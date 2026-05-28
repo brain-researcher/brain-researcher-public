@@ -1,0 +1,77 @@
+# NiWrap Container Configuration
+#
+# This file maps neuroimaging software packages to their container images
+# and execution configurations.
+#
+# For CVMFS unpacked containers, use image_is_directory: true
+
+afni:
+  image: "/cvmfs/neurodesk.ardc.edu.au/containers/afni_25.2.03_20250717/afni_25.2.03_20250717.simg"
+  image_is_directory: true
+  runtime: "apptainer"
+  binds:
+    - "/data:/data"
+    - "/tmp:/tmp"
+  env: {}
+  network_disabled: true
+
+fsl:
+  image: "/cvmfs/neurodesk.ardc.edu.au/containers/fsl_6.0.7.18_20250928/fsl_6.0.7.18_20250928.simg"
+  image_is_directory: true
+  runtime: "apptainer"
+  binds:
+    - "/data:/data"
+    - "/tmp:/tmp"
+  env:
+    FSLOUTPUTTYPE: "NIFTI_GZ"
+  network_disabled: true
+
+ants:
+  image: "/cvmfs/neurodesk.ardc.edu.au/containers/ants_2.6.0_20250424/ants_2.6.0_20250424.simg"
+  image_is_directory: true
+  runtime: "apptainer"
+  binds:
+    - "/data:/data"
+    - "/tmp:/tmp"
+  env: {}
+  network_disabled: true
+
+freesurfer:
+  image: "/cvmfs/neurodesk.ardc.edu.au/containers/freesurfer_8.1.0_20250812/freesurfer_8.1.0_20250812.simg"
+  image_is_directory: true
+  runtime: "apptainer"
+  binds:
+    - "/data:/data"
+    - "/tmp:/tmp"
+  env: {}  # FS_LICENSE will be auto-detected and injected by license_resolver
+  network_disabled: true
+  require_license: true
+
+mrtrix:
+  image: "/cvmfs/neurodesk.ardc.edu.au/containers/mrtrix3_3.0.7_20250929/mrtrix3_3.0.7_20250929.simg"
+  image_is_directory: true
+  runtime: "apptainer"
+  binds:
+    - "/data:/data"
+    - "/tmp:/tmp"
+  env: {}
+  network_disabled: true
+
+workbench:
+  image: "/cvmfs/neurodesk.ardc.edu.au/containers/connectomeworkbench_1.5.0_20220919/connectomeworkbench_1.5.0_20220919.simg"
+  image_is_directory: true
+  runtime: "apptainer"
+  binds:
+    - "/data:/data"
+    - "/tmp:/tmp"
+  env: {}
+  network_disabled: true
+
+# Default configuration for unknown packages
+_default:
+  runtime: "apptainer"
+  binds:
+    - "/data:/data"
+    - "/tmp:/tmp"
+  env: {}
+  network_disabled: true

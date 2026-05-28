@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "patterns": [
+    {
+      "id": "bridge_disconnected_regions",
+      "label": "Bridge disconnected regions",
+      "taste_axis": "bridge_disconnected_regions",
+      "minimal_test_template": "Use the smallest available dataset split to test whether {anchor} and {candidate} show a measurable shift under {relation}.",
+      "falsifier_template": "If the effect between {anchor} and {candidate} is absent under matched controls, this bridge hypothesis is likely spurious."
+    },
+    {
+      "id": "resolve_contradictions",
+      "label": "Resolve contradictions",
+      "taste_axis": "resolve_contradictions",
+      "minimal_test_template": "Run a two-condition contrast around {anchor}->{candidate} and verify whether directionality is stable across preprocessing choices.",
+      "falsifier_template": "If both conditions yield the same slope/sign with confidence intervals overlapping zero difference, contradiction resolution is unsupported."
+    },
+    {
+      "id": "controlled_ood_search",
+      "label": "Controlled OOD search",
+      "taste_axis": "controlled_ood_search",
+      "minimal_test_template": "Evaluate {candidate} as an OOD extension of {anchor} with one cheap discriminating metric tied to {query}.",
+      "falsifier_template": "If OOD gain disappears after cost-matched baseline controls, treat this candidate as low-leverage novelty."
+    }
+  ]
+}

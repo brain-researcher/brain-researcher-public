@@ -1,0 +1,9 @@
+{
+  "query": "run realtime GLM analysis with my test data",
+  "params": {
+    "data_file": "tests/fixtures/realtime_fmri/test_data.npy",
+    "design_matrix_file": "tests/fixtures/realtime_fmri/test_design.npy",
+    "contrast_file": "tests/fixtures/realtime_fmri/test_contrast.npy",
+    "output_dir": "tests/fixtures/realtime_fmri/outputs/glm"
+  }
+}

@@ -1,0 +1,33 @@
+{{- if .Values.orchestrator.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "brain-researcher.orchestrator.fullname" . }}-runtime-reader
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestrator
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "brain-researcher.orchestrator.fullname" . }}-runtime-reader
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestrator
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "brain-researcher.orchestrator.serviceAccountName" . }}
+    namespace: {{ .Values.namespaces.core }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "brain-researcher.orchestrator.fullname" . }}-runtime-reader
+{{- end }}

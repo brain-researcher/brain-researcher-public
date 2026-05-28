@@ -1,0 +1,373 @@
+id: tf_value_based_decision
+label: Value-Based Decision & Learning
+description: >-
+  Reward-guided decision paradigms spanning reinforcement learning (bandits, reversals, model-based vs model-free,
+  Pavlovian–instrumental interactions, habit sensitivity) and economic valuation (risk/ambiguity, intertemporal choice,
+  effort-based cost–benefit). Emphasizes model-based readouts (parameterized utility/discount/learning models) in addition
+  to behavioral DVs.
+examples: [two_armed_bandit, probabilistic_reversal, two_step_task, prospect_theory_choice, delay_discounting, bart_risk, ellsberg_ambiguity, eefrt_effort]
+typical_DVs: [choice_fraction, stay_probability, reaction_time, switching_rate, acceptance_rate]
+common_manipulations: [reward_probability, volatility, base_rate, payoff_matrix, probability_level, ambiguity_level, delay_ms, magnitude, effort_level, success_probability]
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Reinforcement Learning — Bandits, Reversal, Contextual
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_bandit_reversal
+    label: Bandit & Reversal Learning
+    description: Learn action values from stochastic outcomes; adapt to reversals or nonstationary environments.
+    paradigms:
+      - name: Two-Armed Bandit (Stationary)
+        typical_DVs: [choice_fraction_armA, stay_probability, rt_ms]
+        common_manipulations: [reward_probability, payoff_matrix, horizon, exploration_instruction]
+        model_families: [Q_learning, Softmax, Epsilon_greedy]
+        model_params: [alpha_pos, alpha_neg, beta_inverse_temp, epsilon_explore, kappa_stickiness]
+        variant_tags: [stationary, 2AFC]
+        design_flags: [counterbalance_left_right, side_bias_check]
+        qa_checks: [min_trials_per_arm, learning_curve_monotonicity]
+        keywords: [exploration_exploitation]
+      - name: Restless/Volatile Bandit (Nonstationary)
+        typical_DVs: [adaptation_speed, stay_probability_by_volatility, rt_ms]
+        common_manipulations: [volatility, hazard_rate, reward_drift_sigma]
+        model_families: [Kalman_filter, Bayesian_changepoint, Leaky_integrator]
+        model_params: [process_variance, observation_variance, hazard_h, alpha_dynamic, beta_inverse_temp]
+        variant_tags: [restless, volatile]
+        design_flags: [blockwise_volatility]
+        qa_checks: [posterior_tracking_plausible]
+        keywords: [nonstationary, hazard]
+      - name: Contextual Bandit (Feature-Based)
+        typical_DVs: [feature_weight_estimates, choice_accuracy, rt_ms]
+        common_manipulations: [context_features_k, diagnosticity, volatility]
+        model_families: [LinUCB, Thompson_sampling, Contextual_RL]
+        model_params: [w_feature_weights, sigma_prior, c_ucb, beta_inverse_temp]
+        variant_tags: [feature_based]
+        design_flags: [context_randomization]
+        qa_checks: [multicollinearity_check]
+        keywords: [contextual_credit_assignment]
+      - name: Probabilistic Reversal (2AFC)
+        typical_DVs: [perseveration_index, win_stay_lose_shift, switch_after_loss]
+        common_manipulations: [reward_probability, reversal_probability, volatility]
+        model_families: [Q_learning, Hybrid_RL]
+        model_params: [alpha_pos, alpha_neg, beta_inverse_temp, kappa_stickiness]
+        variant_tags: [reversal]
+        design_flags: [volatility_blocks]
+        qa_checks: [balanced_stimulus_exposure]
+        keywords: [reversal_learning]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # RL Arbitration — Model-Based vs Model-Free
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_mb_mf_arbitration
+    label: Model-Based vs Model-Free Arbitration
+    description: Separate goal-directed planning from habitual cached values using transition structure.
+    paradigms:
+      - name: Two-Step Task (Daw)
+        typical_DVs: [mb_index, mf_index, stay_probability_by_transition_outcome, rt_ms]
+        common_manipulations: [state_transition_prob, reward_probability, volatility, horizon]
+        model_families: [Hybrid_MB_MF, SARSA_lambda, Logistic_MB_index]
+        model_params: [w_MB, alpha_MB, alpha_MF, lambda_eligibility, beta_inverse_temp, kappa_stay, p_common]
+        variant_tags: [sequential, arbitration]
+        design_flags: [transition_instruction_check]
+        qa_checks: [transition_comprehension_pass, sufficient_trial_count]
+        keywords: [model_based, model_free]
+      - name: Multi-Step Sequential RL (3+ states)
+        typical_DVs: [mb_index, reward_rate]
+        common_manipulations: [branching_factor, transition_noise]
+        model_families: [Hybrid_MB_MF]
+        model_params: [w_MB, alpha_MB, alpha_MF, beta_inverse_temp]
+        variant_tags: [sequential]
+        design_flags: []
+        qa_checks: []
+        keywords: [planning_depth]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Pavlovian–Instrumental Interactions & Valence×Action
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_pavlovian_instrumental
+    label: Pavlovian–Instrumental & Valence×Action
+    description: Pavlovian biases invigorate or suppress instrumental actions; valence–action interactions in RL.
+    paradigms:
+      - name: Go/NoGo Reinforcement (Gain/Avoid)
+        typical_DVs: [go_bias, pavlovian_bias, accuracy_by_condition, rt_ms]
+        common_manipulations: [valence_gain_loss, action_requirement_go_nogo, reward_probability, punishment_magnitude]
+        model_families: [Actor_critic, Asymmetric_RL]
+        model_params: [alpha_gain, alpha_loss, beta_inverse_temp, pavlovian_bias_pi, go_bias_b]
+        variant_tags: [go_nogo_rl]
+        design_flags: [condition_counterbalance]
+        qa_checks: [balanced_mapping]
+        keywords: [pavlovian_instrumental]
+      - name: Probabilistic Selection Task (PST)
+        typical_DVs: [go_learning_index, nogo_learning_index, choice_accuracy]
+        common_manipulations: [reward_probability_pair, block_number]
+        model_families: [Q_learning, Asymmetric]
+        model_params: [alpha_gain, alpha_loss, beta_inverse_temp]
+        variant_tags: [probabilistic_selection]
+        design_flags: []
+        qa_checks: []
+        keywords: [go_vs_nogo]
+      - name: Specific / General PIT
+        typical_DVs: [specific_transfer, general_invigoration, response_bias]
+        common_manipulations: [cue_outcome_mapping, outcome_identity, extinction_test]
+        model_families: [PIT_additive_bias]
+        model_params: [phi_specific, phi_general]
+        variant_tags: [PIT]
+        design_flags: [pavlovian_phase + instrumental_phase + transfer_test]
+        qa_checks: [extinction_in_transfer]
+        keywords: [PIT]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Habit Sensitivity — Devaluation / Contingency Degradation
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_habit_sensitivity
+    label: Habit Sensitivity (Outcome/Contingency)
+    description: Distinguish goal-directed from habitual control by outcome value or action–outcome contingency.
+    paradigms:
+      - name: Outcome Devaluation
+        typical_DVs: [devaluation_sensitivity, slips_of_action_rate]
+        common_manipulations: [devaluation_method, valued_vs_devalued, overtraining]
+        model_families: [Goal_directed_vs_habit_mixture]
+        model_params: [w_goal_directed, habit_bias, beta_inverse_temp]
+        variant_tags: [devaluation]
+        design_flags: []
+        qa_checks: [devaluation_check]
+        keywords: [habit]
+      - name: Contingency Degradation
+        typical_DVs: [degradation_sensitivity, response_rate_change]
+        common_manipulations: [contingency_strength, noncontingent_outcomes]
+        model_families: [Contingency_sensitivity]
+        model_params: [theta_contingency, beta_inverse_temp]
+        variant_tags: [contingency]
+        design_flags: []
+        qa_checks: [noncontingent_rate_logged]
+        keywords: [habit]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Risk & Ambiguity — Prospect Theory, BART, MPL, Ellsberg
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_risk_ambiguity
+    label: Risk & Ambiguity
+    description: Valuation under known probabilities (risk) and unknown probabilities (ambiguity).
+    paradigms:
+      - name: Prospect Theory Choice (Two-Outcome Lotteries)
+        typical_DVs: [risk_aversion_index, loss_aversion_lambda, probability_weighting_gamma]
+        common_manipulations: [probability_level, magnitude, gain_vs_loss, mixed_gamble_flag, reference_point]
+        model_families: [Prospect_theory, Cumulative_prospect, EU_with_CRRA]
+        model_params: [alpha_gain, alpha_loss, lambda_loss_aversion, gamma_gain, gamma_loss, phi_elevation, beta_inverse_temp, reference_r]
+        variant_tags: [gain_domain, loss_domain, mixed]
+        design_flags: [orthogonalize_p_and_m, reference_dependent]
+        qa_checks: [dominance_violations_zero]
+        keywords: [prospect_theory]
+      - name: Probability Discounting
+        typical_DVs: [certainty_equivalent, discount_rate_h]
+        common_manipulations: [probability_level, magnitude]
+        model_families: [Hyperbolic_probability_discount, Prospect_weighting]
+        model_params: [h_prob, gamma_weighting, beta_inverse_temp]
+        variant_tags: [prob_discount]
+        design_flags: []
+        qa_checks: []
+        keywords: [probability_discounting]
+      - name: Holt–Laury Multiple Price List (MPL)
+        typical_DVs: [switch_point_row, CRRA_risk_coeff]
+        common_manipulations: [probability_schedule, stakes]
+        model_families: [EU_CRRA]
+        model_params: [rho_CRRA]
+        variant_tags: [MPL]
+        design_flags: [incentive_compatible]
+        qa_checks: [single_switch_monotonicity]
+        keywords: [CRRA]
+      - name: Balloon Analogue Risk Task (BART)
+        typical_DVs: [adjusted_pumps, explosion_rate, cashout_rate]
+        common_manipulations: [explosion_probability_schedule, stake_per_pump]
+        model_families: [Risk_tolerance_BART, Belief_updating]
+        model_params: [risk_tolerance_tau, belief_p_explode, beta_inverse_temp]
+        variant_tags: [sequential_risk]
+        design_flags: [trial_end_on_explosion]
+        qa_checks: [extreme_pumping_filter]
+        keywords: [BART]
+      - name: Ellsberg Ambiguity (Urn)
+        typical_DVs: [ambiguity_aversion_index, ambiguity_premium]
+        common_manipulations: [ambiguity_level, probability_known_flag]
+        model_families: [Smooth_ambiguity, Maxmin, Alpha_maxmin]
+        model_params: [alpha_ambiguity, phi_ambiguity_attitude, beta_inverse_temp]
+        variant_tags: [ambiguity]
+        design_flags: [known_vs_unknown_probability]
+        qa_checks: [consistency_checks]
+        keywords: [ambiguity_aversion]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Intertemporal Choice — Delay Discounting
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_intertemporal_choice
+    label: Intertemporal Choice (Delay Discounting)
+    description: Trade-offs between smaller–sooner and larger–later rewards; present bias vs long-run discounting.
+    paradigms:
+      - name: Adjusting-Amount Discounting (Staircase)
+        typical_DVs: [indifference_point, discount_rate_k]
+        common_manipulations: [delay_ms, magnitude, immediate_vs_delayed, payout_type]
+        model_families: [Hyperbolic, Quasi_hyperbolic, Exponential]
+        model_params: [k_hyperbolic, beta_present_bias, delta_long_run, beta_inverse_temp, magnitude_scaler]
+        variant_tags: [staircase]
+        design_flags: [ titration_procedure ]
+        qa_checks: [consistency_of_indifference]
+        keywords: [delay_discounting]
+      - name: Fixed-Set Intertemporal Choice
+        typical_DVs: [sooner_choice_fraction, area_under_curve_AUC]
+        common_manipulations: [delay_ms, magnitude]
+        model_families: [Hyperbolic, Drift_diffusion_value]
+        model_params: [k_hyperbolic, theta_value_to_drift, a_boundary, Ter_nondec, beta_inverse_temp]
+        variant_tags: [fixed_set]
+        design_flags: [ddm_optional]
+        qa_checks: []
+        keywords: [intertemporal_choice]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Effort-Based Valuation — Cognitive & Physical
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_effort_cost_benefit
+    label: Effort-Based Valuation (Cognitive/Physical)
+    description: Discounting rewards by required cognitive/physical effort or success probability.
+    paradigms:
+      - name: Cognitive Effort Discounting (COGED)
+        typical_DVs: [indifference_point, effort_discount_k]
+        common_manipulations: [effort_level (N_back/load), reward_magnitude, time_on_task]
+        model_families: [Hyperbolic_effort_discount]
+        model_params: [k_effort, beta_inverse_temp]
+        variant_tags: [cognitive]
+        design_flags: [adaptive_titration_optional]
+        qa_checks: [performance_at_each_load]
+        keywords: [cognitive_effort]
+      - name: Effort Expenditure for Rewards Task (EEfRT)
+        typical_DVs: [effort_choice_rate, response_rate, reward_rate]
+        common_manipulations: [reward_magnitude, success_probability, effort_requirement]
+        model_families: [Cost_benefit_softmax]
+        model_params: [k_effort, beta_inverse_temp, phi_success_weight]
+        variant_tags: [physical]
+        design_flags: [real_effort]
+        qa_checks: [fatigue_control]
+        keywords: [physical_effort]
+      - name: Demand Selection Task (DST)
+        typical_DVs: [low_demand_choice_fraction, demand_avoidance_index]
+        common_manipulations: [task_switch_probability, demand_difference, reward_context]
+        model_families: [Effort_avoidance_bias]
+        model_params: [bias_low_demand, beta_inverse_temp]
+        variant_tags: [cognitive]
+        design_flags: [implicit_effort_cues]
+        qa_checks: []
+        keywords: [demand_avoidance]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Multi-Attribute Integration — Combine Risk/Delay/Effort/Reward
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_multi_attribute_integration
+    label: Multi-Attribute Cost–Benefit Integration
+    description: Joint trade-offs between reward, risk, delay, and effort in a single choice set.
+    paradigms:
+      - name: Multi-Attribute Choice (Risk × Delay × Effort)
+        typical_DVs: [choice_fraction_by_attribute, rt_ms]
+        common_manipulations: [probability_level, delay_ms, effort_level, reward_magnitude]
+        model_families: [Additive_weighted_utility, Attribute_weighted_DDM]
+        model_params: [w_risk, w_delay, w_effort, w_reward, theta_value_to_drift, a_boundary, Ter_nondec, beta_inverse_temp]
+        variant_tags: [multi_attribute]
+        design_flags: [orthogonal_design]
+        qa_checks: [collinearity_check]
+        keywords: [multi_attribute_choice]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Two-Armed Bandit
+    - Probabilistic Reversal Learning
+    - Two-Step Task
+    - Go/NoGo Reinforcement Learning
+    - Probabilistic Selection Task
+    - Pavlovian–Instrumental Transfer
+    - Outcome Devaluation
+    - Contingency Degradation
+    - Risky Choice / Lottery Choice
+    - Holt–Laury Multiple Price List
+    - Balloon Analogue Risk Task
+    - Ellsberg Ambiguity
+    - Delay Discounting
+    - Effort Discounting / EEfRT
+    - Multi-Attribute Choice
+  cogpo_candidate_labels:
+    - Reinforcement Learning
+    - Reversal Learning
+    - Model-based vs Model-free
+    - Risky Choice
+    - Ambiguity Choice
+    - Delay Discounting
+    - Effort Discounting
+constructs:
+  primary: [Reinforcement Learning, Value-based Choice]
+  secondary: [Exploration–Exploitation, Arbitration, Risk Aversion, Loss Aversion, Ambiguity Aversion, Time Discounting, Effort Cost, Habit Formation]
+uri_brainmap: []
+uri_cogpo: []
+status: draft
+provenance:
+  - source: merge(tf_reinforcement_habit, tf_economic_risk_choice) + decision-model expansion
+    fields: [subfamilies, paradigms, model_families, model_params, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns:
+    - onset
+    - duration
+    - trial_type              # e.g., state, choice, outcome, transfer, devaluation
+    - state                   # if applicable (MDP/sequential)
+    - optionA_prob
+    - optionA_mag
+    - optionB_prob
+    - optionB_mag
+    - ambiguity_level
+    - delay_ms
+    - effort_level
+    - action
+    - outcome
+    - reward                  # numeric
+    - response
+    - correct
+    - rt
+    - feedback
+  per_subfamily:
+    sf_bandit_reversal:
+      events_columns: [onset, duration, trial_type, arm_chosen, reward_probability_current, volatility_block, outcome, reward, response, rt]
+      hed_examples:
+        - "Reinforcement-learning, Bandit, Choice"
+        - "Reinforcement-learning, Reversal, Outcome"
+    sf_mb_mf_arbitration:
+      events_columns: [onset, duration, trial_type, state, transition_type (common/rare), outcome, reward, response, rt]
+      hed_examples:
+        - "Reinforcement-learning, Two-step, Transition"
+    sf_pavlovian_instrumental:
+      events_columns: [onset, duration, trial_type, valence, action_requirement, pavlovian_cue, outcome, reward, response, rt]
+      hed_examples:
+        - "Reinforcement-learning, Go-nogo, Valence"
+        - "Pavlovian-instrumental-transfer, Transfer-phase"
+    sf_habit_sensitivity:
+      events_columns: [onset, duration, trial_type, valued_vs_devalued, devaluation_method, contingency_strength, response_rate, slips_of_action]
+      hed_examples:
+        - "Habit, Outcome-devaluation"
+        - "Habit, Contingency-degradation"
+    sf_risk_ambiguity:
+      events_columns: [onset, duration, trial_type, probability_level, magnitude, gain_loss_flag, reference_point, ambiguity_level, response, correct, rt]
+      hed_examples:
+        - "Economic-decision, Prospect-theory"
+        - "Economic-decision, Ambiguity"
+    sf_intertemporal_choice:
+      events_columns: [onset, duration, trial_type, sooner_amount, later_amount, delay_ms, payout_type, response, rt]
+      hed_examples:
+        - "Economic-decision, Intertemporal, Discounting"
+    sf_effort_cost_benefit:
+      events_columns: [onset, duration, trial_type, effort_level, reward_magnitude, success_probability, response, rt, outcome, reward]
+      hed_examples:
+        - "Cost-benefit, Effort, EEfRT"
+    sf_multi_attribute_integration:
+      events_columns: [onset, duration, trial_type, probability_level, delay_ms, effort_level, reward_magnitude, response, rt]
+      hed_examples:
+        - "Economic-decision, Multi-attribute, Tradeoff"

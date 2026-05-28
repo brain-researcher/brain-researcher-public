@@ -1,0 +1,358 @@
+{
+  "name": "scientific_report_generate",
+  "tier": "ops",
+  "surface_tier": "ops",
+  "capability_family": "scientific_report",
+  "description": "Draft a scientific report by reviewing one run/workspace and rendering LaTeX.\n\n    When ``run_id`` or ``autoresearch_dir`` is supplied, the tool delegates\n    review to the existing scientific-review MCP functions, converts the\n    resulting verdict into conservative report sections, merges optional\n    plain-text analysis sections, then calls ``latex_report_render``. When no\n    source is supplied, it degrades to a plain ``latex_report_render`` call over\n    the provided analysis sections and skips scientific review.\n\n    On successful render, the tool also writes a Markdown draft and a\n    ``report_revision_handoff`` manifest next to the generated TeX/style/template/PDF artifacts.\n    The handoff is a source-preserving contract for a coding agent: retrieve the\n    Markdown, TeX, LaTeX style/template assets, PDF, metadata, and handoff manifest; revise the TeX without\n    deleting or summarizing BR-generated content; add requested scientific\n    details, citations, figures, script paths, and provenance; then compile and\n    validate the revised PDF. Optional ``revision_instructions``,\n    ``revision_source_artifacts``, ``local_workspace``, and\n    ``local_workspace_manifest`` are persisted into that handoff so callers can\n    explicitly name details, local files, or prior report sources the coding agent\n    must restore. ``local_workspace`` is a coding-agent handoff pointer only; the\n    deployed MCP server does not assume it can read that filesystem path.",
+  "input_schema": {
+    "properties": {
+      "run_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Run Id"
+      },
+      "autoresearch_dir": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Autoresearch Dir"
+      },
+      "workflow_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Workflow Id"
+      },
+      "logs_dir": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Logs Dir"
+      },
+      "task_id": {
+        "default": "default",
+        "title": "Task Id",
+        "type": "string"
+      },
+      "title": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Title"
+      },
+      "authors": {
+        "default": "Brain Researcher",
+        "title": "Authors",
+        "type": "string"
+      },
+      "analysis_sections": {
+        "anyOf": [
+          {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Analysis Sections"
+      },
+      "subtitle": {
+        "default": "",
+        "title": "Subtitle",
+        "type": "string"
+      },
+      "institution": {
+        "default": "",
+        "title": "Institution",
+        "type": "string"
+      },
+      "date": {
+        "default": "",
+        "title": "Date",
+        "type": "string"
+      },
+      "use_judgment_critic": {
+        "default": true,
+        "title": "Use Judgment Critic",
+        "type": "boolean"
+      },
+      "force_recompute": {
+        "default": false,
+        "title": "Force Recompute",
+        "type": "boolean"
+      },
+      "compile_pdf": {
+        "default": false,
+        "title": "Compile Pdf",
+        "type": "boolean"
+      },
+      "halt_on_review_block": {
+        "default": false,
+        "title": "Halt On Review Block",
+        "type": "boolean"
+      },
+      "revision_instructions": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Revision Instructions"
+      },
+      "revision_source_artifacts": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Revision Source Artifacts"
+      },
+      "local_workspace": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Local Workspace"
+      },
+      "local_workspace_manifest": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Local Workspace Manifest"
+      }
+    },
+    "oneOf": [
+      {
+        "properties": {
+          "autoresearch_dir": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "pattern": "^\\s*$",
+                "type": "string"
+              }
+            ]
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "pattern": "^\\s*$",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "properties": {
+          "autoresearch_dir": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "pattern": "^\\s*$",
+                "type": "string"
+              }
+            ]
+          },
+          "run_id": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ]
+      },
+      {
+        "properties": {
+          "autoresearch_dir": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "pattern": "^\\s*$",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "autoresearch_dir"
+        ]
+      }
+    ],
+    "title": "scientific_report_generateArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "scientific_report_generateDictOutput",
+    "type": "object"
+  },
+  "examples": [
+    {
+      "input": {
+        "run_id": "br_example_run",
+        "analysis_sections": {
+          "Results Summary": "Summarize key reviewed outputs here."
+        },
+        "compile_pdf": true,
+        "revision_instructions": [
+          "Restore figure captions and experiment-log provenance."
+        ],
+        "revision_source_artifacts": [
+          {
+            "label": "curated_tex",
+            "role": "prior_report_source",
+            "path": "/path/to/curated_report.tex"
+          }
+        ],
+        "local_workspace": "/path/to/user/workspace",
+        "local_workspace_manifest": {
+          "source_files": [
+            "README.md",
+            "results/summary.json"
+          ],
+          "figures": [
+            "figures/main_result.png"
+          ],
+          "scripts": [
+            "scripts/reproduce.py"
+          ],
+          "logs": [
+            "logs/run.log"
+          ],
+          "citations": [
+            "references.bib"
+          ],
+          "required_revision": [
+            "Read local workspace files before editing TeX.",
+            "Add local figure paths, script paths, and provenance."
+          ],
+          "compile_command": "latexmk -pdf report.tex"
+        }
+      },
+      "output": {
+        "ok": true,
+        "report_run_id": "br_report_run",
+        "artifacts": {
+          "markdown": "artifacts/report/draft_report.md",
+          "tex": "artifacts/report/report.tex",
+          "pdf": "artifacts/report/report.pdf",
+          "handoff": "artifacts/report/report_revision_handoff.json"
+        },
+        "_agent_directive": {
+          "report_revision_handoff": {
+            "protocol": "br.report_revision_handoff.directive.v1",
+            "purpose": "source_preserving_scientific_report_revision",
+            "local_workspace_context": {
+              "access_mode": "client_local_workspace",
+              "path": "/path/to/user/workspace",
+              "server_readable": false
+            },
+            "revision_instructions": [
+              "Restore figure captions and experiment-log provenance."
+            ]
+          }
+        }
+      },
+      "tested": false
+    },
+    {
+      "input": {
+        "analysis_sections": {
+          "Results Summary": "Draft a plain report without scientific review."
+        },
+        "compile_pdf": true
+      },
+      "output": {
+        "ok": true,
+        "report_run_id": "br_report_run",
+        "artifacts": {
+          "markdown": "artifacts/report/draft_report.md",
+          "tex": "artifacts/report/report.tex",
+          "handoff": "artifacts/report/report_revision_handoff.json"
+        }
+      },
+      "tested": false
+    }
+  ],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

@@ -1,0 +1,33 @@
+# Mapping used by orchestrator metrics to keep job_kind labels stable.
+# Keys are normalized to lowercase. Entries ending with "_" are treated
+# as prefix matches (e.g., kg_ingest_ matches kg_ingest_metrics or similar).
+
+pipeline_to_kind:
+  glm_first_level: glm
+  glm_second_level: glm
+  glm: glm
+  connectivity_rest: connectivity
+  connectivity: connectivity
+  neuromaps_parcellate: parcellation
+  parcellation: parcellation
+  registration_mni: registration
+  registration: registration
+  mriqc: qc
+  kg_ingest_: kg_ingest
+  kg_query: kg_query
+  render_3d: render_3d
+  download: file_io
+  upload: file_io
+  planner: planner
+
+tool_to_kind:
+  fsl-feat: glm
+  fitlins: glm
+  nilearn-firstlevel: glm
+  afni-3dttest: glm
+  neuromaps: parcellation
+  fmriprep: registration
+  ants_registration: registration
+  mriqc: qc
+  niclip: embedding
+  neurokg: kg_query

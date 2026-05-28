@@ -1,0 +1,141 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Design System/Design Tokens" />
+
+# Design Tokens
+
+Design tokens are the visual design atoms of the Brain Researcher design system. They define the consistent visual properties used throughout the application.
+
+## Colors
+
+Our color system is designed for accessibility and scientific data visualization, with high contrast ratios and colorblind-friendly palettes.
+
+### Primary Colors
+- **Primary**: `hsl(221.2 83.2% 53.3%)` - Brand blue for primary actions
+- **Primary Foreground**: `hsl(210 40% 98%)` - Text on primary backgrounds
+- **Secondary**: `hsl(210 40% 96%)` - Secondary actions and backgrounds
+- **Secondary Foreground**: `hsl(222.2 84% 4.9%)` - Text on secondary backgrounds
+
+### Semantic Colors
+- **Destructive**: `hsl(0 84.2% 60.2%)` - Error states and dangerous actions
+- **Destructive Foreground**: `hsl(210 40% 98%)` - Text on destructive backgrounds
+- **Success**: `hsl(142.1 76.2% 36.3%)` - Success states and confirmations
+- **Warning**: `hsl(47.9 95.8% 53.1%)` - Warning states and cautions
+
+### Neutral Colors
+- **Background**: `hsl(0 0% 100%)` / `hsl(222.2 84% 4.9%)` (dark)
+- **Foreground**: `hsl(222.2 84% 4.9%)` / `hsl(210 40% 98%)` (dark)
+- **Muted**: `hsl(210 40% 96%)` / `hsl(217.2 32.6% 17.5%)` (dark)
+- **Muted Foreground**: `hsl(215.4 16.3% 46.9%)` / `hsl(215 20.2% 65.1%)` (dark)
+
+### Borders
+- **Border**: `hsl(214.3 31.8% 91.4%)` / `hsl(217.2 32.6% 17.5%)` (dark)
+- **Input**: `hsl(214.3 31.8% 91.4%)` / `hsl(217.2 32.6% 17.5%)` (dark)
+- **Ring**: `hsl(221.2 83.2% 53.3%)` - Focus rings
+
+## Typography
+
+### Font Families
+- **Sans**: Inter, system-ui, sans-serif - Primary font for UI
+- **Mono**: JetBrains Mono, Consolas, monospace - Code and data display
+
+### Font Sizes
+- **xs**: 0.75rem (12px)
+- **sm**: 0.875rem (14px)
+- **base**: 1rem (16px)
+- **lg**: 1.125rem (18px)
+- **xl**: 1.25rem (20px)
+- **2xl**: 1.5rem (24px)
+- **3xl**: 1.875rem (30px)
+- **4xl**: 2.25rem (36px)
+
+### Font Weights
+- **normal**: 400
+- **medium**: 500
+- **semibold**: 600
+- **bold**: 700
+
+### Line Heights
+- **tight**: 1.25
+- **normal**: 1.5
+- **relaxed**: 1.75
+
+## Spacing
+
+### Scale
+Based on 0.25rem (4px) increments:
+- **0**: 0px
+- **1**: 0.25rem (4px)
+- **2**: 0.5rem (8px)
+- **3**: 0.75rem (12px)
+- **4**: 1rem (16px)
+- **6**: 1.5rem (24px)
+- **8**: 2rem (32px)
+- **12**: 3rem (48px)
+- **16**: 4rem (64px)
+
+## Border Radius
+
+- **none**: 0px
+- **sm**: 0.125rem (2px)
+- **base**: 0.25rem (4px)
+- **md**: 0.375rem (6px)
+- **lg**: 0.5rem (8px)
+- **xl**: 0.75rem (12px)
+- **full**: 9999px
+
+## Shadows
+
+### Elevation System
+- **sm**: `0 1px 2px 0 rgb(0 0 0 / 0.05)`
+- **base**: `0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)`
+- **md**: `0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)`
+- **lg**: `0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)`
+- **xl**: `0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)`
+
+## Animation
+
+### Duration
+- **150**: 150ms - Quick interactions
+- **200**: 200ms - Standard transitions  
+- **300**: 300ms - Slower transitions
+- **500**: 500ms - Complex animations
+
+### Easing
+- **ease-in-out**: Smooth start and end
+- **ease-out**: Quick start, slow end
+- **ease-in**: Slow start, quick end
+
+## Breakpoints
+
+### Responsive Design Points
+- **sm**: 640px - Small tablets
+- **md**: 768px - Tablets
+- **lg**: 1024px - Laptops
+- **xl**: 1280px - Desktops
+- **2xl**: 1536px - Large screens
+
+## Scientific Data Colors
+
+### Brain Activation Maps
+- **Positive**: `hsl(0 100% 50%)` to `hsl(60 100% 50%)` - Red to yellow gradient
+- **Negative**: `hsl(240 100% 50%)` to `hsl(180 100% 50%)` - Blue to cyan gradient
+
+### Statistical Significance
+- **p < 0.05**: `hsl(142.1 76.2% 36.3%)` - Significant (green)
+- **p < 0.01**: `hsl(142.1 76.2% 26.3%)` - Highly significant (dark green)
+- **p ≥ 0.05**: `hsl(215.4 16.3% 46.9%)` - Non-significant (gray)
+
+## Usage Guidelines
+
+### Do's
+- Use tokens consistently across components
+- Test color combinations for accessibility
+- Maintain hierarchy with typography scales
+- Apply consistent spacing patterns
+
+### Don'ts  
+- Don't hardcode colors or spacing values
+- Don't use colors that fail accessibility standards
+- Don't mix different font families unnecessarily
+- Don't break the spacing scale for custom values

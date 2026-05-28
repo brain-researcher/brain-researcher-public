@@ -1,0 +1,583 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Guidelines/Accessibility" />
+
+# Accessibility Guidelines
+
+Brain Researcher UI components are designed with accessibility as a core principle. This guide outlines our accessibility standards and implementation practices.
+
+## WCAG 2.1 AA Compliance
+
+All components meet or exceed WCAG 2.1 AA standards across four main principles:
+
+### Perceivable
+Information and UI components must be presentable to users in ways they can perceive.
+
+#### Color Contrast
+- **Normal text**: Minimum 4.5:1 contrast ratio
+- **Large text**: Minimum 3:1 contrast ratio  
+- **Interactive elements**: Minimum 3:1 for focus indicators
+
+```css
+/* High contrast text examples */
+.primary-text { color: #1f2937; } /* 16.94:1 on white */
+.secondary-text { color: #6b7280; } /* 4.69:1 on white */
+.error-text { color: #dc2626; } /* 5.74:1 on white */
+```
+
+#### Alternative Text
+All images, including scientific visualizations, include descriptive alt text:
+
+```tsx
+// Brain imaging visualization
+<img 
+  src="statistical-map.png"
+  alt="Statistical parametric map showing significant activation in left motor cortex (t = 4.23, p < 0.001, cluster size = 234 voxels)"
+/>
+
+// Chart visualization  
+<img 
+  src="activation-plot.png"
+  alt="Line chart showing BOLD signal over time. Peak activation at 6 seconds post-stimulus onset, returning to baseline by 12 seconds."
+/>
+```
+
+#### Responsive Text Scaling
+Text scales appropriately when zoomed to 200% without horizontal scrolling:
+
+```css
+/* Flexible font sizes */
+html { font-size: 16px; }
+@media (max-width: 768px) { html { font-size: 14px; } }
+@media (min-width: 1200px) { html { font-size: 18px; } }
+```
+
+### Operable
+UI components and navigation must be operable by all users.
+
+#### Keyboard Navigation
+All interactive elements are keyboard accessible:
+
+```tsx
+// Proper keyboard handling
+<Button 
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  }}
+  onClick={handleClick}
+>
+  Analyze Data
+</Button>
+
+// Tab order management
+<div>
+  <input tabIndex={1} placeholder="Search studies..." />
+  <button tabIndex={2}>Search</button>
+  <button tabIndex={3}>Advanced</button>
+</div>
+```
+
+#### Focus Management
+Visible focus indicators and logical focus flow:
+
+```css
+/* Custom focus styles */
+.focus-visible:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* High contrast focus for dark theme */
+.dark .focus-visible:focus {
+  outline-color: #60a5fa;
+}
+```
+
+#### Time-based Content
+Interactive content provides adequate time limits and controls:
+
+```tsx
+// Analysis progress with pause option
+<div role="progressbar" aria-valuenow={progress} aria-valuemax={100}>
+  <div>Analysis Progress: {progress}%</div>
+  <div>Estimated time remaining: {timeRemaining}</div>
+  <button onClick={pauseAnalysis} aria-label="Pause analysis">
+    Pause
+  </button>
+</div>
+```
+
+### Understandable
+Information and operation of UI must be understandable.
+
+#### Clear Language
+Use plain, scientific language appropriate for the audience:
+
+```tsx
+// Clear, descriptive labels
+<label htmlFor="threshold">
+  Statistical Threshold
+  <span className="text-sm text-gray-600">
+    (t-statistic value for significance testing)
+  </span>
+</label>
+<input 
+  id="threshold"
+  type="number"
+  aria-describedby="threshold-help"
+  min="0"
+  max="10"
+  step="0.1"
+/>
+<div id="threshold-help">
+  Typical values range from 2.0 (liberal) to 4.0 (conservative)
+</div>
+```
+
+#### Error Identification
+Clear, actionable error messages:
+
+```tsx
+// Descriptive error handling
+{errors.threshold && (
+  <div role="alert" className="text-red-600">
+    <strong>Invalid threshold value:</strong> 
+    Please enter a number between 2.0 and 10.0. 
+    Current value "{threshold}" is outside the valid range.
+  </div>
+)}
+
+// Input validation feedback
+<input
+  aria-invalid={errors.threshold ? 'true' : 'false'}
+  aria-describedby="threshold-error"
+/>
+```
+
+#### Consistent Navigation
+Predictable interface patterns across all components:
+
+```tsx
+// Consistent action button placement
+<div className="flex justify-end gap-2 mt-4">
+  <Button variant="outline">Cancel</Button>
+  <Button variant="default">Analyze</Button>
+</div>
+```
+
+### Robust
+Content must be robust enough for interpretation by various assistive technologies.
+
+#### Semantic HTML
+Use appropriate HTML elements and ARIA attributes:
+
+```tsx
+// Proper semantic structure
+<main>
+  <header>
+    <h1>fMRI Analysis Results</h1>
+    <nav aria-label="Result navigation">
+      <a href="#summary">Summary</a>
+      <a href="#statistical-maps">Statistical Maps</a>
+      <a href="#roi-analysis">ROI Analysis</a>
+    </nav>
+  </header>
+  
+  <section id="summary" aria-labelledby="summary-heading">
+    <h2 id="summary-heading">Analysis Summary</h2>
+    <p>This analysis identified significant activation patterns...</p>
+  </section>
+</main>
+
+// Data tables with proper headers
+<table role="table" aria-label="ROI activation results">
+  <thead>
+    <tr>
+      <th scope="col">Brain Region</th>
+      <th scope="col">Hemisphere</th>
+      <th scope="col">Peak t-statistic</th>
+      <th scope="col">p-value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Primary Motor Cortex</td>
+      <td>Left</td>
+      <td>4.23</td>
+      <td>&lt; 0.001</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+## Screen Reader Support
+
+### Live Regions
+Dynamic content updates are announced to screen readers:
+
+```tsx
+// Status announcements
+<div aria-live="polite" id="analysis-status">
+  {isAnalyzing ? 'Analysis in progress...' : `Analysis complete. ${resultsCount} significant regions found.`}
+</div>
+
+// Error announcements
+<div aria-live="assertive" id="error-announcements">
+  {error && `Error: ${error.message}`}
+</div>
+```
+
+### Descriptive Labels
+All form controls and interactive elements have descriptive labels:
+
+```tsx
+// Complex form labeling
+<fieldset>
+  <legend>Analysis Parameters</legend>
+  
+  <div>
+    <label htmlFor="smoothing">
+      Spatial Smoothing (FWHM in mm)
+    </label>
+    <input 
+      id="smoothing"
+      type="number"
+      aria-describedby="smoothing-help"
+      value={smoothing}
+      onChange={(e) => setSmoothing(e.target.value)}
+    />
+    <div id="smoothing-help">
+      Higher values increase sensitivity but reduce spatial precision
+    </div>
+  </div>
+</fieldset>
+```
+
+### Navigation Landmarks
+Clear page structure with ARIA landmarks:
+
+```tsx
+<div role="application" aria-label="Brain Researcher Analysis Platform">
+  <nav role="navigation" aria-label="Main navigation">
+    {/* Navigation menu */}
+  </nav>
+  
+  <main role="main">
+    <section role="search" aria-label="Dataset search">
+      {/* Search interface */}
+    </section>
+    
+    <section role="region" aria-label="Analysis results">
+      {/* Results display */}
+    </section>
+  </main>
+  
+  <aside role="complementary" aria-label="Analysis tools">
+    {/* Tool palette */}
+  </aside>
+</div>
+```
+
+## Motor Accessibility
+
+### Keyboard Shortcuts
+Efficient keyboard navigation for power users:
+
+```tsx
+// Global keyboard shortcuts
+useEffect(() => {
+  const handleKeyPress = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key) {
+        case 'k': // Ctrl/Cmd + K for search
+          e.preventDefault();
+          focusSearch();
+          break;
+        case 'n': // Ctrl/Cmd + N for new analysis  
+          e.preventDefault();
+          startNewAnalysis();
+          break;
+        case 'e': // Ctrl/Cmd + E for export
+          e.preventDefault();
+          exportResults();
+          break;
+      }
+    }
+  };
+  
+  document.addEventListener('keydown', handleKeyPress);
+  return () => document.removeEventListener('keydown', handleKeyPress);
+}, []);
+```
+
+### Large Touch Targets
+Minimum 44px touch targets for mobile accessibility:
+
+```css
+/* Touch-friendly interactive elements */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 12px;
+}
+
+/* Button spacing */
+.button-group button {
+  margin: 4px;
+  min-height: 44px;
+}
+```
+
+### Reduced Motion Support
+Respect user motion preferences:
+
+```css
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  /* Still show focus changes */
+  *:focus {
+    transition: outline 0.2s ease;
+  }
+}
+```
+
+## Cognitive Accessibility
+
+### Clear Visual Hierarchy
+Consistent heading structure and visual organization:
+
+```tsx
+// Proper heading hierarchy
+<div>
+  <h1>fMRI Analysis Platform</h1>
+    <h2>Upload Dataset</h2>
+      <h3>File Selection</h3>
+      <h3>Preprocessing Options</h3>
+    <h2>Analysis Configuration</h2>
+      <h3>Statistical Parameters</h3>
+      <h3>Output Options</h3>
+</div>
+```
+
+### Progress Indicators
+Clear feedback for long-running operations:
+
+```tsx
+// Multi-step process indicator
+<div role="progressbar" 
+     aria-valuemin={0} 
+     aria-valuemax={100} 
+     aria-valuenow={currentStep * 25}
+     aria-label="Analysis progress">
+  
+  <div className="flex justify-between mb-2">
+    <span>Step {currentStep} of 4</span>
+    <span>{currentStep * 25}% complete</span>
+  </div>
+  
+  <div className="bg-gray-200 rounded-full h-2">
+    <div 
+      className="bg-blue-500 h-2 rounded-full transition-all"
+      style={{ width: `${currentStep * 25}%` }}
+    />
+  </div>
+  
+  <ol className="mt-4 text-sm">
+    <li className={currentStep >= 1 ? 'text-green-600' : 'text-gray-400'}>
+      Data preprocessing ✓
+    </li>
+    <li className={currentStep >= 2 ? 'text-green-600' : 'text-gray-400'}>
+      Statistical modeling {currentStep === 2 && '(in progress...)'}
+    </li>
+    <li className={currentStep >= 3 ? 'text-green-600' : 'text-gray-400'}>
+      Results generation
+    </li>
+    <li className={currentStep >= 4 ? 'text-green-600' : 'text-gray-400'}>
+      Report creation
+    </li>
+  </ol>
+</div>
+```
+
+### Error Prevention
+Validate inputs and provide helpful guidance:
+
+```tsx
+// Input validation with helpful feedback
+<div>
+  <label htmlFor="p-threshold">P-value Threshold</label>
+  <input
+    id="p-threshold"
+    type="number"
+    min="0.001"
+    max="0.1"
+    step="0.001"
+    value={pThreshold}
+    onChange={validatePThreshold}
+    aria-describedby="p-threshold-help"
+  />
+  
+  {pThreshold > 0.05 && (
+    <div className="text-yellow-600" role="alert">
+      <strong>Warning:</strong> P-value above 0.05 may produce many false positives
+    </div>
+  )}
+  
+  <div id="p-threshold-help">
+    Common values: 0.05 (uncorrected), 0.001 (conservative)
+  </div>
+</div>
+```
+
+## Testing Accessibility
+
+### Automated Testing
+Use accessibility testing tools in development:
+
+```javascript
+// Jest + jest-axe for automated testing
+import { axe, toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+test('Button component is accessible', async () => {
+  const { container } = render(<Button>Test Button</Button>);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+```
+
+### Manual Testing Checklist
+Regular manual testing procedures:
+
+#### Keyboard Testing
+- [ ] Tab through all interactive elements
+- [ ] Verify logical tab order
+- [ ] Test keyboard shortcuts
+- [ ] Ensure all actions are keyboard accessible
+- [ ] Check focus indicators are visible
+
+#### Screen Reader Testing
+- [ ] Test with NVDA (Windows)
+- [ ] Test with JAWS (Windows)  
+- [ ] Test with VoiceOver (macOS)
+- [ ] Verify all content is announced
+- [ ] Check heading navigation works
+- [ ] Test form completion flow
+
+#### Magnification Testing
+- [ ] Test at 200% zoom without horizontal scroll
+- [ ] Verify text remains readable
+- [ ] Check that no functionality is lost
+- [ ] Test with Windows Magnifier or macOS Zoom
+
+### Browser Extensions
+Helpful testing tools:
+- **axe DevTools**: Automated accessibility scanning
+- **WAVE**: Web accessibility evaluation
+- **Color Contrast Analyzer**: Check color ratios
+- **HeadingsMap**: Verify heading structure
+
+## Common Patterns
+
+### Loading States
+Accessible loading indicators:
+
+```tsx
+<div role="status" aria-label="Loading analysis results">
+  <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full" />
+  <span className="sr-only">Loading...</span>
+</div>
+```
+
+### Modal Dialogs
+Proper focus management:
+
+```tsx
+// Focus trap and ARIA attributes
+<div 
+  role="dialog" 
+  aria-labelledby="dialog-title"
+  aria-describedby="dialog-description"
+  aria-modal="true"
+>
+  <h2 id="dialog-title">Confirm Analysis</h2>
+  <p id="dialog-description">
+    This will start a new analysis with the current parameters
+  </p>
+  
+  <div>
+    <button onClick={onCancel} ref={cancelButtonRef}>
+      Cancel
+    </button>
+    <button onClick={onConfirm} autoFocus>
+      Start Analysis
+    </button>
+  </div>
+</div>
+```
+
+### Data Visualization
+Accessible charts and graphs:
+
+```tsx
+// Chart with table fallback
+<div>
+  <div className="sr-only">
+    <h3>Activation Data (Table View)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Time Point</th>
+          <th>BOLD Signal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {chartData.map((point, i) => (
+          <tr key={i}>
+            <td>{point.time}s</td>
+            <td>{point.signal.toFixed(2)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  
+  <div aria-hidden="true">
+    <canvas 
+      ref={chartRef}
+      width={600}
+      height={400}
+      role="img"
+      aria-label="Line chart showing BOLD signal over time"
+    />
+  </div>
+</div>
+```
+
+## Resources
+
+### Documentation
+- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)
+- [WebAIM Resources](https://webaim.org/resources/)
+
+### Tools
+- [Colour Contrast Analyser](https://www.tpgi.com/color-contrast-checker/)
+- [NVDA Screen Reader](https://www.nvaccess.org/download/)
+- [Accessibility Insights](https://accessibilityinsights.io/)
+
+### Testing Services
+- Consider professional accessibility auditing
+- User testing with people with disabilities
+- Regular compliance reviews

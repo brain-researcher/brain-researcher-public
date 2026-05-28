@@ -1,0 +1,185 @@
+# Brain Researcher JupyterHub MVP values
+#
+# This file is a Brain Researcher-specific overlay for the upstream
+# `jupyterhub/jupyterhub` Helm chart.
+#
+# Product direction:
+# - Hosted cloud uses JupyterHub + JupyterLab + notebook assistant + BR MCP
+# - Local Docker and HPC use coding agents + BR MCP, not this deployment shell
+#
+# Expected install shape:
+#   helm upgrade --install br-workspace jupyterhub/jupyterhub \
+#     -n brain-researcher-workspace --create-namespace \
+#     -f infrastructure/jupyterhub/values.mvp.yaml
+
+proxy:
+  service:
+    type: ClusterIP
+  chp:
+    networkPolicy:
+      enabled: true
+  secretToken: "CHANGE_ME_LONG_RANDOM_SECRET"
+
+hub:
+  networkPolicy:
+    enabled: true
+  serviceAccount:
+    create: true
+  db:
+    type: sqlite-memory
+  config:
+    JupyterHub:
+      admin_access: false
+      authenticator_class: generic-oauth
+    GenericOAuthenticator:
+      login_service: "Brain Researcher"
+      client_id: "CHANGE_ME_OIDC_CLIENT_ID"
+      client_secret: "CHANGE_ME_OIDC_CLIENT_SECRET"
+      oauth_callback_url: "https://hub.brain-researcher.com/hub/oauth_callback"
+      authorize_url: "https://accounts.google.com/o/oauth2/v2/auth"
+      token_url: "https://oauth2.googleapis.com/token"
+      userdata_url: "https://openidconnect.googleapis.com/v1/userinfo"
+      username_key: email
+      scope:
+        - openid
+        - email
+        - profile
+      allowed_users: []
+      allowed_groups: []
+  extraEnv:
+    BR_PRODUCT_NAME: "Brain Researcher"
+    BR_WORKSPACE_MODE: "hosted"
+    BR_MCP_MODE: "hosted_notebook_v1"
+    BR_MCP_HTTP_URL: "http://brain-researcher-mcp.brain-researcher-core.svc.cluster.local:7000/mcp"
+    BR_NOTEBOOK_ASSISTANT_MODE: "enabled"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  extraVolumes:
+    - name: workspace-bootstrap
+      configMap:
+        name: brain-researcher-workspace-bootstrap
+        defaultMode: 0555
+  extraVolumeMounts:
+    - name: workspace-bootstrap
+      mountPath: /opt/brain-researcher/bootstrap
+      readOnly: true
+  extraConfig:
+    10-brain-researcher.py: |
+      # Placeholder for future BR-specific hub config.
+      # The MVP keeps the hub thin and shifts intelligence into BR MCP.
+      c.Spawner.default_url = "/lab"
+
+singleuser:
+  image:
+    name: "ghcr.io/brain-researcher/jupyter-singleuser"
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  uid: 1000
+  fsGid: 100
+  cmd: null
+  defaultUrl: "/lab"
+  serviceAccountName: "brain-researcher-singleuser"
+  storage:
+    type: dynamic
+    homeMountPath: /home/jovyan
+    capacity: 50Gi
+    dynamic:
+      storageClass: "standard-rwo"
+    extraVolumes:
+      - name: cvmfs-neurodesk-containers
+        hostPath:
+          path: /cvmfs/neurodesk.ardc.edu.au/containers
+          type: Directory
+      - name: cvmfs-neurodesk-modules
+        hostPath:
+          path: /cvmfs/neurodesk.ardc.edu.au/neurodesk-modules
+          type: Directory
+      - name: shared-datasets
+        persistentVolumeClaim:
+          claimName: brain-researcher-shared-datasets
+      - name: workspace-bootstrap
+        configMap:
+          name: brain-researcher-workspace-bootstrap
+          defaultMode: 0555
+    extraVolumeMounts:
+      - name: cvmfs-neurodesk-containers
+        mountPath: /cvmfs/neurodesk.ardc.edu.au/containers
+        readOnly: true
+      - name: cvmfs-neurodesk-modules
+        mountPath: /cvmfs/neurodesk.ardc.edu.au/neurodesk-modules
+        readOnly: true
+      - name: shared-datasets
+        mountPath: /data
+        readOnly: true
+      - name: workspace-bootstrap
+        mountPath: /opt/brain-researcher/bootstrap
+        readOnly: true
+  extraEnv:
+    BR_WORKSPACE_MODE: "hosted"
+    BR_MCP_MODE: "hosted_notebook_v1"
+    BR_MCP_HTTP_URL: "http://brain-researcher-mcp.brain-researcher-core.svc.cluster.local:7000/mcp"
+    BR_NOTEBOOK_ASSISTANT_ENABLED: "true"
+    BR_NEURODESK_ROOT: "/cvmfs/neurodesk.ardc.edu.au"
+    JUPYTER_ENABLE_LAB: "yes"
+  lifecycleHooks:
+    postStart:
+      exec:
+        command:
+          - bash
+          - -lc
+          - |
+            if [ -x /opt/brain-researcher/bootstrap/start.sh ]; then
+              /opt/brain-researcher/bootstrap/start.sh
+            fi
+  profileList:
+    - display_name: "Standard neuroimaging workspace"
+      slug: standard
+      description: "Default JupyterLab workspace with Neurodesk access and BR MCP notebook integration."
+      default: true
+      kubespawner_override:
+        cpu_guarantee: 1
+        cpu_limit: 2
+        mem_guarantee: 4G
+        mem_limit: 8G
+
+scheduling:
+  userScheduler:
+    enabled: false
+  podPriority:
+    enabled: true
+  userPlaceholder:
+    enabled: false
+
+prePuller:
+  hook:
+    enabled: false
+  continuous:
+    enabled: false
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  hosts:
+    - hub.brain-researcher.com
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    - hosts:
+        - hub.brain-researcher.com
+      secretName: brain-researcher-hub-tls
+
+cull:
+  enabled: true
+  users: true
+  timeout: 3600
+  every: 600
+  maxAge: 86400
+  removeNamedServers: true
+
+debug:
+  enabled: false

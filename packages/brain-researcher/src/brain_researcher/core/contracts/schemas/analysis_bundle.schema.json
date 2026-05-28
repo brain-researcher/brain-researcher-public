@@ -1,0 +1,2470 @@
+{
+  "$defs": {
+    "AnalysisBundleFiles": {
+      "description": "Well-known file references relative to `run_dir` when possible.",
+      "properties": {
+        "analysis_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Analysis Json"
+        },
+        "analysis_script_py": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Analysis Script Py"
+        },
+        "artifact_manifest_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Manifest Json"
+        },
+        "docker_compose_yml": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Docker Compose Yml"
+        },
+        "environment_yml": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Environment Yml"
+        },
+        "execution_manifest_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Manifest Json"
+        },
+        "inputs_manifest_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inputs Manifest Json"
+        },
+        "observation_json": {
+          "default": "observation.json",
+          "title": "Observation Json",
+          "type": "string"
+        },
+        "provenance_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provenance Json"
+        },
+        "requirements_txt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requirements Txt"
+        },
+        "reward_breakdown_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reward Breakdown Json"
+        },
+        "rm_pairwise_raw_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rm Pairwise Raw Json"
+        },
+        "rm_pairwise_redacted_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rm Pairwise Redacted Json"
+        },
+        "rm_process_raw_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rm Process Raw Json"
+        },
+        "rm_process_redacted_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rm Process Redacted Json"
+        },
+        "run_script_sh": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Script Sh"
+        },
+        "stderr_txt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stderr Txt"
+        },
+        "stdout_txt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stdout Txt"
+        },
+        "trace_jsonl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trace Jsonl"
+        },
+        "trajectory_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trajectory Json"
+        }
+      },
+      "title": "AnalysisBundleFiles",
+      "type": "object"
+    },
+    "BundleFileEntry": {
+      "description": "A single file entry in the bundle manifest.",
+      "properties": {
+        "checksum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Checksum in the form sha256:<hex>",
+          "title": "Checksum"
+        },
+        "checksum_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checksum Reason"
+        },
+        "checksum_status": {
+          "default": "skipped",
+          "description": "ok|missing|skipped|error",
+          "title": "Checksum Status",
+          "type": "string"
+        },
+        "mime": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Best-effort MIME type",
+          "title": "Mime"
+        },
+        "path": {
+          "description": "Path relative to run_dir when possible",
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "description": "Semantic role, e.g. observation|trace|trajectory",
+          "title": "Role",
+          "type": "string"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "File size in bytes",
+          "title": "Size"
+        }
+      },
+      "required": [
+        "role",
+        "path"
+      ],
+      "title": "BundleFileEntry",
+      "type": "object"
+    },
+    "ConditionConstraintV1": {
+      "properties": {
+        "condition_key": {
+          "title": "Condition Key",
+          "type": "string"
+        },
+        "condition_value": {
+          "title": "Condition Value",
+          "type": "string"
+        },
+        "expected_conclusion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Conclusion"
+        },
+        "source_signal_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Signal Id"
+        }
+      },
+      "required": [
+        "condition_key",
+        "condition_value"
+      ],
+      "title": "ConditionConstraintV1",
+      "type": "object"
+    },
+    "ConditionTagSignalV1": {
+      "properties": {
+        "conclusion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conclusion"
+        },
+        "condition_key": {
+          "title": "Condition Key",
+          "type": "string"
+        },
+        "condition_value": {
+          "title": "Condition Value",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "conflict_state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conflict State"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Id"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "schema_version": {
+          "const": "loop-signal-v1",
+          "default": "loop-signal-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "signal_id": {
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_type": {
+          "const": "condition_tag",
+          "default": "condition_tag",
+          "title": "Signal Type",
+          "type": "string"
+        },
+        "stage": {
+          "default": "unknown",
+          "enum": [
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5",
+            "unknown"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "condition_key",
+        "condition_value"
+      ],
+      "title": "ConditionTagSignalV1",
+      "type": "object"
+    },
+    "CrossStageContextV1": {
+      "properties": {
+        "condition_constraints": {
+          "items": {
+            "$ref": "#/$defs/ConditionConstraintV1"
+          },
+          "title": "Condition Constraints",
+          "type": "array"
+        },
+        "dataset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Id"
+        },
+        "design_constraints": {
+          "items": {
+            "$ref": "#/$defs/DesignConstraintV1"
+          },
+          "title": "Design Constraints",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "predicted_intents": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Predicted Intents",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "cross-stage-context-v1",
+          "default": "cross-stage-context-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sensitivity_constraints": {
+          "items": {
+            "$ref": "#/$defs/SensitivityConstraintV1"
+          },
+          "title": "Sensitivity Constraints",
+          "type": "array"
+        },
+        "task_family": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Family"
+        }
+      },
+      "title": "CrossStageContextV1",
+      "type": "object"
+    },
+    "DesignConstraintSignalV1": {
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "constraint_type": {
+          "title": "Constraint Type",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Id"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "requirement": {
+          "title": "Requirement",
+          "type": "string"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "schema_version": {
+          "const": "loop-signal-v1",
+          "default": "loop-signal-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "signal_id": {
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_type": {
+          "const": "design_constraint",
+          "default": "design_constraint",
+          "title": "Signal Type",
+          "type": "string"
+        },
+        "stage": {
+          "default": "unknown",
+          "enum": [
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5",
+            "unknown"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "constraint_type",
+        "target",
+        "requirement"
+      ],
+      "title": "DesignConstraintSignalV1",
+      "type": "object"
+    },
+    "DesignConstraintV1": {
+      "properties": {
+        "constraint_type": {
+          "title": "Constraint Type",
+          "type": "string"
+        },
+        "requirement": {
+          "title": "Requirement",
+          "type": "string"
+        },
+        "source_signal_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Signal Id"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "constraint_type",
+        "target",
+        "requirement"
+      ],
+      "title": "DesignConstraintV1",
+      "type": "object"
+    },
+    "EvaluationV1": {
+      "description": "Optional benchmark/evaluation metadata attached to a run.",
+      "properties": {
+        "harbor": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Harbor"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata"
+        },
+        "schema_version": {
+          "const": "evaluation-v1",
+          "default": "evaluation-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scorecard": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScorecardV1"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scorecard"
+        },
+        "task": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaskSpecV1"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task"
+        }
+      },
+      "title": "EvaluationV1",
+      "type": "object"
+    },
+    "ExecutionEntrypointsV1": {
+      "properties": {
+        "docker_compose": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Docker Compose"
+        },
+        "environment_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Environment File"
+        },
+        "python_script": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Script"
+        },
+        "shell_script": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shell Script"
+        }
+      },
+      "title": "ExecutionEntrypointsV1",
+      "type": "object"
+    },
+    "ExecutionIORefV1": {
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "kind": {
+          "default": "file",
+          "enum": [
+            "file",
+            "directory",
+            "uri",
+            "value"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ExecutionIORefV1",
+      "type": "object"
+    },
+    "ExecutionManifestV1": {
+      "properties": {
+        "entrypoints": {
+          "$ref": "#/$defs/ExecutionEntrypointsV1"
+        },
+        "execution_mode": {
+          "$ref": "#/$defs/ExecutionModeV1",
+          "default": "unknown"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/ExecutionIORefV1"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "neurodesk": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NeurodeskExecutionV1"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "outputs": {
+          "items": {
+            "$ref": "#/$defs/ExecutionIORefV1"
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        },
+        "repro": {
+          "$ref": "#/$defs/ExecutionReproV1"
+        },
+        "runtime": {
+          "$ref": "#/$defs/ExecutionRuntimeV1"
+        },
+        "schema_version": {
+          "const": "execution-manifest-v1",
+          "default": "execution-manifest-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        }
+      },
+      "title": "ExecutionManifestV1",
+      "type": "object"
+    },
+    "ExecutionModeV1": {
+      "enum": [
+        "python_script",
+        "shell_script",
+        "docker_compose",
+        "neurodesk",
+        "mixed",
+        "unknown"
+      ],
+      "title": "ExecutionModeV1",
+      "type": "string"
+    },
+    "ExecutionReproV1": {
+      "properties": {
+        "command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "working_directory": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": ".",
+          "title": "Working Directory"
+        }
+      },
+      "title": "ExecutionReproV1",
+      "type": "object"
+    },
+    "ExecutionRuntimeV1": {
+      "properties": {
+        "docker_supported": {
+          "default": false,
+          "title": "Docker Supported",
+          "type": "boolean"
+        },
+        "neurodesk_supported": {
+          "default": false,
+          "title": "Neurodesk Supported",
+          "type": "boolean"
+        },
+        "python_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Version"
+        }
+      },
+      "title": "ExecutionRuntimeV1",
+      "type": "object"
+    },
+    "HypothesisDeltaSignalV1": {
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "delta_metric": {
+          "title": "Delta Metric",
+          "type": "string"
+        },
+        "delta_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Delta Value"
+        },
+        "hypothesis_id": {
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Id"
+        },
+        "posterior_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Posterior Value"
+        },
+        "prior_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prior Value"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "schema_version": {
+          "const": "loop-signal-v1",
+          "default": "loop-signal-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "signal_id": {
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_type": {
+          "const": "hypothesis_delta",
+          "default": "hypothesis_delta",
+          "title": "Signal Type",
+          "type": "string"
+        },
+        "stage": {
+          "default": "unknown",
+          "enum": [
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5",
+            "unknown"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "delta_metric"
+      ],
+      "title": "HypothesisDeltaSignalV1",
+      "type": "object"
+    },
+    "IdsV1": {
+      "description": "Stable identifiers for correlating objects/events across services.",
+      "properties": {
+        "analysis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Analysis identifier if applicable",
+          "title": "Analysis Id"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Job identifier",
+          "title": "Job Id"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inbound API/UI request identifier",
+          "title": "Request Id"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Run identifier",
+          "title": "Run Id"
+        },
+        "schema_version": {
+          "const": "ids-v1",
+          "default": "ids-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Conversation/session/thread id",
+          "title": "Session Id"
+        },
+        "trace_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distributed trace id",
+          "title": "Trace Id"
+        },
+        "user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "End-user id",
+          "title": "User Id"
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Workspace/project id",
+          "title": "Workspace Id"
+        }
+      },
+      "title": "IdsV1",
+      "type": "object"
+    },
+    "NeurodeskExecutionV1": {
+      "properties": {
+        "command_template": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command Template"
+        },
+        "container_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Container Paths",
+          "type": "array"
+        },
+        "modules": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Modules",
+          "type": "array"
+        }
+      },
+      "title": "NeurodeskExecutionV1",
+      "type": "object"
+    },
+    "PolicyRefV1": {
+      "description": "Reference to the policy that governed a run/event.",
+      "properties": {
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable notes",
+          "title": "Notes"
+        },
+        "policy_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Checksum in the form sha256:<hex> when available",
+          "title": "Policy Hash"
+        },
+        "policy_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Policy identifier",
+          "title": "Policy Id"
+        },
+        "policy_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Where the policy came from (file/env/url)",
+          "title": "Policy Source"
+        },
+        "schema_version": {
+          "const": "policy-ref-v1",
+          "default": "policy-ref-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "thresholds": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional thresholds used by the policy",
+          "title": "Thresholds"
+        }
+      },
+      "title": "PolicyRefV1",
+      "type": "object"
+    },
+    "RMLogMetadataV1": {
+      "description": "Optional metadata for redact+raw-vault RM logs.",
+      "properties": {
+        "generated_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generated At"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata"
+        },
+        "policy": {
+          "default": "redact+raw-vault",
+          "title": "Policy",
+          "type": "string"
+        },
+        "raw_checksum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Checksum"
+        },
+        "raw_checksum_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Checksum Reason"
+        },
+        "raw_checksum_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Checksum Status"
+        },
+        "raw_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Json"
+        },
+        "redacted_checksum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Redacted Checksum"
+        },
+        "redacted_checksum_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Redacted Checksum Reason"
+        },
+        "redacted_checksum_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Redacted Checksum Status"
+        },
+        "redacted_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Redacted Json"
+        },
+        "schema_version": {
+          "const": "rm-log-metadata-v1",
+          "default": "rm-log-metadata-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "title": "RMLogMetadataV1",
+      "type": "object"
+    },
+    "ScorecardV1": {
+      "description": "Score output produced by a validator/comparator (v1).",
+      "properties": {
+        "breakdown": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Breakdown"
+        },
+        "evaluator": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evaluator"
+        },
+        "generated_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generated At"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        },
+        "metrics": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Metrics",
+          "type": "object"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "overall_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overall Score"
+        },
+        "passed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Passed"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "schema_version": {
+          "const": "scorecard-v1",
+          "default": "scorecard-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Id"
+        }
+      },
+      "title": "ScorecardV1",
+      "type": "object"
+    },
+    "SensitivityConstraintV1": {
+      "properties": {
+        "analysis_axis": {
+          "title": "Analysis Axis",
+          "type": "string"
+        },
+        "min_eta_squared": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Eta Squared"
+        },
+        "recommendation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendation"
+        },
+        "source_signal_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Signal Id"
+        }
+      },
+      "required": [
+        "analysis_axis"
+      ],
+      "title": "SensitivityConstraintV1",
+      "type": "object"
+    },
+    "SensitivityFindingSignalV1": {
+      "properties": {
+        "analysis_axis": {
+          "title": "Analysis Axis",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "eta_squared": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Eta Squared",
+          "type": "number"
+        },
+        "plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Id"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "recommended_action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommended Action"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "schema_version": {
+          "const": "loop-signal-v1",
+          "default": "loop-signal-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "signal_id": {
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_type": {
+          "const": "sensitivity_finding",
+          "default": "sensitivity_finding",
+          "title": "Signal Type",
+          "type": "string"
+        },
+        "stability_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stability Label"
+        },
+        "stage": {
+          "default": "unknown",
+          "enum": [
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5",
+            "unknown"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "analysis_axis",
+        "eta_squared"
+      ],
+      "title": "SensitivityFindingSignalV1",
+      "type": "object"
+    },
+    "TaskSpecV1": {
+      "description": "Benchmark case specification (v1).",
+      "properties": {
+        "allowlist": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Allowlist"
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "expected_outputs": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Expected Outputs",
+          "type": "array"
+        },
+        "inputs": {
+          "additionalProperties": true,
+          "title": "Inputs",
+          "type": "object"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "schema_version": {
+          "const": "task-spec-v1",
+          "default": "task-spec-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scoring": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scoring"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "task_id": {
+          "description": "Stable identifier for this evaluation task/case",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id"
+      ],
+      "title": "TaskSpecV1",
+      "type": "object"
+    },
+    "UserFeedbackSignalV1": {
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "feedback_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Feedback Text"
+        },
+        "helpful": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Helpful"
+        },
+        "plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Id"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "rating": {
+          "anyOf": [
+            {
+              "maximum": 5.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rating"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "schema_version": {
+          "const": "loop-signal-v1",
+          "default": "loop-signal-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "signal_id": {
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_type": {
+          "const": "user_feedback",
+          "default": "user_feedback",
+          "title": "Signal Type",
+          "type": "string"
+        },
+        "stage": {
+          "default": "unknown",
+          "enum": [
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5",
+            "unknown"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "title": "UserFeedbackSignalV1",
+      "type": "object"
+    },
+    "VersionRefV1": {
+      "description": "Best-effort versions for reproducibility/auditing.",
+      "properties": {
+        "brain_researcher_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Installed brain_researcher package version",
+          "title": "Brain Researcher Version"
+        },
+        "contracts_version": {
+          "default": "contracts-v1",
+          "description": "Version identifier for this contract set",
+          "title": "Contracts Version",
+          "type": "string"
+        },
+        "git_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Git commit SHA if known",
+          "title": "Git Commit"
+        },
+        "image_digests": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Container/image digests",
+          "title": "Image Digests",
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "version-ref-v1",
+          "default": "version-ref-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool_versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Tool/library versions",
+          "title": "Tool Versions",
+          "type": "object"
+        }
+      },
+      "title": "VersionRefV1",
+      "type": "object"
+    }
+  },
+  "description": "Single-document bundle for a run (v1).",
+  "properties": {
+    "analysis_manifest": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Analysis Manifest"
+    },
+    "artifact_manifest": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Artifact Manifest"
+    },
+    "artifacts": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "created_at": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "cross_stage_context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CrossStageContextV1"
+        },
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cross Stage Context"
+    },
+    "evaluation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EvaluationV1"
+        },
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evaluation"
+    },
+    "execution_manifest": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutionManifestV1"
+        },
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Execution Manifest"
+    },
+    "file_manifest": {
+      "items": {
+        "$ref": "#/$defs/BundleFileEntry"
+      },
+      "title": "File Manifest",
+      "type": "array"
+    },
+    "files": {
+      "$ref": "#/$defs/AnalysisBundleFiles"
+    },
+    "finished_at": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Finished At"
+    },
+    "generated_at": {
+      "description": "UTC ISO8601 timestamp",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "ids": {
+      "$ref": "#/$defs/IdsV1"
+    },
+    "inputs_manifest": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Inputs Manifest"
+    },
+    "job_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Job Id"
+    },
+    "loop_signals": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "condition_tag": "#/$defs/ConditionTagSignalV1",
+            "design_constraint": "#/$defs/DesignConstraintSignalV1",
+            "hypothesis_delta": "#/$defs/HypothesisDeltaSignalV1",
+            "sensitivity_finding": "#/$defs/SensitivityFindingSignalV1",
+            "user_feedback": "#/$defs/UserFeedbackSignalV1"
+          },
+          "propertyName": "signal_type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/ConditionTagSignalV1"
+          },
+          {
+            "$ref": "#/$defs/SensitivityFindingSignalV1"
+          },
+          {
+            "$ref": "#/$defs/DesignConstraintSignalV1"
+          },
+          {
+            "$ref": "#/$defs/HypothesisDeltaSignalV1"
+          },
+          {
+            "$ref": "#/$defs/UserFeedbackSignalV1"
+          }
+        ]
+      },
+      "title": "Loop Signals",
+      "type": "array"
+    },
+    "observation": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observation"
+    },
+    "policy": {
+      "$ref": "#/$defs/PolicyRefV1"
+    },
+    "policy_snapshot": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Snapshot"
+    },
+    "provenance": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Provenance"
+    },
+    "reward_breakdown": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reward Breakdown"
+    },
+    "rm_pairwise": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RMLogMetadataV1"
+        },
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rm Pairwise"
+    },
+    "rm_process": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RMLogMetadataV1"
+        },
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rm Process"
+    },
+    "run_card": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Card"
+    },
+    "run_dir": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Dir"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "schema_version": {
+      "const": "analysis-bundle-v1",
+      "default": "analysis-bundle-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "state": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "State"
+    },
+    "trajectory": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trajectory"
+    },
+    "versions": {
+      "$ref": "#/$defs/VersionRefV1"
+    }
+  },
+  "required": [
+    "generated_at"
+  ],
+  "title": "AnalysisBundleV1",
+  "type": "object"
+}

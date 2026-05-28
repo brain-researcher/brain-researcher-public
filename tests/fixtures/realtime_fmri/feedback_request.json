@@ -1,0 +1,9 @@
+{
+  "query": "control neurofeedback display",
+  "params": {
+    "activation_level": 0.7,
+    "target_level": 0.5,
+    "feedback_type": "visual",
+    "output_dir": "tests/fixtures/realtime_fmri/outputs/feedback"
+  }
+}

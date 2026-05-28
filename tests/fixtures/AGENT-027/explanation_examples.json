@@ -1,0 +1,375 @@
+{
+  "explanation_scenarios": [
+    {
+      "scenario_id": "fmri_working_memory",
+      "input_data": {
+        "analysis_type": "GLM",
+        "task": "n-back working memory",
+        "significant_clusters": [
+          {
+            "region": "left_dorsolateral_prefrontal_cortex",
+            "peak_coordinates": [-42, 22, 36],
+            "z_score": 4.67,
+            "p_value": 0.0001,
+            "cluster_size": 234,
+            "correction": "FWE"
+          },
+          {
+            "region": "bilateral_posterior_parietal_cortex",
+            "peak_coordinates": [38, -58, 44],
+            "z_score": 4.23,
+            "p_value": 0.0005,
+            "cluster_size": 189,
+            "correction": "FWE"
+          }
+        ],
+        "behavioral_correlation": {
+          "accuracy": {
+            "r": 0.43,
+            "p": 0.003,
+            "interpretation": "higher_activation_better_performance"
+          }
+        },
+        "sample_size": 45,
+        "age_range": [20, 35]
+      },
+      "explanations": {
+        "expert_technical": {
+          "text": "GLM analysis of n-back working memory task data (n=45) revealed significant activation in two primary clusters: left dorsolateral prefrontal cortex (BA 9/46; peak MNI: [-42, 22, 36]; Z=4.67, p<0.0001, FWE corrected, k=234 voxels) and bilateral posterior parietal cortex (BA 7/40; peak MNI: [38, -58, 44]; Z=4.23, p=0.0005, FWE corrected, k=189 voxels). Notably, left DLPFC activation showed significant positive correlation with task accuracy (r=0.43, p=0.003), indicating that increased prefrontal recruitment is associated with superior working memory performance. This activation pattern is consistent with the established frontoparietal working memory network (Baddeley, 2003; Owen et al., 2005) and supports the central executive model of prefrontal function.",
+          "confidence_score": 0.92,
+          "complexity_score": 0.95,
+          "includes_citations": true,
+          "includes_statistics": true,
+          "includes_methodology": true
+        },
+        "clinician_structured": {
+          "text": {
+            "summary": "Working memory task analysis identified significant activation in brain regions known to support executive function and attention control.",
+            "methodology": "We used statistical parametric mapping (GLM) with family-wise error correction to identify brain regions that were significantly more active during the demanding 2-back task compared to the control 0-back condition.",
+            "findings": "Two main brain networks were activated: the left frontal control region (involved in managing and manipulating information) and bilateral parietal attention regions (involved in maintaining information in awareness). Importantly, individuals with stronger activation in the frontal region performed better on the task.",
+            "implications": "This pattern indicates healthy functioning of the working memory system. The positive correlation between brain activation and performance suggests these regions are efficiently supporting cognitive demands.",
+            "confidence": "High confidence - results are statistically robust with large effect sizes and consistent with established literature.",
+            "limitations": "Results are based on healthy young adults (ages 20-35) and may not generalize to other age groups or clinical populations."
+          },
+          "confidence_score": 0.89,
+          "complexity_score": 0.65,
+          "includes_citations": false,
+          "includes_statistics": true,
+          "includes_methodology": true
+        },
+        "student_layman": {
+          "text": "We asked people to do a challenging memory task while we scanned their brains. During this task, two main brain areas became very active. The first was in the front part of the brain (called the prefrontal cortex), which acts like a 'mental workspace' where we manipulate information - imagine it like the workspace on your computer where you have files open that you're actively working with. The second area was toward the back and sides of the brain (parietal cortex), which helps us pay attention to important information - like a spotlight that helps us focus. What's really interesting is that people who had stronger activation in the front brain area also performed better on the memory task. This suggests their brains were working more efficiently to handle the challenge. These findings tell us that working memory isn't handled by just one brain region, but requires teamwork between different areas.",
+          "confidence_score": 0.86,
+          "complexity_score": 0.25,
+          "includes_citations": false,
+          "includes_statistics": false,
+          "includes_methodology": false,
+          "includes_analogies": true
+        }
+      }
+    },
+    {
+      "scenario_id": "resting_state_connectivity",
+      "input_data": {
+        "analysis_type": "functional_connectivity",
+        "method": "seed_based_correlation",
+        "seed_region": "posterior_cingulate_cortex",
+        "significant_connections": [
+          {
+            "target_region": "medial_prefrontal_cortex",
+            "correlation": 0.68,
+            "p_value": 0.0001,
+            "network": "default_mode_network"
+          },
+          {
+            "target_region": "angular_gyrus",
+            "correlation": 0.54,
+            "p_value": 0.002,
+            "network": "default_mode_network"
+          }
+        ],
+        "network_properties": {
+          "modularity": 0.42,
+          "clustering_coefficient": 0.38,
+          "path_length": 2.1
+        },
+        "clinical_context": "healthy_controls_vs_depression"
+      },
+      "explanations": {
+        "expert_technical": {
+          "text": "Seed-based functional connectivity analysis using the posterior cingulate cortex (PCC) as seed region revealed significant connectivity within the default mode network (DMN). Primary connections were identified with medial prefrontal cortex (mPFC; r=0.68, p<0.0001) and bilateral angular gyrus (r=0.54, p=0.002). Network topology analysis revealed modularity Q=0.42, clustering coefficient C=0.38, and characteristic path length L=2.1, indicating a small-world network architecture. These connectivity patterns are consistent with canonical DMN organization and suggest intact network integrity in this sample.",
+          "confidence_score": 0.91,
+          "complexity_score": 0.92
+        },
+        "clinician_structured": {
+          "text": {
+            "summary": "Resting-state connectivity analysis shows normal communication patterns within the default mode network, a brain system active during rest and introspective thinking.",
+            "methodology": "We measured how different brain regions communicate with each other when participants are not performing any specific task (resting state). We focused on the posterior cingulate cortex and examined which other regions showed synchronized activity.",
+            "findings": "Strong connections were found between the posterior cingulate and two other key regions: the medial prefrontal cortex (involved in self-referential thinking) and angular gyrus (involved in conceptual processing). The strength of these connections is within normal ranges.",
+            "implications": "Normal default mode network connectivity suggests healthy introspective and self-referential cognitive processes. This is particularly relevant as altered DMN connectivity has been associated with depression and other psychiatric conditions.",
+            "clinical_relevance": "These findings can serve as a baseline for comparison with clinical populations where DMN alterations are expected."
+          },
+          "confidence_score": 0.87,
+          "complexity_score": 0.58
+        },
+        "patient_explanation": {
+          "text": "When you're not actively thinking about anything specific - just letting your mind wander - certain parts of your brain stay connected and work together. We call this the 'default network' because it's what your brain defaults to when you're not focused on the outside world. Think of it like the brain's 'screensaver' - it's what happens when you're daydreaming, remembering the past, or imagining the future. Your brain scan shows that these connections are working normally, which is a good sign. This network includes areas involved in thinking about yourself and making sense of experiences. When this network isn't working properly, it can be related to depression or anxiety, but your results suggest everything is functioning as it should.",
+          "confidence_score": 0.83,
+          "complexity_score": 0.20,
+          "includes_analogies": true
+        }
+      }
+    },
+    {
+      "scenario_id": "error_scenario_convergence_failure",
+      "input_data": {
+        "analysis_type": "GLM",
+        "status": "failed",
+        "error_type": "convergence_failure",
+        "error_message": "Maximum likelihood estimation failed to converge after 1000 iterations",
+        "completed_subjects": 18,
+        "total_subjects": 25,
+        "problematic_subjects": ["sub-012", "sub-019", "sub-023"],
+        "suggested_solutions": [
+          "Remove subjects with excessive motion",
+          "Adjust model parameters",
+          "Use different optimization algorithm"
+        ]
+      },
+      "explanations": {
+        "expert_technical": {
+          "text": "Statistical analysis encountered a convergence failure during maximum likelihood estimation of the GLM parameters. The optimization algorithm failed to reach a stable solution after 1000 iterations, likely due to ill-conditioned design matrices or excessive noise in subjects sub-012, sub-019, and sub-023. This prevented completion of analysis for 7 subjects (28% of sample). Recommended solutions include: (1) implementing more stringent motion exclusion criteria, (2) regularizing the model with appropriate priors, or (3) switching to a more robust optimization algorithm such as L-BFGS with line search.",
+          "confidence_score": 0.75,
+          "complexity_score": 0.90
+        },
+        "clinician_structured": {
+          "text": {
+            "problem": "The statistical analysis could not be completed successfully due to technical issues with the mathematical model fitting.",
+            "details": "The computer algorithm that fits the statistical model to the brain data could not find a stable solution, even after trying 1000 times. This happened for 7 out of 25 participants (28% of the sample).",
+            "likely_causes": "This usually occurs when there are data quality issues, such as excessive head movement during scanning, or when the statistical model is too complex for the available data.",
+            "next_steps": "We recommend: (1) reviewing data quality metrics and potentially excluding participants with poor data quality, (2) simplifying the statistical model, or (3) trying alternative analysis approaches.",
+            "impact": "This prevents us from getting reliable results for the full sample, which may limit the generalizability of our findings."
+          },
+          "confidence_score": 0.70,
+          "complexity_score": 0.45
+        },
+        "student_layman": {
+          "text": "Think of analyzing brain data like trying to fit a mathematical formula to a set of measurements. Sometimes, the computer can't find the right 'fit' - it's like trying to draw a line through a cloud of dots, but the dots are so scattered that no single line works well. This happened with your brain data analysis. Out of 25 people's brain scans, the computer had trouble with 7 of them, probably because those scans had too much movement or noise. It's like trying to take a photo of something moving - the picture comes out blurry and hard to analyze. The good news is this is a common technical issue, and there are several ways to fix it, such as being more selective about which scans to include or using a different mathematical approach.",
+          "confidence_score": 0.68,
+          "complexity_score": 0.15,
+          "includes_analogies": true
+        }
+      }
+    },
+    {
+      "scenario_id": "group_comparison_aging",
+      "input_data": {
+        "analysis_type": "two_sample_t_test",
+        "comparison": "older_adults_vs_younger_adults",
+        "groups": {
+          "younger": {"n": 22, "age_mean": 24.5, "age_sd": 3.2},
+          "older": {"n": 20, "age_mean": 68.7, "age_sd": 4.8}
+        },
+        "task": "episodic_memory_encoding",
+        "significant_differences": [
+          {
+            "contrast": "older_greater_than_younger",
+            "regions": [
+              {
+                "region": "right_prefrontal_cortex",
+                "peak_coordinates": [45, 35, 28],
+                "t_value": 3.84,
+                "p_value": 0.001,
+                "effect_size_cohens_d": 1.02
+              }
+            ]
+          },
+          {
+            "contrast": "younger_greater_than_older", 
+            "regions": [
+              {
+                "region": "bilateral_hippocampus",
+                "peak_coordinates": [-28, -18, -12],
+                "t_value": -4.21,
+                "p_value": 0.0003,
+                "effect_size_cohens_d": 1.23
+              }
+            ]
+          }
+        ],
+        "behavioral_data": {
+          "memory_performance": {
+            "younger_mean": 0.78,
+            "older_mean": 0.65,
+            "p_value": 0.002
+          }
+        }
+      },
+      "explanations": {
+        "expert_technical": {
+          "text": "Two-sample t-test comparison between younger (n=22, age=24.5±3.2) and older adults (n=20, age=68.7±4.8) during episodic memory encoding revealed age-related differences in activation patterns. Older adults showed significantly greater activation in right prefrontal cortex (BA 9/10; t(40)=3.84, p=0.001, Cohen's d=1.02), consistent with compensation models of cognitive aging (PASA/CRUNCH). Conversely, younger adults demonstrated significantly greater bilateral hippocampal activation (t(40)=-4.21, p=0.0003, d=1.23), suggesting age-related decline in medial temporal lobe function. Despite compensatory prefrontal recruitment, older adults showed significantly reduced behavioral performance (0.65 vs 0.78, p=0.002), indicating incomplete compensation.",
+          "confidence_score": 0.94,
+          "complexity_score": 0.96
+        },
+        "clinician_structured": {
+          "text": {
+            "summary": "Brain imaging comparison between younger and older adults reveals age-related changes in memory processing, with both adaptive and declining patterns.",
+            "methodology": "We compared brain activation during memory formation between 22 younger adults (average age 25) and 20 older adults (average age 69) using statistical mapping to identify regions showing different activation levels between groups.",
+            "findings": "Two main patterns emerged: (1) Older adults showed increased activation in the front part of the brain (prefrontal cortex), which likely represents the brain trying to compensate for age-related changes. (2) Younger adults showed stronger activation in the hippocampus, a region critical for memory formation. Behaviorally, older adults performed more poorly on the memory task despite the compensatory brain activation.",
+            "implications": "These findings suggest that healthy aging involves both neural decline (reduced hippocampal function) and adaptive changes (increased prefrontal engagement). However, the compensation appears to be incomplete, as evidenced by the performance differences.",
+            "clinical_relevance": "Understanding normal aging patterns is crucial for distinguishing healthy aging from pathological conditions like mild cognitive impairment or dementia."
+          },
+          "confidence_score": 0.91,
+          "complexity_score": 0.52
+        }
+      }
+    },
+    {
+      "scenario_id": "meta_analysis_result",
+      "input_data": {
+        "analysis_type": "coordinate_based_meta_analysis",
+        "method": "ALE",
+        "included_studies": 23,
+        "total_subjects": 486,
+        "search_terms": ["working memory", "fMRI", "prefrontal"],
+        "convergent_clusters": [
+          {
+            "region": "left_dorsolateral_prefrontal_cortex",
+            "peak_coordinates": [-41, 23, 35],
+            "ale_score": 0.024,
+            "p_value": 0.0001,
+            "studies_contributing": 19,
+            "volume": 2456
+          },
+          {
+            "region": "bilateral_posterior_parietal_cortex",
+            "peak_coordinates": [42, -56, 46],
+            "ale_score": 0.019,
+            "p_value": 0.0005,
+            "studies_contributing": 15,
+            "volume": 1823
+          }
+        ],
+        "heterogeneity_analysis": {
+          "q_statistic": 45.2,
+          "i_squared": 52,
+          "interpretation": "moderate_heterogeneity"
+        }
+      },
+      "explanations": {
+        "expert_technical": {
+          "text": "Activation likelihood estimation (ALE) meta-analysis of 23 working memory fMRI studies (N=486) identified two significant convergent clusters. Left dorsolateral prefrontal cortex showed the highest convergence (peak MNI: [-41, 23, 35]; ALE=0.024, p<0.0001, k=2456 mm³) with contributions from 19/23 studies (83%). Bilateral posterior parietal cortex also showed significant convergence (peak MNI: [42, -56, 46]; ALE=0.019, p=0.0005, k=1823 mm³) across 15 studies (65%). Heterogeneity analysis revealed moderate between-study variance (Q=45.2, I²=52%), suggesting some systematic differences in study methodology or sample characteristics that should be considered in interpretation.",
+          "confidence_score": 0.96,
+          "complexity_score": 0.94
+        },
+        "researcher_structured": {
+          "text": {
+            "summary": "Meta-analysis combining results from 23 independent working memory studies provides robust evidence for consistent brain activation patterns across different research groups and methodologies.",
+            "methodology": "We used activation likelihood estimation (ALE) to identify brain regions that are consistently activated across multiple fMRI studies of working memory. This approach provides more reliable evidence than any single study by combining data from 486 participants across different laboratories.",
+            "findings": "Two brain regions showed highly consistent activation across studies: the left frontal control region (prefrontal cortex) activated in 83% of studies, and bilateral attention/maintenance regions (parietal cortex) activated in 65% of studies. These represent the most reliable components of the working memory network.",
+            "confidence": "Very high confidence due to large sample size and convergent evidence across multiple independent studies.",
+            "limitations": "Moderate heterogeneity between studies suggests some methodological differences that may influence results. Publication bias toward positive results may also affect these findings.",
+            "implications": "These regions can be considered core components of the working memory network and provide important targets for clinical research and intervention studies."
+          },
+          "confidence_score": 0.94,
+          "complexity_score": 0.68
+        }
+      }
+    }
+  ],
+  "explanation_quality_metrics": {
+    "technical_accuracy": {
+      "description": "Correctness of technical details and statistical reporting",
+      "scoring_criteria": {
+        "perfect": "All technical details accurate, proper statistical notation",
+        "good": "Minor technical imprecision but overall accurate", 
+        "fair": "Some technical errors that don't affect main conclusions",
+        "poor": "Significant technical errors affecting interpretation"
+      }
+    },
+    "audience_appropriateness": {
+      "description": "Alignment between explanation complexity and target audience",
+      "scoring_criteria": {
+        "perfect": "Perfectly calibrated to audience expertise and needs",
+        "good": "Mostly appropriate with minor misalignments",
+        "fair": "Generally appropriate but some sections too complex/simple",
+        "poor": "Significantly misaligned with audience level"
+      }
+    },
+    "clarity_and_comprehensibility": {
+      "description": "How clearly and understandably the information is presented",
+      "scoring_criteria": {
+        "perfect": "Crystal clear, no ambiguity, flows logically",
+        "good": "Clear with minor unclear sections",
+        "fair": "Generally clear but some confusing parts",
+        "poor": "Frequently unclear or confusing"
+      }
+    },
+    "completeness": {
+      "description": "Coverage of important aspects relevant to the analysis",
+      "scoring_criteria": {
+        "perfect": "Covers all relevant aspects thoroughly",
+        "good": "Covers most important aspects adequately",
+        "fair": "Covers basic aspects but missing some details",
+        "poor": "Missing important information"
+      }
+    },
+    "confidence_calibration": {
+      "description": "Appropriate expression of uncertainty and confidence",
+      "scoring_criteria": {
+        "perfect": "Confidence level perfectly matched to evidence strength",
+        "good": "Confidence mostly well-calibrated",
+        "fair": "Confidence somewhat over/under-calibrated",
+        "poor": "Confidence significantly misaligned with evidence"
+      }
+    }
+  },
+  "adaptive_features_examples": {
+    "expertise_progression": {
+      "scenario": "User starts as beginner, shows good understanding over time",
+      "progression_stages": [
+        {
+          "session": 1,
+          "user_understanding": "beginner",
+          "explanation_complexity": 0.2,
+          "includes_analogies": true,
+          "technical_terms": "minimal"
+        },
+        {
+          "session": 3,
+          "user_understanding": "developing",
+          "explanation_complexity": 0.4,
+          "includes_analogies": true,
+          "technical_terms": "basic_with_definitions"
+        },
+        {
+          "session": 5,
+          "user_understanding": "intermediate",
+          "explanation_complexity": 0.6,
+          "includes_analogies": false,
+          "technical_terms": "standard"
+        }
+      ]
+    },
+    "confusion_adaptation": {
+      "scenario": "User shows confusion about statistical concepts",
+      "adaptation_strategy": {
+        "confused_topics": ["p_values", "multiple_comparisons", "effect_sizes"],
+        "adaptation_responses": {
+          "p_values": "Always include analogy and avoid bare numerical reporting",
+          "multiple_comparisons": "Explain why correction is necessary with concrete example", 
+          "effect_sizes": "Always contextualize with practical significance"
+        }
+      }
+    },
+    "domain_focus_adaptation": {
+      "scenario": "Clinical user primarily interested in diagnostic implications",
+      "adaptations": {
+        "emphasis_shift": "clinical_relevance_first",
+        "include_sections": ["diagnostic_implications", "treatment_relevance", "patient_communication"],
+        "reduce_sections": ["methodological_details", "statistical_theory"],
+        "terminology_preference": "clinical_over_research"
+      }
+    }
+  }
+}

@@ -1,0 +1,454 @@
+---
+# Default deny-all authorization policy
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: default-deny-all
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    security-policy: deny-all
+spec:
+  # Empty rules deny all traffic by default
+
+---
+# Allow ingress gateway to access all services
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress-gateway
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    security-policy: ingress
+spec:
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+
+---
+# Web UI authorization policy
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: web-ui-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: web-ui
+spec:
+  selector:
+    matchLabels:
+      app: web-ui
+  rules:
+  # Allow ingress gateway
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+        
+  # Allow other services to access web UI APIs
+  - from:
+    - source:
+        principals: 
+          - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+          - "cluster.local/ns/brain-researcher/sa/agent-service-account"
+          - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/api/*", "/health"]
+        
+  # Allow health checks from monitoring
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/prometheus-service-account"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/health", "/metrics"]
+
+---
+# BR-KG API authorization policy
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: neurokg-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: neurokg
+spec:
+  selector:
+    matchLabels:
+      app: neurokg
+  rules:
+  # Allow ingress gateway for external API access
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        
+  # Allow agent service to query BR-KG
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/agent-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/search/*", "/vector/*", "/spatial/*", "/api/*"]
+        
+  # Allow web UI to access BR-KG
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/web-ui-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/search/*", "/export/*", "/api/*"]
+        
+  # Allow orchestrator for workflow management
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/orchestrator-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT"]
+        paths: ["/api/*", "/workflow/*"]
+        
+  # Health checks and metrics
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/prometheus-service-account"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/health", "/metrics"]
+        
+  # Admin operations (restricted)
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/admin-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT", "DELETE"]
+    when:
+    - key: request.headers[x-admin-token]
+      values: ["admin-secret-token"]
+
+---
+# Agent Service authorization policy
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: agent-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: agent
+spec:
+  selector:
+    matchLabels:
+      app: agent
+  rules:
+  # Allow ingress gateway for chat endpoints
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        
+  # Allow web UI to access chat APIs
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/web-ui-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/chat/*", "/analysis/*", "/tools/*"]
+        
+  # Allow orchestrator for workflow coordination
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/orchestrator-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/tools/*", "/analysis/*", "/workflow/*"]
+        
+  # Health checks and metrics
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/prometheus-service-account"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/health", "/metrics"]
+        
+  # Streaming endpoints with special permissions
+  - from:
+    - source:
+        principals: 
+          - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+          - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/chat/stream/*"]
+    when:
+    - key: request.headers[connection]
+      values: ["upgrade", "keep-alive"]
+
+---
+# Orchestrator authorization policy
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: orchestrator-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: orchestrator
+spec:
+  selector:
+    matchLabels:
+      app: orchestrator
+  rules:
+  # Allow all Brain Researcher services
+  - from:
+    - source:
+        principals: 
+          - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
+          - "cluster.local/ns/brain-researcher/sa/agent-service-account"
+          - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT"]
+        paths: ["/jobs/*", "/workflow/*", "/api/*"]
+        
+  # Health checks and metrics
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/prometheus-service-account"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/health", "/metrics"]
+
+---
+# Database access authorization
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: redis-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  rules:
+  # Only allow Brain Researcher services to access Redis
+  - from:
+    - source:
+        principals: 
+          - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
+          - "cluster.local/ns/brain-researcher/sa/agent-service-account"
+          - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: postgres-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  rules:
+  # Only allow services that need database access
+  - from:
+    - source:
+        principals: 
+          - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+          - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
+          - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: neo4j-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: neo4j
+spec:
+  selector:
+    matchLabels:
+      app: neo4j
+  rules:
+  # Only allow BR-KG service to access Neo4j
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/neurokg-service-account"]
+
+---
+# Monitoring services authorization
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: prometheus-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  rules:
+  # Allow Prometheus to scrape all services
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/prometheus-service-account"]
+    to:
+    - operation:
+        methods: ["GET"]
+        
+  # Allow Grafana to query Prometheus
+  - from:
+    - source:
+        principals: ["cluster.local/ns/brain-researcher/sa/grafana-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        
+  # Allow ingress access for Prometheus UI
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    to:
+    - operation:
+        methods: ["GET"]
+    when:
+    - key: request.headers[x-prometheus-access]
+      values: ["allowed"]
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: grafana-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: grafana
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  rules:
+  # Allow ingress access for Grafana UI
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+
+---
+# Kiali service mesh observability authorization
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: kiali-authorization
+  namespace: istio-system
+  labels:
+    app: kiali
+spec:
+  selector:
+    matchLabels:
+      app: kiali
+  rules:
+  # Allow ingress access for Kiali UI
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        
+  # Allow Kiali to query Prometheus and Grafana
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/kiali-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+
+---
+# External service authorization via egress gateway
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: egress-gateway-authorization
+  namespace: istio-system
+  labels:
+    app: istio-egressgateway
+spec:
+  selector:
+    matchLabels:
+      istio: egressgateway
+  rules:
+  # Allow Brain Researcher services to access external APIs
+  - from:
+    - source:
+        principals: 
+          - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+          - "cluster.local/ns/brain-researcher/sa/agent-service-account"
+          - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        
+---
+# JWT Authentication policy for API access
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: jwt-api-authorization
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    security-policy: jwt
+spec:
+  rules:
+  # Require JWT for API endpoints
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+    to:
+    - operation:
+        paths: ["/api/*", "/chat/*", "/search/*"]
+    when:
+    - key: request.headers[authorization]
+      values: ["Bearer *"]
+      
+  # Allow health checks without JWT
+  - to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/health", "/ready"]

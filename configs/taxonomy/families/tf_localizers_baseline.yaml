@@ -1,0 +1,381 @@
+id: tf_localizers_baseline
+label: Functional Localizers & Baseline Tasks
+name: Functional Localizers & Baseline Tasks
+meta: true
+description: >-
+  Canonical localizers and baseline paradigms used to define regions-of-interest (ROI) or establish control conditions.
+  Marked as `meta: true` for special handling: exclude from construct scoring, prioritize for ROI extraction and QC.
+  Includes sensory maps (retinotopy/tonotopy/somatotopy), visual category localizers (FFA/PPA/LOC/EBA/VWFA/MT+),
+  language and ToM localizers, plus resting/passive baselines. Each paradigm lists recommended contrasts and target ROIs.
+examples: [retinotopy, prf_mapping, tonotopy, voice_localizer, motor_localizer, somatotopy, face_localizer, scene_localizer, loc_object, eba_body, vwfa_wordform, mtplus_motion, color_v4, biological_motion, language_sentences_gt_nonwords, tom_false_belief, resting_fixation, passive_viewing]
+typical_DVs: [activation_contrast, selectivity_index, map_quality, test_retest_reliability]
+common_manipulations: [stimulus_category, block_length_s, event_rate_hz, contrast_definition, sweep_rate, wedge_speed, ring_speed]
+usage_policy:
+  roi_definition_only: true
+  exclude_from_construct_metrics: true
+  prioritize_in_preproc_qc: true   # e.g., use for tSNR/reliability checks
+
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Visual Field Maps & pRF
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_retinotopy_prf
+    label: Retinotopy & pRF Mapping
+    description: Polar-angle/eccentricity phase-encoding and population receptive field (pRF) mapping for early visual cortex.
+    paradigms:
+      - name: Retinotopy (Wedge/Ring Phase-Encoded)
+        typical_DVs: [map_quality, polar_angle_map, eccentricity_map]
+        common_manipulations: [wedge_speed_deg_s, ring_speed_deg_s, checkboard_contrast, block_length_s]
+        roi_targets: [V1, V2, V3, V3A, V4]
+        contrast_recipes:
+          - label: "Retinotopy coherence"
+            definition: "Stimulus-driven periodic response coherence vs baseline"
+      - name: pRF Mapping (Bar Sweeps / Moving Apertures)
+        typical_DVs: [map_quality, prf_size_sigma_deg, prf_x_deg, prf_y_deg]
+        common_manipulations: [bar_width_deg, sweep_rate_deg_s, aperture_pattern, background_luminance]
+        roi_targets: [V1, V2, V3, V3A/B, LO, TO]
+        contrast_recipes:
+          - label: "pRF fit quality"
+            definition: "Variance explained (R²) by pRF model"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Auditory Cortex Maps & Voice Localizer
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_tonotopy_voice
+    label: Tonotopy & Voice Localizer
+    description: Frequency maps in auditory cortex and temporal voice area (TVA) selectivity.
+    paradigms:
+      - name: Tonotopy (Frequency Sweeps)
+        typical_DVs: [map_quality, best_frequency_hz]
+        common_manipulations: [sweep_rate_oct_per_min, freq_range_hz, block_length_s]
+        roi_targets: [A1, Belt/Parabelt]
+        contrast_recipes:
+          - label: "High vs low frequency"
+            definition: "High>Low or parametric frequency regressor"
+      - name: Voice Localizer (TVA)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [human_voices_vs_scrambled, control_sounds, block_length_s]
+        roi_targets: [Temporal Voice Area]
+        contrast_recipes:
+          - label: "Voices > Scrambled"
+            definition: "Human vocalizations > phase-scrambled controls"
+      - name: Music Localizer (optional)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [music_vs_control_sounds, instrumental_vs_vocal]
+        roi_targets: [auditory cortex, planum temporale]
+        contrast_recipes:
+          - label: "Music > Control"
+            definition: "Musical excerpts > control sounds"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Motor & Somatosensory Maps
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_motor_somato
+    label: Motor & Somatotopy Localizers
+    description: Effector-specific motor and tactile stimulation to map M1/S1 and cerebellar representations.
+    paradigms:
+      - name: Motor Localizer (Hand/Foot/Tongue)
+        typical_DVs: [activation_contrast, selectivity_index]
+        common_manipulations: [effector (hand/foot/tongue), block_length_s, pacing_rate_hz]
+        roi_targets: [M1_hand_knob, Foot_M1, Tongue_M1, SMA]
+        contrast_recipes:
+          - label: "Hand > Rest"
+            definition: "Finger tapping > fixation"
+          - label: "Foot > Hand"
+            definition: "Toe movement > finger movement"
+      - name: Somatotopy (Tactile)
+        typical_DVs: [activation_contrast, selectivity_index]
+        common_manipulations: [body_site, stimulation_rate_hz, block_length_s]
+        roi_targets: [S1_hand, S1_face, S1_foot]
+        contrast_recipes:
+          - label: "Finger > Rest"
+            definition: "Finger tactile > rest"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Visual Category Selectivity (FFA/PPA/LOC/EBA/VWFA/MT+/V4)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_visual_category
+    label: Visual Category Localizers
+    description: Category-selective visual cortex contrasts for object/face/place/body/word/motion/color ROIs.
+    paradigms:
+      - name: Face Localizer (FFA)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [faces_vs_objects, faces_vs_scrambled]
+        roi_targets: [FFA]
+        contrast_recipes:
+          - label: "Faces > Objects"
+            definition: "Face images > object images"
+      - name: Scene Localizer (PPA)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [scenes_vs_objects]
+        roi_targets: [PPA, RSC]
+        contrast_recipes:
+          - label: "Scenes > Objects"
+            definition: "Scenes > objects"
+      - name: Object Localizer (LOC)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [objects_vs_scrambled]
+        roi_targets: [LOC]
+        contrast_recipes:
+          - label: "Objects > Scrambled"
+            definition: "Intact objects > scrambled controls"
+      - name: Body Localizer (EBA/FBA)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [bodies_vs_objects]
+        roi_targets: [EBA, FBA]
+        contrast_recipes:
+          - label: "Bodies > Objects"
+            definition: "Bodies/Body parts > objects"
+      - name: Word-Form Localizer (VWFA)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [words_vs_consonant_strings, words_vs_objects]
+        roi_targets: [VWFA]
+        contrast_recipes:
+          - label: "Words > Consonant Strings"
+            definition: "Words > consonant strings"
+      - name: Motion Localizer (hMT+/V5)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [moving_vs_static_dots]
+        roi_targets: [hMT+]
+        contrast_recipes:
+          - label: "Motion > Static"
+            definition: "Moving dots > static dots"
+      - name: Color Localizer (V4)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [color_vs_grayscale]
+        roi_targets: [V4]
+        contrast_recipes:
+          - label: "Color > Gray"
+            definition: "Colored images > grayscale"
+      - name: Biological Motion Localizer (pSTS)
+        aliases: [biological_motion, Biological Motion, Point-Light Biological Motion, pSTS Localizer]
+        typical_DVs: [selectivity_index]
+        common_manipulations: [biological_motion_vs_scrambled, point_light_vs_full_form]
+        roi_targets: [pSTS, EBA]
+        contrast_recipes:
+          - label: "Biological Motion > Scrambled"
+            definition: "Point-light biological motion > scrambled motion"
+      - name: Tool/Object Action Localizer (optional)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [tools_vs_animals, manipulable_vs_nonmanipulable]
+        roi_targets: [left pMTG, aIPS]
+        contrast_recipes:
+          - label: "Tools > Animals"
+            definition: "Tool images > animal images"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Language & ToM Localizers
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_language_tom
+    label: Language & Theory-of-Mind (ToM) Localizers
+    description: Sentences>nonwords for language network; false-belief > false-photo for ToM network.
+    paradigms:
+      - name: Language Localizer (Sentences > Nonwords)
+        typical_DVs: [activation_contrast, selectivity_index, reliability_index]
+        common_manipulations: [sentences_vs_nonwords, block_length_s, comprehension_questions_optional]
+        roi_targets: [LIFG/LIFGop, LMFG, LATL, LpSTS/MTG]
+        contrast_recipes:
+          - label: "Sentences > Nonwords"
+            definition: "Meaningful sentences > nonword strings"
+      - name: ToM Localizer (False Belief > False Photo)
+        typical_DVs: [activation_contrast, selectivity_index]
+        common_manipulations: [false_belief_vs_false_photo, story_length_s]
+        roi_targets: [TPJ, mPFC, Precuneus]
+        contrast_recipes:
+          - label: "False Belief > False Photo"
+            definition: "Belief reasoning > physical description"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Attention & Control Network Localizers
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_attention_control_networks
+    label: Attention & Control Network Localizers
+    description: Paradigms to localize dorsal/ventral attention networks, frontoparietal control, and default mode network.
+    paradigms:
+      - name: Dorsal Attention Network (DAN) Localizer
+        typical_DVs: [activation_contrast, selectivity_index]
+        common_manipulations: [spatial_attention_task_vs_passive, cue_target_soa_ms]
+        roi_targets: [FEF, IPS, SPL]
+        contrast_recipes:
+          - label: "Attention > Passive"
+            definition: "Top-down spatial attention > passive viewing"
+      - name: Ventral Attention Network (VAN) Localizer
+        typical_DVs: [activation_contrast, selectivity_index]
+        common_manipulations: [oddball_targets_vs_standard, reorienting_trials]
+        roi_targets: [TPJ, vIFC, SMG]
+        contrast_recipes:
+          - label: "Oddball > Standard"
+            definition: "Unexpected/reorienting targets > standard stimuli"
+      - name: Frontoparietal Control Network (FPN) Localizer
+        typical_DVs: [activation_contrast, selectivity_index]
+        common_manipulations: [task_switching_vs_single_task, working_memory_load]
+        roi_targets: [dlPFC, PPC, preSMA]
+        contrast_recipes:
+          - label: "Task Switch > Single Task"
+            definition: "Task switching > single task blocks"
+      - name: Default Mode Network (DMN) Localizer
+        typical_DVs: [activation_contrast, deactivation_contrast]
+        common_manipulations: [rest_vs_task, self_referential_vs_external]
+        roi_targets: [mPFC, PCC, angular_gyrus]
+        contrast_recipes:
+          - label: "Rest > Task"
+            definition: "Resting state > externally-directed task"
+          - label: "Self-Ref > External"
+            definition: "Self-referential processing > external task"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Memory & Encoding Localizers
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_memory_encoding
+    label: Memory & Encoding Localizers
+    description: Paradigms to localize hippocampus, parahippocampal regions, and memory-related networks.
+    paradigms:
+      - name: Hippocampal Localizer (Scene/Place Encoding)
+        typical_DVs: [activation_contrast, selectivity_index]
+        common_manipulations: [scenes_vs_objects, encoding_vs_retrieval]
+        roi_targets: [Hippocampus, Parahippocampal Gyrus, RSC]
+        contrast_recipes:
+          - label: "Scenes > Objects"
+            definition: "Scene encoding > object encoding"
+      - name: Perirhinal Cortex Localizer (Object Familiarity)
+        typical_DVs: [selectivity_index]
+        common_manipulations: [familiar_vs_novel_objects, repetition_priming]
+        roi_targets: [Perirhinal Cortex, Anterior Temporal]
+        contrast_recipes:
+          - label: "Novel > Familiar"
+            definition: "Novel objects > familiar objects"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Baseline / Control Conditions (Meta)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_baseline_control
+    label: Baseline & Control Paradigms
+    description: Non-cognitive baselines and low-level controls for contrasts and QC; treat as meta-only.
+    paradigms:
+      - name: Resting State (Eyes Open/Closed/Fixation)
+        typical_DVs: [map_quality, tSNR, mean_FD]
+        common_manipulations: [eyes_state, fixation_dot_presence]
+        roi_targets: []
+        contrast_recipes: []
+      - name: Passive Viewing
+        typical_DVs: [map_quality, reliability_index]
+        common_manipulations: [stimulus_category, block_length_s]
+        roi_targets: []
+        contrast_recipes: []
+      - name: Scrambled Controls
+        typical_DVs: [contrast_quality]
+        common_manipulations: [scramble_type (phase/scramble), block_length_s]
+        roi_targets: []
+        contrast_recipes: []
+      - name: Visual Fixation Baseline
+        typical_DVs: [map_quality, tSNR]
+        common_manipulations: [fixation_dot_size_deg, background_luminance]
+        roi_targets: []
+        contrast_recipes: []
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Retinotopy
+    - pRF Mapping
+    - Tonotopy
+    - Voice Localizer
+    - Music Localizer
+    - Motor Localizer
+    - Somatosensory Localizer
+    - Face Localizer (FFA)
+    - Scene Localizer (PPA)
+    - Object Localizer (LOC)
+    - Body Localizer (EBA/FBA)
+    - Word-Form Localizer (VWFA)
+    - Motion Localizer (hMT+/V5)
+    - Color Localizer (V4)
+    - Biological Motion Localizer
+    - Tool/Object Action Localizer
+    - Language Localizer (Sentences > Nonwords)
+    - ToM Localizer (False Belief > False Photo)
+    - Attention Network Localizers (DAN/VAN/FPN)
+    - Default Mode Network Localizer
+    - Hippocampal/Memory Localizers
+    - Resting State / Passive Viewing
+  cogpo_candidate_labels:
+    - Retinotopy
+    - Tonotopy
+    - Motor Localizer
+    - Face/Scene/Object/Body/Word-Form/Motion/Color Localizers
+    - Biological Motion Localizer
+    - Language Localizer
+    - ToM Localizer
+    - Attention Network Localizers
+    - Default Mode Network Localizer
+constructs:
+  primary: [ROI Identification, Baseline Control]
+  secondary: [Quality Control, Reliability]
+uri_brainmap: []
+uri_cogpo: []
+status: draft
+provenance:
+  - source: localizer canon + prior families (visual/auditory/motor/language/ToM)
+    fields: [subfamilies, paradigms, roi_targets, contrast_recipes]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (meta-friendly)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, stimulus_category, block_length_s, sweep_rate]
+  per_subfamily:
+    sf_retinotopy_prf:
+      events_columns: [onset, duration, trial_type, wedge_speed_deg_s, ring_speed_deg_s, sweep_rate, aperture_type, response]
+      hed_examples:
+        - "Localizer, Retinotopy, Wedge"
+        - "Localizer, pRF, Bar-sweep"
+    sf_tonotopy_voice:
+      events_columns: [onset, duration, trial_type, sweep_rate, freq_range_hz, voice_condition, music_condition]
+      hed_examples:
+        - "Localizer, Tonotopy"
+        - "Localizer, Voice"
+        - "Localizer, Music"
+    sf_motor_somato:
+      events_columns: [onset, duration, trial_type, effector, pacing_rate_hz]
+      hed_examples:
+        - "Localizer, Motor, Hand"
+    sf_visual_category:
+      events_columns: [onset, duration, trial_type, stimulus_category, control_category, biological_motion_flag, tool_flag]
+      hed_examples:
+        - "Localizer, Face>Object"
+        - "Localizer, Motion>Static"
+        - "Localizer, Biological-motion"
+        - "Localizer, Tool>Animal"
+    sf_language_tom:
+      events_columns: [onset, duration, trial_type, sentence_vs_nonword, story_type]
+      hed_examples:
+        - "Localizer, Language, Sentences"
+        - "Localizer, ToM, False-belief"
+    sf_attention_control_networks:
+      events_columns: [onset, duration, trial_type, attention_condition, task_switch_flag, oddball_flag, self_referential_flag]
+      hed_examples:
+        - "Localizer, Attention, DAN"
+        - "Localizer, Attention, VAN"
+        - "Localizer, Control, FPN"
+        - "Localizer, Default-mode, Rest>Task"
+    sf_memory_encoding:
+      events_columns: [onset, duration, trial_type, scene_vs_object, novel_vs_familiar, encoding_vs_retrieval]
+      hed_examples:
+        - "Localizer, Memory, Scenes>Objects"
+        - "Localizer, Memory, Novel>Familiar"
+    sf_baseline_control:
+      events_columns: [onset, duration, trial_type, eyes_state, fixation_presence, fixation_dot_size_deg]
+      hed_examples:
+        - "Baseline, Rest, Fixation"
+
+# Special handling flags for pipelines
+meta_flags:
+  ignore_in_construct_scores: true
+  allow_roi_export_only: true
+  recommended_thresholds:
+    voxelwise_p_unc: 0.001
+    cluster_extent_min_vox: 10

@@ -1,0 +1,35 @@
+FROM python:3.11-slim
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src
+
+WORKDIR /app
+
+# System deps for the MCP runtime. behavior-task execution is delegated to the
+# agent or hosted marimo runtime, so psyflow/PsychoPy build deps stay out of
+# this image.
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    git curl ca-certificates \
+    latexmk \
+    texlive-latex-base \
+    texlive-latex-recommended \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-pictures \
+    texlive-science \
+    gcc g++ make pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml README.md /app/
+COPY src /app/src
+COPY configs /app/configs
+COPY scripts /app/scripts
+
+# Install the MCP runtime surface plus agent-side orchestration dependencies.
+RUN pip install --upgrade pip && pip install .[agent] mcp
+
+EXPOSE 7000
+
+CMD ["python", "-m", "brain_researcher.services.mcp.server"]

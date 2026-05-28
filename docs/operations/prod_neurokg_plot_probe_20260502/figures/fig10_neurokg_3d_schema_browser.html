@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <title>BR-KG Schema Graph Browser</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --panel: rgba(8, 18, 30, 0.82);
+      --panel-strong: rgba(12, 28, 44, 0.92);
+      --line: rgba(180, 226, 255, 0.16);
+      --text: #edf8ff;
+      --muted: #93aaba;
+      --accent: #20d3b3;
+      --hot: #ffb000;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 14% 18%, rgba(32,211,179,0.18), transparent 28%),
+        radial-gradient(circle at 76% 18%, rgba(78,165,255,0.16), transparent 31%),
+        linear-gradient(135deg, #05090f 0%, #091522 44%, #061017 100%);
+      color: var(--text);
+      font: 14px/1.4 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #graph {
+      position: fixed;
+      inset: 0;
+    }
+    #graph::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(5,10,16,0.82), transparent 24%, transparent 76%, rgba(5,10,16,0.44)),
+        linear-gradient(180deg, rgba(5,10,16,0.46), transparent 22%, rgba(5,10,16,0.34));
+    }
+    .hud {
+      position: fixed;
+      top: 22px;
+      left: 24px;
+      width: min(430px, calc(100vw - 48px));
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.38);
+      z-index: 5;
+    }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: .14em;
+      font-weight: 750;
+    }
+    .pulse {
+      width: 9px;
+      height: 9px;
+      border-radius: 99px;
+      background: var(--accent);
+      box-shadow: 0 0 18px var(--accent);
+    }
+    h1 {
+      margin: 9px 0 8px;
+      font-size: clamp(28px, 3.2vw, 52px);
+      line-height: .95;
+      letter-spacing: 0;
+    }
+    .subtitle {
+      margin: 0;
+      color: #b7c9d7;
+      max-width: 35rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .stat {
+      min-width: 0;
+      padding: 10px 9px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.045);
+    }
+    .stat strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1;
+      color: #fff;
+    }
+    .stat span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.15;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 14px;
+      align-items: center;
+    }
+    input[type="search"] {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(1,7,12,.62);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
+    button {
+      border: 1px solid rgba(32,211,179,.42);
+      color: var(--text);
+      background: rgba(32,211,179,.14);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .slider-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    input[type="range"] {
+      accent-color: var(--accent);
+      width: 100%;
+    }
+    .side {
+      position: fixed;
+      top: 22px;
+      right: 24px;
+      width: min(380px, calc(100vw - 48px));
+      max-height: calc(100vh - 44px);
+      overflow: hidden auto;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.38);
+      z-index: 5;
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+    .legend {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .legend-row {
+      display: grid;
+      grid-template-columns: 12px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      color: #cfe2ef;
+      font-size: 12px;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      box-shadow: 0 0 13px currentColor;
+    }
+    .triple-list {
+      display: grid;
+      gap: 8px;
+    }
+    .triple {
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .triple .count {
+      color: var(--hot);
+      font-weight: 800;
+      margin-right: 7px;
+    }
+    .triple .text {
+      color: #dceaf3;
+      font-size: 12px;
+    }
+    .tooltip {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      width: min(620px, calc(100vw - 48px));
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel-strong);
+      box-shadow: 0 18px 70px rgba(0,0,0,.45);
+      z-index: 8;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .16s ease;
+    }
+    .tooltip.visible { opacity: 1; }
+    .tooltip-title {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .tooltip-body {
+      color: var(--muted);
+      margin-top: 5px;
+      font-size: 12px;
+    }
+    .caption {
+      position: fixed;
+      left: 24px;
+      bottom: 20px;
+      color: rgba(226, 242, 251, .68);
+      max-width: 520px;
+      font-size: 12px;
+      z-index: 4;
+    }
+    @media (max-width: 920px) {
+      .side { display: none; }
+      .hud { width: calc(100vw - 32px); left: 16px; top: 16px; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .caption { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="graph" aria-label="Interactive 3D BR-KG schema graph"></div>
+
+  <section class="hud">
+    <div class="eyebrow"><span class="pulse"></span> Prod BR-KG schema graph</div>
+    <h1>BR-KG</h1>
+    <p class="subtitle">Interactive schema-level graph: label-set nodes, typed relation edges, edge-count mass from the full prod export.</p>
+    <div class="stats">
+      <div class="stat"><strong id="stat-edges">-</strong><span>graph edges</span></div>
+      <div class="stat"><strong id="stat-triples">-</strong><span>schema triples</span></div>
+      <div class="stat"><strong id="stat-labels">-</strong><span>label sets</span></div>
+      <div class="stat"><strong id="stat-top10">-</strong><span>top-10 edge share</span></div>
+    </div>
+    <div class="controls">
+      <input id="search" type="search" placeholder="Search label set, e.g. Publication, StatsMap, Tool" list="node-options" />
+      <button id="reset">Reset</button>
+      <datalist id="node-options"></datalist>
+    </div>
+    <div class="slider-row">
+      <span>Top</span>
+      <input id="rank-limit" type="range" min="12" max="151" value="80" step="1" />
+      <strong><span id="rank-value">80</span> triples</strong>
+    </div>
+  </section>
+
+  <aside class="side">
+    <h2>Node surfaces</h2>
+    <div id="surface-legend" class="legend"></div>
+    <h2>Dominant relationships</h2>
+    <div id="relationship-legend" class="legend"></div>
+    <h2>Top schema triples</h2>
+    <div id="top-triples" class="triple-list"></div>
+  </aside>
+
+  <div id="tooltip" class="tooltip"></div>
+  <div class="caption">This is an aggregated schema graph, not a raw node-link dump. Edge width and animated flow encode canonical schema-triple counts.</div>
+
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three-spritetext@1.8.0/dist/three-spritetext.min.js"></script>
+  <script src="https://unpkg.com/3d-force-graph@1.77.0/dist/3d-force-graph.min.js"></script>
+  <script>
+    const graphPayload = {"nodes":[{"id":"StatisticalMap","label":"StatisticalMap","shortLabel":"StatisticalMap","surface":"Statistical maps","color":"#20d3b3","val":15.213,"totalEdges":1085648,"incomingEdges":1454,"outgoingEdges":1084194,"labelCount":1,"topRelationships":[["BELONGS_TO",1078293],["IN_ONVOC",7331],["MAPS_TO",24]],"x":121.011,"y":27.06,"z":-34},{"id":"Collection","label":"Collection","shortLabel":"Collection","surface":"Statistical maps","color":"#20d3b3","val":15.158,"totalEdges":1075460,"incomingEdges":1075385,"outgoingEdges":75,"labelCount":1,"topRelationships":[["BELONGS_TO",1075385],["MAPS_TO",75]],"x":124.856,"y":58.78,"z":0},{"id":"Publication","label":"Publication","shortLabel":"Publication","surface":"Publication evidence","color":"#4ea5ff","val":14.129,"totalEdges":893884,"incomingEdges":3964,"outgoingEdges":889920,"labelCount":1,"topRelationships":[["HAS_COORDINATE",447499],["HAS_TERM",358050],["ABOUT",67785],["HAS_TEXT_EMBEDDING",12958],["CITES",6791]],"x":66.433,"y":104.703,"z":-34},{"id":"Coordinate","label":"Coordinate","shortLabel":"Coordinate","surface":"Spatial anatomy","color":"#b8f34d","val":11.02,"totalEdges":447500,"incomingEdges":447499,"outgoingEdges":1,"labelCount":1,"topRelationships":[["HAS_COORDINATE",447499],["LOCATED_IN",1]],"x":-27.06,"y":121.011,"z":-34},{"id":"Term","label":"Term","shortLabel":"Term","surface":"Ontology and terms","color":"#c77dff","val":10.227,"totalEdges":358050,"incomingEdges":358050,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_TERM",358050]],"x":-121.011,"y":-27.06,"z":-34},{"id":"StatsMap","label":"StatsMap","shortLabel":"StatsMap","surface":"Statistical maps","color":"#20d3b3","val":9.788,"totalEdges":312829,"incomingEdges":0,"outgoingEdges":312829,"labelCount":1,"topRelationships":[["IN_REGION",121261],["IN_ONVOC",43958],["IN_SPACE",35180],["COMPUTED_WITH",30880],["GENERATED_FROM",30880]],"x":120.079,"y":93.194,"z":34},{"id":"Concept|OntologyConcept|OnvocClass","label":"Concept|OntologyConcept|OnvocClass","shortLabel":"Concept|On ... OnvocClass","surface":"Ontology and terms","color":"#c77dff","val":7.716,"totalEdges":140673,"incomingEdges":139908,"outgoingEdges":765,"labelCount":3,"topRelationships":[["ABOUT",75922],["IN_ONVOC",63160],["CLASSIFIED_UNDER",1530],["MAPS_TO",60],["CONTRAST_OF",1]],"x":-124.856,"y":-58.78,"z":0},{"id":"BrainRegion","label":"BrainRegion","shortLabel":"BrainRegion","surface":"Spatial anatomy","color":"#b8f34d","val":7.491,"totalEdges":126053,"incomingEdges":124710,"outgoingEdges":1343,"labelCount":1,"topRelationships":[["IN_REGION",121261],["PART_OF",2652],["HAS_REGION",2123],["IN_PARCELLATION",17]],"x":-58.78,"y":124.856,"z":0},{"id":"Task","label":"Task","shortLabel":"Task","surface":"Task and behavior","color":"#ffb000","val":7.188,"totalEdges":107634,"incomingEdges":19519,"outgoingEdges":88115,"labelCount":1,"topRelationships":[["IN_DOMAIN",52117],["MAPS_TO",24744],["IN_ONVOC",10894],["MEASURES",9901],["HAS_CONTRAST",1585]],"x":-104.703,"y":66.433,"z":-34},{"id":"Process|ConceptClass","label":"Process|ConceptClass","shortLabel":"Process|ConceptClass","surface":"Ontology and terms","color":"#c77dff","val":6.079,"totalEdges":52640,"incomingEdges":52640,"outgoingEdges":0,"labelCount":2,"topRelationships":[["IN_DOMAIN",52117],["CLASSIFIEDUNDER",523]],"x":-120.079,"y":-93.194,"z":34},{"id":"TemplateSpace","label":"TemplateSpace","shortLabel":"TemplateSpace","surface":"Spatial anatomy","color":"#b8f34d","val":5.609,"totalEdges":35199,"incomingEdges":35199,"outgoingEdges":0,"labelCount":1,"topRelationships":[["IN_SPACE",35199]],"x":-93.194,"y":120.079,"z":34},{"id":"Contrast|GLMContrast","label":"Contrast|GLMContrast","shortLabel":"Contrast|GLMContrast","surface":"Task and behavior","color":"#ffb000","val":5.568,"totalEdges":33843,"incomingEdges":31645,"outgoingEdges":2198,"labelCount":2,"topRelationships":[["DERIVED_FROM",30126],["MAPS_TO",1261],["HAS_CONTRAST",879],["USES_CONDITION",750],["BELONGS_TO",734]],"x":-129.85,"y":46.723,"z":0},{"id":"TaskAnalysis","label":"TaskAnalysis","shortLabel":"TaskAnalysis","surface":"Task and behavior","color":"#ffb000","val":5.565,"totalEdges":33753,"incomingEdges":32934,"outgoingEdges":819,"labelCount":1,"topRelationships":[["GENERATED_FROM",30880],["PARTICIPATES_IN",1982],["HAS_RESOURCE",432],["HAS_CONDITION",310],["DESCRIBES_TASK",72]],"x":-150.806,"y":19.011,"z":34},{"id":"ModelSpec","label":"ModelSpec","shortLabel":"ModelSpec","surface":"Analysis methods","color":"#ff7ad9","val":5.495,"totalEdges":31489,"incomingEdges":30880,"outgoingEdges":609,"labelCount":1,"topRelationships":[["COMPUTED_WITH",30880],["HAS_CONTRAST",393],["HAS_RESOURCE",144],["DESCRIBES_TASK",72]],"x":27.06,"y":-121.011,"z":-34},{"id":"Concept","label":"Concept","shortLabel":"Concept","surface":"Ontology and terms","color":"#c77dff","val":5.205,"totalEdges":23006,"incomingEdges":15815,"outgoingEdges":7191,"labelCount":1,"topRelationships":[["MAPS_TO",8954],["MEASURES",7315],["SUGGESTS_MEASURES",1902],["ASSERTS",1237],["MEASUREDBY",1218]],"x":-105.767,"y":-127.943,"z":68},{"id":"DataResource|OpenNeuro","label":"DataResource|OpenNeuro","shortLabel":"DataResource|OpenNeuro","surface":"Tools and resources","color":"#ff6b6b","val":5.025,"totalEdges":18411,"incomingEdges":14722,"outgoingEdges":3689,"labelCount":2,"topRelationships":[["HAS_RESOURCE",14722],["ABOUT",3689]],"x":-66.433,"y":-104.703,"z":-34},{"id":"Embedding","label":"Embedding","shortLabel":"Embedding","surface":"Publication evidence","color":"#4ea5ff","val":4.78,"totalEdges":12958,"incomingEdges":12958,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_TEXT_EMBEDDING",12958]],"x":46.723,"y":129.85,"z":0},{"id":"Tool","label":"Tool","shortLabel":"Tool","surface":"Tools and resources","color":"#ff6b6b","val":4.754,"totalEdges":12450,"incomingEdges":0,"outgoingEdges":12450,"labelCount":1,"topRelationships":[["IMPLEMENTS_FAMILY",4294],["HAS_VERSION",4142],["SUPPORTS_MODALITY",2655],["ABOUT",1337],["VALIDATED_ON",13]],"x":-46.723,"y":-129.85,"z":0},{"id":"Dataset|DataResource","label":"Dataset|DataResource","shortLabel":"Dataset|DataResource","surface":"Tools and resources","color":"#ff6b6b","val":4.6,"totalEdges":9580,"incomingEdges":94,"outgoingEdges":9486,"labelCount":2,"topRelationships":[["ABOUT",2807],["HAS_MODALITY",1839],["HOSTED_AT",1694],["HAS_TASK",1641],["INVOLVES_SPECIES",990]],"x":-19.011,"y":-150.806,"z":34},{"id":"ToolVersion","label":"ToolVersion","shortLabel":"ToolVersion","surface":"Tools and resources","color":"#ff6b6b","val":4.282,"totalEdges":4842,"incomingEdges":4142,"outgoingEdges":700,"labelCount":1,"topRelationships":[["HAS_VERSION",4142],["PRODUCES_RESOURCE",362],["CONSUMES_RESOURCE",338]],"x":15.68,"y":-165.258,"z":68},{"id":"Modality","label":"Modality","shortLabel":"Modality","surface":"Tools and resources","color":"#ff6b6b","val":4.254,"totalEdges":4494,"incomingEdges":4494,"outgoingEdges":0,"labelCount":1,"topRelationships":[["SUPPORTS_MODALITY",2655],["HAS_MODALITY",1839]],"x":55.699,"y":-171.166,"z":-68},{"id":"TaskFamily","label":"TaskFamily","shortLabel":"TaskFamily","surface":"Task and behavior","color":"#ffb000","val":4.055,"totalEdges":2441,"incomingEdges":2441,"outgoingEdges":0,"labelCount":1,"topRelationships":[["IMPLEMENTS_FAMILY",2167],["BELONGS_TO_FAMILY",176],["CLASSIFIED_UNDER",98]],"x":-165.258,"y":-15.68,"z":68},{"id":"ToolFamily","label":"ToolFamily","shortLabel":"ToolFamily","surface":"Tools and resources","color":"#ff6b6b","val":4.018,"totalEdges":2127,"incomingEdges":2127,"outgoingEdges":0,"labelCount":1,"topRelationships":[["IMPLEMENTS_FAMILY",2127]],"x":98.843,"y":-166.931,"z":-34},{"id":"Contrast","label":"Contrast","shortLabel":"Contrast","surface":"Task and behavior","color":"#ffb000","val":4.016,"totalEdges":2109,"incomingEdges":1622,"outgoingEdges":487,"labelCount":1,"topRelationships":[["HAS_CONTRAST",1585],["IN_ONVOC",468],["DERIVED_FROM",37],["MAPS_TO",19]],"x":-171.166,"y":-55.699,"z":-68},{"id":"Subject","label":"Subject","shortLabel":"Subject","surface":"Task and behavior","color":"#ffb000","val":4.0,"totalEdges":1982,"incomingEdges":0,"outgoingEdges":1982,"labelCount":1,"topRelationships":[["PARTICIPATES_IN",1982]],"x":-166.931,"y":-98.843,"z":-34},{"id":"Repository","label":"Repository","shortLabel":"Repository","surface":"Other schema","color":"#95a3b3","val":3.963,"totalEdges":1694,"incomingEdges":1694,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HOSTED_AT",1694]],"x":104.703,"y":-66.433,"z":-34},{"id":"SubjectGroup","label":"SubjectGroup","shortLabel":"SubjectGroup","surface":"Task and behavior","color":"#ffb000","val":3.952,"totalEdges":1620,"incomingEdges":402,"outgoingEdges":1218,"labelCount":1,"topRelationships":[["HAS_PHENOTYPE",1218],["INCLUDES",402]],"x":-151.537,"y":-142.48,"z":0},{"id":"Atlas","label":"Atlas","shortLabel":"Atlas","surface":"Spatial anatomy","color":"#b8f34d","val":3.91,"totalEdges":1331,"incomingEdges":0,"outgoingEdges":1331,"labelCount":1,"topRelationships":[["HAS_REGION",1327],["HAS_PARCELLATION",2],["CITES",1],["IN_SPACE",1]],"x":-127.943,"y":105.767,"z":68},{"id":"Citation","label":"Citation","shortLabel":"Citation","surface":"Publication evidence","color":"#4ea5ff","val":3.904,"totalEdges":1293,"incomingEdges":1293,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HASCITATION",1293]],"x":19.011,"y":150.806,"z":34},{"id":"Phenotype","label":"Phenotype","shortLabel":"Phenotype","surface":"Task and behavior","color":"#ffb000","val":3.892,"totalEdges":1218,"incomingEdges":1218,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_PHENOTYPE",1218]],"x":-124.652,"y":-183.7,"z":34},{"id":"Condition","label":"Condition","shortLabel":"Condition","surface":"Task and behavior","color":"#ffb000","val":3.866,"totalEdges":1060,"incomingEdges":1060,"outgoingEdges":0,"labelCount":1,"topRelationships":[["USES_CONDITION",750],["HAS_CONDITION",310]],"x":-86.703,"y":-219.496,"z":68},{"id":"Species","label":"Species","shortLabel":"Species","surface":"Other schema","color":"#95a3b3","val":3.854,"totalEdges":990,"incomingEdges":990,"outgoingEdges":0,"labelCount":1,"topRelationships":[["INVOLVES_SPECIES",990]],"x":129.85,"y":-46.723,"z":0},{"id":"Parcellation","label":"Parcellation","shortLabel":"Parcellation","surface":"Spatial anatomy","color":"#b8f34d","val":3.831,"totalEdges":865,"incomingEdges":19,"outgoingEdges":846,"labelCount":1,"topRelationships":[["HAS_REGION",796],["HAS_PARCEL",26],["IN_SPACE",18],["IN_PARCELLATION",17],["HAS_RESOURCE",6]],"x":-160.417,"y":81.647,"z":-68},{"id":"TaskCondition","label":"TaskCondition","shortLabel":"TaskCondition","surface":"Task and behavior","color":"#ffb000","val":3.819,"totalEdges":807,"incomingEdges":807,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HASCONDITION",807]],"x":-38.89,"y":-246.957,"z":-68},{"id":"ReviewRule","label":"ReviewRule","shortLabel":"ReviewRule","surface":"Other schema","color":"#95a3b3","val":3.801,"totalEdges":717,"incomingEdges":126,"outgoingEdges":591,"labelCount":1,"topRelationships":[["REQUIRES_FIELD",162],["HAS_VALIDITY_LAYER",102],["HAS_REASON_TAG",81],["CONTAINS_RULE",71],["HAS_LIFECYCLE_STATUS",71]],"x":150.806,"y":-19.011,"z":34},{"id":"ResourceType","label":"ResourceType","shortLabel":"ResourceType","surface":"Other schema","color":"#95a3b3","val":3.797,"totalEdges":700,"incomingEdges":700,"outgoingEdges":0,"labelCount":1,"topRelationships":[["PRODUCES_RESOURCE",362],["CONSUMES_RESOURCE",338]],"x":165.258,"y":15.68,"z":68},{"id":"Dataset","label":"Dataset","shortLabel":"Dataset","surface":"Tools and resources","color":"#ff6b6b","val":3.792,"totalEdges":676,"incomingEdges":19,"outgoingEdges":657,"labelCount":1,"topRelationships":[["INCLUDES",402],["ABOUT",254],["MAPS_TO",19],["USES_TASK",1]],"x":142.48,"y":-151.537,"z":0},{"id":"TaskIndicator","label":"TaskIndicator","shortLabel":"TaskIndicator","surface":"Task and behavior","color":"#ffb000","val":3.772,"totalEdges":584,"incomingEdges":584,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HASINDICATOR",584]],"x":16.833,"y":-263.463,"z":-34},{"id":"Author","label":"Author","shortLabel":"Author","surface":"Other schema","color":"#95a3b3","val":3.757,"totalEdges":524,"incomingEdges":232,"outgoingEdges":292,"labelCount":1,"topRelationships":[["AFFILIATED_WITH",292],["AUTHORED_BY",232]],"x":171.166,"y":55.699,"z":-68},{"id":"TaskSpec","label":"TaskSpec","shortLabel":"TaskSpec","surface":"Task and behavior","color":"#ffb000","val":3.756,"totalEdges":519,"incomingEdges":110,"outgoingEdges":409,"labelCount":1,"topRelationships":[["HAS_CONTRAST",243],["HAS_GLM_PRIOR",148],["HAS_TASK",110],["IN_ONVOC",17],["HAS_GLM_RUN",1]],"x":77.843,"y":-266.879,"z":0},{"id":"Dataset|OpenNeuro","label":"Dataset|OpenNeuro","shortLabel":"Dataset|OpenNeuro","surface":"Tools and resources","color":"#ff6b6b","val":3.744,"totalEdges":470,"incomingEdges":38,"outgoingEdges":432,"labelCount":2,"topRelationships":[["HAS_CONTRAST",243],["MAPS_TO",76],["HAS_GLM_PRIOR",72],["ABOUT",40],["HAS_TASK",38]],"x":183.7,"y":-124.652,"z":34},{"id":"Experiment|Psych101Experiment","label":"Experiment|Psych101Experiment","shortLabel":"Experiment ... Experiment","surface":"Other schema","color":"#95a3b3","val":3.703,"totalEdges":325,"incomingEdges":76,"outgoingEdges":249,"labelCount":2,"topRelationships":[["USES_TASK",151],["CLASSIFIED_UNDER",98],["HAS_EXPERIMENT",76]],"x":166.931,"y":98.843,"z":-34},{"id":"Institution","label":"Institution","shortLabel":"Institution","surface":"Other schema","color":"#95a3b3","val":3.692,"totalEdges":292,"incomingEdges":292,"outgoingEdges":0,"labelCount":1,"topRelationships":[["AFFILIATED_WITH",292]],"x":151.537,"y":142.48,"z":0},{"id":"Study","label":"Study","shortLabel":"Study","surface":"Other schema","color":"#95a3b3","val":3.669,"totalEdges":227,"incomingEdges":217,"outgoingEdges":10,"labelCount":1,"topRelationships":[["BELONGS_TO",217],["ABOUT",10]],"x":124.652,"y":183.7,"z":34},{"id":"GLMDesignPrior","label":"GLMDesignPrior","shortLabel":"GLMDesignPrior","surface":"Analysis methods","color":"#ff7ad9","val":3.668,"totalEdges":224,"incomingEdges":224,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_GLM_PRIOR",224]],"x":58.78,"y":-124.856,"z":0},{"id":"ReviewSchemaField","label":"ReviewSchemaField","shortLabel":"ReviewSchemaField","surface":"Other schema","color":"#95a3b3","val":3.644,"totalEdges":163,"incomingEdges":163,"outgoingEdges":0,"labelCount":1,"topRelationships":[["REQUIRES_FIELD",163]],"x":86.703,"y":219.496,"z":68},{"id":"ReviewRuleRegistry","label":"ReviewRuleRegistry","shortLabel":"ReviewRuleRegistry","surface":"Other schema","color":"#95a3b3","val":3.632,"totalEdges":138,"incomingEdges":0,"outgoingEdges":138,"labelCount":1,"topRelationships":[["CONTAINS_RULE",71],["CONTAINS_CALIBRATION_CASE",60],["HAS_POLICY_DECISION",6],["CONTAINS_MODIFIER",1]],"x":38.89,"y":246.957,"z":-68},{"id":"Battery","label":"Battery","shortLabel":"Battery","surface":"Other schema","color":"#95a3b3","val":3.63,"totalEdges":134,"incomingEdges":134,"outgoingEdges":0,"labelCount":1,"topRelationships":[["INBATTERY",134]],"x":-16.833,"y":263.463,"z":-34},{"id":"ReviewCalibrationCase","label":"ReviewCalibrationCase","shortLabel":"ReviewCalibrationCase","surface":"Other schema","color":"#95a3b3","val":3.621,"totalEdges":116,"incomingEdges":60,"outgoingEdges":56,"labelCount":1,"topRelationships":[["CONTAINS_CALIBRATION_CASE",60],["CALIBRATES_RULE",55],["CALIBRATES_MODIFIER",1]],"x":-77.843,"y":266.879,"z":0},{"id":"ReviewImplementationRule","label":"ReviewImplementationRule","shortLabel":"ReviewImplementationRule","surface":"Other schema","color":"#95a3b3","val":3.617,"totalEdges":108,"incomingEdges":108,"outgoingEdges":0,"labelCount":1,"topRelationships":[["CONTAINS_IMPLEMENTATION_RULE",80],["MAPPED_TO_IMPLEMENTATION",28]],"x":-140.966,"y":255.72,"z":34},{"id":"ReviewValidityLayer","label":"ReviewValidityLayer","shortLabel":"ReviewValidityLayer","surface":"Other schema","color":"#95a3b3","val":3.614,"totalEdges":102,"incomingEdges":102,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_VALIDITY_LAYER",102]],"x":-202.646,"y":229.283,"z":68},{"id":"Consortium","label":"Consortium","shortLabel":"Consortium","surface":"Other schema","color":"#95a3b3","val":3.612,"totalEdges":99,"incomingEdges":99,"outgoingEdges":0,"labelCount":1,"topRelationships":[["PART_OF",99]],"x":-259.135,"y":187.747,"z":-68},{"id":"StatMap","label":"StatMap","shortLabel":"StatMap","surface":"Other schema","color":"#95a3b3","val":3.602,"totalEdges":83,"incomingEdges":0,"outgoingEdges":83,"labelCount":1,"topRelationships":[["DERIVED_FROM",43],["IN_ONVOC",40]],"x":-306.718,"y":132.213,"z":-34},{"id":"ReviewReasonTag","label":"ReviewReasonTag","shortLabel":"ReviewReasonTag","surface":"Other schema","color":"#95a3b3","val":3.601,"totalEdges":81,"incomingEdges":81,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_REASON_TAG",81]],"x":-341.934,"y":64.694,"z":0},{"id":"ReviewImplementationRuleCatalog","label":"ReviewImplementationRuleCatalog","shortLabel":"ReviewImpl ... uleCatalog","surface":"Other schema","color":"#95a3b3","val":3.601,"totalEdges":80,"incomingEdges":0,"outgoingEdges":80,"labelCount":1,"topRelationships":[["CONTAINS_IMPLEMENTATION_RULE",80]],"x":-361.803,"y":-11.947,"z":34},{"id":"Dataset|Psych101Dataset","label":"Dataset|Psych101Dataset","shortLabel":"Dataset|Psych101Dataset","surface":"Tools and resources","color":"#ff6b6b","val":3.598,"totalEdges":76,"incomingEdges":0,"outgoingEdges":76,"labelCount":2,"topRelationships":[["HAS_EXPERIMENT",76]],"x":219.496,"y":-86.703,"z":68},{"id":"ReviewLifecycleStatus","label":"ReviewLifecycleStatus","shortLabel":"ReviewLifecycleStatus","surface":"Other schema","color":"#95a3b3","val":3.595,"totalEdges":71,"incomingEdges":71,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_LIFECYCLE_STATUS",71]],"x":-364.029,"y":-94.12,"z":68},{"id":"ReviewSeverity","label":"ReviewSeverity","shortLabel":"ReviewSeverity","surface":"Other schema","color":"#95a3b3","val":3.595,"totalEdges":71,"incomingEdges":71,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_SEVERITY",71]],"x":-347.179,"y":-177.671,"z":-68},{"id":"ReviewRuleGroup","label":"ReviewRuleGroup","shortLabel":"ReviewRuleGroup","surface":"Other schema","color":"#95a3b3","val":3.595,"totalEdges":71,"incomingEdges":71,"outgoingEdges":0,"labelCount":1,"topRelationships":[["IN_RULE_GROUP",71]],"x":-310.808,"y":-258.097,"z":-34},{"id":"Parcel","label":"Parcel","shortLabel":"Parcel","surface":"Other schema","color":"#95a3b3","val":3.557,"totalEdges":26,"incomingEdges":26,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_PARCEL",26]],"x":-255.551,"y":-330.783,"z":0},{"id":"GLMRun","label":"GLMRun","shortLabel":"GLMRun","surface":"Analysis methods","color":"#ff7ad9","val":3.536,"totalEdges":10,"incomingEdges":2,"outgoingEdges":8,"labelCount":1,"topRelationships":[["HAS_VARIANT",7],["HAS_GLM_RUN",2],["HAS_SUMMARY",1]],"x":93.194,"y":-120.079,"z":34},{"id":"DataResource","label":"DataResource","shortLabel":"DataResource","surface":"Tools and resources","color":"#ff6b6b","val":3.532,"totalEdges":8,"incomingEdges":8,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_RESOURCE",6],["VALIDATED_ON",2]],"x":246.957,"y":-38.89,"z":-68},{"id":"GLMVariant","label":"GLMVariant","shortLabel":"GLMVariant","surface":"Analysis methods","color":"#ff7ad9","val":3.53,"totalEdges":7,"incomingEdges":7,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_VARIANT",7]],"x":127.943,"y":-105.767,"z":68},{"id":"ExecutionFailure","label":"ExecutionFailure","shortLabel":"ExecutionFailure","surface":"Other schema","color":"#95a3b3","val":3.53,"totalEdges":7,"incomingEdges":7,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAD_FAILURE",7]],"x":-183.14,"y":-391.259,"z":34},{"id":"ReviewPolicyDecision","label":"ReviewPolicyDecision","shortLabel":"ReviewPolicyDecision","surface":"Other schema","color":"#95a3b3","val":3.528,"totalEdges":6,"incomingEdges":6,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_POLICY_DECISION",6]],"x":-96.367,"y":-435.465,"z":68},{"id":"Region","label":"Region","shortLabel":"Region","surface":"Other schema","color":"#95a3b3","val":3.528,"totalEdges":6,"incomingEdges":6,"outgoingEdges":0,"labelCount":1,"topRelationships":[["ACTIVATES",5],["LOCATED_IN",1]],"x":1.018,"y":-459.999,"z":-68},{"id":"ReviewSensitivityTemplate","label":"ReviewSensitivityTemplate","shortLabel":"ReviewSensitivityTemplate","surface":"Other schema","color":"#95a3b3","val":3.525,"totalEdges":5,"incomingEdges":5,"outgoingEdges":0,"labelCount":1,"topRelationships":[["TRIGGERS_SENSITIVITY",5]],"x":104.464,"y":-462.345,"z":-34},{"id":"Run","label":"Run","shortLabel":"Run","surface":"Other schema","color":"#95a3b3","val":3.522,"totalEdges":4,"incomingEdges":0,"outgoingEdges":4,"labelCount":1,"topRelationships":[["HAD_FAILURE",4]],"x":208.835,"y":-441.058,"z":0},{"id":"ReviewPositiveModifier","label":"ReviewPositiveModifier","shortLabel":"ReviewPositiveModifier","surface":"Other schema","color":"#95a3b3","val":3.519,"totalEdges":3,"incomingEdges":2,"outgoingEdges":1,"labelCount":1,"topRelationships":[["CALIBRATES_MODIFIER",1],["CONTAINS_MODIFIER",1],["REQUIRES_FIELD",1]],"x":308.661,"y":-395.894,"z":34},{"id":"ToolEvidence","label":"ToolEvidence","shortLabel":"ToolEvidence","surface":"Tools and resources","color":"#ff6b6b","val":3.511,"totalEdges":1,"incomingEdges":1,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_EVIDENCE",1]],"x":263.463,"y":16.833,"z":-34},{"id":"ResultSummary","label":"ResultSummary","shortLabel":"ResultSummary","surface":"Other schema","color":"#95a3b3","val":3.511,"totalEdges":1,"incomingEdges":1,"outgoingEdges":0,"labelCount":1,"topRelationships":[["HAS_SUMMARY",1]],"x":398.428,"y":-327.889,"z":68}],"links":[{"source":"StatisticalMap","target":"Collection","rel":"BELONGS_TO","relGroup":"BELONGS_TO","color":"#20d3b3","value":1075385,"rank":1,"share":0.4437626014408249,"width":7.65,"particles":5,"schemaTriple":"StatisticalMap -[BELONGS_TO]-> Collection"},{"source":"Publication","target":"Coordinate","rel":"HAS_COORDINATE","relGroup":"HAS_COORDINATE","color":"#4ea5ff","value":447499,"rank":2,"share":0.184662535168491,"width":5.095,"particles":5,"schemaTriple":"Publication -[HAS_COORDINATE]-> Coordinate"},{"source":"Publication","target":"Term","rel":"HAS_TERM","relGroup":"HAS_TERM","color":"#c77dff","value":358050,"rank":3,"share":0.1477509909900987,"width":4.605,"particles":5,"schemaTriple":"Publication -[HAS_TERM]-> Term"},{"source":"StatsMap","target":"BrainRegion","rel":"IN_REGION","relGroup":"IN_REGION","color":"#b8f34d","value":121261,"rank":4,"share":0.0500389133317982,"width":2.868,"particles":5,"schemaTriple":"StatsMap -[IN_REGION]-> BrainRegion"},{"source":"Publication","target":"Concept|OntologyConcept|OnvocClass","rel":"ABOUT","relGroup":"ABOUT","color":"#ff7ad9","value":67785,"rank":5,"share":0.027971794230593,"width":2.258,"particles":3,"schemaTriple":"Publication -[ABOUT]-> Concept|OntologyConcept|OnvocClass"},{"source":"Task","target":"Process|ConceptClass","rel":"IN_DOMAIN","relGroup":"IN_DOMAIN","color":"#ffb000","value":52117,"rank":6,"share":0.0215063214563077,"width":2.035,"particles":3,"schemaTriple":"Task -[IN_DOMAIN]-> Process|ConceptClass"},{"source":"StatsMap","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":43958,"rank":7,"share":0.0181394723137627,"width":1.906,"particles":3,"schemaTriple":"StatsMap -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"StatsMap","target":"TemplateSpace","rel":"IN_SPACE","relGroup":"IN_SPACE","color":"#7ce7ff","value":35180,"rank":8,"share":0.0145171899540055,"width":1.752,"particles":3,"schemaTriple":"StatsMap -[IN_SPACE]-> TemplateSpace"},{"source":"StatsMap","target":"ModelSpec","rel":"COMPUTED_WITH","relGroup":"COMPUTED_WITH","color":"#ff6b6b","value":30880,"rank":9,"share":0.0127427750363755,"width":1.67,"particles":3,"schemaTriple":"StatsMap -[COMPUTED_WITH]-> ModelSpec"},{"source":"StatsMap","target":"TaskAnalysis","rel":"GENERATED_FROM","relGroup":"GENERATED_FROM","color":"#f08cff","value":30880,"rank":10,"share":0.0127427750363755,"width":1.67,"particles":3,"schemaTriple":"StatsMap -[GENERATED_FROM]-> TaskAnalysis"},{"source":"StatsMap","target":"Contrast|GLMContrast","rel":"DERIVED_FROM","relGroup":"DERIVED_FROM","color":"#ffffff","value":30120,"rank":11,"share":0.0124291575160502,"width":1.655,"particles":3,"schemaTriple":"StatsMap -[DERIVED_FROM]-> Contrast|GLMContrast"},{"source":"StatsMap","target":"DataResource|OpenNeuro","rel":"HAS_RESOURCE","relGroup":"Other","color":"#7786a3","value":14146,"rank":12,"share":0.0058374124243707,"width":1.276,"particles":1,"schemaTriple":"StatsMap -[HAS_RESOURCE]-> DataResource|OpenNeuro"},{"source":"Publication","target":"Embedding","rel":"HAS_TEXT_EMBEDDING","relGroup":"Other","color":"#7786a3","value":12958,"rank":13,"share":0.0053471787215464,"width":1.24,"particles":1,"schemaTriple":"Publication -[HAS_TEXT_EMBEDDING]-> Embedding"},{"source":"Task","target":"Task","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":11062,"rank":14,"share":0.0045647855392612,"width":1.18,"particles":1,"schemaTriple":"Task -[MAPS_TO]-> Task"},{"source":"Task","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":10894,"rank":15,"share":0.004495459561084,"width":1.175,"particles":1,"schemaTriple":"Task -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"StatisticalMap","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":7331,"rank":16,"share":0.0030251711072431,"width":1.044,"particles":1,"schemaTriple":"StatisticalMap -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"StatsMap","target":"Concept","rel":"MEASURES","relGroup":"Other","color":"#7786a3","value":4502,"rank":17,"share":0.0018577711532954,"width":0.916,"particles":0,"schemaTriple":"StatsMap -[MEASURES]-> Concept"},{"source":"Tool","target":"ToolVersion","rel":"HAS_VERSION","relGroup":"Other","color":"#7786a3","value":4142,"rank":18,"share":0.0017092154857729,"width":0.897,"particles":0,"schemaTriple":"Tool -[HAS_VERSION]-> ToolVersion"},{"source":"DataResource|OpenNeuro","target":"Concept|OntologyConcept|OnvocClass","rel":"ABOUT","relGroup":"ABOUT","color":"#ff7ad9","value":3689,"rank":19,"share":0.0015222829374737,"width":0.872,"particles":0,"schemaTriple":"DataResource|OpenNeuro -[ABOUT]-> Concept|OntologyConcept|OnvocClass"},{"source":"Task","target":"Task","rel":"MEASURES","relGroup":"Other","color":"#7786a3","value":3560,"rank":20,"share":0.0014690504899448,"width":0.864,"particles":0,"schemaTriple":"Task -[MEASURES]-> Task"},{"source":"Publication","target":"Publication","rel":"CITES","relGroup":"Other","color":"#7786a3","value":3395,"rank":21,"share":0.0014009624756636,"width":0.855,"particles":0,"schemaTriple":"Publication -[CITES]-> Publication"},{"source":"Concept","target":"Concept","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":3145,"rank":22,"share":0.0012977988176619,"width":0.839,"particles":0,"schemaTriple":"Concept -[MAPS_TO]-> Concept"},{"source":"Dataset|DataResource","target":"Concept|OntologyConcept|OnvocClass","rel":"ABOUT","relGroup":"ABOUT","color":"#ff7ad9","value":2807,"rank":23,"share":0.0011583215520435,"width":0.818,"particles":0,"schemaTriple":"Dataset|DataResource -[ABOUT]-> Concept|OntologyConcept|OnvocClass"},{"source":"Task","target":"Concept","rel":"MEASURES","relGroup":"Other","color":"#7786a3","value":2773,"rank":24,"share":0.0011442912945553,"width":0.816,"particles":0,"schemaTriple":"Task -[MEASURES]-> Concept"},{"source":"Tool","target":"Modality","rel":"SUPPORTS_MODALITY","relGroup":"Other","color":"#7786a3","value":2655,"rank":25,"share":0.0010955980479785,"width":0.808,"particles":0,"schemaTriple":"Tool -[SUPPORTS_MODALITY]-> Modality"},{"source":"Tool","target":"TaskFamily","rel":"IMPLEMENTS_FAMILY","relGroup":"Other","color":"#7786a3","value":2167,"rank":26,"share":0.0008942225875591,"width":0.773,"particles":0,"schemaTriple":"Tool -[IMPLEMENTS_FAMILY]-> TaskFamily"},{"source":"Tool","target":"ToolFamily","rel":"IMPLEMENTS_FAMILY","relGroup":"Other","color":"#7786a3","value":2127,"rank":27,"share":0.0008777164022788,"width":0.77,"particles":0,"schemaTriple":"Tool -[IMPLEMENTS_FAMILY]-> ToolFamily"},{"source":"Subject","target":"TaskAnalysis","rel":"PARTICIPATES_IN","relGroup":"Other","color":"#7786a3","value":1982,"rank":28,"share":0.0008178814806378,"width":0.759,"particles":0,"schemaTriple":"Subject -[PARTICIPATES_IN]-> TaskAnalysis"},{"source":"StatsMap","target":"Concept","rel":"SUGGESTS_MEASURES","relGroup":"Other","color":"#7786a3","value":1902,"rank":29,"share":0.0007848691100772,"width":0.753,"particles":0,"schemaTriple":"StatsMap -[SUGGESTS_MEASURES]-> Concept"},{"source":"Dataset|DataResource","target":"Modality","rel":"HAS_MODALITY","relGroup":"Other","color":"#7786a3","value":1839,"rank":30,"share":0.0007588718682608,"width":0.748,"particles":0,"schemaTriple":"Dataset|DataResource -[HAS_MODALITY]-> Modality"},{"source":"Dataset|DataResource","target":"Repository","rel":"HOSTED_AT","relGroup":"Other","color":"#7786a3","value":1694,"rank":31,"share":0.0006990369466198,"width":0.736,"particles":0,"schemaTriple":"Dataset|DataResource -[HOSTED_AT]-> Repository"},{"source":"Task","target":"Contrast","rel":"HAS_CONTRAST","relGroup":"Other","color":"#7786a3","value":1585,"rank":32,"share":0.000654057591731,"width":0.726,"particles":0,"schemaTriple":"Task -[HAS_CONTRAST]-> Contrast"},{"source":"Dataset|DataResource","target":"Task","rel":"HAS_TASK","relGroup":"Other","color":"#7786a3","value":1569,"rank":33,"share":0.0006474551176189,"width":0.725,"particles":0,"schemaTriple":"Dataset|DataResource -[HAS_TASK]-> Task"},{"source":"StatisticalMap","target":"StatisticalMap","rel":"BELONGS_TO","relGroup":"BELONGS_TO","color":"#20d3b3","value":1454,"rank":34,"share":0.0005999998349381,"width":0.715,"particles":0,"schemaTriple":"StatisticalMap -[BELONGS_TO]-> StatisticalMap"},{"source":"Tool","target":"Concept|OntologyConcept|OnvocClass","rel":"ABOUT","relGroup":"ABOUT","color":"#ff7ad9","value":1337,"rank":35,"share":0.0005517192429933,"width":0.704,"particles":0,"schemaTriple":"Tool -[ABOUT]-> Concept|OntologyConcept|OnvocClass"},{"source":"Atlas","target":"BrainRegion","rel":"HAS_REGION","relGroup":"Other","color":"#7786a3","value":1327,"rank":36,"share":0.0005475926966732,"width":0.703,"particles":0,"schemaTriple":"Atlas -[HAS_REGION]-> BrainRegion"},{"source":"BrainRegion","target":"BrainRegion","rel":"PART_OF","relGroup":"Other","color":"#7786a3","value":1326,"rank":37,"share":0.0005471800420412,"width":0.703,"particles":0,"schemaTriple":"BrainRegion -[PART_OF]-> BrainRegion"},{"source":"Concept","target":"Task","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":1312,"rank":38,"share":0.0005414028771931,"width":0.701,"particles":0,"schemaTriple":"Concept -[MAPS_TO]-> Task"},{"source":"Task","target":"Concept","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":1289,"rank":39,"share":0.0005319118206569,"width":0.699,"particles":0,"schemaTriple":"Task -[MAPS_TO]-> Concept"},{"source":"Task","target":"Concept","rel":"ASSERTS","relGroup":"Other","color":"#7786a3","value":1237,"rank":40,"share":0.0005104537797926,"width":0.694,"particles":0,"schemaTriple":"Task -[ASSERTS]-> Concept"},{"source":"SubjectGroup","target":"Phenotype","rel":"HAS_PHENOTYPE","relGroup":"Other","color":"#7786a3","value":1218,"rank":41,"share":0.0005026133417845,"width":0.692,"particles":0,"schemaTriple":"SubjectGroup -[HAS_PHENOTYPE]-> Phenotype"},{"source":"Concept","target":"Task","rel":"MEASUREDBY","relGroup":"Other","color":"#7786a3","value":1218,"rank":42,"share":0.0005026133417845,"width":0.692,"particles":0,"schemaTriple":"Concept -[MEASUREDBY]-> Task"},{"source":"Task","target":"Citation","rel":"HASCITATION","relGroup":"Other","color":"#7786a3","value":1091,"rank":43,"share":0.0004502062035196,"width":0.679,"particles":0,"schemaTriple":"Task -[HASCITATION]-> Citation"},{"source":"Dataset|DataResource","target":"Species","rel":"INVOLVES_SPECIES","relGroup":"Other","color":"#7786a3","value":990,"rank":44,"share":0.0004085280856869,"width":0.668,"particles":0,"schemaTriple":"Dataset|DataResource -[INVOLVES_SPECIES]-> Species"},{"source":"Task","target":"TaskCondition","rel":"HASCONDITION","relGroup":"Other","color":"#7786a3","value":807,"rank":45,"share":0.0003330122880296,"width":0.647,"particles":0,"schemaTriple":"Task -[HASCONDITION]-> TaskCondition"},{"source":"Parcellation","target":"BrainRegion","rel":"HAS_REGION","relGroup":"Other","color":"#7786a3","value":796,"rank":46,"share":0.0003284730870775,"width":0.646,"particles":0,"schemaTriple":"Parcellation -[HAS_REGION]-> BrainRegion"},{"source":"Concept|OntologyConcept|OnvocClass","target":"Concept|OntologyConcept|OnvocClass","rel":"CLASSIFIED_UNDER","relGroup":"Other","color":"#7786a3","value":765,"rank":47,"share":0.0003156807934853,"width":0.642,"particles":0,"schemaTriple":"Concept|OntologyConcept|OnvocClass -[CLASSIFIED_UNDER]-> Concept|OntologyConcept|OnvocClass"},{"source":"Contrast|GLMContrast","target":"Condition","rel":"USES_CONDITION","relGroup":"Other","color":"#7786a3","value":750,"rank":48,"share":0.0003094909740052,"width":0.64,"particles":0,"schemaTriple":"Contrast|GLMContrast -[USES_CONDITION]-> Condition"},{"source":"Contrast|GLMContrast","target":"Contrast|GLMContrast","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":621,"rank":49,"share":0.0002562585264763,"width":0.623,"particles":0,"schemaTriple":"Contrast|GLMContrast -[MAPS_TO]-> Contrast|GLMContrast"},{"source":"Task","target":"Task","rel":"SUGGESTS_MEASURES","relGroup":"Other","color":"#7786a3","value":612,"rank":50,"share":0.0002525446347882,"width":0.622,"particles":0,"schemaTriple":"Task -[SUGGESTS_MEASURES]-> Task"},{"source":"Task","target":"TaskIndicator","rel":"HASINDICATOR","relGroup":"Other","color":"#7786a3","value":584,"rank":51,"share":0.000240990305092,"width":0.618,"particles":0,"schemaTriple":"Task -[HASINDICATOR]-> TaskIndicator"},{"source":"Concept","target":"Process|ConceptClass","rel":"CLASSIFIEDUNDER","relGroup":"Other","color":"#7786a3","value":523,"rank":52,"share":0.0002158183725396,"width":0.609,"particles":0,"schemaTriple":"Concept -[CLASSIFIEDUNDER]-> Process|ConceptClass"},{"source":"Contrast|GLMContrast","target":"Publication","rel":"BELONGS_TO","relGroup":"BELONGS_TO","color":"#20d3b3","value":517,"rank":53,"share":0.0002133424447476,"width":0.608,"particles":0,"schemaTriple":"Contrast|GLMContrast -[BELONGS_TO]-> Publication"},{"source":"Contrast","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":468,"rank":54,"share":0.0001931223677792,"width":0.6,"particles":0,"schemaTriple":"Contrast -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"TaskAnalysis","target":"DataResource|OpenNeuro","rel":"HAS_RESOURCE","relGroup":"Other","color":"#7786a3","value":432,"rank":55,"share":0.000178266801027,"width":0.594,"particles":0,"schemaTriple":"TaskAnalysis -[HAS_RESOURCE]-> DataResource|OpenNeuro"},{"source":"Concept","target":"Concept","rel":"KINDOF","relGroup":"Other","color":"#7786a3","value":429,"rank":56,"share":0.0001770288371309,"width":0.594,"particles":0,"schemaTriple":"Concept -[KINDOF]-> Concept"},{"source":"Dataset","target":"SubjectGroup","rel":"INCLUDES","relGroup":"Other","color":"#7786a3","value":402,"rank":57,"share":0.0001658871620668,"width":0.589,"particles":0,"schemaTriple":"Dataset -[INCLUDES]-> SubjectGroup"},{"source":"ModelSpec","target":"Contrast|GLMContrast","rel":"HAS_CONTRAST","relGroup":"Other","color":"#7786a3","value":393,"rank":58,"share":0.0001621732703787,"width":0.588,"particles":0,"schemaTriple":"ModelSpec -[HAS_CONTRAST]-> Contrast|GLMContrast"},{"source":"Dataset|DataResource","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":367,"rank":59,"share":0.0001514442499465,"width":0.583,"particles":0,"schemaTriple":"Dataset|DataResource -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"ToolVersion","target":"ResourceType","rel":"PRODUCES_RESOURCE","relGroup":"Other","color":"#7786a3","value":362,"rank":60,"share":0.0001493809767865,"width":0.582,"particles":0,"schemaTriple":"ToolVersion -[PRODUCES_RESOURCE]-> ResourceType"},{"source":"ToolVersion","target":"ResourceType","rel":"CONSUMES_RESOURCE","relGroup":"Other","color":"#7786a3","value":338,"rank":61,"share":0.0001394772656183,"width":0.578,"particles":0,"schemaTriple":"ToolVersion -[CONSUMES_RESOURCE]-> ResourceType"},{"source":"TaskAnalysis","target":"Condition","rel":"HAS_CONDITION","relGroup":"Other","color":"#7786a3","value":310,"rank":62,"share":0.0001279229359221,"width":0.572,"particles":0,"schemaTriple":"TaskAnalysis -[HAS_CONDITION]-> Condition"},{"source":"Author","target":"Institution","rel":"AFFILIATED_WITH","relGroup":"Other","color":"#7786a3","value":292,"rank":63,"share":0.000120495152546,"width":0.569,"particles":0,"schemaTriple":"Author -[AFFILIATED_WITH]-> Institution"},{"source":"Concept","target":"Concept","rel":"PARTOF","relGroup":"Other","color":"#7786a3","value":263,"rank":64,"share":0.0001085281682178,"width":0.563,"particles":0,"schemaTriple":"Concept -[PARTOF]-> Concept"},{"source":"Dataset","target":"Concept|OntologyConcept|OnvocClass","rel":"ABOUT","relGroup":"ABOUT","color":"#ff7ad9","value":254,"rank":65,"share":0.0001048142765297,"width":0.561,"particles":0,"schemaTriple":"Dataset -[ABOUT]-> Concept|OntologyConcept|OnvocClass"},{"source":"Dataset|OpenNeuro","target":"Contrast|GLMContrast","rel":"HAS_CONTRAST","relGroup":"Other","color":"#7786a3","value":243,"rank":66,"share":0.0001002750755776,"width":0.558,"particles":0,"schemaTriple":"Dataset|OpenNeuro -[HAS_CONTRAST]-> Contrast|GLMContrast"},{"source":"TaskSpec","target":"Contrast|GLMContrast","rel":"HAS_CONTRAST","relGroup":"Other","color":"#7786a3","value":243,"rank":67,"share":0.0001002750755776,"width":0.558,"particles":0,"schemaTriple":"TaskSpec -[HAS_CONTRAST]-> Contrast|GLMContrast"},{"source":"Publication","target":"Author","rel":"AUTHORED_BY","relGroup":"Other","color":"#7786a3","value":232,"rank":68,"share":9.573587462561909e-05,"width":0.556,"particles":0,"schemaTriple":"Publication -[AUTHORED_BY]-> Author"},{"source":"Contrast|GLMContrast","target":"Study","rel":"BELONGS_TO","relGroup":"BELONGS_TO","color":"#20d3b3","value":217,"rank":69,"share":8.95460551455144e-05,"width":0.552,"particles":0,"schemaTriple":"Contrast|GLMContrast -[BELONGS_TO]-> Study"},{"source":"Concept","target":"Citation","rel":"HASCITATION","relGroup":"Other","color":"#7786a3","value":202,"rank":70,"share":8.335623566540972e-05,"width":0.549,"particles":0,"schemaTriple":"Concept -[HASCITATION]-> Citation"},{"source":"Task","target":"Concept","rel":"RELATED_TO","relGroup":"Other","color":"#7786a3","value":185,"rank":71,"share":7.634110692129108e-05,"width":0.544,"particles":0,"schemaTriple":"Task -[RELATED_TO]-> Concept"},{"source":"Task","target":"TaskFamily","rel":"BELONGS_TO_FAMILY","relGroup":"Other","color":"#7786a3","value":176,"rank":72,"share":7.262721523322827e-05,"width":0.542,"particles":0,"schemaTriple":"Task -[BELONGS_TO_FAMILY]-> TaskFamily"},{"source":"ReviewRule","target":"ReviewSchemaField","rel":"REQUIRES_FIELD","relGroup":"Other","color":"#7786a3","value":162,"rank":73,"share":6.685005038513057e-05,"width":0.538,"particles":0,"schemaTriple":"ReviewRule -[REQUIRES_FIELD]-> ReviewSchemaField"},{"source":"Experiment|Psych101Experiment","target":"Task","rel":"USES_TASK","relGroup":"Other","color":"#7786a3","value":151,"rank":74,"share":6.231084943305381e-05,"width":0.535,"particles":0,"schemaTriple":"Experiment|Psych101Experiment -[USES_TASK]-> Task"},{"source":"TaskSpec","target":"GLMDesignPrior","rel":"HAS_GLM_PRIOR","relGroup":"Other","color":"#7786a3","value":148,"rank":75,"share":6.107288553703286e-05,"width":0.534,"particles":0,"schemaTriple":"TaskSpec -[HAS_GLM_PRIOR]-> GLMDesignPrior"},{"source":"ModelSpec","target":"DataResource|OpenNeuro","rel":"HAS_RESOURCE","relGroup":"Other","color":"#7786a3","value":144,"rank":76,"share":5.942226700900495e-05,"width":0.533,"particles":0,"schemaTriple":"ModelSpec -[HAS_RESOURCE]-> DataResource|OpenNeuro"},{"source":"Task","target":"Battery","rel":"INBATTERY","relGroup":"Other","color":"#7786a3","value":134,"rank":77,"share":5.529572068893517e-05,"width":0.53,"particles":0,"schemaTriple":"Task -[INBATTERY]-> Battery"},{"source":"ReviewRule","target":"ReviewValidityLayer","rel":"HAS_VALIDITY_LAYER","relGroup":"Other","color":"#7786a3","value":102,"rank":78,"share":4.209077246471184e-05,"width":0.52,"particles":0,"schemaTriple":"ReviewRule -[HAS_VALIDITY_LAYER]-> ReviewValidityLayer"},{"source":"Dataset|DataResource","target":"Consortium","rel":"PART_OF","relGroup":"Other","color":"#7786a3","value":99,"rank":79,"share":4.0852808568690905e-05,"width":0.519,"particles":0,"schemaTriple":"Dataset|DataResource -[PART_OF]-> Consortium"},{"source":"Experiment|Psych101Experiment","target":"TaskFamily","rel":"CLASSIFIED_UNDER","relGroup":"Other","color":"#7786a3","value":98,"rank":80,"share":4.044015393668392e-05,"width":0.519,"particles":0,"schemaTriple":"Experiment|Psych101Experiment -[CLASSIFIED_UNDER]-> TaskFamily"},{"source":"ReviewRule","target":"ReviewReasonTag","rel":"HAS_REASON_TAG","relGroup":"Other","color":"#7786a3","value":81,"rank":81,"share":3.3425025192565284e-05,"width":0.512,"particles":0,"schemaTriple":"ReviewRule -[HAS_REASON_TAG]-> ReviewReasonTag"},{"source":"ReviewImplementationRuleCatalog","target":"ReviewImplementationRule","rel":"CONTAINS_IMPLEMENTATION_RULE","relGroup":"Other","color":"#7786a3","value":80,"rank":82,"share":3.301237056055831e-05,"width":0.512,"particles":0,"schemaTriple":"ReviewImplementationRuleCatalog -[CONTAINS_IMPLEMENTATION_RULE]-> ReviewImplementationRule"},{"source":"Dataset|Psych101Dataset","target":"Experiment|Psych101Experiment","rel":"HAS_EXPERIMENT","relGroup":"Other","color":"#7786a3","value":76,"rank":83,"share":3.136175203253039e-05,"width":0.511,"particles":0,"schemaTriple":"Dataset|Psych101Dataset -[HAS_EXPERIMENT]-> Experiment|Psych101Experiment"},{"source":"ModelSpec","target":"TaskAnalysis","rel":"DESCRIBES_TASK","relGroup":"Other","color":"#7786a3","value":72,"rank":84,"share":2.9711133504502477e-05,"width":0.509,"particles":0,"schemaTriple":"ModelSpec -[DESCRIBES_TASK]-> TaskAnalysis"},{"source":"Dataset|OpenNeuro","target":"GLMDesignPrior","rel":"HAS_GLM_PRIOR","relGroup":"Other","color":"#7786a3","value":72,"rank":85,"share":2.9711133504502477e-05,"width":0.509,"particles":0,"schemaTriple":"Dataset|OpenNeuro -[HAS_GLM_PRIOR]-> GLMDesignPrior"},{"source":"Dataset|DataResource","target":"TaskSpec","rel":"HAS_TASK","relGroup":"Other","color":"#7786a3","value":72,"rank":86,"share":2.9711133504502477e-05,"width":0.509,"particles":0,"schemaTriple":"Dataset|DataResource -[HAS_TASK]-> TaskSpec"},{"source":"ReviewRuleRegistry","target":"ReviewRule","rel":"CONTAINS_RULE","relGroup":"Other","color":"#7786a3","value":71,"rank":87,"share":2.9298478872495497e-05,"width":0.509,"particles":0,"schemaTriple":"ReviewRuleRegistry -[CONTAINS_RULE]-> ReviewRule"},{"source":"ReviewRule","target":"ReviewLifecycleStatus","rel":"HAS_LIFECYCLE_STATUS","relGroup":"Other","color":"#7786a3","value":71,"rank":88,"share":2.9298478872495497e-05,"width":0.509,"particles":0,"schemaTriple":"ReviewRule -[HAS_LIFECYCLE_STATUS]-> ReviewLifecycleStatus"},{"source":"ReviewRule","target":"ReviewSeverity","rel":"HAS_SEVERITY","relGroup":"Other","color":"#7786a3","value":71,"rank":89,"share":2.9298478872495497e-05,"width":0.509,"particles":0,"schemaTriple":"ReviewRule -[HAS_SEVERITY]-> ReviewSeverity"},{"source":"ReviewRule","target":"ReviewRuleGroup","rel":"IN_RULE_GROUP","relGroup":"Other","color":"#7786a3","value":71,"rank":90,"share":2.9298478872495497e-05,"width":0.509,"particles":0,"schemaTriple":"ReviewRule -[IN_RULE_GROUP]-> ReviewRuleGroup"},{"source":"Collection","target":"Dataset|DataResource","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":61,"rank":91,"share":2.517193255242571e-05,"width":0.504,"particles":0,"schemaTriple":"Collection -[MAPS_TO]-> Dataset|DataResource"},{"source":"ReviewRuleRegistry","target":"ReviewCalibrationCase","rel":"CONTAINS_CALIBRATION_CASE","relGroup":"Other","color":"#7786a3","value":60,"rank":92,"share":2.475927792041873e-05,"width":0.504,"particles":0,"schemaTriple":"ReviewRuleRegistry -[CONTAINS_CALIBRATION_CASE]-> ReviewCalibrationCase"},{"source":"Concept","target":"Concept|OntologyConcept|OnvocClass","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":60,"rank":93,"share":2.475927792041873e-05,"width":0.504,"particles":0,"schemaTriple":"Concept -[MAPS_TO]-> Concept|OntologyConcept|OnvocClass"},{"source":"ReviewCalibrationCase","target":"ReviewRule","rel":"CALIBRATES_RULE","relGroup":"Other","color":"#7786a3","value":55,"rank":94,"share":2.2696004760383837e-05,"width":0.501,"particles":0,"schemaTriple":"ReviewCalibrationCase -[CALIBRATES_RULE]-> ReviewRule"},{"source":"Contrast|GLMContrast","target":"Concept","rel":"CONTRAST_OF","relGroup":"Other","color":"#7786a3","value":52,"rank":95,"share":2.14580408643629e-05,"width":0.5,"particles":0,"schemaTriple":"Contrast|GLMContrast -[CONTRAST_OF]-> Concept"},{"source":"Dataset|DataResource","target":"Publication","rel":"CITED_BY","relGroup":"Other","color":"#7786a3","value":49,"rank":96,"share":2.022007696834196e-05,"width":0.499,"particles":0,"schemaTriple":"Dataset|DataResource -[CITED_BY]-> Publication"},{"source":"Dataset|OpenNeuro","target":"Concept|OntologyConcept|OnvocClass","rel":"ABOUT","relGroup":"ABOUT","color":"#ff7ad9","value":40,"rank":97,"share":1.6506185280279154e-05,"width":0.494,"particles":0,"schemaTriple":"Dataset|OpenNeuro -[ABOUT]-> Concept|OntologyConcept|OnvocClass"},{"source":"Contrast|GLMContrast","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":40,"rank":98,"share":1.6506185280279154e-05,"width":0.494,"particles":0,"schemaTriple":"Contrast|GLMContrast -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"StatMap","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":40,"rank":99,"share":1.6506185280279154e-05,"width":0.494,"particles":0,"schemaTriple":"StatMap -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"Dataset|OpenNeuro","target":"TaskSpec","rel":"HAS_TASK","relGroup":"Other","color":"#7786a3","value":38,"rank":100,"share":1.5680876016265196e-05,"width":0.493,"particles":0,"schemaTriple":"Dataset|OpenNeuro -[HAS_TASK]-> TaskSpec"},{"source":"Dataset|OpenNeuro","target":"Dataset|OpenNeuro","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":38,"rank":101,"share":1.5680876016265196e-05,"width":0.493,"particles":0,"schemaTriple":"Dataset|OpenNeuro -[MAPS_TO]-> Dataset|OpenNeuro"},{"source":"StatMap","target":"Contrast","rel":"DERIVED_FROM","relGroup":"DERIVED_FROM","color":"#ffffff","value":37,"rank":102,"share":1.5268221384258216e-05,"width":0.492,"particles":0,"schemaTriple":"StatMap -[DERIVED_FROM]-> Contrast"},{"source":"TaskAnalysis","target":"Concept","rel":"MEASURES","relGroup":"Other","color":"#7786a3","value":32,"rank":103,"share":1.3204948224223322e-05,"width":0.489,"particles":0,"schemaTriple":"TaskAnalysis -[MEASURES]-> Concept"},{"source":"ReviewRule","target":"ReviewImplementationRule","rel":"MAPPED_TO_IMPLEMENTATION","relGroup":"Other","color":"#7786a3","value":28,"rank":104,"share":1.1554329696195409e-05,"width":0.487,"particles":0,"schemaTriple":"ReviewRule -[MAPPED_TO_IMPLEMENTATION]-> ReviewImplementationRule"},{"source":"Parcellation","target":"Parcel","rel":"HAS_PARCEL","relGroup":"Other","color":"#7786a3","value":26,"rank":105,"share":1.072902043218145e-05,"width":0.485,"particles":0,"schemaTriple":"Parcellation -[HAS_PARCEL]-> Parcel"},{"source":"TaskAnalysis","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":23,"rank":106,"share":9.491056536160511e-06,"width":0.483,"particles":0,"schemaTriple":"TaskAnalysis -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"Concept","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":22,"rank":107,"share":9.078401904153534e-06,"width":0.483,"particles":0,"schemaTriple":"Concept -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"TaskAnalysis","target":"Task","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":19,"rank":108,"share":7.840438008132598e-06,"width":0.48,"particles":0,"schemaTriple":"TaskAnalysis -[MAPS_TO]-> Task"},{"source":"StatisticalMap","target":"Dataset|DataResource","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":19,"rank":109,"share":7.840438008132598e-06,"width":0.48,"particles":0,"schemaTriple":"StatisticalMap -[MAPS_TO]-> Dataset|DataResource"},{"source":"Contrast","target":"Contrast|GLMContrast","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":19,"rank":110,"share":7.840438008132598e-06,"width":0.48,"particles":0,"schemaTriple":"Contrast -[MAPS_TO]-> Contrast|GLMContrast"},{"source":"Parcellation","target":"TemplateSpace","rel":"IN_SPACE","relGroup":"IN_SPACE","color":"#7ce7ff","value":18,"rank":111,"share":7.427783376125618e-06,"width":0.479,"particles":0,"schemaTriple":"Parcellation -[IN_SPACE]-> TemplateSpace"},{"source":"TaskSpec","target":"Concept|OntologyConcept|OnvocClass","rel":"IN_ONVOC","relGroup":"IN_ONVOC","color":"#b77dff","value":17,"rank":112,"share":7.01512874411864e-06,"width":0.479,"particles":0,"schemaTriple":"TaskSpec -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass"},{"source":"BrainRegion","target":"Parcellation","rel":"IN_PARCELLATION","relGroup":"Other","color":"#7786a3","value":17,"rank":113,"share":7.01512874411864e-06,"width":0.479,"particles":0,"schemaTriple":"BrainRegion -[IN_PARCELLATION]-> Parcellation"},{"source":"Collection","target":"Dataset","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":14,"rank":114,"share":5.777164848097704e-06,"width":0.476,"particles":0,"schemaTriple":"Collection -[MAPS_TO]-> Dataset"},{"source":"Tool","target":"Dataset|DataResource","rel":"VALIDATED_ON","relGroup":"Other","color":"#7786a3","value":11,"rank":115,"share":4.539200952076767e-06,"width":0.473,"particles":0,"schemaTriple":"Tool -[VALIDATED_ON]-> Dataset|DataResource"},{"source":"Study","target":"Concept|OntologyConcept|OnvocClass","rel":"ABOUT","relGroup":"ABOUT","color":"#ff7ad9","value":10,"rank":116,"share":4.126546320069788e-06,"width":0.472,"particles":0,"schemaTriple":"Study -[ABOUT]-> Concept|OntologyConcept|OnvocClass"},{"source":"Concept","target":"Task","rel":"MEASURES","relGroup":"Other","color":"#7786a3","value":8,"rank":117,"share":3.3012370560558305e-06,"width":0.47,"particles":0,"schemaTriple":"Concept -[MEASURES]-> Task"},{"source":"GLMRun","target":"GLMVariant","rel":"HAS_VARIANT","relGroup":"Other","color":"#7786a3","value":7,"rank":118,"share":2.888582424048852e-06,"width":0.468,"particles":0,"schemaTriple":"GLMRun -[HAS_VARIANT]-> GLMVariant"},{"source":"StatMap","target":"Contrast|GLMContrast","rel":"DERIVED_FROM","relGroup":"DERIVED_FROM","color":"#ffffff","value":6,"rank":119,"share":2.475927792041873e-06,"width":0.467,"particles":0,"schemaTriple":"StatMap -[DERIVED_FROM]-> Contrast|GLMContrast"},{"source":"ReviewRuleRegistry","target":"ReviewPolicyDecision","rel":"HAS_POLICY_DECISION","relGroup":"Other","color":"#7786a3","value":6,"rank":120,"share":2.475927792041873e-06,"width":0.467,"particles":0,"schemaTriple":"ReviewRuleRegistry -[HAS_POLICY_DECISION]-> ReviewPolicyDecision"},{"source":"Parcellation","target":"DataResource","rel":"HAS_RESOURCE","relGroup":"Other","color":"#7786a3","value":6,"rank":121,"share":2.475927792041873e-06,"width":0.467,"particles":0,"schemaTriple":"Parcellation -[HAS_RESOURCE]-> DataResource"},{"source":"Task","target":"Region","rel":"ACTIVATES","relGroup":"Other","color":"#7786a3","value":5,"rank":122,"share":2.063273160034894e-06,"width":0.466,"particles":0,"schemaTriple":"Task -[ACTIVATES]-> Region"},{"source":"StatisticalMap","target":"Dataset","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":5,"rank":123,"share":2.063273160034894e-06,"width":0.466,"particles":0,"schemaTriple":"StatisticalMap -[MAPS_TO]-> Dataset"},{"source":"ReviewRule","target":"ReviewSensitivityTemplate","rel":"TRIGGERS_SENSITIVITY","relGroup":"Other","color":"#7786a3","value":5,"rank":124,"share":2.063273160034894e-06,"width":0.466,"particles":0,"schemaTriple":"ReviewRule -[TRIGGERS_SENSITIVITY]-> ReviewSensitivityTemplate"},{"source":"Run","target":"ExecutionFailure","rel":"HAD_FAILURE","relGroup":"Other","color":"#7786a3","value":4,"rank":125,"share":1.6506185280279152e-06,"width":0.464,"particles":0,"schemaTriple":"Run -[HAD_FAILURE]-> ExecutionFailure"},{"source":"Task","target":"GLMDesignPrior","rel":"HAS_GLM_PRIOR","relGroup":"Other","color":"#7786a3","value":4,"rank":126,"share":1.6506185280279152e-06,"width":0.464,"particles":0,"schemaTriple":"Task -[HAS_GLM_PRIOR]-> GLMDesignPrior"},{"source":"Tool","target":"Dataset|DataResource","rel":"FAILED_ON","relGroup":"Other","color":"#7786a3","value":3,"rank":127,"share":1.2379638960209365e-06,"width":0.462,"particles":0,"schemaTriple":"Tool -[FAILED_ON]-> Dataset|DataResource"},{"source":"Tool","target":"ExecutionFailure","rel":"HAD_FAILURE","relGroup":"Other","color":"#7786a3","value":3,"rank":128,"share":1.2379638960209365e-06,"width":0.462,"particles":0,"schemaTriple":"Tool -[HAD_FAILURE]-> ExecutionFailure"},{"source":"TaskAnalysis","target":"Concept","rel":"MAPS_TO","relGroup":"Other","color":"#7786a3","value":3,"rank":129,"share":1.2379638960209365e-06,"width":0.462,"particles":0,"schemaTriple":"TaskAnalysis -[MAPS_TO]-> Concept"},{"source":"Concept","target":"Task","rel":"RELATED_TO","relGroup":"Other","color":"#7786a3","value":3,"rank":130,"share":1.2379638960209365e-06,"width":0.462,"particles":0,"schemaTriple":"Concept -[RELATED_TO]-> Task"},{"source":"Tool","target":"Publication","rel":"DOCUMENTED_IN","relGroup":"Other","color":"#7786a3","value":2,"rank":131,"share":8.253092640139576e-07,"width":0.46,"particles":0,"schemaTriple":"Tool -[DOCUMENTED_IN]-> Publication"},{"source":"Atlas","target":"Parcellation","rel":"HAS_PARCELLATION","relGroup":"Other","color":"#7786a3","value":2,"rank":132,"share":8.253092640139576e-07,"width":0.46,"particles":0,"schemaTriple":"Atlas -[HAS_PARCELLATION]-> Parcellation"},{"source":"Concept","target":"Concept","rel":"RELATED_TO","relGroup":"Other","color":"#7786a3","value":2,"rank":133,"share":8.253092640139576e-07,"width":0.46,"particles":0,"schemaTriple":"Concept -[RELATED_TO]-> Concept"},{"source":"Tool","target":"DataResource","rel":"VALIDATED_ON","relGroup":"Other","color":"#7786a3","value":2,"rank":134,"share":8.253092640139576e-07,"width":0.46,"particles":0,"schemaTriple":"Tool -[VALIDATED_ON]-> DataResource"},{"source":"Concept","target":"Task","rel":"ACTIVATES","relGroup":"Other","color":"#7786a3","value":1,"rank":135,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Concept -[ACTIVATES]-> Task"},{"source":"ReviewCalibrationCase","target":"ReviewPositiveModifier","rel":"CALIBRATES_MODIFIER","relGroup":"Other","color":"#7786a3","value":1,"rank":136,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"ReviewCalibrationCase -[CALIBRATES_MODIFIER]-> ReviewPositiveModifier"},{"source":"Atlas","target":"Publication","rel":"CITES","relGroup":"Other","color":"#7786a3","value":1,"rank":137,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Atlas -[CITES]-> Publication"},{"source":"Concept","target":"Task","rel":"CITES","relGroup":"Other","color":"#7786a3","value":1,"rank":138,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Concept -[CITES]-> Task"},{"source":"ReviewRuleRegistry","target":"ReviewPositiveModifier","rel":"CONTAINS_MODIFIER","relGroup":"Other","color":"#7786a3","value":1,"rank":139,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"ReviewRuleRegistry -[CONTAINS_MODIFIER]-> ReviewPositiveModifier"},{"source":"Contrast|GLMContrast","target":"Concept|OntologyConcept|OnvocClass","rel":"CONTRAST_OF","relGroup":"Other","color":"#7786a3","value":1,"rank":140,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Contrast|GLMContrast -[CONTRAST_OF]-> Concept|OntologyConcept|OnvocClass"},{"source":"Tool","target":"ToolEvidence","rel":"HAS_EVIDENCE","relGroup":"Other","color":"#7786a3","value":1,"rank":141,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Tool -[HAS_EVIDENCE]-> ToolEvidence"},{"source":"Dataset|OpenNeuro","target":"GLMRun","rel":"HAS_GLM_RUN","relGroup":"Other","color":"#7786a3","value":1,"rank":142,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Dataset|OpenNeuro -[HAS_GLM_RUN]-> GLMRun"},{"source":"TaskSpec","target":"GLMRun","rel":"HAS_GLM_RUN","relGroup":"Other","color":"#7786a3","value":1,"rank":143,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"TaskSpec -[HAS_GLM_RUN]-> GLMRun"},{"source":"GLMRun","target":"ResultSummary","rel":"HAS_SUMMARY","relGroup":"Other","color":"#7786a3","value":1,"rank":144,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"GLMRun -[HAS_SUMMARY]-> ResultSummary"},{"source":"Atlas","target":"TemplateSpace","rel":"IN_SPACE","relGroup":"IN_SPACE","color":"#7ce7ff","value":1,"rank":145,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Atlas -[IN_SPACE]-> TemplateSpace"},{"source":"Coordinate","target":"Region","rel":"LOCATED_IN","relGroup":"Other","color":"#7786a3","value":1,"rank":146,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Coordinate -[LOCATED_IN]-> Region"},{"source":"Concept","target":"Task","rel":"MEASURED_BY","relGroup":"Other","color":"#7786a3","value":1,"rank":147,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Concept -[MEASURED_BY]-> Task"},{"source":"Publication","target":"Concept","rel":"MENTIONS_CONCEPT","relGroup":"Other","color":"#7786a3","value":1,"rank":148,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Publication -[MENTIONS_CONCEPT]-> Concept"},{"source":"ReviewPositiveModifier","target":"ReviewSchemaField","rel":"REQUIRES_FIELD","relGroup":"Other","color":"#7786a3","value":1,"rank":149,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"ReviewPositiveModifier -[REQUIRES_FIELD]-> ReviewSchemaField"},{"source":"Concept","target":"Task","rel":"SIMILAR_TO","relGroup":"Other","color":"#7786a3","value":1,"rank":150,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Concept -[SIMILAR_TO]-> Task"},{"source":"Dataset","target":"Task","rel":"USES_TASK","relGroup":"Other","color":"#7786a3","value":1,"rank":151,"share":4.126546320069788e-07,"width":0.457,"particles":0,"schemaTriple":"Dataset -[USES_TASK]-> Task"}],"meta":{"totalEdges":2423334,"schemaTriples":151,"nodeLabelSets":71,"relationshipTypes":85,"top1Share":0.4437626014408249,"top3Share":0.7761761275994147,"top10Share":0.9338353689586331,"source":"data/kg_schema_triples_full_labelsets.csv"},"surfaceLegend":[{"surface":"Statistical maps","color":"#20d3b3","nodes":3},{"surface":"Publication evidence","color":"#4ea5ff","nodes":3},{"surface":"Spatial anatomy","color":"#b8f34d","nodes":5},{"surface":"Task and behavior","color":"#ffb000","nodes":12},{"surface":"Ontology and terms","color":"#c77dff","nodes":4},{"surface":"Tools and resources","color":"#ff6b6b","nodes":11},{"surface":"Analysis methods","color":"#ff7ad9","nodes":4},{"surface":"Other schema","color":"#95a3b3","nodes":29}],"relationshipLegend":[{"relationship":"BELONGS_TO","edges":1077573,"color":"#20d3b3"},{"relationship":"HAS_COORDINATE","edges":447499,"color":"#4ea5ff"},{"relationship":"HAS_TERM","edges":358050,"color":"#c77dff"},{"relationship":"IN_REGION","edges":121261,"color":"#b8f34d"},{"relationship":"ABOUT","edges":75922,"color":"#ff7ad9"},{"relationship":"IN_ONVOC","edges":63160,"color":"#b77dff"},{"relationship":"IN_DOMAIN","edges":52117,"color":"#ffb000"},{"relationship":"IN_SPACE","edges":35199,"color":"#7ce7ff"},{"relationship":"GENERATED_FROM","edges":30880,"color":"#f08cff"},{"relationship":"COMPUTED_WITH","edges":30880,"color":"#ff6b6b"}],"topTriples":[{"rank":1,"schema_triple":"StatisticalMap -[BELONGS_TO]-> Collection","edge_count":1075385,"edge_share":0.4437626014408249,"relationship_type":"BELONGS_TO"},{"rank":2,"schema_triple":"Publication -[HAS_COORDINATE]-> Coordinate","edge_count":447499,"edge_share":0.184662535168491,"relationship_type":"HAS_COORDINATE"},{"rank":3,"schema_triple":"Publication -[HAS_TERM]-> Term","edge_count":358050,"edge_share":0.1477509909900987,"relationship_type":"HAS_TERM"},{"rank":4,"schema_triple":"StatsMap -[IN_REGION]-> BrainRegion","edge_count":121261,"edge_share":0.0500389133317982,"relationship_type":"IN_REGION"},{"rank":5,"schema_triple":"Publication -[ABOUT]-> Concept|OntologyConcept|OnvocClass","edge_count":67785,"edge_share":0.027971794230593,"relationship_type":"ABOUT"},{"rank":6,"schema_triple":"Task -[IN_DOMAIN]-> Process|ConceptClass","edge_count":52117,"edge_share":0.0215063214563077,"relationship_type":"IN_DOMAIN"},{"rank":7,"schema_triple":"StatsMap -[IN_ONVOC]-> Concept|OntologyConcept|OnvocClass","edge_count":43958,"edge_share":0.0181394723137627,"relationship_type":"IN_ONVOC"},{"rank":8,"schema_triple":"StatsMap -[IN_SPACE]-> TemplateSpace","edge_count":35180,"edge_share":0.0145171899540055,"relationship_type":"IN_SPACE"},{"rank":9,"schema_triple":"StatsMap -[COMPUTED_WITH]-> ModelSpec","edge_count":30880,"edge_share":0.0127427750363755,"relationship_type":"COMPUTED_WITH"},{"rank":10,"schema_triple":"StatsMap -[GENERATED_FROM]-> TaskAnalysis","edge_count":30880,"edge_share":0.0127427750363755,"relationship_type":"GENERATED_FROM"},{"rank":11,"schema_triple":"StatsMap -[DERIVED_FROM]-> Contrast|GLMContrast","edge_count":30120,"edge_share":0.0124291575160502,"relationship_type":"DERIVED_FROM"},{"rank":12,"schema_triple":"StatsMap -[HAS_RESOURCE]-> DataResource|OpenNeuro","edge_count":14146,"edge_share":0.0058374124243707,"relationship_type":"HAS_RESOURCE"},{"rank":13,"schema_triple":"Publication -[HAS_TEXT_EMBEDDING]-> Embedding","edge_count":12958,"edge_share":0.0053471787215464,"relationship_type":"HAS_TEXT_EMBEDDING"},{"rank":14,"schema_triple":"Task -[MAPS_TO]-> Task","edge_count":11062,"edge_share":0.0045647855392612,"relationship_type":"MAPS_TO"}]};
+    const fmt = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+    const fullFmt = new Intl.NumberFormat("en-US");
+    const meta = graphPayload.meta;
+    const elem = document.getElementById("graph");
+    const tooltip = document.getElementById("tooltip");
+    let currentLimit = 80;
+    let labelsVisible = true;
+    let highlightedNode = null;
+
+    document.getElementById("stat-edges").textContent = fmt.format(meta.totalEdges);
+    document.getElementById("stat-triples").textContent = fullFmt.format(meta.schemaTriples);
+    document.getElementById("stat-labels").textContent = fullFmt.format(meta.nodeLabelSets);
+    document.getElementById("stat-top10").textContent = `${Math.round(meta.top10Share * 1000) / 10}%`;
+
+    function renderLegend() {
+      const surfaceRoot = document.getElementById("surface-legend");
+      surfaceRoot.innerHTML = graphPayload.surfaceLegend
+        .filter(row => row.nodes > 0)
+        .map(row => `<div class="legend-row"><span class="dot" style="color:${row.color};background:${row.color}"></span><span>${row.surface}</span><span>${row.nodes}</span></div>`)
+        .join("");
+
+      const relRoot = document.getElementById("relationship-legend");
+      relRoot.innerHTML = graphPayload.relationshipLegend
+        .map(row => `<div class="legend-row"><span class="dot" style="color:${row.color};background:${row.color}"></span><span>${row.relationship}</span><span>${fmt.format(row.edges)}</span></div>`)
+        .join("");
+
+      const triples = document.getElementById("top-triples");
+      triples.innerHTML = graphPayload.topTriples
+        .map(row => `<div class="triple"><span class="count">#${row.rank} ${fmt.format(row.edge_count)}</span><span class="text">${row.schema_triple}</span></div>`)
+        .join("");
+    }
+
+    function graphForLimit(limit) {
+      const links = graphPayload.links.filter(link => link.rank <= limit);
+      const nodeIds = new Set();
+      links.forEach(link => {
+        nodeIds.add(typeof link.source === "object" ? link.source.id : link.source);
+        nodeIds.add(typeof link.target === "object" ? link.target.id : link.target);
+      });
+      const nodes = graphPayload.nodes.filter(node => nodeIds.has(node.id));
+      return {
+        nodes: nodes.map(node => ({ ...node })),
+        links: links.map(link => ({ ...link }))
+      };
+    }
+
+    const Graph = ForceGraph3D()(elem)
+      .backgroundColor("rgba(0,0,0,0)")
+      .graphData(graphForLimit(currentLimit))
+      .nodeId("id")
+      .nodeVal("val")
+      .nodeColor(node => node.color)
+      .nodeLabel(node => `${node.label}<br>${node.surface}<br>${fmt.format(node.totalEdges)} incident edges`)
+      .linkColor(link => link.color)
+      .linkOpacity(0.46)
+      .linkWidth(link => link.width)
+      .linkCurvature(link => Math.min(0.34, 0.04 + link.rank * 0.0012))
+      .linkDirectionalArrowLength(3.2)
+      .linkDirectionalArrowRelPos(1)
+      .linkDirectionalParticles(link => link.particles)
+      .linkDirectionalParticleWidth(link => Math.max(1.2, link.width * 0.75))
+      .linkDirectionalParticleSpeed(link => 0.0028 + Math.min(0.012, link.share * 0.08))
+      .onNodeHover(node => {
+        elem.style.cursor = node ? "pointer" : null;
+        showNodeTooltip(node);
+      })
+      .onLinkHover(link => {
+        elem.style.cursor = link ? "pointer" : null;
+        showLinkTooltip(link);
+      })
+      .onNodeClick(node => {
+        highlightedNode = node;
+        const distance = 118 + node.val * 8;
+        const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+        Graph.cameraPosition(
+          { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+          node,
+          900
+        );
+      })
+      .nodeThreeObject(node => {
+        const group = new THREE.Group();
+        const radius = Math.max(3.2, node.val);
+        const geometry = new THREE.SphereGeometry(radius, 24, 24);
+        const material = new THREE.MeshStandardMaterial({
+          color: node.color,
+          emissive: node.color,
+          emissiveIntensity: 0.24,
+          roughness: 0.38,
+          metalness: 0.28
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        group.add(sphere);
+
+        const haloGeometry = new THREE.SphereGeometry(radius * 1.62, 24, 24);
+        const haloMaterial = new THREE.MeshBasicMaterial({
+          color: node.color,
+          transparent: true,
+          opacity: 0.075,
+          depthWrite: false
+        });
+        group.add(new THREE.Mesh(haloGeometry, haloMaterial));
+
+        if (labelsVisible && node.totalEdges >= 8000) {
+          const sprite = new SpriteText(node.shortLabel);
+          sprite.color = "#eaf8ff";
+          sprite.textHeight = Math.max(5.5, Math.min(9.2, radius * 0.52));
+          sprite.backgroundColor = "rgba(4,10,16,0.44)";
+          sprite.borderRadius = 4;
+          sprite.padding = 2.8;
+          sprite.position.y = radius * 1.75;
+          group.add(sprite);
+        }
+        return group;
+      });
+
+    function updateCanvasState() {
+      const canvas = document.querySelector("canvas");
+      if (canvas && window.__BRKG_GRAPH_STATE__) {
+        window.__BRKG_GRAPH_STATE__.canvas = { width: canvas.width, height: canvas.height };
+        window.__BRKG_GRAPH_STATE__.viewport = { width: window.innerWidth, height: window.innerHeight };
+      }
+    }
+
+    function resizeGraph() {
+      Graph.width(window.innerWidth).height(window.innerHeight);
+      updateCanvasState();
+    }
+
+    Graph.d3Force("charge").strength(-260);
+    Graph.d3Force("link").distance(link => 42 + Math.max(0, 9 - Math.log10(link.value + 1)) * 16);
+    Graph.cameraPosition({ x: 0, y: -360, z: 225 }, { x: 0, y: 0, z: 0 }, 0);
+    window.addEventListener("resize", () => requestAnimationFrame(resizeGraph));
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.72);
+    const directional = new THREE.DirectionalLight(0x8fdcff, 1.2);
+    directional.position.set(120, -220, 340);
+    Graph.scene().add(ambient);
+    Graph.scene().add(directional);
+
+    function showNodeTooltip(node) {
+      if (!node) {
+        tooltip.classList.remove("visible");
+        return;
+      }
+      const rels = (node.topRelationships || []).map(([rel, count]) => `${rel}: ${fmt.format(count)}`).join(" · ");
+      tooltip.innerHTML = `<div class="tooltip-title"><span class="dot" style="background:${node.color};color:${node.color}"></span>${node.label}</div><div class="tooltip-body">${node.surface} · ${fmt.format(node.totalEdges)} incident edges · out ${fmt.format(node.outgoingEdges)} · in ${fmt.format(node.incomingEdges)}<br>${rels}</div>`;
+      tooltip.classList.add("visible");
+    }
+
+    function showLinkTooltip(link) {
+      if (!link) {
+        tooltip.classList.remove("visible");
+        return;
+      }
+      const source = typeof link.source === "object" ? link.source.id : link.source;
+      const target = typeof link.target === "object" ? link.target.id : link.target;
+      tooltip.innerHTML = `<div class="tooltip-title"><span class="dot" style="background:${link.color};color:${link.color}"></span>${link.rel}</div><div class="tooltip-body">${source} -> ${target}<br>${fmt.format(link.value)} edges · rank #${link.rank} · ${(link.share * 100).toFixed(2)}% of graph edges</div>`;
+      tooltip.classList.add("visible");
+    }
+
+    function updateLimit(limit) {
+      currentLimit = Number(limit);
+      document.getElementById("rank-value").textContent = currentLimit;
+      Graph.graphData(graphForLimit(currentLimit));
+      window.__BRKG_GRAPH_STATE__.limit = currentLimit;
+    }
+
+    document.getElementById("rank-limit").addEventListener("input", event => updateLimit(event.target.value));
+    document.getElementById("reset").addEventListener("click", () => {
+      document.getElementById("search").value = "";
+      highlightedNode = null;
+      Graph.cameraPosition({ x: 0, y: -360, z: 225 }, { x: 0, y: 0, z: 0 }, 850);
+    });
+
+    const dataList = document.getElementById("node-options");
+    dataList.innerHTML = graphPayload.nodes.map(node => `<option value="${node.label}"></option>`).join("");
+    document.getElementById("search").addEventListener("change", event => {
+      const query = event.target.value.trim().toLowerCase();
+      if (!query) return;
+      const node = Graph.graphData().nodes.find(candidate => candidate.label.toLowerCase().includes(query));
+      if (node) {
+        Graph.cameraPosition({ x: node.x * 2.6, y: node.y * 2.6, z: node.z * 2.6 + 80 }, node, 900);
+        showNodeTooltip(node);
+      }
+    });
+
+    window.addEventListener("keydown", event => {
+      if (event.key.toLowerCase() === "l") {
+        labelsVisible = !labelsVisible;
+        Graph.nodeThreeObject(Graph.nodeThreeObject());
+      }
+    });
+
+    renderLegend();
+    window.__BRKG_GRAPH_STATE__ = {
+      ready: false,
+      nodes: graphPayload.nodes.length,
+      links: graphPayload.links.length,
+      limit: currentLimit,
+      source: meta.source
+    };
+    resizeGraph();
+
+    setTimeout(() => {
+      window.__BRKG_GRAPH_STATE__.ready = true;
+      updateCanvasState();
+    }, 3600);
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+FROM python:3.11-slim AS agent
+
+# Install minimal system dependencies required by various neuroimaging libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+        gcc \
+        g++ \
+        make \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy project metadata and source code
+COPY pyproject.toml README.md /app/
+COPY src /app/src
+COPY configs /app/configs
+
+# Install Agent deps at build time so the container can start quickly and health
+# checks don't flap while downloading large optional deps.
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e ".[agent]" && \
+    pip install --no-cache-dir "aiosqlite>=0.20.0"
+
+RUN mkdir -p /app/data /app/logs
+
+# Environment configuration
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src \
+    BR_AGENT_BOOTSTRAP_DISABLED=1
+
+EXPOSE 8000
+
+CMD ["python", "-m", "brain_researcher.services.agent.web_service"]

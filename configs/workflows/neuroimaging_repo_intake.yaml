@@ -1,0 +1,289 @@
+version: "1.0"
+last_updated: "2026-03-09"
+
+row_model:
+  required_fields:
+    - repo_slug
+    - repo_url
+    - current_state
+    - domain
+    - packaging_mode
+    - interface_mode
+    - runtime_status
+    - license_status
+    - priority
+    - recommended_workflow
+    - why_it_matters
+    - next_action
+    - evidence_urls
+  current_state_values:
+    - already_usable
+    - present_not_standardized
+    - missing_and_should_acquire
+  packaging_mode_values:
+    - container_workflow
+    - python_wrapper
+    - mixed
+    - reference_asset
+  interface_mode_values:
+    - bids_app_cli
+    - general_cli
+    - python_api
+    - mixed
+  runtime_status_values:
+    - ready_now
+    - partial
+    - needs_backend_work
+  license_status_values:
+    - permissive
+    - mixed_upstream
+    - unknown
+  priority_values:
+    - P0
+    - P1
+    - P2
+    - P3
+    - P4
+    - P5
+
+decision:
+  preproc_qc_first:
+    answer: "yes"
+    summary: >
+      Prioritize mature preprocessing and QC repositories first. Brain Researcher
+      already has recipe metadata and runtime slots for NiPreps and PennLINC
+      style BIDS apps, so that path has the lowest packaging risk and the
+      clearest workflow boundaries.
+    evidence_paths:
+      - configs/runtime/execution_recipes.yaml
+      - configs/workflows/workflow_catalog.yaml
+      - docs/mcp.md
+
+priorities:
+  - priority: P0
+    family_id: preproc_qc_bids_apps
+    reason: "The runtime already supports container and Neurodesk recipes for BIDS-app style pipelines."
+  - priority: P1
+    family_id: structural_surface
+    reason: "Structural and surface workflows are the next cleanest extension after preprocessing."
+  - priority: P2
+    family_id: diffusion_reconstruction
+    reason: "Diffusion reconstruction depends on stable upstream preprocessing contracts."
+  - priority: P3
+    family_id: broader_frameworks
+    reason: "Broader frameworks should follow after first-wave workflow contracts are stable."
+
+families:
+  - family_id: preproc_qc_bids_apps
+    title: "Preprocessing and QC BIDS apps"
+    summary: >
+      These repositories map most directly onto Brain Researcher's existing
+      workflow and recipe surface because they already expose standardized
+      BIDS-app CLIs and clear derivative contracts.
+    entries:
+      - repo_slug: nipreps/fmriprep
+        repo_url: https://github.com/nipreps/fmriprep
+        current_state: present_not_standardized
+        domain: fmri_and_anatomical_preprocessing
+        packaging_mode: container_workflow
+        interface_mode: bids_app_cli
+        runtime_status: ready_now
+        license_status: permissive
+        priority: P0
+        recommended_workflow: workflow_fmriprep_preprocessing
+        why_it_matters: "This is the de facto standard preprocessing workflow for human BIDS fMRI datasets."
+        next_action: "Keep the command-preview adapter now and harden the container-backed workflow contract next."
+        evidence_urls:
+          - https://github.com/nipreps/fmriprep
+          - https://fmriprep.org/
+        notes:
+          container_image: nipreps/fmriprep:23.2.3
+          neurodesk_package: fmriprep
+      - repo_slug: nipreps/mriqc
+        repo_url: https://github.com/nipreps/mriqc
+        current_state: present_not_standardized
+        domain: structural_and_functional_qc
+        packaging_mode: container_workflow
+        interface_mode: bids_app_cli
+        runtime_status: ready_now
+        license_status: permissive
+        priority: P0
+        recommended_workflow: workflow_mriqc
+        why_it_matters: "MRIQC is the cleanest reusable QC gate to run before expensive preprocessing and downstream modeling."
+        next_action: "Promote the standalone workflow and keep report extraction/report surfacing as the next adapter layer."
+        evidence_urls:
+          - https://github.com/nipreps/mriqc
+          - https://mriqc.readthedocs.io/
+        notes:
+          container_image: nipreps/mriqc:24.0.2
+          neurodesk_package: mriqc
+      - repo_slug: PennLINC/qsiprep
+        repo_url: https://github.com/PennLINC/qsiprep
+        current_state: present_not_standardized
+        domain: diffusion_preprocessing
+        packaging_mode: container_workflow
+        interface_mode: bids_app_cli
+        runtime_status: ready_now
+        license_status: permissive
+        priority: P0
+        recommended_workflow: workflow_qsiprep
+        why_it_matters: "QSIPrep provides the most natural diffusion analogue to fMRIPrep for reusable BR workflows."
+        next_action: "Promote the standalone command-preview workflow now and constrain reconstruction add-ons separately."
+        evidence_urls:
+          - https://github.com/PennLINC/qsiprep
+          - https://qsiprep.readthedocs.io/
+        notes:
+          container_image: pennbbl/qsiprep:latest
+          neurodesk_package: qsiprep
+      - repo_slug: nipreps/smriprep
+        repo_url: https://github.com/nipreps/smriprep
+        current_state: present_not_standardized
+        domain: anatomical_preprocessing
+        packaging_mode: container_workflow
+        interface_mode: bids_app_cli
+        runtime_status: partial
+        license_status: permissive
+        priority: P1
+        recommended_workflow: workflow_smriprep
+        why_it_matters: "sMRIPrep lets BR expose structural preprocessing independently instead of bundling it inside fMRIPrep."
+        next_action: "Ship a container-first command-preview adapter and add a hardened backend once the image/runtime path is standardized."
+        evidence_urls:
+          - https://github.com/nipreps/smriprep
+          - https://www.nipreps.org/smriprep/
+        notes:
+          container_image: nipreps/smriprep:0.19.1
+
+  - family_id: structural_surface
+    title: "Structural and surface workflows"
+    summary: >
+      These repositories are the next candidates after preprocessing because
+      they offer stable cortical/surface outputs that many downstream workflows
+      depend on.
+    entries:
+      - repo_slug: Deep-MI/FastSurfer
+        repo_url: https://github.com/Deep-MI/FastSurfer
+        current_state: present_not_standardized
+        domain: structural_reconstruction
+        packaging_mode: mixed
+        interface_mode: general_cli
+        runtime_status: partial
+        license_status: permissive
+        priority: P1
+        recommended_workflow: workflow_fastsurfer
+        why_it_matters: "FastSurfer is the fastest path to a practical structural reconstruction workflow with FreeSurfer-compatible outputs."
+        next_action: "Keep the current BR stub adapter for workflow shape, then replace it with a container-backed backend."
+        evidence_urls:
+          - https://github.com/Deep-MI/FastSurfer
+          - https://deep-mi.org/FastSurfer/dev/overview/index.html
+        notes:
+          neurodesk_package: fastsurfer
+      - repo_slug: Washington-University/workbench
+        repo_url: https://github.com/Washington-University/workbench
+        current_state: already_usable
+        domain: surface_and_cifti_processing
+        packaging_mode: reference_asset
+        interface_mode: general_cli
+        runtime_status: ready_now
+        license_status: permissive
+        priority: P1
+        recommended_workflow: workflow_surface_projection_analysis
+        why_it_matters: "Workbench is already part of the local runtime and should remain the canonical surface/CIFTI execution dependency."
+        next_action: "Keep exposing only opinionated workflows rather than mirroring raw wb_command directly."
+        evidence_urls:
+          - https://github.com/Washington-University/workbench
+          - https://www.humanconnectome.org/software/workbench-command
+        notes:
+          neurodesk_package: connectomeworkbench
+      - repo_slug: aramis-lab/clinica
+        repo_url: https://github.com/aramis-lab/clinica
+        current_state: missing_and_should_acquire
+        domain: multimodal_clinical_pipelines
+        packaging_mode: container_workflow
+        interface_mode: mixed
+        runtime_status: needs_backend_work
+        license_status: permissive
+        priority: P3
+        recommended_workflow: workflow_clinica_t1_family
+        why_it_matters: "Clinica is the clearest route to disease-focused clinical imaging workflows once first-wave infrastructure is stable."
+        next_action: "Keep on backlog until the BIDS-app preprocessing family is locked."
+        evidence_urls:
+          - https://github.com/aramis-lab/clinica
+          - https://aramislab.paris.inria.fr/clinica/
+
+  - family_id: diffusion_reconstruction
+    title: "Diffusion reconstruction and tractometry"
+    summary: >
+      These repositories extend diffusion workflows beyond preprocessing and
+      should land after QSIPrep-style inputs are standardized.
+    entries:
+      - repo_slug: PennLINC/qsirecon
+        repo_url: https://github.com/PennLINC/qsirecon
+        current_state: present_not_standardized
+        domain: diffusion_reconstruction
+        packaging_mode: container_workflow
+        interface_mode: general_cli
+        runtime_status: partial
+        license_status: permissive
+        priority: P2
+        recommended_workflow: workflow_qsirecon
+        why_it_matters: "QSIRecon is the cleanest downstream reconstruction companion to QSIPrep."
+        next_action: "Keep the command-generation workflow now and narrow the allowed reconstruction presets before full execution support."
+        evidence_urls:
+          - https://github.com/PennLINC/qsirecon
+          - https://qsirecon.readthedocs.io/
+        notes:
+          neurodesk_package: qsirecon
+      - repo_slug: MRtrix3/mrtrix3
+        repo_url: https://github.com/MRtrix3/mrtrix3
+        current_state: already_usable
+        domain: tractography_and_connectomics
+        packaging_mode: mixed
+        interface_mode: general_cli
+        runtime_status: ready_now
+        license_status: permissive
+        priority: P2
+        recommended_workflow: workflow_dwi_connectome
+        why_it_matters: "MRtrix3 is already a local dependency and should stay a constrained backend rather than a raw command mirror."
+        next_action: "Add more opinionated BR workflows on top of the existing MRtrix3 runtime instead of widening the tool surface."
+        evidence_urls:
+          - https://github.com/MRtrix3/mrtrix3
+          - https://mrtrix.readthedocs.io/
+        notes:
+          neurodesk_package: mrtrix3
+      - repo_slug: tractometry/pyAFQ
+        repo_url: https://github.com/tractometry/pyAFQ
+        current_state: missing_and_should_acquire
+        domain: tractometry
+        packaging_mode: python_wrapper
+        interface_mode: python_api
+        runtime_status: needs_backend_work
+        license_status: permissive
+        priority: P3
+        recommended_workflow: workflow_tractometry
+        why_it_matters: "pyAFQ is a strong downstream tractometry layer once QSIPrep and QSIRecon contracts are stable."
+        next_action: "Keep on backlog until diffusion preprocessing and reconstruction presets are standardized."
+        evidence_urls:
+          - https://github.com/tractometry/pyAFQ
+          - https://tractometry.org/pyAFQ/
+
+  - family_id: broader_frameworks
+    title: "Broader workflow frameworks"
+    summary: >
+      These repositories are important but wider in scope. They should be
+      wrapped only after the first-wave workflow contracts are stable.
+    entries:
+      - repo_slug: FCP-INDI/C-PAC
+        repo_url: https://github.com/FCP-INDI/C-PAC
+        current_state: missing_and_should_acquire
+        domain: configurable_rsfmri_pipeline
+        packaging_mode: container_workflow
+        interface_mode: mixed
+        runtime_status: needs_backend_work
+        license_status: mixed_upstream
+        priority: P3
+        recommended_workflow: workflow_cpac_rsfmri
+        why_it_matters: "C-PAC is valuable, but its configuration surface is larger than the first-wave NiPreps-style workflows."
+        next_action: "Defer until the BR external-workflow adapter layer has stronger preset and policy controls."
+        evidence_urls:
+          - https://github.com/FCP-INDI/C-PAC
+          - https://fcp-indi.github.io/

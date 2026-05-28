@@ -1,0 +1,93 @@
+{
+  "warmup_patterns": [
+    {
+      "pattern_name": "common_queries_warmup",
+      "queries": [
+        "preprocess fmri data",
+        "run glm analysis", 
+        "extract roi time series",
+        "compute functional connectivity",
+        "create statistical maps"
+      ],
+      "contexts": [
+        {"dataset": "ds000114", "subject": "sub-01"},
+        {"dataset": "ds000114", "subject": "sub-02"},
+        {"dataset": "ds000115", "subject": "sub-01"}
+      ],
+      "expected_cache_entries": 15,
+      "expected_hit_rate_after_repeat": 1.0
+    }
+  ],
+  "realistic_usage_patterns": [
+    {
+      "pattern_name": "typical_analysis_session",
+      "sequence": [
+        {
+          "step": 1,
+          "query": "load dataset ds000114",
+          "expected_cache_miss": true
+        },
+        {
+          "step": 2, 
+          "query": "preprocess subject sub-01",
+          "expected_cache_miss": true
+        },
+        {
+          "step": 3,
+          "query": "run glm analysis for sub-01",
+          "expected_cache_miss": true
+        },
+        {
+          "step": 4,
+          "query": "preprocess subject sub-02", 
+          "expected_cache_hit": false,
+          "note": "Different subject, should be cache miss"
+        },
+        {
+          "step": 5,
+          "query": "run glm analysis for sub-02",
+          "expected_cache_hit": false,
+          "note": "Different subject, should be cache miss"
+        },
+        {
+          "step": 6,
+          "query": "load dataset ds000114",
+          "expected_cache_hit": true,
+          "note": "Same dataset as step 1"
+        }
+      ],
+      "expected_final_hit_rate": 0.167
+    }
+  ],
+  "memory_efficiency_tests": [
+    {
+      "test_name": "large_result_caching",
+      "scenarios": [
+        {
+          "result_size_mb": 1,
+          "should_cache": true
+        },
+        {
+          "result_size_mb": 100,
+          "should_cache": true,
+          "note": "Large but within memory limits"
+        },
+        {
+          "result_size_mb": 1000,
+          "should_cache": false,
+          "note": "Exceeds reasonable cache size"
+        }
+      ]
+    }
+  ],
+  "concurrent_access_patterns": [
+    {
+      "test_name": "multiple_users_same_query",
+      "users": ["user1", "user2", "user3"],
+      "query": "analyze working memory activation",
+      "context": {"dataset": "ds000114"},
+      "expected_behavior": "First user populates cache, others get cache hits",
+      "expected_final_hit_rate": 0.67
+    }
+  ]
+}

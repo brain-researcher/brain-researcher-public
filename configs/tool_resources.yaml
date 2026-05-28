@@ -1,0 +1,326 @@
+version: 1
+resources:
+  - name: volume_3d
+    description: 3D anatomical volume
+  - name: volume_4d
+    description: 4D time series volume
+  - name: surface_mesh
+    description: Surface mesh geometry
+  - name: parcellation_labels
+    description: Atlas/parcellation label map
+  - name: mask_path
+    description: Binary mask volume
+  - name: timeseries
+    description: Extracted time series
+  - name: connectivity_matrix
+    description: Connectivity/correlation matrix
+  - name: stat_map
+    description: Statistical map
+  - name: raw_eeg
+    description: Raw EEG recording
+  - name: clean_eeg
+    description: Cleaned EEG data
+  - name: epochs
+    description: Epoched EEG/MEG data
+  - name: power_spectra
+    description: Spectral power features
+  - name: montage
+    description: Electrode montage
+  - name: events_tsv
+    description: Events table (BIDS)
+  - name: features_table
+    description: Tabular features
+  - name: feature_metadata
+    description: Feature-level metadata table
+  - name: contacts_mni
+    description: Electrode contacts in MNI space
+  - name: bids_root
+    description: BIDS root directory
+  - name: subject_label
+    description: Subject identifier
+  - name: bvals
+    description: Diffusion b-values
+  - name: bvecs
+    description: Diffusion b-vectors
+  - name: coord_table
+    description: Coordinate table
+  - name: coordinate_table
+    description: Coordinate table (alternate canonical name)
+  - name: data_file
+    description: Numeric data matrix file
+  - name: labels_file
+    description: Labels array file
+  - name: groups_file
+    description: Groups array file
+  - name: pubmed_query
+    description: PubMed query specification
+  - name: doi_list
+    description: List of DOI identifiers
+  - name: kg_nodes
+    description: Knowledge graph nodes
+  - name: kg_edges
+    description: Knowledge graph edges
+  - name: report_html
+    description: HTML report
+  - name: text_prompt
+    description: LLM prompt text
+  - name: text_completion
+    description: LLM completion text
+  - name: text_context
+    description: LLM context text
+  - name: demo_payload
+    description: Demo payload
+  - name: llm_usage
+    description: LLM usage metadata
+  - name: code_context
+    description: Code context
+  - name: code_diff
+    description: Code diff/patch
+  - name: genetics_data
+    description: Genetics data
+  - name: fused_representation
+    description: Multimodal fused representation
+  - name: pet_metrics
+    description: PET metrics
+  - name: optical_timeseries
+    description: Optical imaging time series
+  - name: optical_metrics
+    description: Optical-derived metrics
+  - name: clinical_data
+    description: Clinical data
+  - name: risk_scores
+    description: Risk scores
+  - name: causal_graph
+    description: Causal graph
+  - name: nwb_file
+    description: NWB file
+  - name: atlas_name
+    description: Atlas identifier/name
+  - name: atlas_path
+    description: Filesystem path to atlas/parcellation
+  - name: t1w_image
+    description: T1-weighted anatomical image
+  - name: surfaces_dir
+    description: Directory containing reconstructed cortical surfaces
+  - name: aparcaseg
+    description: FreeSurfer aparc+aseg segmentation file
+  - name: fmri_img
+    description: Preprocessed fMRI image
+  - name: thickness_table
+    description: Cortical thickness table
+  - name: volume_table
+    description: Regional volume table
+  - name: nwb_summary
+    description: NWB summary
+  - name: model_artifact
+    description: Saved model artifact
+  - name: dataset_ref
+    description: Dataset reference identifier
+  - name: dataset_resources
+    description: Dataset resource bundle
+  - name: bids_path
+    description: BIDS path reference
+  - name: search_query
+    description: Search query text or structure
+  - name: search_results
+    description: Search results payload
+  - name: file_chunks
+    description: Chunked file contents
+  - name: aligned_timeseries
+    description: Aligned time series data
+  - name: aseg
+    description: FreeSurfer aseg segmentation
+  - name: association_stats
+    description: Genetic association statistics
+  - name: effect_sizes
+    description: Effect size table or vector
+  - name: classification_report
+    description: Classification performance report
+  - name: clean_bold
+    description: Cleaned BOLD time series
+  - name: clean_ieeg
+    description: Cleaned iEEG recording
+  - name: code_edit_plan
+    description: Code editing plan
+  - name: concept_terms
+    description: Concept/term identifiers
+  - name: corrected_map
+    description: Corrected statistical map
+  - name: dmri_bvals
+    description: Diffusion b-values file
+  - name: dmri_bvecs
+    description: Diffusion b-vectors file
+  - name: dmri_dwi
+    description: Diffusion-weighted image
+  - name: dmri_maps
+    description: Diffusion-derived maps (FA, MD, etc.)
+  - name: dmri_metrics
+    description: Diffusion metrics
+  - name: dmri_model
+    description: Fitted diffusion model
+  - name: dmri_preprocessed
+    description: Preprocessed diffusion data
+  - name: electrode_coordinates
+    description: Electrode coordinate positions
+  - name: electrode_montage
+    description: Electrode montage definition
+  - name: graph_metrics
+    description: Graph theory metrics
+  - name: labels
+    description: Class labels or annotations
+  - name: llm_model_hint
+    description: LLM model selection hint
+  - name: llm_task_type
+    description: LLM task type specification
+  - name: metadata
+    description: Metadata dictionary
+  - name: label_map
+    description: Label encoding or continuous-label metadata
+  - name: metrics
+    description: General metrics/statistics
+  - name: model
+    description: Trained model
+  - name: mri_magnitude
+    description: MRI magnitude image
+  - name: mri_phase
+    description: MRI phase image
+  - name: parcellation
+    description: Parcellation/atlas volume
+  - name: path_list
+    description: List of file paths
+  - name: pet_coreg
+    description: Coregistered PET image
+  - name: pet_image
+    description: PET image volume
+  - name: preprocessed_bold
+    description: Preprocessed BOLD data
+  - name: psd_file
+    description: Power spectral density file
+  - name: p_value_map
+    description: P-value statistical map
+  - name: qc_report
+    description: Quality control report
+  - name: qsm_map
+    description: Quantitative susceptibility map
+  - name: raw_ieeg
+    description: Raw iEEG recording
+  - name: recon_report
+    description: Reconstruction report
+  - name: reference_region
+    description: Reference region mask
+  - name: roi_metrics
+    description: ROI-based metrics
+  - name: rsa_matrix
+    description: Representational similarity analysis matrix
+  - name: source_estimate
+    description: Source localization estimate
+  - name: spike_times
+    description: Spike time data
+  - name: sample_metadata
+    description: Sample-level metadata table
+  - name: stats_map
+    description: Statistical map (alternative name for stat_map)
+  - name: stimulus_features
+    description: Stimulus feature representation
+  - name: surfaces
+    description: Surface mesh files
+  - name: suvr_map
+    description: Standardized uptake value ratio map
+  - name: t1w
+    description: T1-weighted anatomical image
+  - name: tractography
+    description: Tractography/streamlines data
+  - name: test_list
+    description: List of test specifications
+  - name: ct_image
+    description: CT image volume
+  - name: mri_image
+    description: MRI image volume
+  - name: ct_to_mri_xfm
+    description: CT-to-MRI transform matrix
+  - name: ct_in_mri
+    description: CT registered into MRI space
+  - name: term
+    description: Meta-analysis term
+  - name: target_space
+    description: Target template space identifier
+  - name: aligned_map
+    description: Aligned statistical map
+  - name: meta_stat_map
+    description: Meta-analysis statistical map
+  - name: meta_report
+    description: Meta-analysis HTML report artifact
+  - name: nodes_file
+    description: Knowledge graph nodes input file
+  - name: edges_file
+    description: Knowledge graph edges input file
+  - name: kg_report
+    description: Knowledge graph validation report artifact
+  - name: question
+    description: Question text for QA workflows
+  - name: kg_answer
+    description: Knowledge graph QA answer artifact
+  - name: kg_subgraph
+    description: Knowledge graph QA subgraph artifact
+  - name: apply_flag
+    description: Flag indicating whether to apply changes
+  - name: code_summary
+    description: Summary of code changes
+  - name: test_status
+    description: Test execution status
+  - name: file_path
+    description: Generic file path input or output
+  - name: file_paths
+    description: List of input or output file paths
+  - name: raw_ephys
+    description: Raw extracellular electrophysiology recording or probe directory
+  - name: video_file
+    description: Behavior video file
+  - name: coordinates
+    description: Coordinate or keypoint table
+  - name: site_labels
+    description: Site or keypoint label list
+  - name: matrix
+    description: Generic matrix or aligned design matrix output
+  - name: pet_image
+    description: PET volume input
+  - name: t1w_image
+    description: T1-weighted anatomical image input
+  - name: pet_in_t1
+    description: PET volume coregistered to T1w space
+  - name: xfm
+    description: Spatial transform matrix
+  - name: reference_mask
+    description: Reference region mask
+  - name: qc_volume
+    description: Quality control volume
+  - name: roi_suvr
+    description: ROI SUVR table
+  - name: montage_name
+    description: Named EEG montage (e.g., standard_1020)
+  - name: montage_def
+    description: Resolved EEG montage definition
+  - name: subject_id
+    description: Subject identifier
+  - name: bids_root
+    description: BIDS dataset root directory
+  - name: labels_tsv
+    description: TSV file with parcellation labels
+  - name: dwi_image
+    description: Diffusion-weighted image
+  - name: bvals
+    description: Diffusion b-values
+  - name: bvecs
+    description: Diffusion gradient directions
+  - name: fmri_img
+    description: fMRI volume input
+  - name: atlas_path
+    description: Filesystem path to atlas/parcellation
+  - name: fa_map
+    description: Fractional anisotropy map
+  - name: md_map
+    description: Mean diffusivity map
+  - name: fodf
+    description: Fiber orientation distribution function volume
+  - name: parcellation_volume
+    description: Parcellation volume image

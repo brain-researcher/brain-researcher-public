@@ -1,0 +1,41 @@
+# Namespaces template for Brain Researcher platform
+{{- if .Values.namespaces }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "brain-researcher.coreNamespace" . }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    {{- include "brain-researcher.componentLabels" "core" | nindent 4 }}
+  annotations:
+    description: "Core services namespace for Brain Researcher platform"
+    helm.sh/release-name: {{ .Release.Name }}
+    helm.sh/release-namespace: {{ .Release.Namespace }}
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "brain-researcher.dataNamespace" . }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    {{- include "brain-researcher.componentLabels" "data" | nindent 4 }}
+  annotations:
+    description: "Data services namespace for Brain Researcher platform"
+    helm.sh/release-name: {{ .Release.Name }}
+    helm.sh/release-namespace: {{ .Release.Namespace }}
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "brain-researcher.monitoringNamespace" . }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    {{- include "brain-researcher.componentLabels" "monitoring" | nindent 4 }}
+  annotations:
+    description: "Monitoring and observability namespace for Brain Researcher platform"
+    helm.sh/release-name: {{ .Release.Name }}
+    helm.sh/release-namespace: {{ .Release.Namespace }}
+{{- end }}

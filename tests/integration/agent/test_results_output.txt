@@ -1,0 +1,798 @@
+Starting comprehensive tool tests at 2025-07-31 05:36:56.633795
+================================================================================
+
+============================================================
+Testing glm_analysis
+============================================================
+
+[1/5] Basic motor task contrast
+    Simple motor vs baseline contrast
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Complex multi-contrast design
+    Multiple contrasts for visual experiment
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Single contrast with custom threshold
+    Language task with lower threshold
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Invalid dataset ID
+    Should handle non-existent dataset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Missing contrasts
+    Should fail when contrasts not provided
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing encoding_model
+============================================================
+
+[1/5] Visual encoding with default parcellation
+    Standard visual encoding model
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Motor encoding with custom parcellation
+    Motor features with Glasser parcellation
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Multi-feature encoding model
+    Language model with multiple features
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Invalid parcellation
+    Should handle unknown parcellation
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Memory-intensive dataset
+    Large dataset to test resource handling
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing contrast_analysis
+============================================================
+
+[1/5] Basic z-map analysis
+    Standard contrast analysis
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Analysis with specific coordinates
+    Target specific brain regions
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Multiple contrasts comparison
+    Use specific atlas for labeling
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Invalid file path
+    Should handle missing files
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Low threshold edge case
+    Very low threshold for weak effects
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing brain_similarity
+============================================================
+
+[1/5] Same dataset correlation
+    Compare subjects within dataset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Cross-dataset comparison
+    Compare across different studies
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Different similarity metrics
+    Use cosine similarity
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] With custom brain mask
+    Restrict to specific brain region
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid maps
+    Should handle missing files
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing find_related_concepts
+============================================================
+
+[1/5] Basic concept search
+    Find concepts related to motor cortex
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Deep graph traversal
+    Deeper search for working memory network
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Limited results
+    Get only top 3 directly connected concepts
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Non-existent concept
+    Should handle unknown concepts gracefully
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Special characters in concept
+    Concept with parentheses and hyphens
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing coordinate_to_concept
+============================================================
+
+[1/5] Single coordinate lookup
+    Map single MNI coordinate
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Multiple coordinates batch
+    Batch process multiple regions
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Custom radius search
+    Larger radius for broader search
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Different top_k values
+    Limit to top 3 concepts per coordinate
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid coordinates format
+    Should handle format errors
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing concept_literature_search
+============================================================
+
+[1/5] Single concept search
+    Basic literature search
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Multi-concept with keywords
+    Combine concept with keywords
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Year-filtered search
+    Recent papers only
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Large result set
+    Retrieve many papers
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Empty concept
+    Should handle empty search
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing graph_query
+============================================================
+
+[1/5] Subgraph extraction
+    Extract subgraph around motor cortex
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Path finding between nodes
+    Find connection path between regions
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Neighbor queries
+    Get direct neighbors only
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] With custom filters
+    Filter by relationship type
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid query type
+    Should handle unknown query types
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing task_to_concept_mapping
+============================================================
+
+[1/5] Common task mapping
+    Map n-back task to concepts
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Complex task name
+    Multi-word task name
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Without synonyms
+    Exact match only
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Motor task mapping
+    Complex motor task
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Unknown task
+    Should handle unknown tasks gracefully
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing openneuro_download
+============================================================
+
+[1/5] Small dataset download
+    Download small test dataset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Specific version download
+    Download specific dataset version
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Latest version
+    Download most recent version
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Invalid dataset ID
+    Should handle non-existent dataset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Partial download
+    Download only subject 01
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing openneuro_list_files
+============================================================
+
+[1/5] List all files
+    List all files in dataset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Filter by extension
+    List only nifti files
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Specific subject files
+    List files for subject 01
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Empty dataset
+    Edge case: empty or minimal dataset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Access denied dataset
+    Should handle permission errors
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing dandi_search
+============================================================
+
+[1/5] Species-based search
+    Search for mouse datasets
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Technique-based search
+    Search by imaging technique
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Combined filters
+    Multiple search criteria
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Empty search term
+    Should return recent datasets
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Large result limit
+    Test pagination handling
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing dandi_download
+============================================================
+
+[1/5] Basic dandiset download
+    Download small test dandiset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Specific version
+    Download draft version
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] With file filtering
+    Download specific files only
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Invalid dandiset ID
+    Should handle non-existent dandiset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Large dandiset partial
+    Download with size limit
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing neurosynth_meta_analysis
+============================================================
+
+[1/5] Single term analysis
+    Basic meta-analysis
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Multiple terms
+    Combined terms analysis
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Custom threshold
+    Less stringent threshold
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Rare term
+    Less common term
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid threshold
+    Should handle invalid threshold
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing neurosynth_search_terms
+============================================================
+
+[1/5] Partial term search
+    Search for memory-related terms
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Exact match search
+    Exact term matching
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Common prefix search
+    Find all visual-related terms
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Special characters
+    Term with hyphen
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Empty search
+    Should return all terms or error
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing neurosynth_visualize
+============================================================
+
+[1/5] Basic visualization
+    Standard brain map visualization
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Custom threshold visualization
+    Orthogonal view with strict threshold
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Multiple overlays
+    Overlay multiple activation maps
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] High-resolution output
+    High quality output
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid term
+    Should handle missing term
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing neurovault_search_images
+============================================================
+
+[1/5] Task-based search
+    Search for motor task images
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Modality filtering
+    Filter by image type
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Large result set
+    Many results
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Complex query
+    Multi-word search
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] No results query
+    Should return empty results
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing neurovault_download_collection
+============================================================
+
+[1/5] Public collection
+    Download public collection
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Large collection
+    Limit number of images
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] With metadata
+    Download with full metadata
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Private collection
+    Should handle access errors
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Non-existent collection
+    Should handle missing collection
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing validate_bids
+============================================================
+
+[1/5] Valid BIDS dataset
+    Validate clean BIDS dataset
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Dataset with warnings
+    Allow warnings
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Invalid structure
+    Non-BIDS organized data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Missing required files
+    Missing dataset_description.json
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Empty directory
+    Edge case: empty directory
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing query_bids_layout
+============================================================
+
+[1/5] Query BOLD files
+    Find all BOLD images
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Subject-specific query
+    Get files for specific subject
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Multi-modal query
+    Query multiple modalities
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Complex filters
+    Multiple filter criteria
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid query
+    Should handle invalid query keys
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing heudiconv_convert
+============================================================
+
+[1/5] Basic conversion
+    Standard DICOM to BIDS conversion
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Custom heuristic
+    Use custom conversion rules
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Multi-session data
+    Convert specific session
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Invalid DICOM path
+    Should handle missing DICOMs
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Corrupted files
+    Skip corrupted DICOM files
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing run_fmriprep
+============================================================
+
+[1/5] Single subject
+    Process one subject
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Multiple subjects
+    Process multiple subjects
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Custom parameters
+    Custom preprocessing options
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Resource constraints
+    Limited resources
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid BIDS
+    Should fail on non-BIDS data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing run_mriqc
+============================================================
+
+[1/5] Participant level
+    Individual QC metrics
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Group level
+    Group QC summary
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Custom parameters
+    Specific modalities and thresholds
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Large dataset
+    Parallel processing
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Missing data
+    Handle incomplete datasets
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing run_qsiprep
+============================================================
+
+[1/5] Basic preprocessing
+    Standard diffusion preprocessing
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Custom outputs
+    Custom output resolution
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Multi-shell data
+    Multi-shell diffusion data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Invalid diffusion data
+    No diffusion data present
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Resource limits
+    Limited computational resources
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing run_spike_sorting
+============================================================
+
+[1/5] Kilosort2 sorting
+    Use Kilosort2 algorithm
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] SpyKING CIRCUS sorting
+    Parallel spike sorting
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Custom parameters
+    Custom sorting parameters
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Multi-channel data
+    Channel group sorting
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid format
+    Should handle wrong file format
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing run_suite2p
+============================================================
+
+[1/5] Basic 2-photon analysis
+    Standard Suite2p processing
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Multi-plane imaging
+    Multiple imaging planes
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Custom ROI detection
+    Adjust ROI detection parameters
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Large dataset
+    Process in batches
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Corrupted tiff
+    Should handle corrupted data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing read_nwb
+============================================================
+
+[1/5] Basic file reading
+    Read entire NWB file
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Specific data types
+    Read only time series data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Large file handling
+    Lazy loading for large files
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Corrupted file
+    Should handle corrupted files
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Missing file
+    Should handle missing files
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing write_nwb
+============================================================
+
+[1/5] Basic file writing
+    Create basic NWB file
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Complex metadata
+    Complex experiment metadata
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Multi-modal data
+    Multiple data modalities
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Invalid path
+    Should handle invalid paths
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Permissions issue
+    Should handle permission errors
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing inspect_nwb
+============================================================
+
+[1/5] Basic inspection
+    Get basic file information
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Detailed metadata
+    Full metadata inspection
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Data validation
+    Validate NWB compliance
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Version checking
+    Check NWB schema version
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid NWB
+    Non-NWB HDF5 file
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing mriqc_group_report
+============================================================
+
+[1/5] Basic group report
+    Standard group QC report
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Custom metrics
+    Select specific QC metrics
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Large cohort
+    Parallel processing for large cohort
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Missing participants
+    Handle missing participant data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid metrics
+    Should handle unknown metrics
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+============================================================
+Testing visual_qc_launch
+============================================================
+
+[1/5] Functional QC
+    QC functional data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[2/5] Structural QC
+    QC anatomical data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[3/5] Diffusion QC
+    QC diffusion data
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[4/5] Custom parameters
+    Custom QC parameters
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+[5/5] Invalid data type
+    Should handle unknown QC type
+    ❌ FAILED: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: ...
+
+================================================================================
+COMPREHENSIVE TEST SUMMARY
+================================================================================
+
+Overall Statistics:
+  Total Tools Tested: 31
+  Total Test Cases: 155
+  Passed Tests: 0
+  Failed Tests: 155
+  Success Rate: 0.0%
+
+✅ FULLY WORKING TOOLS (0):
+
+⚠️  PARTIALLY WORKING TOOLS (0):
+
+❌ BROKEN TOOLS (31):
+  - brain_similarity (0/5 tests passed)
+  - concept_literature_search (0/5 tests passed)
+  - contrast_analysis (0/5 tests passed)
+  - coordinate_to_concept (0/5 tests passed)
+  - dandi_download (0/5 tests passed)
+  - dandi_search (0/5 tests passed)
+  - encoding_model (0/5 tests passed)
+  - find_related_concepts (0/5 tests passed)
+  - glm_analysis (0/5 tests passed)
+  - graph_query (0/5 tests passed)
+  - heudiconv_convert (0/5 tests passed)
+  - inspect_nwb (0/5 tests passed)
+  - mriqc_group_report (0/5 tests passed)
+  - neurosynth_meta_analysis (0/5 tests passed)
+  - neurosynth_search_terms (0/5 tests passed)
+  - neurosynth_visualize (0/5 tests passed)
+  - neurovault_download_collection (0/5 tests passed)
+  - neurovault_search_images (0/5 tests passed)
+  - openneuro_download (0/5 tests passed)
+  - openneuro_list_files (0/5 tests passed)
+  - query_bids_layout (0/5 tests passed)
+  - read_nwb (0/5 tests passed)
+  - run_fmriprep (0/5 tests passed)
+  - run_mriqc (0/5 tests passed)
+  - run_qsiprep (0/5 tests passed)
+  - run_spike_sorting (0/5 tests passed)
+  - run_suite2p (0/5 tests passed)
+  - task_to_concept_mapping (0/5 tests passed)
+  - validate_bids (0/5 tests passed)
+  - visual_qc_launch (0/5 tests passed)
+  - write_nwb (0/5 tests passed)
+
+Detailed results saved to comprehensive_test_results.json
+
+Test completed at 2025-07-31 05:36:56.721489

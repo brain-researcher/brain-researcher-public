@@ -1,0 +1,80 @@
+# Prometheus configuration for Brain Researcher monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Rule files
+rule_files:
+  - "rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Brain Researcher services
+  - job_name: 'brain-researcher-api-gateway'
+    static_configs:
+      - targets: ['api-gateway:8080']
+    metrics_path: /metrics
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  - job_name: 'brain-researcher-orchestrator'
+    static_configs:
+      - targets: ['orchestrator:3001']
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'brain-researcher-agent'
+    static_configs:
+      - targets: ['agent:8000']
+    metrics_path: /metrics
+    scrape_interval: 60s  # Agent may be slower
+
+  - job_name: 'brain-researcher-neurokg'
+    static_configs:
+      - targets: ['neurokg:5000']
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'brain-researcher-web-ui'
+    static_configs:
+      - targets: ['web-ui:3000']
+    metrics_path: /api/metrics
+    scrape_interval: 60s
+
+  # System monitoring
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # Docker monitoring
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+
+  # Redis monitoring
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # Nginx monitoring
+  - job_name: 'nginx-exporter'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+    scrape_interval: 30s
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Storage retention
+storage:
+  tsdb:
+    retention.time: 30d
+    retention.size: 10GB

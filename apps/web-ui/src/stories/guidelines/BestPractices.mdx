@@ -1,0 +1,315 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Guidelines/Best Practices" />
+
+# Best Practices & Usage Guidelines
+
+This guide outlines best practices for using the Brain Researcher UI component library effectively and consistently.
+
+## Component Usage Principles
+
+### 1. Accessibility First
+All components should be accessible by default. Follow these guidelines:
+
+#### Keyboard Navigation
+- Ensure all interactive elements are keyboard accessible
+- Provide visible focus indicators
+- Implement logical tab order
+- Support standard keyboard shortcuts (Enter, Space, Escape)
+
+```tsx
+// Good: Accessible button with proper ARIA labels
+<Button 
+  aria-label="Download analysis results"
+  onClick={handleDownload}
+>
+  <Download className="mr-2 h-4 w-4" />
+  Download
+</Button>
+
+// Bad: Button without context
+<Button onClick={handleDownload}>
+  <Download />
+</Button>
+```
+
+#### Screen Reader Support
+- Use semantic HTML elements
+- Provide descriptive labels and descriptions
+- Include live regions for dynamic content
+- Test with actual screen readers
+
+```tsx
+// Good: Proper ARIA attributes
+<div role="region" aria-labelledby="results-heading">
+  <h2 id="results-heading">Analysis Results</h2>
+  <div aria-live="polite" id="status">
+    {loading ? 'Loading results...' : `${results.length} results found`}
+  </div>
+</div>
+```
+
+### 2. Scientific Data Context
+Components should be optimized for scientific workflows:
+
+#### Data Precision
+- Display numerical values with appropriate precision
+- Include units of measurement
+- Show confidence intervals where relevant
+- Provide statistical context
+
+```tsx
+// Good: Scientific precision
+<KPICard
+  title="Average Activation"
+  value="3.45"
+  unit="t-statistic"
+  confidence="95% CI: [2.12, 4.78]"
+  significance="p < 0.001"
+/>
+
+// Bad: Imprecise display
+<KPICard title="Activation" value="3" />
+```
+
+#### Error Handling
+- Show clear error messages for failed analyses
+- Provide recovery suggestions
+- Include technical details for debugging
+- Log errors appropriately
+
+### 3. Performance Considerations
+
+#### Large Datasets
+When working with neuroimaging data:
+- Implement virtualization for large tables
+- Use progressive loading for images
+- Provide data sampling options
+- Show loading states
+
+```tsx
+// Good: Virtualized table for large datasets
+<DataTable
+  data={largeDataset}
+  virtualizeRows={true}
+  pageSize={100}
+  onLoadMore={handleLoadMore}
+/>
+```
+
+#### Image Optimization
+- Use appropriate formats (WebP, AVIF when supported)
+- Implement lazy loading
+- Provide thumbnail previews
+- Support different quality levels
+
+## Layout and Spacing
+
+### Grid System
+Use the responsive grid system consistently:
+
+```tsx
+// Mobile-first responsive layout
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <ResultCard />
+  <ResultCard />
+  <ResultCard />
+</div>
+```
+
+### Spacing Scale
+Follow the 8px spacing scale:
+- **Micro spacing**: 4px (`space-1`) - Between related elements
+- **Small spacing**: 8px (`space-2`) - Between components
+- **Medium spacing**: 16px (`space-4`) - Between sections
+- **Large spacing**: 32px (`space-8`) - Between major sections
+
+## Typography Guidelines
+
+### Hierarchy
+Maintain clear information hierarchy:
+
+```tsx
+// Clear hierarchy for scientific results
+<div>
+  <h1 className="text-2xl font-bold">Study Title</h1>
+  <h2 className="text-lg font-semibold mt-4">Analysis Results</h2>
+  <h3 className="text-base font-medium mt-2">Statistical Maps</h3>
+  <p className="text-sm text-gray-600">Detailed findings...</p>
+</div>
+```
+
+### Scientific Notation
+Handle scientific notation appropriately:
+- Use proper mathematical symbols (×, ±, ≤, ≥)
+- Format p-values consistently (p < 0.001)
+- Display coordinates in standard format [x, y, z]
+
+## Color and Theme Usage
+
+### Semantic Colors
+Use colors consistently across scientific contexts:
+
+```tsx
+// Statistical significance colors
+const significanceColors = {
+  'p < 0.001': 'text-green-700',
+  'p < 0.01': 'text-green-600', 
+  'p < 0.05': 'text-green-500',
+  'n.s.': 'text-gray-500'
+}
+```
+
+### Brain Visualization
+For brain imaging displays:
+- Use established color schemes (hot, cool, viridis)
+- Provide colorbar legends
+- Support colorblind-friendly palettes
+- Allow threshold adjustments
+
+## State Management
+
+### Loading States
+Provide appropriate feedback during operations:
+
+```tsx
+// Different loading states for different durations
+{isAnalyzing && (
+  <div className="flex items-center gap-2">
+    <Loader2 className="h-4 w-4 animate-spin" />
+    <span>Analyzing data... This may take several minutes</span>
+    <ProgressBar value={analysisProgress} />
+  </div>
+)}
+```
+
+### Error States
+Handle errors gracefully:
+
+```tsx
+// Recoverable error with action
+{error && (
+  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div className="flex items-center gap-2 text-red-700">
+      <AlertCircle className="h-5 w-5" />
+      <span className="font-medium">Analysis Failed</span>
+    </div>
+    <p className="mt-2 text-red-600">{error.message}</p>
+    <div className="mt-3 flex gap-2">
+      <Button variant="outline" size="sm" onClick={retryAnalysis}>
+        Retry
+      </Button>
+      <Button variant="ghost" size="sm" onClick={reportError}>
+        Report Issue
+      </Button>
+    </div>
+  </div>
+)}
+```
+
+## Responsive Design
+
+### Breakpoint Strategy
+Design for these primary breakpoints:
+- **Mobile**: 320px - 767px (single column, touch-first)
+- **Tablet**: 768px - 1023px (flexible columns, mixed input)
+- **Desktop**: 1024px+ (multi-column, mouse/keyboard)
+
+### Touch Interactions
+On mobile devices:
+- Minimum 44px touch targets
+- Support gestures (pinch-zoom, swipe)
+- Provide haptic feedback where appropriate
+- Consider thumb reach patterns
+
+## Testing Guidelines
+
+### Component Testing
+Test components thoroughly:
+
+```tsx
+// Test all variants and states
+describe('Button Component', () => {
+  it('renders all variants correctly', () => {
+    ['default', 'destructive', 'outline'].forEach(variant => {
+      render(<Button variant={variant}>Test</Button>)
+      // Assert rendering
+    })
+  })
+
+  it('handles accessibility correctly', () => {
+    render(<Button aria-label="Test button">Icon</Button>)
+    expect(screen.getByLabelText('Test button')).toBeInTheDocument()
+  })
+})
+```
+
+### Accessibility Testing
+- Run automated a11y tests
+- Test with keyboard navigation
+- Verify screen reader compatibility
+- Check color contrast ratios
+
+## Documentation Standards
+
+### Component Documentation
+Each component should include:
+
+```tsx
+/**
+ * ResultCard displays analysis results in various formats
+ * 
+ * @param result - Result data with type detection
+ * @param expanded - Whether content is visible
+ * @param onDownload - Download callback
+ * 
+ * @example
+ * <ResultCard 
+ *   result={analysisResult}
+ *   expanded={true}
+ *   onDownload={handleDownload}
+ * />
+ */
+```
+
+### Story Documentation
+Stories should demonstrate:
+- All component variants
+- Real-world usage examples
+- Edge cases and error states
+- Accessibility features
+- Responsive behavior
+
+## Common Pitfalls to Avoid
+
+### ❌ Don't
+- Hardcode scientific values or thresholds
+- Ignore loading states for long operations
+- Use generic error messages
+- Break responsive layouts on small screens
+- Skip accessibility attributes
+- Mix different design patterns inconsistently
+
+### ✅ Do
+- Make components configurable for different research contexts
+- Provide clear feedback during processing
+- Include contextual help and documentation
+- Test across all supported devices and browsers
+- Follow established scientific visualization conventions
+- Maintain consistent interaction patterns
+
+## Getting Help
+
+### Resources
+- **Component Docs**: Check individual component stories
+- **Accessibility**: Use the a11y addon for testing
+- **Design Tokens**: Reference the design system documentation
+- **Examples**: Browse real-world usage in stories
+
+### Contributing
+When adding new components:
+1. Follow established patterns and conventions
+2. Include comprehensive stories and documentation
+3. Test accessibility and responsiveness
+4. Consider scientific use cases and requirements
+5. Update relevant guidelines and best practices

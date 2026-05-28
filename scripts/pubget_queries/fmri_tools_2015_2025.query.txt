@@ -1,0 +1,5 @@
+((fMRI[Title/Abstract] OR "functional MRI"[Title/Abstract] OR BOLD[Title/Abstract])
+ AND (SPM[Title/Abstract] OR FSL[Title/Abstract] OR AFNI[Title/Abstract]
+      OR fMRIPrep[Title/Abstract] OR Nipype[Title/Abstract] OR ICA-AROMA[Title/Abstract]
+      OR CONN[Title/Abstract] OR DPABI[Title/Abstract] OR GIFT[Title/Abstract] OR Nilearn[Title/Abstract])
+ AND ("2015/01/01"[PDAT] : "2025/12/31"[PDAT]))

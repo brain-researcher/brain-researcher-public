@@ -1,0 +1,28 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-postgres
+  namespace: {{ .Values.namespaces.data }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9187"
+    prometheus.io/path: "/metrics"
+spec:
+  type: {{ .Values.postgres.service.type }}
+  ports:
+    - port: {{ .Values.postgres.service.ports.postgres }}
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+    - port: {{ .Values.postgres.service.ports.metrics }}
+      targetPort: 9187
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- include "brain-researcher.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+{{- end }}

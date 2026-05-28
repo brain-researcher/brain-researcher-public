@@ -1,0 +1,1039 @@
+# ==============================================================
+# ONVOC VOCAB — HED TAG NORMALIZATION (v8+ short-form safe)
+# ==============================================================
+# Normalise HED tags and align with experimental ontologies
+# Set dataset_description.json → "HEDVersion": "8.x" (and include any library schemas)
+# before scoring cohorts.
+#
+# This file maps various HED tag formats to normalized categories
+# used for evidence extraction in BR-KG task mapping.
+
+# ==============================================================
+# SENSORY MODALITIES
+# ==============================================================
+
+auditory:
+  tags:
+  - auditory
+  - Auditory-presentation
+  - Sensory-presentation/Auditory-presentation
+  - sensory-event/auditory
+  - sound
+  - audio
+  - (Item, Audio)
+
+visual:
+  tags:
+  - visual
+  - Visual-presentation
+  - Sensory-presentation/Visual-presentation
+  - sensory-event/visual
+  - (Item, Visual)
+
+somatosensory:
+  tags:
+  - somatosensory
+  - Somatosensory-presentation
+  - Sensory-presentation/Somatosensory-presentation
+  - tactile
+  - touch
+  - haptic
+
+olfactory:
+  tags:
+  - olfactory
+  - Olfactory-presentation
+  - Sensory-presentation/Olfactory-presentation
+  - smell
+
+gustatory:
+  tags:
+  - gustatory
+  - Gustatory-presentation
+  - Sensory-presentation/Gustatory-presentation
+  - taste
+
+# ==============================================================
+# VISUAL STIMULUS TYPES
+# ==============================================================
+
+face:
+  tags:
+  - face
+  - (Image, Face)
+  - Visual-presentation
+  - stimulus/face
+  - facial-stimulus
+  - face-image
+
+object:
+  tags:
+  - object
+  - (Image, Object)
+  - Visual-presentation
+  - stimulus/object
+  - object-image
+
+scene:
+  tags:
+  - scene
+  - (Image, Scene)
+  - Visual-presentation
+  - stimulus/scene
+  - scene-image
+  - environment
+
+word:
+  tags:
+  - word
+  - text/word
+  - (Item, Text, Word)
+  - Visual-presentation
+  - stimulus/word
+  - text-stimulus
+
+number:
+  tags:
+  - number
+  - numeral
+  - (Item, Text, Number)
+  - Visual-presentation
+  - stimulus/number
+  - numeric-stimulus
+
+letter:
+  tags:
+  - letter
+  - (Item, Text, Letter)
+  - Visual-presentation
+  - stimulus/letter
+  - alphabetic-stimulus
+
+symbol:
+  tags:
+  - symbol
+  - (Item, Visual, Symbol)
+  - Visual-presentation
+  - stimulus/symbol
+
+# ==============================================================
+# MOTOR ACTIONS
+# ==============================================================
+
+motor:
+  tags:
+  - motor
+  - Participant-action/Move
+  - Action/Move
+  - Hand-movement
+  - participant/hand/movement
+  - movement
+  - motor-action
+
+button_press:
+  tags:
+  - button-press
+  - Action/Press-button
+  - Response
+  - Participant-response
+  - keypress
+  - key-press
+  - button-response
+
+blink:
+  tags:
+  - blink
+  - Eye-blink
+  - Eye-movement, Blink
+
+motor_tapping:
+  tags:
+  - Motor, Tapping
+  - Motor, Tapping, Paced
+  - Motor, Sequence
+  - finger-tapping
+  - tapping
+
+motor_tracking:
+  tags:
+  - Motor, Tracking
+  - Motor, Tracking, Joystick
+  - Motor, Pursuit
+  - tracking
+  - pursuit-tracking
+
+motor_reach:
+  tags:
+  - Motor, Reach-to-grasp
+  - reach
+  - grasping
+  - reach-movement
+
+oculomotor:
+  tags:
+  - Oculomotor
+  - Oculomotor, Saccade
+  - Oculomotor, Pursuit
+  - Eye-movement
+  - saccade
+  - eye-movement
+
+motor_imagery:
+  tags:
+  - Motor, Imagery
+  - Motor, Imagery, Kinesthetic
+  - Motor, Mental-rotation
+  - motor-imagery
+  - mental-rotation
+
+# ==============================================================
+# ATTENTION AND SELECTION
+# ==============================================================
+
+attention:
+  tags:
+  - attention
+  - Attention
+  - Attention/Focus
+  - selective-attention
+
+spatial_attention:
+  tags:
+  - Experimental-stimulus, Visual, Target, Spatial-attention
+  - Spatial-attention
+  - spatial-cueing
+  - Experimental-stimulus, Visual, Cue, Spatial-cueing
+
+visual_search:
+  tags:
+  - Experimental-stimulus, Visual, Array, Visual-search
+  - Visual-search
+  - search-task
+  - visual-search-task
+
+feature_attention:
+  tags:
+  - Experimental-stimulus, Feature-attention
+  - Feature-attention
+  - feature-based-attention
+
+object_attention:
+  tags:
+  - Experimental-stimulus, Object-attention
+  - Object-attention
+  - object-based-attention
+
+sustained_attention:
+  tags:
+  - Experimental-stimulus, Sustained-attention
+  - Sustained-attention, CPT
+  - vigilance
+  - sustained-attention
+
+temporal_attention:
+  tags:
+  - Experimental-stimulus, RSVP
+  - Experimental-stimulus, RSVP, Temporal-cue
+  - Temporal-attention
+  - RSVP
+  - rapid-serial-visual-presentation
+
+attentional_capture:
+  tags:
+  - Distractor, Visual, Singleton, Attentional-capture
+  - Attentional-capture
+  - singleton-capture
+
+attention_blink:
+  tags:
+  - Experimental-stimulus, RSVP, Target, Attention-blink
+  - Attention-blink
+  - AB
+
+fixation:
+  tags:
+  - fixation
+  - Eye-fixation
+  - Attention/Focus
+  - fixate
+
+# ==============================================================
+# PERCEPTION
+# ==============================================================
+
+detection:
+  tags:
+  - Perception, Detection
+  - Perception, Detection, Yes-no
+  - Perception, Detection, 2AFC
+  - detection
+  - signal-detection
+
+discrimination:
+  tags:
+  - Perception, Discrimination
+  - Perception, Discrimination, Orientation
+  - Perception, Discrimination, Vernier
+  - discrimination
+  - feature-discrimination
+
+motion_perception:
+  tags:
+  - Perception, Motion
+  - Perception, Motion, Coherence
+  - motion
+  - motion-perception
+  - visual-motion
+
+temporal_order:
+  tags:
+  - Perception, Temporal-order
+  - Perception, Temporal-order, TOJ
+  - Temporal-order-judgment
+  - TOJ
+
+masking:
+  tags:
+  - Perception, Masking
+  - Perception, Masking, Metacontrast
+  - masking
+  - metacontrast-masking
+
+crowding:
+  tags:
+  - Perception, Crowding
+  - crowding
+  - visual-crowding
+
+rivalry:
+  tags:
+  - Perception, Rivalry
+  - rivalry
+  - binocular-rivalry
+
+illusion:
+  tags:
+  - Perception, Illusion
+  - Perception, Illusion, Kanizsa
+  - illusion
+  - visual-illusion
+
+change_blindness:
+  tags:
+  - Experimental-stimulus, Visual, Flicker, Change-blindness
+  - Change-blindness
+  - change-detection
+
+# ==============================================================
+# MEMORY
+# ==============================================================
+
+memory_encoding:
+  tags:
+  - memory-encoding
+  - Task/Memory/Encoding
+  - Memory, Encoding
+  - encoding
+
+memory_retrieval:
+  tags:
+  - memory-retrieval
+  - Task/Memory/Retrieval
+  - Memory, Retrieval
+  - retrieval
+  - recall
+
+working_memory:
+  tags:
+  - Working-memory
+  - Task/Memory/Working-memory
+  - working-memory
+  - WM
+
+episodic_memory:
+  tags:
+  - Episodic-memory
+  - Memory, Episodic
+  - episodic-memory
+
+semantic_memory:
+  tags:
+  - Semantic-memory
+  - Memory, Semantic
+  - semantic-memory
+
+procedural_memory:
+  tags:
+  - Procedural-memory
+  - Memory, Procedural
+  - procedural-memory
+
+# ==============================================================
+# LEARNING
+# ==============================================================
+
+learning:
+  tags:
+  - Learning
+  - Task/Learning
+  - learning
+
+category_learning:
+  tags:
+  - Learning, Category
+  - Learning, Category, Rule-based
+  - Learning, Category, Decision-bound
+  - category-learning
+
+probabilistic_learning:
+  tags:
+  - Learning, Probabilistic-classification
+  - Learning, Category, Weather-prediction
+  - probabilistic-learning
+
+reinforcement_learning:
+  tags:
+  - Reinforcement-learning
+  - Reinforcement-learning, Bandit
+  - Reinforcement-learning, Bandit, Choice
+  - RL
+  - reward-learning
+
+associative_learning:
+  tags:
+  - Associative-learning
+  - Learning, Associative
+  - associative-learning
+
+motor_learning:
+  tags:
+  - Motor, Learning
+  - motor-learning
+  - skill-acquisition
+
+adaptation:
+  tags:
+  - Adaptation
+  - Adaptation, Visuomotor-rotation
+  - Adaptation, Force-field
+  - adaptation
+  - sensorimotor-adaptation
+
+# ==============================================================
+# DECISION-MAKING AND VALUE
+# ==============================================================
+
+decision:
+  tags:
+  - Decision
+  - decision-making
+  - choice
+
+economic_decision:
+  tags:
+  - Economic-decision
+  - Economic-decision, Prospect-theory
+  - Economic-decision, Ambiguity
+  - Economic-decision, Intertemporal
+  - economic-decision
+
+risk_ambiguity:
+  tags:
+  - Economic-decision, Ambiguity
+  - risk
+  - ambiguity
+  - risk-ambiguity
+
+intertemporal_choice:
+  tags:
+  - Economic-decision, Intertemporal, Discounting
+  - intertemporal-choice
+  - temporal-discounting
+  - delay-discounting
+
+value_based_decision:
+  tags:
+  - Value-based-decision
+  - value-computation
+  - value-based-choice
+
+pavlovian_instrumental:
+  tags:
+  - Pavlovian-instrumental-transfer
+  - Pavlovian-instrumental-transfer, Transfer-phase
+  - Reinforcement-learning, Go-nogo
+  - PIT
+
+habit:
+  tags:
+  - Habit
+  - Habit, Outcome-devaluation
+  - Habit, Contingency-degradation
+  - habit
+
+# ==============================================================
+# EXECUTIVE CONTROL
+# ==============================================================
+
+inhibition:
+  tags:
+  - Inhibition
+  - Inhibition-task
+  - Inhibition-task, SART
+  - inhibitory-control
+  - response-inhibition
+
+task_switching:
+  tags:
+  - Task-switching
+  - Task-switch
+  - task-switching
+  - switch-task
+
+cognitive_control:
+  tags:
+  - Cognitive-control
+  - executive-control
+  - control
+
+conflict:
+  tags:
+  - Conflict
+  - conflict-resolution
+  - cognitive-conflict
+
+# ==============================================================
+# LANGUAGE AND SEMANTIC PROCESSING
+# ==============================================================
+
+language_semantic:
+  tags:
+  - semantic
+  - LANG:Semantic-*
+  - Language
+  - Comprehension
+  - semantic-processing
+
+language_production:
+  tags:
+  - Language, Production
+  - language-production
+  - speech-production
+
+language_comprehension:
+  tags:
+  - Language, Comprehension
+  - language-comprehension
+  - reading
+
+phonological:
+  tags:
+  - Phonological
+  - phonological-processing
+  - phonology
+
+syntactic:
+  tags:
+  - Syntactic
+  - syntactic-processing
+  - syntax
+
+semantic:
+  tags:
+  - Semantic
+  - semantic-processing
+  - meaning
+
+# ==============================================================
+# SOCIAL COGNITION
+# ==============================================================
+
+social_decision:
+  tags:
+  - Social-decision
+  - Social-decision, Ultimatum
+  - Cooperation
+  - Cooperation, Public-goods
+  - social-decision-making
+
+theory_of_mind:
+  tags:
+  - Mentalizing
+  - Mentalizing, False-belief
+  - Theory-of-mind
+  - ToM
+  - mentalizing
+
+empathy:
+  tags:
+  - Empathy
+  - Empathy, Vicarious-pain
+  - empathy
+  - vicarious-experience
+
+social_learning:
+  tags:
+  - Social-learning
+  - Social-learning, Advice-taking
+  - Social-influence
+  - social-learning
+
+moral:
+  tags:
+  - Moral
+  - Moral, Trolley
+  - moral-judgment
+  - moral-decision
+
+social_perception:
+  tags:
+  - Perception, Gaze
+  - Perception, Gaze, Joint-attention
+  - Perception, Biological-motion
+  - social-perception
+
+# ==============================================================
+# NAVIGATION AND SPATIAL PROCESSING
+# ==============================================================
+
+navigation:
+  tags:
+  - Navigation
+  - spatial-navigation
+  - navigation
+
+spatial_navigation:
+  tags:
+  - Navigation, Virtual-maze
+  - Navigation, Place-learning
+  - Navigation, Wayfinding
+  - spatial-navigation
+
+path_integration:
+  tags:
+  - Navigation, Path-integration
+  - Navigation, Path-integration, Triangle-completion
+  - path-integration
+
+cognitive_map:
+  tags:
+  - Navigation, Reorientation
+  - Navigation, Cue-conflict
+  - cognitive-map
+  - spatial-map
+
+spatial_orientation:
+  tags:
+  - Navigation, Pointing
+  - Navigation, Relative-direction
+  - spatial-orientation
+
+# ==============================================================
+# TIMING AND TEMPORAL PROCESSING
+# ==============================================================
+
+timing:
+  tags:
+  - Timing
+  - temporal-processing
+  - time-perception
+
+interval_timing:
+  tags:
+  - Timing, Bisection
+  - Timing, Reproduction
+  - interval-timing
+  - time-interval
+
+synchronization:
+  tags:
+  - Timing, Synchronization
+  - Timing, Continuation
+  - synchronization
+  - temporal-synchronization
+
+temporal_order:
+  tags:
+  - Timing, TOJ
+  - Timing, Simultaneity
+  - temporal-order-judgment
+
+foreperiod:
+  tags:
+  - Timing, Foreperiod
+  - Timing, Temporal-cueing
+  - foreperiod
+  - temporal-cueing
+
+# ==============================================================
+# EMOTION AND AFFECT
+# ==============================================================
+
+emotion_positive:
+  tags:
+  - positive-valence
+  - Affect/Positive
+  - positive-emotion
+  - positive-valence
+
+emotion_negative:
+  tags:
+  - negative-valence
+  - Affect/Negative
+  - negative-emotion
+  - negative-valence
+
+emotion:
+  tags:
+  - Emotion
+  - Affect
+  - emotion
+  - affective
+
+reward:
+  tags:
+  - reward
+  - Affect/Reward
+  - Motivation/Reward
+  - reward
+  - positive-reinforcement
+
+punishment:
+  tags:
+  - punishment
+  - Affect/Punishment
+  - negative-reinforcement
+  - punishment
+
+anxiety:
+  tags:
+  - Anxiety
+  - anxiety
+  - anxious
+
+fear:
+  tags:
+  - Fear
+  - fear
+  - fear-conditioning
+
+# ==============================================================
+# INTEROCEPTION
+# ==============================================================
+
+interoception:
+  tags:
+  - Interoception
+  - Interoception, Heartbeat
+  - interoception
+  - interoceptive-awareness
+
+heartbeat:
+  tags:
+  - Interoception, Heartbeat
+  - Interoception, Heartbeat, Discrimination
+  - Interoception, Heartbeat, Counting
+  - Interoception, Heartbeat-evoked-potential
+  - heartbeat
+  - HEP
+
+challenge:
+  tags:
+  - Challenge
+  - Challenge, Respiratory
+  - Challenge, Respiratory, Hypercapnia
+  - Challenge, Pain
+  - Challenge, Pain, Cold-pressor
+  - challenge
+  - physiological-challenge
+
+# ==============================================================
+# TASK PHASES AND STRUCTURES
+# ==============================================================
+
+baseline:
+  tags:
+  - baseline
+  - Baseline
+  - rest
+  - resting
+  - resting-state
+
+cue:
+  tags:
+  - cue
+  - Cue
+  - Experimental-stimulus, Visual, Cue
+  - cue-stimulus
+
+target:
+  tags:
+  - target
+  - Target
+  - Experimental-stimulus, Visual, Target
+  - target-stimulus
+
+distractor:
+  tags:
+  - distractor
+  - Distractor
+  - Distractor, Visual
+  - distractor-stimulus
+
+probe:
+  tags:
+  - probe
+  - Probe
+  - Navigation, Probe
+  - probe-trial
+
+block:
+  tags:
+  - block
+  - Block
+  - block-onset
+  - block-offset
+
+trial:
+  tags:
+  - trial
+  - Trial
+  - trial-onset
+  - trial-offset
+
+outcome:
+  tags:
+  - outcome
+  - Outcome
+  - Reinforcement-learning, Reversal, Outcome
+  - outcome-feedback
+
+feedback:
+  tags:
+  - feedback
+  - Feedback
+  - feedback-presentation
+  - performance-feedback
+
+# ==============================================================
+# RESPONSES
+# ==============================================================
+
+response:
+  tags:
+  - response
+  - Response
+  - Participant-response
+  - participant-response
+
+correct:
+  tags:
+  - correct
+  - Correct
+  - correct-response
+  - accuracy
+
+incorrect:
+  tags:
+  - incorrect
+  - Incorrect
+  - incorrect-response
+  - error
+
+reaction_time:
+  tags:
+  - rt
+  - reaction-time
+  - RT
+  - response-time
+
+# ==============================================================
+# PAIN AND SOMATOSENSORY
+# ==============================================================
+
+pain:
+  tags:
+  - pain
+  - Somatosensory-presentation/Pain
+  - Challenge, Pain
+  - pain-stimulus
+
+tactile:
+  tags:
+  - tactile
+  - Tactile
+  - tactile-stimulus
+  - touch-stimulus
+
+# ==============================================================
+# ADDITIONAL COGNITIVE PROCESSES
+# ==============================================================
+
+planning:
+  tags:
+  - Planning
+  - Navigation, Planning
+  - planning
+  - cognitive-planning
+
+reasoning:
+  tags:
+  - Reasoning
+  - reasoning
+  - logical-reasoning
+
+problem_solving:
+  tags:
+  - Problem-solving
+  - problem-solving
+  - problem-solution
+
+creativity:
+  tags:
+  - Creativity
+  - creativity
+  - creative-thinking
+
+# ==============================================================
+# NEUROFEEDBACK
+# ==============================================================
+
+neurofeedback:
+  tags:
+  - Neurofeedback
+  - neurofeedback
+  - NFB
+  - biofeedback
+
+# ==============================================================
+# TASK-SPECIFIC CATEGORIES
+# ==============================================================
+
+go_nogo:
+  tags:
+  - Go-nogo
+  - Go-NoGo
+  - go-nogo-task
+  - go-no-go
+
+stop_signal:
+  tags:
+  - Stop-signal
+  - stop-signal-task
+  - SST
+
+stroop:
+  tags:
+  - Stroop
+  - stroop-task
+  - color-word-stroop
+
+flanker:
+  tags:
+  - Flanker
+  - flanker-task
+  - Eriksen-flanker
+
+simon:
+  tags:
+  - Simon
+  - simon-task
+  - simon-effect
+
+nback:
+  tags:
+  - N-back
+  - n-back
+  - nback
+  - working-memory-nback
+
+oddball:
+  tags:
+  - Oddball
+  - oddball
+  - oddball-paradigm
+  - deviant-stimulus
+
+# ==============================================================
+# EXPERIMENTAL MANIPULATIONS
+# ==============================================================
+
+valid_cue:
+  tags:
+  - Valid-cue
+  - Experimental-stimulus, Visual, Cue, Spatial-cueing, Valid-cue
+  - valid-cue
+
+invalid_cue:
+  tags:
+  - Invalid-cue
+  - invalid-cue
+
+congruent:
+  tags:
+  - Congruent
+  - congruent
+  - compatible
+
+incongruent:
+  tags:
+  - Incongruent
+  - incongruent
+  - incompatible
+
+target_present:
+  tags:
+  - Target-present
+  - Experimental-stimulus, Visual, Array, Visual-search, Target-present
+  - target-present
+
+target_absent:
+  tags:
+  - Target-absent
+  - target-absent
+
+# ==============================================================
+# MULTIMODAL AND CROSS-MODAL
+# ==============================================================
+
+multimodal:
+  tags:
+  - Multimodal
+  - multimodal
+  - cross-modal
+
+audiovisual:
+  tags:
+  - Audiovisual
+  - Timing, Audiovisual-recalibration
+  - audiovisual
+  - audio-visual
+
+# ==============================================================
+# SPECIALIZED PARADIGMS
+# ==============================================================
+
+priming:
+  tags:
+  - Priming
+  - priming
+  - semantic-priming
+
+masking:
+  tags:
+  - Masking
+  - masking
+  - backward-masking
+
+interference:
+  tags:
+  - Interference
+  - interference
+  - proactive-interference
+  - retroactive-interference
+
+transfer:
+  tags:
+  - Transfer
+  - transfer
+  - learning-transfer

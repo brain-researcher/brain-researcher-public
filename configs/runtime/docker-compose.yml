@@ -1,0 +1,25 @@
+services:
+  neurokg:
+    build:
+      context: ../..
+      target: neurokg
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+
+  agent:
+    build:
+      context: ../..
+      target: agent
+    depends_on:
+      - neurokg
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - NEUROKG_API_URL=http://neurokg:5000

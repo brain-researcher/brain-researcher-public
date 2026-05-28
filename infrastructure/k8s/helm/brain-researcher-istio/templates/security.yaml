@@ -1,0 +1,204 @@
+{{/*
+Generate security policies for all configured services
+*/}}
+{{- if .Values.security.globalMtls.enabled }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-peer-authentication
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    security-policy: mtls
+spec:
+  mtls:
+    mode: {{ .Values.security.globalMtls.mode }}
+{{- end }}
+
+{{/*
+Service-specific peer authentication policies
+*/}}
+{{- range $serviceName, $config := .Values.services }}
+{{- if and $config.enabled $config.security }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: {{ $config.name }}-peer-authentication
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    service: {{ $serviceName }}
+spec:
+  {{- $context := dict "serviceName" $config.name "security" $config.security }}
+  {{- include "brain-researcher-istio.peerAuthSpec" $context | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{/*
+Database services peer authentication
+*/}}
+{{- if .Values.services.databases }}
+{{- range $dbName, $dbConfig := .Values.services.databases }}
+{{- if and $dbConfig.enabled $dbConfig.security }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: {{ $dbConfig.name }}-peer-authentication
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    service: {{ $dbName }}
+    type: database
+spec:
+  selector:
+    matchLabels:
+      app: {{ $dbName }}
+  mtls:
+    mode: {{ $dbConfig.security.mtlsMode }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Authorization policies
+*/}}
+{{- if .Values.security.authorizationPolicies.denyAll.enabled }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ .Values.security.authorizationPolicies.denyAll.name }}
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    security-policy: deny-all
+spec: {}
+{{- end }}
+
+{{- if .Values.security.authorizationPolicies.allowIngress.enabled }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ .Values.security.authorizationPolicies.allowIngress.name }}
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    security-policy: ingress
+spec:
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/{{ include "brain-researcher-istio.istioNamespace" . }}/sa/istio-ingressgateway-service-account"]
+{{- end }}
+
+{{/*
+Service-specific authorization policies
+*/}}
+{{- if .Values.security.authorizationPolicies.serviceSpecific.enabled }}
+{{- range $serviceName, $config := .Values.services }}
+{{- if and $config.enabled $config.security $config.security.authorizationRules }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ $config.name }}-authorization
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    service: {{ $serviceName }}
+spec:
+  {{- $context := dict "serviceName" $config.name "security" $config.security }}
+  {{- include "brain-researcher-istio.authPolicySpec" $context | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Database authorization policies
+*/}}
+{{- if .Values.services.databases }}
+{{- range $dbName, $dbConfig := .Values.services.databases }}
+{{- if and $dbConfig.enabled $dbConfig.security }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ $dbConfig.name }}-authorization
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    service: {{ $dbName }}
+    type: database
+spec:
+  selector:
+    matchLabels:
+      app: {{ $dbName }}
+  rules:
+  - from:
+    - source:
+        principals: 
+        {{- if eq $dbName "redis" }}
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/web-ui-service-account"
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/agent-service-account"
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/orchestrator-service-account"
+        {{- else if eq $dbName "postgres" }}
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/neurokg-service-account"
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/orchestrator-service-account"
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/web-ui-service-account"
+        {{- else if eq $dbName "neo4j" }}
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/neurokg-service-account"
+        {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+JWT Authentication Policy (if enabled)
+*/}}
+{{- if .Values.security.jwt.enabled }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-auth
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    security-policy: jwt
+spec:
+  jwtRules:
+  - issuer: {{ .Values.security.jwt.issuer | quote }}
+    jwksUri: {{ .Values.security.jwt.jwksUri | quote }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: jwt-api-authorization
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    security-policy: jwt
+spec:
+  rules:
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+    to:
+    - operation:
+        paths: ["/api/*", "/chat/*", "/search/*"]
+    when:
+    - key: request.headers[authorization]
+      values: ["Bearer *"]
+  - to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/health", "/ready"]
+{{- end }}

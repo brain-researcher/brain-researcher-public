@@ -1,0 +1,28 @@
+{{- if .Values.redis.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-redis
+  namespace: {{ .Values.namespaces.data }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cache
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9121"
+    prometheus.io/path: "/metrics"
+spec:
+  type: {{ .Values.redis.service.type }}
+  ports:
+    - port: {{ .Values.redis.service.ports.redis }}
+      targetPort: 6379
+      protocol: TCP
+      name: redis
+    - port: {{ .Values.redis.service.ports.metrics }}
+      targetPort: 9121
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- include "brain-researcher.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: cache
+{{- end }}

@@ -1,0 +1,161 @@
+# Alert Rules for Brain Researcher Platform
+groups:
+  - name: service_health
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute."
+          runbook: "Check service logs and restart if necessary"
+
+      - alert: HighErrorRate
+        expr: brain_researcher:error_rate_5m > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Error rate is {{ $value }} errors/sec on {{ $labels.job }}"
+          runbook: "Check application logs for error patterns"
+
+      - alert: HighLatency
+        expr: brain_researcher:response_time_p95_5m > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time on {{ $labels.job }}"
+          description: "95th percentile response time is {{ $value }}s on {{ $labels.job }}"
+          runbook: "Check for performance bottlenecks"
+
+  - name: system_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: brain_researcher:cpu_utilization_5m > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+          runbook: "Check for resource-intensive processes"
+
+      - alert: HighMemoryUsage
+        expr: brain_researcher:memory_utilization_5m > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+          runbook: "Check for memory leaks or scale resources"
+
+      - alert: DiskSpaceLow
+        expr: system:disk_usage_percentage > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }}"
+          runbook: "Clean up logs or expand disk space"
+
+      - alert: DiskSpaceCritical
+        expr: system:disk_usage_percentage > 95
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }}"
+          runbook: "Immediate action required - clean up or expand disk"
+
+  - name: agent_alerts
+    rules:
+      - alert: AgentQueryBacklog
+        expr: agent_query_queue_size > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agent query backlog building up"
+          description: "Agent has {{ $value }} queries in queue"
+          runbook: "Check agent performance and scale if needed"
+
+      - alert: LLMTokenLimitApproaching
+        expr: rate(agent_llm_tokens_total[1h]) > 50000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High LLM token usage"
+          description: "Token usage rate is {{ $value }} tokens/hour"
+          runbook: "Monitor token costs and usage patterns"
+
+      - alert: ToolExecutionFailureRate
+        expr: rate(agent_tool_execution_failures_total[5m]) / rate(agent_tool_executions_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High tool execution failure rate"
+          description: "Tool failure rate is {{ $value }}"
+          runbook: "Check tool integrations and dependencies"
+
+  - name: neurokg_alerts
+    rules:
+      - alert: Neo4jConnectionPoolExhausted
+        expr: neurokg:database_connection_pool_usage > 90
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Neo4j connection pool nearly exhausted"
+          description: "Connection pool usage is {{ $value }}%"
+          runbook: "Scale database connections or check for connection leaks"
+
+      - alert: SlowSemanticSearch
+        expr: neurokg:semantic_search_latency_p95_5m > 5.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow semantic search queries"
+          description: "95th percentile semantic search latency is {{ $value }}s"
+          runbook: "Check vector index performance and database optimization"
+
+      - alert: HighKnowledgeGraphQueryRate
+        expr: neurokg:query_rate_5m > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High knowledge graph query rate"
+          description: "Query rate is {{ $value }} queries/sec"
+          runbook: "Monitor for query patterns and potential caching opportunities"
+
+  - name: infrastructure_alerts
+    rules:
+      - alert: RedisConnectionFailure
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis cache is unavailable"
+          description: "Redis service is down"
+          runbook: "Restart Redis service and check configuration"
+
+      - alert: PrometheusTargetDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus monitoring is down"
+          description: "Prometheus self-monitoring indicates service failure"
+          runbook: "Restart Prometheus service immediately"

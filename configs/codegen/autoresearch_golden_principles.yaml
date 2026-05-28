@@ -1,0 +1,181 @@
+version: 1
+registry_id: repo_repair_golden_principles_v1
+title: Brain Researcher Repo Repair Golden Principles
+summary: >
+  Machine-readable repair principles for autoresearch, HARNESS validation,
+  repo_repair_context generation, and mergeability scoring.
+principles:
+  - id: evidence_before_edit
+    title: Evidence Before Edit
+    rule: >
+      Diagnose from real BR run evidence before proposing or validating a fix.
+      Prefer run_bundle, run_scorecard, trace, observation, and artifact
+      evidence over prompt-time guesses.
+    why_it_exists: >
+      The failure-attribution loop is only trustworthy when repairs are tied to
+      reproducible evidence rather than anecdotal benchmark behavior.
+    failure_modes:
+      - preflight_contract_failure
+      - workflow_discoverability_mismatch
+      - tool_param_fill_failure
+      - runtime_stall_or_incomplete_bundle
+      - trace_or_bundle_corruption
+      - artifact_contract_miss
+      - step_skipped_without_useful_result
+      - tool_execution_failure
+      - wrong_tool_or_workflow_routing
+    applies_to:
+      - diagnosis
+      - candidate_generation
+
+  - id: terminal_run_invariant
+    title: Terminal Run Invariant
+    rule: >
+      Every non-cancelled BR run must converge to a terminal status and write
+      finished_at. queued or running leftovers are correctness failures.
+    why_it_exists: >
+      Runtime and orchestration regressions should not leave ambiguous run
+      state; stalled runs hide root cause and corrupt downstream evaluation.
+    failure_modes:
+      - runtime_stall_or_incomplete_bundle
+      - trace_or_bundle_corruption
+    applies_to:
+      - runtime
+      - harness
+
+  - id: bundle_persistence_invariant
+    title: Bundle Persistence Invariant
+    rule: >
+      A failed step is acceptable, but a missing bundle is not. Terminal runs
+      must persist trace.jsonl, observation.json, trajectory.json,
+      provenance.json, and analysis_bundle.json unless the contract says
+      otherwise.
+    why_it_exists: >
+      The repair loop depends on durable evidence. Trace-only or partially
+      written runs block failure attribution and regression detection.
+    failure_modes:
+      - trace_or_bundle_corruption
+      - artifact_contract_miss
+      - runtime_stall_or_incomplete_bundle
+    applies_to:
+      - runtime
+      - artifact_contracts
+
+  - id: native_harness_first
+    title: Native Harness Before General Benchmark
+    rule: >
+      Runtime and orchestration fixes should first be validated with a native
+      HARNESS probe before they are judged by a general external coding
+      benchmark.
+    why_it_exists: >
+      Infrastructure regressions need deterministic probes; benchmark-agent
+      failures can otherwise mask whether the harness itself was fixed.
+    failure_modes:
+      - trace_or_bundle_corruption
+      - runtime_stall_or_incomplete_bundle
+      - artifact_contract_miss
+    applies_to:
+      - validation
+      - promotion
+
+  - id: patch_surface_discipline
+    title: Patch Surface Discipline
+    rule: >
+      Fixes should stay inside the diagnosed surface and candidate allowlist.
+      Small, localized diffs are preferred over sprawling cross-repo edits.
+    why_it_exists: >
+      Autoresearch candidates are only mergeable when they remain legible,
+      scoped, and reviewable against the suspected surface.
+    failure_modes:
+      - preflight_contract_failure
+      - workflow_discoverability_mismatch
+      - tool_param_fill_failure
+      - runtime_stall_or_incomplete_bundle
+      - trace_or_bundle_corruption
+      - artifact_contract_miss
+      - step_skipped_without_useful_result
+      - tool_execution_failure
+      - wrong_tool_or_workflow_routing
+    applies_to:
+      - patch_legibility
+      - mergeability
+
+  - id: no_silent_fallbacks
+    title: No Silent Fallbacks
+    rule: >
+      Do not hide broken states with weak fallbacks, swallowed exceptions, or
+      vague success semantics. Fail loudly or persist explicit uncertainty.
+    why_it_exists: >
+      Silent fallback logic makes it impossible to distinguish healthy behavior
+      from disguised corruption in both runtime traces and benchmark results.
+    failure_modes:
+      - preflight_contract_failure
+      - artifact_contract_miss
+      - trace_or_bundle_corruption
+      - wrong_tool_or_workflow_routing
+    applies_to:
+      - implementation
+      - review
+
+  - id: motif_plus_canary_gate
+    title: Motif Plus Canary Gate
+    rule: >
+      A repair candidate is promotable only if it improves the target motif
+      without introducing blocker-level regressions on the canary slice.
+    why_it_exists: >
+      Point fixes are not enough; promotion should preserve neighboring
+      behaviors while resolving the diagnosed failure mode.
+    failure_modes:
+      - preflight_contract_failure
+      - workflow_discoverability_mismatch
+      - tool_param_fill_failure
+      - runtime_stall_or_incomplete_bundle
+      - trace_or_bundle_corruption
+      - artifact_contract_miss
+      - step_skipped_without_useful_result
+      - tool_execution_failure
+      - wrong_tool_or_workflow_routing
+    applies_to:
+      - validation
+      - promotion
+
+  - id: absorbed_upstream_truthfulness
+    title: Absorbed-Upstream Truthfulness
+    rule: >
+      If baseline no longer reproduces the failure and mainline already
+      contains the repair, mark the candidate as absorbed_upstream instead of
+      claiming a fresh win.
+    why_it_exists: >
+      The repair queue needs truthful lifecycle state so already-merged fixes
+      are archived cleanly instead of double-counted.
+    failure_modes:
+      - preflight_contract_failure
+      - workflow_discoverability_mismatch
+      - tool_param_fill_failure
+      - runtime_stall_or_incomplete_bundle
+      - trace_or_bundle_corruption
+      - artifact_contract_miss
+      - step_skipped_without_useful_result
+      - tool_execution_failure
+      - wrong_tool_or_workflow_routing
+    applies_to:
+      - candidate_lifecycle
+      - reporting
+
+  - id: incident_to_harness
+    title: Incident To Harness
+    rule: >
+      Recurrent failure motifs should be compressed into deterministic HARNESS
+      tasks so future regressions are judged by probes, not memory.
+    why_it_exists: >
+      Repeated incidents become cheap regression checks only after they are
+      converted into explicit Harbor tasks with verifiers and contracts.
+    failure_modes:
+      - trace_or_bundle_corruption
+      - runtime_stall_or_incomplete_bundle
+      - tool_param_fill_failure
+      - preflight_contract_failure
+      - artifact_contract_miss
+    applies_to:
+      - harness_design
+      - incident_response

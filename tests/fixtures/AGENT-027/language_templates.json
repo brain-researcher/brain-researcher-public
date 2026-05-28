@@ -1,0 +1,345 @@
+{
+  "template_categories": {
+    "analysis_results": {
+      "description": "Templates for analysis result reporting",
+      "templates": {
+        "fmri_activation": {
+          "english": {
+            "technical": "GLM analysis revealed {num_clusters} significant clusters (p < {threshold}, {correction} correction). Peak activation in {peak_region} at MNI coordinates [{peak_x}, {peak_y}, {peak_z}] with Z = {z_score}. Cluster extent: {cluster_size} voxels.",
+            "structured": {
+              "summary": "Analysis identified {num_clusters} brain regions with significant activation during {task}.",
+              "methodology": "We used {method} with {correction} correction for multiple comparisons at {threshold} significance level.",
+              "findings": "Peak activation was observed in {peak_region} (Z = {z_score}, {cluster_size} voxels).",
+              "implications": "This activation pattern is consistent with {cognitive_function} and suggests {interpretation}."
+            },
+            "layman": "We found {num_clusters} brain regions that were particularly active during the {task} task. The strongest response was in the {peak_region}, which is known to be involved in {function_description}."
+          },
+          "spanish": {
+            "technical": "El análisis GLM reveló {num_clusters} grupos significativos (p < {threshold}, corrección {correction}). Activación máxima en {peak_region} en coordenadas MNI [{peak_x}, {peak_y}, {peak_z}] con Z = {z_score}. Extensión del grupo: {cluster_size} vóxeles.",
+            "structured": {
+              "summary": "El análisis identificó {num_clusters} regiones cerebrales con activación significativa durante {task}.",
+              "methodology": "Utilizamos {method} con corrección {correction} para comparaciones múltiples al nivel de significancia {threshold}.",
+              "findings": "La activación máxima se observó en {peak_region} (Z = {z_score}, {cluster_size} vóxeles).",
+              "implications": "Este patrón de activación es consistente con {cognitive_function} y sugiere {interpretation}."
+            },
+            "layman": "Encontramos {num_clusters} regiones cerebrales que estuvieron particularmente activas durante la tarea {task}. La respuesta más fuerte fue en {peak_region}, que se sabe está involucrada en {function_description}."
+          },
+          "french": {
+            "technical": "L'analyse GLM a révélé {num_clusters} clusters significatifs (p < {threshold}, correction {correction}). Activation maximale dans {peak_region} aux coordonnées MNI [{peak_x}, {peak_y}, {peak_z}] avec Z = {z_score}. Étendue du cluster: {cluster_size} voxels.",
+            "layman": "Nous avons trouvé {num_clusters} régions cérébrales particulièrement actives pendant la tâche {task}. La réponse la plus forte était dans {peak_region}, qui est connue pour être impliquée dans {function_description}."
+          }
+        },
+        "connectivity_analysis": {
+          "english": {
+            "technical": "Functional connectivity analysis using {method} revealed significant connections between {seed_region} and {target_regions}. Network properties: modularity = {modularity}, clustering coefficient = {clustering}, characteristic path length = {path_length}.",
+            "structured": {
+              "summary": "Connectivity analysis identified significant communication patterns between brain regions.",
+              "methodology": "We computed {method} connectivity using {seed_region} as seed region.",
+              "findings": "Strong connections were found with {target_regions} (r = {correlation_strength}).",
+              "implications": "This connectivity pattern suggests coordinated activity within the {network_name} network."
+            },
+            "layman": "We examined how different brain regions communicate with each other. We found that {seed_region} has strong connections with {target_regions}, indicating they work together during {task}."
+          },
+          "spanish": {
+            "technical": "El análisis de conectividad funcional usando {method} reveló conexiones significativas entre {seed_region} y {target_regions}. Propiedades de la red: modularidad = {modularity}, coeficiente de agrupamiento = {clustering}, longitud característica del camino = {path_length}.",
+            "layman": "Examinamos cómo se comunican entre sí las diferentes regiones del cerebro. Encontramos que {seed_region} tiene conexiones fuertes con {target_regions}, indicando que trabajan juntas durante {task}."
+          }
+        },
+        "statistical_inference": {
+          "english": {
+            "technical": "Statistical parametric mapping using {model} revealed significant effects (F({df1},{df2}) = {f_statistic}, p = {p_value}). Post-hoc tests showed {significant_contrasts} with effect sizes ranging from {min_effect_size} to {max_effect_size} (Cohen's d).",
+            "structured": {
+              "summary": "Statistical analysis detected significant effects in the brain activation data.",
+              "methodology": "We applied {model} statistical model with {contrast_description} contrasts.",
+              "findings": "Significant effects were found with F = {f_statistic} and p = {p_value}.",
+              "implications": "The effect sizes suggest {effect_interpretation} differences between conditions."
+            },
+            "layman": "Our statistical analysis found significant differences in brain activity between different conditions. These differences are {effect_interpretation} and suggest that the brain responds differently to {condition_description}."
+          }
+        }
+      }
+    },
+    "error_messages": {
+      "description": "Templates for error reporting",
+      "templates": {
+        "processing_failure": {
+          "english": {
+            "technical": "Processing failed during {stage} with error: {error_type}. Stack trace: {stack_trace}. Suggested resolution: {resolution}.",
+            "structured": {
+              "summary": "An error occurred during data processing that prevented completion.",
+              "problem": "The error occurred during {stage}: {error_message}",
+              "impact": "This prevented {affected_analyses} from completing successfully.",
+              "resolution": "To resolve this issue: {resolution_steps}"
+            },
+            "layman": "We encountered a problem while processing your data during the {stage} step. {user_friendly_explanation}. Here's what you can try: {simple_resolution}."
+          },
+          "spanish": {
+            "technical": "El procesamiento falló durante {stage} con error: {error_type}. Seguimiento de pila: {stack_trace}. Resolución sugerida: {resolution}.",
+            "layman": "Encontramos un problema mientras procesábamos sus datos durante el paso {stage}. {user_friendly_explanation}. Esto es lo que puede intentar: {simple_resolution}."
+          }
+        },
+        "data_quality_issues": {
+          "english": {
+            "technical": "Data quality assessment identified {num_issues} issues: {issue_list}. Quality metrics: mean FD = {mean_fd}, DVARS = {dvars}, tSNR = {tsnr}. Recommendation: {qc_recommendation}.",
+            "structured": {
+              "summary": "Quality control analysis detected issues that may affect results reliability.",
+              "issues": "The following data quality issues were identified: {detailed_issues}",
+              "metrics": "Quality metrics showed: {quality_metrics}",
+              "recommendation": "We recommend: {detailed_recommendation}"
+            },
+            "layman": "We found some quality issues with your brain imaging data. This means the results might not be as reliable as we'd like. The main issues were: {simple_issue_list}. We suggest: {simple_recommendation}."
+          }
+        }
+      }
+    },
+    "progress_updates": {
+      "description": "Templates for progress reporting",
+      "templates": {
+        "preprocessing_progress": {
+          "english": {
+            "technical": "Preprocessing stage {current_stage}/{total_stages}: {stage_name}. Progress: {completed_subjects}/{total_subjects} subjects ({progress_percentage}%). ETA: {estimated_time_remaining}.",
+            "layman": "We're currently working on step {current_stage} of {total_stages}: {stage_description}. We've finished {completed_subjects} out of {total_subjects} participants ({progress_percentage}% complete). Estimated time remaining: {estimated_time_remaining}."
+          },
+          "spanish": {
+            "technical": "Etapa de preprocesamiento {current_stage}/{total_stages}: {stage_name}. Progreso: {completed_subjects}/{total_subjects} sujetos ({progress_percentage}%). ETA: {estimated_time_remaining}.",
+            "layman": "Actualmente estamos trabajando en el paso {current_stage} de {total_stages}: {stage_description}. Hemos terminado {completed_subjects} de {total_subjects} participantes ({progress_percentage}% completo). Tiempo estimado restante: {estimated_time_remaining}."
+          }
+        },
+        "analysis_progress": {
+          "english": {
+            "technical": "Analysis pipeline progress: {completed_steps}/{total_steps} steps completed. Current: {current_analysis} ({current_progress}%). Queue status: {queued_jobs} jobs pending.",
+            "layman": "Analysis is {current_progress}% complete. We're currently running {current_analysis}. There are {queued_jobs} more analyses in the queue after this one."
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "description": "Templates for recommendation generation",
+      "templates": {
+        "next_steps": {
+          "english": {
+            "technical": "Based on current results, recommend: 1) {technical_recommendation_1}, 2) {technical_recommendation_2}, 3) {technical_recommendation_3}. Consider additional analyses: {suggested_analyses}.",
+            "structured": {
+              "immediate": "Immediate next steps: {immediate_actions}",
+              "short_term": "Short-term recommendations: {short_term_actions}",
+              "long_term": "Long-term considerations: {long_term_actions}",
+              "additional_analyses": "Suggested additional analyses: {analysis_suggestions}"
+            },
+            "layman": "Based on what we found, here's what we suggest doing next: {simple_recommendations}. You might also want to consider: {additional_suggestions}."
+          },
+          "spanish": {
+            "technical": "Basado en los resultados actuales, recomendamos: 1) {technical_recommendation_1}, 2) {technical_recommendation_2}, 3) {technical_recommendation_3}. Considerar análisis adicionales: {suggested_analyses}.",
+            "layman": "Basado en lo que encontramos, esto es lo que sugerimos hacer después: {simple_recommendations}. También podría considerar: {additional_suggestions}."
+          }
+        },
+        "method_suggestions": {
+          "english": {
+            "technical": "For your research question, consider: {method_1} (advantages: {advantages_1}), {method_2} (advantages: {advantages_2}). Sample size recommendations: {sample_size_guidance}.",
+            "structured": {
+              "recommended_methods": "Recommended analysis methods: {method_list}",
+              "rationale": "These methods are suggested because: {selection_rationale}",
+              "requirements": "Requirements and considerations: {method_requirements}",
+              "alternatives": "Alternative approaches: {alternative_methods}"
+            },
+            "layman": "For what you're trying to study, we suggest using {simple_method_description}. This approach is good because {method_benefits}."
+          }
+        }
+      }
+    },
+    "help_responses": {
+      "description": "Templates for help and guidance",
+      "templates": {
+        "concept_explanation": {
+          "english": {
+            "technical": "{concept} refers to {technical_definition}. Key characteristics: {characteristics}. Mathematical formulation: {formula}. Applications: {applications}.",
+            "structured": {
+              "definition": "{concept} is defined as: {clear_definition}",
+              "explanation": "This means: {detailed_explanation}",
+              "examples": "Common examples include: {concept_examples}",
+              "relevance": "This is relevant to neuroimaging because: {neuroimaging_relevance}"
+            },
+            "layman": "{concept} is {simple_definition}. Think of it like {analogy}. In brain imaging, we use this to {practical_application}."
+          },
+          "spanish": {
+            "technical": "{concept} se refiere a {technical_definition}. Características clave: {characteristics}. Formulación matemática: {formula}. Aplicaciones: {applications}.",
+            "layman": "{concept} es {simple_definition}. Piénsalo como {analogy}. En imágenes cerebrales, usamos esto para {practical_application}."
+          }
+        },
+        "troubleshooting": {
+          "english": {
+            "technical": "Issue: {problem_description}. Diagnostic steps: {diagnostic_steps}. Common causes: {common_causes}. Resolution approaches: {resolution_approaches}.",
+            "structured": {
+              "problem": "The issue you're experiencing: {problem_summary}",
+              "diagnosis": "To diagnose this problem: {diagnostic_guidance}",
+              "solutions": "Potential solutions: {solution_options}",
+              "prevention": "To prevent this in the future: {prevention_tips}"
+            },
+            "layman": "The problem seems to be: {simple_problem_description}. Here are some things you can try to fix it: {simple_solutions}."
+          }
+        }
+      }
+    }
+  },
+  "confidence_indicators": {
+    "high_confidence": {
+      "english": ["strong evidence", "robust findings", "highly reliable", "well-established", "consistent results"],
+      "spanish": ["evidencia sólida", "hallazgos robustos", "altamente confiable", "bien establecido", "resultados consistentes"],
+      "french": ["preuves solides", "résultats robustes", "très fiable", "bien établi", "résultats cohérents"],
+      "german": ["starke Beweise", "robuste Befunde", "hochzuverlässig", "gut etabliert", "konsistente Ergebnisse"],
+      "chinese": ["强有力的证据", "稳健的发现", "高度可靠", "确立的", "一致的结果"]
+    },
+    "medium_confidence": {
+      "english": ["moderate evidence", "preliminary findings", "reasonably reliable", "suggestive results", "initial indication"],
+      "spanish": ["evidencia moderada", "hallazgos preliminares", "razonablemente confiable", "resultados sugestivos", "indicación inicial"],
+      "french": ["preuves modérées", "résultats préliminaires", "raisonnablement fiable", "résultats suggestifs", "indication initiale"],
+      "german": ["mäßige Beweise", "vorläufige Befunde", "angemessen zuverlässig", "suggestive Ergebnisse", "erste Hinweise"],
+      "chinese": ["中等证据", "初步发现", "合理可靠", "提示性结果", "初步指征"]
+    },
+    "low_confidence": {
+      "english": ["limited evidence", "exploratory findings", "cautious interpretation", "preliminary indication", "requires replication"],
+      "spanish": ["evidencia limitada", "hallazgos exploratorios", "interpretación cautelosa", "indicación preliminar", "requiere replicación"],
+      "french": ["preuves limitées", "résultats exploratoires", "interprétation prudente", "indication préliminaire", "nécessite une réplication"],
+      "german": ["begrenzte Beweise", "explorative Befunde", "vorsichtige Interpretation", "vorläufige Hinweise", "benötigt Replikation"],
+      "chinese": ["有限的证据", "探索性发现", "谨慎解释", "初步指征", "需要重复验证"]
+    }
+  },
+  "analogy_templates": {
+    "statistical_concepts": {
+      "p_value": {
+        "english": "Think of a p-value like a probability of getting a false alarm. Just as a smoke detector might go off when you're cooking (false alarm), a small p-value means it's unlikely our result is just a 'false alarm' due to chance.",
+        "spanish": "Piensa en un valor p como la probabilidad de obtener una falsa alarma. Así como un detector de humo podría sonar cuando estás cocinando (falsa alarma), un valor p pequeño significa que es improbable que nuestro resultado sea solo una 'falsa alarma' debido al azar.",
+        "analogy_domain": "everyday_objects"
+      },
+      "multiple_comparisons": {
+        "english": "Multiple comparisons are like buying many lottery tickets. The more tickets you buy, the higher your chance of winning something, but most will still be losers. Similarly, testing many brain regions increases the chance of finding false positives.",
+        "analogy_domain": "gambling"
+      },
+      "effect_size": {
+        "english": "Effect size is like the volume of music. Statistical significance tells you the music is definitely playing (not silence), but effect size tells you if it's a whisper or a concert.",
+        "analogy_domain": "everyday_experiences"
+      }
+    },
+    "brain_imaging_concepts": {
+      "bold_signal": {
+        "english": "The BOLD signal is like the glow of a coal in a fire. When a brain region works hard, it needs more oxygen (like a coal getting brighter when you blow on it), and that's what we measure.",
+        "analogy_domain": "physical_processes"
+      },
+      "preprocessing": {
+        "english": "Preprocessing brain images is like editing a photo. Just as you might crop, adjust brightness, and remove red-eye to get a clear picture, we clean up brain images to see the actual brain activity clearly.",
+        "analogy_domain": "photography"
+      },
+      "normalization": {
+        "english": "Brain normalization is like fitting everyone's head into the same hat size for comparison. Since everyone's brain is shaped slightly differently, we 'stretch' or 'squeeze' them to fit a standard template.",
+        "analogy_domain": "clothing"
+      }
+    },
+    "analysis_methods": {
+      "glm": {
+        "english": "A General Linear Model is like a recipe that explains what ingredients (brain activity) contribute to the final dish (behavior). We can see which ingredients have the biggest impact on the taste.",
+        "analogy_domain": "cooking"
+      },
+      "connectivity": {
+        "english": "Brain connectivity is like a telephone network. We can see which brain regions 'call' each other frequently and which ones rarely communicate, helping us understand how information flows.",
+        "analogy_domain": "communication_networks"
+      }
+    }
+  },
+  "technical_term_definitions": {
+    "neuroimaging_terms": {
+      "fMRI": {
+        "technical": "Functional Magnetic Resonance Imaging - a neuroimaging technique that measures brain activity by detecting changes in blood oxygenation and flow",
+        "simple": "a brain scanner that shows which parts of the brain are active",
+        "explanation": "uses magnetic fields to detect blood flow changes in the brain"
+      },
+      "BOLD": {
+        "technical": "Blood Oxygen Level Dependent signal - the physiological basis of fMRI contrast",
+        "simple": "the signal we measure that shows brain activity",
+        "explanation": "when brain cells work harder, they need more oxygen, which changes the magnetic properties we can detect"
+      },
+      "GLM": {
+        "technical": "General Linear Model - a statistical framework for analyzing neuroimaging data",
+        "simple": "a mathematical method to find patterns in brain activity",
+        "explanation": "helps us determine which brain regions are significantly active during different tasks"
+      },
+      "preprocessing": {
+        "technical": "the initial processing steps applied to raw neuroimaging data to prepare it for statistical analysis",
+        "simple": "cleaning and preparing the brain images for analysis",
+        "explanation": "removes artifacts and standardizes the data so we can compare across subjects"
+      }
+    },
+    "statistical_terms": {
+      "p_value": {
+        "technical": "the probability of obtaining results at least as extreme as observed, assuming the null hypothesis is true",
+        "simple": "a number that tells us how likely our results are due to chance",
+        "explanation": "smaller p-values (like 0.01) mean it's very unlikely the result is just random chance"
+      },
+      "FWE": {
+        "technical": "Family-Wise Error rate - a method for controlling Type I error when making multiple statistical comparisons",
+        "simple": "a way to avoid false positives when testing many brain regions",
+        "explanation": "ensures that even when testing thousands of brain regions, we maintain reliable results"
+      },
+      "cluster": {
+        "technical": "a contiguous group of voxels that exceed a statistical threshold",
+        "simple": "a group of nearby brain locations that show similar activity",
+        "explanation": "rather than looking at individual points, we look at connected regions of activity"
+      }
+    }
+  },
+  "contextual_modifiers": {
+    "expertise_level": {
+      "beginner": {
+        "complexity_reduction": 0.3,
+        "jargon_replacement": true,
+        "analogy_frequency": "high",
+        "explanation_depth": "basic"
+      },
+      "intermediate": {
+        "complexity_reduction": 0.0,
+        "jargon_replacement": false,
+        "analogy_frequency": "moderate",
+        "explanation_depth": "detailed"
+      },
+      "expert": {
+        "complexity_reduction": 0.0,
+        "jargon_replacement": false,
+        "analogy_frequency": "low",
+        "explanation_depth": "comprehensive",
+        "include_technical_details": true
+      }
+    },
+    "domain_focus": {
+      "clinical": {
+        "emphasis": ["implications", "diagnosis", "treatment"],
+        "terminology": "clinical",
+        "outcome_focus": "patient_relevance"
+      },
+      "research": {
+        "emphasis": ["methodology", "replication", "future_directions"],
+        "terminology": "research",
+        "outcome_focus": "scientific_validity"
+      },
+      "educational": {
+        "emphasis": ["concepts", "understanding", "learning"],
+        "terminology": "educational",
+        "outcome_focus": "knowledge_transfer"
+      }
+    },
+    "time_constraints": {
+      "brief": {
+        "max_length": 200,
+        "focus": "key_findings",
+        "detail_level": "summary"
+      },
+      "standard": {
+        "max_length": 500,
+        "focus": "comprehensive",
+        "detail_level": "detailed"
+      },
+      "comprehensive": {
+        "max_length": 1000,
+        "focus": "thorough",
+        "detail_level": "exhaustive"
+      }
+    }
+  }
+}

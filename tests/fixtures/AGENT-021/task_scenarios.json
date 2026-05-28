@@ -1,0 +1,179 @@
+{
+  "scheduling_scenarios": {
+    "high_priority_tasks": [
+      {
+        "task_id": "critical_analysis",
+        "name": "Critical Brain Analysis",
+        "tool_name": "fmri_glm",
+        "tool_args": {"dataset": "critical_study"},
+        "priority": "CRITICAL",
+        "deadline": 300,
+        "preemptible": false,
+        "estimated_duration": 120,
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 4.0},
+          {"resource_type": "memory", "amount": 8.0}
+        ]
+      },
+      {
+        "task_id": "urgent_preprocessing",
+        "name": "Urgent Preprocessing",
+        "tool_name": "fmriprep",
+        "tool_args": {"subject": "sub-001"},
+        "priority": "HIGH",
+        "deadline": 600,
+        "preemptible": true,
+        "estimated_duration": 300,
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 6.0},
+          {"resource_type": "memory", "amount": 12.0}
+        ]
+      }
+    ],
+    "mixed_priority_workload": [
+      {
+        "task_id": "background_qc",
+        "name": "Quality Control",
+        "tool_name": "quality_check",
+        "tool_args": {"dataset": "ds000114"},
+        "priority": "BACKGROUND",
+        "preemptible": true,
+        "estimated_duration": 600,
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 1.0},
+          {"resource_type": "memory", "amount": 2.0}
+        ]
+      },
+      {
+        "task_id": "normal_analysis",
+        "name": "Standard Analysis",
+        "tool_name": "statistical_test",
+        "tool_args": {"contrast": "task_vs_rest"},
+        "priority": "NORMAL",
+        "preemptible": true,
+        "estimated_duration": 180,
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 2.0},
+          {"resource_type": "memory", "amount": 4.0}
+        ]
+      },
+      {
+        "task_id": "high_connectivity",
+        "name": "Connectivity Analysis",
+        "tool_name": "connectivity_analysis",
+        "tool_args": {"method": "correlation"},
+        "priority": "HIGH",
+        "preemptible": true,
+        "estimated_duration": 240,
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 4.0},
+          {"resource_type": "memory", "amount": 6.0}
+        ]
+      }
+    ],
+    "resource_intensive": [
+      {
+        "task_id": "heavy_computation",
+        "name": "Heavy Computation",
+        "tool_name": "ml_training",
+        "tool_args": {"model": "deep_network"},
+        "priority": "NORMAL",
+        "preemptible": true,
+        "estimated_duration": 1800,
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 8.0},
+          {"resource_type": "gpu", "amount": 1.0},
+          {"resource_type": "memory", "amount": 16.0}
+        ]
+      },
+      {
+        "task_id": "memory_intensive",
+        "name": "Memory Intensive Task",
+        "tool_name": "large_dataset_processing",
+        "tool_args": {"dataset_size": "large"},
+        "priority": "NORMAL",
+        "preemptible": true,
+        "estimated_duration": 900,
+        "resource_requirements": [
+          {"resource_type": "memory", "amount": 24.0},
+          {"resource_type": "storage", "amount": 100.0}
+        ]
+      }
+    ],
+    "preemption_test": [
+      {
+        "task_id": "long_running",
+        "name": "Long Running Task",
+        "tool_name": "long_computation",
+        "tool_args": {"iterations": 10000},
+        "priority": "LOW",
+        "preemptible": true,
+        "estimated_duration": 3600,
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 4.0}
+        ]
+      },
+      {
+        "task_id": "urgent_interrupt",
+        "name": "Urgent Task",
+        "tool_name": "quick_analysis",
+        "tool_args": {"urgent": true},
+        "priority": "CRITICAL",
+        "deadline": 120,
+        "preemptible": false,
+        "estimated_duration": 60,
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 4.0}
+        ]
+      }
+    ]
+  },
+  "queue_scenarios": {
+    "empty_queue": {
+      "queued_tasks": 0,
+      "running_tasks": 0,
+      "completed_tasks": 5
+    },
+    "moderate_queue": {
+      "queued_tasks": 8,
+      "running_tasks": 3,
+      "completed_tasks": 12
+    },
+    "heavy_queue": {
+      "queued_tasks": 25,
+      "running_tasks": 4,
+      "completed_tasks": 8
+    },
+    "backlog_queue": {
+      "queued_tasks": 50,
+      "running_tasks": 2,
+      "completed_tasks": 3
+    }
+  },
+  "performance_expectations": {
+    "aggressive_strategy": {
+      "max_parallel": 8,
+      "expected_throughput_min": 5.0,
+      "expected_latency_max": 120.0,
+      "acceptable_error_rate": 0.05
+    },
+    "balanced_strategy": {
+      "max_parallel": 4,
+      "expected_throughput_min": 3.0,
+      "expected_latency_max": 180.0,
+      "acceptable_error_rate": 0.02
+    },
+    "conservative_strategy": {
+      "max_parallel": 2,
+      "expected_throughput_min": 1.5,
+      "expected_latency_max": 300.0,
+      "acceptable_error_rate": 0.01
+    },
+    "minimal_strategy": {
+      "max_parallel": 1,
+      "expected_throughput_min": 0.8,
+      "expected_latency_max": 600.0,
+      "acceptable_error_rate": 0.005
+    }
+  }
+}

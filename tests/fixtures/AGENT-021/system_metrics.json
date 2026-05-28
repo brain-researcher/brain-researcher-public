@@ -1,0 +1,102 @@
+{
+  "test_scenarios": {
+    "healthy_system": {
+      "cpu_usage": 25.0,
+      "memory_usage": 40.0,
+      "memory_available": 12.8,
+      "disk_io_read": 5.2,
+      "disk_io_write": 3.1,
+      "network_sent": 2.5,
+      "network_recv": 1.8,
+      "load_average": [0.8, 0.9, 1.0],
+      "active_processes": 120,
+      "gpu_usage": 15.0,
+      "gpu_memory": 20.0
+    },
+    "moderate_load": {
+      "cpu_usage": 65.0,
+      "memory_usage": 70.0,
+      "memory_available": 6.4,
+      "disk_io_read": 25.0,
+      "disk_io_write": 20.0,
+      "network_sent": 50.0,
+      "network_recv": 45.0,
+      "load_average": [2.5, 2.8, 2.2],
+      "active_processes": 180,
+      "gpu_usage": 60.0,
+      "gpu_memory": 75.0
+    },
+    "stressed_system": {
+      "cpu_usage": 85.0,
+      "memory_usage": 88.0,
+      "memory_available": 2.56,
+      "disk_io_read": 80.0,
+      "disk_io_write": 70.0,
+      "network_sent": 120.0,
+      "network_recv": 110.0,
+      "load_average": [4.2, 4.8, 4.5],
+      "active_processes": 250,
+      "gpu_usage": 85.0,
+      "gpu_memory": 90.0
+    },
+    "critical_system": {
+      "cpu_usage": 96.0,
+      "memory_usage": 94.0,
+      "memory_available": 1.28,
+      "disk_io_read": 150.0,
+      "disk_io_write": 140.0,
+      "network_sent": 200.0,
+      "network_recv": 180.0,
+      "load_average": [6.8, 7.2, 7.0],
+      "active_processes": 320,
+      "gpu_usage": 95.0,
+      "gpu_memory": 98.0
+    }
+  },
+  "resource_limits": {
+    "default": {
+      "cpu": 8.0,
+      "gpu": 1.0,
+      "memory": 32.0,
+      "storage": 1000.0,
+      "network": 1000.0
+    },
+    "high_performance": {
+      "cpu": 16.0,
+      "gpu": 2.0,
+      "memory": 64.0,
+      "storage": 2000.0,
+      "network": 2000.0
+    },
+    "limited": {
+      "cpu": 4.0,
+      "gpu": 0.5,
+      "memory": 16.0,
+      "storage": 500.0,
+      "network": 500.0
+    }
+  },
+  "mock_metrics_progression": {
+    "degrading_system": [
+      {"timestamp": 0, "cpu_usage": 30, "memory_usage": 40},
+      {"timestamp": 60, "cpu_usage": 45, "memory_usage": 55},
+      {"timestamp": 120, "cpu_usage": 65, "memory_usage": 70},
+      {"timestamp": 180, "cpu_usage": 80, "memory_usage": 85},
+      {"timestamp": 240, "cpu_usage": 90, "memory_usage": 92}
+    ],
+    "recovering_system": [
+      {"timestamp": 0, "cpu_usage": 90, "memory_usage": 85},
+      {"timestamp": 60, "cpu_usage": 75, "memory_usage": 70},
+      {"timestamp": 120, "cpu_usage": 55, "memory_usage": 50},
+      {"timestamp": 180, "cpu_usage": 35, "memory_usage": 30},
+      {"timestamp": 240, "cpu_usage": 25, "memory_usage": 25}
+    ],
+    "stable_system": [
+      {"timestamp": 0, "cpu_usage": 50, "memory_usage": 60},
+      {"timestamp": 60, "cpu_usage": 52, "memory_usage": 58},
+      {"timestamp": 120, "cpu_usage": 48, "memory_usage": 62},
+      {"timestamp": 180, "cpu_usage": 51, "memory_usage": 59},
+      {"timestamp": 240, "cpu_usage": 49, "memory_usage": 61}
+    ]
+  }
+}

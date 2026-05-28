@@ -1,0 +1,1017 @@
+# =========================================================
+# ONVOC VOCAB — MEDICATION CLASSES (RxNorm/DrugBank/ATC)
+# =========================================================
+# Comprehensive medication lexicon based on ONVOC tree structure
+# Organized by therapeutic category with synonyms, RxNorm, and ATC codes
+# Used for matching medication names in BIDS participants.tsv files
+
+# =========================================================
+# ADHD MEDICATIONS - STIMULANTS
+# =========================================================
+
+Stimulant:
+  synonyms:
+    - methylphenidate
+    - ritalin
+    - concerta
+    - metadate
+    - daytrana
+    - dexmethylphenidate
+    - focalin
+    - lisdexamfetamine
+    - vyvanse
+    - amphetamine
+    - mixed amphetamine salts
+    - adderall
+    - dextroamphetamine
+    - dexedrine
+    - pemoline
+  rxnorm_ingredients:
+    - { name: methylphenidate, rxcui: 224917 }
+    - { name: dexmethylphenidate, rxcui: 352372 }
+    - { name: lisdexamfetamine, rxcui: 711043 }
+    - { name: amphetamine, rxcui: 405812 }
+    - { name: dextroamphetamine, rxcui: 3288 }
+  atc_codes:
+    - N06BA   # Centrally acting sympathomimetics
+    - N06BA04 # Methylphenidate
+    - N06BA11 # Dexmethylphenidate
+    - N06BA12 # Lisdexamfetamine
+    - N06BA01 # Amphetamine
+    - N06BA02 # Dexamphetamine
+
+# =========================================================
+# ADHD MEDICATIONS - NONSTIMULANTS
+# =========================================================
+
+Atomoxetine:
+  synonyms:
+    - atomoxetine
+    - strattera
+  rxnorm_ingredients:
+    - { name: atomoxetine, rxcui: 314076 }
+  atc_codes:
+    - N06BA09 # Atomoxetine
+
+Guanfacine:
+  synonyms:
+    - guanfacine
+    - intuniv
+    - tenex
+  rxnorm_ingredients:
+    - { name: guanfacine, rxcui: 4908 }
+  atc_codes:
+    - C02AC02 # Guanfacine
+
+Clonidine:
+  synonyms:
+    - clonidine
+    - catapres
+    - kapvay
+  rxnorm_ingredients:
+    - { name: clonidine, rxcui: 2599 }
+  atc_codes:
+    - C02AC01 # Clonidine
+
+Viloxazine:
+  synonyms:
+    - viloxazine
+    - qelbree
+  rxnorm_ingredients:
+    - { name: viloxazine, rxcui: 12458 }
+  atc_codes:
+    - N06AX22 # Viloxazine
+
+# =========================================================
+# ANTIDEPRESSANTS - SSRIs
+# =========================================================
+
+SSRI:
+  synonyms:
+    - selective serotonin reuptake inhibitor
+    - ssri
+    - fluoxetine
+    - prozac
+    - sertraline
+    - zoloft
+    - paroxetine
+    - paxil
+    - citalopram
+    - celexa
+    - escitalopram
+    - lexapro
+    - fluvoxamine
+    - luvox
+  rxnorm_ingredients:
+    - { name: fluoxetine, rxcui: 476 }
+    - { name: sertraline, rxcui: 82728 }
+    - { name: paroxetine, rxcui: 7986 }
+    - { name: citalopram, rxcui: 2556 }
+    - { name: escitalopram, rxcui: 353108 }
+    - { name: fluvoxamine, rxcui: 4477 }
+  atc_codes:
+    - N06AB   # SSRIs
+    - N06AB03 # Fluoxetine
+    - N06AB06 # Sertraline
+    - N06AB05 # Paroxetine
+    - N06AB04 # Citalopram
+    - N06AB10 # Escitalopram
+    - N06AB08 # Fluvoxamine
+
+Fluoxetine:
+  synonyms:
+    - fluoxetine
+    - prozac
+    - sarafem
+  rxnorm_ingredients:
+    - { name: fluoxetine, rxcui: 476 }
+  atc_codes:
+    - N06AB03 # Fluoxetine
+
+Sertraline:
+  synonyms:
+    - sertraline
+    - zoloft
+  rxnorm_ingredients:
+    - { name: sertraline, rxcui: 82728 }
+  atc_codes:
+    - N06AB06 # Sertraline
+
+Paroxetine:
+  synonyms:
+    - paroxetine
+    - paxil
+    - pexeva
+    - brisdelle
+  rxnorm_ingredients:
+    - { name: paroxetine, rxcui: 7986 }
+  atc_codes:
+    - N06AB05 # Paroxetine
+
+Citalopram:
+  synonyms:
+    - citalopram
+    - celexa
+  rxnorm_ingredients:
+    - { name: citalopram, rxcui: 2556 }
+  atc_codes:
+    - N06AB04 # Citalopram
+
+Escitalopram:
+  synonyms:
+    - escitalopram
+    - lexapro
+    - cipralex
+  rxnorm_ingredients:
+    - { name: escitalopram, rxcui: 353108 }
+  atc_codes:
+    - N06AB10 # Escitalopram
+
+Fluvoxamine:
+  synonyms:
+    - fluvoxamine
+    - luvox
+  rxnorm_ingredients:
+    - { name: fluvoxamine, rxcui: 4477 }
+  atc_codes:
+    - N06AB08 # Fluvoxamine
+
+# =========================================================
+# ANTIDEPRESSANTS - SNRIs
+# =========================================================
+
+SNRI:
+  synonyms:
+    - serotonin norepinephrine reuptake inhibitor
+    - snri
+    - venlafaxine
+    - effexor
+    - desvenlafaxine
+    - pristiq
+    - duloxetine
+    - cymbalta
+    - levomilnacipran
+    - fetzima
+    - milnacipran
+    - savella
+  rxnorm_ingredients:
+    - { name: venlafaxine, rxcui: 39786 }
+    - { name: desvenlafaxine, rxcui: 683693 }
+    - { name: duloxetine, rxcui: 476250 }
+    - { name: levomilnacipran, rxcui: 1433211 }
+    - { name: milnacipran, rxcui: 588250 }
+  atc_codes:
+    - N06AX16 # Venlafaxine
+    - N06AX21 # Duloxetine
+    - N06AX23 # Desvenlafaxine
+    - N06AX28 # Levomilnacipran
+    - N06AX17 # Milnacipran
+
+Venlafaxine:
+  synonyms:
+    - venlafaxine
+    - effexor
+    - effexor xr
+  rxnorm_ingredients:
+    - { name: venlafaxine, rxcui: 39786 }
+  atc_codes:
+    - N06AX16 # Venlafaxine
+
+Desvenlafaxine:
+  synonyms:
+    - desvenlafaxine
+    - pristiq
+  rxnorm_ingredients:
+    - { name: desvenlafaxine, rxcui: 683693 }
+  atc_codes:
+    - N06AX23 # Desvenlafaxine
+
+Duloxetine:
+  synonyms:
+    - duloxetine
+    - cymbalta
+  rxnorm_ingredients:
+    - { name: duloxetine, rxcui: 476250 }
+  atc_codes:
+    - N06AX21 # Duloxetine
+
+# =========================================================
+# ANTIDEPRESSANTS - OTHER
+# =========================================================
+
+Bupropion:
+  synonyms:
+    - bupropion
+    - wellbutrin
+    - zyban
+    - aplenzin
+  rxnorm_ingredients:
+    - { name: bupropion, rxcui: 1833 }
+  atc_codes:
+    - N06AX12 # Bupropion
+
+Mirtazapine:
+  synonyms:
+    - mirtazapine
+    - remeron
+  rxnorm_ingredients:
+    - { name: mirtazapine, rxcui: 6976 }
+  atc_codes:
+    - N06AX11 # Mirtazapine
+
+Vilazodone:
+  synonyms:
+    - vilazodone
+    - viibryd
+  rxnorm_ingredients:
+    - { name: vilazodone, rxcui: 1150541 }
+  atc_codes:
+    - N06AX26 # Vilazodone
+
+Vortioxetine:
+  synonyms:
+    - vortioxetine
+    - trintellix
+    - brintellix
+  rxnorm_ingredients:
+    - { name: vortioxetine, rxcui: 1534889 }
+  atc_codes:
+    - N06AX27 # Vortioxetine
+
+Amitriptyline:
+  synonyms:
+    - amitriptyline
+    - elavil
+  rxnorm_ingredients:
+    - { name: amitriptyline, rxcui: 704 }
+  atc_codes:
+    - N06AA09 # Amitriptyline
+
+Imipramine:
+  synonyms:
+    - imipramine
+    - tofranil
+  rxnorm_ingredients:
+    - { name: imipramine, rxcui: 5640 }
+  atc_codes:
+    - N06AA02 # Imipramine
+
+Trazodone:
+  synonyms:
+    - trazodone
+    - desyrel
+    - oleptro
+  rxnorm_ingredients:
+    - { name: trazodone, rxcui: 10689 }
+  atc_codes:
+    - N06AX05 # Trazodone
+
+# =========================================================
+# ANTIPSYCHOTICS
+# =========================================================
+
+Antipsychotic:
+  synonyms:
+    - antipsychotic
+    - neuroleptic
+    - quetiapine
+    - seroquel
+    - aripiprazole
+    - abilify
+    - risperidone
+    - risperdal
+    - olanzapine
+    - zyprexa
+    - ziprasidone
+    - geodon
+    - lurasidone
+    - latuda
+    - paliperidone
+    - invega
+    - clozapine
+    - clozaril
+    - asenapine
+    - saphris
+    - brexpiprazole
+    - rexulti
+    - cariprazine
+    - vraylar
+    - iloperidone
+    - fanapt
+    - loxapine
+    - loxitane
+    - molindone
+    - moban
+    - pimozide
+    - orap
+  atc_codes:
+    - N05A   # Antipsychotics
+
+Quetiapine:
+  synonyms:
+    - quetiapine
+    - seroquel
+  rxnorm_ingredients:
+    - { name: quetiapine, rxcui: 35256 }
+  atc_codes:
+    - N05AH04 # Quetiapine
+
+Aripiprazole:
+  synonyms:
+    - aripiprazole
+    - abilify
+  rxnorm_ingredients:
+    - { name: aripiprazole, rxcui: 352276 }
+  atc_codes:
+    - N05AX12 # Aripiprazole
+
+Risperidone:
+  synonyms:
+    - risperidone
+    - risperdal
+  rxnorm_ingredients:
+    - { name: risperidone, rxcui: 9149 }
+  atc_codes:
+    - N05AX08 # Risperidone
+
+Olanzapine:
+  synonyms:
+    - olanzapine
+    - zyprexa
+  rxnorm_ingredients:
+    - { name: olanzapine, rxcui: 6918 }
+  atc_codes:
+    - N05AH03 # Olanzapine
+
+Ziprasidone:
+  synonyms:
+    - ziprasidone
+    - geodon
+  rxnorm_ingredients:
+    - { name: ziprasidone, rxcui: 352245 }
+  atc_codes:
+    - N05AE04 # Ziprasidone
+
+Lurasidone:
+  synonyms:
+    - lurasidone
+    - latuda
+  rxnorm_ingredients:
+    - { name: lurasidone, rxcui: 1150550 }
+  atc_codes:
+    - N05AE05 # Lurasidone
+
+Paliperidone:
+  synonyms:
+    - paliperidone
+    - invega
+  rxnorm_ingredients:
+    - { name: paliperidone, rxcui: 617312 }
+  atc_codes:
+    - N05AX13 # Paliperidone
+
+Clozapine:
+  synonyms:
+    - clozapine
+    - clozaril
+  rxnorm_ingredients:
+    - { name: clozapine, rxcui: 2723 }
+  atc_codes:
+    - N05AH02 # Clozapine
+
+# =========================================================
+# ANXIOLYTICS - BENZODIAZEPINES
+# =========================================================
+
+Benzodiazepine:
+  synonyms:
+    - benzodiazepine
+    - alprazolam
+    - xanax
+    - lorazepam
+    - ativan
+    - clonazepam
+    - klonopin
+    - diazepam
+    - valium
+    - temazepam
+    - restoril
+    - chlordiazepoxide
+    - librium
+    - oxazepam
+    - serax
+    - clorazepate
+    - tranxene
+  atc_codes:
+    - N05BA   # Benzodiazepines
+
+Alprazolam:
+  synonyms:
+    - alprazolam
+    - xanax
+  rxnorm_ingredients:
+    - { name: alprazolam, rxcui: 596 }
+  atc_codes:
+    - N05BA12 # Alprazolam
+
+Lorazepam:
+  synonyms:
+    - lorazepam
+    - ativan
+  rxnorm_ingredients:
+    - { name: lorazepam, rxcui: 6472 }
+  atc_codes:
+    - N05BA06 # Lorazepam
+
+Clonazepam:
+  synonyms:
+    - clonazepam
+    - klonopin
+  rxnorm_ingredients:
+    - { name: clonazepam, rxcui: 2598 }
+  atc_codes:
+    - N03AE01 # Clonazepam
+
+Diazepam:
+  synonyms:
+    - diazepam
+    - valium
+  rxnorm_ingredients:
+    - { name: diazepam, rxcui: 3374 }
+  atc_codes:
+    - N05BA01 # Diazepam
+
+# =========================================================
+# ANXIOLYTICS - OTHER
+# =========================================================
+
+Buspirone:
+  synonyms:
+    - buspirone
+    - buspar
+  rxnorm_ingredients:
+    - { name: buspirone, rxcui: 1839 }
+  atc_codes:
+    - N05BE01 # Buspirone
+
+Hydroxyzine:
+  synonyms:
+    - hydroxyzine
+    - atarax
+    - vistaril
+  rxnorm_ingredients:
+    - { name: hydroxyzine, rxcui: 5521 }
+  atc_codes:
+    - N05BB01 # Hydroxyzine
+
+Propranolol:
+  synonyms:
+    - propranolol
+    - inderal
+  rxnorm_ingredients:
+    - { name: propranolol, rxcui: 8787 }
+  atc_codes:
+    - C07AA05 # Propranolol
+
+# =========================================================
+# MOOD STABILIZERS
+# =========================================================
+
+Mood_Stabilizer:
+  synonyms:
+    - mood stabilizer
+    - lithium
+    - lithium carbonate
+    - valproic acid
+    - valproate
+    - depakote
+    - carbamazepine
+    - tegretol
+    - lamotrigine
+    - lamictal
+    - oxcarbazepine
+    - trileptal
+    - gabapentin
+    - neurontin
+    - pregabalin
+    - lyrica
+    - topiramate
+    - topamax
+    - tiagabine
+    - gabitril
+    - zonisamide
+    - zonegran
+  atc_codes:
+    - N03AF01 # Valproic acid
+    - N03AX09 # Lamotrigine
+    - N03AX11 # Carbamazepine
+    - N05AN01 # Lithium
+
+Lithium:
+  synonyms:
+    - lithium
+    - lithium carbonate
+    - eskalith
+    - lithobid
+  rxnorm_ingredients:
+    - { name: lithium carbonate, rxcui: 6470 }
+  atc_codes:
+    - N05AN01 # Lithium
+
+Valproic_Acid:
+  synonyms:
+    - valproic acid
+    - valproate
+    - depakote
+    - divalproex
+  rxnorm_ingredients:
+    - { name: valproic acid, rxcui: 11289 }
+  atc_codes:
+    - N03AF01 # Valproic acid
+
+Carbamazepine:
+  synonyms:
+    - carbamazepine
+    - tegretol
+    - carbatrol
+  rxnorm_ingredients:
+    - { name: carbamazepine, rxcui: 2191 }
+  atc_codes:
+    - N03AF01 # Carbamazepine
+
+Lamotrigine:
+  synonyms:
+    - lamotrigine
+    - lamictal
+  rxnorm_ingredients:
+    - { name: lamotrigine, rxcui: 6378 }
+  atc_codes:
+    - N03AX09 # Lamotrigine
+
+Oxcarbazepine:
+  synonyms:
+    - oxcarbazepine
+    - trileptal
+  rxnorm_ingredients:
+    - { name: oxcarbazepine, rxcui: 352293 }
+  atc_codes:
+    - N03AF02 # Oxcarbazepine
+
+Gabapentin:
+  synonyms:
+    - gabapentin
+    - neurontin
+    - grabil
+  rxnorm_ingredients:
+    - { name: gabapentin, rxcui: 4252 }
+  atc_codes:
+    - N03AX12 # Gabapentin
+
+Pregabalin:
+  synonyms:
+    - pregabalin
+    - lyrica
+  rxnorm_ingredients:
+    - { name: pregabalin, rxcui: 321988 }
+  atc_codes:
+    - N03AX16 # Pregabalin
+
+Topiramate:
+  synonyms:
+    - topiramate
+    - topamax
+  rxnorm_ingredients:
+    - { name: topiramate, rxcui: 10600 }
+  atc_codes:
+    - N03AX11 # Topiramate
+
+# =========================================================
+# PARKINSON'S DISEASE MEDICATIONS
+# =========================================================
+
+Levodopa:
+  synonyms:
+    - levodopa
+    - l-dopa
+    - sinemet
+    - carbidopa levodopa
+  rxnorm_ingredients:
+    - { name: levodopa, rxcui: 6378 }
+  atc_codes:
+    - N04BA01 # Levodopa
+
+Carbidopa:
+  synonyms:
+    - carbidopa
+    - sinemet
+  rxnorm_ingredients:
+    - { name: carbidopa, rxcui: 2034 }
+  atc_codes:
+    - N04BA02 # Carbidopa
+
+Pramipexole:
+  synonyms:
+    - pramipexole
+    - mirapex
+  rxnorm_ingredients:
+    - { name: pramipexole, rxcui: 31382 }
+  atc_codes:
+    - N04BC05 # Pramipexole
+
+Ropinirole:
+  synonyms:
+    - ropinirole
+    - requip
+  rxnorm_ingredients:
+    - { name: ropinirole, rxcui: 8427 }
+  atc_codes:
+    - N04BC04 # Ropinirole
+
+Amantadine:
+  synonyms:
+    - amantadine
+    - symmetrel
+    - golemri
+  rxnorm_ingredients:
+    - { name: amantadine, rxcui: 596 }
+  atc_codes:
+    - N04BB01 # Amantadine
+
+Selegiline:
+  synonyms:
+    - selegiline
+    - eldepryl
+    - emsam
+  rxnorm_ingredients:
+    - { name: selegiline, rxcui: 9633 }
+  atc_codes:
+    - N04BD01 # Selegiline
+
+Rasagiline:
+  synonyms:
+    - rasagiline
+    - azilect
+  rxnorm_ingredients:
+    - { name: rasagiline, rxcui: 617312 }
+  atc_codes:
+    - N04BD02 # Rasagiline
+
+# =========================================================
+# DEMENTIA MEDICATIONS
+# =========================================================
+
+Donepezil:
+  synonyms:
+    - donepezil
+    - aricept
+  rxnorm_ingredients:
+    - { name: donepezil, rxcui: 31555 }
+  atc_codes:
+    - N06DA02 # Donepezil
+
+Rivastigmine:
+  synonyms:
+    - rivastigmine
+    - exelon
+  rxnorm_ingredients:
+    - { name: rivastigmine, rxcui: 352291 }
+  atc_codes:
+    - N06DA03 # Rivastigmine
+
+Galantamine:
+  synonyms:
+    - galantamine
+    - razadyne
+  rxnorm_ingredients:
+    - { name: galantamine, rxcui: 352292 }
+  atc_codes:
+    - N06DA04 # Galantamine
+
+Memantine:
+  synonyms:
+    - memantine
+    - namenda
+  rxnorm_ingredients:
+    - { name: memantine, rxcui: 352292 }
+  atc_codes:
+    - N06DX01 # Memantine
+
+# =========================================================
+# MIGRAINE MEDICATIONS
+# =========================================================
+
+Triptan:
+  synonyms:
+    - triptan
+    - sumatriptan
+    - imitrex
+    - rizatriptan
+    - maxalt
+    - eletriptan
+    - relpax
+    - zolmitriptan
+    - zomig
+    - frovatriptan
+    - frova
+    - naratriptan
+    - amerge
+    - almotriptan
+    - axert
+  atc_codes:
+    - N02CC   # Serotonin (5HT1) agonists
+
+Sumatriptan:
+  synonyms:
+    - sumatriptan
+    - imitrex
+  rxnorm_ingredients:
+    - { name: sumatriptan, rxcui: 10438 }
+  atc_codes:
+    - N02CC01 # Sumatriptan
+
+Rizatriptan:
+  synonyms:
+    - rizatriptan
+    - maxalt
+  rxnorm_ingredients:
+    - { name: rizatriptan, rxcui: 352292 }
+  atc_codes:
+    - N02CC04 # Rizatriptan
+
+# =========================================================
+# OPIOIDS
+# =========================================================
+
+Opioid:
+  synonyms:
+    - opioid
+    - narcotic
+    - morphine
+    - oxycodone
+    - oxycontin
+    - hydrocodone
+    - vicodin
+    - codeine
+    - tramadol
+    - ultram
+    - fentanyl
+    - duragesic
+    - buprenorphine
+    - suboxone
+    - hydromorphone
+    - dilaudid
+    - tapentadol
+    - nucynta
+    - naloxone
+    - narcan
+  atc_codes:
+    - N02A   # Opioids
+
+Morphine:
+  synonyms:
+    - morphine
+    - morphine sulfate
+    - ms contin
+  rxnorm_ingredients:
+    - { name: morphine, rxcui: 7052 }
+  atc_codes:
+    - N02AA01 # Morphine
+
+Oxycodone:
+  synonyms:
+    - oxycodone
+    - oxycontin
+    - roxicodone
+  rxnorm_ingredients:
+    - { name: oxycodone, rxcui: 7804 }
+  atc_codes:
+    - N02AA05 # Oxycodone
+
+Hydrocodone:
+  synonyms:
+    - hydrocodone
+    - vicodin
+    - norco
+  rxnorm_ingredients:
+    - { name: hydrocodone, rxcui: 5489 }
+  atc_codes:
+    - N02AA03 # Hydrocodone
+
+# =========================================================
+# ANTI-INFLAMMATORY
+# =========================================================
+
+NSAID:
+  synonyms:
+    - nsaid
+    - nonsteroidal anti-inflammatory drug
+    - ibuprofen
+    - advil
+    - naproxen
+    - aleve
+    - celecoxib
+    - celebrex
+    - meloxicam
+    - mobic
+    - diclofenac
+    - voltaren
+  atc_codes:
+    - M01A   # Anti-inflammatory and antirheumatic products
+
+Ibuprofen:
+  synonyms:
+    - ibuprofen
+    - advil
+    - motrin
+  rxnorm_ingredients:
+    - { name: ibuprofen, rxcui: 5640 }
+  atc_codes:
+    - M01AE01 # Ibuprofen
+
+Naproxen:
+  synonyms:
+    - naproxen
+    - aleve
+    - naprosyn
+  rxnorm_ingredients:
+    - { name: naproxen, rxcui: 7225 }
+  atc_codes:
+    - M01AE02 # Naproxen
+
+# =========================================================
+# ANESTHETICS
+# =========================================================
+
+Propofol:
+  synonyms:
+    - propofol
+    - diprivan
+  rxnorm_ingredients:
+    - { name: propofol, rxcui: 8777 }
+  atc_codes:
+    - N01AX10 # Propofol
+
+Sevoflurane:
+  synonyms:
+    - sevoflurane
+    - ultane
+  rxnorm_ingredients:
+    - { name: sevoflurane, rxcui: 352292 }
+  atc_codes:
+    - N01AB08 # Sevoflurane
+
+# =========================================================
+# CANNABINOIDS
+# =========================================================
+
+Cannabis:
+  synonyms:
+    - cannabis
+    - marijuana
+    - thc
+    - delta-9-tetrahydrocannabinol
+    - cbd
+    - cannabidiol
+  atc_codes:
+    - N02BG01 # Cannabis
+
+Cannabidiol:
+  synonyms:
+    - cannabidiol
+    - cbd
+    - epidiolex
+  rxnorm_ingredients:
+    - { name: cannabidiol, rxcui: 352292 }
+  atc_codes:
+    - N02BG01 # Cannabidiol
+
+# =========================================================
+# PSYCHEDELICS / HALLUCINOGENS
+# =========================================================
+
+Psilocybin:
+  synonyms:
+    - psilocybin
+    - magic mushrooms
+  rxnorm_ingredients:
+    - { name: psilocybin, rxcui: 352292 }
+
+Ketamine:
+  synonyms:
+    - ketamine
+    - ketalar
+  rxnorm_ingredients:
+    - { name: ketamine, rxcui: 6176 }
+  atc_codes:
+    - N01AX03 # Ketamine
+
+MDMA:
+  synonyms:
+    - mdma
+    - ecstasy
+    - 3,4-methylenedioxymethamphetamine
+  rxnorm_ingredients:
+    - { name: mdma, rxcui: 352292 }
+
+LSD:
+  synonyms:
+    - lsd
+    - lysergic acid diethylamide
+    - acid
+  rxnorm_ingredients:
+    - { name: lsd, rxcui: 352292 }
+
+# =========================================================
+# ANTICONVULSANTS
+# =========================================================
+
+Anticonvulsant:
+  synonyms:
+    - anticonvulsant
+    - antiepileptic
+    - phenytoin
+    - dilantin
+    - phenobarbital
+    - primidone
+    - mysoline
+  atc_codes:
+    - N03A   # Antiepileptics
+
+Phenytoin:
+  synonyms:
+    - phenytoin
+    - dilantin
+  rxnorm_ingredients:
+    - { name: phenytoin, rxcui: 8203 }
+  atc_codes:
+    - N03AB02 # Phenytoin
+
+# =========================================================
+# BETA BLOCKERS
+# =========================================================
+
+Beta_Blocker:
+  synonyms:
+    - beta blocker
+    - propranolol
+    - inderal
+    - metoprolol
+    - lopressor
+    - atenolol
+    - tenormin
+  atc_codes:
+    - C07   # Beta blocking agents
+
+# =========================================================
+# CONTRACEPTIVES
+# =========================================================
+
+Oral_Contraceptive:
+  synonyms:
+    - oral contraceptive
+    - birth control pill
+    - ethinyl estradiol
+    - levonorgestrel
+    - norethindrone
+  atc_codes:
+    - G03A   # Hormonal contraceptives for systemic use

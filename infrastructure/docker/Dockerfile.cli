@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# System deps for building optional packages (keep minimal)
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    git curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml README.md /app/
+COPY src /app/src
+
+# Install with agent extras for CLI
+RUN pip install --upgrade pip && pip install .[agent]
+
+# Default to REPL
+ENTRYPOINT ["br"]
+CMD ["chat"]

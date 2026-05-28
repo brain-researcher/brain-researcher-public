@@ -1,0 +1,1628 @@
+# ===========================================
+# ONVOC VOCAB — DIAGNOSES (ICD/HPO expanded)
+# ===========================================
+# Comprehensive diagnosis lexicon based on ONVOC tree structure
+# Includes Psychiatric, Neurological, and Medical Disorders
+# Organized by category with ICD-10, ICD-11, and HPO mappings
+
+# ===========================================
+# PSYCHIATRIC DISORDERS
+# ===========================================
+
+ADHD:
+  synonyms:
+    - attention deficit hyperactivity disorder
+    - attention-deficit/hyperactivity disorder
+    - attention deficit
+    - adhd
+    - add
+    - hyperkinetic disorder
+    - hkd
+  icd10:
+    - F90.0   # Predominantly inattentive
+    - F90.1   # Predominantly hyperactive-impulsive
+    - F90.2   # Combined type
+    - F90.8
+    - F90.9
+  icd11:
+    - 6A05    # ADHD (ICD-11)
+    - 6A05.2  # Combined presentation
+  hpo_ids:
+    - HP:0007018  # Attention deficit hyperactivity disorder
+
+MDD:
+  synonyms:
+    - major depressive disorder
+    - major depression
+    - unipolar depression
+    - depressive episode
+    - mdd
+    - clinical depression
+  icd10:
+    - F32.0
+    - F32.1
+    - F32.2
+    - F32.3
+    - F32.4
+    - F32.5
+    - F32.8
+    - F32.9
+    - F33.0
+    - F33.1
+    - F33.2
+    - F33.3
+    - F33.4
+    - F33.8
+    - F33.9
+  icd11:
+    - 6A70    # Depressive episode
+    - 6A71    # Recurrent depressive disorder
+  hpo_ids:
+    - HP:0000716  # Depression
+
+ASD:
+  synonyms:
+    - autism spectrum disorder
+    - autism
+    - asd
+    - autistic disorder
+    - infantile autism
+    - kanner's syndrome
+    - asperger syndrome
+  icd10:
+    - F84.0   # Autistic disorder
+    - F84.5   # Asperger syndrome
+  icd11:
+    - 6A02    # Autism spectrum disorder
+  hpo_ids:
+    - HP:0000729  # Autism
+
+SZ:
+  synonyms:
+    - schizophrenia
+    - schiz
+    - paranoid schizophrenia
+    - catatonic schizophrenia
+    - hebephrenic schizophrenia
+    - disorganized schizophrenia
+    - schizophrenia spectrum
+  icd10:
+    - F20.0
+    - F20.1
+    - F20.2
+    - F20.3
+    - F20.5
+    - F20.8
+    - F20.9
+  icd11:
+    - 6A20
+  hpo_ids:
+    - HP:0100753  # Schizophrenia
+
+Bipolar_Disorder:
+  synonyms:
+    - bipolar disorder
+    - bipolar affective disorder
+    - manic depression
+    - bipolar i
+    - bipolar ii
+    - bipolar depression
+  icd10:
+    - F31.0
+    - F31.1
+    - F31.2
+    - F31.3
+    - F31.4
+    - F31.5
+    - F31.6
+    - F31.7
+    - F31.8
+    - F31.9
+  icd11:
+    - 6A60    # Bipolar type I disorder
+    - 6A61    # Bipolar type II disorder
+  hpo_ids:
+    - HP:0007302  # Bipolar affective disorder
+
+Anxiety_Disorders:
+  synonyms:
+    - anxiety disorder
+    - anxiety
+    - generalized anxiety disorder
+    - gad
+    - anxiety neurosis
+  icd10:
+    - F41.0
+    - F41.1
+    - F41.2
+    - F41.3
+    - F41.8
+    - F41.9
+  icd11:
+    - 6B00    # Generalized anxiety disorder
+    - 6B01    # Panic disorder
+  hpo_ids:
+    - HP:0000739  # Anxiety
+
+Panic_Disorder:
+  synonyms:
+    - panic disorder
+    - panic attacks
+    - panic
+  icd10:
+    - F41.0
+  icd11:
+    - 6B01    # Panic disorder
+  hpo_ids:
+    - HP:0000231  # Panic attacks
+
+PTSD:
+  synonyms:
+    - post-traumatic stress disorder
+    - posttraumatic stress disorder
+    - ptsd
+    - post traumatic stress
+    - shell shock
+    - combat stress
+  icd10:
+    - F43.1
+  icd11:
+    - 6B40    # Post-traumatic stress disorder
+  hpo_ids:
+    - HP:0000729  # Post-traumatic stress disorder
+
+OCD:
+  synonyms:
+    - obsessive-compulsive disorder
+    - obsessive compulsive disorder
+    - ocd
+    - obsessive compulsive neurosis
+  icd10:
+    - F42.0
+    - F42.1
+    - F42.2
+    - F42.8
+    - F42.9
+  icd11:
+    - 6B20    # Obsessive-compulsive disorder
+  hpo_ids:
+    - HP:0000722  # Obsessive-compulsive behavior
+
+Eating_Disorders:
+  synonyms:
+    - eating disorder
+    - anorexia nervosa
+    - bulimia nervosa
+    - binge eating disorder
+    - anorexia
+    - bulimia
+  icd10:
+    - F50.0
+    - F50.1
+    - F50.2
+    - F50.3
+    - F50.4
+    - F50.5
+    - F50.8
+    - F50.9
+  icd11:
+    - 6B80    # Anorexia nervosa
+    - 6B81    # Bulimia nervosa
+    - 6B82    # Binge eating disorder
+  hpo_ids:
+    - HP:0000726  # Anorexia
+    - HP:0002021  # Binge eating
+
+Borderline_Personality_Disorder:
+  synonyms:
+    - borderline personality disorder
+    - bpd
+    - emotionally unstable personality disorder
+    - eupd
+  icd10:
+    - F60.3
+  icd11:
+    - 6D11.1  # Borderline pattern
+  hpo_ids:
+    - HP:0000828  # Borderline personality disorder
+
+Personality_Disorders:
+  synonyms:
+    - personality disorder
+    - personality disorder cluster a
+    - personality disorder cluster b
+    - personality disorder cluster c
+  icd10:
+    - F60.0
+    - F60.1
+    - F60.2
+    - F60.3
+    - F60.4
+    - F60.5
+    - F60.6
+    - F60.7
+    - F60.8
+    - F60.9
+  icd11:
+    - 6D10    # Personality disorder
+  hpo_ids:
+    - HP:0000828  # Personality disorder
+
+Phobia:
+  synonyms:
+    - phobia
+    - specific phobia
+    - social phobia
+    - agoraphobia
+  icd10:
+    - F40.0
+    - F40.1
+    - F40.2
+    - F40.8
+    - F40.9
+  icd11:
+    - 6B03    # Specific phobia
+    - 6B04    # Social anxiety disorder
+  hpo_ids:
+    - HP:0000723  # Phobia
+
+Social_Phobia:
+  synonyms:
+    - social phobia
+    - social anxiety disorder
+    - social anxiety
+  icd10:
+    - F40.1
+  icd11:
+    - 6B04    # Social anxiety disorder
+  hpo_ids:
+    - HP:0000723  # Social phobia
+
+Claustrophobia:
+  synonyms:
+    - claustrophobia
+    - fear of enclosed spaces
+  icd10:
+    - F40.2
+  icd11:
+    - 6B03    # Specific phobia
+  hpo_ids:
+    - HP:0000723  # Claustrophobia
+
+Mood_Disorder:
+  synonyms:
+    - mood disorder
+    - affective disorder
+    - mood disorders
+  icd10:
+    - F30-F39
+  icd11:
+    - 6A60    # Mood disorders
+  hpo_ids:
+    - HP:0000754  # Mood disorder
+
+Cyclothymic_Disorder:
+  synonyms:
+    - cyclothymic disorder
+    - cyclothymia
+  icd10:
+    - F34.0
+  icd11:
+    - 6A62    # Cyclothymic disorder
+  hpo_ids:
+    - HP:0000716  # Cyclothymia
+
+Mood_Dysregulation_Disorder:
+  synonyms:
+    - mood dysregulation disorder
+    - disruptive mood dysregulation disorder
+    - dmdd
+  icd10:
+    - F34.8
+  icd11:
+    - 6C72    # Disruptive mood dysregulation disorder
+  hpo_ids:
+    - HP:0000754  # Mood dysregulation
+
+Grief_Disorder:
+  synonyms:
+    - grief disorder
+    - prolonged grief disorder
+    - complicated grief
+    - persistent complex bereavement disorder
+  icd10:
+    - F43.2
+  icd11:
+    - 6B42    # Prolonged grief disorder
+  hpo_ids:
+    - HP:0000716  # Grief
+
+Psychotic_Disorder:
+  synonyms:
+    - psychotic disorder
+    - psychosis
+    - psychotic
+  icd10:
+    - F20-F29
+  icd11:
+    - 6A20    # Schizophrenia
+    - 6A21    # Schizoaffective disorder
+  hpo_ids:
+    - HP:0000709  # Psychosis
+
+Affective_Psychotic_Disorder:
+  synonyms:
+    - affective psychotic disorder
+    - schizoaffective disorder
+    - schizoaffective
+  icd10:
+    - F25.0
+    - F25.1
+    - F25.2
+    - F25.8
+    - F25.9
+  icd11:
+    - 6A21    # Schizoaffective disorder
+  hpo_ids:
+    - HP:0000709  # Affective psychosis
+
+Developmental_Disorder:
+  synonyms:
+    - developmental disorder
+    - developmental delay
+    - developmental disability
+  icd10:
+    - F80-F89
+  icd11:
+    - 6A01    # Developmental disorders
+  hpo_ids:
+    - HP:0001263  # Developmental delay
+
+Neurodevelopment_Disorders:
+  synonyms:
+    - neurodevelopment disorders
+    - neurodevelopmental disorder
+    - neurodevelopmental disability
+  icd10:
+    - F80-F89
+  icd11:
+    - 6A01    # Neurodevelopmental disorders
+  hpo_ids:
+    - HP:0001263  # Neurodevelopmental delay
+
+Learning_Disorder:
+  synonyms:
+    - learning disorder
+    - learning disability
+    - learning difficulties
+    - specific learning disorder
+  icd10:
+    - F81.0
+    - F81.1
+    - F81.2
+    - F81.3
+    - F81.8
+    - F81.9
+  icd11:
+    - 6A03    # Specific learning disorder
+  hpo_ids:
+    - HP:0001328  # Learning disability
+
+Conduct_Disorders:
+  synonyms:
+    - conduct disorder
+    - conduct disorders
+    - behavioral disorder
+  icd10:
+    - F91.0
+    - F91.1
+    - F91.2
+    - F91.3
+    - F91.8
+    - F91.9
+  icd11:
+    - 6C91    # Conduct-dissocial disorder
+  hpo_ids:
+    - HP:0000708  # Behavioral abnormality
+
+Oppositional_Defiant_Disorder:
+  synonyms:
+    - oppositional defiant disorder
+    - odd
+    - oppositional defiant
+  icd10:
+    - F91.3
+  icd11:
+    - 6C90    # Oppositional defiant disorder
+  hpo_ids:
+    - HP:0000708  # Oppositional behavior
+
+Substance_Use_Disorders:
+  synonyms:
+    - substance use disorder
+    - substance abuse
+    - substance dependence
+    - addiction
+  icd10:
+    - F10-F19
+  icd11:
+    - 6C40    # Substance use disorders
+  hpo_ids:
+    - HP:0002451  # Substance abuse
+
+Tobacco_Use_Disorder:
+  synonyms:
+    - tobacco use disorder
+    - nicotine dependence
+    - smoking addiction
+    - tobacco dependence
+  icd10:
+    - F17.2
+  icd11:
+    - 6C4A    # Tobacco use disorder
+  hpo_ids:
+    - HP:0002451  # Tobacco use
+
+Cannabis_Use_Disorder:
+  synonyms:
+    - cannabis use disorder
+    - marijuana use disorder
+    - cannabis dependence
+    - marijuana addiction
+  icd10:
+    - F12.2
+  icd11:
+    - 6C41    # Cannabis use disorder
+  hpo_ids:
+    - HP:0002451  # Cannabis use
+
+Behavioral_Addiction:
+  synonyms:
+    - behavioral addiction
+    - process addiction
+    - non-substance addiction
+  icd10:
+    - F63.9
+  icd11:
+    - 6C5Y    # Other specified impulse control disorder
+  hpo_ids:
+    - HP:0002451  # Behavioral addiction
+
+Gambling_Addiction:
+  synonyms:
+    - gambling addiction
+    - pathological gambling
+    - compulsive gambling
+    - gambling disorder
+  icd10:
+    - F63.0
+  icd11:
+    - 6C50    # Gambling disorder
+  hpo_ids:
+    - HP:0002451  # Gambling addiction
+
+Gaming_Addiction:
+  synonyms:
+    - gaming addiction
+    - internet gaming disorder
+    - video game addiction
+    - gaming disorder
+  icd10:
+    - F63.9
+  icd11:
+    - 6C51    # Gaming disorder
+  hpo_ids:
+    - HP:0002451  # Gaming addiction
+
+Internet_Addiction:
+  synonyms:
+    - internet addiction
+    - internet use disorder
+    - problematic internet use
+  icd10:
+    - F63.9
+  icd11:
+    - 6C51    # Gaming disorder (may include internet)
+  hpo_ids:
+    - HP:0002451  # Internet addiction
+
+Dissociative_Disorder:
+  synonyms:
+    - dissociative disorder
+    - dissociation
+    - dissociative identity disorder
+    - did
+  icd10:
+    - F44.0
+    - F44.1
+    - F44.2
+    - F44.3
+    - F44.4
+    - F44.5
+    - F44.6
+    - F44.7
+    - F44.8
+    - F44.9
+  icd11:
+    - 6B60    # Dissociative disorders
+  hpo_ids:
+    - HP:0000745  # Dissociation
+
+Elimination_Disorders:
+  synonyms:
+    - elimination disorder
+    - encopresis
+    - enuresis
+  icd10:
+    - F98.0
+    - F98.1
+  icd11:
+    - 6C02    # Enuresis
+    - 6C03    # Encopresis
+  hpo_ids:
+    - HP:0000019  # Urinary incontinence
+    - HP:0000520  # Fecal incontinence
+
+Body_Dysmorphic_Disorder:
+  synonyms:
+    - body dysmorphic disorder
+    - bdd
+    - dysmorphophobia
+    - body dysmorphia
+  icd10:
+    - F45.2
+  icd11:
+    - 6B21    # Body dysmorphic disorder
+  hpo_ids:
+    - HP:0000726  # Body dysmorphic disorder
+
+Sexual_Dysfunctions:
+  synonyms:
+    - sexual dysfunction
+    - sexual disorder
+    - sexual dysfunction disorder
+  icd10:
+    - F52.0
+    - F52.1
+    - F52.2
+    - F52.3
+    - F52.4
+    - F52.5
+    - F52.6
+    - F52.7
+    - F52.8
+    - F52.9
+  icd11:
+    - HA00    # Sexual dysfunctions
+  hpo_ids:
+    - HP:0030019  # Sexual dysfunction
+
+Gender_Dysphoria:
+  synonyms:
+    - gender dysphoria
+    - gender identity disorder
+    - gender incongruence
+  icd10:
+    - F64.0
+    - F64.1
+    - F64.2
+    - F64.8
+    - F64.9
+  icd11:
+    - HA60    # Gender incongruence
+  hpo_ids:
+    - HP:0030019  # Gender dysphoria
+
+Alexithymia:
+  synonyms:
+    - alexithymia
+    - emotional blindness
+  icd10:
+    - F48.1
+  icd11:
+    - 6B01    # Personality disorder trait
+  hpo_ids:
+    - HP:0030019  # Alexithymia
+
+Catatonia:
+  synonyms:
+    - catatonia
+    - catatonic
+    - catatonic state
+  icd10:
+    - F20.2
+  icd11:
+    - 6A40    # Catatonia
+  hpo_ids:
+    - HP:0002361  # Catatonia
+
+# ===========================================
+# NEUROLOGICAL DISORDERS
+# ===========================================
+
+PD:
+  synonyms:
+    - parkinson's disease
+    - parkinson disease
+    - idiopathic parkinsonism
+    - paralysis agitans
+    - pd
+  icd10:
+    - G20       # Base code
+  icd11:
+    - 8A00.0    # Parkinson disease
+  hpo_ids:
+    - HP:0001300 # Parkinsonism
+
+Alzheimers_Disease:
+  synonyms:
+    - alzheimer's disease
+    - alzheimer disease
+    - ad
+    - senile dementia
+    - presenile dementia
+    - alzheimer dementia
+  icd10:
+    - G30.0
+    - G30.1
+    - G30.8
+    - G30.9
+  icd11:
+    - 8A20.0    # Alzheimer disease
+  hpo_ids:
+    - HP:0002511  # Alzheimer disease
+
+Dementia:
+  synonyms:
+    - dementia
+    - senile dementia
+    - vascular dementia
+    - frontotemporal dementia
+  icd10:
+    - F00
+    - F01
+    - F02
+    - F03
+  icd11:
+    - 6D80    # Dementia
+  hpo_ids:
+    - HP:0000726  # Dementia
+
+Epilepsy:
+  synonyms:
+    - epilepsy
+    - seizure disorder
+    - seizures
+    - convulsive disorder
+  icd10:
+    - G40.0
+    - G40.1
+    - G40.2
+    - G40.3
+    - G40.4
+    - G40.5
+    - G40.6
+    - G40.7
+    - G40.8
+    - G40.9
+  icd11:
+    - 8A61    # Epilepsy
+  hpo_ids:
+    - HP:0001250  # Seizures
+
+Multiple_Sclerosis:
+  synonyms:
+    - multiple sclerosis
+    - ms
+    - disseminated sclerosis
+  icd10:
+    - G35
+  icd11:
+    - 8A40    # Multiple sclerosis
+  hpo_ids:
+    - HP:0001265  # Multiple sclerosis
+
+Stroke:
+  synonyms:
+    - stroke
+    - cerebrovascular accident
+    - cva
+    - brain attack
+    - ischemic stroke
+    - hemorrhagic stroke
+  icd10:
+    - I60
+    - I61
+    - I62
+    - I63
+    - I64
+    - I65
+    - I66
+    - I67
+    - I68
+    - I69
+  icd11:
+    - 8B20    # Stroke
+  hpo_ids:
+    - HP:0001297  # Stroke
+
+Migraine:
+  synonyms:
+    - migraine
+    - migraine headache
+    - migraine with aura
+    - migraine without aura
+  icd10:
+    - G43.0
+    - G43.1
+    - G43.2
+    - G43.3
+    - G43.8
+    - G43.9
+  icd11:
+    - 8A80    # Migraine
+  hpo_ids:
+    - HP:0002076  # Migraine
+
+Chronic_Pain:
+  synonyms:
+    - chronic pain
+    - persistent pain
+    - chronic pain syndrome
+  icd10:
+    - G89.4
+    - R52.1
+    - R52.2
+  icd11:
+    - 8E43    # Chronic pain
+  hpo_ids:
+    - HP:0012531  # Chronic pain
+
+Peripheral_Neuropathy:
+  synonyms:
+    - peripheral neuropathy
+    - neuropathy
+    - peripheral nerve disorder
+  icd10:
+    - G60
+    - G61
+    - G62
+    - G63
+  icd11:
+    - 8C03    # Peripheral neuropathy
+  hpo_ids:
+    - HP:0009830  # Peripheral neuropathy
+
+Carpal_Tunnel_Syndrome:
+  synonyms:
+    - carpal tunnel syndrome
+    - cts
+    - median neuropathy
+  icd10:
+    - G56.0
+  icd11:
+    - 8C50.0  # Carpal tunnel syndrome
+  hpo_ids:
+    - HP:0001271  # Carpal tunnel syndrome
+
+Sciatica:
+  synonyms:
+    - sciatica
+    - sciatic neuralgia
+    - lumbosacral radiculopathy
+  icd10:
+    - M54.3
+    - M54.4
+  icd11:
+    - 8C50.1  # Sciatica
+  hpo_ids:
+    - HP:0003448  # Sciatica
+
+Down_Syndrome:
+  synonyms:
+    - down syndrome
+    - down's syndrome
+    - trisomy 21
+    - ds
+  icd10:
+    - Q90.0
+    - Q90.1
+    - Q90.2
+    - Q90.9
+  icd11:
+    - LD40.0  # Down syndrome
+  hpo_ids:
+    - HP:0001756  # Down syndrome
+
+Fragile_X_Syndrome:
+  synonyms:
+    - fragile x syndrome
+    - fragile x
+    - fxs
+    - martin-bell syndrome
+  icd10:
+    - Q99.2
+  icd11:
+    - LD55.0  # Fragile X syndrome
+  hpo_ids:
+    - HP:0010259  # Fragile X syndrome
+
+Dyslexia:
+  synonyms:
+    - dyslexia
+    - reading disorder
+    - reading disability
+    - developmental dyslexia
+  icd10:
+    - F81.0
+  icd11:
+    - 6A03.0  # Developmental learning disorder with impairment in reading
+  hpo_ids:
+    - HP:0010522  # Dyslexia
+
+Hyperalgesia:
+  synonyms:
+    - hyperalgesia
+    - increased pain sensitivity
+    - pain hypersensitivity
+  icd10:
+    - R52.9
+  icd11:
+    - 8E43    # Chronic pain
+  hpo_ids:
+    - HP:0012531  # Hyperalgesia
+
+Fibromyalgia:
+  synonyms:
+    - fibromyalgia
+    - fibromyalgia syndrome
+    - fms
+  icd10:
+    - M79.3
+  icd11:
+    - 8E49.0  # Fibromyalgia
+  hpo_ids:
+    - HP:0012531  # Fibromyalgia
+
+Neurodegeneration:
+  synonyms:
+    - neurodegeneration
+    - neurodegenerative disease
+    - neurodegenerative disorder
+  icd10:
+    - G30-G32
+  icd11:
+    - 8A00    # Neurodegenerative disorders
+  hpo_ids:
+    - HP:0002180  # Neurodegeneration
+
+Neuroinflammation:
+  synonyms:
+    - neuroinflammation
+    - brain inflammation
+    - neuroinflammatory
+  icd10:
+    - G93.2
+  icd11:
+    - 8D20    # Neuroinflammation
+  hpo_ids:
+    - HP:0012531  # Neuroinflammation
+
+Meningioma:
+  synonyms:
+    - meningioma
+    - meningeal tumor
+  icd10:
+    - D32.9
+    - C70.9
+  icd11:
+    - 2A00.1  # Meningioma
+  hpo_ids:
+    - HP:0009733  # Meningioma
+
+Pituitary_Adenoma:
+  synonyms:
+    - pituitary adenoma
+    - pituitary tumor
+    - pituitary neoplasm
+  icd10:
+    - D35.2
+  icd11:
+    - 2D12    # Pituitary adenoma
+  hpo_ids:
+    - HP:0003004  # Pituitary adenoma
+
+Motor_Neuron_Disease:
+  synonyms:
+    - motor neuron disease
+    - mnd
+    - amyotrophic lateral sclerosis
+    - als
+  icd10:
+    - G12.2
+  icd11:
+    - 8B60    # Motor neuron disease
+  hpo_ids:
+    - HP:0003677  # Motor neuron disease
+
+Amyotrophic_Lateral_Sclerosis:
+  synonyms:
+    - amyotrophic lateral sclerosis
+    - als
+    - lou gehrig's disease
+    - motor neuron disease
+  icd10:
+    - G12.2
+  icd11:
+    - 8B60.0  # Amyotrophic lateral sclerosis
+  hpo_ids:
+    - HP:0003677  # ALS
+
+Huntingtons_Disease:
+  synonyms:
+    - huntington's disease
+    - huntington disease
+    - hd
+    - huntington's chorea
+  icd10:
+    - G10
+  icd11:
+    - 8A01.10  # Huntington disease
+  hpo_ids:
+    - HP:0002072  # Huntington disease
+
+Communication_Disorder:
+  synonyms:
+    - communication disorder
+    - speech disorder
+    - language disorder
+  icd10:
+    - F80.0
+    - F80.1
+    - F80.2
+    - F80.3
+    - F80.8
+    - F80.9
+  icd11:
+    - 6A01.2  # Developmental speech or language disorder
+  hpo_ids:
+    - HP:0000750  # Communication disorder
+
+Aphasia:
+  synonyms:
+    - aphasia
+    - dysphasia
+    - language impairment
+    - speech impairment
+  icd10:
+    - R47.0
+    - R47.1
+  icd11:
+    - AB31    # Aphasia
+  hpo_ids:
+    - HP:0002381  # Aphasia
+
+Apraxia:
+  synonyms:
+    - apraxia
+    - apraxia of speech
+    - ideomotor apraxia
+  icd10:
+    - R48.2
+  icd11:
+    - AB32    # Apraxia
+  hpo_ids:
+    - HP:0002186  # Apraxia
+
+Dystonia:
+  synonyms:
+    - dystonia
+    - dystonic movement
+    - dystonic disorder
+  icd10:
+    - G24.0
+    - G24.1
+    - G24.2
+    - G24.3
+    - G24.4
+    - G24.5
+    - G24.8
+    - G24.9
+  icd11:
+    - 8A00.1  # Dystonia
+  hpo_ids:
+    - HP:0001332  # Dystonia
+
+Ataxia:
+  synonyms:
+    - ataxia
+    - cerebellar ataxia
+    - ataxic gait
+  icd10:
+    - G11.0
+    - G11.1
+    - G11.2
+    - G11.3
+    - G11.4
+    - G11.8
+    - G11.9
+  icd11:
+    - 8A03    # Ataxia
+  hpo_ids:
+    - HP:0001251  # Ataxia
+
+Palsy:
+  synonyms:
+    - palsy
+    - cerebral palsy
+    - cp
+    - bell's palsy
+  icd10:
+    - G80
+    - G81
+    - G82
+    - G83
+  icd11:
+    - 8D20    # Cerebral palsy
+  hpo_ids:
+    - HP:0002072  # Cerebral palsy
+
+# ===========================================
+# MEDICAL DISORDERS
+# ===========================================
+
+Type_1_Diabetes_Mellitus:
+  synonyms:
+    - type 1 diabetes mellitus
+    - type 1 diabetes
+    - t1d
+    - insulin-dependent diabetes
+    - iddm
+    - juvenile diabetes
+  icd10:
+    - E10
+  icd11:
+    - 5A10    # Type 1 diabetes mellitus
+  hpo_ids:
+    - HP:0000851  # Type 1 diabetes mellitus
+
+Type_2_Diabetes_Mellitus:
+  synonyms:
+    - type 2 diabetes mellitus
+    - type 2 diabetes
+    - t2d
+    - non-insulin-dependent diabetes
+    - niddm
+    - adult-onset diabetes
+  icd10:
+    - E11
+  icd11:
+    - 5A11    # Type 2 diabetes mellitus
+  hpo_ids:
+    - HP:0005978  # Type 2 diabetes mellitus
+
+Hypertension:
+  synonyms:
+    - hypertension
+    - high blood pressure
+    - hbp
+    - arterial hypertension
+  icd10:
+    - I10
+    - I11
+    - I12
+    - I13
+    - I15
+    - I16
+  icd11:
+    - BA00    # Hypertension
+  hpo_ids:
+    - HP:0000822  # Hypertension
+
+Hyperlipidemia:
+  synonyms:
+    - hyperlipidemia
+    - hyperlipidaemia
+    - high cholesterol
+    - dyslipidemia
+  icd10:
+    - E78.0
+    - E78.1
+    - E78.2
+    - E78.3
+    - E78.4
+    - E78.5
+  icd11:
+    - 5C80    # Hyperlipidemia
+  hpo_ids:
+    - HP:0003077  # Hyperlipidemia
+
+Asthma:
+  synonyms:
+    - asthma
+    - bronchial asthma
+    - reactive airway disease
+  icd10:
+    - J45.0
+    - J45.1
+    - J45.8
+    - J45.9
+  icd11:
+    - CA23    # Asthma
+  hpo_ids:
+    - HP:0002099  # Asthma
+
+Chronic_Obstructive_Pulmonary_Disease:
+  synonyms:
+    - chronic obstructive pulmonary disease
+    - copd
+    - chronic bronchitis
+    - emphysema
+  icd10:
+    - J44.0
+    - J44.1
+    - J44.8
+    - J44.9
+  icd11:
+    - CA22    # Chronic obstructive pulmonary disease
+  hpo_ids:
+    - HP:0006510  # COPD
+
+Coronary_Artery_Disease:
+  synonyms:
+    - coronary artery disease
+    - cad
+    - coronary heart disease
+    - ischemic heart disease
+  icd10:
+    - I25.0
+    - I25.1
+    - I25.2
+    - I25.3
+    - I25.4
+    - I25.5
+    - I25.6
+    - I25.8
+    - I25.9
+  icd11:
+    - BA80    # Coronary artery disease
+  hpo_ids:
+    - HP:0001681  # Coronary artery disease
+
+Cardiovascular_Disease:
+  synonyms:
+    - cardiovascular disease
+    - cvd
+    - heart disease
+  icd10:
+    - I00-I99
+  icd11:
+    - BA00    # Cardiovascular disease
+  hpo_ids:
+    - HP:0001626  # Cardiovascular disease
+
+Kidney_Disease:
+  synonyms:
+    - kidney disease
+    - renal disease
+    - chronic kidney disease
+    - ckd
+    - renal failure
+  icd10:
+    - N18
+    - N19
+  icd11:
+    - GB90    # Chronic kidney disease
+  hpo_ids:
+    - HP:0001919  # Chronic kidney disease
+
+Liver_Disease:
+  synonyms:
+    - liver disease
+    - hepatic disease
+    - liver failure
+    - cirrhosis
+  icd10:
+    - K70
+    - K71
+    - K72
+    - K73
+    - K74
+    - K75
+    - K76
+    - K77
+  icd11:
+    - DB90    # Liver disease
+  hpo_ids:
+    - HP:0001399  # Liver disease
+
+Gastrointestinal_Disorder:
+  synonyms:
+    - gastrointestinal disorder
+    - gi disorder
+    - digestive disorder
+  icd10:
+    - K20-K95
+  icd11:
+    - DD90    # Gastrointestinal disorder
+  hpo_ids:
+    - HP:0002251  # Gastrointestinal disorder
+
+Gastroesophageal_Reflux_Disease:
+  synonyms:
+    - gastroesophageal reflux disease
+    - gerd
+    - acid reflux
+    - reflux disease
+  icd10:
+    - K21.0
+    - K21.9
+  icd11:
+    - DD22    # Gastroesophageal reflux disease
+  hpo_ids:
+    - HP:0002577  # GERD
+
+Hypothyroidism:
+  synonyms:
+    - hypothyroidism
+    - underactive thyroid
+    - thyroid deficiency
+  icd10:
+    - E03.0
+    - E03.1
+    - E03.2
+    - E03.3
+    - E03.4
+    - E03.5
+    - E03.8
+    - E03.9
+  icd11:
+    - 5A00    # Hypothyroidism
+  hpo_ids:
+    - HP:0000821  # Hypothyroidism
+
+Hyperthyroidism:
+  synonyms:
+    - hyperthyroidism
+    - overactive thyroid
+    - thyrotoxicosis
+    - graves' disease
+  icd10:
+    - E05.0
+    - E05.1
+    - E05.2
+    - E05.3
+    - E05.4
+    - E05.5
+    - E05.8
+    - E05.9
+  icd11:
+    - 5A02    # Hyperthyroidism
+  hpo_ids:
+    - HP:0000836  # Hyperthyroidism
+
+Thyroiditis:
+  synonyms:
+    - thyroiditis
+    - hashimoto's thyroiditis
+    - autoimmune thyroiditis
+  icd10:
+    - E06.0
+    - E06.1
+    - E06.2
+    - E06.3
+    - E06.4
+    - E06.5
+    - E06.9
+  icd11:
+    - 5A00.2  # Thyroiditis
+  hpo_ids:
+    - HP:0002921  # Thyroiditis
+
+Anemia:
+  synonyms:
+    - anemia
+    - anaemia
+    - low hemoglobin
+    - iron deficiency anemia
+  icd10:
+    - D50
+    - D51
+    - D52
+    - D53
+  icd11:
+    - 3A00    # Anemia
+  hpo_ids:
+    - HP:0001903  # Anemia
+
+Blood_Disorder:
+  synonyms:
+    - blood disorder
+    - hematological disorder
+    - blood disease
+  icd10:
+    - D50-D89
+  icd11:
+    - 3A00    # Blood disorders
+  hpo_ids:
+    - HP:0001871  # Blood disorder
+
+Hormonal_Disorder:
+  synonyms:
+    - hormonal disorder
+    - endocrine disorder
+    - hormone imbalance
+  icd10:
+    - E00-E07
+    - E15-E16
+    - E20-E35
+  icd11:
+    - 5A00    # Endocrine disorders
+  hpo_ids:
+    - HP:0000818  # Hormonal disorder
+
+Cancer:
+  synonyms:
+    - cancer
+    - malignancy
+    - neoplasm
+    - tumor
+    - carcinoma
+  icd10:
+    - C00-C97
+  icd11:
+    - 2A00    # Neoplasms
+  hpo_ids:
+    - HP:0002664  # Neoplasm
+
+Brain_Tumor:
+  synonyms:
+    - brain tumor
+    - brain neoplasm
+    - intracranial tumor
+    - brain cancer
+  icd10:
+    - C71
+    - D33.0
+    - D33.1
+    - D33.2
+    - D33.3
+  icd11:
+    - 2A00.1  # Brain tumor
+  hpo_ids:
+    - HP:0004375  # Brain tumor
+
+Aneurysm:
+  synonyms:
+    - aneurysm
+    - cerebral aneurysm
+    - brain aneurysm
+    - aortic aneurysm
+  icd10:
+    - I71.0
+    - I71.1
+    - I71.2
+    - I71.3
+    - I71.4
+    - I71.5
+    - I71.6
+    - I71.8
+    - I71.9
+  icd11:
+    - BD50    # Aneurysm
+  hpo_ids:
+    - HP:0002617  # Aneurysm
+
+Osteoarthritis:
+  synonyms:
+    - osteoarthritis
+    - oa
+    - degenerative joint disease
+    - degenerative arthritis
+  icd10:
+    - M15
+    - M16
+    - M17
+    - M18
+    - M19
+  icd11:
+    - FA00    # Osteoarthritis
+  hpo_ids:
+    - HP:0002758  # Osteoarthritis
+
+Chronic_Fatigue_Syndrome:
+  synonyms:
+    - chronic fatigue syndrome
+    - cfs
+    - myalgic encephalomyelitis
+    - me
+    - me/cfs
+  icd10:
+    - G93.3
+  icd11:
+    - 8E49.0  # Chronic fatigue syndrome
+  hpo_ids:
+    - HP:0011725  # Chronic fatigue syndrome
+
+Disorders_of_Consciousness:
+  synonyms:
+    - disorders of consciousness
+    - doc
+    - coma
+    - vegetative state
+    - minimally conscious state
+  icd10:
+    - R40.2
+    - R40.3
+    - R40.4
+  icd11:
+    - MB21    # Disorders of consciousness
+  hpo_ids:
+    - HP:0001259  # Disorders of consciousness
+
+Sleep_Disorder:
+  synonyms:
+    - sleep disorder
+    - sleep disturbance
+    - sleep dysfunction
+  icd10:
+    - G47.0
+    - G47.1
+    - G47.2
+    - G47.3
+    - G47.4
+    - G47.8
+    - G47.9
+  icd11:
+    - 7A00    # Sleep disorders
+  hpo_ids:
+    - HP:0002360  # Sleep disorder
+
+Insomnia:
+  synonyms:
+    - insomnia
+    - sleep deprivation
+    - difficulty sleeping
+  icd10:
+    - G47.0
+  icd11:
+    - 7A00    # Insomnia
+  hpo_ids:
+    - HP:0000101  # Insomnia
+
+Deafness:
+  synonyms:
+    - deafness
+    - hearing loss
+    - hearing impairment
+    - deaf
+  icd10:
+    - H90.0
+    - H90.1
+    - H90.2
+    - H90.3
+    - H90.4
+    - H90.5
+    - H90.6
+    - H90.7
+    - H90.8
+    - H90.9
+  icd11:
+    - AB50    # Deafness
+  hpo_ids:
+    - HP:0000364  # Hearing impairment
+
+Glaucoma:
+  synonyms:
+    - glaucoma
+    - open-angle glaucoma
+    - closed-angle glaucoma
+  icd10:
+    - H40.0
+    - H40.1
+    - H40.2
+    - H40.3
+    - H40.4
+    - H40.5
+    - H40.6
+    - H40.8
+    - H40.9
+  icd11:
+    - 9C61    # Glaucoma
+  hpo_ids:
+    - HP:0000501  # Glaucoma
+
+Infectious_Disease:
+  synonyms:
+    - infectious disease
+    - infection
+    - communicable disease
+  icd10:
+    - A00-B99
+  icd11:
+    - 1A00    # Infectious diseases
+  hpo_ids:
+    - HP:0002715  # Infectious disease
+
+Hepatitis_B_Virus:
+  synonyms:
+    - hepatitis b virus
+    - hbv
+    - hepatitis b
+    - hep b
+  icd10:
+    - B16
+    - B18.0
+    - B18.1
+  icd11:
+    - 1E50.1  # Hepatitis B
+  hpo_ids:
+    - HP:0006571  # Hepatitis B
+
+Hepatitis_C_Virus:
+  synonyms:
+    - hepatitis c virus
+    - hcv
+    - hepatitis c
+    - hep c
+  icd10:
+    - B17.1
+    - B18.2
+  icd11:
+    - 1E50.2  # Hepatitis C
+  hpo_ids:
+    - HP:0006572  # Hepatitis C
+
+Human_Immunodeficiency_Virus:
+  synonyms:
+    - human immunodeficiency virus
+    - hiv
+    - aids
+    - acquired immunodeficiency syndrome
+  icd10:
+    - B20
+    - B21
+    - B22
+    - B23
+    - B24
+  icd11:
+    - 1C60    # HIV
+  hpo_ids:
+    - HP:0002721  # HIV
+
+Sepsis:
+  synonyms:
+    - sepsis
+    - septicemia
+    - blood infection
+  icd10:
+    - A40
+    - A41
+  icd11:
+    - 1G40    # Sepsis
+  hpo_ids:
+    - HP:0001892  # Sepsis
+
+Chromosomal_Disorder:
+  synonyms:
+    - chromosomal disorder
+    - chromosomal abnormality
+    - chromosomal anomaly
+  icd10:
+    - Q90-Q99
+  icd11:
+    - LD44    # Chromosomal disorders
+  hpo_ids:
+    - HP:0002827  # Chromosomal disorder
+
+Tetralogy_of_Fallot:
+  synonyms:
+    - tetralogy of fallot
+    - tof
+    - fallot's tetralogy
+  icd10:
+    - Q21.3
+  icd11:
+    - LA88.0  # Tetralogy of Fallot
+  hpo_ids:
+    - HP:0001639  # Tetralogy of Fallot

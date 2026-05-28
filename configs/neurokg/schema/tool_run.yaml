@@ -1,0 +1,20 @@
+label: ToolRun
+key: run_id
+properties:
+  run_id: string
+  job_id: string?
+  started_at: datetime?
+  finished_at: datetime?
+  status: string             # success | error | cancelled | timeout
+  parameters_json: string?
+  runtime_kind: string?
+relationships:
+  - name: EXECUTED_VERSION
+    from: ToolRun
+    to: ToolVersion
+  - name: USED_RESOURCE
+    from: ToolRun
+    to: DataResource
+  - name: GENERATED_RESOURCE
+    from: ToolRun
+    to: DataResource

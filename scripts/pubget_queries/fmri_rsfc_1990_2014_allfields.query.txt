@@ -1,0 +1,5 @@
+("resting state" OR "resting-state" OR rsfMRI OR "functional connectivity"
+ OR connectome OR "brain network" OR "default mode network" OR DMN
+ OR "intrinsic connectivity network" OR RSN)
+AND ("magnetic resonance" OR MRI OR BOLD OR fMRI OR "functional MRI")
+AND ("1990/01/01"[PDAT] : "2014/12/31"[PDAT])

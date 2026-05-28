@@ -1,0 +1,104 @@
+name: Studio Run Blocked Report
+description: Report where Verify is blocked and what guidance is missing.
+title: "[STUDIO] Blocked - "
+labels:
+  - area/studio
+  - type/bug
+body:
+  - type: dropdown
+    id: entry_surface
+    attributes:
+      label: Entry surface
+      options:
+        - Studio Plan
+        - Studio Plan + Review pipeline
+        - Studio Plan + Ask Agent to fix
+    validations:
+      required: true
+
+  - type: textarea
+    id: page_urls
+    attributes:
+      label: Page URL(s)
+      placeholder: Paste exact Studio URL(s)
+    validations:
+      required: true
+
+  - type: textarea
+    id: click_path
+    attributes:
+      label: Click path / reproduction steps
+      placeholder: |
+        1. New Chat
+        2. Set Intent/Data/Concepts/Pipeline
+        3. Verify becomes blocked
+    validations:
+      required: true
+
+  - type: input
+    id: pipeline
+    attributes:
+      label: Pipeline or workflow name
+      placeholder: Preprocessing and QC
+    validations:
+      required: true
+
+  - type: dropdown
+    id: blocked_item
+    attributes:
+      label: Blocked Verify item
+      options:
+        - Data validated
+        - Workflow compatible
+        - All inputs provided
+        - Credits sufficient
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context_ids
+    attributes:
+      label: IDs and context
+      placeholder: Workflow ID, run ID, dataset ID, or task ID if available
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected guidance
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual guidance shown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: used_agent_fix
+    attributes:
+      label: Did you click Ask Agent to fix?
+      options:
+        - Yes
+        - No
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested UX fix
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      placeholder: Screenshot(s), exact error text, and logs
+    validations:
+      required: true

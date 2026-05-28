@@ -1,0 +1,315 @@
+id: tf_motor_action
+name: Motor Action & Imagery
+description: >-
+  Execution, control, learning, and mental simulation of actions across effectors (eye/hand/fingers/arm).
+  Covers rhythmic/sequenced actions, continuous tracking/trajectory control, oculomotor control (pro/anti/pursuit,
+  adaptation), sensorimotor adaptation (visuomotor rotation/force-field), speed–accuracy trade-offs (Fitts’ law),
+  and motor imagery (visual/kinesthetic) with mental chronometry.
+examples: [finger_tapping, sequential_tapping, joystick_tracking, pursuit_tracking, pro_saccade, anti_saccade, smooth_pursuit, visuomotor_rotation, force_field_adaptation, fitts_pointing, kinesthetic_imagery, visual_motor_imagery]
+typical_DVs: [movement_rate_hz, intertap_interval_ms, tracking_error_rms, path_integral_error, saccade_latency_ms, antisaccade_error_rate, pursuit_gain, aftereffect_deg, adaptation_rate, endpoint_error_deg, fitts_slope_b, imagery_success, chronometry_ratio]
+common_manipulations: [force_level, sequence_probability, trajectory_complexity, target_speed_deg_s, target_size_mm, index_of_difficulty, cue_type, feedback_type, perturbation_gain, rotation_deg, force_gain, imagery_instruction, effector]
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Rhythmic & Sequenced Actions (Finger/Hand)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_rhythmic_sequenced
+    label: Rhythmic & Sequenced Actions
+    description: Finger tapping and sequence production with speed/accuracy and sequence structure manipulations.
+    paradigms:
+      - name: Finger Tapping (Unimanual/Bimanual)
+        typical_DVs: [movement_rate_hz, intertap_interval_ms, variability_cv, synchronization_error_ms]
+        common_manipulations: [force_level, pacing_metronome, hand (left/right/bimanual), speed_emphasis]
+        model_families: [Oscillator_coupling, Error_correction]
+        model_params: [oscillator_freq, coupling_gain, error_correction_gain]
+        variant_tags: [paced, unpaced]
+        design_flags: [metronome_on_off]
+        qa_checks: [tap_outlier_filter, drift_check]
+        keywords: [rhythmic_action]
+      - name: Sequential Tapping / Serial Order
+        typical_DVs: [sequence_accuracy, interpress_interval_ms, chunk_boundary_latency, learning_rate]
+        common_manipulations: [sequence_probability, chunk_structure, practice_blocks, dual_task]
+        model_families: [Motor_chunking_models]
+        model_params: [chunk_size, transition_cost]
+        variant_tags: [deterministic, probabilistic]
+        design_flags: [explicit_awareness_probe_optional]
+        qa_checks: [post_task_awareness]
+        keywords: [sequence, chunking]
+      - name: Serial Reaction Time (SRT) Task
+        typical_DVs: [sequence_learning_effect_ms, error_rate]
+        common_manipulations: [sequence_probability, random_block_insertion]
+        model_families: []
+        model_params: []
+        variant_tags: [implicit_learning]
+        design_flags: [awareness_probe_optional]
+        qa_checks: [awareness_control]
+        keywords: [srt, implicit_sequence]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Trajectory Tracking & Continuous Control
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_trajectory_tracking
+    label: Trajectory Tracking & Continuous Control
+    description: Joystick/arm/eye continuous tracking of moving targets or paths with perturbations/noise.
+    paradigms:
+      - name: Joystick Tracking (Path/Target Following)
+        typical_DVs: [tracking_error_rms, lag_ms, spectral_error_profile]
+        common_manipulations: [trajectory_complexity, target_speed_deg_s, visual_delay_ms, perturbation_force]
+        model_families: [State_space_controller, PID_like]
+        model_params: [Kp, Ki, Kd, sensorimotor_delay_ms]
+        variant_tags: [position_control, velocity_control]
+        design_flags: [continuous_sampling_100hz_plus]
+        qa_checks: [calibration_valid, dropout_fraction]
+        keywords: [continuous_control]
+      - name: Manual Pursuit Tracking (Cursor/Target)
+        typical_DVs: [pursuit_gain, phase_lag_deg, endpoint_error_deg]
+        common_manipulations: [target_speed_deg_s, frequency_content, predictability]
+        model_families: [Linear_tracking_model]
+        model_params: [gain, phase_lag]
+        variant_tags: [sinusoidal, pseudo_random]
+        design_flags: []
+        qa_checks: []
+        keywords: [manual_pursuit]
+      - name: Reach-to-Grasp Kinematics
+        typical_DVs: [peak_velocity, time_to_peak_velocity_ms, maximum_aperture_mm, movement_time_ms]
+        common_manipulations: [object_size_mm, object_distance_mm, vision_available]
+        model_families: []
+        model_params: []
+        variant_tags: [grasp]
+        design_flags: [marker_or_glove_optional]
+        qa_checks: [kinematic_smoothing_params]
+        keywords: [reach_to_grasp]
+      - name: Isometric Force Production / Tracking
+        typical_DVs: [force_rms_error, peak_force_N, variability_cv]
+        common_manipulations: [target_force_level_N, visual_feedback_gain]
+        model_families: [State_space_controller]
+        model_params: [controller_gain]
+        variant_tags: [isometric]
+        design_flags: []
+        qa_checks: [load_cell_calibrated]
+        keywords: [isometric_force]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Oculomotor Control (Execution & Inhibition)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_oculomotor
+    label: Oculomotor Control
+    description: Saccades and pursuit; latency, accuracy, inhibition and countermanding; adaptation via double-step.
+    paradigms:
+      - name: Pro-Saccade
+        typical_DVs: [saccade_latency_ms, endpoint_error_deg, peak_velocity_deg_s]
+        common_manipulations: [eccentricity_deg, gap_overlap, luminance]
+        model_families: [LATER]
+        model_params: [mu_rate, sigma_rate, threshold]
+        variant_tags: [gap_overlap]
+        design_flags: [eye_tracker_required]
+        qa_checks: [blink_exclusion, srt_plausible]
+        keywords: [saccade]
+      - name: Anti-Saccade
+        typical_DVs: [saccade_latency_ms, antisaccade_error_rate]
+        common_manipulations: [eccentricity_deg, deadline_ms, instruction_emphasis]
+        model_families: [Race_inhibition, LATER_dual]
+        model_params: [inhibition_delay, mu_rate_anti]
+        variant_tags: [inhibition]
+        design_flags: []
+        qa_checks: [error_coding_check]
+        keywords: [inhibitory_control]
+      - name: Smooth Pursuit
+        typical_DVs: [pursuit_gain, catch_up_saccade_rate, phase_lag_deg]
+        common_manipulations: [target_speed_deg_s, motion_predictability, frequency_hz]
+        model_families: [Kalman_sensorimotor]
+        model_params: [process_noise, obs_noise]
+        variant_tags: [predictable, unpredictable]
+        design_flags: []
+        qa_checks: [signal_loss_rate]
+        keywords: [pursuit]
+      - name: Saccadic Adaptation (Double-Step)
+        typical_DVs: [gain_change_pct, adaptation_rate]
+        common_manipulations: [intrasaccadic_target_step_deg, number_of_adaptation_trials, step_direction]
+        model_families: [State_space_adaptation]
+        model_params: [learning_rate_eta, retention_rho]
+        variant_tags: [forward_step, backward_step]
+        design_flags: [online_step_detection]
+        qa_checks: [trial_exclusion_criteria]
+        keywords: [sensorimotor_adaptation]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Sensorimotor Adaptation (Hand/Arm)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_sensorimotor_adaptation
+    label: Sensorimotor Adaptation (Hand/Arm)
+    description: Update internal models to compensate for visuomotor/force-field perturbations; quantify aftereffects/savings.
+    paradigms:
+      - name: Visuomotor Rotation (VMR)
+        typical_DVs: [reach_error_deg, aftereffect_deg, adaptation_rate]
+        common_manipulations: [rotation_deg, feedback_type (cursor/clamped), online_feedback_delay_ms]
+        model_families: [State_space_adaptation, Fast_slow_dual_rate]
+        model_params: [A_fast, B_fast, A_slow, B_slow]
+        variant_tags: [implicit_explicit_split_optional]
+        design_flags: [error_clamp_blocks_optional]
+        qa_checks: [handedness_logged]
+        keywords: [vmr]
+      - name: Force-Field Adaptation
+        typical_DVs: [lateral_deviation_mm, aftereffect_area, adaptation_rate]
+        common_manipulations: [force_gain, channel_trials, perturbation_schedule]
+        model_families: [State_space_adaptation]
+        model_params: [learning_rate, retention]
+        variant_tags: [velocity_dependent, position_dependent]
+        design_flags: [channel_trial_inclusion]
+        qa_checks: [robot_calibration]
+        keywords: [force_field]
+      - name: Prism Adaptation (optional)
+        typical_DVs: [prism_aftereffect_deg, adaptation_rate]
+        common_manipulations: [prism_power, exposure_duration]
+        model_families: [State_space_adaptation]
+        model_params: [learning_rate, retention]
+        variant_tags: [visuomotor]
+        design_flags: []
+        qa_checks: []
+        keywords: [prism]
+      - name: Savings & Washout Assessment
+        typical_DVs: [savings_index, reacquisition_rate, washout_rate]
+        common_manipulations: [washout_length, relearning_interval]
+        model_families: [Fast_slow_dual_rate]
+        model_params: [A_fast, B_fast, A_slow, B_slow]
+        variant_tags: [savings]
+        design_flags: [separate_phases_logged]
+        qa_checks: [phase_order_documented]
+        keywords: [savings, washout]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Speed–Accuracy & Pointing (Fitts’ Law)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_speed_accuracy_pointing
+    label: Speed–Accuracy Trade-off & Pointing (Fitts’ Law)
+    description: Aimpoint movements trading speed for accuracy; logarithmic relation to index of difficulty (ID).
+    paradigms:
+      - name: Fitts’ Pointing Task
+        typical_DVs: [movement_time_ms, endpoint_error_deg, throughput_bits_per_s, slope_b, intercept_a]
+        common_manipulations: [target_size_mm, movement_amplitude_mm, index_of_difficulty_bits, feedback_type]
+        model_families: [Fitts_law_linear]
+        model_params: [a_intercept, b_slope]
+        variant_tags: [mouse, stylus, 3d]
+        design_flags: [isochronous_optional]
+        qa_checks: [outlier_removal_policy]
+        keywords: [fitts]
+      - name: Rapid Aiming / Go-Before-Knowing
+        typical_DVs: [movement_time_ms, corrective_submovements, accuracy]
+        common_manipulations: [deadline_ms, target_uncertainty]
+        model_families: [Urgency_gating_optional]
+        model_params: [urgency_slope]
+        variant_tags: [deadline]
+        design_flags: []
+        qa_checks: []
+        keywords: [rapid_aiming]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Motor Imagery & Simulation
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_motor_imagery
+    label: Motor Imagery & Simulation
+    description: Covert simulation of actions with kinesthetic or visual focus; mental chronometry and vividness.
+    paradigms:
+      - name: Kinesthetic Motor Imagery (KMI)
+        typical_DVs: [imagery_success_rate, vividness_rating, chronometry_ratio (imagination/real)]
+        common_manipulations: [imagery_instruction (kinesthetic/visual), action_complexity, perspective (first/third)]
+        model_families: [Motor_simulation_meta]
+        model_params: [vividness_scale]
+        variant_tags: [first_person, third_person]
+        design_flags: [overt_movement_monitoring]
+        qa_checks: [EMG_leak_check]
+        keywords: [kinesthetic_imagery]
+      - name: Visual Motor Imagery (VMI)
+        typical_DVs: [imagery_success_rate, chronometry_ratio]
+        common_manipulations: [visual_detail, perspective, task_familiarity]
+        model_families: []
+        model_params: []
+        variant_tags: [visual]
+        design_flags: []
+        qa_checks: []
+        keywords: [visual_imagery]
+      - name: Mental Rotation of Body/Tool
+        typical_DVs: [rotation_function_slope_ms_per_deg, accuracy]
+        common_manipulations: [angular_disparity_deg, stimulus_type (hand/tool)]
+        model_families: [Mental_rotation_linear]
+        model_params: [slope, intercept]
+        variant_tags: [body, tool]
+        design_flags: []
+        qa_checks: []
+        keywords: [mental_rotation]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Finger Tapping
+    - Sequential Tapping
+    - Pursuit Tracking
+    - Pro-Saccade
+    - Anti-Saccade
+    - Smooth Pursuit
+    - Saccadic Adaptation
+    - Visuomotor Rotation
+    - Force-Field Adaptation
+    - Fitts’ Law Pointing
+    - Mental Rotation (Body/Tool)
+    - Motor Imagery
+  cogpo_candidate_labels:
+    - Finger Tapping
+    - Pursuit Tracking
+    - Pro-/Anti-Saccade
+    - Visuomotor Rotation
+    - Force-Field Adaptation
+    - Fitts’ Pointing
+    - Motor Imagery
+constructs:
+  primary: [Motor Execution, Sensorimotor Control, Sensorimotor Adaptation, Motor Imagery]
+  secondary: [Speed–Accuracy Trade-off, Inhibitory Control (Oculomotor), Internal Model Updating]
+uri_brainmap: []
+uri_cogpo: []
+status: plausible
+provenance:
+  - source: task_families_master_20.yaml + motor/action expansion
+    fields: [subfamilies, paradigms, model_families, model_params, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, effector, response, correct, rt]
+  per_subfamily:
+    sf_rhythmic_sequenced:
+      events_columns: [onset, duration, trial_type, pacing, sequence_id, force_level, random_block_flag, response, intertap_interval_ms]
+      hed_examples:
+        - "Motor, Tapping, Paced"
+        - "Motor, Sequence, Chunking"
+        - "Motor, SRT, Implicit"
+    sf_trajectory_tracking:
+      events_columns: [onset, duration, trial_type, trajectory_complexity, target_speed_deg_s, visual_delay_ms, perturbation_force, object_size_mm, object_distance_mm, target_force_level_N, tracking_error_rms]
+      hed_examples:
+        - "Motor, Tracking, Joystick"
+        - "Motor, Pursuit, Manual"
+        - "Motor, Reach-to-grasp"
+        - "Motor, Force, Isometric"
+    sf_oculomotor:
+      events_columns: [onset, duration, trial_type, target_eccentricity_deg, gap_overlap, instruction (pro/anti), target_speed_deg_s, response, saccade_latency_ms]
+      hed_examples:
+        - "Oculomotor, Saccade, Pro"
+        - "Oculomotor, Pursuit"
+    sf_sensorimotor_adaptation:
+      events_columns: [onset, duration, trial_type, perturbation_type (rotation/force/prism), rotation_deg, force_gain, feedback_type, reach_error_deg, aftereffect_deg, washout_length, relearning_interval]
+      hed_examples:
+        - "Adaptation, Visuomotor-rotation"
+        - "Adaptation, Force-field"
+        - "Adaptation, Savings"
+    sf_speed_accuracy_pointing:
+      events_columns: [onset, duration, trial_type, target_size_mm, movement_amplitude_mm, index_of_difficulty_bits, movement_time_ms, endpoint_error_deg]
+      hed_examples:
+        - "Motor, Fitts, Pointing"
+    sf_motor_imagery:
+      events_columns: [onset, duration, trial_type, imagery_instruction (kinesthetic/visual), perspective (first/third), action_type, imagery_success, chronometry_ratio]
+      hed_examples:
+        - "Motor, Imagery, Kinesthetic"
+        - "Motor, Mental-rotation"

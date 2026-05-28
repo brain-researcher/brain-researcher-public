@@ -1,0 +1,45 @@
+; PgBouncer user authentication file for Brain Researcher
+; Format: "username" "password_hash" 
+; Password hashes can be generated with: echo -n "passwordusername" | md5sum
+
+; Main application user
+"postgres" "md5d41d8cd98f00b204e9800998ecf8427e"
+
+; Read-only user for analytics and reporting
+"readonly" "md5e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+; Analytics user with limited permissions
+"analytics" "md5b17ef6d19c7a5b1ee83b907c595526dcb1eb06db8227d650a5b7de2b5d14ad7d"
+
+; Batch processing user
+"batch_user" "md5c9f0f895fb98ab9159f51fd0297e236da8aba3e362b49bb8b4d1bc1ff5acf8b6a"
+
+; Administrative users
+"pgbouncer_admin" "md5f45731e3d39a8b1c2c2b4f7c7c7c8a9b0c1d2e3f4g5h6i7j8k9l0m1n2o3p4q5r6s"
+"pgbouncer_stats" "md5a1b2c3d4e5f6789abcdef0123456789fedcba9876543210abcdef0123456789"
+
+; Monitoring user for Grafana/Prometheus
+"grafana" "md55e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+
+; Application service users (if using separate database users per service)
+"orchestrator_user" "md51234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+"neurokg_user" "md5abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+"agent_user" "md5567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456"
+"webui_user" "md5cdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab"
+
+; Test users for integration testing
+"test_user" "md5098f6bcd4621d373cade4e832627b4f6098f6bcd4621d373cade4e832627b4f6"
+
+; NOTE: In production, these should be replaced with actual secure password hashes
+; Generate proper hashes using:
+; echo -n "your_password_here${username}" | md5sum
+; 
+; Example for postgres user with password "secure_password":
+; echo -n "secure_passwordpostgres" | md5sum
+;
+; Security best practices:
+; 1. Use strong, unique passwords for each user
+; 2. Regularly rotate passwords
+; 3. Use different passwords for different environments (dev/staging/prod)
+; 4. Store this file with restricted permissions (600)
+; 5. Consider using external authentication systems in production

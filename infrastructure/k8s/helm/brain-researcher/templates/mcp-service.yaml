@@ -1,0 +1,20 @@
+{{- if or .Values.mcp.enabled .Values.global.mcpEnabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-mcp
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+spec:
+  type: {{ .Values.mcp.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.mcp.service.port | default 7000 }}
+      targetPort: 7000
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "brain-researcher.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+{{- end }}

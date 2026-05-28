@@ -1,0 +1,171 @@
+{
+  "cases": [
+    {
+      "case_id": "eval:supported_clean_a",
+      "gold_label": "supported",
+      "evidence": [
+        {
+          "direction": "support",
+          "strength": 0.9,
+          "quality": 0.92,
+          "source_reliability": 0.9,
+          "count": 18
+        }
+      ]
+    },
+    {
+      "case_id": "eval:supported_clean_b",
+      "gold_label": "supported",
+      "evidence": [
+        {
+          "direction": "support",
+          "strength": 0.85,
+          "quality": 0.88,
+          "source_reliability": 0.88,
+          "count": 14
+        }
+      ]
+    },
+    {
+      "case_id": "eval:supported_light_uncert",
+      "gold_label": "supported",
+      "evidence": [
+        {
+          "direction": "support",
+          "strength": 0.9,
+          "quality": 0.9,
+          "source_reliability": 0.9,
+          "count": 15
+        },
+        {
+          "direction": "uncertain",
+          "strength": 0.4,
+          "quality": 0.78,
+          "source_reliability": 0.75,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "case_id": "eval:uncertain_heavy_a",
+      "gold_label": "uncertain",
+      "evidence": [
+        {
+          "direction": "support",
+          "strength": 0.9,
+          "quality": 0.9,
+          "source_reliability": 0.9,
+          "count": 15
+        },
+        {
+          "direction": "uncertain",
+          "strength": 0.9,
+          "quality": 0.86,
+          "source_reliability": 0.82,
+          "count": 20
+        }
+      ]
+    },
+    {
+      "case_id": "eval:uncertain_heavy_b",
+      "gold_label": "uncertain",
+      "evidence": [
+        {
+          "direction": "support",
+          "strength": 0.88,
+          "quality": 0.88,
+          "source_reliability": 0.88,
+          "count": 12
+        },
+        {
+          "direction": "uncertain",
+          "strength": 0.85,
+          "quality": 0.82,
+          "source_reliability": 0.8,
+          "count": 18
+        }
+      ]
+    },
+    {
+      "case_id": "eval:conflict_uncertain_a",
+      "gold_label": "conflicted",
+      "evidence": [
+        {
+          "direction": "support",
+          "strength": 0.9,
+          "quality": 0.9,
+          "source_reliability": 0.9,
+          "count": 12
+        },
+        {
+          "direction": "conflict",
+          "strength": 0.8,
+          "quality": 0.84,
+          "source_reliability": 0.82,
+          "count": 7
+        },
+        {
+          "direction": "uncertain",
+          "strength": 0.85,
+          "quality": 0.82,
+          "source_reliability": 0.8,
+          "count": 10
+        }
+      ]
+    },
+    {
+      "case_id": "eval:conflict_uncertain_b",
+      "gold_label": "conflicted",
+      "evidence": [
+        {
+          "direction": "support",
+          "strength": 0.9,
+          "quality": 0.9,
+          "source_reliability": 0.9,
+          "count": 10
+        },
+        {
+          "direction": "conflict",
+          "strength": 0.85,
+          "quality": 0.86,
+          "source_reliability": 0.85,
+          "count": 8
+        },
+        {
+          "direction": "uncertain",
+          "strength": 0.85,
+          "quality": 0.82,
+          "source_reliability": 0.8,
+          "count": 12
+        }
+      ]
+    },
+    {
+      "case_id": "eval:conflict_balanced",
+      "gold_label": "conflicted",
+      "evidence": [
+        {
+          "direction": "support",
+          "strength": 0.9,
+          "quality": 0.9,
+          "source_reliability": 0.9,
+          "count": 9
+        },
+        {
+          "direction": "conflict",
+          "strength": 0.9,
+          "quality": 0.9,
+          "source_reliability": 0.9,
+          "count": 9
+        },
+        {
+          "direction": "uncertain",
+          "strength": 0.6,
+          "quality": 0.76,
+          "source_reliability": 0.72,
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

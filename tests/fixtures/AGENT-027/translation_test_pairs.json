@@ -1,0 +1,272 @@
+{
+  "neuroimaging_translations": [
+    {
+      "source_language": "english",
+      "target_language": "spanish",
+      "domain": "fmri_analysis",
+      "test_pairs": [
+        {
+          "english": "The GLM analysis revealed significant activation in the dorsolateral prefrontal cortex (p < 0.05, FWE corrected) with a peak Z-score of 4.2 at MNI coordinates [42, 22, 36].",
+          "spanish": "El análisis GLM reveló activación significativa en la corteza prefrontal dorsolateral (p < 0.05, corregido FWE) con un Z-score máximo de 4.2 en coordenadas MNI [42, 22, 36].",
+          "technical_terms_preserved": ["GLM", "FWE", "Z-score", "MNI", "[42, 22, 36]", "p < 0.05"],
+          "translation_notes": "Medical and statistical terms should remain in original form"
+        },
+        {
+          "english": "Functional connectivity analysis using seed-based correlation revealed significant connections between the posterior cingulate cortex and medial prefrontal cortex (r = 0.68, p < 0.001).",
+          "spanish": "El análisis de conectividad funcional usando correlación basada en semilla reveló conexiones significativas entre la corteza cingulada posterior y la corteza prefrontal medial (r = 0.68, p < 0.001).",
+          "technical_terms_preserved": ["r = 0.68", "p < 0.001"],
+          "translation_notes": "Anatomical terms should be translated but statistical notation preserved"
+        },
+        {
+          "english": "Preprocessing included slice timing correction, motion correction, spatial normalization to MNI152 template, and smoothing with 6mm FWHM Gaussian kernel.",
+          "spanish": "El preprocesamiento incluyó corrección de timing de corte, corrección de movimiento, normalización espacial a la plantilla MNI152, y suavizado con kernel Gaussiano FWHM de 6mm.",
+          "technical_terms_preserved": ["MNI152", "6mm", "FWHM"],
+          "translation_notes": "Technical specifications should remain unchanged"
+        }
+      ]
+    },
+    {
+      "source_language": "english",
+      "target_language": "french",
+      "domain": "statistical_analysis",
+      "test_pairs": [
+        {
+          "english": "The multiple comparison correction using family-wise error (FWE) rate ensures that the probability of any false positive is maintained at α = 0.05.",
+          "french": "La correction des comparaisons multiples utilisant le taux d'erreur familiale (FWE) garantit que la probabilité de tout faux positif est maintenue à α = 0.05.",
+          "technical_terms_preserved": ["FWE", "α = 0.05"],
+          "translation_notes": "Statistical symbols and abbreviations preserved"
+        },
+        {
+          "english": "The hemodynamic response function (HRF) was modeled using the canonical basis function with time and dispersion derivatives.",
+          "french": "La fonction de réponse hémodynamique (HRF) a été modélisée en utilisant la fonction de base canonique avec des dérivées temporelles et de dispersion.",
+          "technical_terms_preserved": ["HRF"],
+          "translation_notes": "Acronyms maintained, technical concepts translated"
+        }
+      ]
+    },
+    {
+      "source_language": "english",
+      "target_language": "german",
+      "domain": "brain_anatomy",
+      "test_pairs": [
+        {
+          "english": "Significant activation was observed in the superior temporal gyrus, inferior frontal gyrus, and posterior parietal cortex.",
+          "german": "Signifikante Aktivierung wurde im Gyrus temporalis superior, Gyrus frontalis inferior und posterior parietalen Kortex beobachtet.",
+          "technical_terms_preserved": [],
+          "translation_notes": "German maintains Latin anatomical terms"
+        },
+        {
+          "english": "The default mode network includes the medial prefrontal cortex, posterior cingulate cortex, and angular gyrus.",
+          "german": "Das Default-Mode-Netzwerk umfasst den medialen präfrontalen Kortex, den posterioren cingulären Kortex und den Gyrus angularis.",
+          "technical_terms_preserved": ["Default-Mode-Netzwerk"],
+          "translation_notes": "Network names often borrowed from English"
+        }
+      ]
+    },
+    {
+      "source_language": "english", 
+      "target_language": "chinese",
+      "domain": "methodology",
+      "test_pairs": [
+        {
+          "english": "Data were acquired using a 3T Siemens Prisma scanner with a 32-channel head coil and echo-planar imaging (EPI) sequence.",
+          "chinese": "数据是使用3T西门子Prisma扫描仪获取的，配备32通道头线圈和回波平面成像(EPI)序列。",
+          "technical_terms_preserved": ["3T", "Siemens Prisma", "32", "EPI"],
+          "translation_notes": "Technical specifications and brand names preserved"
+        },
+        {
+          "english": "The experimental paradigm used a blocked design with 30-second task blocks alternating with 15-second rest periods.",
+          "chinese": "实验范式采用了分组设计，30秒的任务块与15秒的休息期交替进行。",
+          "technical_terms_preserved": ["30", "15"],
+          "translation_notes": "Time measurements preserved exactly"
+        }
+      ]
+    }
+  ],
+  "context_dependent_translations": [
+    {
+      "context": "clinical_report",
+      "english": "The patient showed reduced activation in the frontal cortex, which may indicate executive dysfunction.",
+      "translations": {
+        "spanish": "El paciente mostró activación reducida en la corteza frontal, lo que puede indicar disfunción ejecutiva.",
+        "french": "Le patient a montré une activation réduite dans le cortex frontal, ce qui peut indiquer un dysfonctionnement exécutif.",
+        "german": "Der Patient zeigte reduzierte Aktivierung im frontalen Kortex, was auf eine exekutive Dysfunktion hinweisen könnte.",
+        "chinese": "患者在额叶皮层显示出活动减少，这可能表明执行功能障碍。"
+      },
+      "style": "formal_clinical"
+    },
+    {
+      "context": "research_paper",
+      "english": "Participants demonstrated increased BOLD signal in regions associated with working memory maintenance.",
+      "translations": {
+        "spanish": "Los participantes demostraron un aumento de la señal BOLD en regiones asociadas con el mantenimiento de la memoria de trabajo.",
+        "french": "Les participants ont démontré une augmentation du signal BOLD dans les régions associées au maintien de la mémoire de travail.",
+        "german": "Die Teilnehmer zeigten ein erhöhtes BOLD-Signal in Regionen, die mit der Aufrechterhaltung des Arbeitsgedächtnisses assoziiert sind.",
+        "chinese": "参与者在与工作记忆维持相关的区域中表现出增加的BOLD信号。"
+      },
+      "style": "academic_formal"
+    },
+    {
+      "context": "patient_explanation",
+      "english": "The scan shows that the parts of your brain responsible for attention are working normally.",
+      "translations": {
+        "spanish": "La exploración muestra que las partes de su cerebro responsables de la atención funcionan normalmente.",
+        "french": "Le scan montre que les parties de votre cerveau responsables de l'attention fonctionnent normalement.",
+        "german": "Der Scan zeigt, dass die Teile Ihres Gehirns, die für die Aufmerksamkeit zuständig sind, normal funktionieren.",
+        "chinese": "扫描显示您大脑中负责注意力的部分工作正常。"
+      },
+      "style": "patient_friendly"
+    }
+  ],
+  "domain_terminology_preservation": [
+    {
+      "domain": "statistical_methods",
+      "terms_to_preserve": [
+        "p-value", "p < 0.05", "p < 0.001", "p < 0.0001",
+        "t-test", "ANOVA", "GLM", "AIC", "BIC", 
+        "F-statistic", "t-statistic", "Z-score",
+        "Cohen's d", "η²", "r²", "β",
+        "FWE", "FDR", "Bonferroni",
+        "χ²", "df", "CI", "SE", "SD"
+      ]
+    },
+    {
+      "domain": "neuroimaging_software",
+      "terms_to_preserve": [
+        "SPM", "FSL", "AFNI", "FreeSurfer", "fMRIPrep",
+        "CONN", "DPABI", "BrainVoyager", "GIFT",
+        "MATLAB", "Python", "R", "Nipype"
+      ]
+    },
+    {
+      "domain": "brain_coordinates",
+      "terms_to_preserve": [
+        "MNI", "Talairach", "MNI152", "MNI305",
+        "[42, -58, 32]", "(x, y, z)",
+        "mm", "voxel", "FWHM"
+      ]
+    },
+    {
+      "domain": "scanning_parameters", 
+      "terms_to_preserve": [
+        "TR", "TE", "FA", "3T", "7T", "1.5T",
+        "T1", "T2", "T2*", "FLAIR", "DWI", "DTI",
+        "EPI", "MPRAGE", "GRE", "SE",
+        "ms", "mm", "°", "Hz"
+      ]
+    }
+  ],
+  "translation_quality_metrics": [
+    {
+      "metric": "technical_term_preservation",
+      "description": "Percentage of technical terms correctly preserved",
+      "threshold": 95,
+      "test_method": "exact_match"
+    },
+    {
+      "metric": "semantic_consistency",
+      "description": "Semantic similarity between source and target",
+      "threshold": 0.85,
+      "test_method": "embedding_similarity"
+    },
+    {
+      "metric": "fluency_score",
+      "description": "Natural language fluency in target language",
+      "threshold": 0.80,
+      "test_method": "language_model_scoring"
+    },
+    {
+      "metric": "terminology_consistency",
+      "description": "Consistent use of domain terminology",
+      "threshold": 90,
+      "test_method": "term_usage_analysis"
+    }
+  ],
+  "challenging_translation_cases": [
+    {
+      "case_type": "compound_technical_terms",
+      "english": "voxel-wise whole-brain seed-to-voxel connectivity analysis",
+      "challenges": [
+        "Multiple technical terms combined",
+        "Hyphenated compound modifiers",
+        "Domain-specific workflow description"
+      ],
+      "expected_translations": {
+        "spanish": "análisis de conectividad voxel-a-voxel de todo el cerebro basado en semilla",
+        "french": "analyse de connectivité de la graine au voxel pour l'ensemble du cerveau voxel par voxel"
+      }
+    },
+    {
+      "case_type": "statistical_expressions", 
+      "english": "corrected for multiple comparisons using FWE at p < 0.05 cluster-level",
+      "challenges": [
+        "Statistical notation mixed with text",
+        "Technical abbreviations",
+        "Hierarchical correction levels"
+      ],
+      "expected_translations": {
+        "spanish": "corregido para comparaciones múltiples usando FWE a nivel de cluster p < 0.05",
+        "german": "korrigiert für Mehrfachvergleiche mit FWE auf Cluster-Ebene p < 0.05"
+      }
+    },
+    {
+      "case_type": "brain_region_lateralization",
+      "english": "bilateral superior temporal gyrus with left hemisphere dominance",
+      "challenges": [
+        "Anatomical directionality",
+        "Lateralization concepts",
+        "Comparative descriptions"
+      ],
+      "expected_translations": {
+        "spanish": "gyrus temporal superior bilateral con dominancia del hemisferio izquierdo",
+        "french": "gyrus temporal supérieur bilatéral avec dominance hémisphérique gauche"
+      }
+    },
+    {
+      "case_type": "temporal_dynamics",
+      "english": "BOLD signal time course showed peak activation at 6 seconds post-stimulus onset",
+      "challenges": [
+        "Temporal relationships",
+        "Signal processing terminology",
+        "Precise timing specifications"
+      ],
+      "expected_translations": {
+        "spanish": "el curso temporal de la señal BOLD mostró activación máxima a los 6 segundos después del inicio del estímulo",
+        "chinese": "BOLD信号时间过程显示在刺激开始后6秒达到峰值激活"
+      }
+    }
+  ],
+  "cultural_adaptation_considerations": [
+    {
+      "target_culture": "spanish_speaking",
+      "adaptations": {
+        "formality_level": "high_formal",
+        "patient_address": "usted_form",
+        "medical_authority": "doctor_patient_hierarchy",
+        "family_involvement": "include_family_context"
+      },
+      "example_adaptations": {
+        "informal": "Your brain scan shows normal activity.",
+        "culturally_adapted": "Su exploración cerebral muestra actividad normal. Es importante que comparta esta información con su familia."
+      }
+    },
+    {
+      "target_culture": "german_speaking",
+      "adaptations": {
+        "precision_emphasis": "high",
+        "technical_detail": "comprehensive",
+        "uncertainty_expression": "explicit",
+        "authority_respect": "formal_titles"
+      }
+    },
+    {
+      "target_culture": "chinese_speaking",
+      "adaptations": {
+        "harmony_emphasis": "reassurance_focus",
+        "collective_implications": "family_health_context",
+        "authority_deference": "medical_expertise_respect",
+        "indirect_communication": "gentle_bad_news_delivery"
+      }
+    }
+  ]
+}

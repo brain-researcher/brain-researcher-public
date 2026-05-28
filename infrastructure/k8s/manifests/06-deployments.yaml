@@ -1,0 +1,759 @@
+# Deployments for Brain Researcher stateless services
+# Provides horizontal scaling and rolling updates for stateless components
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "1.25"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx
+      app.kubernetes.io/component: proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nginx
+        app.kubernetes.io/component: proxy
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "1.25"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9113"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          env:
+            - name: NGINX_ENVSUBST_OUTPUT_DIR
+              value: "/etc/nginx/conf.d"
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+            - name: tls-certificates
+              mountPath: /etc/nginx/ssl
+              readOnly: true
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+        # Nginx Prometheus Exporter sidecar
+        - name: nginx-exporter
+          image: nginx/nginx-prometheus-exporter:0.11.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 9113
+              protocol: TCP
+          args:
+            - -nginx.scrape-uri=http://localhost:80/nginx_status
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              memory: "64Mi"
+              cpu: "50m"
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+        - name: tls-certificates
+          secret:
+            secretName: tls-certificates
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+      terminationGracePeriodSeconds: 30
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: mcp
+    app.kubernetes.io/component: mcp
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mcp
+      app.kubernetes.io/component: mcp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mcp
+        app.kubernetes.io/component: mcp
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "1.0.0"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: mcp
+          image: brain-researcher/mcp:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 7000
+              protocol: TCP
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: PYTHONPATH
+              value: "/app"
+            - name: BR_MCP_TRANSPORT
+              value: "streamable-http"
+            - name: BR_MCP_HOST
+              value: "0.0.0.0"
+            - name: BR_MCP_PORT
+              value: "7000"
+            - name: BR_MCP_MOUNT_PATH
+              value: "/mcp"
+            - name: BR_MCP_LOG_LEVEL
+              value: "INFO"
+          envFrom:
+            - secretRef:
+                name: llm-api-keys
+                optional: true
+            - secretRef:
+                name: external-services
+                optional: true
+            - secretRef:
+                name: mcp-auth
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/component: orchestrator
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: orchestrator
+      app.kubernetes.io/component: orchestrator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: orchestrator
+        app.kubernetes.io/component: orchestrator
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: orchestrator
+          image: brain-researcher/orchestrator:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+            - name: websocket
+              containerPort: 3002
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: PYTHONPATH
+              value: "/app"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: AGENT_URL
+              value: "http://agent-service:8000"
+            - name: NEUROKG_URL
+              value: "http://neurokg-service:5000"
+            - name: NICLIP_URL
+              value: "http://niclip-service:8001"
+            - name: REDIS_URL
+              value: "redis://redis-service:6379/0"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: CORS_ORIGINS
+              value: "http://localhost:3000,https://brain-researcher.local"
+          envFrom:
+            - secretRef:
+                name: database-credentials
+          volumeMounts:
+            - name: orchestrator-config
+              mountPath: /app/config.py
+              subPath: config.py
+              readOnly: true
+            - name: shared-data-storage
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: orchestrator-config
+          configMap:
+            name: orchestrator-config
+        - name: shared-data-storage
+          persistentVolumeClaim:
+            claimName: shared-data-storage
+        - name: logs
+          emptyDir: {}
+      terminationGracePeriodSeconds: 60
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: niclip
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: niclip
+    app.kubernetes.io/component: niclip
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 1  # Single instance due to model size and GPU requirements
+  strategy:
+    type: Recreate  # Use Recreate for GPU workloads
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: niclip
+      app.kubernetes.io/component: niclip
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: niclip
+        app.kubernetes.io/component: niclip
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: niclip
+          image: brain-researcher/niclip:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: PYTHONPATH
+              value: "/app"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: DEVICE
+              value: "cpu"  # Change to "cuda:0" for GPU
+          volumeMounts:
+            - name: niclip-model-storage
+              mountPath: /app/models
+            - name: niclip-data-cache
+              mountPath: /app/data/niclip
+            - name: niclip-config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: logs
+              mountPath: /app/logs
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+              # Uncomment for GPU support:
+              # nvidia.com/gpu: 1
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 6
+      volumes:
+        - name: niclip-model-storage
+          persistentVolumeClaim:
+            claimName: niclip-model-storage
+        - name: niclip-data-cache
+          persistentVolumeClaim:
+            claimName: niclip-data-cache
+        - name: niclip-config
+          configMap:
+            name: niclip-config
+        - name: logs
+          emptyDir: {}
+      # nodeSelector:
+      #   kubernetes.io/gpu: nvidia  # Uncomment for GPU nodes
+      terminationGracePeriodSeconds: 120
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-ui
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: web-ui
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web-ui
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web-ui
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "1.0.0"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: web-ui
+          image: brain-researcher/web-ui:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: NEXT_PUBLIC_API_URL
+              value: "http://nginx/api"
+            - name: NEXT_PUBLIC_APP_NAME
+              value: "Brain Researcher"
+            - name: NEXT_TELEMETRY_DISABLED
+              value: "1"
+            - name: HYPOTHESIS_STORE_BACKEND
+              value: "dual"
+            - name: HYPOTHESIS_STORE_REDIS_URL
+              value: "redis://redis-service:6379/0"
+            - name: HYPOTHESIS_STORE_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: external-services
+                  key: HYPOTHESIS_STORE_POSTGRES_URL
+                  optional: true
+            - name: HYPOTHESIS_SESSION_TTL_SEC
+              value: "2592000"
+            - name: HYPOTHESIS_DEEP_RESEARCH_POLL_INTERVAL_MS
+              value: "2500"
+            - name: HYPOTHESIS_DEEP_RESEARCH_MAX_POLLS
+              value: "0"
+            - name: HYPOTHESIS_DEEP_RESEARCH_START_GRACE_POLLS
+              value: "2"
+            - name: HYPOTHESIS_DEEP_RESEARCH_UI_WAIT_SEC
+              value: "300"
+            - name: HYPOTHESIS_DEEP_RESEARCH_BACKGROUND_CAP_SEC
+              value: "21600"
+            - name: HYPOTHESIS_KG_NO_SEED_SOFT_FAIL
+              value: "true"
+            - name: HYPOTHESIS_KG_MAX_SEED_RETRIES
+              value: "1"
+          envFrom:
+            - secretRef:
+                name: external-services
+          volumeMounts:
+            - name: web-ui-config
+              mountPath: /app/next.config.js
+              subPath: next.config.js
+              readOnly: true
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: web-ui-config
+          configMap:
+            name: web-ui-config
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "2.40"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # Recreate due to persistent storage
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+      app.kubernetes.io/component: monitoring
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometheus
+        app.kubernetes.io/component: monitoring
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "2.40"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      containers:
+        - name: prometheus
+          image: prom/prometheus:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9090
+              protocol: TCP
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.console.libraries=/etc/prometheus/console_libraries"
+            - "--web.console.templates=/etc/prometheus/consoles"
+            - "--storage.tsdb.retention.time=30d"
+            - "--web.enable-lifecycle"
+            - "--web.enable-admin-api"
+          volumeMounts:
+            - name: prometheus-data-storage
+              mountPath: /prometheus
+            - name: prometheus-config
+              mountPath: /etc/prometheus/prometheus.yml
+              subPath: prometheus.yml
+              readOnly: true
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: prometheus-data-storage
+          persistentVolumeClaim:
+            claimName: prometheus-data-storage
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+      terminationGracePeriodSeconds: 60
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "9.5"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # Recreate due to persistent storage
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+      app.kubernetes.io/component: visualization
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: grafana
+        app.kubernetes.io/component: visualization
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "9.5"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
+      containers:
+        - name: grafana
+          image: grafana/grafana:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-piechart-panel"
+            - name: GF_SERVER_ROOT_URL
+              value: "https://brain-researcher.local/grafana/"
+            - name: GF_SERVER_SERVE_FROM_SUB_PATH
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: monitoring-credentials
+          volumeMounts:
+            - name: grafana-data-storage
+              mountPath: /var/lib/grafana
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "400m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: grafana-data-storage
+          persistentVolumeClaim:
+            claimName: grafana-data-storage
+      terminationGracePeriodSeconds: 30

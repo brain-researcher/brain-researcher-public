@@ -1,0 +1,19 @@
+# Cloudflare Configuration Variables
+# Copy this to terraform.tfvars and fill in your values
+
+# Get your API token from: https://dash.cloudflare.com/profile/api-tokens
+# Required permissions: Zone:Read, Zone:Edit, Cache Purge:Edit
+cloudflare_api_token = "YOUR_CLOUDFLARE_API_TOKEN"
+
+# Find your Zone ID in Cloudflare dashboard > Overview > API section
+cloudflare_zone_id = "YOUR_ZONE_ID"
+
+# Your domain name
+domain = "brain-researcher.com"
+
+# Your origin server IP (where your app is hosted)
+# This could be your VPS IP, AWS EC2 IP, or load balancer IP
+origin_server_ip = "YOUR_SERVER_IP"
+
+# Optional: Worker secret key for edge functions
+worker_secret_key = "YOUR_SECRET_KEY"

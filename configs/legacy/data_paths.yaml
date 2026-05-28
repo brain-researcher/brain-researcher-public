@@ -1,0 +1,96 @@
+# Brain Researcher Data Paths Configuration
+# This file centralizes all data source locations for easy management
+
+# Local data sources (always available)
+local:
+  niclip: ${BR_REPO_ROOT}/data/niclip
+  brainmap: ${BR_REPO_ROOT}/data/brainmap
+  openneuro_local: ${HOME}/projects/dataset/openneuro
+  neurokg: ${BR_REPO_ROOT}/data/neurokg
+  cache: ${BR_REPO_ROOT}/data/cache
+  processed: ${BR_REPO_ROOT}/data/processed
+  bids: ${BR_REPO_ROOT}/data/bids
+
+# OAK mount paths (requires SSHFS mount to be active)
+oak_mount:
+  base: ${HOME}/projects/oak_mount
+  enabled: true  # Set to false to disable OAK mount access
+
+  # Large-scale datasets
+  datasets:
+    hcp_young_adult: ${HOME}/projects/oak_mount/data/HCP_YA
+    hcp_youth: ${HOME}/projects/oak_mount/data/hcp_youth
+    openneuro_full: ${HOME}/projects/oak_mount/data
+    cnp: ${HOME}/projects/oak_mount/data/CNP
+    ibc: ${HOME}/projects/oak_mount/data/IBC
+    msc: ${HOME}/projects/oak_mount/data/MSC
+    myconnectome: ${HOME}/projects/oak_mount/data/myconnectome
+    narps: ${HOME}/projects/oak_mount/data/NARPS
+    mls: ${HOME}/projects/oak_mount/data/MLS
+
+  # Resources
+  templateflow: ${HOME}/projects/oak_mount/templateflow
+  shared_containers: ${HOME}/projects/oak_mount/shared/containers
+
+  # User directories
+  user_dir: ${HOME}/projects/oak_mount/users/zijiao/brain_researcher
+  user_outputs: ${HOME}/projects/oak_mount/users/zijiao/brain_researcher/outputs
+  user_cache: ${HOME}/projects/oak_mount/users/zijiao/brain_researcher/cache
+
+# API-based data sources (no local storage required)
+api_sources:
+  pubmed:
+    enabled: true
+    base_url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/
+    cache_days: 30
+
+  neurovault:
+    enabled: true
+    base_url: https://neurovault.org/api
+    cache_days: 7
+
+  neurosynth:
+    enabled: true
+    base_url: https://neurosynth.org
+    cache_days: 90
+
+  wikidata:
+    enabled: true
+    sparql_endpoint: https://query.wikidata.org/sparql
+    cache_days: 30
+
+  allen_brain:
+    enabled: true
+    base_url: http://api.brain-map.org/api/v2
+    cache_days: 90
+
+  openneuro_api:
+    enabled: true
+    graphql_endpoint: https://openneuro.org/crn/graphql
+    s3_bucket: s3://openneuro.org
+
+# Cache settings
+cache:
+  default_ttl_days: 7
+  max_size_gb: 50
+  compression: true
+
+# Dataset priorities (when multiple sources available)
+dataset_priority:
+  - oak_mount  # Prefer OAK mount for large datasets
+  - local      # Fall back to local copies
+  - api        # Use API as last resort
+
+# Loader defaults
+loader_defaults:
+  max_workers: 4
+  retry_attempts: 3
+  retry_delay: 1.0
+  use_cache: true
+  batch_size: 100
+
+# BR-KG database paths
+neurokg:
+  db_path: ${BR_REPO_ROOT}/data/neurokg/db/neurokg_full.db
+  vector_cache: ${BR_REPO_ROOT}/data/neurokg/vector_cache
+  logs: ${BR_REPO_ROOT}/data/neurokg/logs

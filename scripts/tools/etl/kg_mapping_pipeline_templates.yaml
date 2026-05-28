@@ -1,0 +1,45 @@
+# Minimal pipeline template mapping to operations and preferred families.
+# Feel free to extend with more pipelines/steps.
+
+pipelines:
+  fmriprep:
+    id: "pipeline.fmriprep"
+    name: "fMRIPrep BIDS app"
+    description: "Standard fMRI preprocessing with fMRIPrep."
+    operations:
+      - fmriprep_preprocessing
+    prefer_families:
+      - bidsapps
+      - niwrap_generic
+
+  qsiprep:
+    id: "pipeline.qsiprep"
+    name: "QSIPrep BIDS app"
+    description: "Diffusion preprocessing with QSIPrep."
+    operations:
+      - qsiprep_preprocessing
+    prefer_families:
+      - bidsapps
+      - niwrap_generic
+
+  cpac:
+    id: "pipeline.cpac"
+    name: "CPAC preprocessing"
+    description: "CPAC-based preprocessing pipeline."
+    operations:
+      - cpac_preprocessing
+    prefer_families:
+      - niwrap_generic
+
+  tractography:
+    id: "pipeline.tractography"
+    name: "dMRI tractography"
+    description: "Structural tractography workflow."
+    operations:
+      - dmri_preprocessing
+      - dmri_model_fit
+      - dmri_tractography
+      - dmri_parcellate_connectome
+    prefer_families:
+      - mrtrix3
+      - niwrap_generic

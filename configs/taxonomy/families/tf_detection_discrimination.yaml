@@ -1,0 +1,322 @@
+id: tf_detection_discrimination
+label: Perceptual Detection & Discrimination
+description: >-
+  Psychophysical paradigms measuring detectability, sensitivity (d′), thresholds/JNDs, precision, and bias (PSE)
+  across space, time, motion, and form. Includes classic signal-detection (Yes/No, mAFC), discrimination and
+  estimation (contrast/orientation/spatial frequency/color/motion), temporal order/simultaneity and flicker fusion,
+  masking/crowding/adaptation, and (optionally) multistability/illusion tasks when analyzed as discrimination/bias.
+examples: [yes_no_detection, 2afc, orientation_discrimination, contrast_sensitivity, motion_coherence, toj, cff, backward_masking, binocular_rivalry, hollow_mask]
+typical_DVs: [threshold, jnd, dprime, pse_shift, psychometric_slope, precision, rivalry_switch_rate]
+common_manipulations: [contrast, noise_level, soa_ms, stimulus_duration_ms, eccentricity_deg, spatial_frequency_cpd, orientation_diff_deg, delta_e_color, coherence, speed_deg_s, mask_duration_ms]
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Signal Detection & Threshold Estimation
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_signal_detection
+    label: Signal Detection (Yes/No, mAFC) & CSF
+    description: Detect presence/absence or interval location of a signal; estimate contrast thresholds and sensitivity.
+    paradigms:
+      - name: Yes/No Detection (SDT)
+        typical_DVs: [dprime, criterion_c, hit_rate, false_alarm_rate, threshold]
+        common_manipulations: [contrast, noise_level, stimulus_duration_ms, eccentricity_deg]
+        model_families: [Signal_detection_theory, Psychometric_function_Weibull]
+        model_params: [mu_signal, sigma, criterion_c, alpha_threshold, beta_slope, lapse_lambda]
+        variant_tags: [YN, detection]
+        design_flags: [catch_trials, bias_estimation]
+        qa_checks: [false_alarm_rate_sane, display_gamma_calibrated]
+        keywords: [detection, SDT]
+      - name: mAFC Detection (2AFC/4AFC)
+        typical_DVs: [threshold, psychometric_slope]
+        common_manipulations: [contrast, soa_ms, interstimulus_interval_ms]
+        model_families: [Psychometric_function_Logistic]
+        model_params: [alpha_threshold, beta_slope, lapse_lambda]
+        variant_tags: [2AFC, 4AFC]
+        design_flags: [interval_randomization]
+        qa_checks: [staircase_converged]
+        keywords: [AFC, threshold]
+      - name: Contrast Sensitivity Function (CSF)
+        typical_DVs: [contrast_threshold_by_cpd, sensitivity_csf]
+        common_manipulations: [spatial_frequency_cpd, contrast, eccentricity_deg]
+        model_families: [CSF_models, Adaptive_QuickCSF]
+        model_params: [peak_cpd, bandwidth_octaves, sensitivity_peak]
+        variant_tags: [gratings, gabor]
+        design_flags: [adaptive_method_questpsi_optional]
+        qa_checks: [central_fixation_maintained]
+        keywords: [CSF, contrast_sensitivity]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Feature Discrimination (Orientation / Spatial Frequency / Color / Vernier)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_feature_discrimination
+    label: Feature Discrimination (JND & PSE)
+    description: Discriminate feature differences; derive JND (precision) and PSE (bias).
+    paradigms:
+      - name: Orientation Discrimination
+        typical_DVs: [jnd_deg, psychometric_slope, pse_shift]
+        common_manipulations: [orientation_diff_deg, reference_orientation, contrast, eccentricity_deg]
+        model_families: [Psychometric_function, SDT]
+        model_params: [alpha_pse, beta_slope, lapse_lambda]
+        variant_tags: [gabor, gratings]
+        design_flags: []
+        qa_checks: [reference_randomization]
+        keywords: [orientation, JND]
+      - name: Vernier Acuity (Hyperacuity)
+        typical_DVs: [threshold_offset_arcmin, psychometric_slope]
+        common_manipulations: [offset_arcmin, stimulus_duration_ms]
+        model_families: [Psychometric_function]
+        model_params: [alpha_threshold, beta_slope]
+        variant_tags: [vernier]
+        design_flags: []
+        qa_checks: [fixation_stability_check]
+        keywords: [hyperacuity]
+      - name: Spatial Frequency / Size Discrimination
+        typical_DVs: [jnd_cpd, pse_shift]
+        common_manipulations: [spatial_frequency_cpd, contrast, eccentricity_deg]
+        model_families: [Psychometric_function]
+        model_params: [alpha_pse, beta_slope]
+        variant_tags: [size_sf]
+        design_flags: []
+        qa_checks: []
+        keywords: [spatial_frequency]
+      - name: Color Discrimination (ΔE)
+        typical_DVs: [threshold_delta_e, pse_shift]
+        common_manipulations: [delta_e_color, luminance_level, adaptation_state]
+        model_families: [Color_space_thresholds]
+        model_params: [alpha_threshold]
+        variant_tags: [CIELAB]
+        design_flags: [photopic_mesopic_specify]
+        qa_checks: [color_calibration_valid]
+        keywords: [color_threshold]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Motion Perception
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_motion_perception
+    label: Motion Coherence / Direction / Speed
+    description: Estimate sensitivity to motion energy and integration (RDK coherence, direction, speed).
+    paradigms:
+      - name: Random Dot Kinematogram (RDK) Coherence
+        typical_DVs: [coherence_threshold, accuracy, psychometric_slope]
+        common_manipulations: [coherence, dot_density, stimulus_duration_ms, speed_deg_s, aperture_size]
+        model_families: [Psychometric_function, Drift_diffusion_optional]
+        model_params: [alpha_threshold, beta_slope, drift_scaler_theta_optional]
+        variant_tags: [left_right, up_down]
+        design_flags: [limited_lifetime_dots_optional]
+        qa_checks: [dot_field_params_logged]
+        keywords: [motion_coherence]
+      - name: Direction Discrimination (Gratings/RDK)
+        typical_DVs: [accuracy, rt_ms, jnd_deg]
+        common_manipulations: [direction_diff_deg, contrast, speed_deg_s]
+        model_families: [SDT, DDM_optional]
+        model_params: [dprime, a_boundary_optional, Ter_nondec_optional]
+        variant_tags: [direction]
+        design_flags: []
+        qa_checks: []
+        keywords: [direction]
+      - name: Speed Discrimination
+        typical_DVs: [jnd_speed, pse_shift]
+        common_manipulations: [speed_deg_s, contrast, eccentricity_deg]
+        model_families: [Psychometric_function]
+        model_params: [alpha_pse, beta_slope]
+        variant_tags: [speed]
+        design_flags: []
+        qa_checks: []
+        keywords: [speed]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Temporal Perception & Flicker
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_temporal_order_flicker
+    label: Temporal Order / Simultaneity / Flicker Fusion
+    description: Temporal resolution and ordering under brief SOAs; perceptual simultaneity and critical flicker fusion.
+    paradigms:
+      - name: Temporal Order Judgment (TOJ) - Perceptual
+        aliases: [Temporal Order Judgment, TOJ, Perceptual TOJ]
+        typical_DVs: [threshold_soa_ms, psychometric_slope]
+        common_manipulations: [soa_ms, eccentricity_deg, modality, masking]
+        model_families: [Psychometric_function]
+        model_params: [alpha_threshold, beta_slope]
+        variant_tags: [visual, auditory, audiovisual]
+        design_flags: [bimodal_optional]
+        qa_checks: [response_bias_check]
+        keywords: [TOJ, perceptual_timing]
+        notes: Perceptual discrimination of temporal order (distinct from timing interval tasks).
+      - name: Simultaneity Judgment (SJ) - Perceptual
+        aliases: [Simultaneity Judgment, SJ, Perceptual SJ]
+        typical_DVs: [pse_soa_ms, width_TBP]   # TBP: temporal binding window
+        common_manipulations: [soa_ms, modality, luminance_level]
+        model_families: [Psychometric_function]
+        model_params: [alpha_pse, sigma_width]
+        variant_tags: [uni_bimodal]
+        design_flags: []
+        qa_checks: []
+        keywords: [simultaneity, perceptual_timing]
+        notes: Perceptual judgment of simultaneity (distinct from timing interval tasks).
+      - name: Critical Flicker Fusion (CFF)
+        typical_DVs: [cff_threshold_hz]
+        common_manipulations: [luminance, contrast, eccentricity_deg]
+        model_families: [Threshold_estimation]
+        model_params: [alpha_threshold]
+        variant_tags: [flicker]
+        design_flags: []
+        qa_checks: [phosphor_flicker_control]
+        keywords: [flicker_fusion]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Masking, Crowding & Adaptation
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_masking_crowding_adaptation
+    label: Masking, Crowding & Adaptation
+    description: Visibility/interference and contextual interactions shaping thresholds and bias.
+    paradigms:
+      - name: Backward / Forward Masking
+        typical_DVs: [threshold, dprime, masking_function_slope]
+        common_manipulations: [soa_ms, mask_duration_ms, mask_type (metacontrast/pattern), contrast]
+        model_families: [Psychometric_function]
+        model_params: [alpha_threshold, beta_slope]
+        variant_tags: [backward, forward, metacontrast]
+        design_flags: [mask_visibility_check]
+        qa_checks: []
+        keywords: [masking]
+      - name: Crowding (Bouma Law)
+        typical_DVs: [critical_spacing_deg, accuracy]
+        common_manipulations: [eccentricity_deg, flanker_spacing, flanker_similarity]
+        model_families: [Critical_spacing_fit]
+        model_params: [k_bouma]
+        variant_tags: [letters, gabors]
+        design_flags: []
+        qa_checks: [eye_position_monitoring]
+        keywords: [crowding]
+      - name: Tilt Aftereffect / Orientation Adaptation
+        typical_DVs: [pse_shift_deg, aftereffect_magnitude]
+        common_manipulations: [adapter_orientation, adapter_duration_ms, test_orientation]
+        model_families: [Adaptation_shift]
+        model_params: [delta_pse]
+        variant_tags: [tilt_aftereffect]
+        design_flags: [adapter_topup_optional]
+        qa_checks: []
+        keywords: [adaptation]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Multistability & Illusions (as Discrimination/Bias)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_multistability_illusions
+    label: Multistability & Illusions (Optional in this family)
+    description: When treated as bias/precision tasks, include rivalry and classical illusions here (else keep in a separate family).
+    paradigms:
+      - name: Binocular Rivalry
+        typical_DVs: [dominance_duration_ms, rivalry_switch_rate, mixed_percept_fraction]
+        common_manipulations: [contrast, eye_of_presentation, orientation_difference, adaptation_pre]
+        model_families: [Alternation_process_HMM]
+        model_params: [mean_dominance, switch_hazard]
+        variant_tags: [gratings, images]
+        design_flags: [key_hold_report_or_continuous]
+        qa_checks: [report_latency_control]
+        keywords: [rivalry]
+      - name: Hollow Mask / Face Inversion Illusion
+        typical_DVs: [illusion_strength_rating, error_rate, pse_shift]
+        common_manipulations: [illumination_direction, rotation, dynamic_vs_static]
+        model_families: [Bias_shift]
+        model_params: [delta_pse]
+        variant_tags: [face_illusion]
+        design_flags: []
+        qa_checks: []
+        keywords: [hollow_mask]
+      - name: Müller–Lyer / Ebbinghaus / Ponzo
+        typical_DVs: [pse_shift, illusion_magnitude_pct]
+        common_manipulations: [context_geometry, size_of_inducers, viewing_distance]
+        model_families: [Psychometric_function]
+        model_params: [alpha_pse, beta_slope]
+        variant_tags: [size_illusion, length_illusion]
+        design_flags: []
+        qa_checks: [instruction_compliance]
+        keywords: [geometric_illusions]
+      - name: Kanizsa / Illusory Contours
+        typical_DVs: [threshold, accuracy, pse_shift]
+        common_manipulations: [support_ratio, contrast, mask]
+        model_families: [Psychometric_function]
+        model_params: [alpha_threshold]
+        variant_tags: [illusory_contours]
+        design_flags: []
+        qa_checks: []
+        keywords: [Kanizsa]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Contrast Detection
+    - 2AFC Detection
+    - Contrast Sensitivity Function
+    - Orientation Discrimination
+    - Vernier Acuity
+    - Motion Coherence
+    - Direction Discrimination
+    - Temporal Order Judgment
+    - Simultaneity Judgment
+    - Critical Flicker Fusion
+    - Backward/Metacontrast Masking
+    - Crowding
+    - Tilt Aftereffect
+    - Binocular Rivalry
+    - Hollow Mask Illusion
+    - Müller–Lyer / Ebbinghaus / Ponzo
+    - Illusory Contours (Kanizsa)
+  cogpo_candidate_labels:
+    - Detection (Yes/No, mAFC)
+    - Orientation/Contrast Discrimination
+    - Motion Coherence
+    - TOJ / Simultaneity
+    - Flicker Fusion
+    - Masking
+    - Crowding
+    - Rivalry
+    - Illusory Contours
+constructs:
+  primary: [Sensitivity (d′), Threshold/JND, Precision, Bias (PSE)]
+  secondary: [Temporal Resolution, Motion Integration, Contextual Interference, Adaptation]
+uri_brainmap: []
+uri_cogpo: []
+status: plausible
+provenance:
+  - source: task_families_master_20.yaml + detection/discrimination expansion
+    fields: [subfamilies, paradigms, model_families, model_params, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, response, correct, rt]
+  per_subfamily:
+    sf_signal_detection:
+      events_columns: [onset, duration, trial_type, contrast, noise_level, interval_id, response, correct, rt]
+      hed_examples:
+        - "Perception, Detection, Yes-no"
+        - "Perception, Detection, 2AFC"
+    sf_feature_discrimination:
+      events_columns: [onset, duration, trial_type, target_feature, orientation_diff_deg, spatial_frequency_cpd, delta_e_color, response, correct, rt]
+      hed_examples:
+        - "Perception, Discrimination, Orientation"
+        - "Perception, Discrimination, Vernier"
+    sf_motion_perception:
+      events_columns: [onset, duration, trial_type, coherence, speed_deg_s, direction, aperture_size, response, correct, rt]
+      hed_examples:
+        - "Perception, Motion, Coherence"
+    sf_temporal_order_flicker:
+      events_columns: [onset, duration, trial_type, soa_ms, modality, flicker_rate_hz, response, correct, rt]
+      hed_examples:
+        - "Perception, Temporal-order, TOJ"
+        - "Perception, Flicker, CFF"
+    sf_masking_crowding_adaptation:
+      events_columns: [onset, duration, trial_type, mask_type, mask_duration_ms, soa_ms, flanker_spacing_deg, adapter_orientation, response, correct, rt]
+      hed_examples:
+        - "Perception, Masking, Metacontrast"
+        - "Perception, Crowding"
+    sf_multistability_illusions:
+      events_columns: [onset, duration, trial_type, eye_of_presentation, contrast, context_geometry, support_ratio, report_mode, response, rt]
+      hed_examples:
+        - "Perception, Rivalry"
+        - "Perception, Illusion, Kanizsa"

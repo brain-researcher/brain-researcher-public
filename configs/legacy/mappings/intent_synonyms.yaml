@@ -1,0 +1,484 @@
+# Intent-level synonyms (runtime-agnostic)
+
+glm_first_level_fmri:
+  - "glm first level"
+  - "first level glm"
+  - "first-level glm"
+  - "single-subject glm"
+  - "subject level glm"
+  - "run first level glm"
+  - "task glm"
+  - "nilearn glm"
+  - "nilearn first level glm"
+
+glm_group_level_fmri:
+  - "group level glm"
+  - "second level glm"
+  - "group glm"
+  - "between subjects glm"
+
+fmri_preprocessing:
+  - "fmri preprocessing"
+  - "preprocess fmri"
+  - "denoise fmri"
+  - "preprocess bold"
+
+meta_analysis_cbma:
+  - "meta analysis"
+  - "meta-analysis"
+  - "coordinate based meta analysis"
+  - "ale meta analysis"
+  - "activation likelihood estimation"
+  - "cbma meta analysis"
+  - "neurosynth meta analysis"
+
+nwb_io:
+  - "nwb"
+  - "nwb file"
+  - "inspect nwb"
+  - "read nwb"
+  - "open nwb file"
+
+skull_strip_mri:
+  - "skull strip"
+  - "brain extraction"
+  - "bet"
+  - "remove skull"
+  - "strip brain"
+
+registration_linear_mri:
+  - "linear registration"
+  - "affine registration"
+  - "rigid registration"
+  - "flirt"
+  - "align subject to template"
+
+registration_nonlinear_mri:
+  - "nonlinear registration"
+  - "diffeomorphic registration"
+  - "warp to template"
+  - "fnirt"
+  - "ants registration"
+
+roi_timeseries_fmri:
+  - "extract timeseries"
+  - "roi timeseries"
+  - "parcellation timeseries"
+  - "mean timeseries"
+
+connectivity_matrix_fmri:
+  - "connectivity matrix"
+  - "functional connectivity"
+  - "correlation matrix"
+  - "fc matrix"
+
+fetch_atlas_parcellation:
+  - "fetch atlas"
+  - "download atlas"
+  - "get atlas"
+  - "fetch parcellation"
+  - "load atlas"
+
+pet_preprocessing:
+  - "pet preprocessing"
+  - "pet suv"
+  - "compute suvr"
+  - "pet metrics"
+
+dmri_conversion:
+  - "mrtrix"
+  - "mrconvert"
+  - "convert dwi"
+  - "convert dmri"
+  - "dmri conversion"
+
+bias_field_correction:
+  - "n4 bias"
+  - "bias field correction"
+  - "n4 correction"
+  - "bias correction"
+
+fmri_motion_correction:
+  - "motion correction"
+  - "realignment"
+  - "volreg"
+  - "correct motion fmri"
+
+fmri_temporal_smoothing:
+  - "spatial smoothing"
+  - "temporal smoothing"
+  - "blur fmri"
+  - "blurinmask"
+
+fmri_ica_denoising:
+  - "ica denoise"
+  - "melodic"
+  - "ica fmri"
+  - "fsl melodic"
+
+image_format_conversion:
+  - "convert mri"
+  - "mri convert"
+  - "format conversion"
+
+fmri_visualization:
+  - "visualize fmri"
+  - "plot stats map"
+  - "fmri report"
+  - "nilearn viz"
+
+mvpa_decoding_fmri:
+  - "mvpa"
+  - "decoding"
+  - "multivariate decoding"
+  - "pattern analysis"
+
+rag_retrieval:
+  - "rag"
+  - "retrieval augmented generation"
+  - "grounded search"
+  - "condition-resolved evidence"
+  - "evidence conflict mapping"
+  - "condition matrix"
+  - "provenance-grounded evidence"
+
+llm_chat:
+  - "llm chat"
+  - "chat completion"
+  - "openai chat"
+  - "gemini chat"
+
+code_assistant:
+  - "coding assistant"
+  - "code agent"
+  - "refactor code"
+  - "fix code"
+  - "write tests"
+
+genetics_analysis:
+  - "genetics analysis"
+  - "genomics"
+  - "variant analysis"
+
+multimodal_fusion:
+  - "multimodal fusion"
+  - "fuse modalities"
+  - "combine structural functional"
+
+optical_imaging:
+  - "optical imaging"
+  - "fiber photometry"
+  - "optical timeseries"
+
+clinical_decision_support:
+  - "clinical decision support"
+  - "risk score"
+  - "risk stratification"
+
+causal_inference_timeseries:
+  - "causal inference"
+  - "granger causality"
+  - "causal graph"
+
+bids_validation:
+  - "validate bids"
+  - "bids validator"
+  - "bids validation"
+
+bids_query:
+  - "query bids"
+  - "bids layout"
+  - "query layout"
+
+fmriprep_preprocessing:
+  - "run fmriprep"
+  - "fmriprep preprocessing"
+  - "preprocess fmri bids"
+  - "bidsapp.fmriprep.run"
+  - "fmriprep container"
+  - "bidsapp fmriprep"
+
+mriqc_single:
+  - "run mriqc"
+  - "mriqc qc"
+  - "single subject mriqc"
+
+mriqc_group:
+  - "mriqc group"
+  - "group mriqc"
+  - "mriqc group report"
+
+fitlins_glm:
+  - "fitlins"
+  - "bids glm fitlins"
+  - "run fitlins"
+  - "pre-specified analysis plan"
+  - "preregistered analysis plan"
+  - "analysis plan execution"
+
+qsiprep_preprocessing:
+  - "run qsiprep"
+  - "qsiprep preprocessing"
+  - "preprocess dwi"
+
+qsiprep_reconstruction:
+  - "qsiprep recon"
+  - "qsirecon"
+  - "reconstruct diffusion"
+
+qsiprep_qc:
+  - "qsiprep qc"
+  - "dwi qc"
+
+dmri_tractography:
+  - "tractography"
+  - "streamlines"
+  - "fiber tracking"
+  - "tckgen"
+  - "tckedit"
+  - "tckresample"
+  - "tcksift"
+
+ieeg_preprocessing:
+  - "ieeg preprocessing"
+  - "preprocess ieeg"
+  - "clean ieeg"
+
+spike_sorting:
+  - "spike sorting"
+  - "sort spikes"
+  - "spike times"
+
+calcium_suite2p:
+  - "suite2p"
+  - "calcium imaging"
+  - "process calcium"
+
+eeg_preprocessing:
+  - "eeg preprocessing"
+  - "meg preprocessing"
+  - "preprocess eeg"
+  - "preprocess meg"
+  - "clean eeg"
+  - "filter eeg"
+
+eeg_autoreject:
+  - "autoreject"
+  - "auto reject"
+  - "eeg autoreject"
+  - "meg autoreject"
+  - "reject bad segments"
+
+eeg_ica:
+  - "eeg ica"
+  - "meg ica"
+  - "run ica"
+  - "artifact ica"
+
+eeg_timefreq:
+  - "time frequency"
+  - "time-frequency"
+  - "tfr"
+  - "eeg time frequency"
+  - "meg time frequency"
+  - "morlet"
+
+eeg_connectivity:
+  - "eeg connectivity"
+  - "meg connectivity"
+  - "functional connectivity eeg"
+  - "connectivity matrix eeg"
+  - "coherence"
+  - "pli"
+
+eeg_source_localization:
+  - "source localization"
+  - "inverse solution"
+  - "beamformer"
+  - "dipole fitting"
+  - "meg source"
+  - "eeg source"
+
+eeg_fooof:
+  - "fooof"
+  - "spectral parameterization"
+  - "aperiodic fit"
+  - "1/f"
+  - "power spectrum fit"
+
+dmri_model_fit:
+  - "dmri model fit"
+  - "dti fit"
+  - "csd fit"
+  - "noddi fit"
+  - "dwi2fod"
+  - "mrtrix3 dwi2fod"
+  - "dwi2response"
+  - "mrregister"
+
+dmri_parcellate_connectome:
+  - "parcellated connectome"
+  - "dmri connectome"
+  - "structural connectome"
+
+dmri_resolve_triplet:
+  - "resolve dwi"
+  - "dwi triplet"
+  - "fix bvals bvecs"
+
+dynamic_connectivity:
+  - "dynamic connectivity"
+  - "sliding window connectivity"
+  - "time varying connectivity"
+  - "state-dependent connectivity"
+  - "condition-dependent connectivity"
+
+connectivity_measures:
+  - "connectivity measures"
+  - "functional connectivity"
+  - "pli"
+  - "plv"
+  - "coherence"
+
+graph_theory_metrics:
+  - "graph theory"
+  - "graph metrics"
+  - "network metrics"
+
+cpac_preprocessing:
+  - "cpac"
+  - "run cpac"
+  - "cpac preprocessing"
+
+fsl_bedpostx:
+  - "bedpostx"
+  - "fsl bedpostx"
+
+fsl_palm_permutation:
+  - "palm"
+  - "fsl palm"
+  - "permutation glm"
+
+fsl_fix_denoising:
+  - "fsl fix"
+  - "fix ica"
+  - "ica denoising"
+
+afni_clustsim_correction:
+  - "clustsim"
+  - "afni clustsim"
+  - "cluster correction"
+generic_container_op:
+  - "wb_command surface"
+  - "wb command surface"
+  - "surface-smoothing"
+  - "surface smoothing"
+  - "workbench wb_command"
+
+surface_ops:
+  - "surface smoothing"
+  - "surface-"
+  - "metric-"
+  - "wb_command metric"
+  - "wb_command surface"
+
+volume_ops:
+  - "volume-"
+  - "wb_command volume"
+qsm_reconstruction:
+  - "qsm"
+  - "quantitative susceptibility mapping"
+
+pet_coregistration:
+  - "pet coreg"
+  - "coreg pet"
+
+pet_parcellation:
+  - "pet parcellation"
+  - "pet roi"
+
+pet_suvr:
+  - "suvr"
+  - "pet suvr"
+
+ieeg_connectivity:
+  - "ieeg connectivity"
+  - "intracranial connectivity"
+
+ieeg_epoch_features:
+  - "ieeg features"
+  - "ieeg epoch features"
+
+ieeg_electrode_localization:
+  - "electrode localization"
+  - "localize electrodes"
+
+timefreq_tfr:
+  - "tfr"
+  - "time frequency representation"
+  - "time-frequency map"
+
+encoding_models_fmri:
+  - "encoding model"
+  - "stimulus encoding"
+  - "voxelwise model"
+
+hyperalignment_fmri:
+  - "hyperalignment"
+  - "functional alignment"
+
+temporal_decoding_fmri:
+  - "temporal decoding"
+  - "sequence decoding"
+
+searchlight_fmri:
+  - "searchlight"
+  - "searchlight mvpa"
+
+rsa_fmri:
+  - "rsa"
+  - "representational similarity"
+
+parcellation_fetch:
+  - "fetch parcellation"
+  - "download parcellation"
+
+permutation_testing:
+  - "permutation test"
+  - "permutation testing"
+  - "robustness audit"
+  - "sensitivity audit"
+  - "multiverse analysis"
+  - "sensitivity analysis"
+  - "robustness check"
+  - "stability analysis"
+
+multiple_comparison_correction:
+  - "multiple comparison"
+  - "fwe"
+  - "fdr"
+  - "family-wise error control"
+  - "false discovery rate control"
+  - "cluster-level correction"
+  - "correct for multiple comparisons"
+
+feature_selection_ml:
+  - "feature selection"
+  - "select features"
+
+smri_recon_all:
+  - "recon all"
+  - "freesurfer"
+  - "fs recon"
+
+# OpenNeuro dataset download / preview
+openneuro_download:
+  - "download ds"
+  - "download openneuro"
+  - "download dataset ds"
+  - "download ds000"
+  - "openneuro ds"
+  - "fetch openneuro"
+  - "get openneuro dataset"
+  - "openneuro download"
+  - "ds\\d{6}"

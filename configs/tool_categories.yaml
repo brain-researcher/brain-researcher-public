@@ -1,0 +1,614 @@
+# Tool Category Definitions
+# This file defines the categorization scheme for tools in configs/tools_catalog.json
+# Categories are organized hierarchically with clear definitions and tool name patterns
+
+categories:
+  # Data Management & Format Conversion
+  data_management:
+    name: "Data Management"
+    description: "Tools for data loading, validation, format conversion, and archive access"
+    keywords: ["bids", "nwb", "dicom", "openneuro", "dandi", "neurovault", "heudiconv", "validate", "query", "download", "list_files", "convert"]
+    examples:
+      - validate_bids
+      - query_bids_layout
+      - heudiconv_convert
+      - read_nwb
+      - write_nwb
+      - openneuro_download
+      - prefetch.openneuro_cache
+      - bids.manifest
+      - dandi_download
+      - neurovault_download_collection
+
+  # Preprocessing
+  preprocessing:
+    name: "Preprocessing"
+    description: "Image preprocessing, normalization, motion correction, and artifact removal"
+    keywords: ["fmriprep", "qsiprep", "preprocessing", "motion", "correction", "normalize", "smooth", "denoise", "bet", "brain_extraction", "bias", "n4"]
+    examples:
+      - run_fmriprep
+      - fmriprep_preprocessing
+      - run_qsiprep
+      - qsiprep_preprocessing
+      - fsl_bet
+      - ants_n4_bias_correction
+      - mne_preprocessing
+
+  # Quality Control
+  quality_control:
+    name: "Quality Control"
+    description: "Quality assessment, validation, and QC reporting tools"
+    keywords: ["mriqc", "qc", "quality", "visual_qc", "phantom", "validation_metrics", "fmriprep_qc", "qsiprep_qc", "xcpd_qc", "freesurfer_qc"]
+    examples:
+      - run_mriqc
+      - mriqc_group_report
+      - visual_qc_launch
+      - coreg_qc_gallery
+      - fmriprep_qc
+      - qsiprep_qc
+      - freesurfer_qc
+      - phantom_analysis
+
+  # Registration & Alignment
+  registration:
+    name: "Registration & Alignment"
+    description: "Image registration, alignment, and spatial transformation tools"
+    keywords: ["registration", "flirt", "fnirt", "ants_registration", "apply_transforms", "alignment", "warp", "transform"]
+    examples:
+      - fsl_flirt
+      - fsl_fnirt
+      - ants_registration
+      - ants_apply_transforms
+      - registration_pipeline
+
+  # Segmentation
+  segmentation:
+    name: "Segmentation"
+    description: "Tissue segmentation, parcellation, and structure delineation"
+    keywords: ["segmentation", "parcellation", "freesurfer", "recon_all", "brain_segmentation", "tissue", "atlas", "multi_atlas"]
+    examples:
+      - freesurfer_recon_all
+      - freesurfer_parcellation
+      - brain_segmentation
+      - multi_atlas_segmentation
+      - nilearn_parcellation
+
+  # Statistical Analysis
+  statistical_analysis:
+    name: "Statistical Analysis"
+    description: "GLM, hypothesis testing, contrast analysis, and statistical inference"
+    keywords: ["glm", "feat", "fitlins", "contrast", "statistical", "anova", "statsmodels", "spm12_statistical", "second_level", "mixed_effects"]
+    examples:
+      - glm_analysis
+      - fsl_feat_glm
+      - fsl_feat_group
+      - fitlins
+      - statsmodels_glm
+      - nilearn_second_level
+      - contrast_analysis
+      - spm12_statistical
+
+  # Connectivity & Network Analysis
+  connectivity:
+    name: "Connectivity & Network Analysis"
+    description: "Functional and structural connectivity, network analysis, and graph theory"
+    keywords: ["connectivity", "conn", "graph_theory", "network", "xcpd_connectivity", "mne_connectivity", "dynamic_connectivity", "gnn"]
+    examples:
+      - conn_connectivity
+      - conn_graph_theory
+      - xcpd_connectivity_analysis
+      - graph_theory
+      - gnn_connectivity
+      - dynamic_connectivity
+      - mne_connectivity
+
+  # Electrophysiology (EEG/MEG)
+  electrophysiology:
+    name: "Electrophysiology (EEG/MEG)"
+    description: "EEG and MEG data analysis, preprocessing, and source localization"
+    keywords: ["mne", "eeg", "meg", "ica", "timefreq", "source_localization", "beamformer", "dipole", "fooof", "autoreject"]
+    examples:
+      - mne_preprocessing
+      - mne_ica
+      - mne_timefreq
+      - mne_source_localization
+      - mne_beamformer
+      - mne_dipole_fitting
+      - mne_fooof
+      - mne_autoreject
+
+  # Diffusion MRI & Tractography
+  diffusion:
+    name: "Diffusion MRI & Tractography"
+    description: "Diffusion MRI processing, tractography, and white matter analysis"
+    keywords: ["diffusion", "tractography", "bedpostx", "qsiprep_reconstruction", "dti", "dki", "noddi", "fiber", "white_matter"]
+    examples:
+      - run_qsiprep
+      - qsiprep_reconstruction
+      - fsl_bedpostx
+      - diffusion_tractography
+
+  # Surface-Based Analysis
+  surface:
+    name: "Surface-Based Analysis"
+    description: "Cortical surface reconstruction, analysis, and visualization"
+    keywords: ["freesurfer", "surface", "cifti", "hcp_workbench", "cortical", "thickness", "volume_to_surface", "surface_resample"]
+    examples:
+      - freesurfer_recon_all
+      - freesurfer_volumetric
+      - hcp_workbench
+      - cifti_smoothing
+      - volume_to_surface
+      - surface_resample
+      - surface_analysis
+      - ants_cortical_thickness
+
+  # Machine Learning & Decoding
+  machine_learning:
+    name: "Machine Learning & Decoding"
+    description: "MVPA, decoding, encoding models, and pattern analysis"
+    keywords: ["mvpa", "decoding", "encoding", "searchlight", "rsa", "pattern", "classification", "temporal_decoding", "brain_similarity"]
+    examples:
+      - nilearn_decoding
+      - mvpa
+      - encoding_model
+      - encoding_models
+      - searchlight_analysis
+      - rsa_toolbox
+      - temporal_decoding
+      - brain_similarity
+
+  # Deep Learning
+  deep_learning:
+    name: "Deep Learning"
+    description: "Deep learning models, neural networks, and AI-based analysis"
+    keywords: ["pytorch", "dl_pytorch", "monai", "deep_learning", "neural_network", "cnn", "vae", "transformer", "gnn"]
+    examples:
+      - dl_pytorch
+      - monai_deep_learning
+      - gnn_connectivity
+
+  # Knowledge Graph & Retrieval
+  knowledge_graph:
+    name: "Knowledge Graph & Retrieval"
+    description: "BR-KG queries, concept mapping, and literature search"
+    keywords: ["neurokg", "graph_query", "concept", "find_related", "coordinate_to_concept", "task_to_concept", "literature_search", "neurosynth"]
+    examples:
+      - find_related_concepts
+      - coordinate_to_concept
+      - concept_literature_search
+      - graph_query
+      - task_to_concept_mapping
+
+  # Meta-Analysis
+  meta_analysis:
+    name: "Meta-Analysis"
+    description: "Coordinate-based and image-based meta-analysis tools"
+    keywords: ["meta_analysis", "ale", "mkda", "coordinate_meta", "image_based_meta", "effect_size_meta", "literature_mining", "network_meta"]
+    examples:
+      - meta_analysis
+      - coordinate_meta_analysis
+      - image_based_meta_analysis
+      - effect_size_meta_analysis
+      - literature_mining
+      - network_meta_analysis
+
+  # Statistical Inference & Correction
+  statistical_inference:
+    name: "Statistical Inference & Correction"
+    description: "Multiple comparison correction, permutation testing, and advanced inference"
+    keywords: ["permutation", "multiple_comparison", "correction", "palm", "fdr", "fwe", "tfce", "cluster", "afni_3dClustSim"]
+    examples:
+      - permutation_testing
+      - multiple_comparison_correction
+      - fsl_palm
+      - palm_surface
+      - afni_3dClustSim
+
+  # Clinical & Specialized Imaging
+  clinical:
+    name: "Clinical & Specialized Imaging"
+    description: "Clinical tools, lesion detection, QSM, MRS, ASL, and specialized imaging"
+    keywords: ["lesion", "qsm", "mrs", "spectroscopy", "asl", "perfusion", "clinical", "pet_spect", "radiomics", "longitudinal"]
+    examples:
+      - lesion_detection
+      - qsm_reconstruction
+      - mr_spectroscopy
+      - asl_perfusion
+      - pet_spect_analysis
+      - radiomics_extraction
+      - longitudinal_analysis
+
+  # Real-Time Processing
+  realtime:
+    name: "Real-Time Processing"
+    description: "Real-time fMRI, neurofeedback, and online analysis"
+    keywords: ["realtime", "neurofeedback", "closed_loop", "roi_monitoring", "adaptive_thresholding", "realtime_decoding", "realtime_connectivity"]
+    examples:
+      - realtime_fmri
+      - realtime_glm
+      - neurofeedback_control
+      - roi_monitoring
+      - adaptive_thresholding
+      - realtime_decoding
+      - closed_loop_stimulation
+      - realtime_connectivity
+      - neurofeedback_training
+
+  # Brain Simulation
+  simulation:
+    name: "Brain Simulation"
+    description: "Neural mass models, network simulations, and computational modeling"
+    keywords: ["simulation", "neural_mass", "spiking", "oscillator", "biophysical", "cortical_column", "plasticity", "whole_brain"]
+    examples:
+      - neural_mass_model
+      - whole_brain_simulation
+      - spiking_network
+      - neural_field_model
+      - cortical_column_simulation
+      - plasticity_simulation
+      - oscillator_network
+      - biophysical_model
+
+  # Visualization
+  visualization:
+    name: "Visualization"
+    description: "Brain visualization, plotting, and reporting tools"
+    keywords: ["visualization", "plot", "render", "surface", "nilearn_surface", "advanced_visualization", "report_generation"]
+    examples:
+      - advanced_visualization
+      - nilearn_surface
+      - report_generation
+
+  # Workflow Orchestration
+  workflow:
+    name: "Workflow Orchestration"
+    description: "Pipeline building, workflow management, and batch processing"
+    keywords: ["nipype", "workflow", "batch", "pipeline", "cpac", "neurodesk_batch", "neurodesk_command", "fsl_command", "mrtrix3_command"]
+    examples:
+      - nipype_workflow_builder
+      - nipype_bids_app
+      - nipype_interface_wrapper
+      - nipype_distributed
+      - cpac_pipeline
+      - neurodesk_batch
+      - neurodesk_command
+      - fsl_command
+      - mrtrix3_command
+
+  # Feature Selection & Cross-Validation
+  feature_selection:
+    name: "Feature Selection & Cross-Validation"
+    description: "Feature selection, cross-validation, and model validation"
+    keywords: ["feature_selection", "cross_validation", "cv", "kfold", "validation"]
+    examples:
+      - feature_selection
+      - cross_validation
+
+  # Advanced Analysis Methods
+  advanced_analysis:
+    name: "Advanced Analysis Methods"
+    description: "Hyperalignment, multimodal integration, and specialized analysis techniques"
+    keywords: ["hyperalignment", "multimodal", "integration", "cca", "pls", "ica", "melodic", "dual_regression", "fix"]
+    examples:
+      - hyperalignment
+      - multimodal_integration
+      - fsl_melodic_ica
+      - fsl_dual_regression
+      - fsl_fix
+      - fsl_fix_multirun
+      - nilearn_ica
+      - conn_preprocessing
+      - xcpd_postprocessing
+
+  # Data Harmonization & Processing
+  data_harmonization:
+    name: "Data Harmonization & Processing"
+    description: "Multi-site harmonization, motion quantification, and data processing utilities"
+    keywords: ["harmonization", "motion_quantification", "dicom_processing"]
+    examples:
+      - data_harmonization
+      - motion_quantification
+      - dicom_processing
+
+  # Specialized Processing
+  specialized_processing:
+    name: "Specialized Processing"
+    description: "Optical imaging, calcium imaging, spike sorting, and specialized modalities"
+    keywords: ["suite2p", "spike_sorting", "calcium", "optical"]
+    examples:
+      - run_suite2p
+      - run_spike_sorting
+
+# Tool Name Pattern Matching Rules
+# These patterns are used to automatically categorize tools based on their names
+# Patterns are matched in order, and the first match wins
+pattern_matching:
+  # Exact name matches (highest priority)
+  exact_matches:
+    # Data Management
+    validate_bids: data_management
+    query_bids_layout: data_management
+    heudiconv_convert: data_management
+    read_nwb: data_management
+    write_nwb: data_management
+    inspect_nwb: data_management
+    openneuro_download: data_management
+    openneuro_list_files: data_management
+    prefetch.openneuro_cache: data_management
+    bids.manifest: data_management
+    dandi_download: data_management
+    dandi_search: data_management
+    neurovault_download_collection: data_management
+    neurovault_search_images: data_management
+    
+    # Knowledge Graph
+    find_related_concepts: knowledge_graph
+    coordinate_to_concept: knowledge_graph
+    concept_literature_search: knowledge_graph
+    graph_query: knowledge_graph
+    task_to_concept_mapping: knowledge_graph
+    
+    # Preprocessing
+    run_fmriprep: preprocessing
+    fmriprep_preprocessing: preprocessing
+    run_qsiprep: preprocessing
+    qsiprep_preprocessing: preprocessing
+    run_mriqc: quality_control
+    fsl_bet: preprocessing
+    mne_preprocessing: electrophysiology
+    
+    # Statistical Analysis
+    glm_analysis: statistical_analysis
+    encoding_model: machine_learning
+    contrast_analysis: statistical_analysis
+    brain_similarity: machine_learning
+    
+    # Quality Control
+    mriqc_group_report: quality_control
+    visual_qc_launch: quality_control
+    coreg_qc_gallery: quality_control
+    fmriprep_qc: quality_control
+    qsiprep_qc: quality_control
+    xcpd_qc: quality_control
+    freesurfer_qc: quality_control
+    phantom_analysis: quality_control
+    validation_metrics: quality_control
+    
+    # Registration
+    fsl_flirt: registration
+    fsl_fnirt: registration
+    ants_registration: registration
+    ants_apply_transforms: registration
+    ants_template_building: registration
+    registration_pipeline: registration
+    
+    # Segmentation
+    freesurfer_recon_all: segmentation
+    freesurfer_parcellation: segmentation
+    freesurfer_volumetric: segmentation
+    brain_segmentation: segmentation
+    multi_atlas_segmentation: segmentation
+    nilearn_parcellation: segmentation
+    nilearn_masking: preprocessing
+    
+    # Statistical Analysis
+    fsl_feat_glm: statistical_analysis
+    fsl_feat_group: statistical_analysis
+    fitlins: statistical_analysis
+    statsmodels_glm: statistical_analysis
+    nilearn_second_level: statistical_analysis
+    spm12_statistical: statistical_analysis
+    spm12_dcm: advanced_analysis
+    spm12_vbm: segmentation
+    mixed_effects: statistical_analysis
+    
+    # Connectivity
+    conn_preprocessing: advanced_analysis
+    conn_connectivity: connectivity
+    conn_graph_theory: connectivity
+    conn_group_analysis: connectivity
+    xcpd_connectivity_analysis: connectivity
+    graph_theory: connectivity
+    gnn_connectivity: connectivity
+    dynamic_connectivity: connectivity
+    mne_connectivity: connectivity
+    
+    # Electrophysiology
+    mne_ica: electrophysiology
+    mne_timefreq: electrophysiology
+    mne_source_localization: electrophysiology
+    mne_beamformer: electrophysiology
+    mne_dipole_fitting: electrophysiology
+    mne_fooof: electrophysiology
+    mne_autoreject: electrophysiology
+    
+    # Diffusion
+    fsl_bedpostx: diffusion
+    qsiprep_reconstruction: diffusion
+    diffusion_tractography: diffusion
+    
+    # Surface
+    hcp_workbench: surface
+    cifti_smoothing: surface
+    volume_to_surface: surface
+    surface_resample: surface
+    surface_analysis: surface
+    ants_cortical_thickness: surface
+    
+    # Machine Learning
+    nilearn_decoding: machine_learning
+    mvpa: machine_learning
+    encoding_models: machine_learning
+    searchlight_analysis: machine_learning
+    rsa_toolbox: machine_learning
+    temporal_decoding: machine_learning
+    
+    # Deep Learning
+    dl_pytorch: deep_learning
+    monai_deep_learning: deep_learning
+    
+    # Meta-Analysis
+    meta_analysis: meta_analysis
+    coordinate_meta_analysis: meta_analysis
+    image_based_meta_analysis: meta_analysis
+    effect_size_meta_analysis: meta_analysis
+    literature_mining: meta_analysis
+    network_meta_analysis: meta_analysis
+    
+    # Statistical Inference
+    permutation_testing: statistical_inference
+    multiple_comparison_correction: statistical_inference
+    fsl_palm: statistical_inference
+    palm_surface: statistical_inference
+    afni_3dClustSim: statistical_inference
+    
+    # Clinical
+    lesion_detection: clinical
+    qsm_reconstruction: clinical
+    mr_spectroscopy: clinical
+    asl_perfusion: clinical
+    pet_spect_analysis: clinical
+    radiomics_extraction: clinical
+    longitudinal_analysis: clinical
+    
+    # Real-Time
+    realtime_fmri: realtime
+    realtime_glm: realtime
+    neurofeedback_control: realtime
+    roi_monitoring: realtime
+    adaptive_thresholding: realtime
+    realtime_decoding: realtime
+    closed_loop_stimulation: realtime
+    realtime_connectivity: realtime
+    neurofeedback_training: realtime
+    
+    # Simulation
+    neural_mass_model: simulation
+    whole_brain_simulation: simulation
+    spiking_network: simulation
+    neural_field_model: simulation
+    cortical_column_simulation: simulation
+    plasticity_simulation: simulation
+    oscillator_network: simulation
+    biophysical_model: simulation
+    
+    # Visualization
+    advanced_visualization: visualization
+    nilearn_surface: visualization
+    report_generation: visualization
+    
+    # Workflow
+    nipype_workflow_builder: workflow
+    nipype_bids_app: workflow
+    nipype_interface_wrapper: workflow
+    nipype_distributed: workflow
+    cpac_pipeline: workflow
+    neurodesk_batch: workflow
+    neurodesk_command: workflow
+    fsl_command: workflow
+    mrtrix3_command: workflow
+    
+    # Feature Selection
+    feature_selection: feature_selection
+    cross_validation: feature_selection
+    
+    # Advanced Analysis
+    hyperalignment: advanced_analysis
+    multimodal_integration: advanced_analysis
+    fsl_melodic_ica: advanced_analysis
+    fsl_dual_regression: advanced_analysis
+    fsl_fix: advanced_analysis
+    fsl_fix_multirun: advanced_analysis
+    nilearn_ica: advanced_analysis
+    xcpd_postprocessing: advanced_analysis
+    
+    # Data Harmonization
+    data_harmonization: data_harmonization
+    motion_quantification: data_harmonization
+    dicom_processing: data_harmonization
+    
+    # Specialized Processing
+    run_suite2p: specialized_processing
+    run_spike_sorting: specialized_processing
+
+  # Pattern-based matching (fallback for tools not in exact_matches)
+  pattern_rules:
+    - pattern: ".*(bids|nwb|dicom|openneuro|dandi|neurovault|heudiconv|validate|query|download|list_files|convert).*"
+      category: data_management
+    - pattern: ".*(fmriprep|qsiprep|preprocessing|motion|correction|normalize|smooth|denoise|bet|brain_extraction|bias|n4).*"
+      category: preprocessing
+    - pattern: ".*(mriqc|qc|quality|visual_qc|phantom|validation_metrics).*"
+      category: quality_control
+    - pattern: ".*(registration|flirt|fnirt|ants_registration|apply_transforms|alignment|warp|transform).*"
+      category: registration
+    - pattern: ".*(segmentation|parcellation|freesurfer|recon_all|brain_segmentation|tissue|atlas|multi_atlas).*"
+      category: segmentation
+    - pattern: ".*(glm|feat|fitlins|contrast|statistical|anova|statsmodels|spm12_statistical|second_level|mixed_effects).*"
+      category: statistical_analysis
+    - pattern: ".*(connectivity|conn|graph_theory|network|xcpd_connectivity|mne_connectivity|dynamic_connectivity|gnn).*"
+      category: connectivity
+    - pattern: ".*(mne|eeg|meg|ica|timefreq|source_localization|beamformer|dipole|fooof|autoreject).*"
+      category: electrophysiology
+    - pattern: ".*(diffusion|tractography|bedpostx|qsiprep_reconstruction|dti|dki|noddi|fiber|white_matter).*"
+      category: diffusion
+    - pattern: ".*(freesurfer|surface|cifti|hcp_workbench|cortical|thickness|volume_to_surface|surface_resample).*"
+      category: surface
+    - pattern: ".*(mvpa|decoding|encoding|searchlight|rsa|pattern|classification|temporal_decoding|brain_similarity).*"
+      category: machine_learning
+    - pattern: ".*(pytorch|dl_pytorch|monai|deep_learning|neural_network|cnn|vae|transformer|gnn).*"
+      category: deep_learning
+    - pattern: ".*(neurokg|graph_query|concept|find_related|coordinate_to_concept|task_to_concept|literature_search|neurosynth).*"
+      category: knowledge_graph
+    - pattern: ".*(meta_analysis|ale|mkda|coordinate_meta|image_based_meta|effect_size_meta|literature_mining|network_meta).*"
+      category: meta_analysis
+    - pattern: ".*(permutation|multiple_comparison|correction|palm|fdr|fwe|tfce|cluster|afni_3dClustSim).*"
+      category: statistical_inference
+    - pattern: ".*(lesion|qsm|mrs|spectroscopy|asl|perfusion|clinical|pet_spect|radiomics|longitudinal).*"
+      category: clinical
+    - pattern: ".*(realtime|neurofeedback|closed_loop|roi_monitoring|adaptive_thresholding|realtime_decoding|realtime_connectivity).*"
+      category: realtime
+    - pattern: ".*(simulation|neural_mass|spiking|oscillator|biophysical|cortical_column|plasticity|whole_brain).*"
+      category: simulation
+    - pattern: ".*(visualization|plot|render|surface|advanced_visualization|report_generation).*"
+      category: visualization
+    - pattern: ".*(nipype|workflow|batch|pipeline|cpac|neurodesk_batch|neurodesk_command|fsl_command|mrtrix3_command).*"
+      category: workflow
+    - pattern: ".*(feature_selection|cross_validation|cv|kfold|validation).*"
+      category: feature_selection
+    - pattern: ".*(hyperalignment|multimodal|integration|cca|pls|melodic|dual_regression|fix).*"
+      category: advanced_analysis
+    - pattern: ".*(harmonization|motion_quantification|dicom_processing).*"
+      category: data_harmonization
+    - pattern: ".*(suite2p|spike_sorting|calcium|optical).*"
+      category: specialized_processing
+
+# Default category for tools that don't match any pattern
+default_category: "unknown"
+
+# Category display order (for UI purposes)
+display_order:
+  - data_management
+  - preprocessing
+  - quality_control
+  - registration
+  - segmentation
+  - statistical_analysis
+  - connectivity
+  - electrophysiology
+  - diffusion
+  - surface
+  - machine_learning
+  - deep_learning
+  - knowledge_graph
+  - meta_analysis
+  - statistical_inference
+  - clinical
+  - realtime
+  - simulation
+  - visualization
+  - workflow
+  - feature_selection
+  - advanced_analysis
+  - data_harmonization
+  - specialized_processing

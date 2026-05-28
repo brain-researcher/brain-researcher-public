@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brain-researcher"
+version = "0.1.0"
+description = "MCP server, contract layer, and core libraries for the Brain Researcher research-agent OS."
+license = {text = "MIT"}
+authors = [{name = "Brain Researcher Team"}]
+requires-python = ">=3.10"
+keywords = ["neuroimaging", "fmri", "neuroscience", "mcp", "research-agent"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    # Runtime deps mirror what the root pyproject.toml declares for the source
+    # tree. For v0.1.0 this is intentionally permissive — pin in a follow-up
+    # once the public test matrix is wired.
+]
+
+[project.urls]
+Homepage = "https://github.com/zjc062/brain-researcher-public"
+Repository = "https://github.com/zjc062/brain-researcher-public"
+
+[project.scripts]
+brain-researcher = "brain_researcher.cli.main:app"
+br = "brain_researcher.cli.main:app"
+brain-researcher-mcp = "brain_researcher.services.mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
+[tool.setuptools.package-data]
+brain_researcher = ["py.typed"]

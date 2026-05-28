@@ -1,0 +1,363 @@
+{
+  "backend_scenarios": {
+    "kubernetes_healthy": {
+      "backend_type": "kubernetes",
+      "health_status": true,
+      "capacity": {
+        "total_cpu": 256.0,
+        "available_cpu": 192.0,
+        "total_memory_gb": 1024.0,
+        "available_memory_gb": 768.0,
+        "total_gpu": 16,
+        "available_gpu": 12,
+        "queue_depth": 8
+      },
+      "queue_time_estimate": 5,
+      "cost_per_hour": 2.50
+    },
+    
+    "slurm_busy": {
+      "backend_type": "slurm",
+      "health_status": true,
+      "capacity": {
+        "total_cpu": 512.0,
+        "available_cpu": 128.0,
+        "total_memory_gb": 2048.0,
+        "available_memory_gb": 512.0,
+        "total_gpu": 32,
+        "available_gpu": 8,
+        "queue_depth": 45
+      },
+      "queue_time_estimate": 90,
+      "cost_per_hour": 1.20
+    },
+    
+    "aws_batch_expensive": {
+      "backend_type": "aws_batch",
+      "health_status": true,
+      "capacity": {
+        "total_cpu": 1000.0,
+        "available_cpu": 800.0,
+        "total_memory_gb": 4096.0,
+        "available_memory_gb": 3200.0,
+        "total_gpu": 64,
+        "available_gpu": 48,
+        "queue_depth": 12
+      },
+      "queue_time_estimate": 10,
+      "cost_per_hour": 8.75
+    },
+    
+    "backend_degraded": {
+      "backend_type": "kubernetes",
+      "health_status": false,
+      "capacity": {
+        "total_cpu": 128.0,
+        "available_cpu": 0.0,
+        "total_memory_gb": 512.0,
+        "available_memory_gb": 0.0,
+        "total_gpu": 8,
+        "available_gpu": 0,
+        "queue_depth": 150
+      },
+      "queue_time_estimate": 999,
+      "cost_per_hour": 0.0,
+      "error_message": "Node pool scaling failed"
+    }
+  },
+  
+  "job_scenarios": {
+    "light_preprocessing": {
+      "name": "bet-skull-strip",
+      "requirements": {
+        "cpu": 2.0,
+        "memory_gb": 8.0,
+        "gpu": 0,
+        "storage_gb": 20.0,
+        "walltime_minutes": 30
+      },
+      "expected_backend": "kubernetes",
+      "expected_cost": "< 2.0"
+    },
+    
+    "gpu_training": {
+      "name": "deep-learning-segmentation",
+      "requirements": {
+        "cpu": 16.0,
+        "memory_gb": 64.0,
+        "gpu": 4,
+        "storage_gb": 200.0,
+        "walltime_minutes": 480
+      },
+      "expected_backend": "any_with_gpu",
+      "expected_cost": "< 50.0"
+    },
+    
+    "massive_parallel": {
+      "name": "connectome-analysis",
+      "requirements": {
+        "cpu": 128.0,
+        "memory_gb": 512.0,
+        "gpu": 0,
+        "storage_gb": 1000.0,
+        "walltime_minutes": 1440,
+        "node_count": 8
+      },
+      "expected_backend": "slurm",
+      "constraints": ["multi_node_support"]
+    },
+    
+    "urgent_analysis": {
+      "name": "emergency-stroke-analysis",
+      "requirements": {
+        "cpu": 8.0,
+        "memory_gb": 32.0,
+        "gpu": 1,
+        "storage_gb": 100.0,
+        "walltime_minutes": 60
+      },
+      "priority": "urgent",
+      "max_queue_time": 5,
+      "expected_strategy": "fastest"
+    }
+  },
+  
+  "failover_scenarios": {
+    "primary_backend_down": {
+      "scenario": "kubernetes_cluster_failure",
+      "primary_backend": "kubernetes",
+      "failure_reason": "cluster_api_unavailable",
+      "expected_fallback": "slurm",
+      "recovery_time": 300
+    },
+    
+    "resource_exhaustion": {
+      "scenario": "gpu_shortage",
+      "primary_backend": "kubernetes",
+      "failure_reason": "insufficient_gpu_resources",
+      "requirements": {
+        "gpu": 8
+      },
+      "expected_fallback": "aws_batch",
+      "fallback_delay": 30
+    },
+    
+    "cost_threshold_exceeded": {
+      "scenario": "budget_protection",
+      "primary_backend": "aws_batch",
+      "failure_reason": "cost_limit_exceeded",
+      "cost_threshold": 5.0,
+      "expected_fallback": "slurm",
+      "budget_protection": true
+    },
+    
+    "queue_congestion": {
+      "scenario": "slurm_queue_full",
+      "primary_backend": "slurm",
+      "failure_reason": "queue_depth_limit",
+      "queue_threshold": 100,
+      "expected_fallback": "aws_batch",
+      "queue_bypass": true
+    }
+  },
+  
+  "selection_strategy_scenarios": {
+    "fastest_completion": {
+      "strategy": "fastest",
+      "job_requirements": {
+        "cpu": 8.0,
+        "memory_gb": 32.0,
+        "gpu": 1,
+        "walltime_minutes": 120
+      },
+      "backend_states": {
+        "kubernetes": {"queue_time": 5, "healthy": true},
+        "slurm": {"queue_time": 45, "healthy": true},
+        "aws_batch": {"queue_time": 15, "healthy": true}
+      },
+      "expected_selection": "kubernetes"
+    },
+    
+    "cost_optimization": {
+      "strategy": "cheapest",
+      "job_requirements": {
+        "cpu": 16.0,
+        "memory_gb": 64.0,
+        "gpu": 0,
+        "walltime_minutes": 240
+      },
+      "backend_states": {
+        "kubernetes": {"cost": 4.0, "healthy": true},
+        "slurm": {"cost": 1.5, "healthy": true},
+        "aws_batch": {"cost": 12.0, "healthy": true}
+      },
+      "expected_selection": "slurm"
+    },
+    
+    "resource_availability": {
+      "strategy": "most_available",
+      "job_requirements": {
+        "cpu": 32.0,
+        "memory_gb": 128.0,
+        "gpu": 2,
+        "walltime_minutes": 360
+      },
+      "backend_states": {
+        "kubernetes": {"availability_ratio": 0.6, "healthy": true},
+        "slurm": {"availability_ratio": 0.9, "healthy": true},
+        "aws_batch": {"availability_ratio": 0.7, "healthy": true}
+      },
+      "expected_selection": "slurm"
+    },
+    
+    "load_balancing": {
+      "strategy": "load_balanced",
+      "job_requirements": {
+        "cpu": 4.0,
+        "memory_gb": 16.0,
+        "gpu": 1,
+        "walltime_minutes": 90
+      },
+      "backend_usage_history": {
+        "kubernetes": 15,
+        "slurm": 3,
+        "aws_batch": 8
+      },
+      "expected_selection": "slurm"
+    },
+    
+    "preferred_order": {
+      "strategy": "preferred",
+      "preferred_order": ["slurm", "kubernetes", "aws_batch"],
+      "job_requirements": {
+        "cpu": 8.0,
+        "memory_gb": 32.0,
+        "gpu": 0,
+        "walltime_minutes": 120
+      },
+      "backend_states": {
+        "kubernetes": {"healthy": true, "can_satisfy": true},
+        "slurm": {"healthy": false, "can_satisfy": false},
+        "aws_batch": {"healthy": true, "can_satisfy": true}
+      },
+      "expected_selection": "kubernetes"
+    }
+  },
+  
+  "error_scenarios": {
+    "submission_failures": [
+      {
+        "backend": "kubernetes",
+        "error_type": "ApiException",
+        "error_code": 403,
+        "error_message": "Forbidden: insufficient permissions",
+        "retry_recommended": false
+      },
+      {
+        "backend": "slurm",
+        "error_type": "SSH_CONNECTION_ERROR",
+        "error_message": "Connection refused: unable to connect to SLURM head node",
+        "retry_recommended": true,
+        "retry_delay": 60
+      },
+      {
+        "backend": "aws_batch",
+        "error_type": "ClientError",
+        "error_code": "InvalidParameterValue",
+        "error_message": "Job queue is in INVALID state",
+        "retry_recommended": false
+      }
+    ],
+    
+    "monitoring_failures": [
+      {
+        "backend": "kubernetes",
+        "operation": "get_job_status",
+        "error_type": "ApiException",
+        "error_message": "Job not found",
+        "expected_behavior": "mark_as_unknown"
+      },
+      {
+        "backend": "slurm",
+        "operation": "get_logs",
+        "error_type": "FILE_NOT_FOUND",
+        "error_message": "Log file does not exist",
+        "expected_behavior": "return_empty_logs"
+      },
+      {
+        "backend": "aws_batch",
+        "operation": "cancel_job",
+        "error_type": "ClientError",
+        "error_message": "Job cannot be cancelled in current state",
+        "expected_behavior": "return_false"
+      }
+    ]
+  },
+  
+  "performance_benchmarks": {
+    "backend_selection_time": {
+      "target_p95": 500,
+      "target_p99": 1000,
+      "unit": "milliseconds"
+    },
+    
+    "job_submission_time": {
+      "kubernetes": {
+        "target_p95": 2000,
+        "target_p99": 5000
+      },
+      "slurm": {
+        "target_p95": 3000,
+        "target_p99": 8000
+      },
+      "aws_batch": {
+        "target_p95": 4000,
+        "target_p99": 10000
+      },
+      "unit": "milliseconds"
+    },
+    
+    "health_check_time": {
+      "target_p95": 1000,
+      "target_p99": 3000,
+      "unit": "milliseconds"
+    },
+    
+    "capacity_query_time": {
+      "target_p95": 2000,
+      "target_p99": 5000,
+      "unit": "milliseconds"
+    }
+  },
+  
+  "stress_test_scenarios": {
+    "concurrent_submissions": {
+      "num_jobs": 50,
+      "submission_rate": "5_per_second",
+      "job_mix": {
+        "light": 0.4,
+        "standard": 0.4,
+        "heavy": 0.2
+      },
+      "expected_success_rate": 0.95
+    },
+    
+    "backend_failure_during_load": {
+      "num_jobs": 20,
+      "failure_point": "50%_completion",
+      "failed_backend": "kubernetes",
+      "expected_failover_time": 30,
+      "expected_success_rate": 0.90
+    },
+    
+    "resource_contention": {
+      "scenario": "multiple_gpu_jobs",
+      "num_concurrent_jobs": 10,
+      "resource_requirements": {
+        "gpu": 2
+      },
+      "total_available_gpu": 16,
+      "expected_queue_behavior": "fair_scheduling"
+    }
+  }
+}

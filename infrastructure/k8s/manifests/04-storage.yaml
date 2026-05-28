@@ -1,0 +1,340 @@
+# PersistentVolumeClaims and storage configuration for Brain Researcher platform
+# Provides persistent storage for stateful services
+
+---
+# Storage Class definitions for different performance tiers
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: brain-researcher-fast-ssd
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: storage
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: kubernetes.io/aws-ebs  # Change based on your cloud provider
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: brain-researcher-standard
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: storage
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/aws-ebs  # Change based on your cloud provider
+parameters:
+  type: gp3
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+
+---
+# BR-KG database storage - High performance SSD for database files
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: neurokg-db-storage
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: database-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-fast-ssd"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-fast-ssd
+  resources:
+    requests:
+      storage: 50Gi
+  # Optional: Selector for specific PV (if using static provisioning)
+  # selector:
+  #   matchLabels:
+  #     app: neurokg-db
+
+---
+# BR-KG vector cache storage - Fast access for embeddings
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: neurokg-vector-cache
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: vector-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-fast-ssd"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-fast-ssd
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+# Agent session storage - For conversation persistence
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-session-storage
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: session-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-standard
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# Agent logs storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-logs-storage
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: logs-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-standard
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+# NICLIP model storage - For model weights and cache
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: niclip-model-storage
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: niclip
+    app.kubernetes.io/component: model-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-standard
+  resources:
+    requests:
+      storage: 15Gi
+
+---
+# NICLIP data cache storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: niclip-data-cache
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: niclip
+    app.kubernetes.io/component: data-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-standard
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# PostgreSQL data storage - High performance for database
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-storage
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-fast-ssd"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-fast-ssd
+  resources:
+    requests:
+      storage: 100Gi
+
+---
+# Redis data storage - Fast access for cache
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-storage
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-fast-ssd"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-fast-ssd
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# Prometheus data storage - Time series data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data-storage
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: monitoring-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-standard
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+# Grafana data storage - Dashboard and configuration
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data-storage
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-standard
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+# Shared data storage for datasets and artifacts - ReadWriteMany for shared access
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-data-storage
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: shared-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteMany  # Allows multiple pods to mount the same volume
+  storageClassName: brain-researcher-standard  # May need EFS or similar for RWX
+  resources:
+    requests:
+      storage: 200Gi
+
+---
+# Log aggregation storage - For centralized logging
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logs-storage
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: logs-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-standard
+  resources:
+    requests:
+      storage: 30Gi
+
+---
+# Backup storage - For automated backups
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-storage
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: backup-storage
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "brain-researcher-standard"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: brain-researcher-standard
+  resources:
+    requests:
+      storage: 100Gi
+
+# ---
+# Example of using Volume Snapshots for backup (uncomment if VolumeSnapshot CRDs are installed)
+# apiVersion: snapshot.storage.k8s.io/v1
+# kind: VolumeSnapshotClass
+# metadata:
+#   name: brain-researcher-snapshot-class
+# driver: ebs.csi.aws.com  # Change based on your CSI driver
+# deletionPolicy: Retain
+# parameters:
+#   description: "Brain Researcher volume snapshot"
+
+# ---
+# apiVersion: snapshot.storage.k8s.io/v1
+# kind: VolumeSnapshot
+# metadata:
+#   name: postgres-backup-snapshot
+#   namespace: brain-researcher-data
+# spec:
+#   volumeSnapshotClassName: brain-researcher-snapshot-class
+#   source:
+#     persistentVolumeClaimName: postgres-data-storage

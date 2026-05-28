@@ -1,0 +1,183 @@
+{
+  "entity_extraction_tests": [
+    {
+      "query": "Analyze activation in the dorsolateral prefrontal cortex during working memory task",
+      "expected_entities": [
+        {
+          "text": "dorsolateral prefrontal cortex",
+          "type": "brain_region",
+          "normalized": "dorsolateral prefrontal cortex",
+          "confidence": 0.95
+        },
+        {
+          "text": "working memory task",
+          "type": "task", 
+          "normalized": "working memory",
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "query": "Compare functional connectivity between DMN nodes at coordinates (-45, 24, 36)",
+      "expected_entities": [
+        {
+          "text": "functional connectivity",
+          "type": "statistical_method",
+          "normalized": "functional connectivity",
+          "confidence": 0.9
+        },
+        {
+          "text": "DMN",
+          "type": "brain_region",
+          "normalized": "default mode network",
+          "confidence": 0.85
+        },
+        {
+          "text": "(-45, 24, 36)",
+          "type": "coordinate",
+          "normalized": "[-45, 24, 36]",
+          "coordinates": [-45, 24, 36],
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "query": "Run GLM analysis with motion correction on fMRI data from dataset ds000114",
+      "expected_entities": [
+        {
+          "text": "GLM analysis",
+          "type": "statistical_method",
+          "normalized": "general linear model",
+          "confidence": 0.9
+        },
+        {
+          "text": "motion correction",
+          "type": "preprocessing_step",
+          "normalized": "motion correction",
+          "confidence": 0.9
+        },
+        {
+          "text": "fMRI",
+          "type": "modality",
+          "normalized": "functional mri",
+          "confidence": 0.95
+        },
+        {
+          "text": "ds000114",
+          "type": "dataset",
+          "normalized": "ds000114",
+          "confidence": 0.95
+        }
+      ]
+    }
+  ],
+  "intent_classification_tests": [
+    {
+      "query": "Analyze working memory activation in prefrontal cortex",
+      "expected_primary_intent": "analysis",
+      "expected_secondary_intents": [],
+      "confidence": 0.9
+    },
+    {
+      "query": "Compare young vs old adults on working memory task",
+      "expected_primary_intent": "comparison", 
+      "expected_secondary_intents": ["analysis"],
+      "confidence": 0.95
+    },
+    {
+      "query": "Find correlation between connectivity and behavior",
+      "expected_primary_intent": "correlation",
+      "expected_secondary_intents": ["analysis"],
+      "confidence": 0.9
+    },
+    {
+      "query": "Classify brain states using machine learning",
+      "expected_primary_intent": "prediction",
+      "expected_secondary_intents": ["analysis"],
+      "confidence": 0.95
+    },
+    {
+      "query": "Show activation maps for working memory contrast",
+      "expected_primary_intent": "visualization",
+      "expected_secondary_intents": ["analysis"],
+      "confidence": 0.9
+    }
+  ],
+  "query_expansion_tests": [
+    {
+      "query": "fMRI connectivity analysis",
+      "expected_expansions": {
+        "fMRI": ["functional mri", "functional magnetic resonance imaging", "bold fmri"],
+        "connectivity": ["functional connectivity", "effective connectivity", "neural connectivity"],
+        "analysis": ["statistical analysis", "data analysis", "neuroimaging analysis"]
+      },
+      "expected_related_concepts": [
+        "correlation", "network analysis", "graph theory", "resting state"
+      ]
+    },
+    {
+      "query": "DMN regions activation",
+      "expected_expansions": {
+        "DMN": ["default mode network", "default network", "resting state network"],
+        "activation": ["neural activity", "brain activity", "bold response"]
+      },
+      "expected_related_concepts": [
+        "posterior cingulate cortex", "medial prefrontal cortex", "angular gyrus"
+      ]
+    }
+  ],
+  "context_awareness_tests": [
+    {
+      "query": "Analyze it",
+      "context": {
+        "previous_queries": [
+          "Load working memory dataset",
+          "Preprocess fMRI data with motion correction"
+        ]
+      },
+      "expected_expanded_query": "Analyze working memory fMRI data",
+      "expected_confidence": 0.7
+    },
+    {
+      "query": "Compare the groups",
+      "context": {
+        "session_context": {
+          "current_dataset": "aging_study",
+          "groups": ["young_adults", "older_adults"]
+        }
+      },
+      "expected_expanded_query": "Compare young_adults vs older_adults groups",
+      "expected_confidence": 0.8
+    }
+  ],
+  "multi_intent_tests": [
+    {
+      "query": "Preprocess the data, run GLM analysis, and visualize the results",
+      "expected_primary_intent": "analysis",
+      "expected_secondary_intents": ["preprocessing", "visualization"],
+      "expected_steps": ["preprocessing", "statistical_analysis", "visualization"]
+    },
+    {
+      "query": "Find studies with amygdala activation and compare their effect sizes",
+      "expected_primary_intent": "search",
+      "expected_secondary_intents": ["comparison", "meta_analysis"],
+      "expected_complexity": 0.8
+    }
+  ],
+  "ambiguity_resolution_tests": [
+    {
+      "query": "Analyze ACC activation",
+      "context": {},
+      "expected_disambiguation": "anterior cingulate cortex",
+      "confidence": 0.9
+    },
+    {
+      "query": "Run PCA on the data",
+      "context": {
+        "domain_hint": "dimensionality_reduction"
+      },
+      "expected_disambiguation": "principal component analysis",
+      "confidence": 0.95
+    }
+  ]
+}

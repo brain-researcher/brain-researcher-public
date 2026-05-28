@@ -1,0 +1,63 @@
+name: Open question
+description: Raise an architecture or product question that needs tracked discussion.
+title: "[OPEN] "
+labels:
+  - type/discussion
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area/architecture
+        - area/workflow
+        - area/tool
+        - area/benchmark
+        - area/neurokg
+        - area/hypothesis
+        - area/studio
+        - area/datasets
+        - area/docs
+        - area/mcp
+    validations:
+      required: true
+
+  - type: input
+    id: question
+    attributes:
+      label: Open question
+      placeholder: What decision is needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current state
+      placeholder: What exists today and what is not working
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed direction
+      placeholder: Concrete proposal, boundaries, and contract changes
+    validations:
+      required: true
+
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Tradeoffs
+      placeholder: Risks, costs, maintenance burden, migration concerns
+    validations:
+      required: true
+
+  - type: textarea
+    id: next_steps
+    attributes:
+      label: Suggested next steps
+      placeholder: Milestones and acceptance criteria
+    validations:
+      required: true

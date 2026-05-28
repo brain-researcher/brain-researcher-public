@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General community discussion
+    url: https://github.com/zjc062/brain-researcher-public/discussions
+    about: Use Discussions for open-ended conversation and non-tracked topics.

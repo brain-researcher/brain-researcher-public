@@ -1,0 +1,205 @@
+id: tf_priming
+label: Priming
+description: >-
+  Paradigms in which prior exposure to a stimulus (prime) influences processing of a subsequent
+  stimulus (target), without requiring explicit memory retrieval. Covers repetition priming,
+  semantic/associative priming, masked/subliminal priming, conceptual priming, cross-modal
+  priming, and affective priming. Key signatures: RT facilitation or accuracy improvement
+  for primed relative to unprimed targets; modulated by prime–target SOA, awareness, and
+  relatedness. Distinct from explicit LTM retrieval: no intentional recall instruction.
+
+examples:
+  - repetition_priming
+  - semantic_priming
+  - masked_priming
+  - associative_priming
+  - conceptual_priming
+  - affective_priming
+  - cross_modal_priming
+  - negative_priming
+
+typical_DVs:
+  - rt_ms
+  - priming_effect_ms
+  - accuracy
+  - priming_effect_accuracy
+  - d_prime
+
+common_manipulations:
+  - prime_target_relatedness
+  - soa_ms
+  - prime_awareness_masking
+  - repetition_lag
+  - modality_match_mismatch
+  - prime_valence
+
+crosswalk:
+  brainmap_paradigm_classes:
+    - Priming
+    - Repetition Priming
+    - Semantic Priming
+  cogpo_candidate_labels:
+    - repetition priming
+    - semantic priming
+    - masked priming
+  constructs:
+    primary:
+      - implicit memory
+      - semantic processing
+    secondary:
+      - attention
+      - perceptual fluency
+
+status: draft
+
+provenance:
+  - source: manual
+    fields: [id, label, description, subfamilies]
+    confidence: medium
+
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Repetition Priming
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_priming_repetition
+    label: Repetition Priming
+    description: >-
+      The same item (word, picture, object) is presented as both prime and target.
+      Measures implicit memory for prior presentations via RT/accuracy facilitation.
+    paradigms:
+      - name: Word Repetition Priming
+        aliases:
+          - Repetition Priming
+          - Lexical Repetition Priming
+          - Word Identification (Priming)
+          - Perceptual Identification Task
+        typical_DVs: [rt_ms, priming_effect_ms, accuracy]
+        common_manipulations: [repetition_lag, modality_match_mismatch, word_frequency, prime_duration_ms]
+        variant_tags: [lexical, auditory, visual]
+        design_flags: [between_subjects_optional, lag_manipulation]
+        qa_checks: [exclude_error_trials, reaction_time_outlier_trim]
+        keywords: [implicit_memory, repetition_suppression, fluency]
+
+      - name: Object / Picture Repetition Priming
+        aliases:
+          - Picture Priming
+          - Object Repetition
+          - Visual Object Priming
+        typical_DVs: [rt_ms, naming_latency_ms, accuracy]
+        common_manipulations: [repetition_lag, viewpoint_change, format_change_picture_word]
+        variant_tags: [visual, object, picture]
+        design_flags: []
+        qa_checks: [familiarization_check]
+        keywords: [object_recognition, structural_description]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Semantic / Associative Priming
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_priming_semantic
+    label: Semantic & Associative Priming
+    description: >-
+      Prime and target are related in meaning or association. Measures automatic
+      spreading activation in semantic memory and is sensitive to SOA.
+    paradigms:
+      - name: Semantic Priming (Lexical Decision)
+        aliases:
+          - Semantic Priming
+          - Associative Priming
+          - Semantic Priming Paradigm
+          - Category Priming
+          - Semantic Facilitation
+        typical_DVs: [rt_ms, priming_effect_ms, accuracy, d_prime]
+        common_manipulations: [prime_target_relatedness, soa_ms, prime_awareness, proportion_related]
+        variant_tags: [automatic, strategic, SOA_short, SOA_long]
+        design_flags: [lexical_decision_target, naming_target_optional]
+        qa_checks: [soa_manipulation_check, proportion_related_balanced]
+        keywords: [spreading_activation, semantic_memory, SOA]
+
+      - name: Semantic Priming (Naming)
+        aliases:
+          - Primed Naming
+          - Semantic Priming Naming Task
+        typical_DVs: [naming_latency_ms, accuracy]
+        common_manipulations: [prime_target_relatedness, soa_ms]
+        variant_tags: [picture, word]
+        design_flags: []
+        qa_checks: [articulatory_onset_check]
+        keywords: [word_production, semantic_facilitation]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Masked / Subliminal Priming
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_priming_masked
+    label: Masked / Subliminal Priming
+    description: >-
+      Prime is rendered invisible (backward masking, sandwich masking, or CFS). Tests
+      unconscious / automatic influences on target processing.
+    paradigms:
+      - name: Masked Semantic Priming
+        aliases:
+          - Subliminal Semantic Priming
+          - Unconscious Priming
+          - Backward Masked Priming
+          - Masked Priming Paradigm
+        typical_DVs: [rt_ms, priming_effect_ms, accuracy, prime_awareness_dprime]
+        common_manipulations: [prime_duration_ms, mask_type, prime_target_soa_ms, relatedness]
+        variant_tags: [masked, CFS, sandwich_mask]
+        design_flags: [awareness_check_required, ultra_brief_prime]
+        qa_checks: [prime_awareness_check_pct, d_prime_near_zero_for_prime]
+        keywords: [unconscious, automatic, subliminal]
+
+      - name: Masked Identity Priming
+        aliases:
+          - Masked Repetition Priming
+          - Masked Form Priming
+          - Morphological Priming (masked)
+        typical_DVs: [rt_ms, priming_effect_ms]
+        common_manipulations: [prime_duration_ms, morphological_relatedness, orthographic_overlap]
+        variant_tags: [morphological, form]
+        design_flags: [ultra_brief_prime_33ms]
+        qa_checks: [prime_awareness_check]
+        keywords: [morphology, form_priming, orthographic]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Negative Priming
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_priming_negative
+    label: Negative Priming
+    description: >-
+      Response to a target is slower when it matches the previously ignored distractor.
+      Distinguishes inhibition-based from episodic retrieval accounts of selective attention.
+    paradigms:
+      - name: Negative Priming (Identity)
+        aliases:
+          - Negative Priming
+          - Ignored Repetition Effect
+          - NP Paradigm
+        typical_DVs: [rt_ms, negative_priming_effect_ms, accuracy]
+        common_manipulations: [probe_target_lag, distractor_repetition_type, prime_target_overlap]
+        variant_tags: [identity, location]
+        design_flags: [prime_probe_design, counterbalanced_conditions]
+        qa_checks: [outlier_trim_3sd]
+        keywords: [inhibition, selective_attention, episodic_retrieval]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Affective Priming
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_priming_affective
+    label: Affective Priming
+    description: >-
+      Prime's emotional valence influences evaluation of a target. Sensitive to SOA;
+      at short SOAs reveals automatic valence spreading activation.
+    paradigms:
+      - name: Affective Priming (Evaluative Decision)
+        aliases:
+          - Affective Priming
+          - Evaluative Priming
+          - Emotional Priming
+          - Affective Facilitation
+        typical_DVs: [rt_ms, priming_effect_ms, accuracy]
+        common_manipulations: [prime_valence, soa_ms, target_category, prime_awareness]
+        variant_tags: [automatic, evaluative]
+        design_flags: [evaluative_decision_target]
+        qa_checks: [valence_rating_check, soa_manipulation_check]
+        keywords: [valence, emotion, automatic_evaluation]

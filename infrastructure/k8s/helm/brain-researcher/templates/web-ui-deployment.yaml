@@ -1,0 +1,95 @@
+{{- if .Values.webUi.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-web-ui
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  {{- $strategy := .Values.webUi.strategy | default dict }}
+  {{- $rollingUpdate := get $strategy "rollingUpdate" | default dict }}
+  replicas: {{ .Values.webUi.replicaCount }}
+  strategy:
+    type: {{ get $strategy "type" | default "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{- if hasKey $rollingUpdate "maxUnavailable" }} {{ get $rollingUpdate "maxUnavailable" }}{{- else }} 0{{- end }}
+      maxSurge: {{- if hasKey $rollingUpdate "maxSurge" }} {{ get $rollingUpdate "maxSurge" }}{{- else }} 1{{- end }}
+  selector:
+    matchLabels:
+      {{- include "brain-researcher.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "brain-researcher.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+      annotations:
+        {{- with .Values.webUi.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "brain-researcher.serviceAccountName" . }}
+      {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: web-ui
+          image: "{{ .Values.global.imageRegistry }}/web-ui:{{ .Values.webUi.imageTag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: AGENT_BASE_URL
+              value: {{ printf "http://%s-agent:8000" (include "brain-researcher.fullname" .) | quote }}
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://{{ .Values.global.domain }}/api"
+            - name: NEXT_PUBLIC_APP_NAME
+              value: "Brain Researcher"
+            - name: NEXT_TELEMETRY_DISABLED
+              value: "1"
+            - name: PROJECT_ROOT
+              value: "/app"
+            {{- if .Values.webUi.extraEnv }}
+            {{- tpl (toYaml .Values.webUi.extraEnv) $ | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-external-services
+                optional: true
+          resources:
+            {{- toYaml .Values.webUi.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+      {{- with .Values.global.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.global.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.global.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

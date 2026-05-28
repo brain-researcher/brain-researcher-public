@@ -1,0 +1,357 @@
+metadata:
+  name: b2_method_compatibility_seed
+  version: 0.2
+  scope: general_design_method_compatibility
+  description: "Curated seed for plan-time method compatibility checks covering common neuroimaging design-method mismatches."
+
+design_aliases:
+  repeated_measures:
+    - repeated measures
+    - repeated-measures
+    - within-subject
+    - within subject
+    - paired
+    - dependent
+    - dependent samples
+    - matched pairs
+  independent_groups:
+    - independent groups
+    - independent-group
+    - between-subject
+    - between subject
+    - unpaired
+    - two-sample
+    - two sample
+  one_sample:
+    - one-sample
+    - one sample
+    - single-group
+    - single group
+    - single sample
+  factorial:
+    - factorial design
+    - factorial
+    - multi-factor
+    - two-way
+    - interaction design
+  mixed_design:
+    - mixed design
+    - split-plot
+    - mixed factorial
+    - between-within
+  longitudinal:
+    - longitudinal
+    - pre-post
+    - time-series design
+    - repeated assessment
+  correlation:
+    - correlational
+    - cross-sectional correlation
+    - individual differences
+
+method_aliases:
+  paired_t_test:
+    - paired_ttest
+    - paired t-test
+    - paired t test
+    - dependent t-test
+    - dependent t test
+    - dependent samples t-test
+    - dependent samples t test
+    - repeated measures t-test
+    - repeated measures t test
+    - ttest_rel
+  independent_t_test:
+    - independent_ttest
+    - independent t-test
+    - independent t test
+    - independent samples t-test
+    - independent samples t test
+    - two-sample t-test
+    - two sample t test
+    - unpaired t-test
+    - unpaired t test
+    - between-subjects t-test
+    - between subjects t-test
+    - ttest_ind
+  one_sample_t_test:
+    - one-sample t-test
+    - one sample t test
+    - ttest_1samp
+    - single-sample t-test
+    - single sample t test
+  anova_oneway:
+    - one-way anova
+    - one-way ANOVA
+    - oneway_anova
+    - analysis of variance
+    - one way anova
+  anova_repeated:
+    - repeated-measures anova
+    - repeated-measures ANOVA
+    - rmanova
+    - rm_anova
+    - within-subject anova
+    - within-subject ANOVA
+  anova_mixed:
+    - mixed anova
+    - mixed ANOVA
+    - mixed-model anova
+    - mixed-model ANOVA
+    - split-plot anova
+    - split-plot ANOVA
+  linear_regression:
+    - OLS
+    - linear model
+    - lm
+    - simple regression
+    - linear regression
+  correlation_pearson:
+    - pearson
+    - pearson_r
+    - bivariate correlation
+    - pearson correlation
+  mixed_effects_model:
+    - linear mixed model
+    - LME
+    - multilevel model
+    - hierarchical linear model
+    - mixed effects
+    - lmer
+    - mixed_effects
+  mann_whitney:
+    - mann-whitney
+    - mann whitney
+    - wilcoxon rank-sum
+    - rank sum test
+    - mannwhitneyu
+  wilcoxon_signed_rank:
+    - wilcoxon signed rank
+    - signed rank test
+    - wilcoxon signed-rank
+    - wilcoxon
+  permutation_test:
+    - permutation test
+    - randomization test
+    - nonparametric permutation
+    - permutation_test
+
+onvoc_design_map:
+  ONVOC_0000616: repeated_measures
+  ONVOC_0000612: correlation
+  ONVOC_0000613: longitudinal
+
+rules:
+  # --- repeated_measures rules ---
+  - id: repeated_measures_requires_paired_t_test
+    design: repeated_measures
+    method: paired_t_test
+    compatible: true
+    severity: ok
+    rationale: "Repeated-measures designs preserve within-subject dependence, so paired/dependent tests are appropriate."
+    evidence:
+      crosswalk_ref: "configs/planner/capability_crosswalk.yaml#paired_test_tool"
+  - id: repeated_measures_blocks_independent_t_test
+    design: repeated_measures
+    method: independent_t_test
+    compatible: false
+    severity: error
+    rationale: "Repeated-measures observations are not independent, so independent-samples t-tests are invalid here."
+    evidence:
+      crosswalk_ref: "configs/planner/capability_crosswalk.yaml#paired_test_tool"
+  - id: repeated_measures_blocks_anova_oneway
+    design: repeated_measures
+    method: anova_oneway
+    compatible: false
+    severity: error
+    rationale: "One-way ANOVA assumes independent groups; use repeated-measures ANOVA or a mixed-effects model for within-subject designs."
+    evidence:
+      crosswalk_ref: "stats_textbook:oneway_anova_independence_assumption"
+  - id: repeated_measures_blocks_mann_whitney
+    design: repeated_measures
+    method: mann_whitney
+    compatible: false
+    severity: error
+    rationale: "Mann-Whitney U is a nonparametric test for independent groups; use Wilcoxon signed-rank for paired/within-subject comparisons."
+    evidence:
+      crosswalk_ref: "stats_textbook:nonparametric_paired_vs_independent"
+  - id: repeated_measures_supports_anova_repeated
+    design: repeated_measures
+    method: anova_repeated
+    compatible: true
+    severity: ok
+    rationale: "Repeated-measures ANOVA correctly models within-subject dependence."
+  - id: repeated_measures_supports_mixed_effects
+    design: repeated_measures
+    method: mixed_effects_model
+    compatible: true
+    severity: ok
+    rationale: "Mixed-effects models handle within-subject dependence via random intercepts/slopes."
+  - id: repeated_measures_supports_wilcoxon
+    design: repeated_measures
+    method: wilcoxon_signed_rank
+    compatible: true
+    severity: ok
+    rationale: "Wilcoxon signed-rank is the appropriate nonparametric alternative for paired data."
+
+  # --- independent_groups rules ---
+  - id: independent_groups_supports_independent_t_test
+    design: independent_groups
+    method: independent_t_test
+    compatible: true
+    severity: ok
+    rationale: "Independent groups are compatible with independent-samples t-tests."
+    evidence:
+      crosswalk_ref: "configs/planner/capability_crosswalk.yaml#paired_test_tool"
+  - id: independent_groups_blocks_paired_t_test
+    design: independent_groups
+    method: paired_t_test
+    compatible: false
+    severity: error
+    rationale: "Paired tests require matched or repeated observations within the same subject or unit."
+    evidence:
+      crosswalk_ref: "configs/planner/capability_crosswalk.yaml#paired_test_tool"
+  - id: independent_groups_blocks_anova_repeated
+    design: independent_groups
+    method: anova_repeated
+    compatible: false
+    severity: error
+    rationale: "Repeated-measures ANOVA requires within-subject observations; use one-way ANOVA or independent-samples test for between-group designs."
+    evidence:
+      crosswalk_ref: "stats_textbook:rmanova_requires_repeated_obs"
+  - id: independent_groups_blocks_wilcoxon_signed_rank
+    design: independent_groups
+    method: wilcoxon_signed_rank
+    compatible: false
+    severity: error
+    rationale: "Wilcoxon signed-rank assumes paired observations; use Mann-Whitney U for independent groups."
+    evidence:
+      crosswalk_ref: "stats_textbook:nonparametric_paired_vs_independent"
+  - id: independent_groups_supports_anova_oneway
+    design: independent_groups
+    method: anova_oneway
+    compatible: true
+    severity: ok
+    rationale: "One-way ANOVA correctly tests differences between independent groups."
+  - id: independent_groups_supports_mann_whitney
+    design: independent_groups
+    method: mann_whitney
+    compatible: true
+    severity: ok
+    rationale: "Mann-Whitney U is the nonparametric alternative for comparing two independent groups."
+
+  # --- one_sample rules ---
+  - id: one_sample_blocks_independent_t_test
+    design: one_sample
+    method: independent_t_test
+    compatible: false
+    severity: error
+    rationale: "Independent-samples t-tests require two groups; a one-sample design has only one group tested against a reference value."
+    evidence:
+      crosswalk_ref: "stats_textbook:one_sample_vs_two_sample"
+  - id: one_sample_blocks_paired_t_test
+    design: one_sample
+    method: paired_t_test
+    compatible: false
+    severity: error
+    rationale: "Paired t-tests require two matched measurements per subject; use a one-sample t-test for comparing a single group against a fixed value."
+    evidence:
+      crosswalk_ref: "stats_textbook:one_sample_vs_paired"
+  - id: one_sample_supports_one_sample_t_test
+    design: one_sample
+    method: one_sample_t_test
+    compatible: true
+    severity: ok
+    rationale: "One-sample t-test correctly tests whether a single group mean differs from a reference value."
+
+  # --- factorial rules ---
+  - id: factorial_blocks_independent_t_test
+    design: factorial
+    method: independent_t_test
+    compatible: false
+    severity: warn
+    rationale: "Independent-samples t-test ignores factorial structure and interaction effects; use factorial ANOVA or a general linear model."
+    evidence:
+      crosswalk_ref: "stats_textbook:factorial_requires_interaction_test"
+  - id: factorial_blocks_paired_t_test
+    design: factorial
+    method: paired_t_test
+    compatible: false
+    severity: warn
+    rationale: "Paired t-test cannot capture interaction effects in a factorial design; use factorial ANOVA or a mixed-effects model."
+    evidence:
+      crosswalk_ref: "stats_textbook:factorial_requires_interaction_test"
+
+  # --- mixed_design rules ---
+  - id: mixed_design_blocks_independent_t_test
+    design: mixed_design
+    method: independent_t_test
+    compatible: false
+    severity: error
+    rationale: "Independent-samples t-test ignores within-subject structure in a mixed design; use mixed ANOVA or a linear mixed model."
+    evidence:
+      crosswalk_ref: "stats_textbook:mixed_design_requires_mixed_model"
+  - id: mixed_design_blocks_anova_oneway
+    design: mixed_design
+    method: anova_oneway
+    compatible: false
+    severity: error
+    rationale: "One-way ANOVA loses the within-subject factor in a mixed design; use mixed ANOVA or a linear mixed model."
+    evidence:
+      crosswalk_ref: "stats_textbook:mixed_design_requires_mixed_model"
+  - id: mixed_design_supports_anova_mixed
+    design: mixed_design
+    method: anova_mixed
+    compatible: true
+    severity: ok
+    rationale: "Mixed ANOVA correctly handles both between- and within-subject factors."
+  - id: mixed_design_supports_mixed_effects
+    design: mixed_design
+    method: mixed_effects_model
+    compatible: true
+    severity: ok
+    rationale: "Linear mixed models handle mixed designs with random effects for subjects."
+
+  # --- longitudinal rules ---
+  - id: longitudinal_blocks_independent_t_test
+    design: longitudinal
+    method: independent_t_test
+    compatible: false
+    severity: error
+    rationale: "Independent-samples t-test ignores temporal dependence in longitudinal data; use mixed-effects models or repeated-measures approaches."
+    evidence:
+      crosswalk_ref: "stats_textbook:longitudinal_requires_mixed_model"
+  - id: longitudinal_supports_mixed_effects
+    design: longitudinal
+    method: mixed_effects_model
+    compatible: true
+    severity: ok
+    rationale: "Linear mixed models are the standard approach for longitudinal data with random slopes/intercepts."
+  - id: longitudinal_supports_anova_repeated
+    design: longitudinal
+    method: anova_repeated
+    compatible: true
+    severity: ok
+    rationale: "Repeated-measures ANOVA can handle balanced longitudinal designs with few time points."
+
+  # --- correlation rules ---
+  - id: correlation_blocks_independent_t_test
+    design: correlation
+    method: independent_t_test
+    compatible: false
+    severity: error
+    rationale: "T-tests compare group means; correlational designs test continuous associations. Use Pearson/Spearman correlation or linear regression."
+    evidence:
+      crosswalk_ref: "stats_textbook:correlation_vs_group_comparison"
+  - id: correlation_supports_correlation_pearson
+    design: correlation
+    method: correlation_pearson
+    compatible: true
+    severity: ok
+    rationale: "Pearson correlation is the standard parametric test for bivariate linear association."
+  - id: correlation_supports_linear_regression
+    design: correlation
+    method: linear_regression
+    compatible: true
+    severity: ok
+    rationale: "Linear regression models continuous outcome-predictor relationships, generalizing bivariate correlation."

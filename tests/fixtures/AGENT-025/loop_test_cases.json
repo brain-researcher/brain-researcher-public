@@ -1,0 +1,453 @@
+{
+  "for_loop_scenarios": [
+    {
+      "name": "simple_subject_iteration",
+      "description": "Basic iteration over subject list",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "subjects",
+        "max_iterations": 10,
+        "body": ["preprocess_subject", "quality_check"]
+      },
+      "context": {
+        "subjects": ["sub-001", "sub-002", "sub-003", "sub-004", "sub-005"]
+      },
+      "expected_iterations": 5,
+      "expected_nodes": [
+        "preprocess_subject_iter_0", "quality_check_iter_0",
+        "preprocess_subject_iter_1", "quality_check_iter_1",
+        "preprocess_subject_iter_2", "quality_check_iter_2",
+        "preprocess_subject_iter_3", "quality_check_iter_3",
+        "preprocess_subject_iter_4", "quality_check_iter_4"
+      ]
+    },
+    {
+      "name": "max_iterations_limit",
+      "description": "Loop with max_iterations smaller than items list",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "subjects",
+        "max_iterations": 3,
+        "body": ["process_subject"]
+      },
+      "context": {
+        "subjects": ["sub-001", "sub-002", "sub-003", "sub-004", "sub-005", "sub-006", "sub-007"]
+      },
+      "expected_iterations": 3,
+      "expected_nodes": [
+        "process_subject_iter_0",
+        "process_subject_iter_1", 
+        "process_subject_iter_2"
+      ]
+    },
+    {
+      "name": "contrast_iteration",
+      "description": "Iteration over statistical contrasts",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "contrasts",
+        "max_iterations": 20,
+        "body": ["compute_contrast", "threshold_map"]
+      },
+      "context": {
+        "contrasts": [
+          {"name": "task_vs_baseline", "weights": [1, 0]},
+          {"name": "baseline_vs_task", "weights": [0, 1]},
+          {"name": "interaction", "weights": [1, -1]}
+        ]
+      },
+      "expected_iterations": 3,
+      "expected_nodes": [
+        "compute_contrast_iter_0", "threshold_map_iter_0",
+        "compute_contrast_iter_1", "threshold_map_iter_1",
+        "compute_contrast_iter_2", "threshold_map_iter_2"
+      ]
+    },
+    {
+      "name": "nested_parameter_access",
+      "description": "Loop with access to nested parameters",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "analysis_configs",
+        "max_iterations": 10,
+        "body": ["run_analysis"]
+      },
+      "context": {
+        "analysis_configs": [
+          {
+            "method": "glm",
+            "parameters": {"smoothing": 6.0, "threshold": 0.05},
+            "output_dir": "/results/glm"
+          },
+          {
+            "method": "ica", 
+            "parameters": {"n_components": 20, "algorithm": "fastica"},
+            "output_dir": "/results/ica"
+          }
+        ]
+      },
+      "expected_iterations": 2,
+      "variable_bindings": [
+        {"loop_iteration": 0, "loop_item": {"method": "glm", "parameters": {"smoothing": 6.0, "threshold": 0.05}, "output_dir": "/results/glm"}},
+        {"loop_iteration": 1, "loop_item": {"method": "ica", "parameters": {"n_components": 20, "algorithm": "fastica"}, "output_dir": "/results/ica"}}
+      ]
+    }
+  ],
+  "foreach_loop_scenarios": [
+    {
+      "name": "file_processing",
+      "description": "Process each file with conditional break",
+      "loop_config": {
+        "loop_type": "foreach", 
+        "items": "input_files",
+        "max_iterations": 100,
+        "body": ["validate_file", "process_file"],
+        "break_condition": "error_count >= 3"
+      },
+      "context": {
+        "input_files": [
+          "/data/sub-001_bold.nii.gz",
+          "/data/sub-002_bold.nii.gz", 
+          "/data/sub-003_bold.nii.gz",
+          "/data/sub-004_bold.nii.gz"
+        ],
+        "error_count": 0
+      },
+      "expected_iterations": 4,
+      "break_scenarios": [
+        {
+          "error_count_evolution": [0, 0, 1, 2, 3],
+          "expected_break_at_iteration": 4
+        }
+      ]
+    },
+    {
+      "name": "quality_gated_processing", 
+      "description": "Process subjects with quality-based early termination",
+      "loop_config": {
+        "loop_type": "foreach",
+        "items": "subjects",
+        "max_iterations": 50,
+        "body": ["preprocess", "qc_check", "analysis"],
+        "break_condition": "failed_subjects >= 5 or overall_quality < 0.6"
+      },
+      "context": {
+        "subjects": ["sub-001", "sub-002", "sub-003", "sub-004", "sub-005", "sub-006", "sub-007"],
+        "failed_subjects": 0,
+        "overall_quality": 0.85
+      },
+      "expected_iterations": 7,
+      "break_scenarios": [
+        {
+          "description": "Break due to failed subjects",
+          "failed_subjects_evolution": [0, 1, 2, 3, 4, 5],
+          "expected_break_at_iteration": 5
+        },
+        {
+          "description": "Break due to quality degradation",
+          "overall_quality_evolution": [0.85, 0.82, 0.78, 0.72, 0.65, 0.58],
+          "expected_break_at_iteration": 5
+        }
+      ]
+    }
+  ],
+  "while_loop_scenarios": [
+    {
+      "name": "convergence_loop",
+      "description": "Loop until statistical convergence",
+      "loop_config": {
+        "loop_type": "while",
+        "condition": "convergence_criterion < threshold and iteration_count < max_iterations",
+        "max_iterations": 1000,
+        "body": ["compute_iteration", "check_convergence"]
+      },
+      "context": {
+        "convergence_criterion": 1.0,
+        "threshold": 0.001,
+        "iteration_count": 0,
+        "max_iterations": 100
+      },
+      "convergence_simulation": [
+        {"iteration": 0, "convergence_criterion": 1.0},
+        {"iteration": 1, "convergence_criterion": 0.5},
+        {"iteration": 2, "convergence_criterion": 0.1},
+        {"iteration": 3, "convergence_criterion": 0.01},
+        {"iteration": 4, "convergence_criterion": 0.005},
+        {"iteration": 5, "convergence_criterion": 0.0008}
+      ],
+      "expected_iterations": 6
+    },
+    {
+      "name": "permutation_testing",
+      "description": "While loop for permutation testing with early stopping",
+      "loop_config": {
+        "loop_type": "while", 
+        "condition": "p_value > significance_level and n_permutations < max_permutations",
+        "max_iterations": 10000,
+        "body": ["generate_permutation", "compute_statistic", "update_p_value"]
+      },
+      "context": {
+        "p_value": 0.1,
+        "significance_level": 0.05,
+        "n_permutations": 0,
+        "max_permutations": 5000
+      },
+      "p_value_simulation": [
+        {"permutation": 100, "p_value": 0.08},
+        {"permutation": 500, "p_value": 0.06},
+        {"permutation": 1000, "p_value": 0.052},
+        {"permutation": 1500, "p_value": 0.048}
+      ],
+      "expected_iterations": 1500
+    }
+  ],
+  "loop_dependencies": [
+    {
+      "name": "sequential_loop_dependencies",
+      "description": "Loops that depend on each other sequentially",
+      "loops": [
+        {
+          "id": "preprocessing_loop",
+          "loop_config": {
+            "loop_type": "for",
+            "items": "subjects",
+            "body": ["preprocess_subject"]
+          },
+          "dependencies": []
+        },
+        {
+          "id": "first_level_loop", 
+          "loop_config": {
+            "loop_type": "for",
+            "items": "subjects",
+            "body": ["first_level_analysis"]
+          },
+          "dependencies": ["preprocessing_loop"]
+        },
+        {
+          "id": "permutation_loop",
+          "loop_config": {
+            "loop_type": "for",
+            "items": "contrasts", 
+            "body": ["permutation_test"]
+          },
+          "dependencies": ["first_level_loop"]
+        }
+      ],
+      "expected_execution_order": [
+        "preprocessing_loop",
+        "first_level_loop", 
+        "permutation_loop"
+      ]
+    },
+    {
+      "name": "conditional_loop_execution",
+      "description": "Loops executed conditionally based on previous results",
+      "structure": {
+        "preprocessing_loop": {
+          "type": "loop",
+          "loop_config": {
+            "loop_type": "for",
+            "items": "subjects", 
+            "body": ["preprocess"]
+          }
+        },
+        "quality_gate": {
+          "type": "conditional",
+          "condition": "successful_subjects >= min_subjects",
+          "dependencies": ["preprocessing_loop"],
+          "true_branch": ["group_analysis_loop"],
+          "false_branch": ["individual_analysis_loop"]
+        },
+        "group_analysis_loop": {
+          "type": "loop", 
+          "loop_config": {
+            "loop_type": "for",
+            "items": "group_contrasts",
+            "body": ["group_analysis"]
+          }
+        },
+        "individual_analysis_loop": {
+          "type": "loop",
+          "loop_config": {
+            "loop_type": "for", 
+            "items": "subjects",
+            "body": ["individual_analysis"]
+          }
+        }
+      }
+    }
+  ],
+  "loop_error_scenarios": [
+    {
+      "name": "infinite_loop_protection",
+      "description": "Protection against infinite loops",
+      "loop_config": {
+        "loop_type": "while",
+        "condition": "true",  # Intentionally always true
+        "max_iterations": 10,
+        "body": ["infinite_operation"]
+      },
+      "expected_behavior": "terminate_at_max_iterations",
+      "expected_iterations": 10
+    },
+    {
+      "name": "empty_items_list",
+      "description": "Handling empty items list in for loop",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "empty_subjects",
+        "max_iterations": 100,
+        "body": ["process_subject"]
+      },
+      "context": {
+        "empty_subjects": []
+      },
+      "expected_iterations": 0,
+      "expected_nodes": []
+    },
+    {
+      "name": "missing_items_variable", 
+      "description": "Handling missing items variable",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "nonexistent_variable",
+        "max_iterations": 10,
+        "body": ["process_item"]
+      },
+      "context": {},
+      "expected_error": "VariableNotFoundError",
+      "expected_iterations": 0
+    },
+    {
+      "name": "body_node_failure",
+      "description": "Handling failures in loop body nodes",
+      "loop_config": {
+        "loop_type": "for", 
+        "items": "subjects",
+        "max_iterations": 10,
+        "body": ["failing_operation", "dependent_operation"]
+      },
+      "context": {
+        "subjects": ["sub-001", "sub-002", "sub-003"]
+      },
+      "failure_scenarios": [
+        {
+          "failing_node": "failing_operation",
+          "failure_iteration": 1,
+          "expected_behavior": "continue_next_iteration"
+        },
+        {
+          "failing_node": "failing_operation", 
+          "failure_iteration": "all",
+          "expected_behavior": "loop_fails"
+        }
+      ]
+    }
+  ],
+  "performance_test_scenarios": [
+    {
+      "name": "large_iteration_count",
+      "description": "Performance test with large number of iterations",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "large_subject_list", 
+        "max_iterations": 1000,
+        "body": ["lightweight_operation"]
+      },
+      "context": {
+        "large_subject_list": ["sub-{:04d}".format(i) for i in range(1000)]
+      },
+      "performance_criteria": {
+        "max_setup_time_seconds": 5.0,
+        "max_memory_mb": 500
+      }
+    },
+    {
+      "name": "deeply_nested_loops",
+      "description": "Performance test with nested loops",
+      "structure": {
+        "outer_loop": {
+          "loop_type": "for",
+          "items": "subjects",
+          "body": ["middle_loop"]
+        },
+        "middle_loop": {
+          "loop_type": "for", 
+          "items": "sessions",
+          "body": ["inner_loop"]
+        },
+        "inner_loop": {
+          "loop_type": "for",
+          "items": "runs", 
+          "body": ["process_run"]
+        }
+      },
+      "context": {
+        "subjects": ["sub-{:02d}".format(i) for i in range(1, 6)],  # 5 subjects
+        "sessions": ["ses-{:02d}".format(i) for i in range(1, 4)],  # 3 sessions  
+        "runs": ["run-{:02d}".format(i) for i in range(1, 5)]      # 4 runs
+      },
+      "expected_total_iterations": 60,  # 5 * 3 * 4
+      "performance_criteria": {
+        "max_expansion_time_seconds": 10.0
+      }
+    }
+  ],
+  "variable_scope_tests": [
+    {
+      "name": "loop_variable_isolation",
+      "description": "Test that loop variables are properly isolated between iterations",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "subjects",
+        "max_iterations": 5,
+        "body": ["set_temp_variable", "use_temp_variable"]
+      },
+      "context": {
+        "subjects": ["sub-001", "sub-002", "sub-003"]
+      },
+      "variable_tests": [
+        {
+          "iteration": 0,
+          "expected_variables": {
+            "loop_iteration": 0,
+            "loop_item": "sub-001", 
+            "loop_node_id": "subject_processing"
+          }
+        },
+        {
+          "iteration": 1,
+          "expected_variables": {
+            "loop_iteration": 1,
+            "loop_item": "sub-002",
+            "loop_node_id": "subject_processing"
+          }
+        }
+      ]
+    },
+    {
+      "name": "global_variable_access",
+      "description": "Test access to global variables from within loops",
+      "loop_config": {
+        "loop_type": "for",
+        "items": "subjects",
+        "body": ["access_global_vars"]
+      },
+      "context": {
+        "subjects": ["sub-001", "sub-002"],
+        "global_threshold": 0.05,
+        "output_directory": "/results",
+        "analysis_config": {
+          "smoothing": 6.0,
+          "mask": "/masks/brain_mask.nii.gz"
+        }
+      },
+      "expected_global_access": [
+        "global_threshold",
+        "output_directory", 
+        "analysis_config"
+      ]
+    }
+  ]
+}

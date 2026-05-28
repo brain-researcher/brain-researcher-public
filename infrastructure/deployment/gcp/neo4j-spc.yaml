@@ -1,0 +1,20 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: br-neo4j-spc
+  namespace: brain-researcher-core
+spec:
+  provider: gcp
+  parameters:
+    secrets: |
+      # Replace the project + secret name below with your Secret Manager entry.
+      # Example:
+      # - resourceName: "projects/${PROJECT_ID}/secrets/brain-researcher-neo4j-password/versions/latest"
+      - resourceName: "projects/YOUR_GCP_PROJECT_ID/secrets/brain-researcher-neo4j-password/versions/latest"
+        fileName: "NEO4J_PASSWORD"
+  secretObjects:
+    - secretName: brain-researcher-database-credentials
+      type: Opaque
+      data:
+        - objectName: "NEO4J_PASSWORD"
+          key: NEO4J_PASSWORD

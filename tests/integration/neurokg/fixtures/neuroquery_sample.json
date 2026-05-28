@@ -1,0 +1,4 @@
+[
+  {"task_id": "task:nback", "region_id": "schaefer2018_200_17n_2mm:L_DLPFC", "score": 0.78, "confidence": 0.9},
+  {"task_id": "task:stroop", "region_id": "harvard_oxford_cort25:Anterior Cingulate", "score": 0.63}
+]

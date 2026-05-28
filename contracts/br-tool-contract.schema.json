@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zjc062/brain-researcher-public/contracts/br-tool-contract.schema.json",
+  "title": "Brain Researcher Tool Contract Envelope",
+  "description": "Schema for a single tool entry under contracts/tools/<name>.json. The aggregate at docs/mcp_tools.schema.json contains an array of these entries.",
+  "type": "object",
+  "required": [
+    "name",
+    "stability",
+    "contract_version",
+    "surface_tier",
+    "capability_family",
+    "description",
+    "input_schema",
+    "output_schema"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The @mcp.tool function name as exposed via the MCP protocol."
+    },
+    "stability": {
+      "type": "string",
+      "enum": ["stable", "experimental", "deprecated", "internal"],
+      "description": "OSS-facing stability promise. stable = breaking changes require contract_version bump + one-release deprecation window; experimental = no stability promise; deprecated = replaced by another tool (see deprecated_in_favor_of); internal = not exposed via tool_search."
+    },
+    "contract_version": {
+      "type": "string",
+      "description": "Date-based contract version (YYYY-MM-DD) read from contracts/VERSION at extraction time."
+    },
+    "tier": {
+      "type": "string",
+      "description": "Legacy alias for surface_tier kept for back-compat; new consumers should read surface_tier."
+    },
+    "surface_tier": {
+      "type": "string",
+      "enum": ["ops", "default", "advanced"],
+      "description": "Agent-facing complexity tier; orthogonal to stability."
+    },
+    "capability_family": {
+      "type": "string",
+      "description": "Coarse grouping (e.g. planning, scientific_review, grounding)."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short human-readable description from the @mcp.tool docstring."
+    },
+    "input_schema": {
+      "type": "object",
+      "description": "JSON Schema for the tool's input arguments."
+    },
+    "output_schema": {
+      "type": "object",
+      "description": "JSON Schema for the tool's output dict."
+    },
+    "examples": {
+      "type": "array",
+      "description": "Optional request/response examples.",
+      "items": {
+        "type": "object",
+        "required": ["input", "output"],
+        "properties": {
+          "input": {"type": "object"},
+          "output": {"type": "object"},
+          "tested": {"type": "boolean"}
+        }
+      }
+    },
+    "deprecated_in_favor_of": {
+      "type": "string",
+      "description": "If stability=deprecated, the canonical replacement tool name."
+    }
+  },
+  "additionalProperties": true
+}

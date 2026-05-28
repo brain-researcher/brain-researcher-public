@@ -1,0 +1,637 @@
+# NetworkPolicies for Brain Researcher platform
+# Provides network segmentation and security controls at the pod level
+
+---
+# Default deny-all policy for core namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: network-security
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Allow ingress traffic from nginx to all services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-nginx-to-services
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nginx
+      app.kubernetes.io/component: proxy
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow external traffic to nginx
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 9113  # metrics
+  egress:
+    # Allow nginx to communicate with backend services
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: agent
+      ports:
+        - protocol: TCP
+          port: 8000
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: orchestrator
+      ports:
+        - protocol: TCP
+          port: 3001
+        - protocol: TCP
+          port: 3002  # websocket
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: frontend
+      ports:
+        - protocol: TCP
+          port: 3000
+    # DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+# Orchestrator network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-orchestrator
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: orchestrator
+      app.kubernetes.io/component: orchestrator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from Agent and nginx
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: agent
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: proxy
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3001
+        - protocol: TCP
+          port: 3002  # websocket
+        - protocol: TCP
+          port: 9090  # metrics
+  egress:
+    # Allow communication with all backend services
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: agent
+      ports:
+        - protocol: TCP
+          port: 8000
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: neurokg
+      ports:
+        - protocol: TCP
+          port: 5000
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: niclip
+      ports:
+        - protocol: TCP
+          port: 8001
+    # Database access
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: brain-researcher-data
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Redis access
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: brain-researcher-data
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: cache
+      ports:
+        - protocol: TCP
+          port: 6379
+    # DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Agent network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-agent
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: agent
+      app.kubernetes.io/component: agent
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from nginx, ingress, and Orchestrator
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: proxy
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: orchestrator
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 9090  # metrics
+  egress:
+    # Allow communication with BR-KG and NICLIP
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: neurokg
+      ports:
+        - protocol: TCP
+          port: 5000
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: mcp
+      ports:
+        - protocol: TCP
+          port: 7000
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: niclip
+      ports:
+        - protocol: TCP
+          port: 8001
+    # Redis access for session storage
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: brain-researcher-data
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: cache
+      ports:
+        - protocol: TCP
+          port: 6379
+    # External LLM API access (allow all HTTPS)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+    # DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# BR-KG network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-neurokg
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: neurokg
+      app.kubernetes.io/component: neurokg
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from Orchestrator and Agent
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: orchestrator
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: agent
+      ports:
+        - protocol: TCP
+          port: 5000
+        - protocol: TCP
+          port: 9090  # metrics
+  egress:
+    # DNS resolution for external data sources
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # HTTPS for external APIs (OpenNeuro, NeuroVault, etc.)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# NICLIP network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-niclip
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: niclip
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: niclip
+      app.kubernetes.io/component: niclip
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from Orchestrator and Agent
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: orchestrator
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: agent
+      ports:
+        - protocol: TCP
+          port: 8001
+        - protocol: TCP
+          port: 9090  # metrics
+  egress:
+    # DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # HTTPS for model downloads (Hugging Face Hub)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# Web UI network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-web-ui
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: web-ui
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: web-ui
+      app.kubernetes.io/component: frontend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from nginx
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: proxy
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # No external egress needed for static frontend
+    # DNS resolution only
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# MCP (in-cluster) network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mcp
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: mcp
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: mcp
+      app.kubernetes.io/component: mcp
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Only allow calls from Agent.
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: agent
+      ports:
+        - protocol: TCP
+          port: 7000
+  egress:
+    # DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # External HTTPS for file search / deep research providers.
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# Data namespace default deny policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-data
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: network-security
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# PostgreSQL network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: database
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow access from core namespace services
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: brain-researcher-core
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: orchestrator
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 9187  # metrics
+  egress:
+    # DNS resolution only
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Redis network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/component: cache
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow access from core namespace services
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: brain-researcher-core
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 9121  # metrics
+  egress:
+    # DNS resolution only
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Monitoring namespace policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow external access to monitoring services
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 9090  # prometheus
+        - protocol: TCP
+          port: 3000  # grafana
+  egress:
+    # Allow monitoring to scrape metrics from all namespaces
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: brain-researcher-core
+      ports:
+        - protocol: TCP
+          port: 9090  # metrics ports
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 3001
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 5000
+        - protocol: TCP
+          port: 8001
+        - protocol: TCP
+          port: 9113  # nginx exporter
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: brain-researcher-data
+      ports:
+        - protocol: TCP
+          port: 9187  # postgres exporter
+        - protocol: TCP
+          port: 9121  # redis exporter
+    # DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Allow kube-system access for cluster operations
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kube-system
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: kube-system-access
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow access to Kubernetes API server
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
+
+---
+# Emergency break-glass policy (disable in production)
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: emergency-allow-all
+#   namespace: brain-researcher-core
+#   labels:
+#     app.kubernetes.io/name: brain-researcher
+#     app.kubernetes.io/component: emergency-policy
+# spec:
+#   podSelector:
+#     matchLabels:
+#       emergency-access: "true"
+#   policyTypes:
+#     - Ingress
+#     - Egress
+#   ingress:
+#     - from: []
+#   egress:
+#     - to: []

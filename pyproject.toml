@@ -1,0 +1,499 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brain_researcher"
+version = "0.0"
+description = "MRI Research Assistant and BR-KG services for neuroimaging analysis and knowledge graph exploration"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Brain Researcher Team"}
+]
+maintainers = [
+    {name = "Brain Researcher Team"}
+]
+requires-python = ">=3.10"
+keywords = ["neuroimaging", "fmri", "neuroscience", "knowledge-graph", "mri", "brain-research"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+    # Core web framework
+    "Flask>=3.0.0",
+    "Flask-CORS>=4.0.0",
+    "gunicorn>=23.0.0",
+
+    # HTTP and networking
+    "requests>=2.32.0",
+    "httpx>=0.25.0",
+    "aiohttp>=3.9.0",
+
+    # Core data science
+    "pandas>=2.2.0",
+    "numpy>=1.24.0",
+
+    # Configuration and validation
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "mcp>=1.12.0",
+    "python-dotenv>=1.0.0",
+    # Keep this CLI stack aligned with environment.yml and openneuro-py.
+    "click>=8.2.1",
+    "typer>=0.24.0",
+
+    # Flask dependencies
+    "Jinja2>=3.1.0",
+    "MarkupSafe>=2.1.0",
+    "Werkzeug>=3.0.0",
+
+    # Networking basics
+    "certifi>=2023.0.0",
+    "charset-normalizer>=3.0.0",
+    "idna>=3.0.0",
+    "urllib3>=2.0.0",
+
+    # Graph processing
+    "networkx>=3.0.0",
+
+    # Logging
+    "structlog>=23.0.0",
+    "rich>=13.0.0",
+
+    # MCP (Model Context Protocol)
+    "mcp>=1.12.0",
+]
+
+[project.optional-dependencies]
+neurokg = [
+    # Neuroimaging
+    "nibabel>=5.3.0",
+    "nilearn>=0.11.0",
+    "nimare>=0.5.0",
+    "neuromaps>=0.0.5",
+    "templateflow>=24.1.0",
+    "pyneurovault>=0.1.3",
+
+    # Machine learning
+    "scikit-learn>=1.3.0",
+    "scipy>=1.11.0",
+    "statsmodels>=0.14.0",
+    "neurovlm>=0.0.3",
+
+    # Knowledge graph and databases
+    "neo4j>=5.28.0",
+    "py2neo>=2021.2.4",
+    "psycopg2-binary>=2.9.10",
+    "SPARQLWrapper>=2.0.0",
+    "rdflib>=7.1.0",
+    "SQLAlchemy==1.4.54",
+    "SQLAlchemy-JSONField>=1.0.2",
+    "SQLAlchemy-Utils>=0.41.2",
+    "alembic>=1.16.0",
+
+    # Workflow orchestration
+    "apache-airflow>=3.0.1",
+    "apache-airflow-providers-common-sql>=1.27.1",
+    "apache-airflow-providers-smtp>=2.1.0",
+    "apache-airflow-providers-standard>=1.2.0",
+    "croniter>=6.0.0",
+    "cron-descriptor>=1.4.0",
+    "pendulum>=3.1.0",
+
+    # Search and retrieval
+    "faiss-cpu>=1.7.4",
+    "sentence-transformers>=2.2.0",
+    "rapidfuzz>=3.0.0",
+    "promise>=2.3",
+    "fuzzywuzzy>=0.18.0",
+    "spacy>=3.7.0,<4",
+
+    # Biology APIs
+    "biopython>=1.85",
+
+    # Visualization
+    "matplotlib>=3.5.0",
+    "plotly>=5.0.0",
+    "ridgeplot>=0.3.2",
+    "dash>=2.14.0",
+    "dash-cytoscape>=0.3.0",
+    "seaborn>=0.13.0",
+
+    # PDF and document generation
+    "weasyprint>=65.1",
+    "xhtml2pdf>=0.2.17",
+    "reportlab>=4.4.1",
+    "fpdf2>=2.8.3",
+    "PyPDF2>=3.0.0",
+    "pillow>=11.2.0",
+    "svglib>=1.5.1",
+
+    # Data processing
+    "tqdm>=4.60.0",
+    "joblib>=1.3.0",
+    "sparse>=0.17.0",
+    "interchange>=2021.0.4",
+
+    # Additional neuroimaging tools
+    "cognitiveatlas>=0.1.11",
+    "PyMARE>=0.0.10",
+    "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git",
+
+    # Additional utilities
+    "supervisor>=4.2.1",
+    "cadwyn>=5.4.0",
+    
+    # Fix: BR-KG CLI imports agent code which requires these LLM packages
+    "langchain>=0.1.0",
+    "langchain-core>=0.1.0",
+    "langchain-anthropic>=0.0.1",
+    "langchain-openai>=0.0.5",
+    "google-genai>=1.55.0",
+]
+
+genetics = [
+    # Genetic data analysis
+    "pandas-plink>=2.0",
+    "scikit-allel>=1.3",
+    "pyvcf3>=1.0",
+    "pysam>=0.20",  # For BAM/SAM files
+    # Note: hail requires Java and special setup, make it optional
+]
+
+pet = [
+    # PET imaging analysis
+    "pydicom>=2.3",
+    "SimpleITK>=2.2",
+    "scipy>=1.11",  # For kinetic modeling
+    "lmfit>=1.2",  # For model fitting
+]
+
+optical = [
+    # Optical imaging analysis
+    "pynapple>=0.6",  # Neural data analysis
+    # Note: suite2p and caiman have complex dependencies, make them optional
+    "h5py>=3.8",  # For data storage
+    "opencv-python>=4.8",  # For image processing
+]
+
+optical_realtime = [
+    # Replay-first realtime optical stack
+    "caiman>=1.11.0",
+    "suite2p>=0.14.6",
+    "websockets>=12.0",
+]
+
+behavior-task = [
+    # Lazy-imported psyflow stack for scanner-capable behavior task generation.
+    # Pinned to a specific commit for reproducibility; upgrade intentionally.
+    "psyflow @ git+https://github.com/TaskBeacon/psyflow.git@cb2773299e178f967380cc0f9520c056810cfd2a",
+    # Upstream MCP bridge for TaskBeacon catalog/download/localization.
+    "taskbeacon-mcp==0.1.8",
+    "PyYAML>=6.0",
+]
+
+visualization = [
+    # Advanced visualization
+    "plotly>=5.18",
+    "vtk>=9.2",
+    "pyvista>=0.42",
+    "fury>=0.9",  # 3D visualization
+    "ipywidgets>=8.0",  # Interactive widgets
+    # Note: brainrender requires special setup, make it optional
+]
+
+ui = [
+    "gradio>=4.39.0,<5",
+]
+
+notebook = [
+    "marimo>=0.23,<0.24",
+    "notebook-intelligence>=4.4,<5",
+    "pydantic-ai-slim>=1.83.0",
+]
+
+agent = [
+    # LangGraph and LangChain
+    "langgraph>=0.0.20",
+    "langchain>=0.1.0",
+    "langchain-core>=0.1.0",
+    "langchain-openai>=0.0.5",
+    "langchain-anthropic>=0.0.1",
+    "langchain-community>=0.0.1",
+    "langchain-google-genai>=0.1.0",
+    "google-generativeai>=0.8.0",
+    "google-genai>=1.55.0",
+    "openneuro-py>=2026.3.0",
+    
+    # JWT handling
+    "python-jose[cryptography]>=3.3.0",
+    
+    # MCP (Model Context Protocol)
+    "sequential-thinking-mcp>=0.1.0",
+
+    # State management
+    "redis>=5.0.0",
+    "fakeredis>=2.19.0",
+    "aiosqlite>=0.20.0",
+    "aiofiles>=23.0.0",
+
+    # Neo4j access (planner + evidence + optional KG write-through)
+    "neo4j>=5.28.0",
+
+    # API framework
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+
+    # Monitoring
+    "psutil>=5.9.0",
+    "prometheus-client>=0.19.0",
+
+    # Machine learning (for tools)
+    "scikit-learn>=1.3.0",
+    "rapidfuzz>=3.0.0",
+    "xgboost>=2.1.0",
+    "lightgbm>=4.5.0",
+    "torch-geometric>=2.6.0",
+    "pytorch-tabnet>=4.1.0",
+
+    # Neuroimaging dependencies needed by agent tools
+    "nibabel>=5.0.0",
+    "nilearn>=0.10.0",
+    "nimare>=0.5.0",
+    "neuromaps>=0.0.5",
+    "templateflow>=24.1.0",
+    "neurovlm>=0.0.3",
+
+    # Additional dependencies for agent tools
+    "faiss-cpu>=1.7.4",
+    "sentence-transformers>=2.2.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.13.0",
+    "biopython>=1.85",
+    # MNE ecosystem (heavy neuroimaging tools)
+    "mne>=1.7.0",
+    "mne-connectivity>=0.6.0",
+    "autoreject>=0.4.2",
+    "numba>=0.59.0; python_version<'3.12'",
+
+    # Literature search
+    "deepxiv-sdk>=0.2.4",
+]
+
+dev = [
+    # Testing
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.10.0",
+    "pytest-cov>=4.1.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-xdist>=3.3.0",
+    "coverage>=7.0.0",
+    "hypothesis>=6.0.0",
+    "responses>=0.23.0",
+    "beautifulsoup4>=4.12.0",
+    "SPARQLWrapper>=2.0.0",
+    "claude-agent-sdk>=0.1.52",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic-ai-slim>=1.83.0",
+    "tomli>=2.0.0; python_version < '3.11'",
+    "tomlkit>=0.13.0",
+    "nbformat>=5.10.0",
+    "websocket-client>=1.7.0",
+    "spacy>=3.7.0,<4",
+
+    # Linting and formatting
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.4.0",
+    "ruff>=0.1.0",
+
+    # Documentation
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+    "mkdocstrings>=0.23.0",
+    "mkdocstrings-python>=1.7.0",
+]
+
+all = [
+    "brain_researcher[neurokg,agent,ui,notebook,dev]"
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+    "mkdocs-autorefs>=0.5.0",
+    "mkdocs-git-revision-date-localized-plugin>=1.2.0",
+    "pymdown-extensions>=10.0",
+    "mike>=2.0.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/zjc062/brain-researcher-public"
+"Documentation" = "https://github.com/zjc062/brain-researcher-public#readme"
+"Repository" = "https://github.com/zjc062/brain-researcher-public"
+"Issues" = "https://github.com/zjc062/brain-researcher-public/issues"
+
+[project.scripts]
+brain-researcher = "brain_researcher.cli.main:app"
+br = "brain_researcher.cli.main:app"  # Short alias
+brain-researcher-mcp = "brain_researcher.services.mcp.server:main"
+
+[tool.setuptools.packages.find]
+# Carved layout: the Python package lives at packages/brain-researcher/src/
+# (alongside packages/cli/). The per-package pyproject at
+# packages/brain-researcher/pyproject.toml is a thinner wrapper for users
+# who want to install just the package without root-level extras; this root
+# pyproject is the canonical install with all optional-dependency groups.
+where = ["packages/brain-researcher/src"]
+include = ["brain_researcher*"]
+namespaces = false
+exclude = ["tests*", "htmlcov*", "*_env*", "migration*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+  | .*_env
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+skip_glob = ["*_env/*", "migrations/*"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["packages/brain-researcher/src/brain_researcher"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "*_env/*",
+    "setup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+]
+
+[tool.marimo.runtime]
+watcher_on_save = "autorun"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "*_env",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "W191",  # indentation contains tabs
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]

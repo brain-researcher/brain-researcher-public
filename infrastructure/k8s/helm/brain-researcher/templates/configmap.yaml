@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-orchestrator-config
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+data:
+  config.py: |
+    import os
+    
+    # Configuration loaded from Environment Variables
+    class Config:
+        AGENT_URL = os.getenv("AGENT_URL", "http://localhost:8000")
+        NEUROKG_URL = os.getenv("NEUROKG_URL", "http://localhost:5000")
+        NICLIP_URL = os.getenv("NICLIP_URL", "http://localhost:8001")
+        REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+        CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+  demo_map.yaml: |
+{{ .Files.Get "files/demo_map.yaml" | indent 4 }}
+  tool_resources.yaml: |
+{{ .Files.Get "files/tool_resources.yaml" | indent 4 }}

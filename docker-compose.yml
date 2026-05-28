@@ -1,0 +1,174 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:5.20
+    ports:
+      - "${BR_NEO4J_BOLT_PORT:-7687}:7687"
+      - "${BR_NEO4J_HTTP_PORT:-7474}:7474"
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
+      - NEO4J_server_memory_pagecache_size=512M
+      - NEO4J_server_memory_heap_initial__size=512M
+      - NEO4J_server_memory_heap_max__size=1G
+    volumes:
+      - ./data/neo4j:/data
+      - ./backups/neo4j:/data/backups
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "cypher-shell -a bolt://localhost:7687 -u neo4j -p ${NEO4J_PASSWORD:?set NEO4J_PASSWORD} 'RETURN 1'" ]
+      interval: 20s
+      timeout: 5s
+      start_period: 20s
+      retries: 6
+
+  # BR-KG API Service
+  neurokg:
+    build:
+      context: .
+      target: neurokg
+    depends_on:
+      - neo4j
+    ports:
+      - "${BR_NEUROKG_PORT:-5000}:5000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./packages/brain-researcher/src:/app/src
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - PORT=5000
+      - FLASK_APP=brain_researcher.services.neurokg.api.graph_api:app
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
+      - NEO4J_PRELOAD_CACHE=0
+    command: [ "python", "-m", "brain_researcher.services.neurokg.app" ]
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Agent Service
+  agent:
+    image: brain_researcher-agent
+    build:
+      context: .
+      target: agent
+    depends_on:
+      - neurokg
+    ports:
+      - "${AGENT_PORT:-8000}:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./packages/brain-researcher/src:/app/src:ro
+      - ./configs:/app/configs:ro
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - NEUROKG_API_URL=http://neurokg:5000
+      - NEUROKG_URL=http://neurokg:5000
+      - BR_ORCHESTRATOR_URL=http://orchestrator:3001
+      - THREAD_STORE_REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6379/1
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
+      - DISABLE_AUTH_FOR_DEV=0
+      - ORCHESTRATOR_UPLOAD_DIR=/tmp/brain_researcher_uploads/chat
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - BR_ALLOW_RUN_ID_OVERRIDE=1
+      - DEFAULT_LLM_MODEL=${DEFAULT_LLM_MODEL:-gemini-2.0-flash}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Orchestrator worker (no longer UI gateway; optional)
+  orchestrator:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.orchestrator
+    profiles: [ "worker" ] # start with `docker compose --profile worker up`
+    depends_on:
+      - agent
+      - neurokg
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - AGENT_URL=http://agent:8000
+      - NEUROKG_URL=http://neurokg:5000
+      # Foundation model optional; provide if service is running
+      # - NICLIP_URL=http://niclip:8001
+      - REDIS_URL=redis://redis:6379
+      - BR_MCP_TOKEN_PEPPER=${BR_MCP_TOKEN_PEPPER:-}
+      - BR_MCP_TOKEN_PEPPER_VERSION=${BR_MCP_TOKEN_PEPPER_VERSION:-v1}
+      - BR_MCP_TOKEN_REDIS_PREFIX=${BR_MCP_TOKEN_REDIS_PREFIX:-mcp_token}
+    restart: unless-stopped
+
+  # Web UI (Next.js) - talks directly to Agent & BR-KG
+  web-ui:
+    build:
+      context: .
+      dockerfile: apps/web-ui/Dockerfile
+    depends_on:
+      - agent
+      - neurokg
+    ports:
+      - "${WEB_UI_PORT:-3000}:3000"
+    volumes:
+      - ./configs:/app/configs:ro
+    environment:
+      - NODE_ENV=production
+      - BR_AGENT_URL=http://agent:8000
+      - BR_ORCHESTRATOR_URL=http://orchestrator:3001
+      - NEXT_PUBLIC_AGENT_URL=http://agent:8000
+      - NEXT_PUBLIC_NEUROKG_URL=http://neurokg:5000
+      - NEXT_PUBLIC_NEUROKG_API=http://neurokg:5000 # legacy alias
+      - NEUROKG_URL=http://neurokg:5000
+      - NEXT_PUBLIC_API_URL=http://agent:8000 # legacy alias
+      - NEXT_PUBLIC_ORCHESTRATOR_URL=http://localhost:3001
+      - NEXT_PUBLIC_APP_NAME=Brain Researcher Web
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL:-}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
+      - ENABLE_DEV_CREDENTIALS=1
+      - DEV_CREDENTIALS_EMAIL=demo@example.com
+      - DEV_CREDENTIALS_PASSWORD=DemoPass123!
+      - AGENT_HOST=agent
+      - NEUROKG_HOST=neurokg
+      - AGENT_BASE_URL=http://agent:8000
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "IP=$$(hostname -i || echo 127.0.0.1); IP=$$IP node -e \"const ip=process.env.IP||'127.0.0.1'; require('http').get('http://'+ip+':3000/',(r)=>{process.exit(r.statusCode>=200 && r.statusCode<400 ? 0 : 1);}).on('error',()=>process.exit(1));\"" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis for Agent State Management (optional)
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+
+    # Network configuration (optional, for isolation)
+networks:
+  default:
+    name: brain-researcher

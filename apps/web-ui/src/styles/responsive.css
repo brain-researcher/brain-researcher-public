@@ -1,0 +1,702 @@
+/* Responsive Design System for Brain Researcher */
+
+/* ===== CUSTOM CSS VARIABLES ===== */
+:root {
+  /* Breakpoint values (matching Tailwind defaults) */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* Container max-widths */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+  
+  /* Responsive spacing scale */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  
+  /* Responsive font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  
+  /* Grid columns */
+  --grid-cols-1: repeat(1, minmax(0, 1fr));
+  --grid-cols-2: repeat(2, minmax(0, 1fr));
+  --grid-cols-3: repeat(3, minmax(0, 1fr));
+  --grid-cols-4: repeat(4, minmax(0, 1fr));
+  --grid-cols-6: repeat(6, minmax(0, 1fr));
+  --grid-cols-12: repeat(12, minmax(0, 1fr));
+}
+
+/* ===== RESPONSIVE CONTAINER SYSTEM ===== */
+.container-responsive {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    max-width: var(--container-sm);
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: var(--container-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    max-width: var(--container-lg);
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-responsive {
+    max-width: var(--container-xl);
+  }
+}
+
+@media (min-width: 1536px) {
+  .container-responsive {
+    max-width: var(--container-2xl);
+  }
+}
+
+/* ===== RESPONSIVE GRID SYSTEM ===== */
+.grid-responsive {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: var(--grid-cols-1);
+}
+
+@media (min-width: 640px) {
+  .grid-responsive {
+    grid-template-columns: var(--grid-cols-2);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .grid-responsive {
+    grid-template-columns: var(--grid-cols-3);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive {
+    grid-template-columns: var(--grid-cols-4);
+    gap: 2rem;
+  }
+}
+
+/* Grid variants */
+.grid-responsive-2 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: var(--grid-cols-1);
+}
+
+@media (min-width: 768px) {
+  .grid-responsive-2 {
+    grid-template-columns: var(--grid-cols-2);
+    gap: 1.5rem;
+  }
+}
+
+.grid-responsive-3 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: var(--grid-cols-1);
+}
+
+@media (min-width: 640px) {
+  .grid-responsive-3 {
+    grid-template-columns: var(--grid-cols-2);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive-3 {
+    grid-template-columns: var(--grid-cols-3);
+    gap: 1.5rem;
+  }
+}
+
+/* ===== RESPONSIVE TYPOGRAPHY ===== */
+.text-responsive-sm {
+  font-size: var(--text-sm);
+  line-height: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-sm {
+    font-size: var(--text-base);
+    line-height: 1.5rem;
+  }
+}
+
+.text-responsive-base {
+  font-size: var(--text-base);
+  line-height: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-base {
+    font-size: var(--text-lg);
+    line-height: 1.75rem;
+  }
+}
+
+.text-responsive-lg {
+  font-size: var(--text-lg);
+  line-height: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-lg {
+    font-size: var(--text-xl);
+    line-height: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-lg {
+    font-size: var(--text-2xl);
+    line-height: 2rem;
+  }
+}
+
+.text-responsive-xl {
+  font-size: var(--text-xl);
+  line-height: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-xl {
+    font-size: var(--text-2xl);
+    line-height: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-xl {
+    font-size: var(--text-3xl);
+    line-height: 2.25rem;
+  }
+}
+
+.heading-responsive-sm {
+  font-size: var(--text-lg);
+  line-height: 1.75rem;
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .heading-responsive-sm {
+    font-size: var(--text-xl);
+    line-height: 1.75rem;
+  }
+}
+
+.heading-responsive-md {
+  font-size: var(--text-xl);
+  line-height: 1.75rem;
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .heading-responsive-md {
+    font-size: var(--text-2xl);
+    line-height: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heading-responsive-md {
+    font-size: var(--text-3xl);
+    line-height: 2.25rem;
+  }
+}
+
+.heading-responsive-lg {
+  font-size: var(--text-2xl);
+  line-height: 2rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .heading-responsive-lg {
+    font-size: var(--text-3xl);
+    line-height: 2.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heading-responsive-lg {
+    font-size: var(--text-4xl);
+    line-height: 2.5rem;
+  }
+}
+
+.heading-responsive-xl {
+  font-size: var(--text-3xl);
+  line-height: 2.25rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .heading-responsive-xl {
+    font-size: var(--text-4xl);
+    line-height: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heading-responsive-xl {
+    font-size: var(--text-5xl);
+    line-height: 1;
+  }
+}
+
+/* ===== RESPONSIVE SPACING ===== */
+.padding-responsive-sm {
+  padding: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .padding-responsive-sm {
+    padding: var(--spacing-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .padding-responsive-sm {
+    padding: var(--spacing-lg);
+  }
+}
+
+.padding-responsive-md {
+  padding: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .padding-responsive-md {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .padding-responsive-md {
+    padding: var(--spacing-xl);
+  }
+}
+
+.padding-responsive-lg {
+  padding: var(--spacing-lg);
+}
+
+@media (min-width: 768px) {
+  .padding-responsive-lg {
+    padding: var(--spacing-xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .padding-responsive-lg {
+    padding: var(--spacing-2xl);
+  }
+}
+
+.margin-responsive-sm {
+  margin: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .margin-responsive-sm {
+    margin: var(--spacing-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .margin-responsive-sm {
+    margin: var(--spacing-lg);
+  }
+}
+
+.gap-responsive {
+  gap: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .gap-responsive {
+    gap: var(--spacing-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gap-responsive {
+    gap: var(--spacing-lg);
+  }
+}
+
+/* ===== RESPONSIVE FLEXBOX UTILITIES ===== */
+.flex-responsive-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .flex-responsive-col {
+    flex-direction: row;
+    gap: var(--spacing-md);
+  }
+}
+
+.flex-responsive-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+@media (min-width: 640px) {
+  .flex-responsive-row {
+    flex-direction: row;
+    gap: var(--spacing-md);
+  }
+}
+
+/* ===== RESPONSIVE CARD LAYOUTS ===== */
+.card-responsive {
+  padding: var(--spacing-md);
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+}
+
+@media (min-width: 768px) {
+  .card-responsive {
+    padding: var(--spacing-lg);
+    border-radius: 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-responsive {
+    padding: var(--spacing-xl);
+    border-radius: 1rem;
+  }
+}
+
+/* ===== RESPONSIVE SIDEBAR LAYOUTS ===== */
+.layout-responsive-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+@media (min-width: 1024px) {
+  .layout-responsive-sidebar {
+    flex-direction: row;
+  }
+}
+
+.sidebar-responsive {
+  width: 100%;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+@media (min-width: 1024px) {
+  .sidebar-responsive {
+    width: 16rem;
+    border-bottom: none;
+    border-right: 1px solid hsl(var(--border));
+  }
+}
+
+.main-responsive {
+  flex: 1;
+  padding: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .main-responsive {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .main-responsive {
+    padding: var(--spacing-xl);
+  }
+}
+
+/* ===== RESPONSIVE NAVIGATION ===== */
+.nav-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+@media (min-width: 768px) {
+  .nav-responsive {
+    flex-direction: row;
+    gap: var(--spacing-md);
+  }
+}
+
+.nav-item-responsive {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .nav-item-responsive {
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+}
+
+/* ===== RESPONSIVE BUTTON SIZES ===== */
+.button-responsive-sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+  border-radius: 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .button-responsive-sm {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--text-sm);
+    border-radius: 0.375rem;
+  }
+}
+
+.button-responsive-md {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  border-radius: 0.375rem;
+}
+
+@media (min-width: 768px) {
+  .button-responsive-md {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--text-base);
+    border-radius: 0.5rem;
+  }
+}
+
+/* ===== RESPONSIVE VISIBILITY UTILITIES ===== */
+.hide-on-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-on-mobile {
+    display: block;
+  }
+}
+
+.hide-on-desktop {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .hide-on-desktop {
+    display: none;
+  }
+}
+
+.show-on-tablet {
+  display: none;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .show-on-tablet {
+    display: block;
+  }
+}
+
+/* ===== RESPONSIVE IMAGE UTILITIES ===== */
+.image-responsive {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 0.375rem;
+}
+
+@media (min-width: 768px) {
+  .image-responsive {
+    border-radius: 0.5rem;
+  }
+}
+
+/* ===== RESPONSIVE ASPECT RATIOS ===== */
+.aspect-responsive-square {
+  aspect-ratio: 1 / 1;
+}
+
+@media (min-width: 768px) {
+  .aspect-responsive-square {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+.aspect-responsive-video {
+  aspect-ratio: 4 / 3;
+}
+
+@media (min-width: 768px) {
+  .aspect-responsive-video {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* ===== RESPONSIVE OVERFLOW UTILITIES ===== */
+.scroll-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 768px) {
+  .scroll-responsive {
+    overflow-x: visible;
+  }
+}
+
+/* ===== RESPONSIVE Z-INDEX UTILITIES ===== */
+.z-responsive-modal {
+  z-index: 40;
+}
+
+@media (min-width: 768px) {
+  .z-responsive-modal {
+    z-index: 50;
+  }
+}
+
+/* ===== RESPONSIVE ANIMATION UTILITIES ===== */
+@media (prefers-reduced-motion: reduce) {
+  .animate-responsive,
+  .animate-responsive * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  .card-responsive,
+  .container-responsive {
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+  
+  .text-responsive-sm,
+  .text-responsive-base,
+  .text-responsive-lg,
+  .text-responsive-xl {
+    color: #000 !important;
+  }
+}
+
+/* ===== CONTAINER QUERIES (Progressive Enhancement) ===== */
+@supports (container-type: inline-size) {
+  .container-query {
+    container-type: inline-size;
+  }
+  
+  @container (min-width: 400px) {
+    .cq-card {
+      display: flex;
+      flex-direction: row;
+    }
+  }
+  
+  @container (min-width: 600px) {
+    .cq-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+/* ===== UTILITY CLASSES ===== */
+/* Responsive spacing utilities */
+.space-y-fluid > * + * {
+  margin-top: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.space-x-fluid > * + * {
+  margin-left: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+/* Responsive border radius */
+.rounded-fluid {
+  border-radius: clamp(0.25rem, 1vw, 0.75rem);
+}
+
+/* Responsive shadows */
+.shadow-fluid {
+  box-shadow: 0 clamp(1px, 0.2vw, 4px) clamp(2px, 0.5vw, 8px) rgba(0, 0, 0, 0.1);
+}
+
+/* Performance monitoring utilities */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.gpu-accelerated:hover {
+  will-change: auto;
+}
+
+/* Touch feedback utilities */
+.touch-feedback {
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.touch-feedback:active {
+  transform: scale(0.98);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .touch-feedback:active {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+}

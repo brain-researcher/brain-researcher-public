@@ -1,0 +1,87 @@
+version: 1
+updated_at: "2026-02-17"
+
+mappings:
+  legacy_mappings_dir:
+    kind: directory
+    canonical: configs/legacy/mappings
+    owner: agent-planner
+    consumers:
+      - brain_researcher.services.agent.planner.synonyms_loader
+    version: 1
+
+  onvoc_crosswalk:
+    kind: file
+    canonical: configs/legacy/mappings/onvoc_crosswalk.yaml
+    aliases:
+      - brain_researcher/services/neurokg/mappings/onvoc_crosswalk.yaml
+    owner: neurokg
+    consumers:
+      - brain_researcher.services.neurokg.utils.onvoc_linker
+      - brain_researcher.services.neurokg.etl.link_onvoc_datasets
+      - scripts/tools/ontologies/build_onvoc_mapping_rules.py
+    version: 1
+
+  onvoc_tree:
+    kind: file
+    canonical: configs/onvoc_tree.yaml
+    aliases:
+      - brain_researcher/configs/onvoc_tree.yaml
+    owner: neurokg
+    consumers:
+      - brain_researcher.services.neurokg.utils.onvoc_linker
+      - brain_researcher.services.neurokg.utils.matching_profile
+    version: 1
+
+  cao_to_trm:
+    kind: file
+    canonical: configs/legacy/mappings/cao_to_trm.yaml
+    aliases:
+      - brain_researcher/services/neurokg/mappings/cao_to_trm.yaml
+    owner: neurokg
+    consumers:
+      - brain_researcher.services.neurokg.etl.linkers.taxonomy_linker
+    version: 1
+
+  recovery_map:
+    kind: file
+    canonical: configs/recovery_map.yaml
+    owner: agent
+    consumers:
+      - brain_researcher.services.agent.recovery_policy
+    version: 1
+
+  demo_map:
+    kind: file
+    canonical: configs/demo_map.yaml
+    owner: orchestrator
+    consumers:
+      - brain_researcher.services.orchestrator.demo_endpoints
+    version: 1
+
+  tool_id_mappings:
+    kind: file
+    canonical: configs/catalog/tool_id_mappings.yaml
+    owner: agent
+    consumers:
+      - brain_researcher.services.agent.preflight
+    version: 1
+
+  capability_crosswalk:
+    kind: file
+    canonical: configs/planner/capability_crosswalk.yaml
+    owner: planner
+    consumers:
+      - brain_researcher.services.agent.planner.config_loader
+      - brain_researcher.services.agent.planner.capability_predictor
+      - brain_researcher.services.agent.planner.selection
+    version: 1
+
+  niwrap_mapping:
+    kind: file
+    canonical: configs/catalog/niwrap_mapping.yaml
+    owner: catalog
+    consumers:
+      - brain_researcher.services.agent.planner.catalog_loader
+      - brain_researcher.services.tools.catalog_loader
+    version: 1

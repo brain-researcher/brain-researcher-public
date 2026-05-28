@@ -1,0 +1,51 @@
+{
+  "name": "get_execution_recipe",
+  "tier": "advanced",
+  "surface_tier": "advanced",
+  "capability_family": "execution_recipe",
+  "description": "Return a stateless execution recipe for a public MCP tool or workflow.",
+  "input_schema": {
+    "properties": {
+      "tool_id": {
+        "title": "Tool Id",
+        "type": "string"
+      },
+      "params": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Params"
+      },
+      "target_runtime": {
+        "default": "python",
+        "title": "Target Runtime",
+        "type": "string"
+      },
+      "cluster_profile": {
+        "default": "generic",
+        "title": "Cluster Profile",
+        "type": "string"
+      }
+    },
+    "required": [
+      "tool_id"
+    ],
+    "title": "get_execution_recipeArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "get_execution_recipeDictOutput",
+    "type": "object"
+  },
+  "examples": [],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

@@ -1,0 +1,216 @@
+---
+# Main Gateway for Brain Researcher platform
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: brain-researcher-gateway
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    component: gateway
+spec:
+  selector:
+    istio: ingressgateway # Use default Istio ingress gateway
+  servers:
+  # HTTP server (redirects to HTTPS)
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+    tls:
+      httpsRedirect: true
+      
+  # HTTPS server for web UI
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: brain-researcher-tls-cert
+    hosts:
+    - "brain-researcher.local"
+    - "*.brain-researcher.local"
+    - "app.brain-researcher.com"
+    - "*.app.brain-researcher.com"
+    
+  # BR-KG API port
+  - port:
+      number: 5000
+      name: neurokg-api
+      protocol: HTTP
+    hosts:
+    - "api.brain-researcher.local"
+    - "neurokg.brain-researcher.local"
+    - "api.brain-researcher.com"
+    - "neurokg.brain-researcher.com"
+    
+  # Agent service port
+  - port:
+      number: 8000
+      name: agent-service
+      protocol: HTTP
+    hosts:
+    - "agent.brain-researcher.local"
+    - "llm.brain-researcher.local"
+    - "agent.brain-researcher.com"
+    - "llm.brain-researcher.com"
+    
+  # Web UI port
+  - port:
+      number: 3000
+      name: web-ui
+      protocol: HTTP
+    hosts:
+    - "ui.brain-researcher.local"
+    - "dashboard.brain-researcher.local"
+    - "ui.brain-researcher.com"
+    - "dashboard.brain-researcher.com"
+
+---
+# Egress Gateway for external neuroimaging data sources
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: brain-researcher-egress-gateway
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    component: egress-gateway
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+  # OpenNeuro access
+  - port:
+      number: 443
+      name: openneuro-https
+      protocol: HTTPS
+    hosts:
+    - "openneuro.org"
+    - "*.openneuro.org"
+    tls:
+      mode: PASSTHROUGH
+      
+  # NeuroVault access
+  - port:
+      number: 443
+      name: neurovault-https
+      protocol: HTTPS
+    hosts:
+    - "neurovault.org"
+    - "*.neurovault.org"
+    tls:
+      mode: PASSTHROUGH
+      
+  # PubMed/NCBI access
+  - port:
+      number: 443
+      name: ncbi-https
+      protocol: HTTPS
+    hosts:
+    - "eutils.ncbi.nlm.nih.gov"
+    - "ftp.ncbi.nlm.nih.gov"
+    - "pubmed.ncbi.nlm.nih.gov"
+    tls:
+      mode: PASSTHROUGH
+      
+  # Brain imaging repositories
+  - port:
+      number: 443
+      name: neuroimaging-repos-https
+      protocol: HTTPS
+    hosts:
+    - "fcon_1000.projects.nitrc.org"
+    - "central.xnat.org"
+    - "coins.trendscenter.org"
+    - "ida.loni.usc.edu"
+    tls:
+      mode: PASSTHROUGH
+
+---
+# Internal service mesh gateway for inter-service communication
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: brain-researcher-internal-gateway
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    component: internal-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  # Internal API communication
+  - port:
+      number: 80
+      name: internal-http
+      protocol: HTTP
+    hosts:
+    - "*.brain-researcher.svc.cluster.local"
+    - "internal.brain-researcher.local"
+    
+  # Metrics and monitoring
+  - port:
+      number: 9090
+      name: prometheus
+      protocol: HTTP
+    hosts:
+    - "prometheus.brain-researcher.local"
+    - "metrics.brain-researcher.local"
+    
+  # Grafana dashboard
+  - port:
+      number: 3000
+      name: grafana
+      protocol: HTTP
+    hosts:
+    - "grafana.brain-researcher.local"
+    - "monitoring.brain-researcher.local"
+    
+  # Kiali service mesh visualization
+  - port:
+      number: 20001
+      name: kiali
+      protocol: HTTP
+    hosts:
+    - "kiali.brain-researcher.local"
+    - "mesh.brain-researcher.local"
+
+---
+# Gateway for development and testing
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: brain-researcher-dev-gateway
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    component: dev-gateway
+    environment: development
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  # Development HTTP access
+  - port:
+      number: 8080
+      name: dev-http
+      protocol: HTTP
+    hosts:
+    - "dev.brain-researcher.local"
+    - "*.dev.brain-researcher.local"
+    - "localhost"
+    - "127.0.0.1"
+    
+  # Testing ports
+  - port:
+      number: 8090
+      name: test-http
+      protocol: HTTP
+    hosts:
+    - "test.brain-researcher.local"
+    - "*.test.brain-researcher.local"

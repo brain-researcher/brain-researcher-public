@@ -1,0 +1,78 @@
+name: Hypothesis Explorer Review
+description: Review novelty, factual accuracy, bias, and evidence/plan validity.
+title: "[HYP] "
+labels:
+  - area/hypothesis
+  - type/scientific-review
+body:
+  - type: input
+    id: session_id
+    attributes:
+      label: sessionId
+      placeholder: session-xxxxxx
+    validations:
+      required: true
+
+  - type: input
+    id: run_id
+    attributes:
+      label: runId
+      placeholder: hrun-xxxxxx
+    validations:
+      required: true
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Stage observed
+      options:
+        - clarifying
+        - analysis ready
+        - evidence ready
+        - completed
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reviewed_modules
+    attributes:
+      label: Modules reviewed
+      placeholder: Research Canvas, Evidence, Plan, Validation, Candidates
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue type
+      options:
+        - Novelty not actually novel
+        - Factual errors or hallucination
+        - Bias toward predictive models
+        - Formatting or UX
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested fix
+      placeholder: Remove candidate, add qualifier, reframe method, cite stronger evidence
+    validations:
+      required: true

@@ -1,0 +1,218 @@
+# Matching Thresholds Configuration
+# Defines global and per-node-type thresholds for entity matching
+# Used by: UnifiedNodeMatcher, bulk_loader
+#
+# Schema definitions (node/edge types, properties, ID formats) are now in:
+# configs/neurokg/config.yml (schema section)
+
+# SAME_AS edge creation thresholds
+same_as_thresholds:
+  Task: 0.90
+  Concept: 0.90
+  Publication: 1.0
+  Coordinate: 0.90
+  Region: 0.95
+  Dataset: 1.0
+  Phenotype: 0.90
+  StatisticalMap: 1.0
+  Contrast: 0.85
+  Subject: 1.0  # Exact match only
+  SubjectGroup: 0.90
+  Author: 0.85
+
+# MAPS_TO edge creation thresholds (cross-source mapping)
+maps_to_thresholds:
+  Task: 0.85
+  Concept: 0.86
+  Region: 0.75
+  Phenotype: 0.88
+
+# Spatial matching configuration
+spatial_matching:
+  coordinate_radius_mm: 8.0
+  confidence_decay: "linear"  # score = 1 - (distance / radius)
+  max_distance_mm: 8.0
+  min_confidence: 0.0
+  clamp_to_zero: true  # enforce score = max(0, 1 - d/radius)
+
+# String matching configuration
+string_matching:
+  fuzzy_algorithm: "dice"  # dice, levenshtein, jaro_winkler
+  case_sensitive: false
+  remove_punctuation: true
+  remove_stopwords: true
+  min_token_overlap: 0.7
+
+# Embedding matching configuration
+embedding_matching:
+  model_priority: ["niclip", "sbert"]
+  niclip_threshold: 0.85
+  sbert_threshold: 0.86
+  batch_size: 32
+  normalize_embeddings: true
+
+# Per-node matching rules
+node_matching:
+  Task:
+    same_as:
+      min_evidence: 2  # require at least two signals among exact/embedding/fuzzy
+      allowed_methods: ["exact", "fuzzy", "embedding"]
+  Concept:
+    string:
+      allow_fuzzy_fallback: false
+    same_as:
+      threshold: 0.90
+  Region:
+    same_as:
+      require_label_signal: "exact_or_fuzzy"
+      require_overlap: true
+      min_overlap: 0.10
+  Coordinate:
+    spatial:
+      require_same_space: true
+      radius_mm: 8.0
+      clamp_to_zero: true
+    same_as:
+      require_same_space: true
+      threshold: 0.90
+  Dataset:
+    id_pattern: "^ds\\d{3,6}$"  # OpenNeuro ds#### style
+  Phenotype:
+    embedding:
+      enabled: true
+    same_as:
+      threshold: 0.90
+  StatisticalMap:
+    canonical_preference: ["hash_canonical", "url"]  # URL as weak fallback
+  Contrast:
+    embedding:
+      enabled: true
+    hed_signature:
+      enabled: true
+    same_as:
+      threshold: 0.85
+      require_task_id_match: true
+
+# GABRIEL high-precision acceptance gate
+gabriel_quality_gate:
+  mention_strength_min: 0.70
+  mapping_confidence_min: 0.85
+  claim_strength_min: 0.65
+  method_rigor_min: 0.50
+  provenance_completeness_min: 1.00
+  allow_low_evidence_quality: false
+
+# GABRIEL quality profiles (loader-level presets; quality_gate still overrides)
+gabriel_quality_profiles:
+  high_precision:
+    mention_strength_min: 0.70
+    mapping_confidence_min: 0.85
+    claim_strength_min: 0.65
+    method_rigor_min: 0.50
+    provenance_completeness_min: 1.00
+    allow_low_evidence_quality: false
+  balanced:
+    mention_strength_min: 0.60
+    mapping_confidence_min: 0.75
+    claim_strength_min: 0.55
+    method_rigor_min: 0.40
+    provenance_completeness_min: 0.80
+    allow_low_evidence_quality: false
+  balanced_marginal:
+    mention_strength_min: 0.55
+    mapping_confidence_min: 0.75
+    claim_strength_min: 0.50
+    method_rigor_min: 0.35
+    provenance_completeness_min: 0.80
+    allow_low_evidence_quality: false
+  kg_bootstrap:
+    mention_strength_min: 0.40
+    mapping_confidence_min: 0.00
+    claim_strength_min: 0.00
+    method_rigor_min: 0.00
+    provenance_completeness_min: 0.80
+    allow_low_evidence_quality: true
+  kg_task_panel:
+    mention_strength_min: 0.30
+    mapping_confidence_min: 0.82
+    claim_strength_min: 0.40
+    method_rigor_min: 0.10
+    provenance_completeness_min: 0.80
+    allow_low_evidence_quality: true
+
+# Meta-analytic matching (for ACTIVATES edges)
+meta_analytic:
+  z_score_threshold: 5.0
+  posterior_threshold: 0.8
+  min_studies: 3
+  min_subjects: 50
+
+# Canonical node selection
+canonical_selection:
+  # Priority order per source prefix
+  source_priority:
+    Task: [cogat, niclip, bids, openneuro, custom]
+    Concept: [mesh, cogat, wikidata, pubmed, custom]
+    Region: [schaefer400, aal, harvard-oxford, custom]
+    Publication: [doi, pmid]
+    Dataset: [doi, openneuro_id, url]
+    Phenotype: [mesh, hpo, custom]
+    StatisticalMap: [hash_canonical, url]
+
+  # Tiebreaker rules
+  tiebreaker:
+    - "most_connections"  # Node with most edges
+    - "earliest_created"  # Oldest node
+    - "longest_label"     # Most descriptive
+
+# Performance settings
+performance:
+  batch_size: 1000
+  parallel_workers: 4
+  cache_embeddings: true
+  cache_ttl_seconds: 3600
+
+# Logging and monitoring
+logging:
+  log_low_confidence_matches: true
+  low_confidence_threshold: 0.75
+  log_match_failures: true
+  failure_log_path: "logs/match_failures.tsv"
+
+# Edge rules
+edge_rules:
+  SAME_AS:
+    min_confidence: 0.90
+    min_evidence: 2
+    diversity_required: true  # disallow relying only on closely correlated methods
+    disallowed_method_pairs:
+      - ["fuzzy", "embedding"]
+  ACTIVATES:
+    require_meta_analytic: true  # z or posterior
+    require_spatial_within_radius: true
+    min_evidence: 2
+  IN_REGION:
+    max_peak_distance_mm: 8.0
+    min_overlap: 0.10
+
+# Confidence combiner
+confidence_combiner:
+  method: "logit_ensemble"  # alternative: noisy_or
+  weights:
+    exact: 1.0
+    id: 0.9
+    fuzzy: 0.6
+    embedding: 0.6
+    spatial: 0.8
+    overlap: 0.8
+    meta_analytic: 0.9
+  bonus_diversity: 0.04  # +0.03–0.05 when ≥2 method families
+  penalty_conflict: 0.10
+  field_penalty:
+    min_primary_fields: 2
+    multiplier: 0.85  # if matched primary_fields < 2, multiply by 0.85
+  families:
+    string: ["exact", "fuzzy", "id"]
+    semantic: ["embedding", "hed_signature"]
+    spatial: ["spatial", "overlap"]
+    meta: ["meta_analytic"]

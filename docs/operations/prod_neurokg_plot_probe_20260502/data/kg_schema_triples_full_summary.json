@@ -1,0 +1,11 @@
+{
+  "labelset_edge_sum": 2423334,
+  "labelset_schema_triple_count": 151,
+  "multi_source_labelset_rows": 27,
+  "multi_target_labelset_rows": 38,
+  "node_label_count": 75,
+  "relationship_type_count": 85,
+  "total_edges": 2423334,
+  "unwound_edge_sum": 2837951,
+  "unwound_schema_triple_count": 232
+}

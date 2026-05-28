@@ -1,0 +1,125 @@
+{
+  "neuroimaging_terms": {
+    "brain_regions": {
+      "cortical": [
+        "prefrontal cortex", "pfc", "dlpfc", "vlpfc", "orbitofrontal", "ofc",
+        "anterior cingulate", "acc", "posterior cingulate", "pcc",
+        "superior parietal", "inferior parietal", "angular gyrus",
+        "temporal cortex", "superior temporal", "middle temporal",
+        "occipital cortex", "visual cortex", "v1", "v2", "v3", "v4", "v5",
+        "motor cortex", "premotor", "supplementary motor", "sma",
+        "somatosensory cortex", "s1", "s2"
+      ],
+      "subcortical": [
+        "amygdala", "hippocampus", "thalamus", "hypothalamus",
+        "caudate", "putamen", "nucleus accumbens", "striatum",
+        "substantia nigra", "ventral tegmental area", "vta",
+        "brainstem", "pons", "medulla", "midbrain"
+      ],
+      "cerebellar": [
+        "cerebellum", "cerebellar cortex", "deep cerebellar nuclei",
+        "vermis", "cerebellar hemispheres"
+      ]
+    },
+    "tasks_paradigms": {
+      "cognitive": [
+        "n-back", "working memory", "stroop", "flanker", "simon",
+        "attention", "executive control", "cognitive control",
+        "episodic memory", "semantic memory", "recognition memory",
+        "language", "reading", "phonological", "semantic processing"
+      ],
+      "emotional": [
+        "emotion regulation", "emotional faces", "fear conditioning",
+        "reward", "punishment", "emotional memory"
+      ],
+      "motor": [
+        "finger tapping", "hand movements", "motor imagery",
+        "motor learning", "sensorimotor"
+      ],
+      "social": [
+        "theory of mind", "empathy", "social cognition",
+        "face processing", "social interaction"
+      ]
+    },
+    "analysis_methods": {
+      "statistical": [
+        "glm", "general linear model", "t-test", "anova", "regression",
+        "correlation", "partial correlation", "multiple regression",
+        "mixed effects", "random effects", "fixed effects"
+      ],
+      "multivariate": [
+        "pca", "principal component analysis",
+        "ica", "independent component analysis", 
+        "svm", "support vector machine", "classification", "decoding",
+        "machine learning", "cross-validation", "feature selection"
+      ],
+      "connectivity": [
+        "functional connectivity", "effective connectivity",
+        "dynamic connectivity", "psychophysiological interaction", "ppi",
+        "dynamic causal modeling", "dcm", "granger causality"
+      ],
+      "network": [
+        "graph theory", "network analysis", "small world",
+        "clustering coefficient", "path length", "centrality",
+        "modularity", "hub", "network topology"
+      ]
+    },
+    "data_types": {
+      "functional": [
+        "fmri", "functional mri", "bold", "task fmri", "resting state",
+        "asl", "arterial spin labeling", "perfusion"
+      ],
+      "structural": [
+        "t1", "t1-weighted", "t2", "t2-weighted", "flair",
+        "dti", "diffusion tensor imaging", "dwi", "diffusion weighted",
+        "tractography", "fa", "fractional anisotropy", "md", "mean diffusivity"
+      ],
+      "spectroscopy": [
+        "mrs", "magnetic resonance spectroscopy",
+        "gaba", "glutamate", "naa", "choline", "creatine"
+      ]
+    },
+    "preprocessing_steps": [
+      "motion correction", "realignment", "slice timing correction",
+      "normalization", "registration", "coregistration",
+      "smoothing", "spatial smoothing", "gaussian kernel",
+      "temporal filtering", "high pass filter", "low pass filter",
+      "artifact removal", "scrubbing", "ica-aroma",
+      "skull stripping", "brain extraction"
+    ]
+  },
+  "abbreviations": {
+    "fmri": ["functional mri", "functional magnetic resonance imaging"],
+    "bold": ["blood oxygen level dependent", "blood oxygenation level dependent"],
+    "roi": ["region of interest", "regions of interest"],
+    "glm": ["general linear model", "general linear models"],
+    "pca": ["principal component analysis", "principal components analysis"],
+    "ica": ["independent component analysis", "independent components analysis"],
+    "svm": ["support vector machine", "support vector machines"],
+    "dmn": ["default mode network", "default network"],
+    "acc": ["anterior cingulate cortex"],
+    "pcc": ["posterior cingulate cortex"],
+    "pfc": ["prefrontal cortex"],
+    "dlpfc": ["dorsolateral prefrontal cortex"],
+    "vlpfc": ["ventrolateral prefrontal cortex"],
+    "ofc": ["orbitofrontal cortex"],
+    "sma": ["supplementary motor area"],
+    "vta": ["ventral tegmental area"],
+    "dti": ["diffusion tensor imaging"],
+    "dwi": ["diffusion weighted imaging"],
+    "fa": ["fractional anisotropy"],
+    "md": ["mean diffusivity"],
+    "asl": ["arterial spin labeling"],
+    "mrs": ["magnetic resonance spectroscopy"]
+  },
+  "domain_synonyms": {
+    "activation": ["neural activity", "brain activity", "cortical activation", "bold response"],
+    "connectivity": ["functional coupling", "neural connectivity", "brain connectivity"],
+    "preprocessing": ["data preprocessing", "image preprocessing", "fmri preprocessing"],
+    "analysis": ["statistical analysis", "data analysis", "neuroimaging analysis"],
+    "contrast": ["statistical contrast", "task contrast", "condition comparison"],
+    "cluster": ["activation cluster", "brain cluster", "significant cluster"],
+    "threshold": ["statistical threshold", "significance threshold", "alpha level"],
+    "correction": ["multiple comparison correction", "multiple comparisons correction", "family-wise error correction"]
+  }
+}

@@ -1,0 +1,9 @@
+((fMRI OR "functional MRI" OR "functional magnetic resonance imaging" OR BOLD)
+ AND (ICA OR "independent component" OR "seed-based"
+      OR "graph theory" OR "network analysis"
+      OR "dynamic functional connectivity" OR dFC
+      OR ALFF OR fALFF OR ReHo
+      OR "degree centrality"
+      OR PPI OR "psychophysiological interaction"
+      OR DCM OR "dynamic causal modeling")
+ AND ("1990/01/01"[PDAT] : "2014/12/31"[PDAT]))

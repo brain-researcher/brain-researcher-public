@@ -1,0 +1,47 @@
+[
+  {
+    "contrast_id": "c1",
+    "task": "n-back task",
+    "concepts": [
+      {"concept_id": "wm", "name": "working memory", "llm_w": 0.8, "pubmed_w": 0.3},
+      {"concept_id": "att", "name": "attention", "llm_w": 0.5, "pubmed_w": 0.2},
+      {"concept_id": "exec", "name": "executive control", "llm_w": 0.6, "pubmed_w": 0.1}
+    ]
+  },
+  {
+    "contrast_id": "c2",
+    "task": "n-back task",
+    "concepts": [
+      {"concept_id": "wm", "name": "working memory", "llm_w": 0.7, "pubmed_w": 0.25},
+      {"concept_id": "att", "name": "attention", "llm_w": 0.4, "pubmed_w": 0.2},
+      {"concept_id": "exec", "name": "executive control", "llm_w": 0.6, "pubmed_w": 0.1}
+    ]
+  },
+  {
+    "contrast_id": "c3",
+    "task": "n-back task",
+    "concepts": [
+      {"concept_id": "wm", "name": "working memory", "llm_w": 0.9, "pubmed_w": 0.3},
+      {"concept_id": "att", "name": "attention", "llm_w": 0.6, "pubmed_w": 0.25},
+      {"concept_id": "exec", "name": "executive control", "llm_w": 0.5, "pubmed_w": 0.1}
+    ]
+  },
+  {
+    "contrast_id": "c4",
+    "task": "stroop task",
+    "concepts": [
+      {"concept_id": "att", "name": "attention", "llm_w": 0.6, "pubmed_w": 0.3},
+      {"concept_id": "ri", "name": "response inhibition", "llm_w": 0.7, "pubmed_w": 0.4},
+      {"concept_id": "exec", "name": "executive control", "llm_w": 0.5, "pubmed_w": 0.2}
+    ]
+  },
+  {
+    "contrast_id": "c5",
+    "task": "stroop task",
+    "concepts": [
+      {"concept_id": "att", "name": "attention", "llm_w": 0.5, "pubmed_w": 0.25},
+      {"concept_id": "ri", "name": "response inhibition", "llm_w": 0.8, "pubmed_w": 0.35},
+      {"concept_id": "exec", "name": "executive control", "llm_w": 0.4, "pubmed_w": 0.15}
+    ]
+  }
+]

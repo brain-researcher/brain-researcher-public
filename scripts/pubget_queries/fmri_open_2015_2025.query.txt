@@ -1,0 +1,8 @@
+(
+  fMRI[Title/Abstract]
+  OR "functional MRI"[Title/Abstract]
+  OR "functional magnetic resonance"[Title/Abstract]
+  OR BOLD[Title/Abstract]
+  OR "functional connectivity"[Title/Abstract]
+)
+AND (2015[PubDate] : 2025[PubDate])

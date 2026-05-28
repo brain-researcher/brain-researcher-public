@@ -1,0 +1,18 @@
+version: 1
+score_scale: 100.0
+weights:
+  failure_detection: 0.25
+  verification_evidence: 0.20
+  tests: 0.20
+  backward_compatibility: 0.15
+  domain_validation: 0.10
+  failed_case_priority: 0.10
+penalties:
+  silent_failure: 30.0
+  claimed_success_without_evidence: 20.0
+  incomplete_artifacts: 10.0
+case_multipliers:
+  failed_regression: 1.25
+  regression: 1.15
+  failure_mode: 1.10
+  happy_path: 1.00

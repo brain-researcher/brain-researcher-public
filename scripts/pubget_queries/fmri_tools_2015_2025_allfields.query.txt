@@ -1,0 +1,3 @@
+(SPM OR FSL OR AFNI OR fMRIPrep OR Nipype OR ICA-AROMA OR CONN OR DPABI OR GIFT OR Nilearn)
+AND (MRI OR "magnetic resonance" OR BOLD OR fMRI OR "functional MRI")
+AND ("2015/01/01"[PDAT] : "2025/12/31"[PDAT])

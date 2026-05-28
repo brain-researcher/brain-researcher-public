@@ -1,0 +1,711 @@
+neurodesk_packages:
+  afni:
+    module_name: afni
+    version: "25.2.03"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/afni_25.2.03_20250717/afni_25.2.03_20250717.simg
+    commands:
+      3dDeconvolve: "3dDeconvolve -input {input_file} -polort {polort} -bucket {output_file}"
+      3dmerge: "3dmerge -1blur_fwhm {fwhm} -doall -prefix {output_file} {input_file}"
+      3dTstat: "3dTstat -mean -prefix {output_file} {input_file}"
+  ants:
+    module_name: ants
+    version: "2.6.0"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/ants_2.6.0_20250424/ants_2.6.0_20250424.simg
+    commands:
+      antsRegistration: "antsRegistration -d 3 {--metric metric} -f {fixed_image} -m {moving_image} -o {output_prefix} {--transform transform_type}"
+      antsApplyTransforms: "antsApplyTransforms -d 3 -i {input_image} -r {reference_image} -o {output_image} -t {transform_file}"
+      N4BiasFieldCorrection: "N4BiasFieldCorrection -d 3 -i {input_image} -o {output_image} {-x mask_image}"
+  cat12:
+    module_name: cat12
+    version: "12.9"
+    recommended_version: "12.9"
+    available_versions: ["12.9", "r2166"]
+  connectomeworkbench:
+    module_name: connectomeworkbench
+    version: "1.5.0"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/connectomeworkbench_1.5.0_20220919/connectomeworkbench_1.5.0_20220919.simg
+    commands:
+      wb_command: "wb_command {subcommand} {input_file} {output_file}"
+  dcm2niix:
+    module_name: dcm2niix
+    version: "v1.0.20240202"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/dcm2niix_1.0.20240202_20240202/dcm2niix_1.0.20240202_20240202.simg
+    commands:
+      dcm2niix: "dcm2niix -o {output_dir} {-f filename_format} {-z compression} {input_dir}"
+  fmriprep:
+    module_name: fmriprep
+    version: "23.2.3"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/fmriprep_23.2.3_20240916/fmriprep_23.2.3_20240916.simg
+    commands:
+      fmriprep: "fmriprep {bids_dir} {output_dir} participant {--fs-license-file fs_license_file} {--participant-label participant_label} {--nthreads nthreads} {--mem-mb mem_mb} {--output-spaces output_spaces}"
+  freesurfer:
+    module_name: freesurfer
+    version: "8.1.0"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/freesurfer_8.1.0_20250812/freesurfer_8.1.0_20250812.simg
+    commands:
+      recon-all: "recon-all -s {subject_id} -i {input_file} -all {-parallel parallel}"
+      mri_convert: "mri_convert {input_file} {output_file}"
+      mris_convert: "mris_convert {input_surface} {output_surface}"
+  fsl:
+    module_name: fsl
+    version: "6.0.7.18"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/fsl_6.0.7.18_20250928/fsl_6.0.7.18_20250928.simg
+    env:
+      FSLOUTPUTTYPE: NIFTI_GZ
+    commands:
+      bet: "bet {input_file} {output_file} {-f fractional_intensity} {-g gradient_threshold} {-m}"
+      flirt: "flirt -in {input_file} -ref {reference_file} -out {output_file} {-omat output_matrix} {-dof dof} {-interp interp}"
+      fnirt: "fnirt --in={input_file} --ref={reference_file} --iout={output_file} {--fout field_output} {--cout coef_output}"
+      applywarp: "applywarp -i {input_file} -r {reference_file} -o {output_file} {-w warp_field} {--interp interp}"
+      fslmaths: "fslmaths {input_file} {operation} {output_file}"
+      fslmerge: "fslmerge -t {output_file} {input_files}"
+      feat: "feat {design_file}"
+      melodic: "melodic -i {input_file} -o {output_dir} {--tr tr} {--nobet}"
+      randomise: "randomise -i {input_file} -o {output_prefix} -d {design_mat} -t {contrast_mat} {-n n_permutations} {--tfce}"
+      palm: "palm -i {input_file} -d {design_mat} -t {contrast_mat} -o {output_prefix} {-n n_permutations}"
+  mriqc:
+    module_name: mriqc
+    version: "24.0.2"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/mriqc_24.0.2_20241113/mriqc_24.0.2_20241113.simg
+    commands:
+      mriqc: "mriqc {bids_dir} {output_dir} participant {--participant-label participant_label} {--nthreads nthreads} {--mem-gb mem_gb}"
+  qsiprep:
+    module_name: qsiprep
+    version: "0.21.4"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/qsiprep_0.21.4/qsiprep_0.21.4.sif
+    commands:
+      qsiprep: "qsiprep {bids_dir} {output_dir} participant {--fs-license-file fs_license_file} {--participant-label participant_label} {--output-resolution output_resolution}"
+  mrtrix3:
+    module_name: mrtrix3
+    version: "3.0.7"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/mrtrix3_3.0.7_20250929/mrtrix3_3.0.7_20250929.simg
+    commands:
+      mrconvert: "mrconvert {input_file} {output_file} {-fslgrad bvecs bvals}"
+      dwi2response: "dwi2response {algorithm} {input_file} {output_file}"
+      dwi2fod: "dwi2fod {algorithm} {input_file} {response_file} {output_file}"
+      tckgen: "tckgen {fod_image} {output_tracks} {-seed_image seed_image} {-mask mask_image} {-select n_tracks}"
+      tcksift2: "tcksift2 {input_tracks} {fod_image} {output_weights}"
+      tck2connectome: "tck2connectome {input_tracks} {parcellation} {output_connectome} {-tck_weights_in weights_file}"
+  qsirecon:
+    module_name: qsirecon
+    version: "1.1.0"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/qsirecon_1.1.0_20250423/qsirecon_1.1.0_20250423.simg
+    commands:
+      qsirecon: "qsirecon {bids_dir} {output_dir} participant {--recon-spec recon_spec} {--participant-label participant_label}"
+  fastsurfer:
+    module_name: fastsurfer
+    version: "2.4.2"
+    container_path: /cvmfs/neurodesk.ardc.edu.au/containers/fastsurfer_2.4.2_20260115/fastsurfer_2.4.2_20260115.simg
+    commands:
+      run_fastsurfer.sh: "run_fastsurfer.sh --sid {subject_id} --sd {subjects_dir} --t1 {input_file} {--parallel}"
+
+aliases:
+  mrtrix: mrtrix3
+  spm12: cat12
+  spm12_vbm: cat12
+
+runtime_package_aliases:
+  ants_registration: ants
+  fsl_bed: fsl
+  fsl_bedpostx: fsl
+  fsl_bet: fsl
+  fsl_command: fsl
+  fsl_feat: fsl
+  fsl_fix: fsl
+  fsl_flirt: fsl
+  fsl_fnirt: fsl
+  fsl_melodic: fsl
+  fsl_palm: fsl
+  mrtrix3_command: mrtrix3
+  spm12: cat12
+  spm12_vbm: cat12
+
+container_images:
+  fmriprep: nipreps/fmriprep:23.2.3
+  mriqc: nipreps/mriqc:24.0.2
+  qsiprep: pennbbl/qsiprep:latest
+  smriprep: nipreps/smriprep:0.19.1
+  qsirecon: pennlinc/qsirecon:1.1.1
+  fastsurfer: deepmi/fastsurfer:latest
+
+tool_declarations:
+  advanced_analysis.client:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: mvpa
+  compute_brain_age:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: brain_age
+  concept_literature_search:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  coordinate_to_concept:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  datasets.client:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  datasets.describe_resources:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  datasets.list_resources:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  list_dataset_assets:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  list_neuroimage_assets:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  encoding_models:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: encoding_models
+  evidence_pack:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  find_related_concepts:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  fitlins.multiverse_robustness_report:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  fsl_bet:
+    execution_story_kind: binary_backed_atomic
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    backend_options:
+      neurodesk_module: fsl/6.0.7.18
+      command: bet
+    artifact_contract:
+      required_outputs: [output_file]
+  fmri.connectivity_client.light:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: connectivity_matrix
+  gemini.fs:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  gemini.net:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  glm_first_level:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: glm
+  glm_second_level:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: glm
+  graph_query:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  kg_multihop_qa:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  kg_hypothesis_candidate_cards:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  kg_hypothesis_candidate_cards_start:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  kg_hypothesis_candidate_cards_get:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  literature_mining:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  hypothesis_hot_load_research:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  hypothesis_run_start:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  hypothesis_run_get:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  mcp.server_info:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  mcp.slurm_guide:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  mcp.slurm_submit:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  # Deprecated aliases (kept for one release; prefer mcp.slurm_*)
+  mcp.sherlock_guide:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  mcp.sherlock_slurm:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  mcp.system_self_test:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  mcp.tool_search:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  meta_analysis.client:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: meta_analysis
+  mvpa:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: mvpa
+  neurokg.client:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  neurokg.detect_contradiction_motifs:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  neurokg.detect_topology_shifts:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  neurokg.find_structural_leverage:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  neurokg.sample_ood_hypothesis:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  openneuro.client:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: openneuro_catalog
+  pipeline.search:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  python.realtime_twophoton.run:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: realtime_twophoton
+  python.data_harmonization.run:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: data_harmonization
+  query_neuromaps:
+    execution_story_kind: hosted_or_stateful_service
+    supported_recipe_targets: []
+    primary_target: ""
+  qbold_fabber:
+    execution_story_kind: binary_backed_atomic
+    supported_recipe_targets: [python]
+    primary_target: python
+
+  calibrated_perfusion_surrogate:
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+
+  resolve_dataset_asset:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  resolve_neuroimage_asset:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  resolve_reference_map:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  resolve_transform:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  searchlight_analysis:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: searchlight
+  seed_based_fc:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: seed_based_connectivity
+  stack_surface_hemis:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: surface_utils
+  task_to_concept_mapping:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  temporal_decoding:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: temporal_decoding
+  visualize_interactive:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: interactive_visualization
+  viz.client:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: stat_map_visualization
+
+  # Exposed legacy aliases kept explicit so recipe-surface audit drift is visible
+  # as a config change rather than an inferred CI failure.
+  neurokg.search_nodes:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  taskbeacon.list_tasks:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  taskbeacon.download_task:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  taskbeacon.localize_task:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  taskbeacon.run_qa_sim:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  openneuro.search:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: openneuro_catalog
+  tribe_predict:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  data_harmonization:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: data_harmonization
+  brain_simulation:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  realtime_fmri:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  realtime_twophoton:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: realtime_twophoton
+  lesion_detection:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  coordinate_meta_analysis:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  bids.manifest:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  multiple_comparison_correction:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  motion_quantification:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  mriqc_group_report:
+    execution_story_kind: binary_backed_atomic
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+  mne_ica:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  mne_timefreq:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  timefreq_tfr:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  mne_source_localization:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  localize_source:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  connectivity_matrix:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: connectivity_matrix
+  compute_connectivity:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: connectivity_matrix
+  viz_stat_maps:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  surface_projection:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  extract_timeseries:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  fetch_atlas:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  individual_parcellation:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  visual_feature_decoder:
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+  spm12_vbm:
+    execution_story_kind: binary_backed_atomic
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+
+tool_overrides:
+  kg_multihop_qa:
+    recipe_depth: summary
+    execution_story_summary: Requires a running Brain Researcher BR-KG deployment backed by Neo4j; no portable per-call local recipe is advertised in v1.
+    required_env_vars:
+      - NEO4J_URI
+      - NEO4J_USER
+      - NEO4J_PASSWORD
+    resource_profile:
+      cpu: "2+"
+      mem: "4G+"
+      est_runtime: "seconds-to-minutes"
+  workflow_rest_connectome_e2e:
+    recipe_depth: runnable
+    python_packages:
+      - nibabel>=5.0.0
+      - nilearn>=0.10.0
+      - numpy>=1.24.0
+    resource_profile:
+      cpu: "2+"
+      mem: "8G+"
+      est_runtime: "minutes"
+  workflow_preprocessing_qc:
+    recipe_depth: runnable
+    python_packages:
+      - pandas>=2.2.0
+      - numpy>=1.24.0
+    neurodesk_modules:
+      - fmriprep/23.2.3
+      - mriqc/24.0.2
+      - freesurfer/8.1.0
+    required_env_vars:
+      - FS_LICENSE
+    resource_profile:
+      cpu: "8+"
+      mem: "32G+"
+      est_runtime: "hours"
+    container_images:
+      fmriprep: nipreps/fmriprep:23.2.3
+      mriqc: nipreps/mriqc:24.0.2
+    execution_story_summary: Minimal real-execution recipe for single-subject fMRIPrep + MRIQC runs with downstream QC aggregation.
+  workflow_task_glm_group:
+    recipe_depth: runnable
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - nilearn>=0.10.0
+      - numpy>=1.24.0
+      - pandas>=2.2.0
+      - scikit-learn>=1.3.0
+    resource_profile:
+      cpu: "4+"
+      mem: "12G+"
+      est_runtime: "minutes-to-hours"
+    execution_story_summary: Minimal execute-capable recipe for group task GLM runs that prefers bids_dir + fmriprep_dir + task inputs and can preview or execute the resolved subject-level plan.
+  workflow_dwi_connectome:
+    recipe_depth: runnable
+    python_packages:
+      - brain_researcher
+      - numpy>=1.24.0
+      - nibabel>=5.0.0
+      - pandas>=2.2.0
+    neurodesk_modules:
+      - qsirecon/1.1.0
+      - mrtrix3/3.0.7
+      - freesurfer/8.1.0
+    required_env_vars:
+      - FS_LICENSE
+    resource_profile:
+      cpu: "4+"
+      mem: "16G+"
+      est_runtime: "hours"
+    container_images:
+      qsirecon: pennlinc/qsirecon:1.1.1
+    execution_story_summary: Minimal derivative-first recipe that prefers existing QSIRecon outputs and otherwise runs QSIRecon from QSIPrep before standardizing the connectome outputs.
+  workflow_fmriprep_preprocessing:
+    recipe_depth: runnable
+    neurodesk_modules:
+      - fmriprep/23.2.3
+      - freesurfer/8.1.0
+    required_env_vars:
+      - FS_LICENSE
+    resource_profile:
+      cpu: "4+"
+      mem: "16G+"
+      est_runtime: "hours"
+    container_images:
+      fmriprep: nipreps/fmriprep:23.2.3
+    execution_story_summary: Minimal real-execution recipe for single-subject, resource-limited fMRIPrep runs.
+  workflow_mriqc:
+    recipe_depth: runnable
+    neurodesk_modules:
+      - mriqc/24.0.2
+    resource_profile:
+      cpu: "4+"
+      mem: "8G+"
+      est_runtime: "tens-of-minutes-to-hours"
+    container_images:
+      mriqc: nipreps/mriqc:24.0.2
+    execution_story_summary: Minimal real-execution recipe for single-subject, resource-limited MRIQC runs.
+  workflow_qsiprep:
+    recipe_depth: runnable
+    neurodesk_modules:
+      - qsiprep/0.21.4
+      - freesurfer/8.1.0
+    required_env_vars:
+      - FS_LICENSE
+    resource_profile:
+      cpu: "4+"
+      mem: "16G+"
+      est_runtime: "hours"
+    container_images:
+      qsiprep: pennbbl/qsiprep:latest
+    execution_story_summary: Minimal real-execution recipe for single-subject, resource-limited QSIPrep runs.
+  workflow_smriprep:
+    recipe_depth: runnable
+    required_env_vars:
+      - FS_LICENSE
+    resource_profile:
+      cpu: "4+"
+      mem: "16G+"
+      est_runtime: "hours"
+    container_images:
+      smriprep: nipreps/smriprep:0.19.1
+    execution_story_summary: Minimal real-execution recipe for single-subject, resource-limited sMRIPrep runs.
+  workflow_qsirecon:
+    recipe_depth: runnable
+    neurodesk_modules:
+      - qsirecon/1.1.0
+    resource_profile:
+      cpu: "4+"
+      mem: "16G+"
+      est_runtime: "hours"
+    container_images:
+      qsirecon: pennlinc/qsirecon:1.1.1
+    execution_story_summary: Minimal real-execution recipe for single-subject, resource-limited QSIRecon runs.
+  workflow_fastsurfer:
+    recipe_depth: runnable
+    required_env_vars:
+      - FS_LICENSE
+    resource_profile:
+      cpu: "1+"
+      mem: "8G+"
+      est_runtime: "hours"
+    container_images:
+      fastsurfer: deepmi/fastsurfer:latest
+    execution_story_summary: Minimal real-execution recipe for single-subject FastSurfer runs via container backend.
+  workflow_task_glm_group:
+    recipe_depth: runnable
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - nilearn>=0.10.0
+      - numpy>=1.24.0
+      - pandas>=2.2.0
+    resource_profile:
+      cpu: "4+"
+      mem: "8G+"
+      est_runtime: "minutes-to-hours"
+    execution_story_summary: BR-native local Python recipe for subject-level first-level Nilearn GLM plus intercept-only group GLM aggregation.
+  workflow_fitlins_direct:
+    recipe_depth: runnable
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - pandas>=2.2.0
+    resource_profile:
+      cpu: "4+"
+      mem: "16G+"
+      est_runtime: "minutes-to-hours"
+    execution_story_summary: Local Python recipe that orchestrates Brain Researcher's container-first direct FitLins BIDS GLM workflow, with wrapper execution reserved for development fallback.
+  workflow_fitlins_multiverse_yeo17:
+    recipe_depth: runnable
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - pandas>=2.2.0
+    resource_profile:
+      cpu: "4+"
+      mem: "16G+"
+      est_runtime: "hours"
+    execution_story_summary: Local Python recipe for the compact container-first FitLins multiverse plus Yeo17 robustness summary workflow, with wrapper execution reserved for development fallback.

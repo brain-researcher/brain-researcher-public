@@ -1,0 +1,214 @@
+{
+  "historical_queries": [
+    {
+      "query": "analyze working memory activation in prefrontal cortex",
+      "user_id": "user001",
+      "timestamp": "2025-01-01T10:00:00Z",
+      "tools_used": ["glm_analysis", "roi_extraction", "statistical_testing"],
+      "execution_time": 45.2,
+      "success": true,
+      "domain": "fmri"
+    },
+    {
+      "query": "compare young vs old adults on working memory task", 
+      "user_id": "user001",
+      "timestamp": "2025-01-01T10:15:00Z",
+      "tools_used": ["group_comparison", "statistical_testing", "visualization"],
+      "execution_time": 32.1,
+      "success": true,
+      "domain": "fmri"
+    },
+    {
+      "query": "extract time series from default mode network regions",
+      "user_id": "user002", 
+      "timestamp": "2025-01-01T11:00:00Z",
+      "tools_used": ["roi_extraction", "time_series_extraction"],
+      "execution_time": 15.7,
+      "success": true,
+      "domain": "connectivity"
+    },
+    {
+      "query": "compute functional connectivity matrix",
+      "user_id": "user002",
+      "timestamp": "2025-01-01T11:05:00Z", 
+      "tools_used": ["connectivity_analysis", "correlation_matrix"],
+      "execution_time": 28.4,
+      "success": true,
+      "domain": "connectivity"
+    },
+    {
+      "query": "preprocess fmri data with motion correction",
+      "user_id": "user003",
+      "timestamp": "2025-01-01T09:30:00Z",
+      "tools_used": ["motion_correction", "preprocessing"],
+      "execution_time": 120.5,
+      "success": true,
+      "domain": "preprocessing"
+    },
+    {
+      "query": "run glm analysis on preprocessed data",
+      "user_id": "user003",
+      "timestamp": "2025-01-01T09:45:00Z",
+      "tools_used": ["glm_analysis", "statistical_modeling"],
+      "execution_time": 65.3,
+      "success": true,
+      "domain": "fmri"
+    },
+    {
+      "query": "visualize activation maps for working memory contrast",
+      "user_id": "user003",
+      "timestamp": "2025-01-01T10:30:00Z",
+      "tools_used": ["visualization", "brain_plotting"],
+      "execution_time": 12.8,
+      "success": true,
+      "domain": "visualization"
+    },
+    {
+      "query": "classify brain states using machine learning",
+      "user_id": "user004",
+      "timestamp": "2025-01-01T14:00:00Z",
+      "tools_used": ["machine_learning", "classification", "cross_validation"],
+      "execution_time": 180.7,
+      "success": true,
+      "domain": "machine_learning"
+    },
+    {
+      "query": "decode visual stimuli from occipital cortex",
+      "user_id": "user004",
+      "timestamp": "2025-01-01T14:30:00Z",
+      "tools_used": ["decoding", "feature_extraction", "svm_classification"],
+      "execution_time": 95.2,
+      "success": true,
+      "domain": "machine_learning"
+    },
+    {
+      "query": "perform coordinate-based meta-analysis",
+      "user_id": "user005",
+      "timestamp": "2025-01-01T16:00:00Z",
+      "tools_used": ["meta_analysis", "ale_analysis", "cluster_analysis"],
+      "execution_time": 240.1,
+      "success": true,
+      "domain": "meta_analysis"
+    }
+  ],
+  "user_profiles": {
+    "user001": {
+      "preferred_domains": {
+        "fmri": 0.9,
+        "connectivity": 0.6,
+        "visualization": 0.7
+      },
+      "preferred_tools": {
+        "glm_analysis": 0.95,
+        "statistical_testing": 0.8,
+        "roi_extraction": 0.7
+      },
+      "query_complexity_preference": 0.6,
+      "avg_session_length": 45.0,
+      "common_keywords": {
+        "working": 5,
+        "memory": 5,
+        "prefrontal": 3,
+        "cortex": 4,
+        "activation": 6
+      }
+    },
+    "user002": {
+      "preferred_domains": {
+        "connectivity": 0.95,
+        "fmri": 0.7,
+        "network": 0.8
+      },
+      "preferred_tools": {
+        "connectivity_analysis": 0.9,
+        "roi_extraction": 0.8,
+        "time_series_extraction": 0.9
+      },
+      "query_complexity_preference": 0.4,
+      "avg_session_length": 30.0,
+      "common_keywords": {
+        "connectivity": 8,
+        "network": 6,
+        "dmn": 4,
+        "correlation": 5
+      }
+    },
+    "user003": {
+      "preferred_domains": {
+        "preprocessing": 0.8,
+        "fmri": 0.85,
+        "visualization": 0.9
+      },
+      "preferred_tools": {
+        "preprocessing": 0.9,
+        "glm_analysis": 0.8,
+        "visualization": 0.95
+      },
+      "query_complexity_preference": 0.5,
+      "avg_session_length": 60.0,
+      "common_keywords": {
+        "preprocess": 4,
+        "glm": 3,
+        "visualize": 5,
+        "activation": 3
+      }
+    }
+  },
+  "popular_patterns": [
+    {
+      "pattern_id": "domain:fmri_intent:analysis_tools:glm",
+      "frequency": 25,
+      "success_rate": 0.92,
+      "avg_execution_time": 55.7,
+      "example_queries": [
+        "analyze working memory activation", 
+        "run glm analysis on task data",
+        "compute statistical contrasts for fmri"
+      ]
+    },
+    {
+      "pattern_id": "domain:connectivity_intent:analysis_tools:connectivity",
+      "frequency": 18,
+      "success_rate": 0.89,
+      "avg_execution_time": 42.3,
+      "example_queries": [
+        "compute functional connectivity matrix",
+        "analyze resting state networks",
+        "extract connectivity patterns"
+      ]
+    },
+    {
+      "pattern_id": "domain:preprocessing_intent:analysis_tools:preprocessing",
+      "frequency": 15,
+      "success_rate": 0.95,
+      "avg_execution_time": 98.4,
+      "example_queries": [
+        "preprocess fmri data",
+        "apply motion correction",
+        "normalize brain images"
+      ]
+    },
+    {
+      "pattern_id": "domain:visualization_intent:visualization_tools:plotting",
+      "frequency": 12,
+      "success_rate": 0.98,
+      "avg_execution_time": 18.2,
+      "example_queries": [
+        "create brain activation maps",
+        "plot statistical results",
+        "visualize connectivity matrices"
+      ]
+    },
+    {
+      "pattern_id": "domain:machine_learning_intent:prediction_tools:ml",
+      "frequency": 8,
+      "success_rate": 0.75,
+      "avg_execution_time": 156.8,
+      "example_queries": [
+        "classify brain states",
+        "decode stimulus information",
+        "predict behavior from brain data"
+      ]
+    }
+  ]
+}

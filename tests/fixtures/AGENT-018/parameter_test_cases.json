@@ -1,0 +1,142 @@
+{
+  "parameter_validation_tests": [
+    {
+      "template_id": "simple_analysis",
+      "test_case": "valid_parameters",
+      "parameters": {
+        "input_file": "/tmp/test_data.nii.gz",
+        "output_dir": "/tmp/test_output",
+        "threshold": 0.05
+      },
+      "expected_valid": true,
+      "expected_errors": []
+    },
+    {
+      "template_id": "simple_analysis", 
+      "test_case": "missing_required_parameter",
+      "parameters": {
+        "output_dir": "/tmp/test_output",
+        "threshold": 0.05
+      },
+      "expected_valid": false,
+      "expected_errors": ["Parameter 'input_file' is required"]
+    },
+    {
+      "template_id": "simple_analysis",
+      "test_case": "parameter_out_of_range",
+      "parameters": {
+        "input_file": "/tmp/test_data.nii.gz",
+        "output_dir": "/tmp/test_output", 
+        "threshold": 0.5
+      },
+      "expected_valid": false,
+      "expected_errors": ["Parameter 'threshold' must be <= 0.1"]
+    },
+    {
+      "template_id": "simple_analysis",
+      "test_case": "wrong_parameter_type",
+      "parameters": {
+        "input_file": "/tmp/test_data.nii.gz",
+        "output_dir": "/tmp/test_output",
+        "threshold": "not_a_number"
+      },
+      "expected_valid": false,
+      "expected_errors": ["Parameter 'threshold' type error"]
+    }
+  ],
+  "parameter_substitution_tests": [
+    {
+      "template_id": "simple_analysis",
+      "parameters": {
+        "input_file": "/data/study1/func.nii.gz",
+        "output_dir": "/results/study1",
+        "threshold": 0.01
+      },
+      "expected_substitutions": {
+        "load_data.parameters.input_file": "/data/study1/func.nii.gz",
+        "analyze.parameters.threshold": 0.01,
+        "save_results.parameters.output_dir": "/results/study1"
+      }
+    },
+    {
+      "template_id": "complex_workflow",
+      "parameters": {
+        "bids_dataset": "/data/ds000114",
+        "subjects": ["sub-01", "sub-02", "sub-03"],
+        "task_name": "workingmemory",
+        "preprocessing_options": {
+          "smoothing_fwhm": 8.0,
+          "high_pass_filter": 0.008,
+          "motion_correction": true
+        },
+        "analysis_level": "both",
+        "parallel_jobs": 8
+      },
+      "expected_substitutions": {
+        "validate_input.parameters.dataset_path": "/data/ds000114",
+        "subject_preprocessing.parameters.subjects": ["sub-01", "sub-02", "sub-03"],
+        "subject_preprocessing.parameters.preprocessing_options.smoothing_fwhm": 8.0
+      }
+    }
+  ],
+  "default_parameter_tests": [
+    {
+      "template_id": "simple_analysis", 
+      "parameters": {
+        "input_file": "/tmp/test.nii.gz"
+      },
+      "expected_final_parameters": {
+        "input_file": "/tmp/test.nii.gz",
+        "output_dir": "/tmp/test_output",
+        "threshold": 0.05
+      }
+    },
+    {
+      "template_id": "complex_workflow",
+      "parameters": {
+        "bids_dataset": "/data/test_ds",
+        "task_name": "rest"
+      },
+      "expected_final_parameters": {
+        "bids_dataset": "/data/test_ds",
+        "subjects": ["sub-01", "sub-02"],
+        "task_name": "rest",
+        "preprocessing_options": {
+          "smoothing_fwhm": 6.0,
+          "high_pass_filter": 0.01,
+          "motion_correction": true
+        },
+        "analysis_level": "first_level",
+        "parallel_jobs": 4
+      }
+    }
+  ],
+  "type_conversion_tests": [
+    {
+      "parameter_type": "boolean",
+      "test_values": [
+        {"input": "true", "expected": true},
+        {"input": "false", "expected": false},
+        {"input": "1", "expected": true},
+        {"input": "0", "expected": false},
+        {"input": 1, "expected": true},
+        {"input": 0, "expected": false}
+      ]
+    },
+    {
+      "parameter_type": "list",
+      "test_values": [
+        {"input": "a,b,c", "expected": ["a", "b", "c"]},
+        {"input": ["x", "y", "z"], "expected": ["x", "y", "z"]},
+        {"input": "single_item", "expected": ["single_item"]}
+      ]
+    },
+    {
+      "parameter_type": "dict",
+      "test_values": [
+        {"input": "{\"key\": \"value\"}", "expected": {"key": "value"}},
+        {"input": {"existing": "dict"}, "expected": {"existing": "dict"}}
+      ]
+    }
+  ]
+}

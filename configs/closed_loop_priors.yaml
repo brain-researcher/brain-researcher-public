@@ -1,0 +1,29 @@
+# Tunable knobs for KG evidence priors and constraints
+# Used by agent/planner to control fallbacks and smoothing.
+
+# Minimum samples required before using a given evidence layer
+# Layers: dataset_id > dataset_family > global (task_family only)
+min_samples:
+  dataset_id: 5
+  dataset_family: 5
+  global: 0
+
+# Beta smoothing hyperparameters for success rate
+smoothing:
+  alpha: 1.0
+  beta: 1.0
+
+# Latency score bounds (ms) for converting p95 latency to [0,1]
+latency:
+  fast_ms: 1000
+  slow_ms: 60000
+
+# Prior weights (blending into planner score)
+weights:
+  evidence_prior: 0.15   # BR_EVIDENCE_PRIOR_WEIGHT fallback
+  kg_prior: 0.05         # BR_KG_PRIOR_WEIGHT fallback
+
+# Constraint mode defaults
+constraints:
+  mode: relaxed          # relaxed|strict
+  auto_relax: true       # if strict yields 0 matches, relax automatically

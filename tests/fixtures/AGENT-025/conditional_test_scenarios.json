@@ -1,0 +1,294 @@
+{
+  "conditional_scenarios": [
+    {
+      "name": "quality_threshold_decision",
+      "description": "Decision based on data quality metrics",
+      "condition": "preprocessing_result.framewise_displacement < 0.5 and preprocessing_result.dvars_score > 0.8",
+      "context": {
+        "preprocessing_result": {
+          "framewise_displacement": 0.3,
+          "dvars_score": 0.85,
+          "tsnr": 45.2,
+          "success": true
+        }
+      },
+      "expected_result": true,
+      "true_branch": ["advanced_analysis", "generate_detailed_report"],
+      "false_branch": ["basic_analysis", "flag_for_review"]
+    },
+    {
+      "name": "subject_count_threshold",
+      "description": "Group analysis decision based on subject count",
+      "condition": "len(successful_subjects) >= 15 and mean_quality_score > 0.7",
+      "context": {
+        "successful_subjects": ["sub-001", "sub-002", "sub-003", "sub-004", "sub-005", "sub-006", "sub-007", "sub-008", "sub-009", "sub-010", "sub-011", "sub-012", "sub-013", "sub-014", "sub-015", "sub-016"],
+        "mean_quality_score": 0.82
+      },
+      "expected_result": true,
+      "true_branch": ["group_glm", "permutation_testing", "meta_analysis"],
+      "false_branch": ["individual_analysis_only", "collect_more_data"]
+    },
+    {
+      "name": "multi_condition_complex",
+      "description": "Complex multi-condition decision for analysis pipeline",
+      "condition": "(analysis_type == 'group' and n_subjects >= 20) or (analysis_type == 'individual' and quality_score > 0.9)",
+      "context": {
+        "analysis_type": "group",
+        "n_subjects": 25,
+        "quality_score": 0.75
+      },
+      "expected_result": true,
+      "true_branch": ["full_statistical_analysis"],
+      "false_branch": ["limited_analysis", "data_collection_continuation"]
+    },
+    {
+      "name": "error_handling_decision",
+      "description": "Decision based on error conditions and recovery options",
+      "condition": "error_count == 0 or (error_count <= 3 and recovery_possible)",
+      "context": {
+        "error_count": 2,
+        "recovery_possible": true,
+        "critical_errors": 0,
+        "warning_count": 5
+      },
+      "expected_result": true,
+      "true_branch": ["continue_processing"],
+      "false_branch": ["abort_pipeline", "manual_intervention"]
+    },
+    {
+      "name": "modality_availability_check",
+      "description": "Multimodal analysis decision based on data availability",
+      "condition": "has_structural and has_functional and (has_dwi or has_perfusion)",
+      "context": {
+        "has_structural": true,
+        "has_functional": true,
+        "has_dwi": false,
+        "has_perfusion": true,
+        "has_fieldmap": true
+      },
+      "expected_result": true,
+      "true_branch": ["multimodal_analysis", "connectivity_analysis"],
+      "false_branch": ["single_modality_analysis"]
+    },
+    {
+      "name": "computational_resource_decision",
+      "description": "Decision based on available computational resources",
+      "condition": "available_memory_gb >= 32 and n_cores >= 8 and gpu_available",
+      "context": {
+        "available_memory_gb": 64,
+        "n_cores": 16,
+        "gpu_available": true,
+        "disk_space_gb": 500,
+        "estimated_runtime_hours": 4
+      },
+      "expected_result": true,
+      "true_branch": ["gpu_accelerated_analysis", "high_memory_operations"],
+      "false_branch": ["cpu_only_analysis", "reduced_memory_operations"]
+    }
+  ],
+  "switch_scenarios": [
+    {
+      "name": "analysis_method_selection",
+      "description": "Switch between different analysis methods",
+      "switch_variable": "analysis_method",
+      "switch_value": "glm",
+      "branches": {
+        "glm": ["first_level_glm", "second_level_glm", "contrasts"],
+        "ica": ["ica_decomposition", "component_selection", "dual_regression"],
+        "connectivity": ["seed_based_connectivity", "graph_metrics"],
+        "machine_learning": ["feature_extraction", "model_training", "validation"]
+      },
+      "default_branch": ["basic_analysis"],
+      "expected_branch": ["first_level_glm", "second_level_glm", "contrasts"]
+    },
+    {
+      "name": "preprocessing_strategy",
+      "description": "Switch between preprocessing strategies based on data type",
+      "switch_variable": "data_type",
+      "switch_value": "resting_state",
+      "branches": {
+        "task_based": ["task_based_preprocessing", "design_matrix_creation"],
+        "resting_state": ["resting_state_preprocessing", "nuisance_regression"],
+        "arterial_spin_labeling": ["asl_preprocessing", "perfusion_quantification"],
+        "diffusion": ["dwi_preprocessing", "tensor_fitting"]
+      },
+      "default_branch": ["generic_preprocessing"],
+      "expected_branch": ["resting_state_preprocessing", "nuisance_regression"]
+    },
+    {
+      "name": "error_recovery_strategy",
+      "description": "Switch between error recovery strategies",
+      "switch_variable": "error_type",
+      "switch_value": "memory_error",
+      "branches": {
+        "memory_error": ["reduce_memory_usage", "split_processing"],
+        "timeout_error": ["increase_timeout", "optimize_parameters"],
+        "data_error": ["data_validation", "manual_review"],
+        "software_error": ["fallback_software", "alternative_method"]
+      },
+      "default_branch": ["generic_error_handling"],
+      "expected_branch": ["reduce_memory_usage", "split_processing"]
+    }
+  ],
+  "nested_conditional_scenarios": [
+    {
+      "name": "hierarchical_quality_control",
+      "description": "Nested quality control decisions",
+      "structure": {
+        "level_1": {
+          "condition": "basic_qc_passed == true",
+          "true_branch": {
+            "level_2": {
+              "condition": "advanced_qc_score > 0.8",
+              "true_branch": {
+                "level_3": {
+                  "condition": "manual_review_score > 0.9",
+                  "true_branch": ["premium_analysis"],
+                  "false_branch": ["standard_analysis"]
+                }
+              },
+              "false_branch": ["basic_analysis"]
+            }
+          },
+          "false_branch": ["reject_data"]
+        }
+      },
+      "context": {
+        "basic_qc_passed": true,
+        "advanced_qc_score": 0.85,
+        "manual_review_score": 0.92
+      },
+      "expected_path": ["premium_analysis"]
+    },
+    {
+      "name": "progressive_analysis_complexity",
+      "description": "Progressive analysis based on data quality and resources",
+      "structure": {
+        "level_1": {
+          "condition": "data_quality >= 0.7",
+          "true_branch": {
+            "level_2": {
+              "condition": "n_subjects >= 20",
+              "true_branch": {
+                "level_3": {
+                  "condition": "computational_resources == 'high'",
+                  "true_branch": ["comprehensive_analysis", "advanced_statistics"],
+                  "false_branch": ["standard_group_analysis"]
+                }
+              },
+              "false_branch": ["small_sample_analysis"]
+            }
+          },
+          "false_branch": ["data_improvement_suggestions"]
+        }
+      },
+      "context": {
+        "data_quality": 0.82,
+        "n_subjects": 25,
+        "computational_resources": "high"
+      },
+      "expected_path": ["comprehensive_analysis", "advanced_statistics"]
+    }
+  ],
+  "expression_evaluation_tests": [
+    {
+      "name": "arithmetic_expressions",
+      "expressions": [
+        {
+          "expression": "mean_fd * 1000 < 500",
+          "context": {"mean_fd": 0.45},
+          "expected": true
+        },
+        {
+          "expression": "n_subjects / total_subjects > 0.8",
+          "context": {"n_subjects": 85, "total_subjects": 100},
+          "expected": true
+        },
+        {
+          "expression": "sqrt(variance) < threshold",
+          "context": {"variance": 0.16, "threshold": 0.5},
+          "expected": true
+        }
+      ]
+    },
+    {
+      "name": "string_operations",
+      "expressions": [
+        {
+          "expression": "data_type.startswith('task')",
+          "context": {"data_type": "task_rest"},
+          "expected": true
+        },
+        {
+          "expression": "'sub-' + subject_id",
+          "context": {"subject_id": "001"},
+          "expected": "sub-001"
+        }
+      ]
+    },
+    {
+      "name": "list_operations",
+      "expressions": [
+        {
+          "expression": "len(successful_subjects) >= min_subjects",
+          "context": {
+            "successful_subjects": ["sub-001", "sub-002", "sub-003", "sub-004", "sub-005"],
+            "min_subjects": 5
+          },
+          "expected": true
+        },
+        {
+          "expression": "'sub-010' in excluded_subjects",
+          "context": {
+            "excluded_subjects": ["sub-005", "sub-010", "sub-015"]
+          },
+          "expected": true
+        }
+      ]
+    },
+    {
+      "name": "complex_boolean_logic",
+      "expressions": [
+        {
+          "expression": "(qc_score > 0.8 and motion < 0.5) or (manual_override and reviewer_approved)",
+          "context": {
+            "qc_score": 0.75,
+            "motion": 0.6,
+            "manual_override": true,
+            "reviewer_approved": true
+          },
+          "expected": true
+        }
+      ]
+    }
+  ],
+  "edge_cases": [
+    {
+      "name": "missing_variables",
+      "condition": "undefined_variable > 0.5",
+      "context": {},
+      "expected_error": "NameError",
+      "fallback_behavior": "default_branch"
+    },
+    {
+      "name": "type_mismatch",
+      "condition": "string_value > numeric_threshold",
+      "context": {
+        "string_value": "high",
+        "numeric_threshold": 0.5
+      },
+      "expected_error": "TypeError",
+      "fallback_behavior": "error_branch"
+    },
+    {
+      "name": "division_by_zero",
+      "condition": "total_score / n_subjects > 0.8",
+      "context": {
+        "total_score": 100,
+        "n_subjects": 0
+      },
+      "expected_error": "ZeroDivisionError",
+      "fallback_behavior": "error_handling"
+    }
+  ]
+}

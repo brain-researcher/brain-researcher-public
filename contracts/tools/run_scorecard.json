@@ -1,0 +1,33 @@
+{
+  "name": "run_scorecard",
+  "tier": "advanced",
+  "surface_tier": "advanced",
+  "capability_family": "run_observability",
+  "description": "Return a normalized scorecard for a persisted run.",
+  "input_schema": {
+    "properties": {
+      "run_id": {
+        "title": "Run Id",
+        "type": "string"
+      },
+      "profile_id": {
+        "default": "external_coding_v1",
+        "title": "Profile Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ],
+    "title": "run_scorecardArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "run_scorecardDictOutput",
+    "type": "object"
+  },
+  "examples": [],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

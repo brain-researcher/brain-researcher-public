@@ -1,0 +1,26 @@
+services:
+  orchestrator:
+    image: ${REGISTRY:?set REGISTRY}/${GITHUB_REPOSITORY:?set GITHUB_REPOSITORY}/orchestrator:sha-${GITHUB_SHA:?set GITHUB_SHA}
+    pull_policy: always
+    profiles: !reset []
+    ports:
+      - "3001:3001"
+    volumes: !reset []
+
+  neurokg:
+    image: ${REGISTRY:?set REGISTRY}/${GITHUB_REPOSITORY:?set GITHUB_REPOSITORY}/neurokg:sha-${GITHUB_SHA:?set GITHUB_SHA}
+    pull_policy: always
+    # CI runs a sparse checkout and must exercise the pushed image contents.
+    volumes: !reset []
+
+  agent:
+    image: ${REGISTRY:?set REGISTRY}/${GITHUB_REPOSITORY:?set GITHUB_REPOSITORY}/agent:sha-${GITHUB_SHA:?set GITHUB_SHA}
+    pull_policy: always
+    environment:
+      SMOKE_TEST_MODE: "1"
+    volumes: !reset []
+
+  web-ui:
+    image: ${REGISTRY:?set REGISTRY}/${GITHUB_REPOSITORY:?set GITHUB_REPOSITORY}/web-ui:sha-${GITHUB_SHA:?set GITHUB_SHA}
+    pull_policy: always
+    volumes: !reset []

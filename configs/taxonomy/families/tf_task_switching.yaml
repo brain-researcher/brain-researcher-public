@@ -1,0 +1,184 @@
+# TODO CMD: flesh out task-switching paradigms (cue-based, voluntary, alternating runs) and align crosswalk IDs.
+id: tf_task_switching
+label: Task Switching & Cognitive Flexibility
+description: >
+  Switching task sets or classification rules across trials/blocks. Covers explicitly cued vs predictable
+  run-based switching, voluntary/memory-based switching, three-task sequences that reveal task-set inhibition (N−2),
+  bivalent-stimulus rule congruency effects, and neuropsychological set-shifting (WCST/Wisconsin Card Sorting Test, DCCS/Dimensional Change Card Sort, ID/ED/Intra-Extra Dimensional, TMT-B/Trail Making Test Part B).
+
+# ────────────────────────────────────────────────────────────────────────────────
+# LEVEL 2: Subfamilies, each with LEVEL 3 paradigms
+# ────────────────────────────────────────────────────────────────────────────────
+subfamilies:
+  - id: sf_explicit_cued_switching
+    label: Explicitly Cued / Predictable Switching
+    description: External cues or predictable sequences indicate the current task; classic sources of switch and mixing costs.
+    paradigms:
+      - name: Cued Task Switching (explicit cue)
+        aliases: [Explicit Cueing, Color–Shape / Number–Letter switching, Cued Switching, Explicit Task Switching, Task Switching with Cues, Color-Shape Task, Number-Letter Task]
+        typical_DVs: [switch_cost_ms, mixing_cost_ms, error_rate, preparation_effect_slope]
+        common_manipulations: [cue_validity, cue_transparency, CSI_ms, RSI_ms, response_mapping, proportion_switch, bivalent_vs_univalent_stimuli]
+        notes: Switch cost declines with preparation (longer CSI/cue-stimulus interval). Separate local switch vs global mixing costs.
+      - name: Alternating Runs (AABB)
+        aliases: [Predictable Switching, Rogers–Monsell, Rogers-Monsell Task, Alternating Run Task, AABB Switching, Fixed Alternation]
+        typical_DVs: [switch_cost_ms, mixing_cost_ms, error_rate]
+        common_manipulations: [run_length, RSI_ms, CSI_ms, sequence_predictability, response_repetition]
+        notes: Fixed alternation (e.g., AABB…); clean estimation of switch vs repeat trials. RSI = response-stimulus interval; CSI = cue-stimulus interval.
+      - name: Mixed vs Single-Task Blocks
+        aliases: [Global Mixing-Cost Design, Mixed Block Design, Single vs Mixed Blocks, Mixing Cost Paradigm]
+        typical_DVs: [mixing_cost_ms, error_rate]
+        common_manipulations: [block_type_mixed_vs_pure, task_set_size, stimulus_bivalency]
+        notes: Mixed blocks require maintaining two task sets → global "mixing" cost.
+      - name: Prepared vs Unprepared Switching
+        aliases: [Preparation Effect, Preparation Benefit, Task Preparation Paradigm, CSI Manipulation]
+        typical_DVs: [switch_cost_ms, preparation_effect_slope]
+        common_manipulations: [CSI_ms, foreperiod_distribution, cue_modality]
+        notes: Vary CSI (cue–stimulus interval) to quantify reconfiguration/preparation.
+
+  - id: sf_voluntary_memory_based_switching
+    label: Voluntary & Memory-Based Switching
+    description: Internally generated task selection or switching guided by memory of the required sequence/rule.
+    paradigms:
+      - name: Voluntary Task Switching (VTS)
+        aliases: [Free-Choice Switching, VTS Task, Voluntary Switching, Self-Directed Task Switching, Free Choice Task Switching]
+        typical_DVs: [voluntary_switch_rate, stay_bias, switch_cost_ms, error_rate]
+        common_manipulations: [reward_incentive, proportion_switch_goals, instruction_set (promote_switch_vs_stay)]
+        notes: Participants freely choose task each trial; reveals selection biases and control costs.
+      - name: Memory-Based Task Switching (no external cue)
+        aliases: [Internal Cueing, Memory-Guided Switching, Sequence-Based Switching, Internal Task Switching]
+        typical_DVs: [switch_cost_ms, sequence_adherence, error_rate]
+        common_manipulations: [sequence_length, memory_load, sequence_predictability, RSI_ms]
+        notes: Must remember which task comes next; highlights internal control demands. RSI = response-stimulus interval.
+      - name: Bilingual Language Switching (optional)
+        aliases: [Language Switching, Bilingual Switching, Language Task Switching, Code Switching]
+        typical_DVs: [switch_cost_ms, mixing_cost_ms, error_rate]
+        common_manipulations: [language_cue, language_proficiency, CSI_ms, RSI_ms]
+        notes: Kept here as a flexibility exemplar; cross-links to Language family. CSI = cue-stimulus interval; RSI = response-stimulus interval.
+
+  - id: sf_three_task_inhibition
+    label: Three-Task Sequences & Task-Set Inhibition
+    description: Using three tasks (A/B/C) to expose backward inhibition via N−2 repetition costs.
+    paradigms:
+      - name: N−2 Repetition Cost (ABC vs ABA)
+        aliases: [Backward Inhibition, N-2 Repetition Cost, N-2 Repetition Effect, Backward Inhibition Effect, Three-Task Switching]
+        typical_DVs: [n2_repetition_cost_ms, error_rate]
+        common_manipulations: [task_triple_sequence, RSI_ms, CSI_ms, response_repetition_control]
+        notes: Slower performance when returning to a recently abandoned task (ABA) vs novel (CBA). N−2 = second trial back.
+      - name: Task-Set Inertia / Residual Cost
+        aliases: [Residual Switch Cost, Task Set Inertia Effect, Residual Cost, Persistent Switch Cost]
+        typical_DVs: [residual_switch_cost_ms]
+        common_manipulations: [RSI_ms, CSI_ms, task_persistence_manipulations]
+        notes: Persistent carryover even with preparation; dissociable from cue processing. RSI = response-stimulus interval; CSI = cue-stimulus interval.
+
+  - id: sf_bivalent_rule_congruency
+    label: Bivalent Stimuli & Task-Rule Congruency
+    description: Same stimulus affords multiple task rules; congruent vs incongruent stimulus–rule pairings yield a TRCE.
+    paradigms:
+      - name: Task-Rule Congruency Effect (TRCE)
+        aliases: [Bivalent Stimuli Congruency, TRCE Effect, Task Rule Congruency, Bivalent Stimulus Congruency, Rule Congruency Effect]
+        typical_DVs: [trce_ms, error_rate]
+        common_manipulations: [stimulus_bivalency, task_rule_congruency, response_mapping, stimulus_repetition, response_repetition]
+        notes: E.g., parity vs magnitude classifications for digits; congruent/incongruent across rules.
+      - name: Univalent vs Bivalent Stimuli
+        aliases: [Bivalency Effect, Univalent Bivalent Comparison, Stimulus Bivalency Effect]
+        typical_DVs: [bivalency_cost_ms, error_rate]
+        common_manipulations: [bivalent_vs_univalent_stimuli, proportion_bivalent]
+        notes: Bivalency slows performance even on univalent trials (bivalency effect).
+
+  - id: sf_neuropsych_set_shifting
+    label: Neuropsychological Set-Shifting
+    description: Clinical/assessment tasks indexing flexibility; rule discovery/maintenance vs shifts.
+    paradigms:
+      - name: Wisconsin Card Sorting Test (WCST)
+        aliases: [WCST, Wisconsin Card Sort Test, Wisconsin Card Sorting Task, Card Sorting Test]
+        typical_DVs: [perseverative_errors, categories_completed, failures_to_maintain_set, total_errors]
+        common_manipulations: [rule_shift_frequency, feedback_validity, rule_dimensions (color/shape/number)]
+        notes: Gold-standard set-shifting; sensitive to frontal/executive dysfunction.
+      - name: Dimensional Change Card Sort (DCCS)
+        aliases: [DCCS Task, Dimensional Change Card Sort Task, DCCS, Card Sort Task]
+        typical_DVs: [post_switch_accuracy, switch_cost_ms]
+        common_manipulations: [pre_switch_dimension, post_switch_dimension, post_switch_block_length]
+        notes: Widely used in developmental cohorts (children).
+      - name: Intra-/Extra-Dimensional Set Shift (ID/ED; CANTAB)
+        aliases: [ID/ED Shift, IDED, Intra-Extra Dimensional Shift, CANTAB IDED, Intradimensional Extradimensional Shift]
+        typical_DVs: [stages_completed, errors_to_criterion, ED_shift_cost]
+        common_manipulations: [compound_stimuli, intradimensional_vs_extradimensional, reversal_stage_presence]
+        notes: Distinguishes within-dimension (ID) vs across-dimension (ED) shifts. CANTAB = Cambridge Neuropsychological Test Automated Battery.
+      - name: Trail Making Test Part B (TMT-B)
+        aliases: [TMT-B, Trail Making Test B, Trail Making Part B, TMT Part B, Trail Making Test Part B]
+        typical_DVs: [completion_time_ms, errors_count]
+        common_manipulations: [path_complexity, distractor_density]
+        notes: Alternating numbers/letters; paper-and-pencil flexibility proxy.
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalks & constructs (fill URIs later)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Task Switching (Cued)
+    - Wisconsin Card Sorting Test
+    - Dimensional Change Card Sort
+    - Intra-/Extra-Dimensional Set Shift
+    - Trail Making Test – Part B
+    - Number–Letter Task
+    - Color–Shape Task
+    - Voluntary Task Switching
+  cogpo_candidate_labels:
+    - Task Switching (Cued)
+    - Wisconsin Card Sorting Test
+    - Dimensional Change Card Sort
+    - Intra-/Extra-Dimensional Set Shift
+    - Trail Making Test – Part B
+    - Number–Letter Task
+    - Color–Shape Task
+    - Voluntary Task Switching
+constructs:
+  primary: [Cognitive Flexibility, Task-Set Reconfiguration]
+  secondary: [Task-Set Inhibition (N−2), Proactive vs Reactive Control, Preparation (CSI/RSI)]
+uri_brainmap: []
+uri_cogpo: []
+status: plausible
+provenance:
+  - source: task_families_master_20.yaml + switching expansion
+    fields: [subfamilies, paradigms, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, task_current, task_previous, switch_flag, response, correct, rt]
+  per_subfamily:
+    sf_explicit_cued_switching:
+      events_columns: [onset, duration, trial_type, task_cue, cue_validity, CSI_ms, RSI_ms, run_length, proportion_switch, bivalent_flag, response, correct, rt]
+      hed_examples:
+        - "Cognitive-control, Task-switching, Explicit-cue, Switch"
+        - "Cognitive-control, Task-switching, Explicit-cue, Repeat"
+    sf_voluntary_memory_based_switching:
+      events_columns: [onset, duration, trial_type, free_choice_flag, task_choice, stay_switch, incentive_condition, response, correct, rt]
+      hed_examples:
+        - "Cognitive-control, Task-selection, Voluntary-switch"
+    sf_three_task_inhibition:
+      events_columns: [onset, duration, trial_type, sequence_triplet, n2_relation (ABA/CBA), n2_repeat_flag, RSI_ms, CSI_ms, response, correct, rt]
+      hed_examples:
+        - "Cognitive-control, Task-set-inhibition, N-2-repetition-cost"
+    sf_bivalent_rule_congruency:
+      events_columns: [onset, duration, trial_type, stimulus_bivalency, task_rule_congruency, stimulus_repetition, response_repetition, response, correct, rt]
+      hed_examples:
+        - "Cognitive-control, Rule-congruency, Bivalent-stimulus"
+    sf_neuropsych_set_shifting:
+      events_columns:
+        - onset
+        - duration
+        - trial_type
+        - sorting_rule            # WCST/DCCS/IDED
+        - feedback                # correct/incorrect
+        - rule_change_flag
+        - stage                   # IDED stages
+        - errors_cumulative
+        - response
+        - correct
+        - rt
+      hed_examples:
+        - "Clinical-assessment, WCST, Rule-shift"
+        - "Clinical-assessment, ID-ED, Extra-dimensional-shift"

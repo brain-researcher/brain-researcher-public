@@ -1,0 +1,86 @@
+name: NeuroKG Definition/Edge Review
+description: Review node definitions, edges, and multihop reasoning quality.
+title: "[KG] "
+labels:
+  - area/neurokg
+  - type/scientific-review
+body:
+  - type: input
+    id: node_name
+    attributes:
+      label: Node name
+      placeholder: Working memory
+    validations:
+      required: true
+
+  - type: input
+    id: node_id
+    attributes:
+      label: Node ID
+      placeholder: neurostore_task:...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: review_type
+    attributes:
+      label: Review type
+      options:
+        - Missing/inaccurate definition
+        - Edge quality issue
+        - Multihop reasoning issue
+        - Evidence grounding issue
+        - Prompt framing issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: edge_info
+    attributes:
+      label: Edge/path under review
+      placeholder: source -> relation -> target, or multihop path
+    validations:
+      required: true
+
+  - type: dropdown
+    id: evidence_setting
+    attributes:
+      label: Evidence setting used
+      options:
+        - Show unverified evidence ON
+        - Show unverified evidence OFF
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: multihop_run
+    attributes:
+      label: Did you run multihop reasoning?
+      options:
+        - Yes
+        - No
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested fix
+      placeholder: Add qualifiers, change relation type, improve definition
+    validations:
+      required: true

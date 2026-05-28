@@ -1,0 +1,84 @@
+# Example configuration for multi-backend runtime support
+
+backends:
+  # Kubernetes backend configuration
+  kubernetes:
+    enabled: true
+    namespace: "brain-researcher"
+    image_pull_policy: "IfNotPresent"
+    service_account: "brain-researcher-sa"
+    node_selector:
+      node-type: "compute"
+    tolerations:
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+    backoff_limit: 3
+
+  # SLURM backend configuration
+  slurm:
+    enabled: true
+    host: "hpc-cluster.example.com"
+    username: "brain_user"
+    key_file: "/home/user/.ssh/id_rsa"
+    # password: "alternative_to_key"
+    partition: "gpu"
+    account: "neuroimaging"
+    qos: "normal"
+    modules:
+      - "singularity/3.8.0"
+      - "cuda/11.8"
+    container_runtime: "singularity"
+    scratch_dir: "/scratch/brain_researcher"
+
+  # AWS Batch backend configuration
+  aws_batch:
+    enabled: true
+    region: "us-east-1"
+    job_queue: "brain-researcher-queue"
+    job_definition: "brain-researcher-base"
+    role_arn: "arn:aws:iam::123456789012:role/BrainResearcherBatchRole"
+    subnets:
+      - "subnet-12345678"
+      - "subnet-87654321"
+    security_groups:
+      - "sg-12345678"
+    # AWS credentials (optional, uses default auth chain if not provided)
+    # access_key_id: "<AWS_ACCESS_KEY_ID>"
+    # secret_access_key: "<AWS_SECRET_ACCESS_KEY>"
+
+# Default backend selection strategy
+default_strategy: "most_available"  # Options: fastest, cheapest, most_available, preferred, load_balanced
+
+# Preferred backend order (used with "preferred" strategy)
+preferred_order:
+  - "kubernetes"
+  - "slurm"
+  - "aws_batch"
+
+# Resource limits and defaults
+resource_limits:
+  max_cpu: 64
+  max_memory_gb: 512
+  max_gpu: 8
+  max_walltime_minutes: 2880  # 48 hours
+
+# Cost optimization settings
+cost_optimization:
+  enabled: true
+  max_cost_per_job: 50.0  # USD
+  prefer_spot_instances: true
+
+# Monitoring and logging
+monitoring:
+  health_check_interval: 60  # seconds
+  capacity_cache_ttl: 300    # seconds
+  job_status_polling: 30     # seconds
+  log_retention_days: 7
+
+# Failover settings
+failover:
+  max_attempts: 3
+  retry_delay: 1.0  # seconds
+  exponential_backoff: true

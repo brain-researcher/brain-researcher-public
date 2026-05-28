@@ -1,0 +1,190 @@
+{
+  "recommendation_test_cases": [
+    {
+      "test_case": "similar_query_recommendations",
+      "input_query": "analyze working memory activation in frontal cortex",
+      "user_id": "user001",
+      "expected_recommendations": [
+        {
+          "query": "analyze working memory activation in prefrontal cortex",
+          "category": "similar",
+          "confidence_range": [0.8, 1.0],
+          "reason": "Similar to your current query about fmri analysis"
+        },
+        {
+          "query": "compare young vs old adults on working memory task",
+          "category": "similar", 
+          "confidence_range": [0.6, 0.8],
+          "reason": "Similar to your current query about fmri analysis"
+        }
+      ]
+    },
+    {
+      "test_case": "next_step_recommendations",
+      "input_query": "preprocess fmri data with motion correction",
+      "user_id": "user003",
+      "expected_recommendations": [
+        {
+          "query": "Run GLM analysis on preprocessed data",
+          "category": "next_step",
+          "confidence_range": [0.7, 0.9],
+          "reason": "Common next step in analysis workflow"
+        },
+        {
+          "query": "Perform quality control checks",
+          "category": "next_step",
+          "confidence_range": [0.6, 0.8],
+          "reason": "Common next step in analysis workflow"
+        }
+      ]
+    },
+    {
+      "test_case": "popular_recommendations",
+      "input_query": "analyze brain connectivity patterns",
+      "user_id": null,
+      "expected_recommendations": [
+        {
+          "query": "compute functional connectivity matrix", 
+          "category": "popular",
+          "confidence_range": [0.6, 0.8],
+          "reason": "Popular connectivity analysis"
+        },
+        {
+          "query": "extract time series from default mode network regions",
+          "category": "popular",
+          "confidence_range": [0.5, 0.7],
+          "reason": "Popular connectivity analysis"
+        }
+      ]
+    },
+    {
+      "test_case": "personalized_recommendations", 
+      "input_query": "perform statistical analysis",
+      "user_id": "user001",
+      "expected_personalization": {
+        "domain_boost": {
+          "fmri": 0.9,
+          "connectivity": 0.6
+        },
+        "tool_preference": {
+          "glm_analysis": 0.95,
+          "statistical_testing": 0.8
+        },
+        "complexity_preference": 0.6
+      },
+      "expected_recommendations": [
+        {
+          "query": "run glm analysis with statistical testing",
+          "category": "personalized",
+          "confidence_range": [0.8, 1.0],
+          "personalized": true
+        }
+      ]
+    },
+    {
+      "test_case": "multi_domain_query",
+      "input_query": "preprocess data and run connectivity analysis",
+      "user_id": "user002",
+      "expected_recommendations": [
+        {
+          "query": "extract time series after preprocessing",
+          "category": "next_step",
+          "confidence_range": [0.7, 0.9]
+        },
+        {
+          "query": "compute connectivity matrix from preprocessed data",
+          "category": "similar", 
+          "confidence_range": [0.6, 0.8]
+        }
+      ]
+    }
+  ],
+  "similarity_test_cases": [
+    {
+      "query1": "analyze working memory activation",
+      "query2": "examine working memory neural activity", 
+      "expected_similarity_range": [0.7, 0.9],
+      "method": "hybrid"
+    },
+    {
+      "query1": "fmri connectivity analysis",
+      "query2": "functional magnetic resonance imaging connectivity analysis",
+      "expected_similarity_range": [0.8, 1.0],
+      "method": "lexical"
+    },
+    {
+      "query1": "preprocess brain images",
+      "query2": "classify brain states",
+      "expected_similarity_range": [0.1, 0.3],
+      "method": "hybrid"
+    },
+    {
+      "query1": "analyze prefrontal cortex activation",
+      "query2": "examine pfc neural activity",
+      "expected_similarity_range": [0.6, 0.8],
+      "method": "hybrid",
+      "note": "Should handle abbreviations"
+    }
+  ],
+  "cold_start_scenarios": [
+    {
+      "scenario": "new_user_no_history",
+      "user_id": "new_user",
+      "input_query": "analyze brain activation",
+      "expected_strategy": "popular_recommendations",
+      "expected_recommendation_count": [3, 5],
+      "expected_categories": ["popular"]
+    },
+    {
+      "scenario": "new_domain_for_existing_user",
+      "user_id": "user001",
+      "input_query": "perform diffusion tensor imaging analysis",
+      "expected_strategy": "mixed_popular_and_similar",
+      "expected_recommendation_count": [3, 5],
+      "expected_categories": ["popular", "similar"]
+    }
+  ],
+  "trending_topics": [
+    {
+      "topic": "machine_learning",
+      "trend_score": 0.85,
+      "recent_count": 15,
+      "example_queries": [
+        "classify brain states using deep learning",
+        "decode cognitive states with neural networks"
+      ]
+    },
+    {
+      "topic": "connectivity",
+      "trend_score": 0.92,
+      "recent_count": 22,
+      "example_queries": [
+        "dynamic functional connectivity analysis",
+        "effective connectivity modeling"
+      ]
+    },
+    {
+      "topic": "preprocessing",
+      "trend_score": 0.68,
+      "recent_count": 12,
+      "example_queries": [
+        "motion artifact removal",
+        "spatial normalization optimization"
+      ]
+    }
+  ],
+  "feedback_scenarios": [
+    {
+      "original_query": "analyze working memory activation",
+      "recommended_query": "compare working memory between groups",
+      "feedback": "helpful",
+      "expected_learning": "increase_similarity_threshold_for_comparative_queries"
+    },
+    {
+      "original_query": "preprocess fmri data",
+      "recommended_query": "classify emotional states",
+      "feedback": "not_helpful", 
+      "expected_learning": "decrease_cross_domain_recommendations"
+    }
+  ]
+}

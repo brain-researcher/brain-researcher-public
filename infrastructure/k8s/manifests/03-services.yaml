@@ -1,0 +1,415 @@
+# Service definitions for Brain Researcher platform
+# Provides service discovery and load balancing for all components
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # For AWS
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9113"  # nginx-prometheus-exporter port
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+    - name: metrics
+      port: 9113
+      targetPort: 9113
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/component: proxy
+  sessionAffinity: None
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: mcp
+    app.kubernetes.io/component: mcp
+    app.kubernetes.io/part-of: brain-researcher-platform
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 7000
+      targetPort: 7000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: mcp
+    app.kubernetes.io/component: mcp
+  sessionAffinity: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/component: orchestrator
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3001"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+      protocol: TCP
+    - name: websocket
+      port: 3002
+      targetPort: 3002
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/component: orchestrator
+  sessionAffinity: ClientIP  # For WebSocket connections
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 300
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: agent
+  sessionAffinity: ClientIP  # For stateful conversations
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 1800  # 30 minutes for long conversations
+
+---
+# Headless service for StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-headless-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: agent-headless
+    app.kubernetes.io/part-of: brain-researcher-platform
+spec:
+  clusterIP: None
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: agent
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neurokg-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: neurokg
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: neurokg
+  sessionAffinity: None
+
+---
+# Headless service for BR-KG StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: neurokg-headless-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: neurokg-headless
+    app.kubernetes.io/part-of: brain-researcher-platform
+spec:
+  clusterIP: None
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: neurokg
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: niclip-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: niclip
+    app.kubernetes.io/component: niclip
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8001"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: niclip
+    app.kubernetes.io/component: niclip
+  sessionAffinity: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-ui-service
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: web-ui
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    prometheus.io/scrape: "false"  # Next.js doesn't expose metrics by default
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: web-ui
+    app.kubernetes.io/component: frontend
+  sessionAffinity: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9121"  # redis_exporter port
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+    - name: metrics
+      port: 9121
+      targetPort: 9121
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+  sessionAffinity: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9187"  # postgres_exporter port
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+    - name: metrics
+      port: 9187
+      targetPort: 9187
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+  sessionAffinity: None
+
+---
+# Headless service for PostgreSQL StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-headless-service
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database-headless
+    app.kubernetes.io/part-of: brain-researcher-platform
+spec:
+  clusterIP: None
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: brain-researcher-platform
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: monitoring
+  sessionAffinity: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization
+    app.kubernetes.io/part-of: brain-researcher-platform
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization
+  sessionAffinity: ClientIP  # For dashboard sessions
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 1800
+
+---
+# Service for external access to Grafana (optional)
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-external-service
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization-external
+    app.kubernetes.io/part-of: brain-researcher-platform
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 3100
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization
+  sessionAffinity: ClientIP
+
+---
+# Service Monitor for Prometheus Operator (uncomment if using Prometheus Operator)
+# apiVersion: monitoring.coreos.com/v1
+# kind: ServiceMonitor
+# metadata:
+#   name: brain-researcher-services
+#   namespace: brain-researcher-monitoring
+#   labels:
+#     app.kubernetes.io/name: brain-researcher
+#     prometheus: kube-prometheus
+# spec:
+#   namespaceSelector:
+#     matchNames:
+#       - brain-researcher-core
+#       - brain-researcher-data
+#   selector:
+#     matchLabels:
+#       prometheus.io/scrape: "true"
+#   endpoints:
+#     - port: metrics
+#       path: /metrics
+#       interval: 30s
+#       scrapeTimeout: 10s

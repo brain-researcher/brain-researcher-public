@@ -1,0 +1,4328 @@
+# Primary mapping rules for BR-KG scoring and ONVOC anchoring.
+# Runtime components (for example scorer/onvoc mapper flows) may read this file
+# directly, so updates should be treated as production-facing config changes.
+version: 0.0.1
+backbone:
+  onvoc_tree: configs/onvoc_tree.yaml
+family_levels:
+- l1
+- l2
+- l3
+channels:
+  lambda_by_channel:
+    task: 1.0
+    contrast: 0.3
+    phenotype: 0.5
+    modality: 0.3
+    hed: 0.4
+  caps:
+    task: 1.0
+    contrast: 1.0
+    phenotype: 1.0
+    modality: 1.0
+    hed: 1.0
+thresholds:
+  min_weight_if_anchored: 0.4
+  hard_topk: 2
+  unassigned_if_all_below: 0.3
+  cannot_link_cap: 0.1
+defaults:
+  accept:
+    min_score: 0.85
+    min_margin: 0.1
+    allow_multi: false
+  weights:
+    id_exact: 1.0
+    slug_exact: 0.9
+    bids_exact: 0.9
+    hed_all: 0.45
+    hed_any: 0.35
+    keywords_all: 0.35
+    keywords_any: 0.25
+    regex: 0.25
+anchors:
+- family_id: onvoc_0000001
+  onvoc_uri: ONVOC_0000001
+  label: Behaviors
+  level: 1
+  seed_tasks: []
+- family_id: onvoc_0000002
+  onvoc_uri: ONVOC_0000002
+  label: Brain Regions
+  level: 1
+  seed_tasks: []
+- family_id: onvoc_0000003
+  onvoc_uri: ONVOC_0000003
+  label: Disorders
+  level: 1
+  seed_tasks: []
+- family_id: onvoc_0000004
+  onvoc_uri: ONVOC_0000004
+  label: Drugs and Medications
+  level: 1
+  seed_tasks:
+  - slug: acupuncture-task
+  matchers:
+    keywords_any:
+    - acupuncture
+    - needle stimulation
+- family_id: onvoc_0000005
+  onvoc_uri: ONVOC_0000005
+  label: Psychological Concepts
+  level: 1
+  seed_tasks: []
+- family_id: onvoc_0000006
+  onvoc_uri: ONVOC_0000006
+  label: Sensation and Perception
+  level: 1
+  seed_tasks: []
+- family_id: onvoc_0000007
+  onvoc_uri: ONVOC_0000007
+  label: Study Design
+  level: 1
+  seed_tasks: []
+- family_id: onvoc_0000008
+  onvoc_uri: ONVOC_0000008
+  label: Symptoms
+  level: 1
+  seed_tasks: []
+- family_id: onvoc_0000738
+  onvoc_uri: ONVOC_0000738
+  label: Population Characteristics
+  level: 1
+  seed_tasks: []
+- family_id: onvoc_0000246
+  onvoc_uri: ONVOC_0000246
+  label: ADHD Medications Nonstimulants
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000426
+  onvoc_uri: ONVOC_0000426
+  label: Action
+  level: 2
+  seed_tasks:
+  - slug: finger-tapping
+  - slug: action-imitation
+  - slug: action-observation
+  - slug: action-perception-loop
+  matchers:
+    keywords_any:
+    - finger tapping
+    - finger-tapping
+    - motor action
+    - action imitation
+    - action observation
+    - action perception
+    - bimanual
+    - coordination
+- family_id: onvoc_0000514
+  onvoc_uri: ONVOC_0000514
+  label: Age
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000247
+  onvoc_uri: ONVOC_0000247
+  label: Anesthetics
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000248
+  onvoc_uri: ONVOC_0000248
+  label: Anti Inflammatory
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000249
+  onvoc_uri: ONVOC_0000249
+  label: Anti Psychotics
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000250
+  onvoc_uri: ONVOC_0000250
+  label: Antidepressants
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000251
+  onvoc_uri: ONVOC_0000251
+  label: Anxiolytics
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000427
+  onvoc_uri: ONVOC_0000427
+  label: Attention
+  level: 2
+  seed_tasks:
+  - slug: spatial-attention
+  - slug: sustained-attention
+  - slug: ax-cpt
+  - slug: simon
+  - slug: posner-cueing
+  - slug: visuospatial-cueing
+  - slug: continuous-performance
+  - slug: continuous-performance-test-ax-version
+  - slug: penn-continuous-performance
+  - slug: short-penn-continuous-performance-test-number-and-letter-version
+  - slug: antisaccade-prosaccade
+  - slug: incentive-modulated-antisaccade
+  - slug: cued-explicit-recognition
+  - slug: contextual-cueing
+  - slug: cue-approach
+  - slug: cue-based-expectation
+  - slug: cue-based-expectancy-paradigm-combining-emotion-regulation
+  - slug: non-spatial-cuing-paradigm
+  matchers:
+    keywords_any:
+    - simon
+    - stimulus-response
+    - stimulus response
+    - posner
+    - spatial cueing
+    - cue validity
+    - continuous performance
+    - cpt
+    - antisaccade
+    - anti-saccade
+    - cue
+    - visual search
+    - set size
+    - distractor
+    - target present
+    - target absent
+    - non-spatial cuing
+    regex:
+    - \banti[- ]?saccade\b
+  exclude:
+    keywords:
+    - visual search
+    - set size
+    - target present
+    - target absent
+  accept:
+    min_margin: 0.15
+- family_id: onvoc_0000027
+  onvoc_uri: ONVOC_0000027
+  label: Brain Networks
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000252
+  onvoc_uri: ONVOC_0000252
+  label: Cannabinoids
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000253
+  onvoc_uri: ONVOC_0000253
+  label: Contraception
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000028
+  onvoc_uri: ONVOC_0000028
+  label: Cortical Regions
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000428
+  onvoc_uri: ONVOC_0000428
+  label: Decision Making
+  level: 2
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seed_tasks:
+  - slug: 2-stage-decision
+  - slug: alternating-runs-paradigm
+  - slug: angling-risk
+  - slug: angling-risk-task-always-sunny
+  - slug: behavioral-investment-allocation-strategy
+  - slug: becker-degroot-marschak-bdm-procedure
+  - slug: iowa-gambling
+  - slug: cambridge-gambling
+  - slug: probabilistic-gambling
+  - slug: gambling
+  - slug: gambling-fmri-task-paradigm
+  - slug: balloon-analogue-risk
+  - slug: delay-discounting-titration
+  - slug: five-trial-adjusting-delay-discounting
+  - slug: kirby-delay-discounting
+  - slug: temporal-discounting
+  matchers:
+    keywords_any:
+    - two-stage decision
+    - model-based
+    - model free
+    - risk task
+    - angling risk
+    - rule acquisition
+    - investment
+    - auction
+    - bdm
+    - iowa gambling
+    - igt
+    - balloon analogue risk
+    - bart
+    - delay discounting
+    - hyperbolic discounting
+    regex:
+    - \b(k|kappa)\s*=\s*\d
+- family_id: onvoc_0000254
+  onvoc_uri: ONVOC_0000254
+  label: Dementia Medication
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000515
+  onvoc_uri: ONVOC_0000515
+  label: Education Levels
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000429
+  onvoc_uri: ONVOC_0000429
+  label: Emotion
+  level: 2
+  seed_tasks:
+  - slug: mid
+  - slug: reward-processing
+  - slug: monetary-incentive-delay
+  - slug: emotional-regulation
+  - slug: dot-mot
+  - slug: fmri-facial-emotion-paradigm
+  - slug: emotion-identification
+  - slug: immersive-virtual-reality-assay-for-target-regulation-of-emotion-behavioral-and-self-report
+  matchers:
+    keywords_any:
+    - reward processing
+    - monetary incentive delay
+    - mid task
+    - affective
+    - emotion
+    - emotion regulation
+    - emotion identification
+    - facial emotion
+    - virtual reality
+    regex:
+    - \bemotion regulation\b
+- family_id: onvoc_0000516
+  onvoc_uri: ONVOC_0000516
+  label: Ethnicities
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000430
+  onvoc_uri: ONVOC_0000430
+  label: Executive Function
+  level: 2
+  seed_tasks:
+  - slug: eriksen-flanker
+  - slug: go-no-go
+  - slug: stop-signal
+  matchers:
+    keywords_any:
+    - go no go
+    - stop signal
+    - response inhibition
+    - executive function
+    - flanker
+- family_id: onvoc_0000517
+  onvoc_uri: ONVOC_0000517
+  label: Family Relations
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000518
+  onvoc_uri: ONVOC_0000518
+  label: Handedness
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000519
+  onvoc_uri: ONVOC_0000519
+  label: Health
+  level: 2
+  seed_tasks:
+  - slug: spielberger-s-state-trait-anxiety-questionnaire
+  - slug: tobacco-craving-questionnaire
+  - slug: social-communication-questionnaire
+  - slug: broad-autism-phenotype-questionnaire
+  - slug: big-five-questionnaire
+  - slug: social-competence-questionnaire
+  - slug: early-childhood-behavioral-questionnaire
+  - slug: multidimensional-personality-questionnaire
+  - slug: eysenck-personality-questionnaire
+  - slug: future-time-perspective-questionnaire
+  - slug: ten-item-personality-questionnaire
+  - slug: i7-impulsiveness-and-venturesomeness-questionnaire
+  - slug: self-regulation-questionnaire
+  - slug: treatment-self-regulation-questionnaire
+  - slug: eating-questionnaire
+  - slug: five-facet-mindfulness-questionnaire
+  - slug: selection-optimization-compensation-soc-questionnaire
+  - slug: emotion-regulation-questionnaire
+  - slug: aesthetic-exprience-questionnaire-aeq
+  - slug: patient-health-questionnaire-phq-9
+  - slug: autism-diagnostic-interview-revised
+  - slug: autism-diagnostic-observation-schedule
+  - slug: autism-spectrum-quotient
+  - slug: adult-adhd-clinical-diagnostic-scale
+  - slug: adult-adhd-self-report-scale
+  - slug: adolescent-symptom-inventory
+  - slug: adult-behavior-checklist
+  - slug: regulated-heat-stimulation
+  - slug: behavioral-rating-inventory-of-executive-function
+  - slug: barratt-impulsiveness-scale
+  - slug: barratt-impulsiveness-scale-bis
+  - slug: brief-psychiatric-rating-scale
+  - slug: bprs
+  - slug: structured-clinical-interview-for-diagnostic-and-statistical-manual-of-mental-disorders-dsm-iv
+  - slug: anxiety-sensitivity-index-3
+  - slug: anxiety-sensitivity-index-3-asi-3
+  - slug: asi-3
+  - slug: anxiety-sensitivity-index
+  - slug: brief-risk-resilience-index-for-screening-brisc
+  - slug: brisc
+  - slug: brief-symptom-inventory
+  - slug: aberrant-behavior-checklist-community
+  - slug: battelle-developmental-inventory
+  - slug: brief-self-control-scale
+  - slug: broader-phenotype-autism-symptom-scale
+  - slug: chapman-social-anhedonia-scale
+  - slug: children-s-communication-checklist
+  - slug: children-s-memory-scale
+  - slug: children-s-psychiatric-rating-scale
+  - slug: children-s-yale-brown-obsessive-compulsive-scale
+  - slug: communication-and-symbolic-behavior-scales-development-profile
+  - slug: consideration-of-future-consequences-scale
+  - slug: couple-coercion-scale
+  - slug: daily-inventory-of-stressful-events-dise
+  - slug: differential-ability-scales
+  - slug: duckworth-s-short-grit-scale
+  - slug: early-social-and-communication-scales
+  - slug: eckblad-and-chapman-s-hypomanic-personality-scale
+  - slug: edinburgh-handedness-inventory
+  - slug: emotion-regulation-strategies-scale
+  - slug: future-orientation-scale-of-the-time-perspective-survey-child-version
+  - slug: generalized-self-efficacy-scale
+  - slug: glasgow-coma-scale
+  - slug: hopkins-symptom-checklist
+  - slug: hypomanic-personality-scale
+  - slug: international-physical-activity-questionnaire-short-form-ipaq-sf
+  - slug: leiter-international-performance-scale
+  - slug: loneliness-rating-scale
+  - slug: mindful-attention-and-awareness-scale
+  - slug: macarthur-communicative-development-inventories
+  - slug: modified-erickson-scale-of-communication-attitudes
+  - slug: mullen-scales-of-early-learning
+  - slug: multidimensional-personality-questionnaire-control-vs-impulsivity-scale
+  - slug: nih-self-efficacy-scale
+  - slug: nih-toolbox-hearing-handicap-inventory
+  - slug: parent-child-coercion-scale
+  - slug: parent-cognition-scale
+  - slug: parent-rated-stress-nih-perceived-stress-scale
+  - slug: parrott-scale
+  - slug: pdd-behavior-inventory
+  - slug: pearlin-mastery-scale
+  - slug: pleasantness-rating-task
+  - slug: preschool-language-scale
+  - slug: reynell-developmental-language-scales
+  - slug: sides-affect-dysregulation-scale-child-reported
+  - slug: stanford-binet-intelligence-scales
+  - slug: state-trait-anger-expression-inventory-2-staxi-2
+  - slug: theories-of-willpower-scale
+  - slug: unified-parkinson-s-disease-rating-scale
+  - slug: vineland-adaptive-behavior-scales
+  - slug: visual-analogue-scales
+  - slug: wechsler-abbreviated-scale-of-intelligence
+  - slug: wechsler-adult-intelligence-scale-revised
+  - slug: wechsler-intelligence-scale-for-children-revised
+  - slug: wechsler-memory-scale-fourth-edition
+  - slug: zimbardo-time-perspective-inventory
+  - slug: center-for-epidemiologic-studies-depression-scale
+  - slug: ces-d
+  - slug: chapman-infrequency-scale
+  - slug: chapman-magical-ideation-scale
+  - slug: chapman-perceptual-aberration-scale
+  - slug: chapman-physical-anhedonia-scale
+  - slug: child-behavior-checklist
+  - slug: childrens-yale-brown-obsessive-compulsive-scale
+  - slug: cy-bocs
+  - slug: conners-comprehensive-behavior-rating-scales
+  - slug: dickman-impulsivity-inventory
+  - slug: duckworths-short-grit-scale
+  - slug: hamilton-psychiatric-rating-scale-for-depression
+  - slug: ham-d
+  - slug: kessler-psychological-distress-scale-k6
+  - slug: k6
+  - slug: maudsley-obsessive-compulsive-inventory
+  - slug: minnesota-multiphasic-personality-inventory
+  - slug: mmpi
+  - slug: pittsburgh-sleep-quality-index
+  - slug: positive-and-negative-affect-scale
+  - slug: panas
+  - slug: scale-for-the-assessment-of-negative-symptoms
+  - slug: sans
+  - slug: scale-for-the-assessment-of-positive-symptoms
+  - slug: saps
+  - slug: social-responsiveness-scale
+  - slug: srs
+  - slug: symptom-checklist-90-revised
+  - slug: scl-90-r
+  - slug: temperament-and-character-inventory
+  - slug: tci
+  - slug: upps-p-impulsivity-scale
+  - slug: upps-p
+  - slug: young-mania-rating-scale
+  - slug: ymrs
+  - slug: zuckerman-sensation-seeking-scale
+  - slug: adult-attachment-interview
+  - slug: behavioral-approach-inhibition-systems
+  matchers:
+    keywords_any:
+    - questionnaire
+    - inventory
+    - scale
+    - diagnostic
+    - interview
+    - checklist
+    - autism
+    - adhd
+- family_id: onvoc_0000506
+  onvoc_uri: ONVOC_0000506
+  label: Hearing
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000520
+  onvoc_uri: ONVOC_0000520
+  label: Intelligence
+  level: 2
+  seed_tasks:
+  - slug: american-national-adult-reading
+  - slug: battelle-developmental-inventory
+  matchers:
+    keywords_any:
+    - reading test
+    - IQ
+    - intelligence
+    - developmental inventory
+- family_id: onvoc_0000431
+  onvoc_uri: ONVOC_0000431
+  label: Language
+  level: 2
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seed_tasks:
+  - slug: lexical-decision
+  - slug: word-generation
+  - slug: semantic-decision
+  - slug: birkbeck-reversible-sentence-comprehension
+  - slug: hayling-sentence-completion
+  - slug: sentence-completion
+  - slug: sentence-discourse-content
+  - slug: sentence-nonword-language-localizer
+  - slug: sentence-picture-matching
+  - slug: abstract-concrete
+  - slug: abstract-concrete-judgment-bilingual
+  matchers:
+    keywords_any:
+    - lexical decision
+    - word generation
+    - verbal fluency
+    - language
+    - reading comprehension
+    - story comprehension
+    - sentence comprehension
+    - abstract
+    - concrete
+- family_id: onvoc_0000521
+  onvoc_uri: ONVOC_0000521
+  label: Languages
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000432
+  onvoc_uri: ONVOC_0000432
+  label: Learning
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000132
+  onvoc_uri: ONVOC_0000132
+  label: Medical Disorders
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000647
+  onvoc_uri: ONVOC_0000647
+  label: Medical Symptoms
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000433
+  onvoc_uri: ONVOC_0000433
+  label: Memory
+  level: 2
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seed_tasks:
+  - slug: episodic-memory-encoding
+  - slug: episodic-memory-retrieval
+  - slug: n-back
+  - slug: sternberg-memory
+  - slug: working-memory
+  - slug: digit-span
+  - slug: spatial-span
+  - slug: autobiographical-memory
+  - slug: sternberg-delayed-recognition
+  - slug: sternberg-directed-forgetting
+  - slug: sternberg-item-recognition
+  - slug: sternberg-recent-probes
+  matchers:
+    bids:
+    - nback
+    slugs:
+    - n-back
+    - sternberg-memory
+    - episodic-memory
+    hed_any:
+    - memory
+    - working memory
+    keywords_any:
+    - n back
+    - episodic memory
+    - verbal memory
+    - working memory
+    - sternberg
+    - autobiographical memory
+    - personal events
+    regex:
+    - \b(2|3)-back\b
+- family_id: onvoc_0000255
+  onvoc_uri: ONVOC_0000255
+  label: Migraine Medication
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000256
+  onvoc_uri: ONVOC_0000256
+  label: Mood Stabilizers
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000133
+  onvoc_uri: ONVOC_0000133
+  label: Neurological Disorders
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000648
+  onvoc_uri: ONVOC_0000648
+  label: Neurological Symptoms
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000257
+  onvoc_uri: ONVOC_0000257
+  label: Opioids
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000258
+  onvoc_uri: ONVOC_0000258
+  label: Parkinsons Disease Medication
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000434
+  onvoc_uri: ONVOC_0000434
+  label: Perception
+  level: 2
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seed_tasks:
+  - slug: ambiguous-figure
+  - slug: biological-motion
+  - slug: biological-motion-perception-passive-viewing-paradigm
+  matchers:
+    keywords_any:
+    - ambiguous figure
+    - biological motion
+    - point-light
+    - illusion
+- family_id: onvoc_0000522
+  onvoc_uri: ONVOC_0000522
+  label: Population Groups
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000259
+  onvoc_uri: ONVOC_0000259
+  label: Psychedelics
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000134
+  onvoc_uri: ONVOC_0000134
+  label: Psychiatric Disorders
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000649
+  onvoc_uri: ONVOC_0000649
+  label: Psychiatric Symptoms
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000260
+  onvoc_uri: ONVOC_0000260
+  label: Psychostimulants
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000523
+  onvoc_uri: ONVOC_0000523
+  label: Sex
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000009
+  onvoc_uri: ONVOC_0000009
+  label: Sleep
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000435
+  onvoc_uri: ONVOC_0000435
+  label: Social Cognition
+  level: 2
+  seed_tasks:
+  - slug: theory-of-mind
+  - slug: catoon-cognitive-and-affective-theory-of-mind-cartoon
+  - slug: social-cognition-theory-of-mind-fmri-task-paradigm
+  - slug: reading-the-mind-in-the-eyes
+  - slug: narrative-based-pain-empathy-task
+  matchers:
+    keywords_any:
+    - social cognition
+    - theory of mind
+    - mentalizing
+    - social inference
+    - belief attribution
+    - empathy
+    - false belief
+    - mental state
+    - reading the mind in the eyes
+    - eyes test
+    regex:
+    - \btheory of mind\b
+    - \bmentaliz(e|ing|ation)\b
+  exclude:
+    keywords:
+    - face
+    - faces
+    - facial
+    - fusiform
+    - ffa
+    - gaze
+    - biological motion
+    - emotion recognition
+  weights:
+    keywords_any: 0.35
+    regex: 0.3
+    hed_any: 0.35
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+- family_id: onvoc_0000524
+  onvoc_uri: ONVOC_0000524
+  label: Species
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000525
+  onvoc_uri: ONVOC_0000525
+  label: Study Types
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000029
+  onvoc_uri: ONVOC_0000029
+  label: Subcortical Regions
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000010
+  onvoc_uri: ONVOC_0000010
+  label: Substance Abuse
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000011
+  onvoc_uri: ONVOC_0000011
+  label: Substance Use
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000012
+  onvoc_uri: ONVOC_0000012
+  label: Technology Use
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000526
+  onvoc_uri: ONVOC_0000526
+  label: Tests
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000507
+  onvoc_uri: ONVOC_0000507
+  label: Vision
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000527
+  onvoc_uri: ONVOC_0000527
+  label: Weight
+  level: 2
+  seed_tasks: []
+- family_id: onvoc_0000417
+  onvoc_uri: ONVOC_0000417
+  label: 2,5-Dimethoxy-4-bromoamphetamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000416
+  onvoc_uri: ONVOC_0000416
+  label: 2,5-Dimethoxy-4-iodoamphetamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000415
+  onvoc_uri: ONVOC_0000415
+  label: 2,5-Dimethoxy-4-methylamphetamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000404
+  onvoc_uri: ONVOC_0000404
+  label: 3,4-Methylenedioxymethamphetamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000411
+  onvoc_uri: ONVOC_0000411
+  label: 5-MeO-DMT
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000454
+  onvoc_uri: ONVOC_0000454
+  label: Abductive Reasoning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000563
+  onvoc_uri: ONVOC_0000563
+  label: Abnormal Physiological Condition
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000724
+  onvoc_uri: ONVOC_0000724
+  label: Acetaminophen
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000436
+  onvoc_uri: ONVOC_0000436
+  label: Action Initiation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000531
+  onvoc_uri: ONVOC_0000531
+  label: Adolescence
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000558
+  onvoc_uri: ONVOC_0000558
+  label: Adopted Child
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000528
+  onvoc_uri: ONVOC_0000528
+  label: Adult
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000220
+  onvoc_uri: ONVOC_0000220
+  label: Affective Psychotic Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000585
+  onvoc_uri: ONVOC_0000585
+  label: African
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000586
+  onvoc_uri: ONVOC_0000586
+  label: African American
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000708
+  onvoc_uri: ONVOC_0000708
+  label: Agitation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000597
+  onvoc_uri: ONVOC_0000597
+  label: Alaskan Native
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000017
+  onvoc_uri: ONVOC_0000017
+  label: Alcohol Abuse
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000020
+  onvoc_uri: ONVOC_0000020
+  label: Alcohol Use
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000221
+  onvoc_uri: ONVOC_0000221
+  label: Alexithymia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000360
+  onvoc_uri: ONVOC_0000360
+  label: Almotriptan
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000316
+  onvoc_uri: ONVOC_0000316
+  label: Alprazolam
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000176
+  onvoc_uri: ONVOC_0000176
+  label: Alzheimer's Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000392
+  onvoc_uri: ONVOC_0000392
+  label: Amantadine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000561
+  onvoc_uri: ONVOC_0000561
+  label: Ambidextrous
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000135
+  onvoc_uri: ONVOC_0000135
+  label: Amblyopia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000313
+  onvoc_uri: ONVOC_0000313
+  label: Amitriptyline
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000420
+  onvoc_uri: ONVOC_0000420
+  label: Amphetamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000574
+  onvoc_uri: ONVOC_0000574
+  label: Amputation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000112
+  onvoc_uri: ONVOC_0000112
+  label: Amygdala
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000201
+  onvoc_uri: ONVOC_0000201
+  label: Amyotrophic Lateral Sclerosis
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000453
+  onvoc_uri: ONVOC_0000453
+  label: Analogical Reasoning
+  level: 3
+  seed_tasks:
+  - slug: analogical-reasoning
+  - slug: penns-logical-reasoning-test
+  - slug: pennas-logical-reasoning
+  - slug: penns-logical-reasoning-test
+  matchers:
+    keywords_any:
+    - analogical reasoning
+    - analogy
+    - mapping
+- family_id: onvoc_0000150
+  onvoc_uri: ONVOC_0000150
+  label: Anemia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000136
+  onvoc_uri: ONVOC_0000136
+  label: Aneurysm
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000541
+  onvoc_uri: ONVOC_0000541
+  label: Anglo Americans
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000704
+  onvoc_uri: ONVOC_0000704
+  label: Anhedonia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000038
+  onvoc_uri: ONVOC_0000038
+  label: Anterior ascending ramus of the lateral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000039
+  onvoc_uri: ONVOC_0000039
+  label: Anterior horizontal ramus of the lateral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000040
+  onvoc_uri: ONVOC_0000040
+  label: Anterior occipital sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000694
+  onvoc_uri: ONVOC_0000694
+  label: Anxiety
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000204
+  onvoc_uri: ONVOC_0000204
+  label: Anxiety Disorders
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000199
+  onvoc_uri: ONVOC_0000199
+  label: Aphasia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000393
+  onvoc_uri: ONVOC_0000393
+  label: Apomorphine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000661
+  onvoc_uri: ONVOC_0000661
+  label: Appetite
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000200
+  onvoc_uri: ONVOC_0000200
+  label: Apraxia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000287
+  onvoc_uri: ONVOC_0000287
+  label: Aripiprazole
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000452
+  onvoc_uri: ONVOC_0000452
+  label: Arithmetic Operation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000294
+  onvoc_uri: ONVOC_0000294
+  label: Asenapine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000584
+  onvoc_uri: ONVOC_0000584
+  label: Asian
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000145
+  onvoc_uri: ONVOC_0000145
+  label: Asthma
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000203
+  onvoc_uri: ONVOC_0000203
+  label: Ataxia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000367
+  onvoc_uri: ONVOC_0000367
+  label: Atogepant
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000261
+  onvoc_uri: ONVOC_0000261
+  label: Atomoxetine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000448
+  onvoc_uri: ONVOC_0000448
+  label: Attention Shift
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000210
+  onvoc_uri: ONVOC_0000210
+  label: Attention-Deficit Hyperactivity Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000465
+  onvoc_uri: ONVOC_0000465
+  label: Attentional Control
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000446
+  onvoc_uri: ONVOC_0000446
+  label: Auditory Attention
+  level: 3
+  seed_tasks:
+  - slug: divided-auditory-attention
+  matchers:
+    keywords_any:
+    - auditory attention
+    - divided auditory
+    - selective auditory
+    - dichotic
+    - paced auditory
+- family_id: onvoc_0000496
+  onvoc_uri: ONVOC_0000496
+  label: Auditory Perception
+  level: 3
+  seed_tasks:
+  - slug: audio-narrative
+  - slug: audio-visual-target-detection
+  - slug: auditory-masking
+  - slug: auditory-scene-perception
+  - slug: auditory-temporal-discrimination
+  - slug: paced-auditory-serial-addition
+  - slug: rey-auditory-verbal-learning
+  matchers:
+    keywords_any:
+    - auditory masking
+    - auditory temporal
+    - auditory scene
+    - audio narrative
+    - audio-visual
+    - sound localization
+    - speech in noise
+- family_id: onvoc_0000041
+  onvoc_uri: ONVOC_0000041
+  label: Auditory cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000550
+  onvoc_uri: ONVOC_0000550
+  label: Aunt
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000588
+  onvoc_uri: ONVOC_0000588
+  label: Australian
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000215
+  onvoc_uri: ONVOC_0000215
+  label: Autism Spectrum Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000406
+  onvoc_uri: ONVOC_0000406
+  label: Ayahuasca
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000679
+  onvoc_uri: ONVOC_0000679
+  label: Balance Problems
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000042
+  onvoc_uri: ONVOC_0000042
+  label: Banks of superior temporal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000758
+  onvoc_uri: ONVOC_0000758
+  label: Barcelona Neuropsychological Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000606
+  onvoc_uri: ONVOC_0000606
+  label: Bat
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000227
+  onvoc_uri: ONVOC_0000227
+  label: Behavioral Addiction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000739
+  onvoc_uri: ONVOC_0000739
+  label: Behavioural Assessment of Dysexecutive Syndrome
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000618
+  onvoc_uri: ONVOC_0000618
+  label: Benton Visual Retention Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000208
+  onvoc_uri: ONVOC_0000208
+  label: Bipolar Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000587
+  onvoc_uri: ONVOC_0000587
+  label: Black
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000689
+  onvoc_uri: ONVOC_0000689
+  label: Bladder Dysfunction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000669
+  onvoc_uri: ONVOC_0000669
+  label: Bladder Habits
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000171
+  onvoc_uri: ONVOC_0000171
+  label: Blood Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000245
+  onvoc_uri: ONVOC_0000245
+  label: Body Dysmorphic Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000642
+  onvoc_uri: ONVOC_0000642
+  label: Body Mass Index
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000209
+  onvoc_uri: ONVOC_0000209
+  label: Borderline Personality Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000638
+  onvoc_uri: ONVOC_0000638
+  label: Boston Diagnostic Aphasia Examination
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000639
+  onvoc_uri: ONVOC_0000639
+  label: Boston Naming Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000688
+  onvoc_uri: ONVOC_0000688
+  label: Bowel Dysfunction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000668
+  onvoc_uri: ONVOC_0000668
+  label: Bowel Habits
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000137
+  onvoc_uri: ONVOC_0000137
+  label: Brain Tumor
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000295
+  onvoc_uri: ONVOC_0000295
+  label: Brexpiprazole
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000401
+  onvoc_uri: ONVOC_0000401
+  label: Bromocriptine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000732
+  onvoc_uri: ONVOC_0000732
+  label: Buprenorphine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000305
+  onvoc_uri: ONVOC_0000305
+  label: Bupropion
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000327
+  onvoc_uri: ONVOC_0000327
+  label: Buspirone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000740
+  onvoc_uri: ONVOC_0000740
+  label: CNS Vital Signs (Brief Core Battery)
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000043
+  onvoc_uri: ONVOC_0000043
+  label: Calcarine sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000630
+  onvoc_uri: ONVOC_0000630
+  label: California Verbal Learning Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000044
+  onvoc_uri: ONVOC_0000044
+  label: Callosal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000759
+  onvoc_uri: ONVOC_0000759
+  label: Cambridge Neuropsychological Test Automated Battery
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000631
+  onvoc_uri: ONVOC_0000631
+  label: Cambridge Prospective Memory Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000151
+  onvoc_uri: ONVOC_0000151
+  label: Cancer
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000335
+  onvoc_uri: ONVOC_0000335
+  label: Cannabichromene
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000334
+  onvoc_uri: ONVOC_0000334
+  label: Cannabidiol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000333
+  onvoc_uri: ONVOC_0000333
+  label: Cannabigerol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000330
+  onvoc_uri: ONVOC_0000330
+  label: Cannabis
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000234
+  onvoc_uri: ONVOC_0000234
+  label: Cannabis Use Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000372
+  onvoc_uri: ONVOC_0000372
+  label: Carbamazepine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000389
+  onvoc_uri: ONVOC_0000389
+  label: Carbidopa
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000152
+  onvoc_uri: ONVOC_0000152
+  label: Cardiovascular Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000296
+  onvoc_uri: ONVOC_0000296
+  label: Cariprazine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000182
+  onvoc_uri: ONVOC_0000182
+  label: Carpal Tunnel Syndrome
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000615
+  onvoc_uri: ONVOC_0000615
+  label: Case Study
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000610
+  onvoc_uri: ONVOC_0000610
+  label: Case-Control Study
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000238
+  onvoc_uri: ONVOC_0000238
+  label: Catatonia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000045
+  onvoc_uri: ONVOC_0000045
+  label: Caudal anterior cingulate cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000046
+  onvoc_uri: ONVOC_0000046
+  label: Caudal superior temporal sulcus, first segment
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000047
+  onvoc_uri: ONVOC_0000047
+  label: Caudal superior temporal sulcus, second segment
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000048
+  onvoc_uri: ONVOC_0000048
+  label: Caudal superior temporal sulcus, third segment
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000113
+  onvoc_uri: ONVOC_0000113
+  label: Caudate Nucleus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000455
+  onvoc_uri: ONVOC_0000455
+  label: Causal Reasoning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000273
+  onvoc_uri: ONVOC_0000273
+  label: Celecoxib
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000037
+  onvoc_uri: ONVOC_0000037
+  label: Central executive network
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000049
+  onvoc_uri: ONVOC_0000049
+  label: Central sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000114
+  onvoc_uri: ONVOC_0000114
+  label: Cerebellum
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000532
+  onvoc_uri: ONVOC_0000532
+  label: Child
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000321
+  onvoc_uri: ONVOC_0000321
+  label: Chlordiazepoxide
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000345
+  onvoc_uri: ONVOC_0000345
+  label: Chlormadinone Acetate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000564
+  onvoc_uri: ONVOC_0000564
+  label: Chromosomal Abnormality
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000169
+  onvoc_uri: ONVOC_0000169
+  label: Chromosomal Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000153
+  onvoc_uri: ONVOC_0000153
+  label: Chronic Fatigue Syndrome
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000146
+  onvoc_uri: ONVOC_0000146
+  label: Chronic Obstructive Pulmonary Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000180
+  onvoc_uri: ONVOC_0000180
+  label: Chronic Pain
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000050
+  onvoc_uri: ONVOC_0000050
+  label: Cingulate sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000051
+  onvoc_uri: ONVOC_0000051
+  label: Circular insular sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000304
+  onvoc_uri: ONVOC_0000304
+  label: Citalopram
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000481
+  onvoc_uri: ONVOC_0000481
+  label: Classical Conditioning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000222
+  onvoc_uri: ONVOC_0000222
+  label: Claustrophobia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000756
+  onvoc_uri: ONVOC_0000756
+  label: Clock Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000318
+  onvoc_uri: ONVOC_0000318
+  label: Clonazepam
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000263
+  onvoc_uri: ONVOC_0000263
+  label: Clonidine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000323
+  onvoc_uri: ONVOC_0000323
+  label: Clorazepate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000293
+  onvoc_uri: ONVOC_0000293
+  label: Clozapine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000731
+  onvoc_uri: ONVOC_0000731
+  label: Codeine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000760
+  onvoc_uri: ONVOC_0000760
+  label: Cognistat (The Neurobehavioral Cognitive Status Examination)
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000761
+  onvoc_uri: ONVOC_0000761
+  label: Cognitive Assessment Screening Instrument
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000468
+  onvoc_uri: ONVOC_0000468
+  label: Cognitive Flexibility
+  level: 3
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seed_tasks: []
+  seed_tasks:
+  - slug: reversal-learning
+  - slug: reversal-learning-task
+  - slug: inter-dimensional-extra-dimensional-shift
+  matchers:
+    keywords_any:
+    - reversal learning
+    - reversal
+    - id/ed shift
+    - extra dimensional shift
+- family_id: onvoc_0000762
+  onvoc_uri: ONVOC_0000762
+  label: Cognitive Function Scanner
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000579
+  onvoc_uri: ONVOC_0000579
+  label: Cognitive Impairment
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000466
+  onvoc_uri: ONVOC_0000466
+  label: Cognitive Inhibition
+  level: 3
+  seed_tasks:
+  - slug: eriksen-flanker
+  - slug: go-no-go
+  - slug: stop-signal
+- family_id: onvoc_0000474
+  onvoc_uri: ONVOC_0000474
+  label: Cognitive Load
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000611
+  onvoc_uri: ONVOC_0000611
+  label: Cohort Study
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000052
+  onvoc_uri: ONVOC_0000052
+  label: Collateral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000154
+  onvoc_uri: ONVOC_0000154
+  label: Color Blindness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000198
+  onvoc_uri: ONVOC_0000198
+  label: Communication Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000640
+  onvoc_uri: ONVOC_0000640
+  label: Comprehensive Aphasia Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000712
+  onvoc_uri: ONVOC_0000712
+  label: Compulsions
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000575
+  onvoc_uri: ONVOC_0000575
+  label: Concussion
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000457
+  onvoc_uri: ONVOC_0000457
+  label: Conditional Reasoning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000240
+  onvoc_uri: ONVOC_0000240
+  label: Conduct Disorders
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000619
+  onvoc_uri: ONVOC_0000619
+  label: Continuous Performance Task
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000741
+  onvoc_uri: ONVOC_0000741
+  label: Controlled Oral Word Association Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000147
+  onvoc_uri: ONVOC_0000147
+  label: Coronary Artery Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000652
+  onvoc_uri: ONVOC_0000652
+  label: Cough
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000548
+  onvoc_uri: ONVOC_0000548
+  label: Cousin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000616
+  onvoc_uri: ONVOC_0000616
+  label: Cross-Over Study
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000612
+  onvoc_uri: ONVOC_0000612
+  label: Cross-Sectional Study
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000053
+  onvoc_uri: ONVOC_0000053
+  label: Cuneus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000025
+  onvoc_uri: ONVOC_0000025
+  label: Cyberbullying
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000244
+  onvoc_uri: ONVOC_0000244
+  label: Cyclothymic Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000165
+  onvoc_uri: ONVOC_0000165
+  label: Deafness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000763
+  onvoc_uri: ONVOC_0000763
+  label: "Dean\u2013Woodcock Neuropsychological Assessment System"
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000491
+  onvoc_uri: ONVOC_0000491
+  label: Declarative Memory
+  level: 3
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seed_tasks: []
+- family_id: onvoc_0000030
+  onvoc_uri: ONVOC_0000030
+  label: Default mode network
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000743
+  onvoc_uri: ONVOC_0000743
+  label: "Delis\u2013Kaplan Executive Function System"
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000331
+  onvoc_uri: ONVOC_0000331
+  label: Delta-9-Tetrahydrocannabinol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000720
+  onvoc_uri: ONVOC_0000720
+  label: Delusions
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000190
+  onvoc_uri: ONVOC_0000190
+  label: Dementia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000717
+  onvoc_uri: ONVOC_0000717
+  label: Depersonalization
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000695
+  onvoc_uri: ONVOC_0000695
+  label: Depressed Mood
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000207
+  onvoc_uri: ONVOC_0000207
+  label: Depressive Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000716
+  onvoc_uri: ONVOC_0000716
+  label: Derealization
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000267
+  onvoc_uri: ONVOC_0000267
+  label: Desflurane
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000341
+  onvoc_uri: ONVOC_0000341
+  label: Desogestrel
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000314
+  onvoc_uri: ONVOC_0000314
+  label: Desvenlafaxine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000218
+  onvoc_uri: ONVOC_0000218
+  label: Developmental Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000423
+  onvoc_uri: ONVOC_0000423
+  label: Dexmethylphenidate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000422
+  onvoc_uri: ONVOC_0000422
+  label: Dextroamphetamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000319
+  onvoc_uri: ONVOC_0000319
+  label: Diazepam
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000275
+  onvoc_uri: ONVOC_0000275
+  label: Diclofenac
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000343
+  onvoc_uri: ONVOC_0000343
+  label: Dienogest
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000698
+  onvoc_uri: ONVOC_0000698
+  label: Difficulty Concentrating
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000284
+  onvoc_uri: ONVOC_0000284
+  label: Diflunisal
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000744
+  onvoc_uri: ONVOC_0000744
+  label: Digit Vigilance Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000408
+  onvoc_uri: ONVOC_0000408
+  label: Dimethyltryptamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000164
+  onvoc_uri: ONVOC_0000164
+  label: Disorders of Consciousness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000235
+  onvoc_uri: ONVOC_0000235
+  label: Dissociative Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000442
+  onvoc_uri: ONVOC_0000442
+  label: Divided Attention
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000658
+  onvoc_uri: ONVOC_0000658
+  label: Dizziness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000349
+  onvoc_uri: ONVOC_0000349
+  label: Donepezil
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000032
+  onvoc_uri: ONVOC_0000032
+  label: Dorsal attention network
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000054
+  onvoc_uri: ONVOC_0000054
+  label: Dorsal prefrontal cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000184
+  onvoc_uri: ONVOC_0000184
+  label: Down Syndrome
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000013
+  onvoc_uri: ONVOC_0000013
+  label: Dreaming
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000340
+  onvoc_uri: ONVOC_0000340
+  label: Drospirenone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000722
+  onvoc_uri: ONVOC_0000722
+  label: Drug Craving
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000018
+  onvoc_uri: ONVOC_0000018
+  label: Drug Use
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000307
+  onvoc_uri: ONVOC_0000307
+  label: Duloxetine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000681
+  onvoc_uri: ONVOC_0000681
+  label: Dysarthria
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000185
+  onvoc_uri: ONVOC_0000185
+  label: Dyslexia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000687
+  onvoc_uri: ONVOC_0000687
+  label: Dysphagia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000667
+  onvoc_uri: ONVOC_0000667
+  label: Dyspnea
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000202
+  onvoc_uri: ONVOC_0000202
+  label: Dystonia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000598
+  onvoc_uri: ONVOC_0000598
+  label: East Asian
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000213
+  onvoc_uri: ONVOC_0000213
+  label: Eating Disorders
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000665
+  onvoc_uri: ONVOC_0000665
+  label: Edema
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000529
+  onvoc_uri: ONVOC_0000529
+  label: Elderly
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000356
+  onvoc_uri: ONVOC_0000356
+  label: Eletriptan
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000241
+  onvoc_uri: ONVOC_0000241
+  label: Elimination Disorders
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000461
+  onvoc_uri: ONVOC_0000461
+  label: Emotion Perception
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000462
+  onvoc_uri: ONVOC_0000462
+  label: Emotion Regulation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000714
+  onvoc_uri: ONVOC_0000714
+  label: Emotional Outbursts
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000502
+  onvoc_uri: ONVOC_0000502
+  label: Empathy
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000270
+  onvoc_uri: ONVOC_0000270
+  label: Enflurane
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000581
+  onvoc_uri: ONVOC_0000581
+  label: English
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000397
+  onvoc_uri: ONVOC_0000397
+  label: Entacapone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000055
+  onvoc_uri: ONVOC_0000055
+  label: Entorhinal cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000177
+  onvoc_uri: ONVOC_0000177
+  label: Epilepsy
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000493
+  onvoc_uri: ONVOC_0000493
+  label: Episodic Memory
+  level: 3
+  seed_tasks:
+  - slug: episodic-memory-encoding
+  - slug: episodic-memory-retrieval
+- family_id: onvoc_0000364
+  onvoc_uri: ONVOC_0000364
+  label: Erenumab
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000302
+  onvoc_uri: ONVOC_0000302
+  label: Escitalopram
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000336
+  onvoc_uri: ONVOC_0000336
+  label: Ethinyl Estradiol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000277
+  onvoc_uri: ONVOC_0000277
+  label: Etodolac
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000282
+  onvoc_uri: ONVOC_0000282
+  label: Etoricoxib
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000589
+  onvoc_uri: ONVOC_0000589
+  label: European
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000702
+  onvoc_uri: ONVOC_0000702
+  label: Excessive Worry
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000115
+  onvoc_uri: ONVOC_0000115
+  label: Extended Amygdala
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000556
+  onvoc_uri: ONVOC_0000556
+  label: Father
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000650
+  onvoc_uri: ONVOC_0000650
+  label: Fatigue
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000715
+  onvoc_uri: ONVOC_0000715
+  label: Feeling Disconnected
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000706
+  onvoc_uri: ONVOC_0000706
+  label: Feelings of Guilt
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000705
+  onvoc_uri: ONVOC_0000705
+  label: Feelings of Worthlessness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000601
+  onvoc_uri: ONVOC_0000601
+  label: Female
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000730
+  onvoc_uri: ONVOC_0000730
+  label: Fentanyl
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000653
+  onvoc_uri: ONVOC_0000653
+  label: Fever
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000189
+  onvoc_uri: ONVOC_0000189
+  label: Fibromyalgia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000745
+  onvoc_uri: ONVOC_0000745
+  label: Figural Fluency Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000056
+  onvoc_uri: ONVOC_0000056
+  label: First transverse temporal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000303
+  onvoc_uri: ONVOC_0000303
+  label: Fluoxetine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000447
+  onvoc_uri: ONVOC_0000447
+  label: Focused Attention
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000186
+  onvoc_uri: ONVOC_0000186
+  label: Fragile X Syndrome
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000365
+  onvoc_uri: ONVOC_0000365
+  label: Fremanezumab
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000545
+  onvoc_uri: ONVOC_0000545
+  label: French
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000057
+  onvoc_uri: ONVOC_0000057
+  label: Frontal pole
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000058
+  onvoc_uri: ONVOC_0000058
+  label: Frontomarginal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000033
+  onvoc_uri: ONVOC_0000033
+  label: Frontoparietal network
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000358
+  onvoc_uri: ONVOC_0000358
+  label: Frovatriptan
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000059
+  onvoc_uri: ONVOC_0000059
+  label: Fusiform gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000328
+  onvoc_uri: ONVOC_0000328
+  label: Gabapentin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000678
+  onvoc_uri: ONVOC_0000678
+  label: Gait Disturbances
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000351
+  onvoc_uri: ONVOC_0000351
+  label: Galantamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000366
+  onvoc_uri: ONVOC_0000366
+  label: Galcanezumab
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000228
+  onvoc_uri: ONVOC_0000228
+  label: Gambling Addiction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000026
+  onvoc_uri: ONVOC_0000026
+  label: Gaming
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000231
+  onvoc_uri: ONVOC_0000231
+  label: Gaming Addiction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000148
+  onvoc_uri: ONVOC_0000148
+  label: Gastroesophageal Reflux Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000163
+  onvoc_uri: ONVOC_0000163
+  label: Gastrointestinal Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000657
+  onvoc_uri: ONVOC_0000657
+  label: Gastrointestinal Issues
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000239
+  onvoc_uri: ONVOC_0000239
+  label: Gender Dysphoria
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000764
+  onvoc_uri: ONVOC_0000764
+  label: General Practitioner Assessment Of Cognition
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000170
+  onvoc_uri: ONVOC_0000170
+  label: Glaucoma
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000116
+  onvoc_uri: ONVOC_0000116
+  label: Globus Pallidus External Segment
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000117
+  onvoc_uri: ONVOC_0000117
+  label: Globus Pallidus Internal Segment
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000632
+  onvoc_uri: ONVOC_0000632
+  label: Gollin figure test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000554
+  onvoc_uri: ONVOC_0000554
+  label: Grandchild
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000549
+  onvoc_uri: ONVOC_0000549
+  label: Grandparent
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000226
+  onvoc_uri: ONVOC_0000226
+  label: Grief Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000262
+  onvoc_uri: ONVOC_0000262
+  label: Guanfacine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000118
+  onvoc_uri: ONVOC_0000118
+  label: Habenular Nucleus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000484
+  onvoc_uri: ONVOC_0000484
+  label: Habituation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000719
+  onvoc_uri: ONVOC_0000719
+  label: Hallucinations
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000746
+  onvoc_uri: ONVOC_0000746
+  label: Halstead Category Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000620
+  onvoc_uri: ONVOC_0000620
+  label: "Halstead\u2013Reitan Neuropsychological Battery"
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000414
+  onvoc_uri: ONVOC_0000414
+  label: Harmaline
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000413
+  onvoc_uri: ONVOC_0000413
+  label: Harmine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000621
+  onvoc_uri: ONVOC_0000621
+  label: Hayling and Brixton Tests
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000565
+  onvoc_uri: ONVOC_0000565
+  label: Head Injury
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000173
+  onvoc_uri: ONVOC_0000173
+  label: Headache
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000509
+  onvoc_uri: ONVOC_0000509
+  label: Hearing Loss
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000693
+  onvoc_uri: ONVOC_0000693
+  label: Hemianopsia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000155
+  onvoc_uri: ONVOC_0000155
+  label: Hepatitis B Virus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000156
+  onvoc_uri: ONVOC_0000156
+  label: Hepatitis C Virus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000737
+  onvoc_uri: ONVOC_0000737
+  label: Heroin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000060
+  onvoc_uri: ONVOC_0000060
+  label: Heschl's sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000538
+  onvoc_uri: ONVOC_0000538
+  label: High School Education
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000119
+  onvoc_uri: ONVOC_0000119
+  label: Hippocampus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000543
+  onvoc_uri: ONVOC_0000543
+  label: Hispanic
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000542
+  onvoc_uri: ONVOC_0000542
+  label: Hispanic Americans
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000757
+  onvoc_uri: ONVOC_0000757
+  label: Hooper Visual Organisation Task
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000172
+  onvoc_uri: ONVOC_0000172
+  label: Hormonal Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000602
+  onvoc_uri: ONVOC_0000602
+  label: Human
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000157
+  onvoc_uri: ONVOC_0000157
+  label: Human Immunodeficiency Virus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000197
+  onvoc_uri: ONVOC_0000197
+  label: Huntington's Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000723
+  onvoc_uri: ONVOC_0000723
+  label: Hydrocodone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000733
+  onvoc_uri: ONVOC_0000733
+  label: Hydromorphone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000325
+  onvoc_uri: ONVOC_0000325
+  label: Hydroxyzine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000188
+  onvoc_uri: ONVOC_0000188
+  label: Hyperalgesia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000672
+  onvoc_uri: ONVOC_0000672
+  label: Hypercapnia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000139
+  onvoc_uri: ONVOC_0000139
+  label: Hyperlipidemia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000138
+  onvoc_uri: ONVOC_0000138
+  label: Hypertension
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000158
+  onvoc_uri: ONVOC_0000158
+  label: Hyperthyroidism
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000120
+  onvoc_uri: ONVOC_0000120
+  label: Hypothalamus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000149
+  onvoc_uri: ONVOC_0000149
+  label: Hypothyroidism
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000412
+  onvoc_uri: ONVOC_0000412
+  label: Ibogaine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000271
+  onvoc_uri: ONVOC_0000271
+  label: Ibuprofen
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000297
+  onvoc_uri: ONVOC_0000297
+  label: Iloperidone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000315
+  onvoc_uri: ONVOC_0000315
+  label: Imipramine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000510
+  onvoc_uri: ONVOC_0000510
+  label: Impaired Hearing
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000513
+  onvoc_uri: ONVOC_0000513
+  label: Impaired Vision
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000596
+  onvoc_uri: ONVOC_0000596
+  label: Indian
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000276
+  onvoc_uri: ONVOC_0000276
+  label: Indomethacin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000456
+  onvoc_uri: ONVOC_0000456
+  label: Inductive Reasoning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000533
+  onvoc_uri: ONVOC_0000533
+  label: Infant
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000168
+  onvoc_uri: ONVOC_0000168
+  label: Infectious Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000061
+  onvoc_uri: ONVOC_0000061
+  label: Inferior Frontal Gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000062
+  onvoc_uri: ONVOC_0000062
+  label: Inferior frontal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000063
+  onvoc_uri: ONVOC_0000063
+  label: Inferior parietal lobule
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000064
+  onvoc_uri: ONVOC_0000064
+  label: Inferior temporal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000467
+  onvoc_uri: ONVOC_0000467
+  label: Inhibitory Control
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000166
+  onvoc_uri: ONVOC_0000166
+  label: Insomnia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000065
+  onvoc_uri: ONVOC_0000065
+  label: Insula
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000580
+  onvoc_uri: ONVOC_0000580
+  label: Intellectual Disability
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000066
+  onvoc_uri: ONVOC_0000066
+  label: Interhemispheric sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000232
+  onvoc_uri: ONVOC_0000232
+  label: Internet Addiction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000500
+  onvoc_uri: ONVOC_0000500
+  label: Interoception
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000067
+  onvoc_uri: ONVOC_0000067
+  label: Intraparietal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000460
+  onvoc_uri: ONVOC_0000460
+  label: Intuitive Reasoning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000697
+  onvoc_uri: ONVOC_0000697
+  label: Irritability
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000268
+  onvoc_uri: ONVOC_0000268
+  label: Isoflurane
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000068
+  onvoc_uri: ONVOC_0000068
+  label: Isthmus cingulate cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000399
+  onvoc_uri: ONVOC_0000399
+  label: Istradefylline
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000670
+  onvoc_uri: ONVOC_0000670
+  label: Joint Stiffness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000747
+  onvoc_uri: ONVOC_0000747
+  label: Kaplan Baycrest Neurocognitive Assessment
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000748
+  onvoc_uri: ONVOC_0000748
+  label: Kaufman Short Neuropsychological Assessment
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000405
+  onvoc_uri: ONVOC_0000405
+  label: Ketamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000278
+  onvoc_uri: ONVOC_0000278
+  label: Ketoprofen
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000285
+  onvoc_uri: ONVOC_0000285
+  label: Ketorolac
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000144
+  onvoc_uri: ONVOC_0000144
+  label: Kidney Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000369
+  onvoc_uri: ONVOC_0000369
+  label: Lamotrigine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000361
+  onvoc_uri: ONVOC_0000361
+  label: Lasmiditan
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000069
+  onvoc_uri: ONVOC_0000069
+  label: Lateral H-shaped orbital sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000070
+  onvoc_uri: ONVOC_0000070
+  label: Lateral occipital cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000071
+  onvoc_uri: ONVOC_0000071
+  label: Lateral occipital sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000072
+  onvoc_uri: ONVOC_0000072
+  label: Lateral orbitofrontal cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000073
+  onvoc_uri: ONVOC_0000073
+  label: Lateral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000544
+  onvoc_uri: ONVOC_0000544
+  label: Latino
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000237
+  onvoc_uri: ONVOC_0000237
+  label: Learning Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000560
+  onvoc_uri: ONVOC_0000560
+  label: Left handed
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000569
+  onvoc_uri: ONVOC_0000569
+  label: Lesion
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000388
+  onvoc_uri: ONVOC_0000388
+  label: Levodopa
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000337
+  onvoc_uri: ONVOC_0000337
+  label: Levonorgestrel
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000622
+  onvoc_uri: ONVOC_0000622
+  label: Lexical Decision Task
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000659
+  onvoc_uri: ONVOC_0000659
+  label: Lightheadedness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000036
+  onvoc_uri: ONVOC_0000036
+  label: Limbic network
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000074
+  onvoc_uri: ONVOC_0000074
+  label: Lingual gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000421
+  onvoc_uri: ONVOC_0000421
+  label: Lisdexamfetamine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000370
+  onvoc_uri: ONVOC_0000370
+  label: Lithium Carbonate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000159
+  onvoc_uri: ONVOC_0000159
+  label: Liver Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000451
+  onvoc_uri: ONVOC_0000451
+  label: Logical Reasoning
+  level: 3
+  seed_tasks:
+  - slug: ravens-progressive-matrices
+- family_id: onvoc_0000490
+  onvoc_uri: ONVOC_0000490
+  label: Long-Term Memory
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000613
+  onvoc_uri: ONVOC_0000613
+  label: Longitudinal Study
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000317
+  onvoc_uri: ONVOC_0000317
+  label: Lorazepam
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000703
+  onvoc_uri: ONVOC_0000703
+  label: Loss of Interest
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000690
+  onvoc_uri: ONVOC_0000690
+  label: Loss of Smell (Anosmia) or Taste (Ageusia)
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000696
+  onvoc_uri: ONVOC_0000696
+  label: Low Energy
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000298
+  onvoc_uri: ONVOC_0000298
+  label: Loxapine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000291
+  onvoc_uri: ONVOC_0000291
+  label: Lurasidone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000623
+  onvoc_uri: ONVOC_0000623
+  label: "Luria\u2013Nebraska Neuropsychological Battery"
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000505
+  onvoc_uri: ONVOC_0000505
+  label: Lying
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000407
+  onvoc_uri: ONVOC_0000407
+  label: Lysergic Acid Diethylamide
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000765
+  onvoc_uri: ONVOC_0000765
+  label: MCI Screen
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000607
+  onvoc_uri: ONVOC_0000607
+  label: Macaque
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000600
+  onvoc_uri: ONVOC_0000600
+  label: Male
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000121
+  onvoc_uri: ONVOC_0000121
+  label: Mammillary Nucleus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000608
+  onvoc_uri: ONVOC_0000608
+  label: Marmoset
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000075
+  onvoc_uri: ONVOC_0000075
+  label: Medial H-shaped orbital sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000076
+  onvoc_uri: ONVOC_0000076
+  label: Medial orbitofrontal cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000274
+  onvoc_uri: ONVOC_0000274
+  label: Meloxicam
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000352
+  onvoc_uri: ONVOC_0000352
+  label: Memantine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000633
+  onvoc_uri: ONVOC_0000633
+  label: Memory Assessment Scales
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000677
+  onvoc_uri: ONVOC_0000677
+  label: Memory Problems
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000193
+  onvoc_uri: ONVOC_0000193
+  label: Meningioma
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000571
+  onvoc_uri: ONVOC_0000571
+  label: Menopause
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000637
+  onvoc_uri: ONVOC_0000637
+  label: Mental Attributes Profiling System
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000409
+  onvoc_uri: ONVOC_0000409
+  label: Mescaline
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000348
+  onvoc_uri: ONVOC_0000348
+  label: Mestranol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000471
+  onvoc_uri: ONVOC_0000471
+  label: Metacognition
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000424
+  onvoc_uri: ONVOC_0000424
+  label: Methylphenidate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000766
+  onvoc_uri: ONVOC_0000766
+  label: MicroCog
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000590
+  onvoc_uri: ONVOC_0000590
+  label: Middle Eastern
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000537
+  onvoc_uri: ONVOC_0000537
+  label: Middle School Education
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000077
+  onvoc_uri: ONVOC_0000077
+  label: Middle frontal gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000174
+  onvoc_uri: ONVOC_0000174
+  label: Migraine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000472
+  onvoc_uri: ONVOC_0000472
+  label: Mindset
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000624
+  onvoc_uri: ONVOC_0000624
+  label: "Mini\u2013Mental State Examination"
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000530
+  onvoc_uri: ONVOC_0000530
+  label: Minor
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000309
+  onvoc_uri: ONVOC_0000309
+  label: Mirtazapine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000299
+  onvoc_uri: ONVOC_0000299
+  label: Molindone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000609
+  onvoc_uri: ONVOC_0000609
+  label: Monkey
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000243
+  onvoc_uri: ONVOC_0000243
+  label: Mood Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000223
+  onvoc_uri: ONVOC_0000223
+  label: Mood Dysregulation Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000459
+  onvoc_uri: ONVOC_0000459
+  label: Moral Reasoning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000729
+  onvoc_uri: ONVOC_0000729
+  label: Morphine Sulfate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000557
+  onvoc_uri: ONVOC_0000557
+  label: Mother
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000438
+  onvoc_uri: ONVOC_0000438
+  label: Motor Control
+  level: 3
+  seed_tasks:
+  - slug: finger-tapping
+- family_id: onvoc_0000196
+  onvoc_uri: ONVOC_0000196
+  label: Motor Neuron Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000604
+  onvoc_uri: ONVOC_0000604
+  label: Mouse
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000437
+  onvoc_uri: ONVOC_0000437
+  label: Movement
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000641
+  onvoc_uri: ONVOC_0000641
+  label: Multilingual Aphasia Examination
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000179
+  onvoc_uri: ONVOC_0000179
+  label: Multiple Sclerosis
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000499
+  onvoc_uri: ONVOC_0000499
+  label: Multisensory Integration
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000676
+  onvoc_uri: ONVOC_0000676
+  label: Muscle Weakness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000767
+  onvoc_uri: ONVOC_0000767
+  label: NEPSY
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000281
+  onvoc_uri: ONVOC_0000281
+  label: Nabumetone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000735
+  onvoc_uri: ONVOC_0000735
+  label: Naloxone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000272
+  onvoc_uri: ONVOC_0000272
+  label: Naproxen
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000359
+  onvoc_uri: ONVOC_0000359
+  label: Naratriptan
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000654
+  onvoc_uri: ONVOC_0000654
+  label: Nasal Congestion
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000593
+  onvoc_uri: ONVOC_0000593
+  label: Native Hawaiian
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000464
+  onvoc_uri: ONVOC_0000464
+  label: Negative Valence
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000553
+  onvoc_uri: ONVOC_0000553
+  label: Nephew
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000191
+  onvoc_uri: ONVOC_0000191
+  label: Neurodegeneration
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000236
+  onvoc_uri: ONVOC_0000236
+  label: Neurodevelopment Disorders
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000192
+  onvoc_uri: ONVOC_0000192
+  label: Neuroinflammation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000552
+  onvoc_uri: ONVOC_0000552
+  label: Niece
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000269
+  onvoc_uri: ONVOC_0000269
+  label: Nitrous Oxide
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000344
+  onvoc_uri: ONVOC_0000344
+  label: Nomegestrol Acetate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000338
+  onvoc_uri: ONVOC_0000338
+  label: Norethindrone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000339
+  onvoc_uri: ONVOC_0000339
+  label: Norgestimate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000342
+  onvoc_uri: ONVOC_0000342
+  label: Norgestrel
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000643
+  onvoc_uri: ONVOC_0000643
+  label: Normal Body Mass Index
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000578
+  onvoc_uri: ONVOC_0000578
+  label: Normal Cognitive Development
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000508
+  onvoc_uri: ONVOC_0000508
+  label: Normal Hearing
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000577
+  onvoc_uri: ONVOC_0000577
+  label: Normal Intelligence Quotient
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000512
+  onvoc_uri: ONVOC_0000512
+  label: Normal Vision
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000644
+  onvoc_uri: ONVOC_0000644
+  label: Normal Weight
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000591
+  onvoc_uri: ONVOC_0000591
+  label: North American
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000122
+  onvoc_uri: ONVOC_0000122
+  label: Nucleus Accumbens
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000673
+  onvoc_uri: ONVOC_0000673
+  label: Numbness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000450
+  onvoc_uri: ONVOC_0000450
+  label: Numerical Comparison
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000142
+  onvoc_uri: ONVOC_0000142
+  label: Obesity
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000439
+  onvoc_uri: ONVOC_0000439
+  label: Object Manipulation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000449
+  onvoc_uri: ONVOC_0000449
+  label: Object-Based Attention
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000483
+  onvoc_uri: ONVOC_0000483
+  label: Observational Learning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000711
+  onvoc_uri: ONVOC_0000711
+  label: Obsessions
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000212
+  onvoc_uri: ONVOC_0000212
+  label: Obsessive-Compulsive Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000078
+  onvoc_uri: ONVOC_0000078
+  label: Occipitotemporal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000289
+  onvoc_uri: ONVOC_0000289
+  label: Olanzapine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000497
+  onvoc_uri: ONVOC_0000497
+  label: Olfactory Perception
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000079
+  onvoc_uri: ONVOC_0000079
+  label: Olfactory sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000368
+  onvoc_uri: ONVOC_0000368
+  label: OnabotulinumtoxinA
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000482
+  onvoc_uri: ONVOC_0000482
+  label: Operant Conditioning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000224
+  onvoc_uri: ONVOC_0000224
+  label: Oppositional Defiant Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000143
+  onvoc_uri: ONVOC_0000143
+  label: Osteoarthritis
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000646
+  onvoc_uri: ONVOC_0000646
+  label: Overweight
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000283
+  onvoc_uri: ONVOC_0000283
+  label: Oxaprozin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000322
+  onvoc_uri: ONVOC_0000322
+  label: Oxazepam
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000324
+  onvoc_uri: ONVOC_0000324
+  label: Oxcarbazepine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000725
+  onvoc_uri: ONVOC_0000725
+  label: Oxycodone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000749
+  onvoc_uri: ONVOC_0000749
+  label: Paced Auditory Serial Addition Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000592
+  onvoc_uri: ONVOC_0000592
+  label: Pacific Islander
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000651
+  onvoc_uri: ONVOC_0000651
+  label: Pain
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000292
+  onvoc_uri: ONVOC_0000292
+  label: Paliperidone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000195
+  onvoc_uri: ONVOC_0000195
+  label: Palsiy
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000710
+  onvoc_uri: ONVOC_0000710
+  label: Panic Attacks
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000206
+  onvoc_uri: ONVOC_0000206
+  label: Panic Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000123
+  onvoc_uri: ONVOC_0000123
+  label: Parabrachial Pigmented Nucleus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000080
+  onvoc_uri: ONVOC_0000080
+  label: Paracentral lobule
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000081
+  onvoc_uri: ONVOC_0000081
+  label: Paracentral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000082
+  onvoc_uri: ONVOC_0000082
+  label: Parahippocampal gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000576
+  onvoc_uri: ONVOC_0000576
+  label: Paralysis
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000718
+  onvoc_uri: ONVOC_0000718
+  label: Paranoia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000547
+  onvoc_uri: ONVOC_0000547
+  label: Parent
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000675
+  onvoc_uri: ONVOC_0000675
+  label: Paresthesia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000083
+  onvoc_uri: ONVOC_0000083
+  label: Parietooccipital sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000178
+  onvoc_uri: ONVOC_0000178
+  label: Parkinson's Disease
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000310
+  onvoc_uri: ONVOC_0000310
+  label: Paroxetine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000425
+  onvoc_uri: ONVOC_0000425
+  label: Pemoline
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000402
+  onvoc_uri: ONVOC_0000402
+  label: Pergolide
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000084
+  onvoc_uri: ONVOC_0000084
+  label: Pericalcarine cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000572
+  onvoc_uri: ONVOC_0000572
+  label: Perimenopause
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000181
+  onvoc_uri: ONVOC_0000181
+  label: Peripheral Neuropathy
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000214
+  onvoc_uri: ONVOC_0000214
+  label: Personality Disorders
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000205
+  onvoc_uri: ONVOC_0000205
+  label: Phobia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000475
+  onvoc_uri: ONVOC_0000475
+  label: Phonological Processing
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000300
+  onvoc_uri: ONVOC_0000300
+  label: Pimozide
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000279
+  onvoc_uri: ONVOC_0000279
+  label: Piroxicam
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000194
+  onvoc_uri: ONVOC_0000194
+  label: Pituitary Adenoma
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000469
+  onvoc_uri: ONVOC_0000469
+  label: Planning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000583
+  onvoc_uri: ONVOC_0000583
+  label: Polish
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000230
+  onvoc_uri: ONVOC_0000230
+  label: Porn Addiction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000539
+  onvoc_uri: ONVOC_0000539
+  label: Post-Secondary Education
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000211
+  onvoc_uri: ONVOC_0000211
+  label: Post-Traumatic Stress Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000085
+  onvoc_uri: ONVOC_0000085
+  label: Postcentral gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000086
+  onvoc_uri: ONVOC_0000086
+  label: Postcentral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000087
+  onvoc_uri: ONVOC_0000087
+  label: Posterior ascending ramus of the lateral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000088
+  onvoc_uri: ONVOC_0000088
+  label: Posterior cingulate cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000089
+  onvoc_uri: ONVOC_0000089
+  label: Posterior horizontal ramus of the lateral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000573
+  onvoc_uri: ONVOC_0000573
+  label: Postmenopause
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000390
+  onvoc_uri: ONVOC_0000390
+  label: Pramipexole
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000090
+  onvoc_uri: ONVOC_0000090
+  label: Precentral gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000091
+  onvoc_uri: ONVOC_0000091
+  label: Precentral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000092
+  onvoc_uri: ONVOC_0000092
+  label: Precuneus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000329
+  onvoc_uri: ONVOC_0000329
+  label: Pregabalin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000570
+  onvoc_uri: ONVOC_0000570
+  label: Pregnancy
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000535
+  onvoc_uri: ONVOC_0000535
+  label: Prepubescent
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000093
+  onvoc_uri: ONVOC_0000093
+  label: Pretriangular sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000536
+  onvoc_uri: ONVOC_0000536
+  label: Primary School Education
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000094
+  onvoc_uri: ONVOC_0000094
+  label: Primary intermediate sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000470
+  onvoc_uri: ONVOC_0000470
+  label: Problem Solving
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000487
+  onvoc_uri: ONVOC_0000487
+  label: Procedural Learning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000492
+  onvoc_uri: ONVOC_0000492
+  label: Procedural Memory
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000265
+  onvoc_uri: ONVOC_0000265
+  label: Propofol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000326
+  onvoc_uri: ONVOC_0000326
+  label: Propranolol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000187
+  onvoc_uri: ONVOC_0000187
+  label: Prosopagnosia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000410
+  onvoc_uri: ONVOC_0000410
+  label: Psilocin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000403
+  onvoc_uri: ONVOC_0000403
+  label: Psilocybin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000219
+  onvoc_uri: ONVOC_0000219
+  label: Psychotic Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000534
+  onvoc_uri: ONVOC_0000534
+  label: Puberty
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000124
+  onvoc_uri: ONVOC_0000124
+  label: Putamen
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000286
+  onvoc_uri: ONVOC_0000286
+  label: Quetiapine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000614
+  onvoc_uri: ONVOC_0000614
+  label: Randomized Controlled Trial
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000014
+  onvoc_uri: ONVOC_0000014
+  label: Rapid Eye Movement Sleep
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000395
+  onvoc_uri: ONVOC_0000395
+  label: Rasagiline
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000603
+  onvoc_uri: ONVOC_0000603
+  label: Rat
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000478
+  onvoc_uri: ONVOC_0000478
+  label: Reading Comprehension
+  level: 3
+  seed_tasks:
+  - slug: lexical-decision
+- family_id: onvoc_0000125
+  onvoc_uri: ONVOC_0000125
+  label: Red Nucleus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000486
+  onvoc_uri: ONVOC_0000486
+  label: Reinforcement Learning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000707
+  onvoc_uri: ONVOC_0000707
+  label: Restlessness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000463
+  onvoc_uri: ONVOC_0000463
+  label: Reward Responsiveness
+  level: 3
+  seed_tasks:
+  - slug: mid
+  - slug: reward-processing
+- family_id: onvoc_0000634
+  onvoc_uri: ONVOC_0000634
+  label: Rey Auditory Verbal Learning Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000625
+  onvoc_uri: ONVOC_0000625
+  label: "Rey\u2013Osterrieth Complex Figure"
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000095
+  onvoc_uri: ONVOC_0000095
+  label: Rhinal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000559
+  onvoc_uri: ONVOC_0000559
+  label: Right handed
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000685
+  onvoc_uri: ONVOC_0000685
+  label: Rigidity
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000363
+  onvoc_uri: ONVOC_0000363
+  label: Rimegepant
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000721
+  onvoc_uri: ONVOC_0000721
+  label: Risk-taking
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000288
+  onvoc_uri: ONVOC_0000288
+  label: Risperidone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000350
+  onvoc_uri: ONVOC_0000350
+  label: Rivastigmine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000635
+  onvoc_uri: ONVOC_0000635
+  label: Rivermead Behavioural Memory Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000355
+  onvoc_uri: ONVOC_0000355
+  label: Rizatriptan
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000605
+  onvoc_uri: ONVOC_0000605
+  label: Rodent
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000391
+  onvoc_uri: ONVOC_0000391
+  label: Ropinirole
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000096
+  onvoc_uri: ONVOC_0000096
+  label: Rostral anterior cingulate cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000400
+  onvoc_uri: ONVOC_0000400
+  label: Rotigotine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000750
+  onvoc_uri: ONVOC_0000750
+  label: Ruff Figural Fluency Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000655
+  onvoc_uri: ONVOC_0000655
+  label: Runny Nose
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000396
+  onvoc_uri: ONVOC_0000396
+  label: Safinamide
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000031
+  onvoc_uri: ONVOC_0000031
+  label: Salience network
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000418
+  onvoc_uri: ONVOC_0000418
+  label: Salvia Divinorim
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000419
+  onvoc_uri: ONVOC_0000419
+  label: Salvinorin A
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000217
+  onvoc_uri: ONVOC_0000217
+  label: Schizophrenia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000183
+  onvoc_uri: ONVOC_0000183
+  label: Sciatica
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000692
+  onvoc_uri: ONVOC_0000692
+  label: Scotoma
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000347
+  onvoc_uri: ONVOC_0000347
+  label: Segesterone Acetate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000683
+  onvoc_uri: ONVOC_0000683
+  label: Seizures
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000441
+  onvoc_uri: ONVOC_0000441
+  label: Selective Attention
+  level: 3
+  seed_tasks:
+  - slug: visual-search
+  - slug: match-to-sample-visual-search
+  - slug: parallel-serial-search
+  matchers:
+    keywords_any:
+    - visual search
+    - set size
+    - distractor
+    - pop-out
+    - serial search
+    - target present
+    - target absent
+    - match to sample
+    - parallel serial
+    regex:
+    - \bset[- ]?size\b
+    - \bpop[- ]?out\b
+- family_id: onvoc_0000394
+  onvoc_uri: ONVOC_0000394
+  label: Selegiline
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000473
+  onvoc_uri: ONVOC_0000473
+  label: Self-Regulation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000494
+  onvoc_uri: ONVOC_0000494
+  label: Semantic Memory
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000477
+  onvoc_uri: ONVOC_0000477
+  label: Semantics
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000034
+  onvoc_uri: ONVOC_0000034
+  label: Sensorimotor network
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000160
+  onvoc_uri: ONVOC_0000160
+  label: Sepsis
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000301
+  onvoc_uri: ONVOC_0000301
+  label: Sertraline
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000266
+  onvoc_uri: ONVOC_0000266
+  label: Sevoflurane
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000229
+  onvoc_uri: ONVOC_0000229
+  label: Sex Addiction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000713
+  onvoc_uri: ONVOC_0000713
+  label: Sex Drive
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000242
+  onvoc_uri: ONVOC_0000242
+  label: Sexual Dysfunctions
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000489
+  onvoc_uri: ONVOC_0000489
+  label: Short-Term Memory
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000666
+  onvoc_uri: ONVOC_0000666
+  label: Shortness of Breath
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000546
+  onvoc_uri: ONVOC_0000546
+  label: Sibling
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000485
+  onvoc_uri: ONVOC_0000485
+  label: Skill Acquisition
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000663
+  onvoc_uri: ONVOC_0000663
+  label: Skin Irritation
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000662
+  onvoc_uri: ONVOC_0000662
+  label: Skin Rashes
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000568
+  onvoc_uri: ONVOC_0000568
+  label: Skull Fracture
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000167
+  onvoc_uri: ONVOC_0000167
+  label: Sleep Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000660
+  onvoc_uri: ONVOC_0000660
+  label: Sleep Disturbances
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000016
+  onvoc_uri: ONVOC_0000016
+  label: Slow Wave Sleep
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000024
+  onvoc_uri: ONVOC_0000024
+  label: Smartphone Use
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000022
+  onvoc_uri: ONVOC_0000022
+  label: Smoking
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000504
+  onvoc_uri: ONVOC_0000504
+  label: Social Decision Making
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000023
+  onvoc_uri: ONVOC_0000023
+  label: Social Media Use
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000503
+  onvoc_uri: ONVOC_0000503
+  label: Social Perception
+  level: 3
+  seed_tasks:
+  - slug: face-monitor-discrimination
+  - slug: face-matching
+  - slug: cambridge-face-memory
+  - slug: biological-motion
+  - slug: biological-motion-perception-passive-viewing-paradigm
+  matchers:
+    keywords_any:
+    - face
+    - faces
+    - facial
+    - face perception
+    - face recognition
+    - gaze
+    - eye contact
+    - emotion recognition
+    - fusiform
+    - ffa
+    - biological motion
+    - point-light
+    regex:
+    - \bface(s)?\b
+    - \bfusiform\b
+    - \bffa\b
+    - \bgaze\b
+    - \bbiological motion\b
+  weights:
+    keywords_any: 0.35
+    regex: 0.3
+  accept:
+    min_score: 0.85
+    min_margin: 0.1
+    allow_multi: false
+- family_id: onvoc_0000225
+  onvoc_uri: ONVOC_0000225
+  label: Social Phobia
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000701
+  onvoc_uri: ONVOC_0000701
+  label: Social Withdrawal
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000656
+  onvoc_uri: ONVOC_0000656
+  label: Sore Throat
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000594
+  onvoc_uri: ONVOC_0000594
+  label: South American
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000599
+  onvoc_uri: ONVOC_0000599
+  label: Southeast Asian
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000582
+  onvoc_uri: ONVOC_0000582
+  label: Spanish
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000443
+  onvoc_uri: ONVOC_0000443
+  label: Spatial Attention
+  level: 3
+  seed_tasks:
+  - slug: spatial-attention
+  - slug: mental-rotation
+- family_id: onvoc_0000680
+  onvoc_uri: ONVOC_0000680
+  label: Speech Difficulties
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000480
+  onvoc_uri: ONVOC_0000480
+  label: Speech Perception
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000479
+  onvoc_uri: ONVOC_0000479
+  label: Speech Production
+  level: 3
+  seed_tasks:
+  - slug: word-generation
+- family_id: onvoc_0000567
+  onvoc_uri: ONVOC_0000567
+  label: Spinal Cord Injury
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000555
+  onvoc_uri: ONVOC_0000555
+  label: Spouse
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000684
+  onvoc_uri: ONVOC_0000684
+  label: Stiffness
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000175
+  onvoc_uri: ONVOC_0000175
+  label: Stroke
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000626
+  onvoc_uri: ONVOC_0000626
+  label: Stroop Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000097
+  onvoc_uri: ONVOC_0000097
+  label: Subparietal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000021
+  onvoc_uri: ONVOC_0000021
+  label: Substance Dependence
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000216
+  onvoc_uri: ONVOC_0000216
+  label: Substance Use Disorders
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000126
+  onvoc_uri: ONVOC_0000126
+  label: Substantia Nigra Pars Compacta
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000127
+  onvoc_uri: ONVOC_0000127
+  label: Substantia Nigra Pars Reticulata
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000128
+  onvoc_uri: ONVOC_0000128
+  label: Subthalamic Nucleus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000709
+  onvoc_uri: ONVOC_0000709
+  label: Suicidal Thoughts
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000280
+  onvoc_uri: ONVOC_0000280
+  label: Sulindac
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000354
+  onvoc_uri: ONVOC_0000354
+  label: Sumatriptan
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000098
+  onvoc_uri: ONVOC_0000098
+  label: Superior frontal gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000099
+  onvoc_uri: ONVOC_0000099
+  label: Superior frontal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000100
+  onvoc_uri: ONVOC_0000100
+  label: Superior parietal lobule
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000101
+  onvoc_uri: ONVOC_0000101
+  label: Superior rostral sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000102
+  onvoc_uri: ONVOC_0000102
+  label: Superior temporal gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000103
+  onvoc_uri: ONVOC_0000103
+  label: Superior temporal sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000104
+  onvoc_uri: ONVOC_0000104
+  label: Supramarginal gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000440
+  onvoc_uri: ONVOC_0000440
+  label: Sustained Attention
+  level: 3
+  seed_tasks:
+  - slug: sustained-attention
+- family_id: onvoc_0000686
+  onvoc_uri: ONVOC_0000686
+  label: Swallowing Difficulties
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000664
+  onvoc_uri: ONVOC_0000664
+  label: Swelling
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000671
+  onvoc_uri: ONVOC_0000671
+  label: Swollen Lymph Nodes
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000754
+  onvoc_uri: ONVOC_0000754
+  label: Symbol Digit Modalities Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000476
+  onvoc_uri: ONVOC_0000476
+  label: Syntax
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000353
+  onvoc_uri: ONVOC_0000353
+  label: Tacrine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000498
+  onvoc_uri: ONVOC_0000498
+  label: Tactile Perception
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000734
+  onvoc_uri: ONVOC_0000734
+  label: Tapentadol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000320
+  onvoc_uri: ONVOC_0000320
+  label: Temazepam
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000444
+  onvoc_uri: ONVOC_0000444
+  label: Temporal Attention
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000105
+  onvoc_uri: ONVOC_0000105
+  label: Temporal gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000106
+  onvoc_uri: ONVOC_0000106
+  label: Temporal incisure
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000107
+  onvoc_uri: ONVOC_0000107
+  label: Temporal pole
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000108
+  onvoc_uri: ONVOC_0000108
+  label: Temporo-Parietal Junction
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000540
+  onvoc_uri: ONVOC_0000540
+  label: Tertiary Education
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000755
+  onvoc_uri: ONVOC_0000755
+  label: Test of Everyday Attention
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000636
+  onvoc_uri: ONVOC_0000636
+  label: Test of Memory and Learning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000751
+  onvoc_uri: ONVOC_0000751
+  label: Test of Variables of Attention
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000332
+  onvoc_uri: ONVOC_0000332
+  label: Tetrahydrocannabivarin
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000162
+  onvoc_uri: ONVOC_0000162
+  label: Tetralogy of Fallot
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000129
+  onvoc_uri: ONVOC_0000129
+  label: Thalamus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000501
+  onvoc_uri: ONVOC_0000501
+  label: Theory of Mind
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000161
+  onvoc_uri: ONVOC_0000161
+  label: Thyroiditis
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000374
+  onvoc_uri: ONVOC_0000374
+  label: Tiagabine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000691
+  onvoc_uri: ONVOC_0000691
+  label: Tics
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000674
+  onvoc_uri: ONVOC_0000674
+  label: Tingling
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000511
+  onvoc_uri: ONVOC_0000511
+  label: Tinnitus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000019
+  onvoc_uri: ONVOC_0000019
+  label: Tobacco Use
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000233
+  onvoc_uri: ONVOC_0000233
+  label: Tobacco Use Disorder
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000398
+  onvoc_uri: ONVOC_0000398
+  label: Tolcapone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000373
+  onvoc_uri: ONVOC_0000373
+  label: Topiramate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000752
+  onvoc_uri: ONVOC_0000752
+  label: Tower of London Test
+  level: 3
+  seed_tasks:
+  - slug: tower-of-london
+- family_id: onvoc_0000753
+  onvoc_uri: ONVOC_0000753
+  label: Trail-Making Test
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000728
+  onvoc_uri: ONVOC_0000728
+  label: Tramadol
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000109
+  onvoc_uri: ONVOC_0000109
+  label: Transverse occipital sulcus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000110
+  onvoc_uri: ONVOC_0000110
+  label: Transverse temporal gyrus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000566
+  onvoc_uri: ONVOC_0000566
+  label: Traumatic Brain Injury
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000308
+  onvoc_uri: ONVOC_0000308
+  label: Trazodone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000682
+  onvoc_uri: ONVOC_0000682
+  label: Tremors
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000617
+  onvoc_uri: ONVOC_0000617
+  label: Twin Study
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000140
+  onvoc_uri: ONVOC_0000140
+  label: Type 1 Diabetes Mellitus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000141
+  onvoc_uri: ONVOC_0000141
+  label: Type 2 Diabetes Mellitus
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000562
+  onvoc_uri: ONVOC_0000562
+  label: Typical Health
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000362
+  onvoc_uri: ONVOC_0000362
+  label: Ubrogepant
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000346
+  onvoc_uri: ONVOC_0000346
+  label: Ulipristal Acetate
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000551
+  onvoc_uri: ONVOC_0000551
+  label: Uncle
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000645
+  onvoc_uri: ONVOC_0000645
+  label: Underweight
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000371
+  onvoc_uri: ONVOC_0000371
+  label: Valproic Acid
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000458
+  onvoc_uri: ONVOC_0000458
+  label: Value-Based Reasoning
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000306
+  onvoc_uri: ONVOC_0000306
+  label: Venlafaxine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000130
+  onvoc_uri: ONVOC_0000130
+  label: Ventral Pallidum
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000131
+  onvoc_uri: ONVOC_0000131
+  label: Ventral Tegmental Area
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000111
+  onvoc_uri: ONVOC_0000111
+  label: Ventral prefrontal cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000311
+  onvoc_uri: ONVOC_0000311
+  label: Vilazodone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000264
+  onvoc_uri: ONVOC_0000264
+  label: Viloxazine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000445
+  onvoc_uri: ONVOC_0000445
+  label: Visual Attention
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000495
+  onvoc_uri: ONVOC_0000495
+  label: Visual Perception
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000035
+  onvoc_uri: ONVOC_0000035
+  label: Visual cortex
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000312
+  onvoc_uri: ONVOC_0000312
+  label: Vortioxetine
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000627
+  onvoc_uri: ONVOC_0000627
+  label: Wechsler Adult Intelligence Scale
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000628
+  onvoc_uri: ONVOC_0000628
+  label: Wechsler Memory Scale
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000699
+  onvoc_uri: ONVOC_0000699
+  label: Weight Gain
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000700
+  onvoc_uri: ONVOC_0000700
+  label: Weight Loss
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000595
+  onvoc_uri: ONVOC_0000595
+  label: White
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000629
+  onvoc_uri: ONVOC_0000629
+  label: Wisconsin Card Sorting Task
+  level: 3
+  seed_tasks:
+  - slug: wisconsin-card-sorting
+- family_id: onvoc_0000488
+  onvoc_uri: ONVOC_0000488
+  label: Working Memory
+  level: 3
+  seed_tasks:
+  - slug: n-back
+  - slug: sternberg-memory
+  - slug: working-memory
+- family_id: onvoc_0000290
+  onvoc_uri: ONVOC_0000290
+  label: Ziprasidone
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000357
+  onvoc_uri: ONVOC_0000357
+  label: Zolmitriptan
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000375
+  onvoc_uri: ONVOC_0000375
+  label: Zonisamide
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000742
+  onvoc_uri: ONVOC_0000742
+  label: d2 Test of Attention
+  level: 3
+  seed_tasks: []
+- family_id: onvoc_0000015
+  onvoc_uri: ONVOC_0000015
+  label: non-Rapid Eye Movement Sleep
+  level: 3
+  seed_tasks: []

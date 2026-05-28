@@ -1,0 +1,116 @@
+{
+  "name": "tool_search",
+  "tier": "default",
+  "surface_tier": "default",
+  "capability_family": "tool_discovery",
+  "description": "Search Brain Researcher tools by capability keywords.",
+  "input_schema": {
+    "properties": {
+      "query": {
+        "title": "Query",
+        "type": "string"
+      },
+      "limit": {
+        "default": 20,
+        "title": "Limit",
+        "type": "integer"
+      },
+      "offset": {
+        "default": 0,
+        "title": "Offset",
+        "type": "integer"
+      },
+      "modalities": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Modalities"
+      },
+      "kind": {
+        "anyOf": [
+          {
+            "enum": [
+              "imaging",
+              "kg",
+              "viz",
+              "meta",
+              "data",
+              "analysis"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Kind"
+      },
+      "phases": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Phases"
+      },
+      "exposed_only": {
+        "default": true,
+        "title": "Exposed Only",
+        "type": "boolean"
+      },
+      "include_workflows": {
+        "default": true,
+        "title": "Include Workflows",
+        "type": "boolean"
+      },
+      "include_total": {
+        "default": true,
+        "title": "Include Total",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "tool_searchArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "tool_searchDictOutput",
+    "type": "object"
+  },
+  "examples": [
+    {
+      "input": {
+        "query": "registration",
+        "limit": 5
+      },
+      "output": {
+        "ok": true,
+        "tools": [],
+        "count": 0
+      },
+      "tested": false
+    }
+  ],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

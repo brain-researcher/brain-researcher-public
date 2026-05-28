@@ -1,0 +1,357 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://brain-researcher.org/schemas/capabilities.schema.json",
+  "title": "Brain Researcher Tool Capabilities Schema",
+  "description": "Schema for tool capability catalog entries",
+  "type": "object",
+  "required": [
+    "version",
+    "tools"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Catalog schema version",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"
+    },
+    "tools": {
+      "type": "array",
+      "description": "Array of tool capability entries",
+      "items": {
+        "$ref": "#/definitions/toolCapability"
+      },
+      "minItems": 1
+    }
+  },
+  "definitions": {
+    "toolCapability": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "package",
+        "runtime_kind",
+        "modality",
+        "capabilities",
+        "consumes",
+        "produces",
+        "resources"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique tool identifier (e.g., fsl.bet.run, python.nilearn.connectivity, or code_agent)",
+          "pattern": "^[a-z0-9]+(?:[._][a-z0-9_]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable tool name"
+        },
+        "package": {
+          "type": "string",
+          "description": "Parent package name (e.g., fsl, ants, python)",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain category (e.g., neuroimaging, llm_service, code_assistant)",
+          "minLength": 1
+        },
+        "runtime_kind": {
+          "type": "string",
+          "enum": [
+            "container",
+            "python",
+            "mcp"
+          ],
+          "description": "Type of runtime: container (NiWrap/Apptainer), python (native function), or mcp (Model Context Protocol)"
+        },
+        "entrypoint": {
+          "type": "string",
+          "description": "NiWrap tool ID for execution (container tools only)"
+        },
+        "modality": {
+          "type": "array",
+          "description": "Supported imaging modalities",
+          "items": {
+            "type": "string",
+            "enum": [
+              "clinical",
+              "data_catalog",
+              "dmri",
+              "eeg",
+              "fmri",
+              "general",
+              "genetics",
+              "ieeg",
+              "literature",
+              "meg",
+              "multimodal",
+              "optical",
+              "pet",
+              "rag",
+              "search",
+              "smri"
+            ]
+          },
+          "minItems": 1
+        },
+        "capabilities": {
+          "type": "array",
+          "description": "Capability tags describing what the tool does",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "intents": {
+          "type": "array",
+          "description": "Intent IDs implemented by this tool",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        },
+        "consumes": {
+          "type": "array",
+          "description": "Input resource types (validated against tool_resources.yaml at runtime)",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "produces": {
+          "type": "array",
+          "description": "Output resource types (validated against tool_resources.yaml at runtime)",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "resources": {
+          "$ref": "#/definitions/resourceSpec"
+        },
+        "container": {
+          "$ref": "#/definitions/containerSpec",
+          "description": "Container execution spec (for runtime_kind=container)"
+        },
+        "python": {
+          "$ref": "#/definitions/pythonSpec",
+          "description": "Python execution spec (for runtime_kind=python)"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata",
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "authors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "literature": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "urls": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          }
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional short description (may duplicate metadata.description)"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Optional keyword tags for UI/search",
+          "items": {
+            "type": "string"
+          }
+        },
+        "function": {
+          "type": "string",
+          "description": "High-level function bucket (e.g., analysis, preprocessing, utility)"
+        },
+        "risk": {
+          "type": "string",
+          "description": "Risk category (e.g., safe, dangerous)"
+        },
+        "backend": {
+          "type": "object",
+          "description": "Optional backend routing information (e.g., proxy to container tool id)",
+          "properties": {
+            "kind": {
+              "type": "string"
+            },
+            "provider": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "constraints": {
+          "type": "object",
+          "description": "Tool-specific constraints",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "resourceSpec": {
+      "type": "object",
+      "description": "Resource requirements",
+      "properties": {
+        "cpu_min": {
+          "type": "integer",
+          "description": "Minimum CPU cores required",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "mem_mb_min": {
+          "type": "integer",
+          "description": "Minimum memory in MB",
+          "minimum": 128,
+          "maximum": 131072
+        },
+        "gpu": {
+          "type": "boolean",
+          "description": "Whether GPU is required",
+          "default": false
+        },
+        "time_min_default": {
+          "type": "number",
+          "description": "Default time estimate in minutes",
+          "minimum": 0,
+          "maximum": 2880
+        },
+        "scaling_hints": {
+          "type": "array",
+          "description": "Parameter-based resource scaling rules",
+          "items": {
+            "type": "object",
+            "properties": {
+              "param": {
+                "type": "string"
+              },
+              "mem_mb_per_unit": {
+                "type": "number"
+              },
+              "time_min_per_unit": {
+                "type": "number"
+              },
+              "unit_description": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "param"
+            ]
+          }
+        }
+      },
+      "required": [
+        "cpu_min",
+        "mem_mb_min",
+        "gpu",
+        "time_min_default"
+      ]
+    },
+    "containerSpec": {
+      "type": "object",
+      "description": "Container execution configuration",
+      "required": [
+        "package_ref",
+        "runtime"
+      ],
+      "properties": {
+        "package_ref": {
+          "type": "string",
+          "description": "Reference to package in niwrap_containers.yaml (e.g., 'fsl', 'ants')"
+        },
+        "runtime": {
+          "type": "string",
+          "description": "Container runtime",
+          "enum": [
+            "apptainer",
+            "singularity",
+            "docker"
+          ]
+        },
+        "image": {
+          "type": "string",
+          "description": "Container image path (optional, usually from niwrap_containers.yaml)"
+        },
+        "image_is_directory": {
+          "type": "boolean",
+          "description": "Whether image path is a directory (CVMFS unpacked)",
+          "default": true
+        },
+        "binds": {
+          "type": "array",
+          "description": "Volume mount bindings",
+          "items": {
+            "type": "string",
+            "pattern": "^.+:.+$"
+          }
+        },
+        "env": {
+          "type": "object",
+          "description": "Environment variables",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "network_disabled": {
+          "type": "boolean",
+          "description": "Whether network access is disabled",
+          "default": true
+        },
+        "require_license": {
+          "type": "boolean",
+          "description": "Whether tool requires license file",
+          "default": false
+        }
+      }
+    },
+    "pythonSpec": {
+      "type": "object",
+      "description": "Python function/class execution configuration",
+      "required": [
+        "module",
+        "function"
+      ],
+      "properties": {
+        "module": {
+          "type": "string",
+          "description": "Python module path (e.g., 'brain_researcher.core.analysis.connectivity')"
+        },
+        "function": {
+          "type": "string",
+          "description": "Function or class name (e.g., 'compute_connectivity_matrix')"
+        },
+        "entry_type": {
+          "type": "string",
+          "enum": [
+            "function",
+            "class"
+          ],
+          "default": "function",
+          "description": "Type of entry point"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,276 @@
+version: 1
+ruleset_version: '2026-03-24'
+description: >
+  Conservative curated Psych-101 experiment slug and exact experiment id mappings
+  to canonical task/task-family metadata. Use this registry only for obvious,
+  high-confidence mappings; leave the rest unmapped rather than forcing fuzzy
+  ontology links from low-signal artifacts.
+defaults:
+  source: psych101_curated_registry
+mappings:
+  - experiment_slug: badham2017deficits
+    task_label: category learning task
+    family:
+      family_id: tf_rule_category_learning
+      family_label: Category & Probabilistic Learning
+      subfamily_id: sf_rule_based
+      subfamily_label: Rule-Based Learning (RB)
+      paradigm_name: Unidimensional Threshold Rule
+    provenance:
+      confidence: 0.95
+      rationale: Geometric stimulus categorization with trial-by-trial feedback over explicit latent rules.
+
+  - experiment_slug: bahrami2020four
+    task_label: four-armed bandit task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_bandit_reversal
+      subfamily_label: Bandit & Reversal Learning
+      paradigm_name: Four-Armed Bandit
+    provenance:
+      confidence: 0.95
+      rationale: Repeated reward learning over four choice options with exploration-exploitation structure.
+
+  - experiment_slug: cox2017information
+    task_label: associative recognition
+    family:
+      family_id: tf_ltm_declarative
+      family_label: Episodic & Declarative Memory
+      subfamily_id: sf_associative_memory
+      subfamily_label: Associative Memory
+      paradigm_name: Associative Recognition (Intact vs Rearranged)
+    provenance:
+      confidence: 1.0
+      rationale: Study word pairs, then judge whether test pairs preserve original pairings.
+
+  - experiment_slug: enkavi2019adaptivenback
+    task_label: n-back
+    canonical_task:
+      canonical_id: task:n-back
+      label: n-back
+      links:
+        cogat: TRM_4A3FD79D0A5C8
+    family:
+      family_id: tf_working_memory
+      family_label: Working Memory
+      subfamily_id: sf_wm_updating_streaming
+      subfamily_label: WM Updating in Streams
+      paradigm_name: n-back
+    provenance:
+      confidence: 1.0
+      rationale: Adaptive N-back with blockwise difficulty adjustments.
+
+  - experiment_slug: enkavi2019digitspan
+    task_label: digit span
+    family:
+      family_id: tf_working_memory
+      family_label: Working Memory
+      subfamily_id: sf_multimodal_wm
+      subfamily_label: Multimodal WM (Verbal, Auditory, Tactile)
+      paradigm_name: Verbal Digit/Letter WM
+    provenance:
+      confidence: 1.0
+      rationale: Immediate serial recall of digit sequences.
+
+  - experiment_slug: enkavi2019gonogo
+    task_label: go/no-go task
+    canonical_task:
+      canonical_id: task:go_no-go
+      label: go/no-go
+      links:
+        cogat: TRM_4D559BCD67C18
+    family:
+      family_id: tf_conflict_inhibition
+      family_label: Conflict & Inhibitory Control
+      subfamily_id: sf_response_inhibition
+      subfamily_label: Response Inhibition (withhold vs cancel task family)
+      paradigm_name: Go/No-Go (withhold)
+    provenance:
+      confidence: 1.0
+      rationale: Respond to one color and withhold to the other.
+
+  - experiment_slug: enkavi2019recentprobes
+    task_label: recent probes task
+    family:
+      family_id: tf_working_memory
+      family_label: Working Memory
+      subfamily_id: sf_interference_recency_binding
+      subfamily_label: Interference, Recency & Binding
+      paradigm_name: Recent Probes
+    provenance:
+      confidence: 1.0
+      rationale: Six-letter memory set followed by probe recognition judgments.
+
+  - experiment_slug: feng2021dynamics
+    task_label: two-armed bandit task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_bandit_reversal
+      subfamily_label: Bandit & Reversal Learning
+      paradigm_name: Two-Armed Bandit
+    provenance:
+      confidence: 0.95
+      rationale: Repeated slot-machine choices with dynamic reward structure and exploration-exploitation tradeoffs.
+
+  - experiment_slug: frey2017cct
+    task_label: columbia card task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_risk_ambiguity
+      subfamily_label: Risk & Ambiguity
+      paradigm_name: Columbia Card Task (CCT)
+    provenance:
+      confidence: 0.95
+      rationale: Sequential risky card decisions trading gains against latent loss risk.
+
+  - experiment_slug: frey2017risk
+    task_label: balloon analogue risk task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_risk_ambiguity
+      subfamily_label: Risk & Ambiguity
+      paradigm_name: Balloon Analogue Risk Task (BART)
+    provenance:
+      confidence: 1.0
+      rationale: Repeated pump-or-cash-out balloon risk task.
+
+  - experiment_slug: gershman2018deconstructing
+    task_label: two-armed bandit task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_bandit_reversal
+      subfamily_label: Bandit & Reversal Learning
+      paradigm_name: Two-Armed Bandit
+    provenance:
+      confidence: 0.95
+      rationale: Repeated two-option reward learning with short-horizon exploration structure.
+
+  - experiment_slug: kool2016when
+    task_label: two-step task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_mb_mf_arbitration
+      subfamily_label: Model-Based vs Model-Free Arbitration
+      paradigm_name: Two-Step Task (Daw)
+    provenance:
+      confidence: 1.0
+      rationale: Spaceship-to-planet transitions with second-stage rewards.
+
+  - experiment_slug: kool2017cost
+    task_label: two-step task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_mb_mf_arbitration
+      subfamily_label: Model-Based vs Model-Free Arbitration
+      paradigm_name: Two-Step Task (Daw)
+    provenance:
+      confidence: 0.95
+      rationale: Two-step choice variant with reward multipliers and transition structure.
+
+  - experiment_slug: lefebvre2017behavioural
+    task_label: contextual bandit task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_bandit_reversal
+      subfamily_label: Bandit & Reversal Learning
+      paradigm_name: Contextual Bandit
+    provenance:
+      confidence: 0.95
+      rationale: Reward learning across contextual casino environments with multiple local action options.
+
+  - experiment_slug: ruggeri2022globalizability
+    task_label: intertemporal choice
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_intertemporal_choice
+      subfamily_label: Intertemporal Choice
+      paradigm_name: Fixed-Set Intertemporal Choice
+    provenance:
+      confidence: 1.0
+      rationale: Repeated immediate-versus-delayed money choices with explicit delays.
+
+  - experiment_slug: speekenbrink2008learning
+    task_label: weather prediction task
+    family:
+      family_id: tf_rule_category_learning
+      family_label: Category & Probabilistic Learning
+      subfamily_id: sf_probabilistic_classification
+      subfamily_label: Probabilistic Classification
+      paradigm_name: Weather Prediction Task (Cards)
+    provenance:
+      confidence: 1.0
+      rationale: Card combinations are used to predict weather outcomes in a standard probabilistic classification setup.
+
+  - experiment_slug: steingroever2015data
+    task_label: iowa gambling task
+    canonical_task:
+      canonical_id: task:gambling
+      label: gambling task
+      links:
+        cogat: TRM_4F2419110168F
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_risk_ambiguity
+      subfamily_label: Risk & Ambiguity
+      paradigm_name: Iowa Gambling Task (IGT)
+    provenance:
+      confidence: 1.0
+      rationale: Four-deck Iowa Gambling Task with gains and penalties.
+
+  - experiment_slug: tomov2020discovery
+    task_label: route learning
+    family:
+      family_id: tf_spatial_navigation
+      family_label: Spatial Navigation
+      subfamily_id: sf_wayfinding_route_planning
+      subfamily_label: Wayfinding & Route Planning
+      paradigm_name: Route Learning / Decision-Point Navigation
+    provenance:
+      confidence: 1.0
+      rationale: Participants navigate a transit-style network toward goal stations with route decisions.
+
+  - experiment_slug: tomov2021multitask
+    task_label: multi-step sequential decision task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_mb_mf_arbitration
+      subfamily_label: Model-Based vs Model-Free Arbitration
+      paradigm_name: Multi-Step Sequential RL (3+ states)
+    provenance:
+      confidence: 0.95
+      rationale: Sequential planning and reward learning unfold over multi-state trajectories rather than single-step bandits.
+
+  - experiment_slug: wilson2014humans
+    task_label: two-armed bandit task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_bandit_reversal
+      subfamily_label: Bandit & Reversal Learning
+      paradigm_name: Two-Armed Bandit
+    provenance:
+      confidence: 0.95
+      rationale: Human exploration is probed with repeated two-option reward learning games.
+
+  - experiment_slug: zorowitz2023data
+    task_label: two-step task
+    family:
+      family_id: tf_value_based_decision
+      family_label: Value-Based Decision & Learning
+      subfamily_id: sf_mb_mf_arbitration
+      subfamily_label: Model-Based vs Model-Free Arbitration
+      paradigm_name: Two-Step Task (Daw)
+    provenance:
+      confidence: 1.0
+      rationale: First-stage transport choices lead probabilistically to second-stage states with drifting rewards.

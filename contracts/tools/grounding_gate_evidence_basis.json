@@ -1,0 +1,20 @@
+{
+  "name": "grounding_gate_evidence_basis",
+  "tier": "advanced",
+  "surface_tier": "advanced",
+  "capability_family": "grounding",
+  "description": "Gate evidence_basis rows before final output; weak or unresolved anchors are downgraded.",
+  "input_schema": {
+    "additionalProperties": true,
+    "title": "grounding_gate_evidence_basisArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "grounding_gate_evidence_basisDictOutput",
+    "type": "object"
+  },
+  "examples": [],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

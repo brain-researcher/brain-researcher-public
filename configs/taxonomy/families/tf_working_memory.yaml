@@ -1,0 +1,323 @@
+id: tf_working_memory
+label: Working Memory
+description: >-
+  Maintenance and updating of information over short delays. Includes short-delay recognition/recall,
+  capacity/precision measures in visual working memory (VWM), continuous-report estimation, online updating in streams,
+  interference/binding/retro-cue effects, spatial/oculomotor WM (working memory), complex span, and multimodal (auditory/verbal/tactile) WM.
+
+# ────────────────────────────────────────────────────────────────────────────────
+# LEVEL 2: Subfamilies, each with LEVEL 3 paradigms
+# ────────────────────────────────────────────────────────────────────────────────
+subfamilies:
+
+  - id: sf_wm_recognition_short_delay
+    label: Short-Delay Recognition (Yes/No, 2AFC)
+    description: Recognition/verification after brief delay; parametric load and probe diagnostics.
+    paradigms:
+      - name: Sternberg Item Recognition
+        aliases: [Sternberg, Sternberg Task, Sternberg Paradigm, Sternberg Memory Scanning, Item Recognition Task]
+        typical_DVs: [rt_slope_ms_per_item, accuracy]
+        common_manipulations: [memory_load, probe_type, retention_interval_ms]
+        variant_tags: [verbal, visual]
+        design_flags: [serial_search_model]
+        qa_checks: [exclude_post_error_trials, min_accuracy_60pct]
+        keywords: [scanning, load_slope]
+      - name: Delayed Match-to-Sample (DMS)
+        aliases: [Match-to-Sample, DMS Task, Delayed Match to Sample, Delayed Matching, Match to Sample Task]
+        typical_DVs: [accuracy, rt_ms, dprime]
+        common_manipulations: [retention_interval_ms, delay_jitter_ms, stimulus_duration_ms, mask_presence]
+        variant_tags: [YN, 2AFC, spatial, feature]
+        design_flags: []
+        qa_checks: [counterbalance_match_nonmatch]
+        keywords: [short_delay_recognition]
+      - name: Delayed Non-Match-to-Sample (DNMS)
+        aliases: [DNMS Task, Delayed Nonmatch to Sample, Delayed Non-Match, Non-Match-to-Sample, Nonmatch Task]
+        typical_DVs: [accuracy, rt_ms]
+        common_manipulations: [retention_interval_ms, interference_items, similarity]
+        variant_tags: [YN]
+        design_flags: []
+        qa_checks: [balance_match_nonmatch, similarity_control]
+        keywords: [nonmatch_rule]
+      - name: Delayed Category Match (Rule-based)
+        aliases: [Category Match Task, Rule-Based WM, Semantic Match Task, Category-Based Recognition]
+        typical_DVs: [accuracy, rt_ms]
+        common_manipulations: [rule_complexity, retention_interval_ms, lure_similarity]
+        variant_tags: [semantic, category]
+        design_flags: []
+        qa_checks: []
+        keywords: [rule_based_WM]
+
+  - id: sf_vwm_capacity_change_detection
+    label: VWM Capacity (Change Detection)
+    description: Array-based change/no-change; estimates item capacity (K).
+    paradigms:
+      - name: Change Detection (Colored Squares)
+        aliases: [VWM Change, Visual Working Memory Change Detection, Color Change Detection, Array Change Detection, VWM Change Task, Change Detection Task]
+        typical_DVs: [k_capacity, accuracy, rt_ms]
+        common_manipulations: [set_size, retention_interval_ms, change_probability, delta_e, masking]
+        variant_tags: [color, visual]
+        design_flags: [one_shot]
+        qa_checks: [set_size_staircase_optional, chance_level_check]
+        keywords: [K_estimate, array_memory]
+      - name: Orientation Change Detection
+        aliases: [Orientation Change Task, Orientation VWM, Orientation Working Memory]
+        typical_DVs: [k_capacity, accuracy]
+        common_manipulations: [set_size, orientation_diff_deg, retention_interval_ms]
+        variant_tags: [orientation]
+        design_flags: []
+        qa_checks: []
+        keywords: [feature_change]
+      - name: Lateralized Change Detection (CDA-friendly)
+        aliases: [Hemi-field VWM, Hemifield VWM, Lateralized VWM, CDA Task, Contralateral Delay Activity Task, Hemifield Change Detection]
+        typical_DVs: [k_capacity, accuracy]
+        common_manipulations: [retrocue_flag, hemifield, set_size]
+        variant_tags: [EEG_CDA]
+        design_flags: [spatial_cueing]
+        qa_checks: [balanced_hemifield]
+        keywords: [CDA]
+
+  - id: sf_vwm_continuous_report
+    label: VWM Precision (Continuous Report / Delayed Estimation)
+    description: Report a continuous feature after delay; infer precision and error components.
+    paradigms:
+      - name: Delayed Estimation (Color Wheel)
+        aliases: [Continuous Color Report, Color Wheel Task, Color Estimation Task, Delayed Color Estimation, Continuous Report Task]
+        typical_DVs: [mean_abs_error_deg, precision_kappa, guess_rate, swap_rate]
+        common_manipulations: [set_size, retention_interval_ms, retrocue_flag, distractor_during_delay]
+        variant_tags: [color]
+        design_flags: [mixture_model]
+        qa_checks: [fit_mixture_model, exclude_outliers_by_error]
+        keywords: [precision, mixture_components]
+      - name: Delayed Estimation (Orientation)
+        aliases: [Orientation Estimation Task, Orientation Continuous Report, Delayed Orientation Report]
+        typical_DVs: [mean_abs_error_deg, precision_kappa, swap_rate]
+        common_manipulations: [set_size, orientation_diff_deg, retention_interval_ms]
+        variant_tags: [orientation]
+        design_flags: [mixture_model]
+        qa_checks: []
+        keywords: [precision_orientation]
+      - name: Spatial Delayed Estimation (Location)
+        aliases: [Spatial Estimation Task, Location Estimation, Spatial Location Report, Delayed Spatial Report]
+        typical_DVs: [endpoint_error_deg, precision_kappa]
+        common_manipulations: [set_size, eccentricity_deg, retention_interval_ms]
+        variant_tags: [spatial]
+        design_flags: []
+        qa_checks: []
+        keywords: [spatial_precision]
+
+  - id: sf_wm_updating_streaming
+    label: WM Updating in Streams
+    description: Online replacement/insertion of items while monitoring a stream or list.
+    paradigms:
+      - name: n-back
+        aliases: [N-back, N-Back Task, N-Back Paradigm, N-Back Working Memory, Nback Task]
+        typical_DVs: [hit_rate, false_alarms, dprime, rt_ms]
+        common_manipulations: [n_back_level, isi_ms, stimulus_duration_ms, lure_type (n−1,n+1), target_probability]
+        variant_tags: [verbal, visual, spatial, auditory]
+        design_flags: [lure_control]
+        qa_checks: [dprime_reporting, min_accuracy_60pct]
+        keywords: [updating, monitoring]
+      - name: Running Span
+        aliases: [Running Memory Span, Running Memory Task, Continuous Span, Streaming Span]
+        typical_DVs: [proportion_recalled_last_k, recall_order_accuracy]
+        common_manipulations: [stream_rate_hz, list_length, recall_window_k]
+        variant_tags: [verbal, visual]
+        design_flags: [postcued_recall]
+        qa_checks: [serial_position_report]
+        keywords: [running_memory]
+      - name: Keep-Track / Updating Task
+        aliases: [Keep-Track Task, Updating Task, Category Updating Task, Keep Track Paradigm]
+        typical_DVs: [items_correctly_updated, update_cost_ms]
+        common_manipulations: [category_count, update_frequency, interference_items]
+        variant_tags: [semantic]
+        design_flags: []
+        qa_checks: []
+        keywords: [category_updating]
+
+  - id: sf_interference_recency_binding
+    label: Interference, Recency & Binding
+    description: Proactive/retroactive interference, recent-probes conflict, feature/object binding, retro-cues.
+    paradigms:
+      - name: Recent Probes
+        aliases: [PI/Recent Negative, Proactive Interference Recent Probes, Recent Negative Probes, Recent Probe Task, PI Task]
+        typical_DVs: [recent_negative_FA_rate, recent_interference_ms]
+        common_manipulations: [probe_recency (n−1), lure_similarity, RSI_ms]
+        variant_tags: [verbal, visual]
+        design_flags: [proactive_interference]
+        qa_checks: [balance_recent_nonrecent]
+        keywords: [recent_probes, interference]
+      - name: Feature vs Conjunction/Binding Memory
+        aliases: [Feature-Binding VWM, Feature Binding Task, Conjunction Memory, Object Binding VWM, Binding Memory Task]
+        typical_DVs: [binding_cost_ms, binding_error_rate]
+        common_manipulations: [set_size, bound_vs_feature, swap_lures]
+        variant_tags: [color_shape, motion_color]
+        design_flags: [swap_lure_control]
+        qa_checks: [swap_rate_estimation]
+        keywords: [binding, swaps]
+      - name: Retro-Cue Benefit
+        aliases: [Post-Cue Attention, Retro-Cue Task, Retro-Cueing, Retro-Cue Paradigm, Post-Cue Task, Retrospective Cue]
+        typical_DVs: [retrocue_benefit_ms, accuracy_gain]
+        common_manipulations: [retrocue_flag, cue_validity, SOA_ms, set_size]
+        variant_tags: [spatial_retrocue, item_retrocue, feature_retrocue]
+        design_flags: [attention_shift_during_delay]
+        qa_checks: [invalid_cue_control]
+        keywords: [retro_cue, prioritization]
+
+  - id: sf_spatial_oculomotor_wm
+    label: Spatial / Oculomotor Working Memory
+    description: Memory for positions or vectors; often with delayed saccades or reaches.
+    paradigms:
+      - name: Oculomotor Delayed Response (ODR)
+        aliases: [Memory-Guided Saccade, ODR Task, Oculomotor Delayed Saccade, Memory Saccade Task, Delayed Saccade Task]
+        typical_DVs: [saccade_latency_ms, endpoint_error_deg, p_correct]
+        common_manipulations: [target_eccentricity_deg, retention_interval_ms, distractor_during_delay]
+        variant_tags: [ocular]
+        design_flags: []
+        qa_checks: [min_saccade_velocity_threshold, blink_exclusion]
+        keywords: [spatial_WM, saccade_memory]
+      - name: Delayed Reach / Spatial WM
+        aliases: [Delayed Reach Task, Memory-Guided Reach, Spatial Working Memory Reach, Delayed Pointing Task]
+        typical_DVs: [endpoint_error_deg, movement_onset_ms]
+        common_manipulations: [effector (hand/joystick), retention_interval_ms, target_eccentricity_deg]
+        variant_tags: [manual]
+        design_flags: []
+        qa_checks: []
+        keywords: [reach_memory]
+
+  - id: sf_complex_span
+    label: Complex Span (Storage + Processing)
+    description: Alternating processing and storage demands; span scores reflect WM capacity under dual-task load.
+    paradigms:
+      - name: Operation Span (OSPAN)
+        aliases: [OSPAN Task, Operation Span Task, OSPAN, Operation Working Memory Span]
+        typical_DVs: [absolute_span, total_correct]
+        common_manipulations: [processing_difficulty, list_length, pacing]
+        variant_tags: [verbal]
+        design_flags: [dual_task]
+        qa_checks: [processing_accuracy_threshold]
+        keywords: [complex_span]
+      - name: Reading Span
+        aliases: [Reading Span Task, Reading Working Memory Span, Reading WM Span]
+        typical_DVs: [absolute_span, total_correct]
+        common_manipulations: [sentence_difficulty, list_length]
+        variant_tags: [verbal]
+        design_flags: [dual_task]
+        qa_checks: []
+        keywords: [complex_span_reading]
+      - name: Symmetry Span
+        aliases: [Symmetry Span Task, Symmetry Working Memory Span, Symmetry WM Span, Visuospatial Span]
+        typical_DVs: [absolute_span, total_correct]
+        common_manipulations: [symmetry_task_load, grid_size]
+        variant_tags: [visuospatial]
+        design_flags: [dual_task]
+        qa_checks: []
+        keywords: [complex_span_visuospatial]
+
+  - id: sf_multimodal_wm
+    label: Multimodal WM (Verbal, Auditory, Tactile)
+    description: WM across modalities with modality-specific interference (e.g., articulatory suppression).
+    paradigms:
+      - name: Verbal Digit/Letter WM
+        aliases: [Digit Span (forward/backward), Digit Span Task, Letter Span, Verbal Span Task, Forward Backward Span]
+        typical_DVs: [span, accuracy, rt_ms]
+        common_manipulations: [list_length, articulatory_suppression, presentation_rate]
+        variant_tags: [verbal]
+        design_flags: [span_forward_backward]
+        qa_checks: [check_articulatory_compliance]
+        keywords: [verbal_WM]
+      - name: Auditory Tone WM
+        aliases: [Auditory Tone Working Memory, Tone Memory Task, Auditory WM, Tone Working Memory Task]
+        typical_DVs: [accuracy, dprime, rt_ms]
+        common_manipulations: [tone_set_size, isi_ms, frequency_spacing_hz]
+        variant_tags: [auditory]
+        design_flags: []
+        qa_checks: []
+        keywords: [auditory_WM]
+      - name: Tactile/Vibrotactile WM
+        aliases: [Tactile Working Memory, Vibrotactile WM, Tactile Memory Task, Vibrotactile Working Memory Task, Tactile WM Task]
+        typical_DVs: [accuracy, rt_ms, bias]
+        common_manipulations: [frequency_hz, amplitude, set_size]
+        variant_tags: [tactile]
+        design_flags: []
+        qa_checks: []
+        keywords: [tactile_WM]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs optional)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Sternberg Item Recognition
+    - Delayed Match to Sample
+    - Delayed Nonmatch to Sample
+    - n-back
+    - Change Detection
+    - Delayed Estimation
+    - Running Span
+    - Keep-Track (Updating)
+    - Recent Probes
+    - Feature-Binding VWM
+    - Retro-cueing
+    - Oculomotor Delayed Response
+    - Operation Span
+    - Reading Span
+    - Symmetry Span
+    - Digit Span
+  cogpo_candidate_labels:
+    - Sternberg Item Recognition
+    - Delayed Match to Sample
+    - n-back
+    - Change Detection
+    - Delayed Estimation
+    - Running Span
+    - Operation/Reading/Symmetry Span
+constructs:
+  primary: [Maintenance, Updating]
+  secondary: [Capacity (K), Precision, Interference/PI, Binding, Prioritization]
+uri_brainmap: []
+uri_cogpo: []
+status: plausible
+provenance:
+  - source: task_families_master_20.yaml + WM expansion
+    fields: [subfamilies, paradigms, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, response, correct, rt]
+  per_subfamily:
+    sf_wm_recognition_short_delay:
+      events_columns: [onset, duration, trial_type, set_size, probe_type, retention_interval_ms, response, correct, rt]
+      hed_examples:
+        - "Working-memory, Short-delay-recognition"
+    sf_vwm_capacity_change_detection:
+      events_columns: [onset, duration, trial_type, set_size, change_probability, retention_interval_ms, response, correct, rt]
+      hed_examples:
+        - "Working-memory, Visual, Change-detection"
+    sf_vwm_continuous_report:
+      events_columns: [onset, duration, trial_type, set_size, probe_feature, retention_interval_ms, response_angle, rt]
+      hed_examples:
+        - "Working-memory, Visual, Continuous-report"
+    sf_wm_updating_streaming:
+      events_columns: [onset, duration, trial_type, n_back_level, is_target, lure_type, response, correct, rt]
+      hed_examples:
+        - "Working-memory, Updating, N-back"
+    sf_interference_recency_binding:
+      events_columns: [onset, duration, trial_type, probe_recency, bound_vs_feature, swap_lure_flag, retrocue_flag, response, correct, rt]
+      hed_examples:
+        - "Working-memory, Interference, Recent-probes"
+        - "Working-memory, Binding, Feature-conjunction"
+    sf_spatial_oculomotor_wm:
+      events_columns: [onset, duration, trial_type, target_eccentricity_deg, retention_interval_ms, saccade_onset, endpoint_error_deg]
+      hed_examples:
+        - "Working-memory, Oculomotor-delayed-response"
+    sf_complex_span:
+      events_columns: [onset, duration, trial_type, processing_accuracy, storage_item, recall_correct, span_score]
+      hed_examples:
+        - "Working-memory, Complex-span, Operation-span"
+    sf_multimodal_wm:
+      events_columns: [onset, duration, trial_type, modality, list_length, articulatory_suppression, response, correct, rt]
+      hed_examples:
+        - "Working-memory, Verbal, Digit-span"

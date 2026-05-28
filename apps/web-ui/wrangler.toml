@@ -1,0 +1,16 @@
+name = "brain-researcher"
+account_id = "b1f310d611aed3d5906bef441df5fd34"
+compatibility_date = "2024-01-01"
+
+[env.production]
+account_id = "b1f310d611aed3d5906bef441df5fd34"
+zone_id = "874ab8d012d52c6cdd7b4bfa36742413"
+
+# Build configuration
+[build]
+command = "npm run build:cloudflare"
+
+# Pages configuration
+[[pages]]
+name = "brain-researcher"
+compatibility_date = "2024-01-01"

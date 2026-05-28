@@ -1,0 +1,34 @@
+apiVersion: v2
+name: brain-researcher-istio
+description: Helm chart for Brain Researcher Istio service mesh configuration
+type: application
+version: 1.0.0
+appVersion: "1.19.0"
+keywords:
+  - istio
+  - service-mesh
+  - neuroimaging
+  - brain-research
+  - microservices
+home: https://github.com/brain-researcher/brain-researcher
+sources:
+  - https://github.com/brain-researcher/brain-researcher
+maintainers:
+  - name: Brain Researcher Team
+    email: team@brain-researcher.com
+dependencies:
+  - name: base
+    version: "1.27.2"
+    repository: "https://istio-release.storage.googleapis.com/charts"
+    condition: istio.installBase
+  - name: istiod
+    version: "1.27.2" 
+    repository: "https://istio-release.storage.googleapis.com/charts"
+    condition: istio.installIstiod
+  - name: gateway
+    version: "1.27.2"
+    repository: "https://istio-release.storage.googleapis.com/charts"
+    condition: istio.installGateway
+annotations:
+  category: Infrastructure
+  license: MIT

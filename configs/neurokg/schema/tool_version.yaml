@@ -1,0 +1,27 @@
+label: ToolVersion
+key: version_id
+properties:
+  version_id: string         # e.g., fmriprep@23.2.1 or nilearn_connectivity@sha:abc123
+  semver: string?
+  commit_sha: string?
+  container_image: string?
+  container_digest: string?
+  python_module: string?
+  python_function: string?
+  created_at: datetime?
+relationships:
+  - name: HAS_VERSION
+    from: Tool
+    to: ToolVersion
+  - name: CONSUMES_RESOURCE
+    from: ToolVersion
+    to: ResourceType
+  - name: PRODUCES_RESOURCE
+    from: ToolVersion
+    to: ResourceType
+  - name: SUPPORTS_MODALITY
+    from: Tool
+    to: Modality
+  - name: IMPLEMENTS_FAMILY
+    from: Tool
+    to: TaskFamily

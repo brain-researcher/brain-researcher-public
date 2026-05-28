@@ -1,0 +1,24 @@
+# NiWrap promoted command whitelist (initial starter set).
+# These entries can be adjusted as we validate on real datasets.
+promoted:
+  # Structural / surface
+  - package: freesurfer
+    entrypoint: recon-all
+  - package: ants
+    entrypoint: antsRegistration
+  # Skull strip / QC
+  - package: fsl
+    entrypoint: bet
+  # Diffusion
+  - package: mrtrix3
+    entrypoint: tckgen
+  - package: mrtrix3
+    entrypoint: dwi2response
+  # BIDS Apps (core)
+  - package: bidsapp.fmriprep
+    entrypoint: fmriprep
+  - package: bidsapp.qsiprep
+    entrypoint: qsiprep
+  # Workbench common surface op (catch-all entrypoint)
+  - package: workbench
+    entrypoint: wb_command

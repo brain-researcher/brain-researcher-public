@@ -1,0 +1,243 @@
+{
+  "historical_executions": [
+    {
+      "execution_id": "hist_001",
+      "tool_name": "fmriprep",
+      "dataset_characteristics": {
+        "n_subjects": 1,
+        "n_sessions": 1,
+        "n_runs": 2,
+        "total_size_gb": 2.5,
+        "resolution": "2mm",
+        "tr": 2.0
+      },
+      "actual_resources": {
+        "cpu_hours": 6.2,
+        "memory_peak_gb": 7.8,
+        "storage_used_gb": 12.4,
+        "duration_seconds": 8940
+      },
+      "instance_type": "m5.xlarge"
+    },
+    {
+      "execution_id": "hist_002", 
+      "tool_name": "fmriprep",
+      "dataset_characteristics": {
+        "n_subjects": 5,
+        "n_sessions": 1,
+        "n_runs": 3,
+        "total_size_gb": 18.7,
+        "resolution": "2mm",
+        "tr": 2.0
+      },
+      "actual_resources": {
+        "cpu_hours": 34.5,
+        "memory_peak_gb": 9.2,
+        "storage_used_gb": 78.3,
+        "duration_seconds": 52800
+      },
+      "instance_type": "c5.2xlarge"
+    },
+    {
+      "execution_id": "hist_003",
+      "tool_name": "fsl_feat", 
+      "dataset_characteristics": {
+        "n_subjects": 1,
+        "n_sessions": 1,
+        "n_runs": 1,
+        "total_size_gb": 1.2,
+        "task_type": "block_design",
+        "n_volumes": 240
+      },
+      "actual_resources": {
+        "cpu_hours": 1.8,
+        "memory_peak_gb": 3.2,
+        "storage_used_gb": 4.8,
+        "duration_seconds": 2160
+      },
+      "instance_type": "t3.large"
+    },
+    {
+      "execution_id": "hist_004",
+      "tool_name": "connectivity_analysis",
+      "dataset_characteristics": {
+        "n_subjects": 10,
+        "n_parcels": 400,
+        "n_timepoints": 300,
+        "atlas": "schaefer400"
+      },
+      "actual_resources": {
+        "cpu_hours": 12.7,
+        "memory_peak_gb": 24.6,
+        "storage_used_gb": 15.2,
+        "duration_seconds": 15480
+      },
+      "instance_type": "r5.xlarge"
+    },
+    {
+      "execution_id": "hist_005",
+      "tool_name": "freesurfer_recon_all",
+      "dataset_characteristics": {
+        "n_subjects": 1,
+        "image_quality": "high",
+        "resolution": "1mm",
+        "contrast": "T1w"
+      },
+      "actual_resources": {
+        "cpu_hours": 48.2,
+        "memory_peak_gb": 12.8,
+        "storage_used_gb": 32.5,
+        "duration_seconds": 173520
+      },
+      "instance_type": "c5.4xlarge"
+    }
+  ],
+  "prediction_features": {
+    "fmriprep": [
+      "n_subjects",
+      "n_sessions", 
+      "n_runs",
+      "total_size_gb",
+      "resolution_factor",
+      "tr",
+      "use_fieldmaps"
+    ],
+    "fsl_feat": [
+      "n_volumes",
+      "task_complexity",
+      "smoothing_kernel",
+      "highpass_filter",
+      "n_contrasts"
+    ],
+    "connectivity_analysis": [
+      "n_subjects",
+      "n_parcels",
+      "n_timepoints",
+      "connectivity_method",
+      "matrix_size"
+    ],
+    "freesurfer_recon_all": [
+      "image_quality_score",
+      "resolution_factor",
+      "skull_stripped",
+      "parallel_processing"
+    ]
+  },
+  "feature_scaling": {
+    "n_subjects": {"min": 1, "max": 100, "mean": 15.2, "std": 12.8},
+    "total_size_gb": {"min": 0.5, "max": 500.0, "mean": 45.6, "std": 78.3},
+    "n_volumes": {"min": 120, "max": 800, "mean": 350.5, "std": 125.7},
+    "memory_peak_gb": {"min": 2.0, "max": 64.0, "mean": 12.4, "std": 8.9},
+    "cpu_hours": {"min": 0.5, "max": 100.0, "mean": 18.7, "std": 22.1},
+    "duration_seconds": {"min": 300, "max": 259200, "mean": 12450, "std": 28560}
+  },
+  "model_coefficients": {
+    "fmriprep_cpu_model": {
+      "intercept": 2.1,
+      "coefficients": {
+        "n_subjects": 3.2,
+        "n_runs": 1.8, 
+        "total_size_gb": 0.4,
+        "resolution_factor": 2.1
+      },
+      "r_squared": 0.87,
+      "rmse": 2.3
+    },
+    "fmriprep_memory_model": {
+      "intercept": 4.5,
+      "coefficients": {
+        "n_subjects": 0.8,
+        "total_size_gb": 0.3,
+        "resolution_factor": 1.2
+      },
+      "r_squared": 0.82,
+      "rmse": 1.1
+    },
+    "connectivity_memory_model": {
+      "intercept": 1.2,
+      "coefficients": {
+        "n_parcels": 0.05,
+        "n_subjects": 0.3,
+        "matrix_size": 0.001
+      },
+      "r_squared": 0.91,
+      "rmse": 1.8
+    }
+  },
+  "prediction_accuracy": {
+    "fmriprep": {
+      "cpu_prediction_error": 0.15,
+      "memory_prediction_error": 0.12,
+      "duration_prediction_error": 0.18
+    },
+    "fsl_feat": {
+      "cpu_prediction_error": 0.08,
+      "memory_prediction_error": 0.06,
+      "duration_prediction_error": 0.11
+    },
+    "connectivity_analysis": {
+      "cpu_prediction_error": 0.22,
+      "memory_prediction_error": 0.09,
+      "duration_prediction_error": 0.25
+    }
+  },
+  "test_scenarios": {
+    "small_dataset": {
+      "description": "Small single-subject dataset",
+      "characteristics": {
+        "n_subjects": 1,
+        "n_runs": 2,
+        "total_size_gb": 3.2,
+        "resolution": "2mm"
+      },
+      "expected_resources": {
+        "cpu_hours": 5.8,
+        "memory_peak_gb": 6.4,
+        "storage_used_gb": 15.2,
+        "duration_seconds": 7200
+      }
+    },
+    "medium_dataset": {
+      "description": "Medium multi-subject dataset",
+      "characteristics": {
+        "n_subjects": 20,
+        "n_runs": 3,
+        "total_size_gb": 125.6,
+        "resolution": "2mm"
+      },
+      "expected_resources": {
+        "cpu_hours": 78.4,
+        "memory_peak_gb": 12.8,
+        "storage_used_gb": 450.2,
+        "duration_seconds": 86400
+      }
+    },
+    "large_dataset": {
+      "description": "Large multi-site dataset",
+      "characteristics": {
+        "n_subjects": 100,
+        "n_runs": 4,
+        "total_size_gb": 856.3,
+        "resolution": "1.5mm"
+      },
+      "expected_resources": {
+        "cpu_hours": 456.7,
+        "memory_peak_gb": 18.2,
+        "storage_used_gb": 2840.5,
+        "duration_seconds": 432000
+      }
+    }
+  },
+  "uncertainty_estimates": {
+    "fmriprep": {
+      "cpu_confidence_interval": [0.85, 1.15],
+      "memory_confidence_interval": [0.88, 1.12],
+      "duration_confidence_interval": [0.82, 1.18]
+    },
+    "connectivity_analysis": {
+      "cpu_confidence_interval": [0.78, 1.22],
+      "memory_confidence_interval": [0.91, 1.09],
+      "duration_confidence_interval": [0.75, 1.25]
+    }
+  }
+}

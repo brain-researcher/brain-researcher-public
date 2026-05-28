@@ -1,0 +1,2079 @@
+version: 1
+description: 'Incremental alias extensions for TaskFamilyMatcher. These aliases are
+  applied after taxonomy-native aliases and are meant to improve recall for common
+  production label variants without editing the master taxonomy export.
+
+  '
+aliases:
+- alias: orthogonalized go/nogo task
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_response_inhibition
+  paradigm_name: Go/No-Go (withhold)
+- alias: orthogonalized go no-go
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_response_inhibition
+  paradigm_name: Go/No-Go (withhold)
+- alias: orthogonalized gng
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_response_inhibition
+  paradigm_name: Go/No-Go (withhold)
+- alias: stopsignal task
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_response_inhibition
+  paradigm_name: Stop-Signal Task (cancel)
+- alias: stop signal paradigm
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_response_inhibition
+  paradigm_name: Stop-Signal Task (cancel)
+- alias: anti saccade task
+  family_id: tf_motor_action
+  subfamily_id: sf_oculomotor
+  paradigm_name: Anti-Saccade
+- alias: antisaccade task
+  family_id: tf_motor_action
+  subfamily_id: sf_oculomotor
+  paradigm_name: Anti-Saccade
+- alias: anti-saccade paradigm
+  family_id: tf_motor_action
+  subfamily_id: sf_oculomotor
+  paradigm_name: Anti-Saccade
+- alias: 0-back
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: 1-back
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: 2-back
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: 3-back
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: 0 back task
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: 1 back task
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: 2 back task
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: 3 back task
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: verbal n-back
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: spatial n-back
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: rhyming judgment task
+  family_id: tf_language_semantic
+  subfamily_id: sf_phonology_morphology
+  paradigm_name: Rhyme Judgment / Phonological Decision
+- alias: delayed recognition task
+  family_id: tf_working_memory
+  subfamily_id: sf_spatial_oculomotor_wm
+  paradigm_name: Delayed Reach / Spatial WM
+- alias: thermal stimulation task
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: colorword stroop task
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: "Stroop (Color\u2013Word)"
+- alias: speech production
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Sentence Production (Picture Description)
+- alias: speech production and perception
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Sentence Production (Picture Description)
+- alias: set shifting
+  family_id: tf_task_switching
+  subfamily_id: sf_neuropsych_set_shifting
+  paradigm_name: Intra-/Extra-Dimensional Set Shift (ID/ED; CANTAB)
+- alias: orthographic judgment
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Orthographic Decision / Letter-String Legality
+- alias: oral reading
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: oral word reading
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: silent verbal fluency
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Category Fluency / Letter Fluency
+- alias: time reproduction
+  family_id: tf_timing_order
+  subfamily_id: sf_interval_metrics
+  paradigm_name: Interval Reproduction
+- alias: passive visual stimulation
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: passive listening fmri experiment
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: passive listening to laughter
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: framing effect
+  family_id: tf_preference_affective
+  subfamily_id: sf_preference_choice
+  paradigm_name: Loss Aversion / Framing Effects
+- alias: misinformation processing
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_false_memory_interference
+  paradigm_name: Misinformation Effect
+- alias: memory retrieval
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Emotional Memory (Encoding/Retrieval)
+- alias: face processing
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: face processing task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: face-processing task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: personally familiar faces
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: face emotion processing
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: face recognition
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: moral judgment
+  family_id: tf_social_cognition
+  subfamily_id: sf_moral_norms_enforcement
+  paradigm_name: Moral Dilemmas (Trolley/Footbridge)
+- alias: visual attention
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+  target_alias: Spatial Cueing
+- alias: memory encoding
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Enactment / Imagery Encoding
+- alias: visual discrimination
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_feature_discrimination
+  paradigm_name: Orientation Discrimination
+- alias: visual short term memory
+  family_id: tf_working_memory
+  subfamily_id: sf_vwm_capacity_change_detection
+  paradigm_name: Change Detection (Colored Squares)
+- alias: visual short-term memory
+  family_id: tf_working_memory
+  subfamily_id: sf_vwm_capacity_change_detection
+  paradigm_name: Change Detection (Colored Squares)
+- alias: semantic relatedness judgment
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: semantic classification
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: arithmetic verification
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: visuospatial attention
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+  target_alias: Spatial Cueing
+- alias: reading related
+  family_id: tf_working_memory
+  subfamily_id: sf_complex_span
+  paradigm_name: Reading Span
+- alias: word discrimination
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Lexical Decision (Word vs Nonword)
+- alias: truth judgment
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: temporal discrimination
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_temporal_order_flicker
+  paradigm_name: Temporal Order Judgment (TOJ) - Perceptual
+- alias: syntactic movement
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Syntactic Ambiguity / Garden-Path
+- alias: semantic distance judgment
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: cued attention
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+  target_alias: Spatial Cueing
+- alias: color judgment
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_feature_discrimination
+  paradigm_name: "Color Discrimination (\u0394E)"
+- alias: picture naming
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: semantic judgment
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: facial emotion recognition
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: emotion recognition
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: facial emotion processing
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: emotional face processing
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: passive listening
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: trail making
+  family_id: tf_task_switching
+  subfamily_id: sf_neuropsych_set_shifting
+  paradigm_name: Trail Making Test Part B (TMT-B)
+- alias: probabilistic reversal learning
+  family_id: tf_value_based_decision
+  subfamily_id: sf_bandit_reversal
+  paradigm_name: Probabilistic Reversal (2AFC)
+- alias: episodic memory retrieval
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Emotional Memory (Encoding/Retrieval)
+- alias: resting state functional connectivity
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Resting State (Eyes Open/Closed/Fixation)
+- alias: resting state functional mri
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Resting State (Eyes Open/Closed/Fixation)
+- alias: working memory
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: verbal working memory
+  family_id: tf_working_memory
+  subfamily_id: sf_multimodal_wm
+  paradigm_name: Verbal Digit/Letter WM
+- alias: visual search
+  family_id: tf_attention_selective
+  subfamily_id: sf_visual_search_capture
+  paradigm_name: Conjunction Search
+- alias: delay discounting
+  family_id: tf_value_based_decision
+  subfamily_id: sf_intertemporal_choice
+  paradigm_name: Adjusting-Amount Discounting (Staircase)
+- alias: mental rotation
+  family_id: tf_motor_action
+  subfamily_id: sf_motor_imagery
+  paradigm_name: Mental Rotation of Body/Tool
+- alias: emotion processing
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: emotional processing
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: emotional faces
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: fear conditioning
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: Fear Conditioning / Extinction
+- alias: attention network
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+  target_alias: Spatial Cueing
+- alias: decision making
+  family_id: tf_value_based_decision
+  subfamily_id: sf_risk_ambiguity
+  paradigm_name: Prospect Theory Choice (Two-Outcome Lotteries)
+- alias: mental arithmetic
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: empathy
+  family_id: tf_social_cognition
+  subfamily_id: sf_empathy_vicarious
+  paradigm_name: Empathy for Pain (Pictures/Video)
+- alias: naming
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: categorization
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: sentence reading
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Sentence Comprehension (Question/Probe)
+- alias: pain stimulation
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: dichotic listening
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Dichotic Listening (Lateralization)
+- alias: episodic memory
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_item_recognition
+  paradigm_name: Old/New Recognition (Yes/No)
+- alias: motor imagery
+  family_id: tf_motor_action
+  subfamily_id: sf_motor_imagery
+  paradigm_name: Kinesthetic Motor Imagery (KMI)
+- alias: reading
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: action observation
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Biological Motion (Point-Light)
+- alias: motor
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Finger Tapping (Unimanual/Bimanual)
+- alias: spatial working memory
+  family_id: tf_working_memory
+  subfamily_id: sf_spatial_oculomotor_wm
+  paradigm_name: Delayed Reach / Spatial WM
+- alias: visuospatial working memory
+  family_id: tf_working_memory
+  subfamily_id: sf_spatial_oculomotor_wm
+  paradigm_name: Delayed Reach / Spatial WM
+- alias: neurofeedback training
+  family_id: tf_neurofeedback
+  subfamily_id: sf_calibration_transfer
+  paradigm_name: Functional Localizer / Decoder Training
+- alias: visual oddball
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Single-Target RSVP Detection
+- alias: 2 back working memory
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: rey auditory verbal learning
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_free_cued_serial_recall
+  paradigm_name: Free Recall (Immediate/Delayed)
+- alias: montreal imaging stress
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: Montreal Imaging Stress Task (MIST)
+- alias: target detection
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Single-Target RSVP Detection
+- alias: object naming
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: emotional go no go
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_response_inhibition
+  paradigm_name: Go/No-Go (withhold)
+- alias: visual working memory
+  family_id: tf_working_memory
+  subfamily_id: sf_vwm_capacity_change_detection
+  paradigm_name: Change Detection (Colored Squares)
+- alias: saccade
+  family_id: tf_motor_action
+  subfamily_id: sf_oculomotor
+  paradigm_name: Pro-Saccade
+- alias: task switching
+  family_id: tf_task_switching
+  subfamily_id: sf_explicit_cued_switching
+  paradigm_name: Cued Task Switching (explicit cue)
+- alias: motor sequence learning
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Serial Reaction Time (SRT) Task
+- alias: facial expression recognition
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: face perception
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: episodic memory encoding
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Enactment / Imagery Encoding
+- alias: recognition
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_item_recognition
+  paradigm_name: Old/New Recognition (Yes/No)
+- alias: object recognition
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_item_recognition
+  paradigm_name: 2AFC Recognition
+- alias: emotional picture viewing
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: grammaticality judgment
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Agreement / Word Order Violations
+- alias: word recognition
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Lexical Decision (Word vs Nonword)
+- alias: semantic priming
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: semantics
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: semantic localizer
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: semantic localizers
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: biological motion perception
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Biological Motion (Point-Light)
+- alias: associative memory
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_associative_memory
+  paradigm_name: Paired-Associate Learning (PAL)
+- alias: face-name association
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_associative_memory
+  paradigm_name: Paired-Associate Learning (PAL)
+- alias: face-name task
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_associative_memory
+  paradigm_name: Paired-Associate Learning (PAL)
+- alias: face-name fmri task
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_associative_memory
+  paradigm_name: Paired-Associate Learning (PAL)
+- alias: inclusive face-name fmri task
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_associative_memory
+  paradigm_name: Paired-Associate Learning (PAL)
+- alias: visual detection
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_signal_detection
+  paradigm_name: Yes/No Detection (SDT)
+- alias: thermal pain stimulation
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: prospective memory
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_prospective_memory
+  paradigm_name: Event-Based PM (Focal vs Non-Focal)
+- alias: phonological processing
+  family_id: tf_language_semantic
+  subfamily_id: sf_phonology_morphology
+  paradigm_name: Rhyme Judgment / Phonological Decision
+- alias: phonological localizer
+  family_id: tf_language_semantic
+  subfamily_id: sf_phonology_morphology
+  paradigm_name: Rhyme Judgment / Phonological Decision
+- alias: phonological localizers
+  family_id: tf_language_semantic
+  subfamily_id: sf_phonology_morphology
+  paradigm_name: Rhyme Judgment / Phonological Decision
+- alias: sentence completion
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Sentence Comprehension (Question/Probe)
+- alias: oddball
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Single-Target RSVP Detection
+- alias: aesthetic judgment
+  family_id: tf_preference_affective
+  subfamily_id: sf_aesthetic_judgment
+  paradigm_name: Visual Art / Photography Aesthetics
+- alias: word reading
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: temporal discounting
+  family_id: tf_value_based_decision
+  subfamily_id: sf_intertemporal_choice
+  paradigm_name: Adjusting-Amount Discounting (Staircase)
+- alias: spatial attention
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+  target_alias: Spatial Cueing
+- alias: autobiographical memory
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: semantic fluency
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Category Fluency / Letter Fluency
+- alias: semantic association
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: reward processing
+  family_id: tf_value_based_decision
+  subfamily_id: sf_bandit_reversal
+  paradigm_name: Monetary Incentive Delay (MID)
+- alias: picture description
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Sentence Production (Picture Description)
+- alias: emotional conflict
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: Emotional Stroop
+- alias: visual categorization
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Visual Category Learning (Faces/Objects)
+- alias: listening
+  family_id: tf_language_semantic
+  subfamily_id: sf_discourse_pragmatics_prosody
+  paradigm_name: Story Listening / Narrative Comprehension
+- alias: conversational implicature
+  family_id: tf_language_semantic
+  subfamily_id: sf_discourse_pragmatics_prosody
+  paradigm_name: Pragmatics (Sarcasm/Irony/Metaphor)
+- alias: conversational implicature processing
+  family_id: tf_language_semantic
+  subfamily_id: sf_discourse_pragmatics_prosody
+  paradigm_name: Pragmatics (Sarcasm/Irony/Metaphor)
+- alias: implicature processing
+  family_id: tf_language_semantic
+  subfamily_id: sf_discourse_pragmatics_prosody
+  paradigm_name: Pragmatics (Sarcasm/Irony/Metaphor)
+- alias: ci processing
+  family_id: tf_language_semantic
+  subfamily_id: sf_discourse_pragmatics_prosody
+  paradigm_name: Pragmatics (Sarcasm/Irony/Metaphor)
+- alias: ci-processing
+  family_id: tf_language_semantic
+  subfamily_id: sf_discourse_pragmatics_prosody
+  paradigm_name: Pragmatics (Sarcasm/Irony/Metaphor)
+- alias: one back
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: two back working memory
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: sequence learning
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Serial Reaction Time (SRT) Task
+- alias: covert attention
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+  target_alias: Spatial Cueing
+- alias: autobiographical memory retrieval
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: emotional face matching
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: emotional face matching task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: self referential processing
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: self-referential processing
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: emotion induction
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: Film/Music Mood Induction
+- alias: emotion perception
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: sternberg working memory
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_recognition_short_delay
+  paradigm_name: Sternberg Item Recognition
+- alias: time estimation
+  family_id: tf_timing_order
+  subfamily_id: sf_interval_metrics
+  paradigm_name: Interval Reproduction
+- alias: facial expression processing
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: subsequent memory paradigm
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Enactment / Imagery Encoding
+- alias: imagery
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Enactment / Imagery Encoding
+- alias: predictive learning
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_probabilistic_classification
+  paradigm_name: Weather Prediction Task (Cards)
+- alias: memory encoding and retrieval
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Emotional Memory (Encoding/Retrieval)
+- alias: visual word recognition
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Rapid Serial Visual Presentation (RSVP) Word Recognition
+- alias: category learning
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Unidimensional Threshold Rule
+- alias: emotional oddball
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Single-Target RSVP Detection
+- alias: associative encoding
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_associative_memory
+  paradigm_name: Paired-Associate Learning (PAL)
+- alias: self face recognition
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: selective attention
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+  target_alias: Spatial Cueing
+- alias: attentional orienting
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+  target_alias: Spatial Cueing
+- alias: visual feature search
+  family_id: tf_attention_selective
+  subfamily_id: sf_visual_search_capture
+  paradigm_name: Feature Search
+- alias: silent word generation
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: word generation
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: overt word generation
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: word generation task
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: word generation tasks
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: word list generation
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: cued word generation
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: phonetic word generation
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: lexical word generation paradigm
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: episodic memory encoding and retrieval
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Emotional Memory (Encoding/Retrieval)
+- alias: visuomotor
+  family_id: tf_motor_action
+  subfamily_id: sf_sensorimotor_adaptation
+  paradigm_name: Visuomotor Rotation (VMR)
+- alias: story listening
+  family_id: tf_language_semantic
+  subfamily_id: sf_discourse_pragmatics_prosody
+  paradigm_name: Story Listening / Narrative Comprehension
+- alias: spatial memory
+  family_id: tf_spatial_navigation
+  subfamily_id: sf_landmark_memory
+  paradigm_name: Landmark Order / Sequence Memory
+- alias: simple motor
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Finger Tapping (Unimanual/Bimanual)
+- alias: overt picture naming
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: probabilistic learning
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_probabilistic_classification
+  paradigm_name: Weather Prediction Task (Cards)
+- alias: sentence verification
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: emotion word stroop
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: Emotional Stroop
+- alias: episodic retrieval
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Emotional Memory (Encoding/Retrieval)
+- alias: pointing
+  family_id: tf_motor_action
+  subfamily_id: sf_speed_accuracy_pointing
+  paradigm_name: "Fitts\u2019 Pointing Task"
+- alias: risk taking
+  family_id: tf_value_based_decision
+  subfamily_id: sf_risk_ambiguity
+  paradigm_name: Prospect Theory Choice (Two-Outcome Lotteries)
+- alias: food choice
+  family_id: tf_preference_affective
+  subfamily_id: sf_preference_choice
+  paradigm_name: Pairwise Preference (2AFC)
+- alias: emotion rating
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: emotion identification
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: imitation task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: tower of london task
+  family_id: tf_task_switching
+  subfamily_id: sf_neuropsych_set_shifting
+  paradigm_name: Trail Making Test Part B (TMT-B)
+- alias: cue reactivity task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: tactile stimulation task
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: gender discrimination task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: mentalizing task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: deception task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: wheel of fortune task
+  family_id: tf_value_based_decision
+  subfamily_id: sf_risk_ambiguity
+  paradigm_name: Prospect Theory Choice (Two-Outcome Lotteries)
+- alias: face encoding task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: alternate uses task (aut)
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: visuomotor tracking task
+  family_id: tf_motor_action
+  subfamily_id: sf_sensorimotor_adaptation
+  paradigm_name: Visuomotor Rotation (VMR)
+- alias: deductive reasoning task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: impression formation task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: swallowing task
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: food cue reactivity task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: emotional picture processing task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: visuomotor adaptation task
+  family_id: tf_motor_action
+  subfamily_id: sf_sensorimotor_adaptation
+  paradigm_name: Visuomotor Rotation (VMR)
+- alias: transitive inference task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: bimanual coordination task
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Finger Tapping (Unimanual/Bimanual)
+- alias: controlled oral word association test (cowat)
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: self-reflection task
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: alcohol cue reactivity task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: arithmetic task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: facial emotion perception task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: facial expression task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: landmark task
+  family_id: tf_spatial_navigation
+  subfamily_id: sf_path_integration
+  paradigm_name: Landmark-Aided Path Integration
+- alias: neurofeedback task
+  family_id: tf_neurofeedback
+  subfamily_id: sf_calibration_transfer
+  paradigm_name: Functional Localizer / Decoder Training
+- alias: sentence-picture matching task
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Sentence Comprehension (Question/Probe)
+- alias: stop task
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_response_inhibition
+  paradigm_name: Stop-Signal Task (cancel)
+- alias: affective priming task
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: Negative Priming (Stroop/PWI)
+- alias: incidental encoding task
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Enactment / Imagery Encoding
+- alias: homophone judgment task
+  family_id: tf_language_semantic
+  subfamily_id: sf_phonology_morphology
+  paradigm_name: Rhyme Judgment / Phonological Decision
+- alias: visual food cue task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: alcohol cue-reactivity task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: rapid visual information processing (rvip) task
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Single-Target RSVP Detection
+- alias: sequential finger-tapping task
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Finger Tapping (Unimanual/Bimanual)
+- alias: auditory description decision task (addt)
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: pain perception task
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: taylor aggression paradigm (tap)
+  family_id: tf_social_cognition
+  subfamily_id: sf_moral_norms_enforcement
+  paradigm_name: Moral Dilemmas (Trolley/Footbridge)
+- alias: california verbal learning test (cvlt)
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_free_cued_serial_recall
+  paradigm_name: Free Recall (Immediate/Delayed)
+- alias: multiplication task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: emotion discrimination task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: emotion judgment task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: motion discrimination task
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_feature_discrimination
+  paradigm_name: Orientation Discrimination
+- alias: pitch discrimination task
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_feature_discrimination
+  paradigm_name: Orientation Discrimination
+- alias: perceptual discrimination task
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_feature_discrimination
+  paradigm_name: Orientation Discrimination
+- alias: interoceptive attention task
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_interoceptive_accuracy
+  paradigm_name: Heartbeat Counting (Schandry)
+- alias: audiovisual speech integration task
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Speech-in-Noise Word Recognition
+- alias: covert verb generation task
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: speech processing task
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Speech-in-Noise Word Recognition
+- alias: binary choice task
+  family_id: tf_value_based_decision
+  subfamily_id: sf_risk_ambiguity
+  paradigm_name: Prospect Theory Choice (Two-Outcome Lotteries)
+- alias: sentence repetition task
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Sentence Comprehension (Question/Probe)
+- alias: repetition priming task
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: Negative Priming (Stroop/PWI)
+- alias: magnitude comparison task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: sequential finger movement task
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Finger Tapping (Unimanual/Bimanual)
+- alias: motor sequence task
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Serial Reaction Time (SRT) Task
+- alias: speech recognition task
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Speech-in-Noise Word Recognition
+- alias: visual imagery task
+  family_id: tf_motor_action
+  subfamily_id: sf_motor_imagery
+  paradigm_name: Visual Motor Imagery (VMI)
+- alias: self-reference task
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: face discrimination task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: gaze processing task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: audiovisual speech perception task
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Speech-in-Noise Word Recognition
+- alias: sentence generation task
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: action prediction task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: alternative uses task (aut)
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: arithmetic problem solving
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: sentence processing
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Visual Category Learning (Faces/Objects)
+- alias: language processing
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: humor processing
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: acupuncture stimulation
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: implicit association
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: dynamic facial expression
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: number comparison
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: multisource interference
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: "Stroop (Color\u2013Word)"
+- alias: symptom provocation
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_representation_generalization
+  paradigm_name: Transfer & Rotation Generalization
+- alias: matching
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_recognition_short_delay
+  paradigm_name: Delayed Match-to-Sample (DMS)
+- alias: irony comprehension
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_spatial_compatibility
+  paradigm_name: Simon Task
+- alias: metaphor processing
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Visual Category Learning (Faces/Objects)
+- alias: writing
+  family_id: tf_task_switching
+  subfamily_id: sf_neuropsych_set_shifting
+  paradigm_name: Wisconsin Card Sorting Test (WCST)
+- alias: cognitive control
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: Emotion Regulation (Cognitive Reappraisal)
+- alias: emotional judgment
+  family_id: tf_attention_selective
+  subfamily_id: sf_tracking_dynamic_selection
+  paradigm_name: Multiple Object Tracking (MOT)
+- alias: verb generation
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: social perception
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: social perception network
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: trait judgment
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: action anticipation
+  family_id: tf_preference_affective
+  subfamily_id: sf_context_framing
+  paradigm_name: Hedonic Adaptation / Satiation
+- alias: affect labeling
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Attentional Blink (AB)
+- alias: placebo analgesia
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_probabilistic_classification
+  paradigm_name: Weather Prediction Task (Cards)
+- alias: musical hallucination
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_representation_generalization
+  paradigm_name: Transfer & Rotation Generalization
+- alias: embedded figures
+  family_id: tf_task_switching
+  subfamily_id: sf_neuropsych_set_shifting
+  paradigm_name: Intra-/Extra-Dimensional Set Shift (ID/ED; CANTAB)
+- alias: passive avoidance
+  family_id: tf_attention_selective
+  subfamily_id: sf_visual_search_capture
+  paradigm_name: Value-Driven Attentional Capture (VDAC)
+- alias: symbol digit modalities
+  family_id: tf_working_memory
+  subfamily_id: sf_multimodal_wm
+  paradigm_name: Verbal Digit/Letter WM
+- alias: chatroom
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: "Stroop (Color\u2013Word)"
+- alias: social influence
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Phoneme Identification / Categorical Perception
+- alias: optic flow
+  family_id: tf_motor_action
+  subfamily_id: sf_trajectory_tracking
+  paradigm_name: Isometric Force Production / Tracking
+- alias: beam walk
+  family_id: tf_attention_selective
+  subfamily_id: sf_feature_object_based_selection
+  paradigm_name: "Object-Based Attention (Egly\u2013Driver)"
+- alias: lower limb movement
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Finger Tapping (Unimanual/Bimanual)
+- alias: domino
+  family_id: tf_spatial_navigation
+  subfamily_id: sf_path_integration
+  paradigm_name: Out-and-Back / L-Path Homing
+- alias: infant cry response
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+- alias: preparing to overcome prepotency
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: dietary self control
+  family_id: tf_social_cognition
+  subfamily_id: sf_perspective_joint_attention
+  paradigm_name: Director Task (Perspective-Taking)
+- alias: infant cry
+  family_id: tf_working_memory
+  subfamily_id: sf_interference_recency_binding
+  paradigm_name: Recent Probes
+- alias: comprehensive aphasia
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_spatial_compatibility
+  paradigm_name: Simon Task
+- alias: sensory
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Cold Pressor (Hand Immersion)
+- alias: synonym
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_recognition_short_delay
+  paradigm_name: Delayed Non-Match-to-Sample (DNMS)
+- alias: novelty
+  family_id: tf_spatial_navigation
+  subfamily_id: sf_virtual_maze_place_learning
+  paradigm_name: Shortcut Discovery / Novel Path Use
+- alias: poffenberger
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_recognition_short_delay
+  paradigm_name: Sternberg Item Recognition
+- alias: isometric hand grip
+  family_id: tf_motor_action
+  subfamily_id: sf_sensorimotor_adaptation
+  paradigm_name: Visuomotor Rotation (VMR)
+- alias: fearful face
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: fear and escape
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: Fear Conditioning / Extinction
+- alias: human intruder
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: inner speech
+  family_id: tf_attention_selective
+  subfamily_id: sf_visual_search_capture
+  paradigm_name: "Hybrid Search (Memory Set \xD7 Visual Set)"
+- alias: phantom hand movement
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Syntactic Ambiguity / Garden-Path
+- alias: vicarious embarrassment
+  family_id: tf_social_cognition
+  subfamily_id: sf_empathy_vicarious
+  paradigm_name: Vicarious Reward / Outcome for Other
+- alias: foot fault
+  family_id: tf_attention_selective
+  subfamily_id: sf_tracking_dynamic_selection
+  paradigm_name: Multiple Object Tracking (MOT)
+- alias: jack and jill
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_temporal_order_flicker
+  paradigm_name: Simultaneity Judgment (SJ) - Perceptual
+- alias: sexual arousal
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_temporal_order_flicker
+  paradigm_name: Simultaneity Judgment (SJ) - Perceptual
+- alias: horizontal tongue movement
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Finger Tapping (Unimanual/Bimanual)
+- alias: choose your own adventure game
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_value_games
+  paradigm_name: Trust Game (TG)
+- alias: cued self generated thought
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_free_cued_serial_recall
+  paradigm_name: Cued Recall
+- alias: porteus maze
+  family_id: tf_spatial_navigation
+  subfamily_id: sf_virtual_maze_place_learning
+  paradigm_name: Grid/Corridor Maze (Place vs Cue Navigation)
+- alias: fmri task with evocative cues
+  family_id: tf_task_switching
+  subfamily_id: sf_explicit_cued_switching
+  paradigm_name: Cued Task Switching (explicit cue)
+- alias: phonological and lexical
+  family_id: tf_language_semantic
+  subfamily_id: sf_phonology_morphology
+  paradigm_name: Rhyme Judgment / Phonological Decision
+- alias: grammatical agreement
+  family_id: tf_language_semantic
+  subfamily_id: sf_discourse_pragmatics_prosody
+  paradigm_name: Pragmatics (Sarcasm/Irony/Metaphor)
+- alias: prisoners dilemma and welfare game
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_value_games
+  paradigm_name: "Prisoner\u2019s Dilemma / Public Goods"
+- alias: upper limb movement
+  family_id: tf_motor_action
+  subfamily_id: sf_rhythmic_sequenced
+  paradigm_name: Finger Tapping (Unimanual/Bimanual)
+- alias: thermoregulatory event
+  family_id: tf_neurofeedback
+  subfamily_id: sf_eeg_meg_nf
+  paradigm_name: Theta Regulation (Memory/Meditation)
+- alias: self evaluation and reward
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: self evaluation fmri
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: comprehensive mathematical abilities
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_spatial_compatibility
+  paradigm_name: Simon Task
+- alias: roving stimulus
+  family_id: tf_task_switching
+  subfamily_id: sf_bivalent_rule_congruency
+  paradigm_name: Task-Rule Congruency Effect (TRCE)
+- alias: fmri paradigm with visual stimuli
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: angling risk task always sunny
+  family_id: tf_value_based_decision
+  subfamily_id: sf_risk_ambiguity
+  paradigm_name: Prospect Theory Choice (Two-Outcome Lotteries)
+- alias: binaural difference
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: chewing gum
+  family_id: tf_language_semantic
+  subfamily_id: sf_bilingual_switching_translation
+  paradigm_name: Code-Switching / Language Switching
+- alias: food desire
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: grip force squeeze ball
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Single-Target RSVP Detection
+- alias: imagine no imagine
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Enactment / Imagery Encoding
+- alias: noun classifier
+  family_id: tf_attention_selective
+  subfamily_id: sf_change_blindness_attention
+  paradigm_name: Flicker Change Detection
+- alias: power grip
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+- alias: rolling ball
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Single-Target RSVP Detection
+- alias: task free fmri connectivity
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: sensory organization test 5
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_item_recognition
+  paradigm_name: Old/New Recognition (Yes/No)
+- alias: accommodative response
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+- alias: skin conductance response
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+- alias: fmri task for amygdala response
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+- alias: maternal love response
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+- alias: 4 mountains
+  family_id: tf_value_based_decision
+  subfamily_id: sf_intertemporal_choice
+  paradigm_name: Adjusting-Amount Discounting (Staircase)
+- alias: interactive dice game
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_value_games
+  paradigm_name: Dictator Game (DG)
+- alias: cheat card game
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_value_games
+  paradigm_name: Dictator Game (DG)
+- alias: crossmodal semantic congruence
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_recognition_short_delay
+  paradigm_name: Delayed Category Match (Rule-based)
+- alias: doubt card game
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_value_games
+  paradigm_name: Dictator Game (DG)
+- alias: radiological expertise
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: sensory shift
+  family_id: tf_task_switching
+  subfamily_id: sf_neuropsych_set_shifting
+  paradigm_name: Intra-/Extra-Dimensional Set Shift (ID/ED; CANTAB)
+- alias: turn taking disk game
+  family_id: tf_value_based_decision
+  subfamily_id: sf_risk_ambiguity
+  paradigm_name: Prospect Theory Choice (Two-Outcome Lotteries)
+- alias: tickling and laughter
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: communicative intentions
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+- alias: harsh looming faces
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: informative card
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_information_integration
+  paradigm_name: "Gabor (Orientation \xD7 Spatial Frequency)"
+- alias: agency vs control
+  family_id: tf_neurofeedback
+  subfamily_id: sf_controls_sham
+  paradigm_name: Waitlist Control
+- alias: awe experience
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: social approval
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Phoneme Identification / Categorical Perception
+- alias: reliving pain
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: Running Span
+- alias: electroacupuncture fmri
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: action knowledge
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_representation_generalization
+  paradigm_name: Transfer & Rotation Generalization
+- alias: anti drug public service announcements fmri
+  family_id: tf_attention_selective
+  subfamily_id: sf_change_blindness_attention
+  paradigm_name: Flicker Change Detection
+- alias: beads in a bottle
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: checkerboard and binaural tone
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_conflict_adaptation_designs
+  paradigm_name: Sequential Congruency / Gratton
+- alias: curiosity
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_feature_discrimination
+  paradigm_name: Vernier Acuity (Hyperacuity)
+- alias: duplex gamble
+  family_id: tf_value_based_decision
+  subfamily_id: sf_risk_ambiguity
+  paradigm_name: Iowa Gambling Task (IGT)
+- alias: dynamic isometric hand grip
+  family_id: tf_attention_selective
+  subfamily_id: sf_tracking_dynamic_selection
+  paradigm_name: Dynamic Tracking with Occlusion/Reappearance
+- alias: extra corporeal experience
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: handshake task with virtual avatar
+  family_id: tf_task_switching
+  subfamily_id: sf_explicit_cued_switching
+  paradigm_name: Cued Task Switching (explicit cue)
+- alias: hearing in noise
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: infant face cue
+  family_id: tf_working_memory
+  subfamily_id: sf_interference_recency_binding
+  paradigm_name: Retro-Cue Benefit
+- alias: nih toolbox hearing threshold
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: nih toolbox standing balance
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: neutral faces and places
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: olfactory event related fmri
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_prospective_memory
+  paradigm_name: Event-Based PM (Focal vs Non-Focal)
+- alias: own baby cry
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: n-back
+- alias: paying it forward
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: Keep-Track / Updating Task
+- alias: rectangle and polygon
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: subject verb agreement
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Enactment / Imagery Encoding
+- alias: syllable count
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Scrambled Controls
+- alias: symbol counter
+  family_id: tf_attention_selective
+  subfamily_id: sf_spatial_orienting_cueing
+  paradigm_name: Posner Spatial Cueing (Endogenous)
+- alias: test de vocabulario en imagenes peabody
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Enactment / Imagery Encoding
+- alias: abstract concrete
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_representation_generalization
+  paradigm_name: Prototype Distortion Learning
+- alias: network traversal
+  family_id: tf_neurofeedback
+  subfamily_id: sf_rtfmri_connectivity
+  paradigm_name: Network Balance Regulation (DMN-TPN Balance)
+- alias: dual task paradigm for wm and ltm
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Word Reading vs Pseudoword Reading
+- alias: positive negative stimulus
+  family_id: tf_motor_action
+  subfamily_id: sf_speed_accuracy_pointing
+  paradigm_name: "Fitts\u2019 Pointing Task"
+- alias: cooperative hand movement
+  family_id: tf_working_memory
+  subfamily_id: sf_complex_span
+  paradigm_name: Operation Span (OSPAN)
+- alias: belief update
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_updating_streaming
+  paradigm_name: Keep-Track / Updating Task
+- alias: effort based pleasure experience
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_prospective_memory
+  paradigm_name: Event-Based PM (Focal vs Non-Focal)
+- alias: reversible cerebral vasoconstriction syndrome
+  family_id: tf_task_switching
+  subfamily_id: sf_neuropsych_set_shifting
+  paradigm_name: Wisconsin Card Sorting Test (WCST)
+- alias: relative reinforcing efficacy purchase
+  family_id: tf_preference_affective
+  subfamily_id: sf_preference_choice
+  paradigm_name: Loss Aversion / Framing Effects
+- alias: social nonsocial why how
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_learning_influence
+  paradigm_name: Social Conformity (Rating Update)
+- alias: prefrontal inhibitory control
+  family_id: tf_neurofeedback
+  subfamily_id: sf_controls_sham
+  paradigm_name: Waitlist Control
+- alias: insomnia related stimuli
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: masked trauma related stimuli
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: cold and heat stimuli
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: chronometry
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_interoceptive_accuracy
+  paradigm_name: Heartbeat Discrimination / Cardio-Audio Synchrony (Whitehead/MCS)
+- alias: domino game
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_value_games
+  paradigm_name: Ultimatum Game (UG)
+- alias: gap closure
+  family_id: tf_preference_affective
+  subfamily_id: sf_familiarity_exposure
+  paradigm_name: Mere Exposure (Repeated Items)
+- alias: familiarity
+  family_id: tf_preference_affective
+  subfamily_id: sf_familiarity_exposure
+  paradigm_name: Mere Exposure (Repeated Items)
+- alias: isometric dynamic hand grip
+  family_id: tf_motor_action
+  subfamily_id: sf_sensorimotor_adaptation
+  paradigm_name: Visuomotor Rotation (VMR)
+- alias: isometric left hand grip
+  family_id: tf_motor_action
+  subfamily_id: sf_sensorimotor_adaptation
+  paradigm_name: Visuomotor Rotation (VMR)
+- alias: subvocal rehearsal
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: Emotion Regulation (Cognitive Reappraisal)
+- alias: fmri media
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_probabilistic_classification
+  paradigm_name: Feedback Schedule (Immediate vs Summary)
+- alias: neuroimaging experimental
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: active hand movement
+  family_id: tf_working_memory
+  subfamily_id: sf_multimodal_wm
+  paradigm_name: Tactile/Vibrotactile WM
+- alias: changing intentions
+  family_id: tf_working_memory
+  subfamily_id: sf_vwm_capacity_change_detection
+  paradigm_name: Orientation Change Detection
+- alias: defining issues
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: disgust and morality
+  family_id: tf_working_memory
+  subfamily_id: sf_multimodal_wm
+  paradigm_name: Verbal Digit/Letter WM
+- alias: economic exchange game
+  family_id: tf_working_memory
+  subfamily_id: sf_vwm_capacity_change_detection
+  paradigm_name: Change Detection (Colored Squares)
+- alias: fight or escape
+  family_id: tf_task_switching
+  subfamily_id: sf_explicit_cued_switching
+  paradigm_name: Cued Task Switching (explicit cue)
+- alias: game of chicken
+  family_id: tf_preference_affective
+  subfamily_id: sf_preference_choice
+  paradigm_name: Pairwise Preference (2AFC)
+- alias: incentive compatible reward
+  family_id: tf_working_memory
+  subfamily_id: sf_multimodal_wm
+  paradigm_name: Tactile/Vibrotactile WM
+- alias: interactive reciprocity
+  family_id: tf_working_memory
+  subfamily_id: sf_multimodal_wm
+  paradigm_name: Tactile/Vibrotactile WM
+- alias: juice reward
+  family_id: tf_value_based_decision
+  subfamily_id: sf_effort_cost_benefit
+  paradigm_name: Effort Expenditure for Rewards Task (EEfRT)
+- alias: pain vs gain
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: pseudo interactive joke
+  family_id: tf_working_memory
+  subfamily_id: sf_multimodal_wm
+  paradigm_name: Tactile/Vibrotactile WM
+- alias: real time peer interactive chat
+  family_id: tf_working_memory
+  subfamily_id: sf_multimodal_wm
+  paradigm_name: Tactile/Vibrotactile WM
+- alias: self other game character
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_value_games
+  paradigm_name: Trust Game (TG)
+- alias: fearful face gaze
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_visual_category
+  paradigm_name: Face Localizer (FFA)
+- alias: actual tool use
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_temporal_order_flicker
+  paradigm_name: Temporal Order Judgment (TOJ) - Perceptual
+- alias: anxiety word
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: electroshock treatment
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Semantic Decision / Category Verification
+- alias: eyeblink reflex
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Cold Face (Diving) Reflex
+- alias: grip force fmri
+  family_id: tf_motor_action
+  subfamily_id: sf_sensorimotor_adaptation
+  paradigm_name: Force-Field Adaptation
+- alias: passive fmri task with speech and sine wave stimuli
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: rhythm exercise
+  family_id: tf_attention_selective
+  subfamily_id: sf_temporal_attention_rsvp
+  paradigm_name: Rhythmic Entrainment / Temporal Cueing
+- alias: taste strips
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: allocentric reach
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_recognition_short_delay
+  paradigm_name: Delayed Category Match (Rule-based)
+- alias: differential threat safety reversal
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: Emotional Stroop
+- alias: effortful self control
+  family_id: tf_neurofeedback
+  subfamily_id: sf_controls_sham
+  paradigm_name: Waitlist Control
+- alias: egocentric reach
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_recognition_short_delay
+  paradigm_name: Delayed Category Match (Rule-based)
+- alias: face object same different
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: lexical knowledge
+  family_id: tf_language_semantic
+  subfamily_id: sf_lexical_access_orthography
+  paradigm_name: Lexical Decision (Word vs Nonword)
+- alias: negativity bias
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_criterion_base_rate_payoff
+  paradigm_name: Payoff Matrix Manipulation (Asymmetric Costs)
+- alias: physical baseline
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Visual Fixation Baseline
+- alias: physical size
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Interview (AI)
+- alias: religious experience
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_autobiographical_memory
+  paradigm_name: Autobiographical Cue-Word Method
+- alias: self blame fmri
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: social reward fmri
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Phoneme Identification / Categorical Perception
+- alias: task based fmri sound evoked stimuli
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_prospective_memory
+  paradigm_name: Time-Based PM
+- alias: task based fmri visual evoked stimuli
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_prospective_memory
+  paradigm_name: Time-Based PM
+- alias: virtual supermarket
+  family_id: tf_attention_selective
+  subfamily_id: sf_visual_search_capture
+  paradigm_name: Conjunction Search
+- alias: virtual violence
+  family_id: tf_spatial_navigation
+  subfamily_id: sf_virtual_maze_place_learning
+  paradigm_name: Virtual Morris Water Maze (VMWM)
+- alias: av voluntary eye movement
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Syntactic Ambiguity / Garden-Path
+- alias: exploratory eye movement
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Syntactic Ambiguity / Garden-Path
+- alias: interpersonal touch
+  family_id: tf_task_switching
+  subfamily_id: sf_voluntary_memory_based_switching
+  paradigm_name: Memory-Based Task Switching (no external cue)
+- alias: language development
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_language_tom
+  paradigm_name: Language Localizer (Sentences > Nonwords)
+- alias: okazaki hand movement
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Syntactic Ambiguity / Garden-Path
+- alias: unilateral active lip movement
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Syntactic Ambiguity / Garden-Path
+- alias: unilateral right hand movement
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Syntactic Ambiguity / Garden-Path
+- alias: appetitive reward
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_probabilistic_classification
+  paradigm_name: Weather Prediction Task (Cards)
+- alias: center out arm movement
+  family_id: tf_language_semantic
+  subfamily_id: sf_sentence_syntax
+  paradigm_name: Syntactic Ambiguity / Garden-Path
+- alias: completely predictable
+  family_id: tf_task_switching
+  subfamily_id: sf_explicit_cued_switching
+  paradigm_name: Alternating Runs (AABB)
+- alias: geometric analogy
+  family_id: tf_language_semantic
+  subfamily_id: sf_semantic_processing
+  paradigm_name: Sentence Plausibility / Semantic Anomaly
+- alias: inflectional morphology
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_encoding_manipulations_transfer
+  paradigm_name: Emotional Memory (Encoding/Retrieval)
+- alias: maternal criticism
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_modality_specialized
+  paradigm_name: Category Verification / Speeded Classification
+- alias: novelty salience
+  family_id: tf_spatial_navigation
+  subfamily_id: sf_landmark_memory
+  paradigm_name: Landmark Recognition / Salience Rating
+- alias: pre planned movement
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_response_inhibition
+  paradigm_name: Saccade Countermanding (ocular)
+- alias: taste stimuli fmri
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_challenges
+  paradigm_name: Thermal Pain (Heat/Cold Thresholds)
+- alias: interpersonal synchrony
+  family_id: tf_interoception_challenge
+  subfamily_id: sf_interoceptive_accuracy
+  paradigm_name: Heartbeat Discrimination / Cardio-Audio Synchrony (Whitehead/MCS)
+- alias: social bargaining fmri
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_value_games
+  paradigm_name: Social Discounting
+- alias: adaptiveness of erf
+  family_id: tf_neurofeedback
+  subfamily_id: sf_multimodal_closed_loop
+  paradigm_name: Closed-Loop Adaptive Neurofeedback
+- alias: overt speech language
+  family_id: tf_language_semantic
+  subfamily_id: sf_bilingual_switching_translation
+  paradigm_name: Code-Switching / Language Switching
+- alias: jazz
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_temporal_order_flicker
+  paradigm_name: Simultaneity Judgment (SJ) - Perceptual
+- alias: bubbles
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_temporal_order_flicker
+  paradigm_name: Simultaneity Judgment (SJ) - Perceptual
+- alias: famous voice
+  family_id: tf_attention_selective
+  subfamily_id: sf_tracking_dynamic_selection
+  paradigm_name: Multiple Object Tracking (MOT)
+- alias: hand squeeze
+  family_id: tf_working_memory
+  subfamily_id: sf_wm_recognition_short_delay
+  paradigm_name: Delayed Match-to-Sample (DMS)
+- alias: nine hole peg
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: nine peg hole
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Picture Naming / Object Naming
+- alias: animal knowledge
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_item_recognition
+  paradigm_name: Remember/Know (Recollection/Familiarity)
+- alias: regret and rejoice
+  family_id: tf_working_memory
+  subfamily_id: sf_spatial_oculomotor_wm
+  paradigm_name: Oculomotor Delayed Response (ODR)
+- alias: famous face
+  family_id: tf_attention_selective
+  subfamily_id: sf_tracking_dynamic_selection
+  paradigm_name: Multiple Object Tracking (MOT)
+- alias: hand grasp release
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: Negative Priming (Stroop/PWI)
+- alias: animacy experience
+  family_id: tf_localizers_baseline
+  subfamily_id: sf_baseline_control
+  paradigm_name: Passive Viewing
+- alias: think no think task
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_false_memory_interference
+  paradigm_name: Directed Forgetting
+- alias: think no think tnt task
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_false_memory_interference
+  paradigm_name: Directed Forgetting
+- alias: think no think tnt paradigm
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_false_memory_interference
+  paradigm_name: Directed Forgetting
+- alias: animated shapes task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: ekman 60 faces test
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: mutual gaze task
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: romantic love task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: reward and aversive stimuli task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: taste intensity and valence task
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: columbia card task
+  family_id: tf_value_based_decision
+  subfamily_id: sf_risk_ambiguity
+  paradigm_name: Prospect Theory Choice (Two-Outcome Lotteries)
+- alias: ravens progressive matrices
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: raven s progressive matrices rpm task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: fluid intelligence task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: latin square task lst
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: chess analysis task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: intuitive physics task
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: insight task battery itb
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: anagram task
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: karaoke task
+  family_id: tf_language_semantic
+  subfamily_id: sf_language_production
+  paradigm_name: Verb Generation / Word Generation
+- alias: word attack
+  family_id: tf_language_semantic
+  subfamily_id: sf_phonology_morphology
+  paradigm_name: Rhyme Judgment / Phonological Decision
+- alias: circles lines paradigm
+  family_id: tf_conflict_inhibition
+  subfamily_id: sf_stimulus_stimulus_conflict
+  paradigm_name: "Stroop (Color\u2013Word)"
+- alias: optokinetic nystagmus task
+  family_id: tf_motor_action
+  subfamily_id: sf_oculomotor
+  paradigm_name: Pro-Saccade
+- alias: optokinetic nystagmus okn
+  family_id: tf_motor_action
+  subfamily_id: sf_oculomotor
+  paradigm_name: Pro-Saccade
+- alias: grapheme color synesthesia task
+  family_id: tf_detection_discrimination
+  subfamily_id: sf_feature_discrimination
+  paradigm_name: "Color Discrimination (\u0394E)"
+- alias: rey complex figure
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_free_cued_serial_recall
+  paradigm_name: Free Recall (Immediate/Delayed)
+- alias: rey osterrieth complex figure rocf
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_free_cued_serial_recall
+  paradigm_name: Free Recall (Immediate/Delayed)
+- alias: rey osterrieth complex figure test
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_free_cued_serial_recall
+  paradigm_name: Free Recall (Immediate/Delayed)
+- alias: rey osterrieth complex figure test cft
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_free_cued_serial_recall
+  paradigm_name: Free Recall (Immediate/Delayed)
+- alias: rey osterrieth complex figure test rcft
+  family_id: tf_ltm_declarative
+  subfamily_id: sf_free_cued_serial_recall
+  paradigm_name: Free Recall (Immediate/Delayed)
+- alias: creative ability test cat
+  family_id: tf_rule_category_learning
+  subfamily_id: sf_rule_based
+  paradigm_name: Rule Discovery vs Instructed Rule
+- alias: guilford sullivan test
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)
+- alias: forced swim test
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: forced swim test fst
+  family_id: tf_preference_affective
+  subfamily_id: sf_affect_induction
+  paradigm_name: IAPS Picture Viewing
+- alias: vocal sound experiment
+  family_id: tf_language_semantic
+  subfamily_id: sf_speech_perception_comprehension
+  paradigm_name: Dichotic Listening (Lateralization)
+- alias: cybershape
+  family_id: tf_social_cognition
+  subfamily_id: sf_social_perception_attention
+  paradigm_name: Identity/Emotion Recognition (Social)

@@ -1,0 +1,17 @@
+{
+  "task_vs_rest": [
+    0,
+    1,
+    0
+  ],
+  "main_effect": [
+    0,
+    1,
+    0
+  ],
+  "deactivation": [
+    0,
+    -1,
+    0
+  ]
+}

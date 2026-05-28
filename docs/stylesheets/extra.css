@@ -1,0 +1,94 @@
+/* Custom styles for Brain Researcher documentation */
+
+/* Custom colors */
+:root {
+    --md-primary-fg-color: #4a5568;
+    --md-primary-fg-color--light: #718096;
+    --md-primary-fg-color--dark: #2d3748;
+    --md-accent-fg-color: #5a67d8;
+}
+
+/* Code blocks */
+.md-typeset code {
+    font-size: 0.85em;
+}
+
+/* Custom admonitions */
+.md-typeset .admonition.example,
+.md-typeset details.example {
+    border-color: #5a67d8;
+}
+
+.md-typeset .example > .admonition-title,
+.md-typeset .example > summary {
+    background-color: rgba(90, 103, 216, 0.1);
+    border-color: #5a67d8;
+}
+
+/* Grid cards */
+.md-typeset .grid.cards > ul > li {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+    border-color: var(--md-accent-fg-color);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* API reference styling */
+.doc-class {
+    border-left: 3px solid var(--md-accent-fg-color);
+    padding-left: 1rem;
+    margin: 1rem 0;
+}
+
+.doc-function {
+    background-color: var(--md-code-bg-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin: 0.5rem 0;
+}
+
+/* Mermaid diagrams */
+.mermaid {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+/* Terminal output */
+.terminal {
+    background-color: #1a202c;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.terminal::before {
+    content: "$ ";
+    color: #68d391;
+}
+
+/* Feature grid */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.feature-card {
+    padding: 1.5rem;
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--md-accent-fg-color);
+}

@@ -1,0 +1,54 @@
+{
+  "name": "pipeline_plan_validate",
+  "tier": "ops",
+  "surface_tier": "ops",
+  "capability_family": "pipeline_execution",
+  "description": "Validate/normalize a pipeline plan (no execution).",
+  "input_schema": {
+    "properties": {
+      "plan": {
+        "additionalProperties": true,
+        "title": "Plan",
+        "type": "object"
+      }
+    },
+    "required": [
+      "plan"
+    ],
+    "title": "pipeline_plan_validateArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "pipeline_plan_validateDictOutput",
+    "type": "object"
+  },
+  "examples": [
+    {
+      "input": {
+        "plan": {
+          "steps": [
+            {
+              "tool": "extract_timeseries",
+              "params": {
+                "img": "x",
+                "atlas": "y"
+              }
+            }
+          ]
+        }
+      },
+      "output": {
+        "ok": true,
+        "run_id_hint": "br_20251220_000000_abcdef1234",
+        "normalized_plan": {
+          "steps": []
+        },
+        "issues": []
+      },
+      "tested": false
+    }
+  ],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

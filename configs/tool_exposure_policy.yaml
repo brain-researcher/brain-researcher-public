@@ -1,0 +1,39 @@
+# Exposure policy for tool selection.
+# Empty allow lists mean "no restriction" on that dimension.
+# Exposed tools are derived only from defaults (is_default=true).
+
+# If true, and allow_primary_intents is empty, derive allow_primary_intents from
+# configs/intent_priority.yaml:priority. This "stop the bleeding" default keeps
+# long-tail/unknown tools out of the default exposed set while preserving an
+# advanced mode (exposed_only=false) for explicit tool selection.
+derive_allow_primary_from_intent_priority: true
+
+allow_primary_intents: []
+deny_primary_intents:
+  # Keep generic data management/conversion tools out of the default exposed set.
+  # These remain queryable via exposed_only=false / explicit tool references.
+  - data_access
+
+allow_softwares: []
+# Default safety: exclude very large long-tail namespaces from the default exposed set.
+# These tools remain queryable via exposed_only=false / explicit tool references.
+deny_softwares:
+  - freesurfer
+  - workbench
+
+allow_runtime_kinds: []
+deny_runtime_kinds: []
+
+allow_op_keys: []
+deny_op_keys: []
+
+# Extra safety gates for known long-tail namespaces. These affect exposure only
+# (not method mapping) and are applied after allow/deny checks above.
+deny_op_key_prefixes_by_software:
+  afni:
+    - "1d"
+    - "2d"
+
+deny_op_prefixes_by_software:
+  afni:
+    - "@"

@@ -1,0 +1,468 @@
+---
+# Kiali Custom Resource for Brain Researcher service mesh observability
+apiVersion: kiali.io/v1alpha1
+kind: Kiali
+metadata:
+  name: brain-researcher-kiali
+  namespace: istio-system
+  labels:
+    app: kiali
+    project: brain-researcher
+spec:
+  # Installation configuration
+  installation_tag: v1.73.0
+  istio_namespace: istio-system
+  
+  # Kiali server configuration
+  server:
+    web_root: /kiali
+    web_fqdn: kiali.brain-researcher.local
+    web_port: 20001
+    web_schema: http
+    
+  # Authentication strategy
+  auth:
+    strategy: anonymous  # For development - use token/oauth for production
+    
+  # External services configuration
+  external_services:
+    # Prometheus configuration
+    prometheus:
+      url: http://prometheus.brain-researcher.svc.cluster.local:9090
+      custom_metrics_url: http://prometheus.brain-researcher.svc.cluster.local:9090
+      health_check_url: http://prometheus.brain-researcher.svc.cluster.local:9090/-/ready
+      
+    # Grafana integration
+    grafana:
+      enabled: true
+      url: http://grafana.brain-researcher.svc.cluster.local:3000
+      in_cluster_url: http://grafana.brain-researcher.svc.cluster.local:3000
+      auth:
+        type: basic
+        username: admin
+        password: admin
+      dashboards:
+      - name: "Istio Service Mesh Dashboard"
+        variables:
+          namespace: "brain-researcher"
+      - name: "Brain Researcher Services Dashboard"
+        variables:
+          namespace: "brain-researcher"
+          
+    # Jaeger tracing
+    tracing:
+      enabled: true
+      in_cluster_url: http://jaeger-query.istio-system:16686
+      url: http://jaeger-query.istio-system:16686
+      use_grpc: true
+      
+    # Istio configuration
+    istio:
+      root_namespace: istio-system
+      config_map_name: istio
+      istio_sidecar_annotation: sidecar.istio.io/status
+      istio_sidecar_injector_config_map_name: istio-sidecar-injector
+      istiod_deployment_name: istiod
+      
+  # Deployment configuration
+  deployment:
+    # Resources for Brain Researcher workload
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+        
+    # Replica count for high availability
+    replicas: 2
+    
+    # Additional service annotations
+    service_annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9090"
+      prometheus.io/path: "/kiali/api/v1/status"
+      
+    # Pod annotations for service mesh
+    pod_annotations:
+      sidecar.istio.io/inject: "true"
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9090"
+      
+    # Node selector for specific node pools if needed
+    node_selector:
+      kubernetes.io/arch: amd64
+      
+    # Tolerations for dedicated monitoring nodes
+    tolerations:
+    - key: monitoring
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+      
+    # Security context
+    security_context:
+      runAsNonRoot: true
+      runAsUser: 1001
+      fsGroup: 1001
+      
+  # Kiali feature configuration
+  kiali_feature_flags:
+    # Enable certificates management
+    certificates_information_indicators:
+      enabled: true
+      secrets:
+      - brain-researcher-tls-cert
+      - istio-ca-secret
+      
+    # UI features
+    ui_defaults:
+      graph:
+        traffic:
+          grpc: "requests"
+          http: "requests"
+          tcp: "sent"
+        find_options:
+        - description: "Find: slow edges (> 1s)"
+          expression: "rt > 1000"
+        - description: "Find: unhealthy nodes"
+          expression: "! healthy"
+        - description: "Find: unknown nodes"
+          expression: "name = unknown"
+      metrics_per_refresh: "1m"
+      metrics_inbound:
+        aggregations:
+        - display_name: Istio Network
+          label: topology_istio_io_network
+        - display_name: Istio Revision
+          label: istio_io_rev
+      metrics_outbound:
+        aggregations:
+        - display_name: Istio Network
+          label: topology_istio_io_network
+        - display_name: Istio Revision
+          label: istio_io_rev
+      refresh_interval: "60s"
+      
+    # Brain Researcher specific namespaces
+    istio_injection_action: true
+    
+  # Custom dashboard configuration for Brain Researcher
+  custom_dashboards:
+  - name: brain-researcher-overview
+    title: "Brain Researcher Platform Overview"
+    runtime: "All"
+    discoverOn: "workload"
+    items:
+    - chart:
+        name: "Request Rate"
+        unit: "ops"
+        spans: 6
+        metricName: "request_total"
+        dataType: "rate"
+        aggregations:
+        - label: "source_service_name"
+          displayName: "Source Service"
+        - label: "destination_service_name"
+          displayName: "Destination Service"
+    - chart:
+        name: "Request Duration"
+        unit: "seconds"
+        spans: 6
+        metricName: "request_duration_milliseconds"
+        dataType: "histogram"
+        aggregations:
+        - label: "destination_service_name"
+          displayName: "Service"
+    - chart:
+        name: "Success Rate"
+        unit: "percent"
+        spans: 6
+        metricName: "request_total"
+        dataType: "rate"
+        aggregations:
+        - label: "destination_service_name"
+          displayName: "Service"
+        - label: "response_code"
+          displayName: "Response Code"
+    - chart:
+        name: "Data Transfer"
+        unit: "bytes"
+        spans: 6
+        metricName: "request_bytes"
+        dataType: "histogram"
+        aggregations:
+        - label: "source_service_name"
+          displayName: "Source Service"
+          
+  - name: neurokg-analysis
+    title: "BR-KG Analysis Dashboard"
+    runtime: "BR-KG"
+    discoverOn: "service"
+    items:
+    - chart:
+        name: "Knowledge Graph Queries"
+        unit: "queries/sec"
+        spans: 4
+        metricName: "kg_queries_total"
+        dataType: "rate"
+        aggregations:
+        - label: "query_type"
+          displayName: "Query Type"
+    - chart:
+        name: "Search Performance"
+        unit: "seconds"
+        spans: 4
+        metricName: "search_duration_seconds"
+        dataType: "histogram"
+        aggregations:
+        - label: "search_type"
+          displayName: "Search Type"
+    - chart:
+        name: "Database Connections"
+        unit: "connections"
+        spans: 4
+        metricName: "neo4j_connections_active"
+        dataType: "raw"
+        aggregations:
+        - label: "database"
+          displayName: "Database"
+          
+  - name: agent-performance
+    title: "LLM Agent Performance"
+    runtime: "Agent"
+    discoverOn: "service"
+    items:
+    - chart:
+        name: "LLM Processing Time"
+        unit: "seconds"
+        spans: 6
+        metricName: "llm_processing_duration_seconds"
+        dataType: "histogram"
+        aggregations:
+        - label: "model_name"
+          displayName: "Model"
+    - chart:
+        name: "Token Usage"
+        unit: "tokens"
+        spans: 6
+        metricName: "tokens_used_total"
+        dataType: "raw"
+        aggregations:
+        - label: "token_type"
+          displayName: "Token Type"
+    - chart:
+        name: "Tool Execution Rate"
+        unit: "executions/sec"
+        spans: 6
+        metricName: "tool_executions_total"
+        dataType: "rate"
+        aggregations:
+        - label: "tool_name"
+          displayName: "Tool"
+    - chart:
+        name: "Conversation Sessions"
+        unit: "sessions"
+        spans: 6
+        metricName: "active_conversations"
+        dataType: "raw"
+
+---
+# ConfigMap for Kiali configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kiali-config
+  namespace: istio-system
+  labels:
+    app: kiali
+    project: brain-researcher
+data:
+  config.yaml: |
+    # Kiali configuration for Brain Researcher
+    istio_namespace: istio-system
+    
+    server:
+      web_root: /kiali
+      web_fqdn: kiali.brain-researcher.local
+      web_port: 20001
+      web_schema: http
+      
+    auth:
+      strategy: anonymous
+      
+    external_services:
+      prometheus:
+        url: "http://prometheus.brain-researcher.svc.cluster.local:9090"
+      grafana:
+        enabled: true
+        url: "http://grafana.brain-researcher.svc.cluster.local:3000"
+        auth:
+          type: basic
+          username: admin
+          password: admin
+      tracing:
+        enabled: true
+        in_cluster_url: "http://jaeger-query.istio-system:16686"
+        
+    # Brain Researcher specific configurations
+    additional_display_details:
+    - title: "Brain Researcher Service"
+      annotation: "brain-researcher.io/service-type"
+      icon_annotation: "brain-researcher.io/service-icon"
+    - title: "Analysis Type"
+      annotation: "brain-researcher.io/analysis-type"
+    - title: "Data Source"
+      annotation: "brain-researcher.io/data-source"
+      
+    # Health configuration
+    health_config:
+      rate:
+      - namespace: "brain-researcher"
+        kind: "service"
+        name: "neurokg-service"
+        tolerance:
+        - code: "5XX"
+          failure_threshold: 10
+          protocol: "http"
+      - namespace: "brain-researcher"
+        kind: "service"
+        name: "agent-service"
+        tolerance:
+        - code: "5XX"
+          failure_threshold: 5
+          protocol: "http"
+
+---
+# Service for Kiali
+apiVersion: v1
+kind: Service
+metadata:
+  name: kiali
+  namespace: istio-system
+  labels:
+    app: kiali
+    project: brain-researcher
+spec:
+  selector:
+    app: kiali
+  ports:
+  - name: http-kiali
+    port: 20001
+    protocol: TCP
+    targetPort: 20001
+  - name: http-metrics
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  type: ClusterIP
+
+---
+# ServiceAccount for Kiali
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kiali-service-account
+  namespace: istio-system
+  labels:
+    app: kiali
+    project: brain-researcher
+
+---
+# ClusterRole for Kiali
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiali-viewer
+  labels:
+    app: kiali
+    project: brain-researcher
+rules:
+- apiGroups: [""]
+  resources:
+  - configmaps
+  - endpoints
+  - namespaces
+  - nodes
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["extensions", "apps"]
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["autoscaling"]
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["batch"]
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["config.istio.io"]
+  resources: ["*"]
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["networking.istio.io"]
+  resources: ["*"]
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["authentication.istio.io"]
+  resources: ["*"]
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["authorization.istio.io"]
+  resources: ["*"]
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["security.istio.io"]
+  resources: ["*"]
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+# ClusterRoleBinding for Kiali
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kiali-viewer
+  labels:
+    app: kiali
+    project: brain-researcher
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kiali-viewer
+subjects:
+- kind: ServiceAccount
+  name: kiali-service-account
+  namespace: istio-system

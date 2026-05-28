@@ -1,0 +1,87 @@
+# syntax=docker/dockerfile:1.6
+# Full HPC distribution with Brain Researcher core + optional Node CLI
+FROM python:3.11-slim AS base
+
+# Metadata
+LABEL org.opencontainers.image.title="Brain Researcher HPC"
+LABEL org.opencontainers.image.description="Full Brain Researcher platform for HPC/research"
+LABEL org.opencontainers.image.vendor="Brain Researcher Team"
+LABEL org.opencontainers.image.source="https://github.com/brain-researcher/brain-researcher"
+
+# Environment setup
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/usr/local/bin:${PATH}" \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies and tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl wget ca-certificates build-essential \
+    libffi-dev libssl-dev libgomp1 \
+    tini sudo \
+    # Neuroimaging dependencies
+    libglib2.0-0 libsm6 libxext6 libxrender1 libgomp1 \
+    # Optional: FSL dependencies (if needed)
+    libopenblas-base \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optional: Install Node.js for @brainr/cli
+ARG INSTALL_NODE=1
+RUN if [ "$INSTALL_NODE" = "1" ]; then \
+      curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+      apt-get update && apt-get install -y nodejs && \
+      rm -rf /var/lib/apt/lists/* ; \
+    fi
+
+# Create application directory
+WORKDIR /app
+
+# Copy Python project files
+COPY pyproject.toml README.md ./
+COPY src ./src
+COPY scripts ./scripts
+COPY configs ./configs
+
+# Install Brain Researcher with all extras for HPC
+RUN pip install --no-cache-dir -e ".[neurokg,agent,niclip]" && \
+    pip install --no-cache-dir \
+    torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Optional: Install @brainr/cli if Node is installed
+COPY packages/cli /opt/brainr-cli
+RUN if [ "$INSTALL_NODE" = "1" ] && [ -d "/opt/brainr-cli" ]; then \
+      cd /opt/brainr-cli && \
+      npm install && \
+      npm run build && \
+      npm link ; \
+    fi
+
+# Create non-root user for security
+RUN useradd -m -u 1000 -s /bin/bash runner && \
+    echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Setup directories with proper permissions
+RUN mkdir -p /data /scratch /cache /home/runner/.brainr && \
+    chown -R runner:runner /data /scratch /cache /home/runner/.brainr
+
+# Switch to non-root user
+USER runner
+WORKDIR /home/runner
+
+# Environment for the user
+ENV HOME=/home/runner \
+    BR_HOME=/home/runner/.brainr \
+    BR_DATA=/data \
+    BR_CACHE=/cache \
+    BR_SCRATCH=/scratch
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD br version || exit 1
+
+# Use tini for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Default command shows help
+CMD ["br", "--help"]

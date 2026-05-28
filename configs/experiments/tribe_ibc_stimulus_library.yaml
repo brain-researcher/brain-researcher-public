@@ -1,0 +1,531 @@
+schema_version: stimulus-library-proposal-v1
+library_id: tribe_ibc_paradigm_sweep_v1
+proposal_status: draft_ready_for_runner
+description: 'Proposed first-wave IBC stimulus library for paradigm-driven TRIBE v2
+  sweeps. The library prioritizes tasks whose public_protocols checkout already contains
+  directly reusable text, audio, video, or image assets that can be materialized into
+  tribe_predict-ready inputs with minimal reconstruction.
+
+  '
+provenance:
+  source_repo_url: https://github.com/individual-brain-charting/public_protocols
+  source_commit: cbbb7715ea677feb8ed29ed1bc4eaeb1a7f56cc6
+  checkout_root_candidates:
+  - /external/public_protocols
+  - /data/brain_researcher/research/discovery/inputs/public_protocols
+  - /data/brain_researcher/research/discovery/sources/public_protocols
+  resolved_checkout_root: /data/brain_researcher/research/discovery/inputs/public_protocols
+  notes:
+  - /external/public_protocols was requested as the preferred checkout root.
+  - /external is not writable on the current machine.
+  - The canonical checkout root is /data/brain_researcher/research/discovery/inputs/public_protocols.
+brain_researcher_paths:
+  data_root: /data/brain_researcher/research/discovery
+  project_root: /data/brain_researcher/research/discovery/project
+  source_checkout_root: /data/brain_researcher/research/discovery/inputs/public_protocols
+  materialized_library_root: /data/brain_researcher/research/discovery/project/inputs/materialized
+  manifests_root: /data/brain_researcher/research/discovery/project/manifests
+  derived_media_root: /data/brain_researcher/research/discovery/project/inputs/derived_media
+  analysis_root: /data/brain_researcher/research/discovery/project/artifacts/analysis
+  prediction_root: /data/brain_researcher/research/discovery/project/artifacts/predictions
+  tribe_cache_root: /data/brain_researcher/research/discovery/project/artifacts/tmp/tribe_cache
+defaults:
+  prediction_tool: tribe_predict
+  prediction_space: fsaverage5
+  analysis_order:
+  - roi_summary
+  - condition_contrast
+  - vertex_level_followup
+  roi_atlas_candidates:
+  - yeo17
+  - schaefer400
+  packaging_rules:
+    csv_word_sequences: concatenate_w1_to_w10_into_sentence
+    image_collections: render_block_or_category_sequences_to_mp4
+    protocol_demo_videos: smoke_test_only_not_final_analysis
+selection_order:
+- ibc_rsvp_language
+- ibc_math_language
+- ibc_theory_of_mind_text_localizer
+- ibc_realistic_sounds
+- ibc_biological_motion
+- ibc_face_body
+- ibc_scene_perception
+- ibc_hcp_language
+- ibc_hcp_emotion
+- ibc_hcp_social
+tasks:
+- task_id: ibc_rsvp_language
+  priority: wave1
+  readiness: ready_now
+  family: language
+  source_subdir: RSVPLanguage
+  modality:
+    source: text_csv
+    preferred_tribe_input: text
+    optional_tribe_input: video_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/RSVPLanguage/rsvp_language_protocol
+    globs:
+    - langexpy_script/inputs_main_session/inputs_ms_run*.csv
+    - generate_inputs/inputs_grouped_main_session/cond_ms_run*.csv
+    - ../video_annotations/rsvp_language_run-*.mp4
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/RSVPLanguage/rsvp_language_protocol/langexpy_script/inputs_main_session/inputs_ms_run0.csv
+  ingestion:
+    mode: csv_rows_to_text_manifest
+    parser_hint: join columns w1..w10 with spaces and preserve condition, syntax,
+      and probe_type
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/RSVPLanguage/rsvp_language_protocol/langexpy_script/inputs_main_session/inputs_ms_run*.csv
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_rsvp_language_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_rsvp_language
+  contrasts:
+  - contrast_id: sentence_vs_wordlist
+    positive_conditions:
+    - simple_sentence
+    - complex_sentence
+    negative_conditions:
+    - word_list
+    - pseudoword_list
+  - contrast_id: complex_vs_simple_sentence
+    positive_conditions:
+    - complex_sentence
+    negative_conditions:
+    - simple_sentence
+  expected_rois:
+  - left_inferior_frontal_gyrus
+  - left_posterior_superior_temporal_sulcus
+  - left_middle_temporal_gyrus
+  neurokg_tags:
+  - language_localizer
+  - syntax
+  - sentence_processing
+- task_id: ibc_math_language
+  priority: wave1
+  readiness: ready_now
+  family: math_language
+  source_subdir: MathLanguage
+  modality:
+    source: audio_wav
+    preferred_tribe_input: audio_path
+    optional_tribe_input: video_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/MathLanguage
+    globs:
+    - stim/*.wav
+    - video_annotations/mathlang*.mp4
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/MathLanguage/stim/100_arithprin_28_false_vide_resultatsoustraction.wav
+  ingestion:
+    mode: direct_audio_files
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/MathLanguage/stim/*.wav
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_math_language_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_math_language
+    filename_label_parse:
+    - category
+    - truth_value
+    - lexical_context
+  contrasts:
+  - contrast_id: math_vs_control
+    positive_conditions:
+    - arithfact
+    - arithprin
+    - geomfact
+    negative_conditions:
+    - control
+    - colorlessg
+  - contrast_id: math_vs_general_knowledge
+    positive_conditions:
+    - arithfact
+    - arithprin
+    - geomfact
+    negative_conditions:
+    - general
+  expected_rois:
+  - bilateral_intraparietal_sulcus
+  - dorsal_prefrontal_cortex
+  - left_perisylvian_language_regions_as_partial_control
+  neurokg_tags:
+  - math_localizer
+  - numerical_cognition
+  - language_comparison
+- task_id: ibc_theory_of_mind_text_localizer
+  priority: wave1
+  readiness: ready_now
+  family: social_cognition
+  source_subdir: TheoryOfMind/tom_localizer
+  modality:
+    source: plain_text
+    preferred_tribe_input: text
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/TheoryOfMind/tom_localizer
+    globs:
+    - text_files_original/*_story.txt
+    - text_files_original/*_question.txt
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/TheoryOfMind/tom_localizer/text_files_original/1b_story.txt
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/TheoryOfMind/tom_localizer/text_files_original/1p_story.txt
+  ingestion:
+    mode: direct_text_files
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/TheoryOfMind/tom_localizer/text_files_original/*.txt
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_theory_of_mind_text_localizer_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_theory_of_mind_text_localizer
+    condition_parse:
+      b: belief_mental_state
+      p: physical_representation
+  contrasts:
+  - contrast_id: belief_vs_physical_story
+    positive_conditions:
+    - belief_story
+    negative_conditions:
+    - physical_story
+  - contrast_id: belief_question_vs_physical_question
+    positive_conditions:
+    - belief_question
+    negative_conditions:
+    - physical_question
+  expected_rois:
+  - bilateral_temporoparietal_junction
+  - medial_prefrontal_cortex
+  - precuneus_posterior_cingulate
+  neurokg_tags:
+  - theory_of_mind
+  - mentalizing
+  - default_mode_network
+- task_id: ibc_realistic_sounds
+  priority: wave1
+  readiness: ready_now
+  family: audition
+  source_subdir: realistic_sounds
+  modality:
+    source: audio_wav
+    preferred_tribe_input: audio_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/realistic_sounds/stim
+    globs:
+    - set*/s2_*.wav
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/realistic_sounds/stim/set1/s2_voice_1.wav
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/realistic_sounds/stim/set1/s2_speech_20.wav
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/realistic_sounds/stim/set1/s2_music_11.wav
+  ingestion:
+    mode: direct_audio_files
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/realistic_sounds/stim/set*/s2_*.wav
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_realistic_sounds_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_realistic_sounds
+    filename_label_parse:
+    - category
+    - item_id
+  contrasts:
+  - contrast_id: voice_vs_nonvoice
+    positive_conditions:
+    - voice
+    - speech
+    negative_conditions:
+    - animal
+    - music
+    - nature
+    - tools
+  - contrast_id: speech_vs_other_natural_sounds
+    positive_conditions:
+    - speech
+    negative_conditions:
+    - animal
+    - nature
+    - tools
+  expected_rois:
+  - primary_auditory_cortex
+  - superior_temporal_gyrus
+  - superior_temporal_sulcus_voice_selective_regions
+  neurokg_tags:
+  - auditory_localizer
+  - speech
+  - voice
+- task_id: ibc_biological_motion
+  priority: wave1
+  readiness: ready_now
+  family: motion
+  source_subdir: BiologicalMotion
+  modality:
+    source: video
+    preferred_tribe_input: video_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/BiologicalMotion
+    globs:
+    - video_annotations/biomo_type*.mp4
+    - protocol/walkerdata.mat
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/BiologicalMotion/video_annotations/biomo_type1.mp4
+  ingestion:
+    mode: direct_video_demo
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/BiologicalMotion/video_annotations/biomo_type*.mp4
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_biological_motion_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_biological_motion
+    note: use demo videos first; upgrade later to condition-resolved renderings from
+      walkerdata.mat if finer contrasts are needed
+  contrasts:
+  - contrast_id: biological_motion_type1_vs_type2
+    positive_conditions:
+    - biomo_type1
+    negative_conditions:
+    - biomo_type2
+  - contrast_id: intact_motion_vs_scrambled_motion
+    positive_conditions:
+    - intact_biological_motion
+    negative_conditions:
+    - spatial_or_phase_scrambled_motion
+  expected_rois:
+  - hMT_plus_V5
+  - posterior_superior_temporal_sulcus
+  - extrastriate_body_area
+  neurokg_tags:
+  - biological_motion
+  - motion_localizer
+  - social_perception
+- task_id: ibc_face_body
+  priority: wave2
+  readiness: needs_image_packaging
+  family: category_localizer
+  source_subdir: FaceBody
+  modality:
+    source: image_categories
+    preferred_tribe_input: video_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/FaceBody/stimuli
+    globs:
+    - adult/*.jpg
+    - body/*.jpg
+    - house/*.jpg
+    - scrambled/*.jpg
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/FaceBody/stimuli/adult/adult-1.jpg
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/FaceBody/stimuli/body/body-1.jpg
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/FaceBody/stimuli/house/house-1.jpg
+  ingestion:
+    mode: category_images_to_video_blocks
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/FaceBody/stimuli/*/*.jpg
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_face_body_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_face_body
+    derived_video_root: ${BR_REPO_ROOT}/data/stimuli/tribe_ibc/derived_media/ibc_face_body
+  contrasts:
+  - contrast_id: face_vs_scrambled
+    positive_conditions:
+    - adult
+    - child
+    negative_conditions:
+    - scrambled
+  - contrast_id: body_vs_scrambled
+    positive_conditions:
+    - body
+    - limb
+    negative_conditions:
+    - scrambled
+  - contrast_id: house_vs_scrambled
+    positive_conditions:
+    - house
+    - corridor
+    negative_conditions:
+    - scrambled
+  expected_rois:
+  - fusiform_face_area
+  - occipital_face_area
+  - extrastriate_body_area
+  - parahippocampal_place_area
+  neurokg_tags:
+  - face_localizer
+  - body_localizer
+  - scene_localizer
+- task_id: ibc_scene_perception
+  priority: wave2
+  readiness: needs_image_packaging
+  family: scene
+  source_subdir: Scene
+  modality:
+    source: image_pairs
+    preferred_tribe_input: video_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/Scene/Stimuli
+    globs:
+    - Scanner/*.png
+    - Practice/*.png
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/Scene/Stimuli/Scanner/001_a_w.png
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/Scene/Stimuli/Scanner/001_a_x.png
+  ingestion:
+    mode: image_pair_sequences_to_mp4
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/Scene/Stimuli/Scanner/*.png
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_scene_perception_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_scene_perception
+    derived_video_root: ${BR_REPO_ROOT}/data/stimuli/tribe_ibc/derived_media/ibc_scene_perception
+    note: preserve a/b and w/x labels when building pairwise scene plausibility clips
+  contrasts:
+  - contrast_id: coherent_scene_vs_perturbed_scene
+    positive_conditions:
+    - a_w
+    - b_w
+    negative_conditions:
+    - a_x
+    - b_x
+  - contrast_id: scene_vs_dot_practice_controls
+    positive_conditions:
+    - scene_images
+    negative_conditions:
+    - dot_practice
+  expected_rois:
+  - parahippocampal_place_area
+  - occipital_place_area
+  - retrosplenial_complex
+  neurokg_tags:
+  - scene_localizer
+  - place_processing
+  - visual_semantics
+- task_id: ibc_hcp_language
+  priority: wave2
+  readiness: ready_now
+  family: language
+  source_subdir: hcp/protocols/language
+  modality:
+    source: audio_wav
+    preferred_tribe_input: audio_path
+    optional_tribe_input: video_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/language
+    globs:
+    - LANGUAGE Stimuli/*.wav
+    - ../video_annotations/hcp_language.mp4
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/language/LANGUAGE
+      Stimuli/Story_eng.wav
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/language/LANGUAGE
+      Stimuli/Math_eng.wav
+  ingestion:
+    mode: direct_audio_files
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/language/LANGUAGE\
+      Stimuli/*.wav
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_hcp_language_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_hcp_language
+  contrasts:
+  - contrast_id: story_vs_math
+    positive_conditions:
+    - Story_eng
+    - Story
+    negative_conditions:
+    - Math_eng
+    - Math
+  expected_rois:
+  - left_inferior_frontal_gyrus
+  - left_superior_temporal_gyrus
+  - left_middle_temporal_gyrus
+  neurokg_tags:
+  - hcp_language
+  - language_localizer
+  - story_comprehension
+- task_id: ibc_hcp_emotion
+  priority: wave2
+  readiness: needs_image_packaging
+  family: face_emotion
+  source_subdir: hcp/protocols/emotion
+  modality:
+    source: image_categories
+    preferred_tribe_input: video_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/emotion
+    globs:
+    - EMOTION Stimuli/*.jpg
+    - EMOTION Stimuli/*.bmp
+    - ../../video_annotations/hcp_emotion.mp4
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/emotion/EMOTION
+      Stimuli/FA1_left.jpg
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/emotion/EMOTION
+      Stimuli/circle.bmp
+  ingestion:
+    mode: emotion_face_and_shape_images_to_mp4
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/emotion/EMOTION\
+      Stimuli/*
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_hcp_emotion_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_hcp_emotion
+    derived_video_root: ${BR_REPO_ROOT}/data/stimuli/tribe_ibc/derived_media/ibc_hcp_emotion
+    note: stay cortical in interpretation; TRIBE outputs are fsaverage5 surface predictions
+      and will not report amygdala directly
+  contrasts:
+  - contrast_id: face_vs_shape
+    positive_conditions:
+    - face_affect
+    negative_conditions:
+    - shape_control
+  - contrast_id: fearful_face_vs_neutral_shape
+    positive_conditions:
+    - fearful_face
+    negative_conditions:
+    - shape_control
+  expected_rois:
+  - fusiform_face_area
+  - occipital_face_area
+  - ventral_temporal_face_selective_cortex
+  neurokg_tags:
+  - hcp_emotion
+  - face_localizer
+  - affective_faces
+- task_id: ibc_hcp_social
+  priority: wave2
+  readiness: ready_now
+  family: social_cognition
+  source_subdir: hcp/protocols/social
+  modality:
+    source: video
+    preferred_tribe_input: video_path
+  source_assets:
+    root: /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/social
+    globs:
+    - SOCIAL Stimuli/*.AVI
+    - ../../video_annotations/hcp_social.mp4
+    examples:
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/social/SOCIAL
+      Stimuli/Random social.AVI
+    - /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/social/SOCIAL
+      Stimuli/Random mechanical.AVI
+  ingestion:
+    mode: direct_video_files
+    source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/hcp/protocols/social/SOCIAL\
+      Stimuli/*.AVI
+    manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_hcp_social_manifest.json
+    materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_hcp_social
+  contrasts:
+  - contrast_id: social_animation_vs_mechanical_motion
+    positive_conditions:
+    - Random social
+    - BILLIARD
+    - MOCKING
+    - SEDUCING
+    - SURPRISING
+    negative_conditions:
+    - Random mechanical
+    - DRIFTING
+    - STAR
+    - TENNIS
+  - contrast_id: intentional_interaction_vs_noninteraction
+    positive_conditions:
+    - social_animation
+    negative_conditions:
+    - nonsocial_motion
+  expected_rois:
+  - posterior_superior_temporal_sulcus
+  - temporoparietal_junction
+  - medial_prefrontal_cortex
+  neurokg_tags:
+  - hcp_social
+  - theory_of_mind
+  - social_animation
+deferred_tasks:
+- task_id: ibc_preference
+  reason: face images are explicitly omitted in the upstream repo because of copyright
+    restrictions
+- task_id: ibc_theory_of_mind_movie_localizer
+  reason: depends on an external YouTube-hosted Pixar clip rather than fully packaged
+    local assets
+- task_id: ibc_archi_battery
+  reason: useful later, but less friction-free than the first-wave library above
+- task_id: ibc_hcp_working_memory
+  reason: strong task demands and n-back structure make stimulus-only TRIBE interpretation
+    less clean for the first sweep

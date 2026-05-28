@@ -1,0 +1,79 @@
+{
+  "simple_queries": [
+    {
+      "query": "Analyze activation in the prefrontal cortex",
+      "expected_reasoning_type": "analytical",
+      "expected_steps": [
+        {
+          "premise": "User wants to analyze activation in prefrontal cortex",
+          "inference": "This requires identifying prefrontal regions and measuring activation",
+          "conclusion": "Need to extract ROI data and compute activation statistics"
+        }
+      ],
+      "expected_confidence": 0.8
+    },
+    {
+      "query": "Compare working memory activation between young and old adults",
+      "expected_reasoning_type": "comparative",
+      "expected_steps": [
+        {
+          "premise": "Need to compare two groups on working memory task",
+          "inference": "This requires group-level statistical comparison",
+          "conclusion": "Run two-sample t-test on working memory contrasts"
+        }
+      ],
+      "expected_confidence": 0.9
+    }
+  ],
+  "complex_queries": [
+    {
+      "query": "If working memory network connectivity is reduced in aging, and we know that prefrontal cortex shows decreased activation with age, what are the implications for cognitive decline?",
+      "expected_reasoning_type": "causal",
+      "expected_steps": [
+        {
+          "premise": "Working memory connectivity decreases with age",
+          "inference": "Reduced connectivity implies impaired network function",
+          "conclusion": "This contributes to cognitive decline"
+        },
+        {
+          "premise": "Prefrontal cortex activation decreases with age", 
+          "inference": "PFC is crucial for working memory",
+          "conclusion": "Reduced PFC activation impairs working memory performance"
+        }
+      ],
+      "expected_confidence": 0.7
+    }
+  ],
+  "multi_step_queries": [
+    {
+      "query": "Find all studies with prefrontal activation, then identify common tasks, and finally determine if there are age-related differences",
+      "expected_reasoning_type": "analytical",
+      "expected_steps": [
+        {
+          "step_number": 1,
+          "premise": "Need to find studies with prefrontal activation",
+          "inference": "Search literature database for prefrontal studies",
+          "conclusion": "Compile list of relevant studies"
+        },
+        {
+          "step_number": 2,
+          "premise": "Have list of prefrontal activation studies",
+          "inference": "Extract task information from each study",
+          "conclusion": "Identify most common experimental paradigms"
+        },
+        {
+          "step_number": 3,
+          "premise": "Know common tasks used in prefrontal studies",
+          "inference": "Examine age demographics across studies",
+          "conclusion": "Compare activation patterns between age groups"
+        }
+      ],
+      "expected_confidence": 0.75
+    }
+  ],
+  "reasoning_templates": {
+    "analytical": "Breaking down this query step by step:\n1. What is being asked?\n2. Key components to analyze\n3. Approach to take\n4. Step-by-step reasoning",
+    "comparative": "Comparing different approaches:\n1. Option A vs Option B\n2. Comparison criteria\n3. Advantages/Disadvantages\n4. Recommended approach",
+    "causal": "Analyzing causal relationships:\n1. Potential causes\n2. Expected effects\n3. Causal mechanism\n4. Supporting evidence"
+  }
+}

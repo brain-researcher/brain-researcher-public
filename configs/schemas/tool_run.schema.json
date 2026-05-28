@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ToolRun",
+  "type": "object",
+  "properties": {
+    "run_id": {"type": "string"},
+    "job_id": {"type": ["string", "null"]},
+    "status": {"type": ["string", "null"]},
+    "started_at": {"type": ["string", "null"], "format": "date-time"},
+    "finished_at": {"type": ["string", "null"], "format": "date-time"},
+    "parameters_json": {"type": ["string", "null"]},
+    "runtime_kind": {"type": ["string", "null"]}
+  },
+  "required": ["run_id"],
+  "additionalProperties": true
+}

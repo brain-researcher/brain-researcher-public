@@ -1,0 +1,92 @@
+ARG BR_AGENT_BASE_IMAGE=docker.io/zjc062/agent:20260405010701-d87e8a71
+FROM ${BR_AGENT_BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/runtime_sitecustomize:/app/src \
+    HOME=/home/br_user \
+    NB_USER=appuser \
+    NB_UID=1000 \
+    NB_GID=1000 \
+    BR_PRODUCT_NAME="Brain Researcher" \
+    BR_PRODUCT_MODE="hosted-cloud" \
+    BR_PRODUCT_URL="https://brain-researcher.com" \
+    BR_MCP_PROFILE="hosted_notebook_v1" \
+    BR_MCP_TRANSPORT="streamable-http" \
+    BR_MCP_HTTP_URL="http://brain-researcher-mcp.brain-researcher-core.svc.cluster.local:7000/mcp" \
+    BR_MCP_MOUNT_PATH="/mcp" \
+    BR_NOTEBOOK_ASSISTANT_MODE="marimo-ai" \
+    BR_NOTEBOOK_INTELLIGENCE_ENABLED="false" \
+    BR_NBI_MCP_SERVER_NAME="brain-researcher" \
+    BR_NBI_DEFAULT_CHAT_MODE="ask" \
+    BR_NEURODESK_PATH="/cvmfs/neurodesk.ardc.edu.au" \
+    BR_NEURODESK_CONTAINERS="/cvmfs/neurodesk.ardc.edu.au/containers" \
+    BR_NEURODESK_MODULES="/cvmfs/neurodesk.ardc.edu.au/neurodesk-modules" \
+    BR_DATA_ROOT="/home/br_user/work" \
+    BR_SCRATCH_ROOT="/tmp" \
+    BR_TEMPLATE_ROOT="/app/notebooks/templates"
+
+WORKDIR /app
+
+USER root
+
+# Local behavior-task generation runs inside the hosted marimo pod via a
+# notebook-spawned stdio MCP server, so the runtime image itself needs the
+# psyflow/PsychoPy stack plus the Linux headers wxPython depends on.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgtk-3-dev \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    freeglut3-dev \
+    libwebkit2gtk-4.1-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libsdl2-dev \
+    libnotify-dev \
+    libsm-dev \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev \
+    libusb-1.0-0-dev \
+    portaudio19-dev \
+    libasound2-dev \
+    fonts-noto-cjk \
+    xvfb \
+    xauth \
+    && rm -rf /var/lib/apt/lists/*
+
+# The agent base image already carries the full BR agent tool/runtime surface.
+# Overlay the current source tree and only add notebook UX dependencies so the
+# hosted Marimo runtime stays aligned with agent/mcp without re-resolving the
+# heavy agent dependency graph from scratch.
+COPY pyproject.toml README.md /app/
+COPY configs /app/configs
+COPY src /app/src
+COPY notebooks /app/notebooks
+COPY scripts /app/scripts
+COPY scripts/runtime/psyflow_sitecustomize.py /app/runtime_sitecustomize/sitecustomize.py
+
+RUN pip install --upgrade pip && pip install \
+      -e ".[behavior-task]" \
+      "marimo==0.23.0" \
+      "pydantic-ai-slim[google,mcp,openai]>=1.80.0" && \
+    python -m brain_researcher.services.orchestrator.marimo_frontend_patch && \
+    python -m brain_researcher.services.orchestrator.marimo_server_patch && \
+    chmod +x /app/scripts/runtime/start_marimo_singleuser.sh \
+      /app/scripts/runtime/run_taskbeacon_task.sh
+
+RUN mkdir -p /home/br_user/work /home/br_user/.jupyter /home/br_user/.config/marimo \
+      /usr/local/share/jupyter/nbi /usr/local/share/jupyter/nbi_extensions && \
+    chown -R "${NB_UID}:${NB_GID}" /home/br_user /app /usr/local/share/jupyter/nbi /usr/local/share/jupyter/nbi_extensions
+
+# Marimo pods boot into the workspace copy of the BR quickstart notebook.
+WORKDIR /home/br_user/work
+
+USER ${NB_UID}
+
+EXPOSE 2718
+
+ENTRYPOINT ["/app/scripts/runtime/start_marimo_singleuser.sh"]
+CMD ["bash", "-lc", "mkdir -p notebooks && if [ ! -f notebooks/br_quickstart.py ] && [ -f /app/notebooks/templates/br_quickstart.py ]; then cp /app/notebooks/templates/br_quickstart.py notebooks/br_quickstart.py; fi && BASE_ARGS='' && if [ -n \"${BR_MARIMO_BASE_URL:-}\" ]; then BASE_ARGS=\"--base-url ${BR_MARIMO_BASE_URL}\"; fi && AUTH_ARGS='' && if [ -s /run/secrets/br_marimo_runtime_token ]; then AUTH_ARGS='--token-password-file /run/secrets/br_marimo_runtime_token'; elif [ \"${BR_PRODUCT_MODE:-}\" = \"hosted-cloud\" ]; then echo 'br-marimo: runtime token file missing (hosted-cloud requires /run/secrets/br_marimo_runtime_token)' >&2; exit 78; else AUTH_ARGS='--no-token'; fi && exec marimo edit notebooks/br_quickstart.py --host 0.0.0.0 --port 2718 ${BASE_ARGS} ${AUTH_ARGS}"]

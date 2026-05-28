@@ -1,0 +1,421 @@
+# Operator Synonym Mappings
+# Maps natural language phrases → canonical operator names
+# Format: operator_name: [list of phrases]
+# Modality-scoped format: operator@modality: [list of phrases]
+#
+# This file takes precedence over task_synonyms.yaml, concept_synonyms.yaml, roi_synonyms.yaml
+# For overlapping phrases, the mapping here wins.
+
+# ===== Preprocessing Operators =====
+
+skull_strip:
+  - "skull strip"
+  - "skull stripping"
+  - "brain extraction"
+  - "remove skull"
+  - "extract brain"
+  - "bet"
+  - "strip skull from"
+
+bias_correction:
+  - "bias correction"
+  - "bias field correction"
+  - "n4 correction"
+  - "correct bias"
+  - "intensity normalization"
+  - "correct intensity bias"
+
+motion_correction:
+  - "motion correction"
+  - "realign"
+  - "realignment"
+  - "correct motion"
+  - "align volumes"
+  - "motion correct"
+
+slice_timing:
+  - "slice timing"
+  - "slice timing correction"
+  - "correct slice timing"
+
+coregister:
+  - "coregister"
+  - "coregistration"
+  - "align to anatomical"
+  - "register functional to anatomical"
+
+normalize:
+  - "normalize"
+  - "normalization"
+  - "spatial normalization"
+  - "normalize to template"
+  - "warp to standard"
+
+smooth:
+  - "smooth"
+  - "smoothing"
+  - "spatial smoothing"
+  - "gaussian smoothing"
+  - "blur"
+
+# ===== Registration Operators =====
+
+registration:
+  - "register"
+  - "registration"
+  - "align images"
+  - "image alignment"
+
+linear_registration:
+  - "linear registration"
+  - "affine registration"
+  - "rigid registration"
+  - "flirt"
+  - "6dof registration"
+  - "12dof registration"
+
+nonlinear_registration:
+  - "nonlinear registration"
+  - "non-linear registration"
+  - "warp"
+  - "warping"
+  - "fnirt"
+  - "deformable registration"
+
+# ===== Analysis Operators =====
+
+glm:
+  - "glm"
+  - "general linear model"
+  - "statistical model"
+  - "first level analysis"
+  - "task activation"
+
+ica:
+  - "ica"
+  - "independent component analysis"
+  - "decompose"
+  - "melodic"
+  - "component analysis"
+
+seed_connectivity:
+  - "seed connectivity"
+  - "seed-based connectivity"
+  - "roi connectivity"
+  - "functional connectivity from seed"
+
+connectivity_matrix:
+  - "connectivity matrix"
+  - "functional connectivity matrix"
+  - "correlation matrix"
+  - "compute connectivity"
+
+graph_theory:
+  - "graph metrics"
+  - "graph theory"
+  - "network metrics"
+  - "network analysis"
+
+# ===== Segmentation Operators =====
+
+segmentation:
+  - "segment"
+  - "segmentation"
+  - "tissue segmentation"
+  - "parcellation"
+
+tissue_segmentation:
+  - "tissue segmentation"
+  - "segment tissues"
+  - "gm wm csf"
+  - "gray white matter"
+
+subcortical_segmentation:
+  - "subcortical segmentation"
+  - "segment subcortical"
+  - "first"
+  - "amygdala hippocampus"
+
+# ===== Surface Operators =====
+
+surface_reconstruction:
+  - "surface reconstruction"
+  - "recon-all"
+  - "cortical surface"
+  - "reconstruct surface"
+
+surface_parcellation:
+  - "surface parcellation"
+  - "parcellate surface"
+  - "desikan killiany"
+  - "destrieux"
+
+# ===== Format Conversion =====
+
+format_conversion:
+  - "convert"
+  - "conversion"
+  - "convert format"
+  - "dcm to nifti"
+  - "dicom to nifti"
+
+# ===== Quality Control =====
+
+quality_check:
+  - "quality check"
+  - "qc"
+  - "quality control"
+  - "check quality"
+  - "visual inspection"
+
+# ===== Modality-Specific Operators =====
+
+# fMRI-specific
+connectome@fmri:
+  - "functional connectivity"
+  - "resting state connectivity"
+  - "fcmri"
+  - "fc-mri"
+  - "functional connectome"
+
+task_activation@fmri:
+  - "task activation"
+  - "task fmri"
+  - "activation map"
+  - "contrast"
+
+seed_analysis@fmri:
+  - "seed-based analysis"
+  - "roi analysis"
+  - "seed correlation"
+
+# DTI/dMRI-specific
+connectome@dmri:
+  - "structural connectivity"
+  - "diffusion connectome"
+  - "white matter connectivity"
+  - "tractography connectome"
+
+tractography@dmri:
+  - "tractography"
+  - "fiber tracking"
+  - "track fibers"
+  - "streamlines"
+
+tensor_fitting@dmri:
+  - "tensor fitting"
+  - "dti fitting"
+  - "fit diffusion tensor"
+  - "estimate tensor"
+
+# sMRI-specific
+cortical_thickness@smri:
+  - "cortical thickness"
+  - "thickness"
+  - "measure thickness"
+
+volumetry@smri:
+  - "volumetry"
+  - "volume measurement"
+  - "measure volume"
+  - "structure volume"
+
+# EEG/MEG-specific
+source_localization@eeg:
+  - "source localization"
+  - "source estimation"
+  - "inverse solution"
+  - "dipole fitting"
+
+source_localization@meg:
+  - "source localization"
+  - "source estimation"
+  - "beamformer"
+  - "minimum norm"
+
+connectivity@eeg:
+  - "eeg connectivity"
+  - "functional connectivity"
+  - "phase locking"
+  - "coherence"
+
+connectivity@meg:
+  - "meg connectivity"
+  - "functional connectivity"
+  - "phase synchronization"
+
+time_frequency@eeg:
+  - "time frequency"
+  - "tfr"
+  - "time-frequency analysis"
+  - "wavelet"
+  - "spectrogram"
+
+time_frequency@meg:
+  - "time frequency"
+  - "tfr"
+  - "time-frequency decomposition"
+
+# iEEG-specific
+electrode_localization@ieeg:
+  - "electrode localization"
+  - "contact localization"
+  - "seeg localization"
+
+high_gamma@ieeg:
+  - "high gamma"
+  - "broadband gamma"
+  - "high frequency"
+
+# ===== Multi-Subject Operators =====
+
+group_analysis:
+  - "group analysis"
+  - "second level"
+  - "group level"
+  - "between subjects"
+
+mixed_effects:
+  - "mixed effects"
+  - "random effects"
+  - "fixed effects"
+
+meta_analysis:
+  - "meta analysis"
+  - "meta-analysis"
+  - "neurosynth"
+
+coordinate_meta_analysis:
+  - "coordinate meta analysis"
+  - "coordinate-based meta analysis"
+  - "coordinate-based meta-analysis"
+  - "coordinate-based"
+  - "activation likelihood estimation"
+  - "ale"
+  - "mkda"
+  - "cbma"
+  - "kernel density analysis"
+  - "meta regression"
+  - "meta-regression"
+
+# ===== Advanced Analysis =====
+
+mvpa:
+  - "mvpa"
+  - "multivariate pattern analysis"
+  - "decoding"
+  - "classification"
+  - "machine learning"
+
+rsa:
+  - "rsa"
+  - "representational similarity"
+  - "representational similarity analysis"
+
+encoding_model:
+  - "encoding model"
+  - "encoding"
+  - "feature encoding"
+
+decoding_model:
+  - "decoding model"
+  - "decoding"
+  - "pattern classification"
+
+deep_learning:
+  - "deep learning"
+  - "pytorch"
+  - "neural network"
+  - "cnn"
+  - "transformer"
+  - "deep neural network"
+
+statistical_inference:
+  - "statistical inference"
+  - "hypothesis testing"
+  - "permutation test"
+  - "permutation testing"
+  - "multiple comparison"
+  - "multiple comparisons"
+  - "family-wise error"
+  - "fdr"
+
+inference:
+  - "inference"
+
+clinical_decision_support:
+  - "clinical decision support"
+  - "decision support"
+  - "risk scoring"
+  - "clinical risk"
+  - "risk prediction"
+
+# ===== Data Organization =====
+
+bids_conversion:
+  - "bids conversion"
+  - "convert to bids"
+  - "bidsify"
+  - "organize bids"
+
+bids_validation:
+  - "bids validation"
+  - "validate bids"
+  - "check bids"
+
+# ===== Specialized / System Tools =====
+
+specialized_processing:
+  - "specialized processing"
+  - "specialized workflow"
+  - "custom processing"
+
+data_harmonization:
+  - "data harmonization"
+  - "harmonization"
+  - "harmonize"
+  - "combat"
+  - "batch effects"
+  - "site effects"
+  - "scanner effects"
+
+brain_simulation:
+  - "brain simulation"
+  - "simulate brain"
+  - "whole brain simulation"
+  - "neural mass"
+  - "spiking model"
+
+realtime_fmri:
+  - "real-time fmri"
+  - "realtime fmri"
+  - "online fmri"
+  - "real-time neurofeedback"
+  - "neurofeedback"
+
+lesion_detection:
+  - "lesion detection"
+  - "lesion segmentation"
+  - "lesion mask"
+  - "stroke lesion"
+  - "white matter lesion"
+
+# ===== Visualization =====
+
+visualization:
+  - "visualize"
+  - "visualization"
+  - "plot"
+  - "display"
+  - "show results"
+  - "advanced visualization"
+
+glass_brain:
+  - "glass brain"
+  - "glass brain plot"
+  - "transparent brain"
+
+surface_plot:
+  - "surface plot"
+  - "plot on surface"
+  - "cortical surface plot"

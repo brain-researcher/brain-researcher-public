@@ -1,0 +1,226 @@
+# TODO CMD: detail temporal order/interval timing paradigms and relevant dependent measures.
+id: tf_timing_order
+label: Temporal Order & Interval Timing
+description: >-
+  Time perception and production: temporal order/simultaneity, interval discrimination/estimation/production,
+  bisection/reproduction, synchronization–continuation tapping, foreperiod/hazard preparation, time-to-contact.
+  Emphasizes scalar timing/bayesian accounts, oscillator/entrainment models, and timed-evidence variants.
+examples: [temporal_order_judgment, simultaneity_judgment, temporal_bisection, interval_reproduction, synchronization_continuation, foreperiod, time_to_contact]
+typical_DVs: [threshold_soa_ms, temporal_bisection_point, coefficient_of_variation, reproduction_error_ms, asynchrony_ms, foreperiod_effect_ms]
+common_manipulations: [soa_ms, interval_ms, modality, beat_presence, metronome, foreperiod_distribution, hazard_rate, variability_sd]
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Temporal Order & Simultaneity
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_temporal_order
+    label: Temporal Order / Simultaneity
+    paradigms:
+      - name: Temporal Order Judgment (TOJ) - Timing
+        aliases: [Temporal Order Judgment, TOJ, Timing TOJ]
+        typical_DVs: [threshold_soa_ms, psychometric_slope]
+        common_manipulations: [soa_ms, modality, eccentricity_deg, masking]
+        model_families: [Psychometric_function, Bayesian_TOJ]
+        model_params: [alpha_threshold, beta_slope, prior_SOAs]
+        variant_tags: [visual, auditory, audiovisual]
+        design_flags: [bimodal_optional]
+        qa_checks: [response_bias_check]
+        keywords: [order_threshold, timing]
+        notes: Timing-based temporal order judgment (distinct from perceptual discrimination tasks).
+      - name: Simultaneity Judgment (SJ) - Timing
+        aliases: [Simultaneity Judgment, SJ, Timing SJ]
+        typical_DVs: [pse_soa_ms, temporal_binding_window_ms]
+        common_manipulations: [soa_ms, modality, luminance_level]
+        model_families: [Psychometric_function]
+        model_params: [alpha_pse, sigma_width]
+        variant_tags: [uni_bimodal]
+        design_flags: []
+        qa_checks: []
+        keywords: [temporal_binding, timing]
+        notes: Timing-based simultaneity judgment (distinct from perceptual discrimination tasks).
+      - name: Audiovisual TOJ/SJ with Recalibration/Adaptation
+        typical_DVs: [recalibration_shift_ms, threshold_soa_ms, pse_soa_ms, temporal_binding_window_ms]
+        common_manipulations: [adaptation_type (A_leads/V_leads), adaptation_soa_ms, adaptation_block_length, test_task (TOJ/SJ)]
+        model_families: [Bayesian_TOJ, Adaptation_shift_model]
+        model_params: [prior_SOAs, adaptation_gain]
+        variant_tags: [audiovisual, recalibration]
+        design_flags: [pre_post_blocks]
+        qa_checks: [adaptation_effect_present]
+        keywords: [audiovisual_recalibration, temporal_adaptation]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Interval Discrimination / Estimation / Production
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_interval_metrics
+    label: Interval Discrimination, Estimation & Production
+    paradigms:
+      - name: Temporal Bisection
+        typical_DVs: [bisection_point_bp, slope, coefficient_of_variation]
+        common_manipulations: [short_ms, long_ms, probe_ms, modality]
+        model_families: [Scalar_expectancy_theory_SET, Bayesian_interval]
+        model_params: [clock_rate, memory_variance, prior_mean, prior_kappa]
+        variant_tags: [bisection]
+        design_flags: [short_long_training]
+        qa_checks: [cv_scalar_property]
+        keywords: [bisection_point]
+      - name: Duration Discrimination (Shorter/Longer)
+        typical_DVs: [jnd_ms, pse_shift]
+        common_manipulations: [interval_ms, modality, variability_sd]
+        model_families: [SET, Psychometric_function]
+        model_params: [alpha_threshold, beta_slope]
+        variant_tags: [shorter_longer]
+        design_flags: []
+        qa_checks: []
+        keywords: [duration_discrimination]
+      - name: Interval Reproduction
+        typical_DVs: [reproduction_error_ms, constant_error_bias, coefficient_of_variation]
+        common_manipulations: [interval_ms, modality, feedback_presence]
+        model_families: [Bayesian_interval, Noisy_integrator]
+        model_params: [prior_mean, prior_kappa, motor_noise_sigma]
+        variant_tags: [reproduction]
+        design_flags: [delayed_feedback_optional]
+        qa_checks: [bias_vs_variance_reported]
+        keywords: [reproduction]
+      - name: Interval Production
+        typical_DVs: [production_error_ms, variability_sd]
+        common_manipulations: [target_interval_ms, pacing, feedback_presence]
+        model_families: [SET, Bayesian_interval]
+        model_params: [clock_rate, prior_mean]
+        variant_tags: [production]
+        design_flags: []
+        qa_checks: []
+        keywords: [production]
+      - name: Oddball Time Dilation/Compression
+        typical_DVs: [perceived_duration_bias_ms, dilation_index]
+        common_manipulations: [oddball_probability, standard_duration_ms, modality]
+        model_families: [Attention_modulated_timing, Bayesian_interval]
+        model_params: [attention_gain, prior_mean]
+        variant_tags: [oddball]
+        design_flags: [prevalence_control]
+        qa_checks: [oddball_probability_reported]
+        keywords: [time_dilation, oddball_effect]
+      - name: Weber/Scalar Property Across Ranges
+        typical_DVs: [coefficient_of_variation, weber_fraction]
+        common_manipulations: [range_category (sub_second/supra_second), interval_ms_set, modality]
+        model_families: [Scalar_expectancy_theory_SET]
+        model_params: [clock_rate, memory_variance]
+        variant_tags: [weber_scaling]
+        design_flags: [range_blocking]
+        qa_checks: [scalar_property_test]
+        keywords: [weber_scaling, scalar_property]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Sensorimotor Timing & Entrainment
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_sync_continuation
+    label: Synchronization–Continuation & Entrainment
+    paradigms:
+      - name: Synchronization–Continuation Tapping
+        typical_DVs: [asynchrony_ms, drift_ms_per_beat, variability_sd]
+        common_manipulations: [tempo_bpm, metronome_present, modality]
+        model_families: [Oscillator_coupling, Error_correction_MLE]
+        model_params: [oscillator_freq, coupling_kappa, error_correction_gain]
+        variant_tags: [sync, continuation]
+        design_flags: [phase_reset_optional]
+        qa_checks: [outlier_tap_filter]
+        keywords: [entrainment]
+      - name: Beat-Based Temporal Attention
+        typical_DVs: [beat_advantage_ms, accuracy]
+        common_manipulations: [rhythm_regular_vs_irregular, cue_validity]
+        model_families: [Oscillator_attention]
+        model_params: [phase_attention_gain]
+        variant_tags: [rhythm]
+        design_flags: []
+        qa_checks: []
+        keywords: [rhythmic_attention]
+      - name: Time-to-Contact (τ) / Motion Extrapolation
+        typical_DVs: [ttc_estimation_error_ms, bias]
+        common_manipulations: [approach_speed, visibility_duration, occlusion]
+        model_families: [Tau_coupling, Bayesian_motion_time]
+        model_params: [tau_gain, prior_speed]
+        variant_tags: [ttc]
+        design_flags: []
+        qa_checks: []
+        keywords: [time_to_contact]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Preparation / Hazard & Foreperiod
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_foreperiod_hazard
+    label: Foreperiod / Hazard Preparation
+    paradigms:
+      - name: Variable Foreperiod (Warning–Target)
+        typical_DVs: [foreperiod_effect_ms, rt_ms]
+        common_manipulations: [foreperiod_distribution, hazard_rate, cue_validity]
+        model_families: [Hazard_rate_model, Drift_modulation]
+        model_params: [hazard_h, drift_scaler_theta]
+        variant_tags: [warning_signal]
+        design_flags: [catch_trials_optional]
+        qa_checks: [strategic_anticipation_control]
+        keywords: [foreperiod, hazard]
+      - name: Temporal Orienting (Cue-to-Target)
+        typical_DVs: [rt_ms, cueing_benefit_ms]
+        common_manipulations: [temporal_cue_validity, SOA_ms]
+        model_families: [Temporal_prior_model]
+        model_params: [prior_width, prior_peak]
+        variant_tags: [temporal_cue]
+        design_flags: []
+        qa_checks: []
+        keywords: [temporal_orienting]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Temporal Order Judgment
+    - Simultaneity Judgment
+    - Temporal Bisection
+    - Interval Reproduction
+    - Synchronization–Continuation Tapping
+    - Variable Foreperiod
+    - Time-to-Contact
+  cogpo_candidate_labels:
+    - Temporal Order Judgment
+    - Temporal Bisection
+    - Interval Reproduction
+    - Synchronization–Continuation
+    - Foreperiod
+constructs:
+  primary: [Temporal Resolution, Interval Timing]
+  secondary: [Scalar Timing, Bayesian Timing, Entrainment, Hazard/Preparation]
+uri_brainmap: []
+uri_cogpo: []
+status: plausible
+provenance:
+  - source: TODO CMD (timing) + prior families (TOJ/bisection/reproduction/sync/foreperiod)
+    fields: [subfamilies, paradigms, model_families, model_params, dv_vocab, factor_vocab]
+    confidence: high
+
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, soa_ms, interval_ms, modality, metronome_present, foreperiod, response, correct, rt]
+  per_subfamily:
+    sf_temporal_order:
+      events_columns: [onset, duration, trial_type, soa_ms, modality, adaptation_type, adaptation_soa_ms, response, correct, rt]
+      hed_examples:
+        - "Timing, TOJ"
+        - "Timing, Simultaneity"
+        - "Timing, Audiovisual-recalibration"
+    sf_interval_metrics:
+      events_columns: [onset, duration, trial_type, short_ms, long_ms, probe_or_target_ms, oddball_probability, standard_duration_ms, range_category, response, correct, rt]
+      hed_examples:
+        - "Timing, Bisection"
+        - "Timing, Reproduction"
+        - "Timing, Oddball-dilation"
+        - "Timing, Weber-scaling"
+    sf_sync_continuation:
+      events_columns: [onset, duration, trial_type, tempo_bpm, metronome_present, tap_onsets, asynchrony_ms]
+      hed_examples:
+        - "Timing, Synchronization"
+        - "Timing, Continuation"
+    sf_foreperiod_hazard:
+      events_columns: [onset, duration, trial_type, foreperiod, hazard_rate, temporal_cue_validity, response, rt]
+      hed_examples:
+        - "Timing, Foreperiod"
+        - "Timing, Temporal-cueing"
+

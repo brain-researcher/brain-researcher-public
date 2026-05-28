@@ -1,0 +1,1428 @@
+version: 1
+ruleset_version: '2025-11-12'
+defaults:
+  accept:
+    min_score: 0.85
+    min_margin: 0.1
+    allow_multi: false
+  weights:
+    slug_exact: 0.9
+    keywords_any: 0.25
+    regex: 0.25
+mappings:
+- family_id: tf_attention_selective
+  onvoc_uri: ONVOC_0000427
+  seeds:
+    slugs:
+    - simon-task
+    - posner-cueing-task
+    - ax-cpt
+    - continuous-performance-task
+    - antisaccade-task
+    - ant-task
+    - attention-network-task
+    - attention-networks-test
+    - ax-dpx
+    - ax-dpx-task
+    - blocked-channel-selection
+    - selective-attention-task
+    - vigilance
+    - joint-attention-social-and-nonsocial-orienting-task
+    - contextual-semantic-priming
+    - re-entrant-processing
+    - attentional-blink-paradigm
+    - inter-modal-selective-attention-task
+    - same-different-task
+    - choice-reaction-time-task
+    - pebl-perceptual-vigilance
+    - symbol-digit-substitution
+    - dot-pattern-expectancy
+    - test-of-variables-of-attention
+    - sustained-attention-to-response
+    - digit-cancellation
+    - partial-report-procedure
+    - digit-cancellation-task
+    - test-of-variables-of-attention-task
+    - attribute-amnesia
+    - visual-attention-task
+    - symbol-counter-task
+    - attention-bias
+    - match-to-sample-task
+    - match-to-sample-visual-search
+    - rapid-serial-visual-presentation
+    - rapid-serial-visual-presentation-task
+    - rapid-visual-information-processing
+    - rapid-visual-information-processing-task
+    - spatial-cuing-paradigm
+    - time-series-of-response-time
+  keywords_any:
+  - attention
+  - selective attention
+  - visual attention
+  - simon
+  - posner
+  - spatial cueing
+  - cue validity
+  - continuous performance
+  - cpt
+  - antisaccade
+  - attention network
+  - ax dpx
+  - blocked channel
+  - attentional control
+  - alerting network
+  - orienting network
+  - executive control network
+  - attentional blink
+  - joint attention
+  - vigilance
+  - same different
+  - perceptual vigilance
+  - sustained attention
+  - symbol digit
+  - tova
+  - sart
+  - cancellation
+  - partial report
+  - dot pattern
+  - attribute amnesia
+  - variables of attention
+  - digit cancellation
+  - rapid visual information processing
+  - rvip
+  - rapid serial visual presentation
+  - rsvp
+  - attention bias
+  - match to sample
+  - visual search
+  - spatial cuing
+  - Posner cuing
+  regex:
+  - \banti[- ]?saccade\b
+  - \battention[- ]network(s)?[- ]test\b
+  - \bax[- ]dpx\b
+  - \bblocked[- ]channel\b
+  - \bselective[- ]attention\b
+  - \battentional[- ]blink\b
+  - \\brsvp\\b
+  - \\brvip\\b
+- family_id: tf_motor_action
+  onvoc_uri: ONVOC_0000426
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seeds:
+    slugs:
+    - finger-tapping
+    - action-imitation
+    - action-observation
+    - bimanual-coordination
+    - big-little-circle
+    - visually-guided-saccade-task
+    - memory-guided-saccade-task
+    - compensatory-tracking - continuous-tapping - penn-motor-praxis - 
+      pursuit-tracking - visual-pursuit-tracking - visuomotor-rotation - 
+      flexion-extension - grasping
+    - pursuit-rotor
+    - drawing
+    - drawing-from-memory
+    - flexion-extension
+    - grasping
+    - imagined-movement
+    - pointing-task
+    - imagined-movement-task
+    - motor-imagery-task
+    - fitts-task
+    - motor-sequencing-task
+    - nine-hole-peg-test
+    - space-fortress
+    - motor-screening-task
+    - tapping-task
+    - nih-toolbox-standing-balance-test
+    - hand-chirality-recognition
+    - hand-side-recognition
+    - ataxia
+    - ideational-praxis
+    - nih-toolbox-2-minute-walk-endurance
+    - space-fortress-with-oddball
+    - chewing-swallowing
+    - sequence-reproduction
+    - eye-tracking-paradigms
+    - mouse-tracking-paradigms
+    - reaction-time
+    - reaction-time-task
+    - video-games
+  keywords_any:
+  - motor
+  - finger tapping
+  - bimanual
+  - coordination
+  - saccade
+  - visually guided
+  - memory guided
+  - tracking
+  - tapping
+  - motor praxis
+  - visuomotor
+  - visual motor integration
+  - imagined movement
+  - pointing
+  - motor imagery
+  - space fortress
+  - motor screening
+  - standing balance
+  - balance test
+  - handedness judgment
+  - ataxia
+  - praxis
+  - walk endurance
+  - chewing
+  - swallowing
+  - sequence reproduction
+  - eye tracking
+  - mouse tracking
+  regex:
+  - \bsaccade\b
+  - \bmotor[- ](praxis|rotation)\b
+  - \\bspace[- ]fortress\\b
+  - \\bstanding[- ]balance\\b
+- family_id: tf_social_cognition
+  onvoc_uri: ONVOC_0000435
+  seeds:
+    slugs:
+    - theory-of-mind
+    - cartoon-cognitive-and-affective-theory-of-mind
+    - social-cognition-theory-of-mind-fmri-task-paradigm
+    - reading-the-mind-in-the-eyes
+    - false-belief-task
+    - belief-attribution
+    - deception
+    - narrative-based-pain-empathy-task
+    - couples-conflict-task
+  keywords_any:
+  - theory of mind
+  - mentalizing
+  - false belief
+  - belief attribution
+  - social inference
+  - empathy
+  - eyes test
+  - deception
+  - pain empathy
+  - couples conflict
+  regex:
+  - \btheory[- ]of[- ]mind\b
+  - \bmentaliz(e|ing|ation)\b
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+- family_id: tf_social_cognition_perception
+  onvoc_uri: ONVOC_0000503
+  seeds:
+    slugs:
+    - face-monitor-discrimination
+    - face-matching
+    - cambridge-face-memory
+    - cambridge-face-memory-test
+    - penn-face-memory-test
+    - warrington-s-face-word-recognition-test
+    - benton-facial-recognition
+    - benton-face-recognition
+    - benton-facial-recognition-test
+    - facial-recognition-test
+    - facial-recognition-task
+    - biological-motion
+    - biological-motion-perception-passive-viewing-paradigm
+    - facial-expression-display-task
+    - facial-expression-of-emotion
+    - facial-expression-observing-task
+    - intermodal-preferential-looking-paradigm
+    - international-affective-picture-system
+    - facial-expression-observation
+    - emotion-recognition
+    - emotion-recognition-task
+    - face-identification
+    - face-identification-task
+    - penn-facial-memory-test-delayed-memory
+    - social-judgment-of-faces
+    - social-vs-physical-perception
+  keywords_any:
+  - face
+  - faces
+  - facial recognition
+  - face recognition
+  - face memory
+  - emotion recognition
+  - fusiform
+  - ffa
+  - benton facial
+  - biological motion
+  regex:
+  - \bface(s)?\b
+  - \bfusiform\b
+  - \bffa\b
+  - \bbenton[- ]facial\b
+- family_id: tf_value_based_decision
+  onvoc_uri: ONVOC_0000428
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seeds:
+    slugs:
+    - iowa-gambling-task
+    - cambridge-gambling
+    - behavioral-investment-allocation-strategy
+    - becker-degroot-marschak-bdm-procedure
+    - balloon-analogue-risk-task
+    - delay-discounting-task
+    - multi-attribute-decision-making-task
+    - consensus-decision-making-task
+    - prospective-sequential-decision-making-task
+    - social-decision-making-task
+    - cambridge-risk
+    - chicken-game
+    - choice-task-between-risky-and-non-risky-options
+    - donation
+    - holt-and-laury-risk-titrator
+    - matching-pennies-game
+    - risk-preferences
+    - probabilistic-reversal-learning-task
+    - risky-decision-making-under-social-influence
+    - risky-gains
+    - risky-lotteries
+    - trust-game-tg
+    - ultimatum-game-ug
+    - yellow-light-game
+    - hungry-donkey
+    - adaptation-of-marshmellow
+    - bickel-titrator
+    - non-instrumental-information-seeking-task
+    - correlated-bandits
+    - non-choice-task
+    - two-stage-task
+    - convex-time-budgets
+    - internal-menu-choice-task
+    - social-influence-on-emotion-task
+    - value-based-decision-making
+    - two-item-food-choice-task
+    - dietary-decisions-task
+    - probabilistic-selection-task
+    - information-sampling-task
+    - criteria-task
+    - reversal-weather-prediction
+    - cups-task
+    - social-influence-for-food-preferences-task
+    - single-item-food-choice-task
+    - generalization-of-instrumental-avoidance
+    - relative-reinforcing-efficacy-purchase
+    - hidden-state-decision-making
+    - manipulation-of-predictability
+    - violation-of-expectation
+  keywords_any:
+  - value based
+  - gambling
+  - risk
+  - auction
+  - investment
+  - discounting
+  - decision
+  - lottery
+  - trust game
+  - ultimatum
+  - matching pennies
+  - donation
+  - social influence
+  - cognitive reflection
+  - hungry donkey
+  - information seeking
+  - bandit task
+  - two stage
+  - time budget
+  - menu choice
+  - social influence
+  - value based decision making
+  - food choice
+  - dietary decision
+  - probabilistic selection
+  - information sampling
+  - weather prediction
+  - cups task
+  - single item food choice
+  regex:
+  - \b(risk(y)?|gambl)\b
+  - \btrust[- ]game\b
+  - \bultimatum\b
+  - \bbandit(s)?\b
+- family_id: tf_executive_control
+  onvoc_uri: ONVOC_0000430
+  seeds:
+    slugs:
+    - enumeration
+    - enumeration-task
+    - gating
+    - gating-task
+    - lateral-facilitation
+    - lateral-facilitation-task
+  keywords_any:
+  - executive function
+  - executive control
+  - gating
+  - facilitation
+  - enumeration
+- family_id: tf_working_memory
+  onvoc_uri: ONVOC_0000433
+  seeds:
+    slugs:
+    - n-back
+    - adaptive-n-back
+    - sternberg-task
+    - digit-span
+    - spatial-span
+    - operation-span-task
+    - listening-span-task
+    - memory-span-test
+    - complex-span-test
+    - simple-span-task
+    - letter-number-sequencing
+    - keep-track-task
+    - image-monitoring
+    - reading-span-task
+    - oculomotor-delayed-response
+    - corsi-blocks
+    - self-ordered-pointing
+    - spatial-n-back
+    - articulatory-suppression
+    - backward-digit-span
+    - sequence-recall-learning
+    - spatial-delayed-response-task
+    - spatial-delayed-response
+    - object-n-back
+    - letter-n-back-task
+    - delayed-recall-test
+    - recency-judgment-task
+    - delayed-nonmatch-to-sample
+    - delayed-response
+    - delayed-nonmatch-to-sample-task
+    - delayed-response-task
+    - delayed-response-paradigm
+    - delayed-intention
+    - delayed-intention-task
+    - serial-reaction-time
+    - serial-reaction-time-task
+    - serial-reaction-time-paradigm
+    - object-one-back
+    - object-one-back-task
+    - word-one-back
+    - word-one-back-task
+    - face-n-back
+    - change-detection
+    - change-detection-task
+    - letter-memory
+    - tone-counting
+    - nih-toolbox-list-sorting-working-memory
+    - wais-arithmetic
+  keywords_any:
+  - working memory
+  - sternberg
+  - digit span
+  - spatial span
+  - span task
+  - operation span
+  - listening span
+  - memory span
+  - complex span
+  - simple span
+  - letter number
+  - keep track
+  - oculomotor delayed
+  - corsi
+  - articulatory suppression
+  - backward digit
+  regex:
+  - \b(\d|[a-z]+)[- ]span\b
+  - \bletter[- ]number\b
+- family_id: tf_language_semantic
+  onvoc_uri: ONVOC_0000431
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seeds:
+    slugs:
+    - lexical-decision
+    - semantic-decision
+    - sentence-comprehension
+    - story-listening
+    - picture-naming
+    - verb-generation
+    - category-fluency
+    - rhyme-judgment
+    - boston-naming-test
+    - graded-naming-test
+    - rapid-automatized-naming-test
+    - naming-covert
+    - naming-overt
+    - letter-fluency-test
+    - phonemic-fluency-task
+    - semantic-fluency-task
+    - verbal-fluency-task
+    - word-fluency-test
+    - expressive-one-word-picture-vocabulary-test
+    - object-naming
+    - object-naming-task
+    - naming-task
+    - general-knowledge
+    - general-knowledge-task
+    - fame-judgment
+    - fame-judgment-task
+    - pyramids-and-palm-trees
+    - pyramids-and-palm-trees-task
+    - hooper-visual-organization
+    - hooper-visual-organization-test
+    - expressive-vocabulary-test
+    - nih-toolbox-picture-vocabulary-test
+    - peabody-picture-vocabulary-test
+    - penn-vocabulary-test
+    - wais-vocabulary
+    - mirror-reading
+    - covert-verb-generation
+    - word-picture-verification
+    - clinical-evaluation-of-language-fundamentals-3
+    - nih-toolbox-picture-vocabulary-test
+    - peabody-picture-vocabulary-test
+    - expressive-vocabulary-test
+    - penn-vocabulary-test
+    - word-attack
+    - word-identification
+    - syntactic-acceptability-judgement
+    - nonword-repetition
+    - dichotic-listening
+    - shadowing
+    - counting-calculation
+    - semantic-relatedness-task
+    - semantic-classification-task
+    - semantic-task
+    - mental-arithmetic-task
+    - rhyme-verification-task
+    - narrative-based-pain-empathy-task
+    - narrative-based-pain-empathy
+    - phonological-task
+    - gender-discrimination-task
+    - word-picture-matching-task
+    - living-nonliving-task
+    - semantic-association-task
+    - language-rule-learning
+    - phoneme-detection-task
+    - orthographic-task
+    - living-nonliving-judgment
+    - gray-oral-reading-test-4
+    - test-of-early-language-development
+    - test-of-adolescent-and-adult-language
+    - kaufman-brief-intelligence-test
+    - language-processing-fmri-task-paradigm
+    - living-nonliving-judgment-on-mirror-reversed-and-plain-text-words
+    - nart-r
+    - national-adult-reading
+    - verbal-interference
+    - word-recognition
+    - synatcting-and-semantic-fmri-task-paradigm
+    - object-classification
+    - corpus-analysis
+    - visual-world-paradigm
+    - manipulation-of-language-and-non-verbal-behaviors
+  keywords_any:
+  - language
+  - lexical
+  - semantic
+  - story
+  - sentence
+  - picture naming
+  - verb generation
+  - verbal fluency
+  - word fluency
+  - vocabulary
+  - naming
+  - ran
+  - reading comprehension
+  - language fundamentals
+  - word picture
+  - braille reading
+  - vocabulary test
+  - picture vocabulary
+  - nih toolbox
+  - peabody
+  - word fluency
+  - letter fluency
+  - expressive vocabulary
+  - penn vocabulary
+  - word attack
+  - word identification
+  - syntactic judgment
+  - nonword repetition
+  - dichotic listening
+  - shadowing
+  - calculation
+  - arithmetic
+  - semantic relatedness
+  - semantic classification
+  - mental arithmetic
+  - rhyme verification
+  - narrative empathy
+  - phonological task
+  - gender discrimination
+  - word picture matching
+  - living nonliving
+  - semantic association
+  - language rule learning
+  - phoneme detection
+  - orthographic
+  - living/nonliving
+  - gray oral reading
+  - test of early language
+  - test of adolescent and adult language
+  - kbit
+  - language fmri
+  - nart
+  - national adult reading
+  - verbal interference
+  - word recognition
+  - semantic fmri
+  - object classification
+  - corpus analysis
+  - visual world
+  - language and non-verbal
+  regex:
+  - \b(verbal|word|letter|category)[- ]fluency\b
+  - \bnaming\b
+  - \bvocabulary\b
+- family_id: tf_detection_discrimination
+  onvoc_uri: ONVOC_0000434
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seeds:
+    slugs:
+    - yes-no-detection
+    - two-afc-detection
+    - orientation-discrimination
+    - contrast-sensitivity
+    - motion-coherence
+    - temporal-order-judgment
+    - simultaneity-judgment
+    - flicker-fusion
+    - binocular-rivalry
+    - auditory-masking
+    - bistable-percept-paradigm
+    - bistability
+    - ambiguous-figure-task
+    - binocular-rivalry-task
+    - backward-masking
+    - matching-familiar-figures-test
+    - embedded-figures-test
+    - visual-illusion-susceptibility
+    - haptic-illusion-task
+    - muller-lyer-illusion
+    - rubber-hand-illusion
+    - thermal-grill-illusion
+    - uznadze-haptic-illusion-task
+    - birmingham-object-recognition-battery
+    - object-recognition-task
+    - letter-comparison
+    - pattern-comparison
+    - minimal-feature-match
+    - foreshortened-view
+    - visual-alignment
+    - apparent-verticality-judgment
+    - orthographic-discrimination
+    - phonological-discrimination
+    - phonetic-discrimination-task
+    - tone-monitor-discrimination
+    - tactile-monitor-discrimination
+    - vibrotactile-monitor-discrimination
+    - olfactory-monitoring-discrimination
+    - subjective-emotional-picture-discrimination
+    - passive-listening
+    - p300-bci
+    - non-painful-electrical-stimulation
+    - non-painful-thermal-stimulation
+    - pain-monitor-discrimination-task
+    - pain-monitor-discrimination
+    - heat-stimulation
+    - heat-sensitization-adaptation
+    - cold-stimulation
+    - electric-stimulation
+    - tonic-pain-stimulation
+    - phasic-pain-stimulation
+    - dual-sensitization
+    - interoceptive-attentiveness-fmri-task
+    - interoceptive-attentiveness-fmri
+    - pitch-monitor-discrimination
+    - spatial-location-discrimination
+    - syntactic-discrimination
+    - target-detection-task
+    - phoneme-detection-task
+    - color-discrimination-task
+    - object-discrimination-task
+    - numerosity-estimation-task
+    - length-match-task
+    - contrast-detection-task
+    - capsaicin-evoked-pain
+    - mechanical-stimulation
+    - gustatory-stimulation
+    - speech-detection
+    - tone-detection-jnd
+    - motion-discrimination-task
+    - perceptual-discrimination-task
+    - object-rating-task
+    - deviance-detection
+    - gustatory-stimulation-with-liquid-tastes-or-flavors
+    - nih-toolbox-taste-intensity
+    - regularity-and-change-detection
+    - vernier-discrimination
+    - wais-picture-completion
+    - wais-object-assembly
+    - wais-picture-arrangement
+    - synchrony-judgment
+    - novelty-detection-task
+    - surface-properties-of-object-paradigms
+    - regulated-heat-stimulation
+    - coherent-motion
+    - contour-integration
+    - contour-interpolation
+    - cross-modality
+    - intensity-for-somatosensory-stimulation
+    - local-computation
+    - motion-processing
+    - multistability
+    - nih-toolbox-dynamic-visual-acuity
+    - object-perception
+    - perceptual-closure
+    - perceptual-organization
+    - social-vs-physical-perception
+    - visual-object-learning
+  keywords_any:
+  - detection
+  - discrimination
+  - threshold
+  - psychometric
+  - temporal order
+  - simultaneity
+  - flicker
+  - masking
+  - crowding
+  - motion coherence
+  - illusion
+  - bistable
+  - ambiguous
+  - perceptual alternation
+  - object recognition
+  - matching figures
+  - visual patterns
+  - comparison
+  - alignment
+  - orthographic
+  - phonological
+  - phonetic
+  - tactile
+  - vibrotactile
+  - olfactory
+  - monitor discrimination
+  - passive listening
+  - emotional picture
+  - interoception
+  - thermal stimulation
+  - electrical stimulation
+  - pain monitoring
+  - tonic pain
+  - phasic pain
+  - pitch discrimination
+  - spatial location
+  - syntactic discrimination
+  - target detection
+  - phoneme detection
+  - numerosity
+  - capsaicin
+  - mechanical stimulation
+  - gustatory
+  - liquid taste
+  - speech detection
+  - tone detection
+  - checkerboard
+  - motion discrimination
+  - perceptual discrimination
+  - deviance detection
+  - gustatory stimulation
+  - taste intensity
+  - regularity detection
+  - vernier
+  - picture completion
+  - novelty detection
+  - surface properties
+  - heat stimulation
+  regex:
+  - \bbistable(ity)?\b
+  - \bambiguous[- ]figure\b
+  - \bperceptual[- ](rivalry|alternation)\b
+  - \b(backward|visual)[- ]masking\b
+  - \\bmechanical\\s+stimulation\\b
+  - \\bcheckerboard\\b
+- family_id: tf_conflict_inhibition
+  onvoc_uri: ONVOC_0000467
+  seeds:
+    slugs:
+    - stroop-task
+    - numerical-stroop
+    - emotional-stroop
+    - picture-word-interference
+    - reverse-stroop
+    - negative-priming
+    - eriksen-flanker
+    - simon-task
+    - go-no-go
+    - stop-signal
+    - stop-change-task
+    - selective-stop-signal
+    - stimulus-selective-stop-signal
+    - proportion-congruent-task
+    - sequential-congruency-task
+    - chimeric-animal-stroop
+    - counting-stroop
+    - picture-word-stroop
+    - stroop-like-arrows-task
+    - stroop-like-arrows
+  keywords_any:
+  - stroop
+  - counting stroop
+  - flanker
+  - simon
+  - go no go
+  - stop
+  - response inhibition
+  - conflict
+  - inhibitory control
+  - proportion congruent
+  - sequential congruency
+  - negative priming
+  regex:
+  - \b(go|no)[- ]?go\b
+  - \bstop[- ]signal\b
+  - \bproportion[- ]congruent\b
+- family_id: tf_task_switching
+  onvoc_uri: ONVOC_0000468
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seeds:
+    slugs:
+    - cued-task-switching
+    - alternating-run-task
+    - voluntary-task-switching
+    - wisconsin-card-sorting
+    - dimensional-change-card-sort
+    - intra-extra-dimensional-shift
+    - trail-making-b
+    - trail-making-test-a-and-b
+    - plus-minus-task
+    - n-2-repetition-cost
+    - brixton-spatial-anticipation
+    - color-trails - cambridge-neuropsychological-test-automated-battery - 
+      catbat - cattell-s-culture-fair-intelligence - stockings-of-cambridge
+    - tower-of-hanoi
+    - object-alternation
+    - response-mapping
+    - hierarchical-task
+    - attention-switching-task
+    - set-shifting-task
+    - task-switching
+    - nih-toolbox-dimensional-change-card-sort-test
+    - extradimensional-shift-task
+    - intradimensional-shift-task
+    - task-switching-3x2
+    - dimensions-task
+    - color-word-stroop-with-task-switching
+    - one-touch-stockings-of-cambridge
+    - relational-reasoning
+    - why-how
+    - halstead-reitan-battery
+  keywords_any:
+  - task switching
+  - switch cost
+  - mixing cost
+  - set shifting
+  - cognitive flexibility
+  - wisconsin
+  - id/ed
+  - dimensional change
+  - trail making
+  - brixton
+  - cambridge neuropsychological
+  - culture fair
+  - nih toolbox card sort
+  - extradimensional shift
+  - intradimensional shift
+  - 3x2 switching
+  regex:
+  - \btrail[- ]making\b
+  - \bid[- ]/?ed\b
+- family_id: tf_ltm_declarative
+  onvoc_uri: ONVOC_0000491
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seeds:
+    slugs:
+    - free-recall
+    - cued-recall
+    - serial-recall
+    - paired-associate-learning
+    - autobiographical-memory
+    - source-memory
+    - drm-false-memory
+    - misinformation-effect
+    - retrieval-induced-forgetting
+    - directed-forgetting
+    - prospective-memory
+    - associative-recognition
+    - encoding-task
+    - free-word-list-recall
+    - immediate-recall-test
+    - recall-test
+    - semantic-memory-task
+    - short-term-memory-task
+    - visual-short-term-memory-task
+    - adult-s-penn-word-memory-test-delayed-memory
+    - penn-word-memory
+    - california-verbal-learning
+    - california-verbal-learning-test-ii
+    - delayed-memory
+    - episodic-recall
+    - scene-recognition
+    - item-recognition
+    - music-comprehension-production
+    - sequence-recall-learning
+    - incidental-encoding-task
+    - continuous-recognition-paradigm
+    - visual-statistical-learning
+    - delayed-intention
+    - fictitious-event-ordering
+    - sequence-encoding
+    - penn-visual-object-learning-test-delayed-memory
+    - associative-memory-encoding
+    - recognition-memory
+    - spatial-recognition-memory
+    - think-no-think
+    - visual-object-learning
+  keywords_any:
+  - declarative
+  - episodic
+  - free recall
+  - cued recall
+  - recognition
+  - memory
+  - encoding
+  - word list
+  - verbal learning
+  - penn word
+  - california verbal
+  - delayed memory
+  - word memory
+  - episodic recall
+  - incidental encoding
+  - continuous recognition
+  - statistical learning
+  - delayed intention
+  - prospective memory
+  regex:
+  - \b(forgetting|recall|memory)\b
+  - \bverbal[- ]learning\b
+- family_id: tf_autobiographical_projection
+  onvoc_uri: ONVOC_0000453
+  seeds:
+    slugs:
+    - mental-time-travel
+    - future-events-structured-interview
+  keywords_any:
+  - autobiographical
+  - mental time travel
+  - future thinking
+  regex:
+  - \b(autobiographical|mental[- ]time[- ]travel)\b
+- family_id: tf_preference_affective
+  onvoc_uri: ONVOC_0000429
+  seeds:
+    slugs:
+    - emotion-induction
+    - like-dislike-rating
+    - aesthetic-preference
+    - pairwise-preference
+    - bdm-willingness-to-pay
+    - dot-probe-bias
+    - approach-avoid-task
+    - affective-cueing
+    - mere-exposure
+    - mood-induction
+    - disgust-induction
+    - implicit-association
+    - film-viewing
+    - body-image-self-reflection
+    - food-viewing-passive
+    - rapid-marital-interaction-coding-system-rmics
+    - immersive-virtual-reality-assay-regulation-of-self-reflection
+    - immersive-virtual-reality-assay-regulation-of-cognition-behavioral-and-self-report
+    - mindstrong-for-regulation-of-emotion
+    - mindstrong-for-regulation-of-self-focused-reflection
+    - international-affective-picture-system
+    - meditation
+    - meditation-task
+    - pantomime-task
+    - video-mediated-affective-recall
+    - immersive-virtual-reality-assay-for-target-regulation-of-cognition-behavioral-and-self-report
+    - immersive-virtual-reality-assay-for-target-regulation-of-self-reflection-behavioral-and-self-report
+    - eating-drinking
+    - emotion-regulation
+    - emotion-regulation-task
+    - frustration-in-timed-backwards-math
+    - self-evaluation
+    - self-evaluation-task
+    - reciprocal-artwork-evaluation
+    - self-monitoring
+    - thirst-perception
+    - movie-watching
+  keywords_any:
+  - preference
+  - liking
+  - valence
+  - arousal
+  - willingness to pay
+  - dot probe
+  - approach avoid
+  - mood induction
+  - aesthetic
+  - exposure
+  - disgust
+  - implicit association
+  - film viewing
+  - food viewing
+  - marital interaction
+  - self reflection
+  - regulation of emotion
+  - virtual reality regulation
+  - affective recall
+  - video-mediated
+  - immersive virtual reality
+  - eating
+  - drinking
+- family_id: tf_spatial_navigation
+  onvoc_uri: ONVOC_0000493
+  seeds:
+    slugs:
+    - virtual-maze-navigation
+    - virtual-morris-water-maze
+    - radial-arm-maze
+    - route-learning
+    - wayfinding
+    - path-integration
+    - triangle-completion
+    - landmark-recognition
+    - pointing-to-target
+    - boundary-reorientation
+    - grid-maze
+    - path-learning
+    - vandenberg-kuse-tasks
+    - block-design
+    - rapid-serial-object-transformation
+    - morris-water-maze
+    - maze
+    - maze-task
+    - landmark
+    - network-traversal
+  keywords_any:
+  - spatial navigation
+  - maze
+  - wayfinding
+  - route
+  - path integration
+  - landmark
+  - triangle completion
+  - pointing
+  - dead reckoning
+  - mental rotation
+  - block design
+- family_id: tf_rule_category_learning
+  onvoc_uri: ONVOC_0000432
+  seeds:
+    slugs:
+    - rule-based-learning
+    - shj-types
+    - prototype-learning
+    - exemplar-learning
+    - information-integration-learning
+    - probabilistic-classification
+    - weather-prediction-task
+    - classification-learning
+    - hybrid-model-learning
+    - acquired-equivalence
+    - artificial-grammar-learning
+    - categorization
+    - deterministic-classification
+    - mixed-event-related-probe
+    - single-task-weather-prediction
+    - dual-task-weather-prediction
+    - classification-probe-without-feedback
+    - task-set-learning
+    - prototype-distortion-task
+    - raven-s-advanced-progressive-matrices
+    - ravens-advanced-progressive-matrices
+  keywords_any:
+  - category learning
+  - rule learning
+  - prototype
+  - exemplar
+  - probabilistic
+  - information integration
+  - classification
+  - weather prediction
+  - task set learning
+  - shj
+  regex:
+  - \b(shj|shepard[- ]hovland[- ]jenkins)\b
+- family_id: tf_questionnaires_health
+  onvoc_uri: ONVOC_0000519
+  label: Health Questionnaires & Clinical Scales
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seeds:
+    slugs:
+    - adult-adhd-clinical-diagnostic-scale
+    - adult-adhd-self-report-scale
+    - barratt-impulsiveness-scale
+    - brief-psychiatric-rating-scale
+    - center-for-epidemiologic-studies-depression-scale
+    - chapman-infrequency-scale
+    - chapman-magical-ideation-scale
+    - chapman-perceptual-aberration-scale
+    - chapman-physical-anhedonia-scale
+    - chapman-social-anhedonia-scale
+    - child-behavior-checklist
+    - childrens-communication-checklist
+    - childrens-memory-scale
+    - childrens-psychiatric-rating-scale
+    - childrens-yale-brown-obsessive-compulsive-scale
+    - communication-and-symbolic-behavior-scales-development-profile
+    - conners-comprehensive-behavior-rating-scales
+    - consideration-of-future-consequences-scale
+    - daily-inventory-of-stressful-events-dise
+    - dickman-impulsivity-inventory
+    - emotion-regulation-questionnaire
+    - emotion-regulation-strategies-scale
+    - eysenck-personality-questionnaire
+    - five-facet-mindfulness-questionnaire
+    - generalised-self-efficacy-scale
+    - hopkins-symptom-checklist
+    - hypomanic-personality-scale
+    - i7-impulsiveness-and-venturesomeness-questionnaire
+    - kessler-psychological-distress-scale-k6
+    - loneliness-rating-scale
+    - mindful-attention-and-awareness-scale
+    - minnesota-multiphasic-personality-inventory
+    - maudsley-obsessive-compulsive-inventory
+    - multidimensional-personality-questionnaire
+    - prospective-self-regulation-survey
+    - mini-mental-state-examination
+    - state-trait-anger-expression-inventory-2
+    - state-trait-anger-expression-inventory-2-staxi-2
+    - positive-and-negative-affect-schedule-panas-child-version
+    - multidimensional-assessment-of-interoceptive-awareness
+    - conners-3rd-edition
+    - sensory-profile
+    - early-development-interview
+    - nih-toolbox-positive-affect-survey
+    - nih-toolbox-meaning-and-purpose-survey
+    - nih-toolbox-general-life-satisfaction-survey
+    - nih-toolbox-pain-intensity-survey
+    - nih-toolbox-pain-interference-survey
+    - nih-toolbox-vision-related-quality-of-life-survey
+    - state-trait-anger-expression-inventory2-staxi-2
+    - early-development-interview-edi
+    - pittsburgh-stress-battery
+    - stanford-leisure-time-activity-categorical-item
+  keywords_any:
+  - questionnaire
+  - self report
+  - rating scale
+  - clinical scale
+  - inventory
+  - checklist
+  - symptom checklist
+  - psychiatric rating
+  - behavior rating
+  - impulsiveness scale
+  - mindfulness questionnaire
+  - personality questionnaire
+  - anger expression
+  - panas
+  - conners
+  - sensory profile
+  - early development interview
+  - nih toolbox positive affect
+  - nih toolbox meaning and purpose
+  - nih toolbox life satisfaction
+  - pain intensity
+  - pain interference
+  - vision-related quality of life
+  - staxi-2
+  - edi
+  regex:
+  - \\b(scale|questionnaire|inventory|checklist)\\b
+  - \\brating\\s+scale\\b
+- family_id: tf_timing_order
+  onvoc_uri: ONVOC_0000434
+  seeds:
+    slugs:
+    - temporal-order-judgment
+    - simultaneity-judgment
+    - duration-discrimination
+    - interval-production
+    - interval-reproduction
+    - synchronization-continuation
+    - time-to-contact
+    - foreperiod-task
+    - critical-flicker-fusion
+    - synchrony-judgment-task
+    - synchrony-judgment
+    - sequence-reproduction
+  keywords_any:
+  - temporal
+  - timing
+  - interval
+  - duration
+  - time to contact
+  - foreperiod
+  - flicker
+  - synchronization
+  - synchrony judgment
+  - temporal synchrony
+  - sequence reproduction
+  regex:
+  - \b(order|simultaneity|interval|duration)\b
+  - \\bsynchron(y|ous)\\b
+- family_id: onvoc_0000450
+  onvoc_uri: ONVOC_0000450
+  seed_tasks:
+  - slug: numerosity-estimation
+  - slug: parity-judgment
+  matchers:
+    keywords_any:
+    - numerosity
+    - number comparison
+    - magnitude estimation
+    - numerical judgment
+    - parity
+    - even odd
+    - numerical distance
+    regex:
+    - \b(parity|even|odd|numerosity|magnitude)\b
+- family_id: onvoc_0000451
+  onvoc_uri: ONVOC_0000451
+  seed_tasks:
+  - slug: deductive-reasoning
+  - slug: parity-judgment
+  - slug: deduction-task
+  matchers:
+    keywords_any:
+    - deductive
+    - logical reasoning
+    - parity
+    - even odd
+    - logic task
+    - deductive reasoning
+    regex:
+    - \b(parity|logic(al)?|deduct(ive|ion))\b
+- family_id: tf_localizers_baseline
+  onvoc_uri: ONVOC_0000007
+  accept:
+    min_score: 0.85
+    min_margin: 0.0
+    allow_multi: false
+  seeds:
+    slugs:
+    - retinotopy
+    - prf-mapping
+    - population-receptive-field
+    - wedge-ring-phase-encoded
+    - tonotopy
+    - frequency-sweeps
+    - voice-localizer
+    - temporal-voice-area
+    - music-localizer
+    - motor-localizer
+    - hand-foot-tongue
+    - somatotopy
+    - tactile-localizer
+    - face-localizer
+    - scene-localizer
+    - object-localizer
+    - body-localizer
+    - word-form-localizer
+    - motion-localizer
+    - color-localizer
+    - biological-motion-localizer
+    - language-localizer
+    - sentences-nonwords
+    - tom-localizer
+    - theory-of-mind-localizer
+    - false-belief-false-photo
+    - dorsal-attention-network-localizer
+    - ventral-attention-network-localizer
+    - frontoparietal-control-network-localizer
+    - default-mode-network-localizer
+    - hippocampal-localizer
+    - scene-place-encoding
+    - perirhinal-cortex-localizer
+    - object-familiarity
+    - resting-state
+    - eyes-open-closed
+    - fixation
+    - passive-viewing
+    - scrambled-controls
+    - visual-fixation-baseline
+    - social-localizer-fmri-task-paradigm
+    - functional-localizer-fmri-tasks
+    - emotional-localizer-fmri-task-paradigm
+    - standard-localizer-fmri-task-paradigm
+    - pain-matrix-narrative-localizer
+    - spatial-working-memory-localizer-task
+    - multi-object-localizer-task
+    - spatial-localizer-fmri-task-paradigm
+    - sentence-nonword-language-localizer
+    - flashing-checkerboard
+    - rest-eyes-open
+    - rest-eyes-closed
+    - rest-eyes-open-task
+    - retinotopic-mapping-task
+    - vertical-checkerboard
+    - horizontal-checkerboard
+    - retinotopic-representation
+  keywords_any:
+  - localizer
+  - retinotopy
+  - tonotopy
+  - voice area
+  - somatotopy
+  - ffa
+  - ppa
+  - object localizer
+  - loc
+  - eba
+  - vwfa
+  - motion localizer
+  - language localizer
+  - tom localizer
+  - attention network
+  - default mode
+  - resting state
+  - passive viewing
+  - retinotopic mapping
+  - checkerboard
+  - retinotopic representation
+  exclude:
+    keywords:
+    - test
+    - tests
+    - scale
+    - scales
+    - questionnaire
+    - questionnaires
+    - vocabulary
+    - lexical
+    - semantic
+    - word
+    - words
+    - reading
+    - fluency
+    - learning
+    - memory
+    - story
+    - stories
+    - picture
+    - pictures
+    - narrative
+  regex:
+  - \blocalizer(s)?\b
+  - \bretinotop(y|ic)\b
+  - \btonotop(y|ic)\b
+  - \\bretinotop(ic|y)\\b
+- family_id: tf_neurofeedback
+  onvoc_uri: ONVOC_0000007
+  seeds:
+    slugs:
+    - rtfmri-roi-regulation
+    - real-time-fmri
+    - roi-up-regulation
+    - roi-down-regulation
+    - bidirectional-regulation
+    - decoder-based-nf
+    - mvpa-based-nf
+    - decoder-trained-affect-regulation
+    - pain-decoder-regulation
+    - motor-imagery-decoder-regulation
+    - pattern-titration
+    - shaping
+    - seed-target-coupling
+    - connectivity-nf
+    - network-nf
+    - network-balance-regulation
+    - dmn-tpn-balance
+    - dmn-suppression
+    - tpn-enhancement
+    - eeg-alpha-nf
+    - alpha-up-regulation
+    - smr-up-regulation
+    - mu-suppression
+    - beta-band-regulation
+    - frontal-alpha-asymmetry
+    - theta-regulation
+    - fnirs-nf
+    - fnirs-hemodynamic-nf
+    - pfc-hbo-regulation
+    - motor-cortex-hbo-regulation
+    - functional-localizer-decoder-training
+    - transfer-without-feedback
+    - sham-yoked-control
+  keywords_any:
+  - neurofeedback
+  - nf
+  - real time fmri
+  - rtfmri
+  - roi regulation
+  - decoder based
+  - mvpa
+  - connectivity
+  - network
+  - dmn
+  - tpn
+  - eeg
+  - alpha
+  - smr
+  - mu
+  - beta
+  - frontal alpha
+  - fnirs
+  - hemodynamic
+  - pfc regulation
+  - transfer
+  - sham
+  regex:
+  - \b(rt[- ]?fmri|real[- ]time[- ]fmri)\b
+  - \b(decoder|mvpa)[- ]based\b
+  - \bnetwork[- ]balance\b
+  - \b(eeg|meg)[- ]neurofeedback\b
+  - \bfnirs\b

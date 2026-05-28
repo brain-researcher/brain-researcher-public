@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+neurokg_env/
+*.egg-info/
+.pytest_cache/
+
+# Data files (use volumes instead)
+data/neurokg/db/*.db
+data/neurokg/cache/
+data/neurokg/raw/
+logs/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/
+*.md
+
+# Tests
+tests/
+test_*.py
+
+# Build artifacts
+build/
+dist/

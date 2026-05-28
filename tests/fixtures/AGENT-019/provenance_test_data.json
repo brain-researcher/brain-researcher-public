@@ -1,0 +1,269 @@
+{
+  "execution_traces": {
+    "simple_preprocessing": {
+      "execution_id": "exec_001",
+      "workflow_name": "simple_preprocessing",
+      "started_at": 1643723400.0,
+      "completed_at": 1643730600.0,
+      "status": "completed",
+      "steps": [
+        {
+          "step_id": "step_001",
+          "name": "Data Validation",
+          "tool_name": "bids_validator",
+          "started_at": 1643723400.0,
+          "completed_at": 1643723700.0,
+          "status": "completed",
+          "inputs": {
+            "dataset_path": "/data/bids/ds000114"
+          },
+          "outputs": {
+            "validation_report": "/outputs/validation_report.json",
+            "is_valid": true
+          },
+          "metadata": {
+            "version": "1.8.4",
+            "environment": "neurodesk_3.1.0",
+            "container_id": "bids_validator_001"
+          }
+        },
+        {
+          "step_id": "step_002", 
+          "name": "fMRIPrep Preprocessing",
+          "tool_name": "fmriprep",
+          "started_at": 1643723700.0,
+          "completed_at": 1643730300.0,
+          "status": "completed",
+          "inputs": {
+            "bids_dir": "/data/bids/ds000114",
+            "output_dir": "/outputs/fmriprep",
+            "participant_label": "sub-01"
+          },
+          "outputs": {
+            "preprocessed_bold": "/outputs/fmriprep/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz",
+            "confounds": "/outputs/fmriprep/sub-01/func/sub-01_task-rest_desc-confounds_timeseries.tsv",
+            "html_report": "/outputs/fmriprep/sub-01.html"
+          },
+          "metadata": {
+            "version": "21.0.2",
+            "freesurfer_license": "valid",
+            "n_procs": 4,
+            "mem_mb": 8192
+          }
+        },
+        {
+          "step_id": "step_003",
+          "name": "Quality Assessment",
+          "tool_name": "mriqc",
+          "started_at": 1643730300.0,
+          "completed_at": 1643730600.0,
+          "status": "completed",
+          "inputs": {
+            "preprocessed_data": "/outputs/fmriprep/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+          },
+          "outputs": {
+            "qa_metrics": "/outputs/qa/sub-01_qa_metrics.json",
+            "qa_report": "/outputs/qa/sub-01_qa_report.html"
+          },
+          "metadata": {
+            "version": "0.16.1",
+            "metrics_computed": ["tsnr", "mean_fd", "dvars"]
+          }
+        }
+      ],
+      "resources_used": {
+        "total_cpu_hours": 12.5,
+        "total_memory_gb_hours": 45.2,
+        "total_storage_gb": 25.8,
+        "peak_memory_gb": 7.2
+      },
+      "software_environment": {
+        "os": "Ubuntu 20.04",
+        "python": "3.8.10",
+        "containers": ["fmriprep:21.0.2", "mriqc:0.16.1"],
+        "modules": ["FSL/6.0.4", "FreeSurfer/7.1.1"]
+      }
+    },
+    "group_analysis": {
+      "execution_id": "exec_002",
+      "workflow_name": "group_analysis",
+      "started_at": 1643730600.0,
+      "completed_at": 1643741400.0,
+      "status": "completed",
+      "steps": [
+        {
+          "step_id": "step_001",
+          "name": "First Level Analysis Sub-01",
+          "tool_name": "fsl_feat",
+          "started_at": 1643730600.0,
+          "completed_at": 1643732400.0,
+          "status": "completed",
+          "inputs": {
+            "preprocessed_bold": "/outputs/fmriprep/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz",
+            "design_file": "/designs/task-rest_design.fsf"
+          },
+          "outputs": {
+            "cope_files": ["/outputs/feat/sub-01.feat/stats/cope1.nii.gz"],
+            "varcope_files": ["/outputs/feat/sub-01.feat/stats/varcope1.nii.gz"],
+            "tstat_files": ["/outputs/feat/sub-01.feat/stats/tstat1.nii.gz"]
+          }
+        },
+        {
+          "step_id": "step_002",
+          "name": "First Level Analysis Sub-02", 
+          "tool_name": "fsl_feat",
+          "started_at": 1643730600.0,
+          "completed_at": 1643732400.0,
+          "status": "completed",
+          "inputs": {
+            "preprocessed_bold": "/outputs/fmriprep/sub-02/func/sub-02_task-rest_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz",
+            "design_file": "/designs/task-rest_design.fsf"
+          },
+          "outputs": {
+            "cope_files": ["/outputs/feat/sub-02.feat/stats/cope1.nii.gz"],
+            "varcope_files": ["/outputs/feat/sub-02.feat/stats/varcope1.nii.gz"],
+            "tstat_files": ["/outputs/feat/sub-02.feat/stats/tstat1.nii.gz"]
+          }
+        },
+        {
+          "step_id": "step_003",
+          "name": "Group Level Analysis",
+          "tool_name": "fsl_randomise",
+          "started_at": 1643732400.0,
+          "completed_at": 1643741400.0,
+          "status": "completed",
+          "inputs": {
+            "cope_files": [
+              "/outputs/feat/sub-01.feat/stats/cope1.nii.gz",
+              "/outputs/feat/sub-02.feat/stats/cope1.nii.gz"
+            ],
+            "design_matrix": "/designs/group_design.mat",
+            "contrasts": "/designs/group_design.con"
+          },
+          "outputs": {
+            "group_stats": "/outputs/group/randomise_tstat1.nii.gz",
+            "corrp_files": "/outputs/group/randomise_corrp_tstat1.nii.gz",
+            "cluster_files": "/outputs/group/cluster_corrp_tstat1.nii.gz"
+          },
+          "metadata": {
+            "n_permutations": 5000,
+            "threshold": 0.05,
+            "cluster_correction": true
+          }
+        }
+      ]
+    }
+  },
+  "data_lineage": {
+    "output_file_001": {
+      "file_path": "/outputs/fmriprep/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz",
+      "created_by": "step_002",
+      "execution_id": "exec_001",
+      "parent_files": [
+        "/data/bids/ds000114/sub-01/func/sub-01_task-rest_bold.nii.gz"
+      ],
+      "transformations": [
+        "motion_correction",
+        "slice_timing_correction", 
+        "spatial_normalization",
+        "smoothing"
+      ],
+      "checksum": "sha256:a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+      "file_size_bytes": 15728640,
+      "created_at": 1643730300.0
+    },
+    "output_file_002": {
+      "file_path": "/outputs/group/randomise_tstat1.nii.gz",
+      "created_by": "step_003",
+      "execution_id": "exec_002", 
+      "parent_files": [
+        "/outputs/feat/sub-01.feat/stats/cope1.nii.gz",
+        "/outputs/feat/sub-02.feat/stats/cope1.nii.gz"
+      ],
+      "transformations": [
+        "group_level_glm",
+        "permutation_testing",
+        "multiple_comparisons_correction"
+      ],
+      "checksum": "sha256:z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4",
+      "file_size_bytes": 7864320,
+      "created_at": 1643741400.0
+    }
+  },
+  "parameter_tracking": {
+    "fmriprep_params": {
+      "execution_id": "exec_001",
+      "step_id": "step_002",
+      "parameters": {
+        "bids_dir": "/data/bids/ds000114",
+        "output_dir": "/outputs/fmriprep",
+        "participant_label": "sub-01",
+        "task_id": "rest",
+        "nthreads": 4,
+        "mem_mb": 8192,
+        "use_syn_sdc": true,
+        "bold2t1w_init": "register",
+        "output_spaces": ["MNI152NLin2009cAsym"],
+        "fd_spike_threshold": 0.5,
+        "dvars_spike_threshold": 1.5
+      },
+      "parameter_source": "command_line",
+      "validation_status": "valid"
+    },
+    "randomise_params": {
+      "execution_id": "exec_002",
+      "step_id": "step_003",
+      "parameters": {
+        "input_files": [
+          "/outputs/feat/sub-01.feat/stats/cope1.nii.gz",
+          "/outputs/feat/sub-02.feat/stats/cope1.nii.gz"
+        ],
+        "design_matrix": "/designs/group_design.mat",
+        "contrast_matrix": "/designs/group_design.con",
+        "n_permutations": 5000,
+        "threshold": 0.05,
+        "two_sample_unpaired_ttest": true,
+        "cluster_correction": true,
+        "cluster_threshold": 2.3
+      },
+      "parameter_source": "config_file",
+      "validation_status": "valid"
+    }
+  },
+  "execution_dependencies": {
+    "exec_001": {
+      "depends_on": [],
+      "provides_to": ["exec_002"],
+      "shared_data": [
+        "/outputs/fmriprep/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
+      ]
+    },
+    "exec_002": {
+      "depends_on": ["exec_001"],
+      "provides_to": [],
+      "shared_data": []
+    }
+  },
+  "reproducibility_info": {
+    "exec_001": {
+      "random_seeds": {
+        "fmriprep": 12345,
+        "mriqc": 67890
+      },
+      "software_versions": {
+        "fmriprep": "21.0.2",
+        "mriqc": "0.16.1",
+        "fsl": "6.0.4",
+        "freesurfer": "7.1.1"
+      },
+      "system_info": {
+        "os": "Ubuntu 20.04.3 LTS",
+        "kernel": "5.4.0-84-generic",
+        "cpu": "Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz",
+        "memory": "32 GB",
+        "gpu": "None"
+      },
+      "reproducibility_score": 0.95
+    }
+  }
+}

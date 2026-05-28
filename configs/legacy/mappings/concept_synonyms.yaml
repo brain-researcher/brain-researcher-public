@@ -1,0 +1,351 @@
+# Concept Synonyms Mapping
+# Maps various concept names and aliases to canonical cognitive constructs
+# Aligned with Cognitive Atlas where possible
+
+# Core cognitive functions
+- canonical: "working memory"
+  cognitive_atlas_id: "cogat:CAO_00912"
+  concept_id: "concept:working_memory"
+  synonyms:
+    - "WM"
+    - "active memory"
+    - "short-term memory"
+    - "operational memory"
+    - "immediate memory"
+  source_aliases:
+    neurosynth:
+      - "working memory"
+      - "wm"
+    brainmap:
+      - "WORKING MEMORY"
+      - "WM"
+
+- canonical: "cognitive control"
+  cognitive_atlas_id: "cogat:CAO_00052"
+  concept_id: "concept:cognitive_control"
+  synonyms:
+    - "executive control"
+    - "executive function"
+    - "cognitive flexibility"
+    - "executive attention"
+    - "top-down control"
+  source_aliases:
+    neurosynth:
+      - "cognitive control"
+      - "executive"
+    brainmap:
+      - "COGNITIVE CONTROL"
+      - "EXECUTIVE"
+
+- canonical: "attention"
+  cognitive_atlas_id: "cogat:CAO_00030"
+  concept_id: "concept:attention"
+  synonyms:
+    - "attentional control"
+    - "selective attention"
+    - "focused attention"
+    - "attentional focus"
+  source_aliases:
+    neurosynth:
+      - "attention"
+      - "attentional"
+
+- canonical: "inhibition"
+  cognitive_atlas_id: "cogat:CAO_00456"
+  concept_id: "concept:inhibition"
+  synonyms:
+    - "response inhibition"
+    - "inhibitory control"
+    - "impulse control"
+    - "behavioral inhibition"
+    - "suppression"
+  source_aliases:
+    neurosynth:
+      - "inhibition"
+      - "inhibitory"
+    brainmap:
+      - "INHIBITION"
+      - "RESPONSE INHIBITION"
+
+# Memory systems
+- canonical: "episodic memory"
+  cognitive_atlas_id: "cogat:CAO_00303"
+  concept_id: "concept:episodic_memory"
+  synonyms:
+    - "autobiographical memory"
+    - "event memory"
+    - "declarative memory"
+    - "explicit memory"
+  source_aliases:
+    neurosynth:
+      - "episodic"
+      - "episodic memory"
+
+- canonical: "semantic memory"
+  cognitive_atlas_id: "cogat:CAO_00665"
+  concept_id: "concept:semantic_memory"
+  synonyms:
+    - "conceptual knowledge"
+    - "factual memory"
+    - "general knowledge"
+  source_aliases:
+    neurosynth:
+      - "semantic"
+      - "semantic memory"
+
+- canonical: "procedural memory"
+  cognitive_atlas_id: "cogat:CAO_00583"
+  concept_id: "concept:procedural_memory"
+  synonyms:
+    - "implicit memory"
+    - "motor memory"
+    - "skill memory"
+    - "habit memory"
+  source_aliases:
+    neurosynth:
+      - "procedural"
+      - "implicit"
+
+# Language and communication
+- canonical: "language comprehension"
+  cognitive_atlas_id: "cogat:CAO_00475"
+  concept_id: "concept:language_comprehension"
+  synonyms:
+    - "linguistic comprehension"
+    - "sentence comprehension"
+    - "speech comprehension"
+    - "verbal comprehension"
+  source_aliases:
+    neurosynth:
+      - "language"
+      - "comprehension"
+    brainmap:
+      - "LANGUAGE COMPREHENSION"
+
+- canonical: "language production"
+  cognitive_atlas_id: "cogat:CAO_00476"
+  concept_id: "concept:language_production"
+  synonyms:
+    - "speech production"
+    - "verbal production"
+    - "word generation"
+    - "verbal fluency"
+  source_aliases:
+    neurosynth:
+      - "speech"
+      - "production"
+
+- canonical: "reading"
+  cognitive_atlas_id: "cogat:CAO_00600"
+  concept_id: "concept:reading"
+  synonyms:
+    - "text comprehension"
+    - "literacy"
+    - "written language"
+  source_aliases:
+    neurosynth:
+      - "reading"
+      - "text"
+
+# Emotion and affect
+- canonical: "emotion"
+  cognitive_atlas_id: "cogat:CAO_00298"
+  concept_id: "concept:emotion"
+  synonyms:
+    - "affect"
+    - "feeling"
+    - "emotional processing"
+    - "affective processing"
+  source_aliases:
+    neurosynth:
+      - "emotion"
+      - "emotional"
+      - "affective"
+
+- canonical: "emotion regulation"
+  cognitive_atlas_id: "cogat:CAO_00299"
+  concept_id: "concept:emotion_regulation"
+  synonyms:
+    - "affect regulation"
+    - "emotional control"
+    - "mood regulation"
+    - "reappraisal"
+  source_aliases:
+    neurosynth:
+      - "emotion regulation"
+      - "reappraisal"
+
+- canonical: "fear"
+  cognitive_atlas_id: "cogat:CAO_00344"
+  concept_id: "concept:fear"
+  synonyms:
+    - "threat processing"
+    - "fear response"
+    - "anxiety"
+    - "threat detection"
+  source_aliases:
+    neurosynth:
+      - "fear"
+      - "threat"
+      - "anxiety"
+
+- canonical: "reward processing"
+  cognitive_atlas_id: "cogat:CAO_00636"
+  concept_id: "concept:reward_processing"
+  synonyms:
+    - "reward"
+    - "reinforcement"
+    - "motivation"
+    - "incentive processing"
+    - "valuation"
+  source_aliases:
+    neurosynth:
+      - "reward"
+      - "reinforcement"
+    brainmap:
+      - "REWARD"
+
+# Perception
+- canonical: "visual perception"
+  cognitive_atlas_id: "cogat:CAO_00772"
+  concept_id: "concept:visual_perception"
+  synonyms:
+    - "vision"
+    - "visual processing"
+    - "sight"
+  source_aliases:
+    neurosynth:
+      - "visual"
+      - "vision"
+
+- canonical: "auditory perception"
+  cognitive_atlas_id: "cogat:CAO_00055"
+  concept_id: "concept:auditory_perception"
+  synonyms:
+    - "hearing"
+    - "auditory processing"
+    - "sound perception"
+  source_aliases:
+    neurosynth:
+      - "auditory"
+      - "hearing"
+
+- canonical: "face perception"
+  cognitive_atlas_id: "cogat:CAO_00333"
+  concept_id: "concept:face_perception"
+  synonyms:
+    - "face processing"
+    - "face recognition"
+    - "facial processing"
+  source_aliases:
+    neurosynth:
+      - "face"
+      - "facial"
+
+# Motor and action
+- canonical: "motor control"
+  cognitive_atlas_id: "cogat:CAO_00514"
+  concept_id: "concept:motor_control"
+  synonyms:
+    - "motor function"
+    - "movement control"
+    - "motor execution"
+    - "action execution"
+  source_aliases:
+    neurosynth:
+      - "motor"
+      - "movement"
+    brainmap:
+      - "MOTOR"
+
+- canonical: "motor planning"
+  cognitive_atlas_id: "cogat:CAO_00515"
+  concept_id: "concept:motor_planning"
+  synonyms:
+    - "action planning"
+    - "movement planning"
+    - "motor preparation"
+  source_aliases:
+    neurosynth:
+      - "planning"
+      - "preparation"
+
+# Social cognition
+- canonical: "theory of mind"
+  cognitive_atlas_id: "cogat:CAO_00720"
+  concept_id: "concept:theory_of_mind"
+  synonyms:
+    - "mentalizing"
+    - "social cognition"
+    - "perspective taking"
+    - "mind reading"
+  source_aliases:
+    neurosynth:
+      - "theory of mind"
+      - "mentalizing"
+      - "social"
+
+- canonical: "empathy"
+  cognitive_atlas_id: "cogat:CAO_00301"
+  concept_id: "concept:empathy"
+  synonyms:
+    - "compassion"
+    - "emotional empathy"
+    - "cognitive empathy"
+  source_aliases:
+    neurosynth:
+      - "empathy"
+      - "compassion"
+
+# Decision making
+- canonical: "decision making"
+  cognitive_atlas_id: "cogat:CAO_00219"
+  concept_id: "concept:decision_making"
+  synonyms:
+    - "choice"
+    - "selection"
+    - "judgment"
+    - "decision"
+  source_aliases:
+    neurosynth:
+      - "decision"
+      - "choice"
+
+- canonical: "risk taking"
+  cognitive_atlas_id: "cogat:CAO_00640"
+  concept_id: "concept:risk_taking"
+  synonyms:
+    - "risk"
+    - "gambling"
+    - "risk assessment"
+    - "uncertainty"
+  source_aliases:
+    neurosynth:
+      - "risk"
+      - "gambling"
+
+# Consciousness and awareness
+- canonical: "consciousness"
+  cognitive_atlas_id: "cogat:CAO_00176"
+  concept_id: "concept:consciousness"
+  synonyms:
+    - "awareness"
+    - "conscious awareness"
+    - "alertness"
+  source_aliases:
+    neurosynth:
+      - "consciousness"
+      - "awareness"
+
+- canonical: "self-referential processing"
+  cognitive_atlas_id: "cogat:CAO_00666"
+  concept_id: "concept:self_referential_processing"
+  synonyms:
+    - "self"
+    - "self-awareness"
+    - "self-reflection"
+    - "introspection"
+  source_aliases:
+    neurosynth:
+      - "self"
+      - "self referential"

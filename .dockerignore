@@ -1,0 +1,105 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+*_env/
+.venv/
+**/.venv/
+
+# Node.js
+**/node_modules/
+**/.next/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Documentation
+docs/_build/
+site/
+
+# Data files (will be mounted as volumes)
+data/
+brain_researcher/services/neurokg/data/
+logs/
+*.db
+*.sqlite
+*.pkl
+*.h5
+*.nii
+*.nii.gz
+*.npz
+*.npy
+
+# Large files
+*.tar.gz
+*.zip
+*.csv
+*.tsv
+*.parquet
+
+# Notebooks
+*.ipynb_checkpoints
+.jupyter/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Vendored kg-gen runtime sources: keep only installable package files in build context
+external/kg-gen/.git/
+external/kg-gen/.github/
+external/kg-gen/.gcloudignore
+external/kg-gen/.gitignore
+external/kg-gen/.pre-commit-config.yaml
+external/kg-gen/app/
+external/kg-gen/examples/
+external/kg-gen/experiments/
+external/kg-gen/images/
+external/kg-gen/mcp/
+external/kg-gen/tests/
+external/kg-gen/uv.lock
+
+# Misc
+# README.md  # Needed for Docker build
+LICENSE
+CONTRIBUTING.md
+*.log
+.env
+.env.*
+**/.env
+**/.env.*

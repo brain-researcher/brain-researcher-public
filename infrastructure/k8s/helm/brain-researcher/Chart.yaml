@@ -1,0 +1,133 @@
+# Helm Chart metadata for Brain Researcher platform
+apiVersion: v2
+name: brain-researcher
+description: Local Helm chart for the Brain Researcher neuroimaging assistant service stack.
+type: application
+version: 0.1.0
+appVersion: "0.1.0-oss-preview"
+
+# Chart maintainers
+maintainers:
+  - name: Brain Researcher Team
+    url: https://github.com/zjc062/brain_researcher
+
+# Keywords for chart discovery
+keywords:
+  - neuroimaging
+  - fmri
+  - neuroscience
+  - machine-learning
+  - llm
+  - knowledge-graph
+  - brain-analysis
+  - cognitive-science
+
+# Home page and source URLs
+home: https://brain-researcher.com
+sources:
+  - https://github.com/zjc062/brain_researcher
+
+# Annotations for additional metadata
+annotations:
+  # Chart category for Artifact Hub
+  category: "Analytics"
+  
+  # License information
+  licenses: "MIT"
+  
+  # Links for documentation
+  "artifacthub.io/links": |
+    - name: Documentation
+      url: https://github.com/zjc062/brain_researcher/tree/main/docs
+    - name: Release Gates
+      url: https://github.com/zjc062/brain_researcher/tree/main/docs/release
+    - name: Support
+      url: https://github.com/zjc062/brain_researcher/issues
+  
+  # Images used in the chart
+  "artifacthub.io/images": |
+    - name: nginx
+      image: nginx:1.25-alpine
+    - name: orchestrator
+      image: docker.io/zjc062/orchestrator:latest
+    - name: agent
+      image: docker.io/zjc062/agent:latest
+    - name: neurokg
+      image: docker.io/zjc062/neurokg:latest
+    - name: niclip
+      image: docker.io/zjc062/niclip:latest
+    - name: web-ui
+      image: docker.io/zjc062/web-ui:latest
+    - name: postgres
+      image: postgres:15-alpine
+    - name: redis
+      image: redis:7-alpine
+    - name: prometheus
+      image: prom/prometheus:latest
+    - name: grafana
+      image: grafana/grafana:latest
+  
+  # Changelog for this version
+  "artifacthub.io/changes": |
+    - kind: added
+      description: Initial Helm chart for Brain Researcher platform
+    - kind: added
+      description: Kubernetes deployment scaffold for the OSS preview
+    - kind: added
+      description: Horizontal Pod Autoscaling for stateless services
+    - kind: added
+      description: Network policies for security isolation
+    - kind: added
+      description: SSL/TLS termination with cert-manager integration
+    - kind: added
+      description: Persistent storage configuration for stateful services
+    - kind: added
+      description: Prometheus and Grafana monitoring stack
+  
+  # Operating systems supported
+  "artifacthub.io/operator": "false"
+  "artifacthub.io/operatorCapabilities": "Basic Install"
+  
+  # Prerelease flag
+  "artifacthub.io/prerelease": "true"
+  
+  # README information
+  "artifacthub.io/readme": |
+    # Brain Researcher Helm Chart
+    
+    This repository-local Helm chart deploys the Brain Researcher service stack on Kubernetes for operators and contributors.
+    
+    ## Prerequisites
+    
+    - Kubernetes 1.20+
+    - Helm 3.8+
+    - cert-manager (for SSL certificates)
+    - Ingress controller (nginx recommended)
+    - StorageClass for persistent volumes
+    
+    ## Installation
+    
+    ```bash
+    helm install brain-researcher ./infrastructure/k8s/helm/brain-researcher
+    ```
+    
+    ## Configuration
+    
+    See values.yaml for configuration options.
+
+# Dependencies (subchart dependencies would go here)
+dependencies: []
+#  - name: postgresql
+#    version: 12.x.x
+#    repository: https://charts.bitnami.com/bitnami
+#    condition: postgresql.enabled
+#  - name: redis
+#    version: 17.x.x
+#    repository: https://charts.bitnami.com/bitnami
+#    condition: redis.enabled
+
+# Deprecated flag (false for new charts)
+deprecated: false
+
+# Kubernetes version constraints
+kubeVersion: ">=1.20.0-0"

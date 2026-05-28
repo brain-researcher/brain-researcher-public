@@ -1,0 +1,19 @@
+[
+  {
+    "stat_map_id": "nidm:map:test-001",
+    "label": "Working Memory > Baseline (Z)",
+    "uri": "file:///tmp/nidm/wm_baseline_z.nii.gz",
+    "space": "MNI152NLin6Sym",
+    "modality": "fMRI",
+    "experiment_type": "task",
+    "threshold": {"type": "p-value", "value": 0.001, "correction": "FWE"},
+    "software": {"name": "SPM12", "version": "12.3"},
+    "derived_from": {
+      "publication_doi": "10.1007/s11571-023-1001-0",
+      "contrast_id": "contrast:wm-baseline"
+    },
+    "atlas_overlaps": [
+      {"region_id": "schaefer2018_200_17n_2mm:L_PFC_1", "overlap": 0.42}
+    ]
+  }
+]

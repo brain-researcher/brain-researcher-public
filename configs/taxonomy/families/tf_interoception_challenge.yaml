@@ -1,0 +1,274 @@
+id: tf_interoception_challenge
+name: Interoception & Physiological Challenge
+description: >-
+  Tasks probing interoceptive accuracy/awareness (cardiorespiratory/gastric) and responses to controlled physiological
+  perturbations (CO₂ hypercapnia, respiratory load, cold pressor, thermal pain, orthostatic/LBNP, drug challenge, breath-hold).
+  Includes metacognitive assessments (confidence/meta-d′), continuous tracking, and standardized physiological acquisition
+  (ECG/PPG, respiration, SpO₂, EtCO₂, SCR, BP). Use medical screening and safety oversight for challenge paradigms.
+examples: [heartbeat_counting, heartbeat_discrimination_synchrony, heartbeat_tracking, respiratory_load_detection, hypercapnia_co2, breath_hold, cold_pressor, thermal_pain, tilt_table, lbnp, valsalva, drug_challenge]
+typical_DVs: [interoceptive_accuracy, interoceptive_bias, metacognitive_efficiency, dyspnea_rating, pain_rating, anxiety_rating, hr_change_bpm, hrv_rmssd, resp_rate, etco2_mmHg, scr_change, bp_change]
+common_manipulations: [intensity, duration_s, resistance_level, co2_fraction, temperature_c, tilt_angle_deg, lbnp_mmHg, drug_dose, feedback_presence]
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Interoceptive Accuracy, Sensibility, and Metacognition
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_interoceptive_accuracy
+    label: Interoceptive Accuracy & Awareness
+    description: Cardio/respiratory interoception tasks with objective accuracy, subjective sensibility, and metacognitive efficiency.
+    paradigms:
+      - name: Heartbeat Counting (Schandry)
+        typical_DVs: [interoceptive_count_accuracy, bias]
+        common_manipulations: [interval_s (25–60), instruction_style (no_touch/no_pulse), feedback_presence]
+        variant_tags: [counting, cardiac]
+        design_flags: [silent_count, no_manual_palpation]
+        qa_checks: [ecg_or_ppg_logged, exclude_arrhythmic_segments]
+        measurement_guidance:
+          sensors: [ECG (Lead II or chest strap) or PPG (finger/ear), respiration belt]
+          sampling_rates_hz: {ecg_ppg: 250, respiration: 25}
+          preprocessing: ["R-peak or pulse-peak detection", "artifact rejection (motion/blinks)", "align count interval with ECG/PPG"]
+          derived_metrics:
+            interoceptive_count_accuracy: "mean(1 - |reported - actual|/actual) across intervals"
+            bias: "reported - actual beats"
+          notes: "Interpret with caution; influenced by beliefs/HR knowledge. Prefer discrimination + metacognitive measures."
+      - name: Heartbeat Discrimination / Cardio-Audio Synchrony (Whitehead/MCS)
+        typical_DVs: [dprime, criterion_c, accuracy_by_phase_lag, metacognitive_efficiency_mratio]
+        common_manipulations: ["phase_lag_ms (e.g., 0, ±100–300)", soa_jitter_ms, trial_count, confidence_rating]
+        variant_tags: [discrimination, synchrony, cardiac]
+        design_flags: [method_of_constant_stimuli_or_staircase, confidence_required]
+        qa_checks: [prime_phase_control, headphone_check_for_audio]
+        measurement_guidance:
+          sensors: [ECG/PPG synced to audio, headphones]
+          sampling_rates_hz: {ecg_ppg: 250, audio: 44_100}
+          preprocessing: ["phase-estimation of cardiac cycle", "audio latencies calibrated"]
+          derived_metrics:
+            dprime: "SDT sensitivity across synchronous vs asynchronous"
+            meta_dprime: "hierarchical HMeta-d optional; m-ratio = meta-d′/d′"
+      - name: Heartbeat Tracking (Continuous Confidence/Phase)
+        typical_DVs: [tracking_error, confidence_trace_stats, metacog_auc]
+        common_manipulations: [interval_s, feedback_presence, jittered_phase]
+        variant_tags: [continuous, cardiac]
+        design_flags: [continuous_rating_scale]
+        qa_checks: [drift_in_ratings_checked]
+        measurement_guidance:
+          sensors: [ECG/PPG]
+          sampling_rates_hz: {ecg_ppg: 250}
+          preprocessing: ["instantaneous HR estimation", "time-warp to phase for analyses"]
+      - name: Heartbeat-Evoked Potentials (HEP) (optional neural readout)
+        typical_DVs: [hep_amplitude, hep_latency]
+        common_manipulations: [attention_to_heartbeat, task_condition (rest/attention)]
+        variant_tags: [EEG]
+        design_flags: [artifact_rejection_ica]
+        qa_checks: [cardiac_field_artifact_check]
+        measurement_guidance:
+          sensors: [EEG, ECG]
+          sampling_rates_hz: {eeg: 500, ecg: 250}
+          preprocessing: ["R-peak locked averaging", "blink/ICA cleanup"]
+      - name: Respiratory Interoception (Load Detection/Discrimination)
+        typical_DVs: [dprime, detection_threshold_cmH2O, dyspnea_rating]
+        common_manipulations: [resistance_level (low/med/high), block_length, inspiratory_flow]
+        variant_tags: [respiratory, load_detection]
+        design_flags: [mask_or_mouthpiece, medical_screening]
+        qa_checks: [equipment_leak_test, SpO2_monitoring]
+        measurement_guidance:
+          sensors: [mouth pressure transducer, pneumotachograph, respiration belt, SpO2]
+          sampling_rates_hz: {pressure_flow: 100, respiration: 25, spo2: 1}
+          preprocessing: ["baseline calibration", "detect inspiration onset"]
+      - name: Gastric Interoception (Water-Load / Balloon) (optional)
+        typical_DVs: [fullness_rating, detection_threshold_volume_ml, interoceptive_accuracy]
+        common_manipulations: [volume_step_ml, distension_pressure_mmHg]
+        variant_tags: [gastric]
+        design_flags: [medical_clearance_required]
+        qa_checks: [nausea_monitoring]
+        measurement_guidance:
+          sensors: [water volume, pressure catheter (balloon), EGG optional]
+          sampling_rates_hz: {pressure: 50}
+          preprocessing: ["artifact-free segments", "event markers for volume steps"]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Physiological Challenges / Perturbations
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_challenges
+    label: Physiological Challenge Paradigms
+    description: Controlled perturbations to respiratory/cardiovascular/pain systems; monitor subjective and autonomic responses.
+    paradigms:
+      - name: Hypercapnia / CO₂ Inhalation (Air Hunger)
+        typical_DVs: [dyspnea_rating, anxiety_rating, hr_change_bpm, resp_rate, etco2_mmHg, scr_change]
+        common_manipulations: [co2_fraction (e.g., 5–7.5%), duration_s, ramp_vs_step, mask_type]
+        variant_tags: [co2, respiratory]
+        design_flags: [medical_screening, safety_stop_criteria]
+        qa_checks: [etco2_continuous, spo2_no_drop_below_92]
+        measurement_guidance:
+          sensors: [EtCO2 capnography, SpO2, ECG/PPG, respiration belt, SCR, BP (automatic)]
+          sampling_rates_hz: {ecg_ppg: 250, respiration: 25, scr: 10, etco2: 10}
+          preprocessing: ["baseline (≥5 min)", "flag movement artifacts", "mark inhalation epochs"]
+      - name: Respiratory Load / Resistive Breathing
+        typical_DVs: [dyspnea_rating, detection_threshold_cmH2O, resp_rate, tidal_volume]
+        common_manipulations: [resistance_level, duty_cycle, block_duration_s]
+        variant_tags: [respiratory_load]
+        design_flags: [medical_screening, mouthpiece/hygiene]
+        qa_checks: [pressure_flow_calibrated]
+        measurement_guidance:
+          sensors: [pressure transducer, pneumotachograph, SpO2, ECG/PPG, respiration belt]
+          sampling_rates_hz: {pressure_flow: 100, ecg_ppg: 250}
+      - name: Inspiratory Threshold Loading (ITL)
+        typical_DVs: [detection_threshold_cmH2O, dyspnea_rating]
+        common_manipulations: [threshold_cmH2O, trial_length_s]
+        variant_tags: [respiratory_threshold]
+        design_flags: [threshold_valve_device]
+        qa_checks: [threshold_calibration]
+        measurement_guidance:
+          sensors: [pressure transducer, respiration belt, SpO2]
+          sampling_rates_hz: {pressure: 100}
+      - name: Breath-Hold Challenge
+        typical_DVs: [breath_hold_time_s, dyspnea_rating, hr_change_bpm, etco2_mmHg]
+        common_manipulations: [pre-breathing_condition (room_air/O2), coached_vs_spontaneous]
+        variant_tags: [breath_hold]
+        design_flags: [safety_stop_criteria]
+        qa_checks: [spo2_monitored]
+        measurement_guidance:
+          sensors: [SpO2, ECG/PPG, EtCO2 (if mask), respiration belt]
+          sampling_rates_hz: {ecg_ppg: 250, etco2: 10}
+      - name: Cold Pressor (Hand Immersion)
+        typical_DVs: [pain_rating, tolerance_time_s, scr_change, bp_change]
+        common_manipulations: [water_temperature_c (0–5), duration_s, hand (dominant/non)]
+        variant_tags: [cold_pressor]
+        design_flags: [skin_integrity_check]
+        qa_checks: [circulation_issues_screening]
+        measurement_guidance:
+          sensors: [SCR, BP, ECG/PPG]
+          sampling_rates_hz: {scr: 10, ecg_ppg: 250}
+      - name: Thermal Pain (Heat/Cold Thresholds)
+        typical_DVs: [threshold_temp_c, pain_rating, scr_change, hr_change_bpm]
+        common_manipulations: [ramp_rate_c_per_s, target_temp_c, site]
+        variant_tags: [thermal_pain]
+        design_flags: [ethical_limits_defined]
+        qa_checks: [skin_temp_sensor_present]
+        measurement_guidance:
+          sensors: [thermode temp log, SCR, ECG/PPG]
+          sampling_rates_hz: {thermode: 10, scr: 10}
+      - name: Orthostatic / Tilt-Table
+        typical_DVs: [bp_drop_mmHg, hr_increase_bpm, dizziness_rating]
+        common_manipulations: [tilt_angle_deg (60–80), duration_s]
+        variant_tags: [orthostatic]
+        design_flags: [medical_clearance, physician_present]
+        qa_checks: [syncope_stop_protocol]
+        measurement_guidance:
+          sensors: [beat-to-beat BP (Finapres), ECG, SpO2]
+          sampling_rates_hz: {bp: 200, ecg: 250}
+      - name: Lower-Body Negative Pressure (LBNP)
+        typical_DVs: [bp_drop_mmHg, hr_increase_bpm, dizziness_rating]
+        common_manipulations: [lbnp_mmHg (e.g., −15 to −40), step_duration_s]
+        variant_tags: [lbnp]
+        design_flags: [medical_clearance, vacuum_chamber_safety]
+        qa_checks: [seal_integrity]
+        measurement_guidance:
+          sensors: [beat-to-beat BP, ECG, SpO2]
+          sampling_rates_hz: {bp: 200, ecg: 250}
+      - name: Valsalva Maneuver
+        typical_DVs: [phase_bp_changes, hr_reflex_indices]
+        common_manipulations: [strain_pressure_cmH2O, duration_s]
+        variant_tags: [autonomic_reflex]
+        design_flags: [training_required]
+        qa_checks: [contraindications_screening]
+        measurement_guidance:
+          sensors: [BP, ECG, mouth pressure]
+          sampling_rates_hz: {bp: 200, ecg: 250}
+      - name: Baroreflex Neck Suction/Pressure (site/IRB dependent)
+        typical_DVs: [rr_interval_change_ms, bp_reflex_sensitivity]
+        common_manipulations: [neck_pressure_cmH2O, suction_pressure_cmH2O, duration_s]
+        variant_tags: [baroreflex]
+        design_flags: [physician_present]
+        qa_checks: [carotid_screening]
+        measurement_guidance:
+          sensors: [ECG, beat-to-beat BP]
+          sampling_rates_hz: {bp: 200, ecg: 250}
+      - name: Cold Face (Diving) Reflex
+        typical_DVs: [hr_bradycardia_bpm, scr_change]
+        common_manipulations: [water_temperature_c, splash_duration_s]
+        variant_tags: [diving_reflex]
+        design_flags: [skin_integrity_check]
+        qa_checks: [contraindications_screening]
+        measurement_guidance:
+          sensors: [ECG/PPG, SCR]
+          sampling_rates_hz: {ecg_ppg: 250, scr: 10}
+      - name: Drug Challenge (e.g., Isoproterenol/Caffeine) (site/IRB dependent)
+        typical_DVs: [hr_change_bpm, anxiety_rating, palpitations_rating]
+        common_manipulations: [drug_type, dose, infusion_rate]
+        variant_tags: [drug_challenge]
+        design_flags: [IRB_approval, physician_present, resuscitation_ready]
+        qa_checks: [allergy_medication_check]
+        measurement_guidance:
+          sensors: [ECG, BP, SpO2, SCR]
+          sampling_rates_hz: {ecg: 250, bp: 200}
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Hypercapnia/Air Hunger
+    - Respiratory Load
+    - Inspiratory Threshold Loading
+    - Breath-Hold
+    - Cold Pressor
+    - Thermal Pain
+    - Tilt-Table / Orthostatic
+    - Lower-Body Negative Pressure
+    - Drug Challenge
+    - Heartbeat Detection/Counting (candidate)
+    - Heartbeat-Evoked Potentials (HEP)
+    - Baroreflex Neck Suction/Pressure
+    - Diving Reflex / Cold Face Test
+  cogpo_candidate_labels:
+    - Hypercapnia
+    - Respiratory Load
+    - Inspiratory Threshold Loading
+    - Pain Discrimination
+    - Drug Challenge
+    - LBNP
+    - Baroreflex Challenge
+    - Diving Reflex
+constructs:
+  primary: [Interoceptive Accuracy, Interoceptive Awareness/Metacognition, Arousal/Regulatory, Homeostatic Threat]
+  secondary: [Dyspnea, Anxiety Reactivity, Autonomic Reactivity, Pain Sensitivity]
+uri_brainmap: []
+uri_cogpo: []
+status: draft
+provenance:
+  - source: TODO CMD (interoception & challenge) + prior families (respiratory/pain/orthostatic)
+    fields: [subfamilies, paradigms, measurement_guidance, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns:
+    - onset
+    - duration
+    - trial_type           # e.g., baseline, block_onset, challenge, recovery, rating
+    - intensity            # e.g., co2_fraction, resistance_level, temperature_c, tilt_angle_deg, lbnp_mmHg
+    - respiration_rate
+    - heart_rate
+    - etco2_mmHg
+    - spo2_pct
+    - scr
+    - bp_sys_mmHg
+    - bp_dia_mmHg
+    - eeg_flag             # if HEP/EEG recorded
+    - rating_value         # VAS for dyspnea/pain/anxiety/fullness
+    - response
+    - rt
+  per_subfamily:
+    sf_interoceptive_accuracy:
+      events_columns: [onset, duration, trial_type, interval_s, phase_lag_ms, confidence, interoceptive_accuracy, hep_amplitude, response, rt]
+      hed_examples:
+        - "Interoception, Heartbeat, Discrimination"
+        - "Interoception, Heartbeat, Counting"
+        - "Interoception, Heartbeat-evoked-potential"
+    sf_challenges:
+      events_columns: [onset, duration, trial_type, challenge_type, intensity, respiration_rate, heart_rate, etco2_mmHg, spo2_pct, bp_sys_mmHg, bp_dia_mmHg, scr, rating_value, response]
+      hed_examples:
+        - "Challenge, Respiratory, Hypercapnia"
+        - "Challenge, Pain, Cold-pressor"

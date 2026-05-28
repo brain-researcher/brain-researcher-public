@@ -1,0 +1,625 @@
+# Capability crosswalk (v1)
+#
+# Purpose:
+# - Map external labels (e.g., benchmark expected_capability) and common user phrases
+#   into internal planner tokens:
+#     - `to_operators`: capability tags used by `search_by_capability()`
+#     - `to_intents`: intent ids used by `search_by_intent()`
+#
+# This is meant to improve the *system* by increasing recall for tool families that
+# are often referenced with higher-level or alternative terminology.
+#
+# Notes:
+# - Keep mappings conservative; prefer existing capability tags.
+# - Some benchmark labels currently point to tools not yet present in the catalog.
+#   Those entries are kept as placeholders for future catalog enrichment.
+#
+version: 1
+
+mappings:
+  # Top expected_capability labels from BrainRearcherBenchmark_MicroTooling.json (440 tasks).
+  connectivity_tool:
+    aliases:
+      - functional connectivity
+      - connectivity analysis
+      - connectome
+      - connectome analysis
+    to_operators:
+      - connectivity
+      - functional_connectivity
+      - connectivity_matrix
+    to_intents:
+      - connectivity_measures
+      - connectivity_matrix_fmri
+      - dynamic_connectivity
+      - gnn_connectivity_analysis
+
+  realtime_fmri_tool:
+    aliases:
+      - real-time fmri
+      - realtime fmri
+      - neurofeedback
+      - dicom monitor
+      - dicom monitoring
+    to_operators:
+      - realtime_fmri
+      - neurofeedback
+      - fmri_preprocessing
+      - preprocessing
+      - quality_control
+    to_intents:
+      - realtime_fmri
+
+  realtime_twophoton_tool:
+    aliases:
+      - real-time two photon
+      - realtime two photon
+      - two-photon closed loop
+      - twophoton closed loop
+      - calcium closed loop
+      - optical closed loop
+    to_operators:
+      - realtime_twophoton
+      - optical_motion_correction
+      - decoding
+      - preprocessing
+      - quality_control
+    to_intents:
+      - realtime_twophoton
+
+  data_harmonization_tool:
+    aliases:
+      - harmonization
+      - harmonize
+      - combat
+      - batch effects
+      - site effects
+      - scanner effects
+    to_operators:
+      - data_harmonization
+      - combat
+      - preprocessing
+    to_intents:
+      - data_harmonization
+
+  knowledge_graph_tool:
+    aliases:
+      - knowledge graph
+      - knowledge graphs
+      - neurokg
+      - neo4j
+      - graph database
+    to_operators:
+      - neurokg
+
+  brain_simulation_tool:
+    aliases:
+      - brain simulation
+      - neural mass
+      - spiking model
+      - whole-brain simulation
+    to_operators:
+      - brain_simulation
+      - simulation
+      - modeling
+    to_intents:
+      - brain_simulation
+
+  specialized_processing_tool:
+    aliases:
+      - specialized processing
+      - custom processing
+    # Generic fallback to avoid "no candidates" for underspecified queries.
+    to_operators:
+      - specialized_processing
+      - spike_sorting
+      - calcium_imaging
+      - preprocessing
+
+  statistical_inference_tool:
+    aliases:
+      - statistical inference
+      - inference
+      - hypothesis testing
+      - multiple comparisons
+    to_operators:
+      - statistical_inference
+      - inference
+    to_intents:
+      - permutation_testing
+      - multiple_comparison_correction
+
+  advanced_visualization_tool:
+    aliases:
+      - advanced visualization
+      - visualization
+      - plotting
+      - report
+    to_operators:
+      - advanced_visualization
+      - visualization
+      - plotting
+    to_intents:
+      - fmri_visualization
+
+  mvpa_tool:
+    aliases:
+      - mvpa
+      - decoding
+      - multivariate pattern analysis
+      - classification
+    to_operators:
+      - mvpa
+      - decoding
+    to_intents:
+      - mvpa_decoding_fmri
+
+  clinical_decision_support:
+    aliases:
+      - clinical decision support
+      - risk scoring
+      - clinical risk
+    to_operators:
+      - clinical_decision_support
+    to_intents:
+      - clinical_decision_support
+
+  coordinate_meta_analysis_tool:
+    aliases:
+      - coordinate meta-analysis
+      - cbma
+      - activation likelihood estimation
+      - ale meta-analysis
+      - mkda
+      - coordinate-based meta analysis
+    to_operators:
+      - coordinate_meta_analysis
+      - meta_analysis
+    to_intents:
+      - meta_analysis_cbma
+
+  nilearn_glm_tool:
+    aliases:
+      - nilearn glm
+      - glm
+      - general linear model
+      - first level glm
+    to_operators:
+      - glm_first_level_py
+      - glm_first_level
+      - glm
+    to_intents:
+      - glm_first_level_fmri
+
+  graph_theory_tool:
+    aliases:
+      - graph theory
+      - network metrics
+      - centrality
+      - modularity
+    to_operators:
+      - graph_theory
+    to_intents:
+      - graph_theory_metrics
+
+  dl_pytorch_tool:
+    aliases:
+      - pytorch
+      - deep learning
+      - neural network
+      - cnn
+      - transformer
+    to_operators:
+      - deep_learning
+    to_intents:
+      - dl_pytorch
+
+  freesurfer_tool:
+    aliases:
+      - freesurfer
+      - recon-all
+      - cortical reconstruction
+      - surface reconstruction
+    to_operators:
+      - segmentation
+
+  diffusion_tractography_tool:
+    aliases:
+      - diffusion tractography
+      - dmri tractography
+      - streamline tractography
+    to_operators:
+      - tractography
+    to_intents:
+      - dmri_tractography
+
+  segmentation_tool:
+    aliases:
+      - segmentation
+      - tissue segmentation
+      - brain segmentation
+    to_operators:
+      - segmentation
+
+  permutation_testing_tool:
+    aliases:
+      - permutation testing
+      - permutation test
+      - bootstrapping
+      - reproducibility
+    to_operators:
+      - inference
+    to_intents:
+      - permutation_testing
+
+  registration_tool:
+    aliases:
+      - registration
+      - coregistration
+      - co-registration
+      - align images
+      - image alignment
+    to_operators:
+      - registration
+      - linear_registration
+      - nonlinear_registration
+    to_intents:
+      - registration_linear_mri
+      - registration_nonlinear_mri
+
+  lesion_detection_tool:
+    aliases:
+      - lesion detection
+      - lesion segmentation
+      - lesion filling
+    to_operators:
+      - lesion_detection
+      - segmentation
+      - preprocessing
+    to_intents:
+      - lesion_detection
+
+  # Paper 2 loop-closure vocabulary bridges (R1/R2/R3 -> R4)
+  condition_resolved_evidence_tool:
+    aliases:
+      - condition-resolved evidence
+      - condition matrix
+      - evidence conflict map
+      - moderator-aware evidence
+      - provenance-grounded evidence
+    to_operators:
+      - neurokg
+      - meta_analysis
+      - literature
+    to_intents:
+      - rag_retrieval
+      - meta_analysis_cbma
+
+  robustness_audit_tool:
+    aliases:
+      - robustness audit
+      - sensitivity audit
+      - multiverse analysis
+      - sensitivity analysis
+      - robustness check
+      - stability analysis
+    to_operators:
+      - inference
+      - statistical_inference
+      - preprocessing
+    to_intents:
+      - permutation_testing
+      - multiple_comparison_correction
+      - dynamic_connectivity
+
+  design_constraint_tool:
+    aliases:
+      - design constraint
+      - design constraints
+      - pre-specified analysis plan
+      - preregistered analysis plan
+      - discriminative design
+      - hypothesis-discriminating design
+    to_operators:
+      - glm
+      - inference
+      - registration
+    to_intents:
+      - fitlins_glm
+      - glm_group_level_fmri
+      - permutation_testing
+
+  # P0 additions (high ROI for online capability predictor coverage)
+  temporal_filter_tool:
+    aliases:
+      - temporal filtering
+      - bandpass
+      - resting-state filtering
+    to_operators:
+      - preprocessing
+    to_intents:
+      - fmri_temporal_smoothing
+
+  nuisance_regression:
+    aliases:
+      - nuisance regression
+      - global signal regression
+    to_operators:
+      - regression
+      - ica
+      - preprocessing
+    to_intents:
+      - fsl_dual_regression
+
+  compcor_tool:
+    aliases:
+      - compcor
+      - physiological noise removal
+    to_operators:
+      - ica
+      - artifact_removal
+      - preprocessing
+    to_intents:
+      - fmri_ica_denoising
+
+  acpc_alignment_tool:
+    aliases:
+      - acpc alignment
+      - ac-pc line
+      - reference frame alignment
+    to_operators:
+      - registration
+      - linear_registration
+      - alignment
+    to_intents:
+      - registration_linear_mri
+
+  fsl_randomise_tool:
+    aliases:
+      - fsl randomise
+      - randomise
+      - cluster-extent threshold
+    to_operators:
+      - inference
+      - statistical_inference
+    to_intents:
+      - fsl_palm_permutation
+
+  afni_clustsim_tool:
+    aliases:
+      - 3dclustsim
+      - afni clustsim
+      - monte carlo correction
+    to_operators:
+      - inference
+      - statistical_inference
+    to_intents:
+      - afni_clustsim_correction
+
+  literature_mining_tool:
+    aliases:
+      - literature mining
+      - harvard-oxford
+      - disease associations
+    to_operators:
+      - literature_mining
+      - literature
+    to_intents:
+      - literature_mining
+
+  neurosynth_integration:
+    aliases:
+      - cognitive ontology
+      - yeo networks
+      - neurosynth terms
+    to_operators:
+      - meta_analysis
+      - neurosynth
+    to_intents:
+      - meta_analysis_cbma
+
+  fmriprep_tool:
+    aliases:
+      - fmriprep pipeline
+      - batch processing
+      - process multiple subjects
+    to_operators:
+      - preprocessing
+      - bids_app
+    to_intents:
+      - fmriprep_preprocessing
+
+  cross_validation_tool:
+    aliases:
+      - cross-validation
+      - train/test split
+      - developmental trajectory
+      - age prediction
+      - model training
+      - model evaluation
+    to_operators:
+      - deep_learning
+    to_intents:
+      - dl_pytorch
+
+  dynamic_connectivity_tool:
+    aliases:
+      - connectivity dynamics
+      - sliding window
+      - state detection
+    to_operators:
+      - connectivity
+      - graph_theory
+    to_intents:
+      - dynamic_connectivity
+
+  # P1 additions (long-tail coverage)
+  despike_tool:
+    aliases:
+      - despike
+      - 3ddespike
+      - outlier removal
+    to_operators:
+      - preprocessing
+      - artifact_removal
+
+  multiecho_tool:
+    aliases:
+      - multi-echo
+      - multi-echo combination
+      - tedana
+    to_operators:
+      - preprocessing
+
+  gradient_unwarp_tool:
+    aliases:
+      - gradient unwarping
+      - gradient unwarp
+      - hcp pipeline
+    to_operators:
+      - preprocessing
+
+  effect_size_tool:
+    aliases:
+      - effect size
+      - cohen d
+    to_operators:
+      - inference
+      - statistical_inference
+
+  ancova_tool:
+    aliases:
+      - ancova
+      - covariate modeling
+    to_operators:
+      - glm
+      - inference
+    to_intents:
+      - glm_group_level_fmri
+
+  paired_test_tool:
+    aliases:
+      - paired t-test
+      - within-subject
+    to_operators:
+      - inference
+    to_intents:
+      - permutation_testing
+
+  factorial_anova_tool:
+    aliases:
+      - factorial anova
+      - interaction testing
+    to_operators:
+      - glm
+      - inference
+    to_intents:
+      - glm_group_level_fmri
+
+  nonparametric_tool:
+    aliases:
+      - kruskal-wallis
+      - nonparametric
+    to_operators:
+      - inference
+    to_intents:
+      - permutation_testing
+
+  robust_regression_tool:
+    aliases:
+      - robust regression
+      - outlier resistant
+    to_operators:
+      - regression
+      - inference
+
+  prewhitening_tool:
+    aliases:
+      - prewhitening
+      - temporal autocorrelation
+      - ar(1)
+    to_operators:
+      - glm
+      - regression
+    to_intents:
+      - glm_first_level_fmri
+
+  bootstrap_tool:
+    aliases:
+      - bootstrap confidence interval
+      - bootstrap resampling
+    to_operators:
+      - inference
+    to_intents:
+      - permutation_testing
+
+  genetics_gwas_tool:
+    aliases:
+      - gwas
+      - genetics workflow
+    to_operators:
+      - genomics_analysis
+    to_intents:
+      - genetics_analysis
+
+  prs_tool:
+    aliases:
+      - prs
+      - polygenic risk score
+    to_operators:
+      - genomics_analysis
+    to_intents:
+      - genetics_analysis
+
+  # P2 additions for remaining empty-prediction benchmark cases
+  scaling_tool:
+    aliases:
+      - grand mean scaling
+      - intensity standardization
+    to_operators:
+      - preprocessing
+
+  scrubbing_tool:
+    aliases:
+      - scrubbing
+      - motion censoring
+      - high-motion volumes
+    to_operators:
+      - preprocessing
+      - motion_correction
+    to_intents:
+      - fmri_motion_correction
+
+  resampling_tool:
+    aliases:
+      - resampling
+      - 2mm isotropic
+      - isotropic resolution
+      - interpolation
+    to_operators:
+      - registration
+      - alignment
+      - preprocessing
+    to_intents:
+      - registration_linear_mri
+
+  statistical_comparison_tool:
+    aliases:
+      - two-sample t-test
+      - group difference
+      - vs controls
+    to_operators:
+      - inference
+      - statistical_inference
+    to_intents:
+      - permutation_testing
+
+  conjunction_tool:
+    aliases:
+      - conjunction analysis
+      - overlap analysis
+    to_operators:
+      - inference
+      - statistical_inference
+    to_intents:
+      - multiple_comparison_correction

@@ -1,0 +1,269 @@
+{
+  "benchmark_scenarios": {
+    "low_load_optimal": {
+      "description": "Optimal conditions with low system load",
+      "system_conditions": {
+        "cpu_usage": 25.0,
+        "memory_usage": 35.0,
+        "load_average": [0.8, 0.9, 1.0],
+        "health": "healthy"
+      },
+      "expected_performance": {
+        "strategy": "aggressive",
+        "throughput_min": 6.0,
+        "latency_max": 90.0,
+        "error_rate_max": 0.02,
+        "resource_efficiency_min": 0.85
+      },
+      "test_duration": 30.0
+    },
+    "moderate_load_balanced": {
+      "description": "Balanced conditions with moderate system load",
+      "system_conditions": {
+        "cpu_usage": 60.0,
+        "memory_usage": 65.0,
+        "load_average": [2.0, 2.2, 2.5],
+        "health": "moderate"
+      },
+      "expected_performance": {
+        "strategy": "balanced",
+        "throughput_min": 3.5,
+        "latency_max": 150.0,
+        "error_rate_max": 0.03,
+        "resource_efficiency_min": 0.75
+      },
+      "test_duration": 45.0
+    },
+    "high_load_conservative": {
+      "description": "Conservative approach under high system load",
+      "system_conditions": {
+        "cpu_usage": 85.0,
+        "memory_usage": 80.0,
+        "load_average": [4.0, 4.5, 4.8],
+        "health": "stressed"
+      },
+      "expected_performance": {
+        "strategy": "conservative",
+        "throughput_min": 2.0,
+        "latency_max": 250.0,
+        "error_rate_max": 0.01,
+        "resource_efficiency_min": 0.90
+      },
+      "test_duration": 60.0
+    },
+    "critical_load_minimal": {
+      "description": "Minimal execution under critical system load",
+      "system_conditions": {
+        "cpu_usage": 95.0,
+        "memory_usage": 92.0,
+        "load_average": [6.0, 6.5, 7.0],
+        "health": "critical"
+      },
+      "expected_performance": {
+        "strategy": "minimal",
+        "throughput_min": 1.0,
+        "latency_max": 400.0,
+        "error_rate_max": 0.005,
+        "resource_efficiency_min": 0.95
+      },
+      "test_duration": 120.0
+    }
+  },
+  "stress_test_patterns": {
+    "burst_load": {
+      "description": "Sudden burst of high-priority tasks",
+      "pattern": [
+        {"time": 0, "task_count": 2, "priority": "NORMAL"},
+        {"time": 10, "task_count": 8, "priority": "HIGH"},
+        {"time": 15, "task_count": 3, "priority": "CRITICAL"},
+        {"time": 25, "task_count": 1, "priority": "LOW"},
+        {"time": 30, "task_count": 0, "priority": "NORMAL"}
+      ],
+      "expected_adaptations": [
+        {"time": 10, "expected_strategy": "aggressive"},
+        {"time": 15, "expected_strategy": "balanced"},
+        {"time": 30, "expected_strategy": "conservative"}
+      ]
+    },
+    "gradual_increase": {
+      "description": "Gradual increase in system load",
+      "pattern": [
+        {"time": 0, "cpu_usage": 30, "memory_usage": 40, "tasks": 2},
+        {"time": 20, "cpu_usage": 50, "memory_usage": 60, "tasks": 4},
+        {"time": 40, "cpu_usage": 70, "memory_usage": 75, "tasks": 6},
+        {"time": 60, "cpu_usage": 85, "memory_usage": 85, "tasks": 8},
+        {"time": 80, "cpu_usage": 95, "memory_usage": 90, "tasks": 2}
+      ],
+      "expected_health_progression": [
+        "healthy", "moderate", "stressed", "critical", "critical"
+      ]
+    },
+    "resource_exhaustion": {
+      "description": "Resource exhaustion and recovery",
+      "phases": [
+        {
+          "phase": "normal",
+          "duration": 15,
+          "resource_usage": {"cpu": 40, "memory": 50},
+          "task_load": "moderate"
+        },
+        {
+          "phase": "exhaustion",
+          "duration": 30,
+          "resource_usage": {"cpu": 95, "memory": 92},
+          "task_load": "high"
+        },
+        {
+          "phase": "recovery",
+          "duration": 20,
+          "resource_usage": {"cpu": 60, "memory": 65},
+          "task_load": "low"
+        },
+        {
+          "phase": "stabilization",
+          "duration": 15,
+          "resource_usage": {"cpu": 35, "memory": 45},
+          "task_load": "moderate"
+        }
+      ]
+    }
+  },
+  "preemption_test_cases": {
+    "basic_preemption": {
+      "description": "Basic preemption of low priority by high priority",
+      "setup": {
+        "running_task": {
+          "priority": "LOW",
+          "estimated_remaining": 300.0,
+          "preemptible": true,
+          "resources": {"cpu": 4.0, "memory": 6.0}
+        },
+        "incoming_task": {
+          "priority": "HIGH",
+          "deadline": 180.0,
+          "resources": {"cpu": 4.0, "memory": 6.0}
+        }
+      },
+      "expected_outcome": {
+        "preemption_occurs": true,
+        "preemption_reason": "priority_difference"
+      }
+    },
+    "deadline_preemption": {
+      "description": "Preemption due to deadline pressure",
+      "setup": {
+        "running_task": {
+          "priority": "NORMAL",
+          "estimated_remaining": 600.0,
+          "preemptible": true,
+          "resources": {"cpu": 2.0, "memory": 4.0}
+        },
+        "incoming_task": {
+          "priority": "NORMAL",
+          "deadline": 120.0,
+          "resources": {"cpu": 2.0, "memory": 4.0}
+        }
+      },
+      "expected_outcome": {
+        "preemption_occurs": true,
+        "preemption_reason": "deadline_urgency"
+      }
+    },
+    "no_preemption_protected": {
+      "description": "No preemption of protected task",
+      "setup": {
+        "running_task": {
+          "priority": "LOW",
+          "estimated_remaining": 300.0,
+          "preemptible": false,
+          "resources": {"cpu": 4.0, "memory": 6.0}
+        },
+        "incoming_task": {
+          "priority": "CRITICAL",
+          "deadline": 60.0,
+          "resources": {"cpu": 4.0, "memory": 6.0}
+        }
+      },
+      "expected_outcome": {
+        "preemption_occurs": false,
+        "preemption_reason": "non_preemptible"
+      }
+    }
+  },
+  "load_balancing_scenarios": {
+    "even_distribution": {
+      "description": "Even resource distribution across tasks",
+      "resources": {
+        "cpu": {"total": 8.0, "utilized": 0.0},
+        "memory": {"total": 16.0, "utilized": 0.0},
+        "gpu": {"total": 1.0, "utilized": 0.0}
+      },
+      "tasks": [
+        {"id": "task1", "cpu": 2.0, "memory": 4.0, "priority": "NORMAL"},
+        {"id": "task2", "cpu": 2.0, "memory": 4.0, "priority": "NORMAL"},
+        {"id": "task3", "cpu": 2.0, "memory": 4.0, "priority": "NORMAL"}
+      ],
+      "expected_allocation": {
+        "task1": {"cpu": 2.0, "memory": 4.0},
+        "task2": {"cpu": 2.0, "memory": 4.0},
+        "task3": {"cpu": 2.0, "memory": 4.0}
+      }
+    },
+    "priority_based_allocation": {
+      "description": "Priority-based resource allocation",
+      "resources": {
+        "cpu": {"total": 8.0, "utilized": 4.0},
+        "memory": {"total": 16.0, "utilized": 8.0}
+      },
+      "tasks": [
+        {"id": "high_task", "cpu": 3.0, "memory": 6.0, "priority": "HIGH"},
+        {"id": "low_task", "cpu": 3.0, "memory": 6.0, "priority": "LOW"}
+      ],
+      "expected_behavior": {
+        "high_task_gets_preference": true,
+        "low_task_scaled_down": true,
+        "scaling_factor_min": 0.7
+      }
+    },
+    "resource_contention": {
+      "description": "Resource contention resolution",
+      "resources": {
+        "cpu": {"total": 8.0, "utilized": 6.0},
+        "memory": {"total": 16.0, "utilized": 12.0}
+      },
+      "competing_tasks": [
+        {"id": "contender1", "cpu": 4.0, "memory": 6.0, "priority": "NORMAL"},
+        {"id": "contender2", "cpu": 4.0, "memory": 6.0, "priority": "NORMAL"},
+        {"id": "contender3", "cpu": 4.0, "memory": 6.0, "priority": "HIGH"}
+      ],
+      "expected_resolution": {
+        "queued_tasks": 2,
+        "running_tasks": 1,
+        "high_priority_runs_first": true
+      }
+    }
+  },
+  "performance_regression_tests": {
+    "scheduler_latency": {
+      "description": "Task scheduling latency benchmarks",
+      "test_cases": [
+        {"task_count": 1, "max_latency_ms": 5.0},
+        {"task_count": 10, "max_latency_ms": 20.0},
+        {"task_count": 100, "max_latency_ms": 100.0},
+        {"task_count": 1000, "max_latency_ms": 500.0}
+      ]
+    },
+    "monitor_overhead": {
+      "description": "System monitoring overhead limits",
+      "monitoring_intervals": [0.1, 0.5, 1.0, 5.0],
+      "max_cpu_overhead_percent": 5.0,
+      "max_memory_overhead_mb": 50.0
+    },
+    "strategy_selection_speed": {
+      "description": "Strategy selection performance",
+      "context_sizes": ["simple", "moderate", "complex"],
+      "max_selection_time_ms": [2.0, 5.0, 15.0],
+      "iterations_per_test": 100
+    }
+  }
+}

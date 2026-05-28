@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brain-researcher.local/schemas/brain_researcher_case_package.schema.json",
+  "title": "Brain Researcher Collaborator Case Package",
+  "description": "Structured package for a paired collaborator case in the flagship Brain Researcher manuscript.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "status",
+    "title",
+    "subfield",
+    "scientific_question",
+    "target_claim",
+    "collaborator",
+    "dataset_context",
+    "baseline_arm",
+    "brain_researcher_arm",
+    "review_packet",
+    "decision_trajectory",
+    "inclusion_record"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "recruited",
+        "baseline_in_progress",
+        "brain_researcher_in_progress",
+        "packet_ready",
+        "included",
+        "completed_not_included",
+        "dropped_before_completion"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subfield": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scientific_question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target_claim": {
+      "type": "string",
+      "minLength": 1
+    },
+    "planned_success_condition": {
+      "type": "string"
+    },
+    "collaborator": {
+      "$ref": "#/$defs/person"
+    },
+    "dataset_context": {
+      "$ref": "#/$defs/datasetContext"
+    },
+    "baseline_arm": {
+      "$ref": "#/$defs/caseArm"
+    },
+    "brain_researcher_arm": {
+      "$ref": "#/$defs/brainResearcherArm"
+    },
+    "review_packet": {
+      "$ref": "#/$defs/reviewPacket"
+    },
+    "decision_trajectory": {
+      "$ref": "#/$defs/decisionTrajectory"
+    },
+    "inclusion_record": {
+      "$ref": "#/$defs/inclusionRecord"
+    },
+    "outcome_summary": {
+      "$ref": "#/$defs/outcomeSummary"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "person": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "role",
+        "institution"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "lead_collaborator",
+            "supporting_collaborator",
+            "internal_lead"
+          ]
+        },
+        "institution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        }
+      }
+    },
+    "datasetContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataset_ids",
+        "data_access",
+        "modality"
+      ],
+      "properties": {
+        "dataset_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "data_access": {
+          "type": "string",
+          "enum": [
+            "public",
+            "restricted",
+            "local_only"
+          ]
+        },
+        "modality": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_family": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "case_brief",
+            "plan",
+            "result",
+            "audit_bundle",
+            "evidence_trace",
+            "review_packet",
+            "decision_trace",
+            "other"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "caseArm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "summary",
+        "artifacts"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_started",
+            "in_progress",
+            "completed"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "caveats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/artifact"
+          }
+        }
+      }
+    },
+    "brainResearcherArm": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/caseArm"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run_bundle_complete",
+            "audit_bundle_complete"
+          ],
+          "properties": {
+            "run_bundle_complete": {
+              "type": "boolean"
+            },
+            "audit_bundle_complete": {
+              "type": "boolean"
+            },
+            "evidence_trace_complete": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      ]
+    },
+    "reviewPacket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "packet_path",
+        "reviewer_count_target",
+        "rubric_version"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_started",
+            "assembled",
+            "under_review",
+            "completed"
+          ]
+        },
+        "packet_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewer_count_target": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rubric_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blinding_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "trajectoryEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_type",
+        "summary"
+      ],
+      "properties": {
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "accepted_recommendation",
+            "override",
+            "plan_revision",
+            "caveat_added",
+            "conclusion_changed"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "override_category": {
+          "type": "string",
+          "enum": [
+            "domain_judgment",
+            "feasibility_resource_limit",
+            "data_availability",
+            "ethics_scope",
+            "interpretation_disagreement",
+            "other"
+          ]
+        }
+      }
+    },
+    "decisionTrajectory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "events"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_started",
+            "partial",
+            "completed"
+          ]
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trajectoryEvent"
+          },
+          "default": []
+        }
+      }
+    },
+    "inclusionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completion_cutoff",
+        "completed_before_cutoff",
+        "included_in_primary_cohort"
+      ],
+      "properties": {
+        "completion_cutoff": {
+          "type": "string",
+          "format": "date"
+        },
+        "completed_before_cutoff": {
+          "type": "boolean"
+        },
+        "included_in_primary_cohort": {
+          "type": "boolean"
+        },
+        "non_inclusion_reason": {
+          "type": "string"
+        },
+        "main_text_exemplar": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "outcomeSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "brain_researcher_preferred": {
+          "type": "boolean"
+        },
+        "conclusion_changed_between_arms": {
+          "type": "boolean"
+        },
+        "material_caveat_added_by_brain_researcher": {
+          "type": "boolean"
+        },
+        "review_score_deltas": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "decision_space_coverage": {
+              "type": "number"
+            },
+            "transparency_provenance": {
+              "type": "number"
+            },
+            "robustness_of_conclusion": {
+              "type": "number"
+            },
+            "caveat_appropriateness": {
+              "type": "number"
+            },
+            "scientific_usefulness": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  }
+}

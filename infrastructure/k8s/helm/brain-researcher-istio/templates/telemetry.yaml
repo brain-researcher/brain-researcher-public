@@ -1,0 +1,229 @@
+{{/*
+Main telemetry configuration for Brain Researcher
+*/}}
+{{- if or .Values.telemetry.metrics.enabled .Values.telemetry.tracing.enabled .Values.telemetry.accessLogging.enabled }}
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: brain-researcher-telemetry
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    component: telemetry
+spec:
+  {{- include "brain-researcher-istio.telemetrySpec" . | nindent 2 }}
+{{- end }}
+
+{{/*
+Service-specific telemetry configurations
+*/}}
+{{- if .Values.telemetry.metrics.enabled }}
+{{- range $serviceName, $config := .Values.services }}
+{{- if $config.enabled }}
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: {{ $config.name }}-telemetry
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    service: {{ $serviceName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $config.name | replace "-service" "" }}
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        service_type:
+          value: {{ $serviceName | quote }}
+        brain_researcher_service:
+          value: {{ $config.name | quote }}
+        {{- if eq $serviceName "neurokg" }}
+        query_type:
+          value: "%{REQUEST_HEADER_X_QUERY_TYPE}"
+        database:
+          value: "neo4j"
+        search_index:
+          value: "%{REQUEST_HEADER_X_SEARCH_INDEX}"
+        {{- else if eq $serviceName "agent" }}
+        llm_model:
+          value: "%{REQUEST_HEADER_X_LLM_MODEL}"
+        conversation_id:
+          value: "%{REQUEST_HEADER_X_CONVERSATION_ID}"
+        tool_used:
+          value: "%{REQUEST_HEADER_X_TOOL_USED}"
+        analysis_complexity:
+          value: "%{REQUEST_HEADER_X_ANALYSIS_COMPLEXITY}"
+        {{- else if eq $serviceName "webui" }}
+        ui_component:
+          value: "%{REQUEST_HEADER_X_UI_COMPONENT}"
+        page_route:
+          value: "%{REQUEST_HEADER_X_PAGE_ROUTE}"
+        user_action:
+          value: "%{REQUEST_HEADER_X_USER_ACTION}"
+        {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+High-priority service telemetry with increased sampling
+*/}}
+{{- if .Values.telemetry.tracing.enabled }}
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: high-priority-tracing
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    priority: high
+spec:
+  selector:
+    matchLabels:
+      priority: high
+  tracing:
+  - randomSamplingPercentage: 10.0
+  - providers:
+    - name: jaeger
+{{- end }}
+
+{{/*
+Error tracking telemetry
+*/}}
+{{- if .Values.telemetry.metrics.enabled }}
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: error-tracking-telemetry
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    component: error-tracking
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    - match:
+        metric: requests_total
+      tagOverrides:
+        error_type:
+          value: "%{REQUEST_HEADER_X_ERROR_TYPE}"
+        error_code:
+          value: "%{REQUEST_HEADER_X_ERROR_CODE}"
+        recovery_action:
+          value: "%{REQUEST_HEADER_X_RECOVERY_ACTION}"
+  tracing:
+  - randomSamplingPercentage: 100.0
+  - customTags:
+      error.message:
+        header:
+          name: x-error-message
+      error.stack_trace:
+        header:
+          name: x-stack-trace
+      error.context:
+        header:
+          name: x-error-context
+{{- end }}
+
+{{/*
+Performance monitoring telemetry
+*/}}
+{{- if .Values.telemetry.metrics.enabled }}
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: performance-monitoring
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    component: performance
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        processing_stage:
+          value: "%{REQUEST_HEADER_X_PROCESSING_STAGE}"
+        data_volume:
+          value: "%{REQUEST_HEADER_X_DATA_VOLUME}"
+        compute_resources:
+          value: "%{REQUEST_HEADER_X_COMPUTE_RESOURCES}"
+    - match:
+        metric: requests_duration_milliseconds
+      histogram:
+        buckets: [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 60000, 300000]  # TODO: re-derive from .Values.telemetry.metrics.prometheus.customMetrics via Helm range
+  accessLogging:
+  - format:
+      text: |
+        [%START_TIME%] performance_log service="%REQ(X-BRAIN-RESEARCHER-SERVICE)%"
+        method="%REQ(:METHOD)%" path="%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+        duration=%DURATION% response_code=%RESPONSE_CODE%
+        bytes_received=%BYTES_RECEIVED% bytes_sent=%BYTES_SENT%
+        processing_stage="%REQ(X-PROCESSING-STAGE)%" data_volume="%REQ(X-DATA-VOLUME)%"
+        cpu_usage="%REQ(X-CPU-USAGE)%" memory_usage="%REQ(X-MEMORY-USAGE)%"
+{{- end }}
+
+{{/*
+Multi-cluster telemetry (if enabled)
+*/}}
+{{- if .Values.multiCluster.enabled }}
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: cross-cluster-telemetry
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    component: cross-cluster
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        source_cluster:
+          value: "%{SOURCE_CLUSTER}"
+        destination_cluster:
+          value: "%{DESTINATION_CLUSTER}"
+        cross_cluster_request:
+          value: "true"
+  tracing:
+  - customTags:
+      cross_cluster.source:
+        header:
+          name: x-source-cluster
+      cross_cluster.destination:
+        header:
+          name: x-destination-cluster
+      cross_cluster.latency:
+        header:
+          name: x-cross-cluster-latency
+{{- end }}

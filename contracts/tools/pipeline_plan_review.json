@@ -1,0 +1,46 @@
+{
+  "name": "pipeline_plan_review",
+  "tier": "ops",
+  "surface_tier": "ops",
+  "capability_family": "pipeline_execution",
+  "description": "Domain-grounded review of a pipeline plan before execution.",
+  "input_schema": {
+    "properties": {
+      "plan": {
+        "additionalProperties": true,
+        "title": "Plan",
+        "type": "object"
+      },
+      "workflow_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Workflow Id"
+      },
+      "use_kg": {
+        "default": true,
+        "title": "Use Kg",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "plan"
+    ],
+    "title": "pipeline_plan_reviewArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "pipeline_plan_reviewDictOutput",
+    "type": "object"
+  },
+  "examples": [],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

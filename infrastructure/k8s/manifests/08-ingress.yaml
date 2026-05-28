@@ -1,0 +1,336 @@
+# Ingress configurations for Brain Researcher platform
+# Provides SSL termination, routing, and external access to services
+
+---
+# Main application Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: brain-researcher-ingress
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    # Nginx ingress controller annotations
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # SSL and TLS configuration
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-RSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header X-Frame-Options DENY;
+      add_header X-Content-Type-Options nosniff;
+      add_header X-XSS-Protection "1; mode=block";
+      add_header Referrer-Policy strict-origin-when-cross-origin;
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    
+    # CORS configuration
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://brain-researcher.local"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+    
+    # Body size limits
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/client-max-body-size: "100m"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    
+    # Compression
+    nginx.ingress.kubernetes.io/enable-brotli: "true"
+    nginx.ingress.kubernetes.io/brotli-level: "6"
+    nginx.ingress.kubernetes.io/brotli-types: "text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript"
+
+spec:
+  tls:
+    - hosts:
+        - brain-researcher.local
+        - api.brain-researcher.local
+      secretName: brain-researcher-tls
+  rules:
+    - host: brain-researcher.local
+      http:
+        paths:
+          # Main web application
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 80
+
+    - host: api.brain-researcher.local
+      http:
+        paths:
+          # Agent API routes
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: agent-service
+                port:
+                  number: 8000
+
+---
+# Monitoring Ingress (optional - for external Grafana access)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/component: monitoring-ingress
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Basic auth for security
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: monitoring-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: 'Brain Researcher Monitoring - Authentication Required'
+    
+    # Rate limiting for monitoring endpoints
+    nginx.ingress.kubernetes.io/rate-limit: "30"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header X-Frame-Options SAMEORIGIN;
+      add_header X-Content-Type-Options nosniff;
+      add_header X-XSS-Protection "1; mode=block";
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+spec:
+  tls:
+    - hosts:
+        - monitoring.brain-researcher.local
+        - grafana.brain-researcher.local
+        - prometheus.brain-researcher.local
+      secretName: monitoring-tls
+  rules:
+    - host: grafana.brain-researcher.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana-service
+                port:
+                  number: 3000
+    
+    - host: prometheus.brain-researcher.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus-service
+                port:
+                  number: 9090
+
+---
+# WebSocket Ingress for real-time features
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: websocket-ingress
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: websocket
+    app.kubernetes.io/component: websocket-ingress
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # WebSocket specific configuration
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      grpc_read_timeout 300;
+      grpc_send_timeout 300;
+      client_body_timeout 60;
+      client_header_timeout 60;
+      keepalive_timeout 10 10;
+    
+    # WebSocket upgrade headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+
+spec:
+  tls:
+    - hosts:
+        - ws.brain-researcher.local
+      secretName: websocket-tls
+  rules:
+    - host: ws.brain-researcher.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: orchestrator-service
+                port:
+                  number: 3002
+
+---
+# ClusterIssuer for cert-manager (Let's Encrypt)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: cluster-issuer
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@brain-researcher.local  # Replace with actual email
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+            podTemplate:
+              spec:
+                nodeSelector:
+                  "kubernetes.io/os": linux
+      - dns01:
+          cloudflare:  # Example DNS provider - adjust as needed
+            email: admin@brain-researcher.local
+            apiTokenSecretRef:
+              name: cloudflare-api-token-secret
+              key: api-token
+
+---
+# ClusterIssuer for development/staging (Let's Encrypt Staging)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: cluster-issuer-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@brain-researcher.local  # Replace with actual email
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+
+---
+# Basic auth secret for monitoring endpoints
+apiVersion: v1
+kind: Secret
+metadata:
+  name: monitoring-basic-auth
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/component: auth
+type: Opaque
+stringData:
+  # Generated with: htpasswd -c auth admin
+  # Password: admin123 (change in production!)
+  auth: |
+    admin:$2y$10$H6lxqotCSMwKVjjKFTGene.FVBf3GOaWJaWeDK3P9k7LNml8IRuTu
+
+---
+# Certificate resource for automatic SSL certificate provisioning
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: brain-researcher-cert
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: certificate
+spec:
+  secretName: brain-researcher-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: brain-researcher.local
+  dnsNames:
+    - brain-researcher.local
+    - api.brain-researcher.local
+    - ws.brain-researcher.local
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: monitoring-cert
+  namespace: brain-researcher-monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/component: certificate
+spec:
+  secretName: monitoring-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: monitoring.brain-researcher.local
+  dnsNames:
+    - monitoring.brain-researcher.local
+    - grafana.brain-researcher.local
+    - prometheus.brain-researcher.local
+
+# ---
+# Advanced routing with regex (uncomment if needed)
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: api-versioned-ingress
+#   namespace: brain-researcher-core
+#   annotations:
+#     kubernetes.io/ingress.class: "nginx"
+#     nginx.ingress.kubernetes.io/use-regex: "true"
+#     nginx.ingress.kubernetes.io/rewrite-target: /$2
+# spec:
+#   tls:
+#     - hosts:
+#         - api.brain-researcher.local
+#       secretName: brain-researcher-tls
+#   rules:
+#     - host: api.brain-researcher.local
+#       http:
+#         paths:
+#           # API versioning: /v1/*, /v2/*, etc.
+#           - path: /(v[0-9]+)(/|$)(.*)
+#             pathType: ImplementationSpecific
+#             backend:
+#               service:
+#                 name: agent-service
+#                 port:
+#                   number: 8000

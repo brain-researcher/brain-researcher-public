@@ -1,0 +1,47 @@
+# Cloudflare Workers Configuration for Brain Researcher
+# This configures edge functions for enhanced performance
+
+name = "brain-researcher-edge"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Account details (get from Cloudflare dashboard)
+[env.production]
+account_id = "YOUR_ACCOUNT_ID"
+workers_dev = false
+route = { pattern = "*.brain-researcher.com/*", zone_id = "YOUR_ZONE_ID" }
+
+# KV Namespaces for edge caching
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "YOUR_KV_NAMESPACE_ID"
+
+# Durable Objects for stateful edge computing
+[[env.production.durable_objects]]
+binding = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+# R2 Storage for assets
+[[env.production.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "brain-researcher-assets"
+
+# Environment variables
+[env.production.vars]
+ENVIRONMENT = "production"
+API_ENDPOINT = "https://api.brain-researcher.com"
+CACHE_TTL = "3600"
+
+# Development environment
+[env.development]
+workers_dev = true
+vars = { ENVIRONMENT = "development" }
+
+# Build configuration
+[build]
+command = "npm run build"
+watch_paths = ["src/**/*.js"]
+
+# Triggers for automatic deployment
+[triggers]
+crons = ["0 */6 * * *"]  # Cache warming every 6 hours

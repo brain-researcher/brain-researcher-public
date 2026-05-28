@@ -1,0 +1,118 @@
+FROM python:3.11-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src \
+    JUPYTER_PORT=8888 \
+    JUPYTER_SERVER_ROOT=/home/jovyan/work \
+    NB_USER=jovyan \
+    NB_UID=1000 \
+    NB_GID=100 \
+    BR_PRODUCT_NAME="Brain Researcher" \
+    BR_PRODUCT_MODE="hosted-cloud" \
+    BR_PRODUCT_URL="https://brain-researcher.com" \
+    BR_MCP_PROFILE="hosted_notebook_v1" \
+    BR_MCP_TRANSPORT="streamable-http" \
+    BR_MCP_HTTP_URL="http://brain-researcher-mcp.brain-researcher-core.svc.cluster.local:7000/mcp" \
+    BR_MCP_MOUNT_PATH="/mcp" \
+    BR_NOTEBOOK_ASSISTANT_MODE="notebook-intelligence" \
+    BR_NOTEBOOK_INTELLIGENCE_ENABLED="true" \
+    BR_NBI_MCP_SERVER_NAME="brain-researcher" \
+    BR_NBI_DEFAULT_CHAT_MODE="ask" \
+    BR_NEURODESK_PATH="/cvmfs/neurodesk.ardc.edu.au" \
+    BR_NEURODESK_CONTAINERS="/cvmfs/neurodesk.ardc.edu.au/containers" \
+    BR_NEURODESK_MODULES="/cvmfs/neurodesk.ardc.edu.au/neurodesk-modules" \
+    BR_DATA_ROOT="/home/jovyan/work" \
+    BR_SCRATCH_ROOT="/tmp" \
+    BR_TEMPLATE_ROOT="/app/templates"
+
+WORKDIR /app
+
+# Keep the base image small and only add the tools needed for a JupyterLab
+# workspace shell plus light notebook integration hooks.
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    bash \
+    ca-certificates \
+    curl \
+    git \
+    tini \
+    && rm -rf /var/lib/apt/lists/*
+
+# Core notebook stack. This is intentionally skeletal: enough to boot a
+# functional workspace shell, not a fully optimized scientific image yet.
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install \
+      jupyterlab \
+      jupyter-server \
+      jupyter-server-proxy \
+      notebook-intelligence \
+      ipykernel \
+      notebook \
+      numpy \
+      pandas \
+      matplotlib \
+      seaborn \
+      scipy \
+      pyarrow \
+      pyyaml
+
+# Copy the Brain Researcher package so the notebook kernel can import shared
+# helpers and any future notebook-assistant bridge code.
+COPY pyproject.toml README.md /app/
+COPY src /app/src
+COPY configs /app/configs
+COPY docs /app/docs
+COPY scripts /app/scripts
+
+RUN pip install -e . && \
+    chmod +x /app/scripts/runtime/start_jupyter_singleuser.sh
+
+# Pre-create the notebook workspace and common mount points. The actual mounts
+# are expected to be provided by the JupyterHub / Kubernetes runtime.
+RUN if ! getent group "${NB_GID}" >/dev/null; then groupadd --gid "${NB_GID}" "${NB_USER}"; fi && \
+    useradd --create-home --shell /bin/bash --uid "${NB_UID}" --gid "${NB_GID}" "${NB_USER}" && \
+    mkdir -p /home/jovyan/work /home/jovyan/.jupyter /app/templates /app/bootstrap \
+      /usr/local/share/jupyter/nbi \
+      /usr/local/share/jupyter/nbi_extensions && \
+    chown -R "${NB_UID}:${NB_GID}" /home/jovyan /app /usr/local/share/jupyter/nbi /usr/local/share/jupyter/nbi_extensions
+
+# Placeholder boot content for workspace bootstrap hooks.
+RUN cat > /app/bootstrap/README.txt <<'EOF'
+Brain Researcher notebook workspace bootstrap.
+
+Expected future responsibilities:
+- initialize Notebook Intelligence settings
+- attach BR MCP credentials or session bindings
+- seed starter notebooks and templates
+- expose Neurodesk/CVMFS availability checks
+EOF
+
+# Jupyter server configuration is expected to be injected by the JupyterHub
+# chart or mounted via ConfigMap later. The skeleton keeps the image runnable
+# with a plain JupyterLab server for local smoke tests.
+RUN mkdir -p /home/jovyan/.jupyter && \
+    cat > /home/jovyan/.jupyter/jupyter_server_config.py <<'EOF'
+c = get_config()  # type: ignore[name-defined]
+c.ServerApp.ip = "0.0.0.0"
+c.ServerApp.port = 8888
+c.ServerApp.open_browser = False
+c.ServerApp.root_dir = "/home/jovyan/work"
+c.ServerApp.allow_remote_access = True
+c.ServerApp.trust_xheaders = True
+c.ServerApp.jpserver_extensions = {
+    "brain_researcher.integrations.jupyter.server_extension": True,
+}
+
+# Brain Researcher notebook bridge skeleton. The extension is intentionally
+# thin: it serves bootstrap metadata and proxies notebook-side MCP traffic
+# to the configured BR MCP HTTP endpoint.
+EOF
+
+USER ${NB_UID}
+
+EXPOSE 8888
+
+ENTRYPOINT ["tini", "-g", "--", "/app/scripts/runtime/start_jupyter_singleuser.sh"]
+CMD ["jupyter", "lab", "--ServerApp.token=", "--ServerApp.password=", "--ServerApp.allow_origin=*", "--ServerApp.root_dir=/home/jovyan/work"]

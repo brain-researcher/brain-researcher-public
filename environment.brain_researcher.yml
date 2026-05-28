@@ -1,0 +1,102 @@
+name: brain_researcher
+# Canonical Brain Researcher execution runtime environment.
+# Used for: notebook cell execution (Jupyter kernel), CLI analysis scripts, batch jobs.
+# NOT used for: MCP services, orchestrator, web-ui — those run in their own envs.
+# NOT a kitchen-sink dev environment — excludes Airflow, supervisor, cadwyn,
+# test tooling, docs, and modality-specific extras.
+#
+# Layers this env supports:
+#   Layer 1: Jupyter kernel (ipykernel registered as "brain_researcher")
+#   Layer 2: Python runtime (nilearn, nibabel, brain_researcher package)
+#   Layer 3: Neurodesk tools accessed via module load (CVMFS) — not conda
+#
+# Local setup:  bash scripts/setup/setup_local_runtime.sh
+# GCP setup:    bake this file into the singleuser Docker image
+#               (see docs/specs/brain_researcher_runtime_stack.md)
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+
+  # Core scientific stack (conda-managed for ABI stability)
+  - numpy=1.26.4
+  - scipy=1.11.4
+  - scikit-learn=1.3.2
+  - pandas=2.2.0
+  - matplotlib=3.8.2
+  - seaborn=0.13.0
+  - statsmodels=0.14.1
+
+  # Jupyter kernel + server (required for Studio cell execution)
+  - jupyter
+  - jupyterlab
+  - jupyter_client
+  - ipykernel
+  - notebook
+
+  # Build tools
+  - pip
+  - setuptools
+  - wheel
+
+  - pip:
+    # ── Neuroimaging Python ────────────────────────────────────────────────
+    - nibabel>=5.3.0
+    - nilearn>=0.11.0
+    - nimare>=0.5.0
+    - neuromaps>=0.0.5
+    - templateflow>=24.1.0
+    - pyneurovault>=0.1.3
+
+    # ── LLM / agent stack ─────────────────────────────────────────────────
+    - langgraph>=0.0.20
+    - langchain>=0.1.0
+    - langchain-core>=0.1.0
+    - langchain-openai>=0.0.5
+    - langchain-anthropic>=0.0.1
+    - langchain-community>=0.0.1
+    - langchain-google-genai>=0.1.0
+    - google-genai>=1.55.0
+
+    # ── MCP ───────────────────────────────────────────────────────────────
+    - mcp>=1.0.0
+    - sequential-thinking-mcp>=0.1.0
+
+    # ── Knowledge graph ───────────────────────────────────────────────────
+    - neo4j>=5.28.0
+    - SPARQLWrapper>=2.0.0
+    - rdflib>=7.1.0
+
+    # ── Embeddings / retrieval ────────────────────────────────────────────
+    - faiss-cpu>=1.7.4
+    - sentence-transformers>=2.2.0
+    - rapidfuzz>=3.0.0
+
+    # ── State / async ─────────────────────────────────────────────────────
+    - redis>=5.0.0
+    - fakeredis>=2.19.0
+    - aiofiles>=23.0.0
+    - aiosqlite>=0.20.0
+
+    # ── API runtime (needed when brain_researcher services run in kernel) ─
+    - fastapi>=0.104.0
+    - uvicorn>=0.24.0
+    - python-jose[cryptography]>=3.3.0
+
+    # ── Supporting ────────────────────────────────────────────────────────
+    - tqdm>=4.60.0
+    - joblib>=1.3.0
+    - psutil>=5.9.0
+    - biopython>=1.85
+    - cognitiveatlas>=0.1.11
+    - openneuro-py>=2026.3.0
+    - xgboost>=2.1.0
+    - lightgbm>=4.5.0
+    - torch-geometric>=2.6.0
+    - pytorch-tabnet>=4.1.0
+
+    # ── Brain Researcher package itself ───────────────────────────────────
+    # Install source only — no extras, avoids pulling Airflow/supervisor/cadwyn.
+    # The packages above cover what notebooks actually need at runtime.
+    - -e .

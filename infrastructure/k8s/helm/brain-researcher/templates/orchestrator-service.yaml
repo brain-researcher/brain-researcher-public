@@ -1,0 +1,50 @@
+# Orchestrator service template
+{{- if .Values.orchestrator.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brain-researcher.orchestrator.serviceName" . }}
+  namespace: {{ include "brain-researcher.coreNamespace" . }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    {{- include "brain-researcher.componentLabels" "orchestrator" | nindent 4 }}
+  annotations:
+    {{- if .Values.orchestrator.podAnnotations }}
+    {{- toYaml .Values.orchestrator.podAnnotations | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.orchestrator.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.orchestrator.service.ports.http }}
+      targetPort: http
+      protocol: TCP
+    - name: websocket
+      port: {{ .Values.orchestrator.service.ports.websocket }}
+      # Uvicorn serves HTTP + WebSocket upgrades on the same port (3001).
+      targetPort: http
+      protocol: TCP
+    {{- if .Values.orchestrator.service.ports.metrics }}
+    - name: metrics
+      port: {{ .Values.orchestrator.service.ports.metrics }}
+      # Orchestrator exposes Prometheus /metrics on the HTTP port.
+      targetPort: http
+      protocol: TCP
+    {{- end }}
+  selector:
+    {{- include "brain-researcher.selectorLabels" . | nindent 4 }}
+    {{- include "brain-researcher.componentLabels" "orchestrator" | nindent 4 }}
+  {{- if .Values.orchestrator.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.orchestrator.service.sessionAffinity }}
+  {{- if .Values.orchestrator.service.sessionAffinityConfig }}
+  sessionAffinityConfig:
+    {{- toYaml .Values.orchestrator.service.sessionAffinityConfig | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 300
+  {{- end }}
+{{- end }}

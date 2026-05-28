@@ -1,0 +1,289 @@
+services:
+  # Nginx Reverse Proxy & Load Balancer
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: brain-researcher-nginx
+    depends_on:
+      - agent
+      - web-ui
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/brain-researcher-compose.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "nginx", "-t" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - brain-researcher-network
+
+  # Agent Service (LangGraph-based)
+  agent:
+    build:
+      context: .
+      target: agent
+    container_name: brain-researcher-agent
+    depends_on:
+      - neurokg
+      - redis
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs/agent:/app/logs
+      - ./src/brain_researcher/services/agent/.env:/app/.env:ro
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - NEUROKG_API_URL=http://neurokg:5000
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - REDIS_URL=redis://redis:6379/2
+      - BR_ORCHESTRATOR_URL=http://orchestrator:3001
+      - BR_QUEUE_BACKEND=sqlite
+      - BR_QUEUE_DB=/app/data/orchestrator/jobs.sqlite
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    networks:
+      - brain-researcher-network
+
+  # BR-KG Service
+  neurokg:
+    build:
+      context: .
+      target: neurokg
+    container_name: brain-researcher-neurokg
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data/neurokg:/app/data/neurokg
+      - ./logs/neurokg:/app/logs
+      - neurokg_db:/app/data/neurokg/db
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - FLASK_ENV=production
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '1.5'
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - brain-researcher-network
+
+  # Orchestrator Service
+  orchestrator:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.orchestrator
+    container_name: brain-researcher-orchestrator
+    depends_on:
+      - agent
+      - neurokg
+      - redis
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+      - ./logs/orchestrator:/app/logs
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - AGENT_URL=http://agent:8000
+      - NEUROKG_URL=http://neurokg:5000
+      - REDIS_URL=redis://redis:6379/0
+      - BR_QUEUE_BACKEND=sqlite
+      - BR_QUEUE_DB=/app/data/orchestrator/jobs.sqlite
+      - ORCHESTRATOR_UPLOAD_DIR=/app/data/uploads/chat
+      - LOG_LEVEL=INFO
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - brain-researcher-network
+
+  # Web UI (Next.js)
+  web-ui:
+    build:
+      context: .
+      dockerfile: apps/web-ui/Dockerfile
+    container_name: brain-researcher-web-ui
+    depends_on:
+      - orchestrator
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - AGENT_BASE_URL=http://agent:8000
+      - BR_ORCHESTRATOR_URL=http://orchestrator:3001
+      - NEXT_PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_ORCHESTRATOR_URL=${PUBLIC_ORCHESTRATOR_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_AGENT_URL=${PUBLIC_AGENT_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_NEUROKG_URL=${PUBLIC_NEUROKG_URL:-http://localhost:5000}
+      - NEXT_PUBLIC_APP_NAME=Brain Researcher
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL:-}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
+      - NEXT_TELEMETRY_DISABLED=1
+      - ENABLE_DEV_CREDENTIALS=0
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - brain-researcher-network
+
+  # Redis for state management, caching, and pub/sub
+  redis:
+    image: redis:7-alpine
+    container_name: brain-researcher-redis
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+      - ./configs/runtime/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - brain-researcher-network
+
+  # PostgreSQL for persistent data (optional, for production)
+  postgres:
+    image: postgres:15-alpine
+    container_name: brain-researcher-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      - POSTGRES_DB=brain_researcher
+      - POSTGRES_USER=brain_researcher
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-brain_researcher_pass}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=C
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U brain_researcher -d brain_researcher" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - brain-researcher-network
+
+  # Monitoring with Prometheus (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: brain-researcher-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/runtime/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - brain-researcher-network
+
+  # Grafana for dashboards (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: brain-researcher-grafana
+    ports:
+      - "3100:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./infrastructure/monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    restart: unless-stopped
+    networks:
+      - brain-researcher-network
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  neurokg_db:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  brain-researcher-network:
+    driver: bridge
+    name: brain-researcher-network
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

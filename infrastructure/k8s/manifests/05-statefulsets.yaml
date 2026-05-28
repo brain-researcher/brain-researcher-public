@@ -1,0 +1,582 @@
+# StatefulSets for Brain Researcher stateful services
+# Provides stable network identity and persistent storage for stateful components
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neurokg
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: neurokg
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  serviceName: neurokg-headless-service
+  replicas: 1  # Single instance for now, can scale for read replicas
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: neurokg
+      app.kubernetes.io/component: neurokg
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: neurokg
+        app.kubernetes.io/component: neurokg
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: neurokg
+          image: brain-researcher/neurokg:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: PYTHONPATH
+              value: "/app"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: FLASK_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: PORT
+              value: "5000"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: neurokg-db-storage
+              mountPath: /app/data/neurokg/db
+            - name: neurokg-vector-cache
+              mountPath: /app/data/neurokg/vector_cache
+            - name: logs-storage
+              mountPath: /app/logs
+            - name: neurokg-config
+              mountPath: /app/config.yml
+              subPath: config.yml
+              readOnly: true
+            - name: shared-data-storage
+              mountPath: /app/data/shared
+              readOnly: true
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "3Gi"
+              cpu: "1500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: neurokg-db-storage
+          persistentVolumeClaim:
+            claimName: neurokg-db-storage
+        - name: neurokg-vector-cache
+          persistentVolumeClaim:
+            claimName: neurokg-vector-cache
+        - name: logs-storage
+          emptyDir: {}  # Use local storage for logs
+        - name: neurokg-config
+          configMap:
+            name: neurokg-config
+        - name: shared-data-storage
+          persistentVolumeClaim:
+            claimName: shared-data-storage
+      terminationGracePeriodSeconds: 60
+      restartPolicy: Always
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: agent
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  serviceName: agent-headless-service
+  replicas: 2  # Multiple instances for load balancing
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agent
+      app.kubernetes.io/component: agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: agent
+        app.kubernetes.io/component: agent
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: agent
+          image: brain-researcher/agent:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: PYTHONPATH
+              value: "/app"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: NEUROKG_API_URL
+              value: "http://neurokg-service:5000"
+            - name: REDIS_URL
+              value: "redis://redis-service:6379/2"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: AGENT_TOOL_ALLOWLIST
+              value: "gemini.fs,gemini.net,neurokg.client,find_related_concepts,coordinate_to_concept,graph_query,evidence_pack,task_to_concept_mapping,concept_literature_search,literature_mining,coordinate_meta_analysis,meta_analysis.client,datasets.client,datasets.list_resources,openneuro.client,fmri.connectivity_client.light,viz.client,advanced_analysis.client,neurodesk_command,fsl_command,mrtrix3_command,niwrap_search,niwrap_schema,niwrap_execute,dandi_download,openneuro_download,prefetch.openneuro_cache,bids.manifest,multiple_comparison_correction,mcp.server_info,mcp.tool_search,fsl.melodic,fsl.fslFixText,afni.3dClustSim,viz_stat_maps,surface_projection,data_harmonization,brain_simulation,realtime_fmri,lesion_detection,harmonization.client,simulation.stub_client,realtime.pipeline_client,workflow_preprocessing_qc,workflow_rest_connectome_e2e,validate_bids_structure,run_mriqc_workflow,get_qc_table,detect_outliers,qc_aggregator,dashboard_generator,run_bids_app,run_fitlins_recipe,glm_first_level,fetch_atlas,extract_timeseries,compute_connectivity,connectivity_matrix,glm_multiverse,kg_multihop_qa"
+            - name: AGENT_TOOL_ALLOWLIST_STRICT
+              value: "1"
+            - name: BR_ENABLE_CODE_AGENT_TOOL
+              value: "0"
+            - name: NEO4J_URI
+              value: "bolt://brain-researcher-neo4j:7687"
+            - name: NEO4J_USER
+              value: "neo4j"
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-credentials
+                  key: NEO4J_PASSWORD
+                  optional: true
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          envFrom:
+            - secretRef:
+                name: llm-api-keys
+          volumeMounts:
+            - name: agent-session-storage
+              mountPath: /app/data/sessions
+            - name: agent-logs-storage
+              mountPath: /app/logs
+            - name: shared-data-storage
+              mountPath: /app/data/shared
+            - name: agent-config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+              readOnly: true
+          resources:
+            requests:
+              memory: "3Gi"
+              cpu: "1500m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 9
+      volumes:
+        - name: agent-session-storage
+          persistentVolumeClaim:
+            claimName: agent-session-storage
+        - name: agent-logs-storage
+          persistentVolumeClaim:
+            claimName: agent-logs-storage
+        - name: shared-data-storage
+          persistentVolumeClaim:
+            claimName: shared-data-storage
+        - name: agent-config
+          configMap:
+            name: agent-config
+      terminationGracePeriodSeconds: 90
+      restartPolicy: Always
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "15.0"
+spec:
+  serviceName: postgres-headless-service
+  replicas: 1  # Single primary instance
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "15.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: false  # PostgreSQL needs to run as postgres user
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: database-credentials
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: database-credentials
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-credentials
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_INITDB_ARGS
+              value: "--encoding=UTF-8 --locale=C"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: postgres-data-storage
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-config
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+              readOnly: true
+            - name: postgres-init
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init.sql
+              readOnly: true
+            - name: backup-storage
+              mountPath: /backup
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+        # PostgreSQL Exporter sidecar for metrics
+        - name: postgres-exporter
+          image: prometheuscommunity/postgres-exporter:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 9187
+              protocol: TCP
+          env:
+            - name: DATA_SOURCE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: database-credentials
+                  key: POSTGRES_URL
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+      volumes:
+        - name: postgres-data-storage
+          persistentVolumeClaim:
+            claimName: postgres-data-storage
+        - name: postgres-config
+          configMap:
+            name: postgres-config
+        - name: postgres-init
+          configMap:
+            name: postgres-config
+        - name: backup-storage
+          persistentVolumeClaim:
+            claimName: backup-storage
+      terminationGracePeriodSeconds: 60
+      restartPolicy: Always
+
+---
+# Redis StatefulSet for persistent cache
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: brain-researcher-data
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: brain-researcher-platform
+    app.kubernetes.io/version: "7.0"
+spec:
+  serviceName: redis-service
+  replicas: 1  # Single instance for simplicity
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/component: cache
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: cache
+        app.kubernetes.io/part-of: brain-researcher-platform
+        app.kubernetes.io/version: "7.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9121"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: false  # Redis needs specific user setup
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - redis-server
+            - /usr/local/etc/redis/redis.conf
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: redis-data-storage
+              mountPath: /data
+            - name: redis-config
+              mountPath: /usr/local/etc/redis/redis.conf
+              subPath: redis.conf
+              readOnly: true
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+        # Redis Exporter sidecar for metrics
+        - name: redis-exporter
+          image: oliver006/redis_exporter:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 9121
+              protocol: TCP
+          env:
+            - name: REDIS_ADDR
+              value: "redis://localhost:6379"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+      volumes:
+        - name: redis-data-storage
+          persistentVolumeClaim:
+            claimName: redis-data-storage
+        - name: redis-config
+          configMap:
+            name: redis-config
+      terminationGracePeriodSeconds: 30
+      restartPolicy: Always

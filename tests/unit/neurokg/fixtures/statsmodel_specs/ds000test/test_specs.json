@@ -1,0 +1,12 @@
+{
+  "Name": "ds000test",
+  "Nodes": [
+    {
+      "Level": "Run",
+      "Contrasts": [
+        {"Name": "conA", "ConditionList": ["a", "b"], "Weights": [1, -1], "Test": "t"},
+        {"Name": "conB", "ConditionList": ["a"], "Weights": [1], "Test": "t"}
+      ]
+    }
+  ]
+}

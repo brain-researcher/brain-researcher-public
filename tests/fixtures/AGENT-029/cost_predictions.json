@@ -1,0 +1,505 @@
+{
+  "neuroimaging_cost_models": [
+    {
+      "model_name": "fmriprep_preprocessing_cost",
+      "description": "Cost prediction model for fMRIPrep preprocessing pipeline",
+      "input_features": [
+        {
+          "name": "n_subjects",
+          "type": "integer",
+          "description": "Number of subjects to process",
+          "range": [1, 1000]
+        },
+        {
+          "name": "n_sessions_per_subject",
+          "type": "integer", 
+          "description": "Number of sessions per subject",
+          "range": [1, 10],
+          "default": 1
+        },
+        {
+          "name": "n_runs_per_session",
+          "type": "integer",
+          "description": "Number of functional runs per session", 
+          "range": [1, 20],
+          "default": 4
+        },
+        {
+          "name": "run_duration_minutes",
+          "type": "float",
+          "description": "Duration of each functional run in minutes",
+          "range": [5.0, 60.0],
+          "default": 10.0
+        },
+        {
+          "name": "resolution_mm",
+          "type": "float",
+          "description": "Voxel resolution in mm",
+          "range": [1.0, 5.0],
+          "default": 2.0
+        },
+        {
+          "name": "include_freesurfer",
+          "type": "boolean",
+          "description": "Whether to include FreeSurfer processing",
+          "default": true
+        },
+        {
+          "name": "output_spaces",
+          "type": "array",
+          "description": "List of output spaces for normalization",
+          "options": ["T1w", "MNI152NLin2009cAsym", "MNI152NLin6Asym", "fsaverage"],
+          "default": ["T1w", "MNI152NLin2009cAsym"]
+        }
+      ],
+      "cost_components": {
+        "base_cost_per_subject": 2.85,
+        "session_multiplier": 0.95,
+        "run_cost_factor": 0.15,
+        "duration_cost_per_minute": 0.08,
+        "resolution_cost_factor": {
+          "1.0": 2.5,
+          "1.5": 1.8,
+          "2.0": 1.0,
+          "2.5": 0.7,
+          "3.0": 0.5
+        },
+        "freesurfer_addon": 1.20,
+        "output_space_costs": {
+          "T1w": 0.0,
+          "MNI152NLin2009cAsym": 0.25,
+          "MNI152NLin6Asym": 0.25,
+          "fsaverage": 0.40
+        }
+      },
+      "prediction_examples": [
+        {
+          "input": {
+            "n_subjects": 20,
+            "n_sessions_per_subject": 1,
+            "n_runs_per_session": 4,
+            "run_duration_minutes": 8.0,
+            "resolution_mm": 2.0,
+            "include_freesurfer": true,
+            "output_spaces": ["T1w", "MNI152NLin2009cAsym"]
+          },
+          "predicted_cost": 95.50,
+          "confidence_interval": [89.20, 101.80],
+          "estimated_runtime_hours": 240,
+          "cost_breakdown": {
+            "base_preprocessing": 57.00,
+            "freesurfer": 24.00,
+            "output_spaces": 5.00,
+            "compute_overhead": 9.50
+          }
+        },
+        {
+          "input": {
+            "n_subjects": 100,
+            "n_sessions_per_subject": 2,
+            "n_runs_per_session": 6,
+            "run_duration_minutes": 12.0,
+            "resolution_mm": 1.5,
+            "include_freesurfer": true,
+            "output_spaces": ["T1w", "MNI152NLin2009cAsym", "fsaverage"]
+          },
+          "predicted_cost": 892.40,
+          "confidence_interval": [825.60, 959.20],
+          "estimated_runtime_hours": 2400,
+          "cost_breakdown": {
+            "base_preprocessing": 540.00,
+            "freesurfer": 240.00,
+            "high_resolution_addon": 80.40,
+            "output_spaces": 32.00
+          }
+        }
+      ]
+    },
+    {
+      "model_name": "first_level_glm_cost",
+      "description": "Cost prediction for first-level GLM analysis",
+      "input_features": [
+        {
+          "name": "n_subjects",
+          "type": "integer",
+          "range": [1, 500]
+        },
+        {
+          "name": "n_runs_per_subject", 
+          "type": "integer",
+          "range": [1, 20],
+          "default": 4
+        },
+        {
+          "name": "n_conditions",
+          "type": "integer",
+          "range": [2, 20],
+          "default": 4
+        },
+        {
+          "name": "smoothing_fwhm",
+          "type": "float",
+          "range": [0.0, 12.0],
+          "default": 6.0
+        },
+        {
+          "name": "motion_correction",
+          "type": "string",
+          "options": ["basic", "advanced", "ica_aroma"],
+          "default": "basic"
+        }
+      ],
+      "cost_components": {
+        "base_cost_per_subject": 0.65,
+        "run_multiplier": 1.05,
+        "condition_cost": 0.08,
+        "smoothing_cost_factor": 0.02,
+        "motion_correction_costs": {
+          "basic": 0.0,
+          "advanced": 0.15,
+          "ica_aroma": 0.25
+        }
+      },
+      "prediction_examples": [
+        {
+          "input": {
+            "n_subjects": 50,
+            "n_runs_per_subject": 4,
+            "n_conditions": 6,
+            "smoothing_fwhm": 6.0,
+            "motion_correction": "ica_aroma"
+          },
+          "predicted_cost": 52.50,
+          "confidence_interval": [48.80, 56.20],
+          "estimated_runtime_hours": 18
+        }
+      ]
+    },
+    {
+      "model_name": "group_analysis_cost",
+      "description": "Cost prediction for group-level statistical analysis",
+      "input_features": [
+        {
+          "name": "n_subjects",
+          "type": "integer",
+          "range": [10, 1000]
+        },
+        {
+          "name": "analysis_type",
+          "type": "string", 
+          "options": ["one_sample_ttest", "two_sample_ttest", "paired_ttest", "anova", "regression"],
+          "default": "one_sample_ttest"
+        },
+        {
+          "name": "n_contrasts",
+          "type": "integer",
+          "range": [1, 50],
+          "default": 4
+        },
+        {
+          "name": "correction_method",
+          "type": "string",
+          "options": ["fwe", "fdr", "bonferroni", "none"],
+          "default": "fwe"
+        },
+        {
+          "name": "permutation_testing",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "name": "n_permutations",
+          "type": "integer",
+          "range": [100, 10000],
+          "default": 5000
+        }
+      ],
+      "cost_components": {
+        "base_analysis_cost": 8.50,
+        "subject_cost_factor": 0.12,
+        "analysis_type_multipliers": {
+          "one_sample_ttest": 1.0,
+          "two_sample_ttest": 1.3,
+          "paired_ttest": 1.1,
+          "anova": 1.8,
+          "regression": 2.2
+        },
+        "contrast_cost": 1.25,
+        "correction_overhead": {
+          "fwe": 1.2,
+          "fdr": 1.1,
+          "bonferroni": 1.05,
+          "none": 1.0
+        },
+        "permutation_cost_per_1000": 2.40
+      }
+    },
+    {
+      "model_name": "connectivity_analysis_cost",
+      "description": "Cost prediction for functional connectivity analysis",
+      "input_features": [
+        {
+          "name": "n_subjects",
+          "type": "integer",
+          "range": [10, 500]
+        },
+        {
+          "name": "connectivity_type",
+          "type": "string",
+          "options": ["seed_based", "ica", "graph_theory", "dynamic_connectivity"],
+          "default": "seed_based"
+        },
+        {
+          "name": "n_seeds",
+          "type": "integer",
+          "range": [1, 100],
+          "default": 6
+        },
+        {
+          "name": "atlas_parcellation",
+          "type": "string",
+          "options": ["aal", "harvard_oxford", "schaefer_100", "schaefer_200", "schaefer_400"],
+          "default": "schaefer_200"
+        },
+        {
+          "name": "temporal_filtering",
+          "type": "boolean",
+          "default": true
+        }
+      ],
+      "cost_components": {
+        "base_connectivity_cost": 12.50,
+        "subject_scaling": 0.18,
+        "connectivity_type_multipliers": {
+          "seed_based": 1.0,
+          "ica": 2.5,
+          "graph_theory": 3.2,
+          "dynamic_connectivity": 4.8
+        },
+        "seed_cost": 0.85,
+        "atlas_complexity": {
+          "aal": 1.0,
+          "harvard_oxford": 1.2,
+          "schaefer_100": 1.1,
+          "schaefer_200": 1.5,
+          "schaefer_400": 2.2
+        },
+        "filtering_overhead": 0.15
+      }
+    }
+  ],
+  "cost_scaling_models": [
+    {
+      "model_name": "batch_processing_efficiency",
+      "description": "Efficiency gains from batch processing multiple subjects",
+      "scaling_factors": [
+        {"batch_size": 1, "efficiency": 1.0, "overhead_per_subject": 0.25},
+        {"batch_size": 5, "efficiency": 1.08, "overhead_per_subject": 0.20},
+        {"batch_size": 10, "efficiency": 1.15, "overhead_per_subject": 0.18},
+        {"batch_size": 20, "efficiency": 1.22, "overhead_per_subject": 0.15},
+        {"batch_size": 50, "efficiency": 1.28, "overhead_per_subject": 0.12},
+        {"batch_size": 100, "efficiency": 1.32, "overhead_per_subject": 0.10}
+      ]
+    },
+    {
+      "model_name": "temporal_demand_pricing",
+      "description": "Cost variations based on time of day and day of week",
+      "time_multipliers": {
+        "business_hours": {
+          "weekday": 1.25,
+          "weekend": 1.05
+        },
+        "off_hours": {
+          "weekday": 0.85,
+          "weekend": 0.75
+        },
+        "holiday_periods": 0.65
+      },
+      "seasonal_adjustments": {
+        "academic_peak": {"months": [9, 10, 11, 2, 3], "multiplier": 1.15},
+        "summer_lull": {"months": [6, 7, 8], "multiplier": 0.82},
+        "conference_season": {"months": [4, 5], "multiplier": 1.08}
+      }
+    }
+  ],
+  "cost_uncertainty_models": [
+    {
+      "uncertainty_source": "spot_price_volatility",
+      "description": "Uncertainty in costs due to spot price fluctuations",
+      "volatility_factors": {
+        "low_volatility": {"std_dev": 0.08, "confidence_interval_width": 0.15},
+        "medium_volatility": {"std_dev": 0.15, "confidence_interval_width": 0.28},
+        "high_volatility": {"std_dev": 0.25, "confidence_interval_width": 0.45}
+      }
+    },
+    {
+      "uncertainty_source": "processing_time_variation",
+      "description": "Uncertainty due to variable processing times",
+      "variation_factors": {
+        "subject_complexity": {"std_dev": 0.12, "description": "Variation in anatomical complexity"},
+        "data_quality": {"std_dev": 0.18, "description": "Impact of motion artifacts and data quality"},
+        "software_updates": {"std_dev": 0.05, "description": "Performance changes from software updates"},
+        "infrastructure_load": {"std_dev": 0.10, "description": "Variation due to shared infrastructure load"}
+      }
+    }
+  ],
+  "real_time_cost_tracking": [
+    {
+      "job_id": "fmriprep_batch_001",
+      "start_time": "2025-01-15T08:00:00Z",
+      "estimated_duration_hours": 48,
+      "estimated_cost": 125.50,
+      "tracking_points": [
+        {
+          "elapsed_hours": 2,
+          "actual_cost": 5.20,
+          "projected_total": 124.80,
+          "variance": -0.006,
+          "on_track": true
+        },
+        {
+          "elapsed_hours": 6,
+          "actual_cost": 16.80,
+          "projected_total": 134.40,
+          "variance": 0.071,
+          "on_track": false,
+          "alert_triggered": true,
+          "probable_cause": "higher_instance_prices"
+        },
+        {
+          "elapsed_hours": 12,
+          "actual_cost": 30.50,
+          "projected_total": 122.00,
+          "variance": -0.028,
+          "on_track": true,
+          "note": "returned_to_normal_pricing"
+        },
+        {
+          "elapsed_hours": 24,
+          "actual_cost": 62.20,
+          "projected_total": 124.40,
+          "variance": -0.009,
+          "on_track": true
+        },
+        {
+          "elapsed_hours": 36,
+          "actual_cost": 93.60,
+          "projected_total": 124.80,
+          "variance": -0.006,
+          "on_track": true
+        },
+        {
+          "elapsed_hours": 48,
+          "actual_cost": 123.80,
+          "final_variance": -0.014,
+          "savings_vs_estimate": 1.70
+        }
+      ]
+    }
+  ],
+  "cost_optimization_scenarios": [
+    {
+      "scenario_name": "minimize_cost_aggressive",
+      "optimization_goals": {
+        "primary": "minimize_cost",
+        "spot_instance_tolerance": "high",
+        "reliability_requirement": "medium"
+      },
+      "workload": {
+        "type": "fmriprep_preprocessing",
+        "n_subjects": 100,
+        "deadline_flexible": true
+      },
+      "optimal_strategy": {
+        "instance_mix": {
+          "spot_percentage": 0.85,
+          "on_demand_percentage": 0.15
+        },
+        "instance_types": ["c5.4xlarge", "c5.2xlarge"],
+        "scheduling": "off_peak_hours",
+        "estimated_cost": 245.80,
+        "estimated_savings": 0.62,
+        "risk_level": "medium_high"
+      }
+    },
+    {
+      "scenario_name": "balanced_cost_reliability",
+      "optimization_goals": {
+        "primary": "balanced",
+        "cost_limit": 400.0,
+        "reliability_requirement": "high"
+      },
+      "workload": {
+        "type": "clinical_trial_processing",
+        "n_subjects": 150,
+        "deadline_strict": true
+      },
+      "optimal_strategy": {
+        "instance_mix": {
+          "spot_percentage": 0.40,
+          "reserved_percentage": 0.35,
+          "on_demand_percentage": 0.25
+        },
+        "multi_az_deployment": true,
+        "estimated_cost": 385.20,
+        "estimated_completion_time": "36_hours",
+        "reliability_score": 0.94
+      }
+    },
+    {
+      "scenario_name": "time_critical_minimize_duration",
+      "optimization_goals": {
+        "primary": "minimize_time",
+        "cost_budget": 800.0,
+        "deadline_hours": 12
+      },
+      "workload": {
+        "type": "urgent_analysis_pipeline",
+        "n_subjects": 75,
+        "priority": "critical"
+      },
+      "optimal_strategy": {
+        "instance_mix": {
+          "on_demand_percentage": 1.0,
+          "high_performance_instances": true
+        },
+        "parallel_processing": {
+          "max_concurrent_jobs": 15,
+          "resource_allocation": "maximum"
+        },
+        "estimated_cost": 680.50,
+        "estimated_completion_time": "10_hours",
+        "success_probability": 0.98
+      }
+    }
+  ],
+  "historical_accuracy_metrics": {
+    "model_performance": {
+      "fmriprep_preprocessing": {
+        "mean_absolute_error": 0.08,
+        "mean_percentage_error": 0.12,
+        "r_squared": 0.94,
+        "samples_evaluated": 1250
+      },
+      "first_level_glm": {
+        "mean_absolute_error": 0.05,
+        "mean_percentage_error": 0.09,
+        "r_squared": 0.96,
+        "samples_evaluated": 890
+      },
+      "group_analysis": {
+        "mean_absolute_error": 0.15,
+        "mean_percentage_error": 0.18,
+        "r_squared": 0.89,
+        "samples_evaluated": 420
+      }
+    },
+    "prediction_calibration": {
+      "confidence_intervals": {
+        "90_percent": {"actual_coverage": 0.89, "target_coverage": 0.90},
+        "95_percent": {"actual_coverage": 0.94, "target_coverage": 0.95},
+        "99_percent": {"actual_coverage": 0.98, "target_coverage": 0.99}
+      }
+    }
+  }
+}

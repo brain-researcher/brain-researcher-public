@@ -1,0 +1,1083 @@
+version: 1
+registry_id: scientific_review_rule_registry_v1
+title: "Scientific Review Rule Registry: Neuroimaging and Statistics"
+document_version: "May 2026 v1"
+source_document_type: rule_registry
+scope: "Candidate and implemented rules for automated scientific review"
+execution_boundary: >
+  This registry is KG-facing policy metadata. A rule is executable only when
+  lifecycle_status is implemented and implementation_rule_ids point to an
+  operational rule in configs/review_rules.yaml.
+
+severities:
+  - id: BLOCK
+    default_action: block
+    description: "High-confidence validity failure requiring revision before acceptance."
+  - id: WARN
+    default_action: warn
+    description: "High-risk or underreported issue requiring reviewer attention."
+
+lifecycle_statuses:
+  - id: implemented
+    description: "Operational in the review system."
+  - id: deterministic_candidate
+    description: "Likely implementable from structured metadata, manifests, or logs."
+  - id: schema_dependent_candidate
+    description: "Needs additional review_context fields before implementation."
+  - id: nlp_llm_candidate
+    description: "Needs text interpretation, claim extraction, or semantic comparison."
+  - id: calibration_only
+    description: "Used for examples, annotator training, or benchmark cases."
+
+validity_layers:
+  - id: statistical_validity
+    label: "Statistical validity"
+    scope: "Design-model match, error structure, degrees of freedom, multiple comparisons, permutation/randomization inference."
+  - id: measurement_validity
+    label: "Measurement validity"
+    scope: "Data quality, motion, distortion, registration, and surface/volume/CIFTI consistency."
+  - id: construct_validity
+    label: "Construct validity"
+    scope: "Mapping between neural indicators and psychological constructs."
+  - id: generalization_validity
+    label: "Generalization validity"
+    scope: "CV integrity, leakage, sample size, site/stimulus/subject generalization."
+  - id: claim_validity
+    label: "Claim validity"
+    scope: "Ensuring statements do not exceed the evidence."
+
+reason_tags:
+  - id: leakage
+    description: "CV or train/test isolation is broken."
+  - id: circularity
+    description: "Same data used for ROI/feature selection and effect testing."
+  - id: confound
+    description: "Confound uncontrolled or insufficiently controlled."
+  - id: null_mismatch
+    description: "Invalid null hypothesis or inference framework."
+  - id: low_reliability
+    description: "Measurement or indicator reliability is insufficient for the claim."
+  - id: claim_inflation
+    description: "Statement exceeds the evidence."
+  - id: prior_conflict
+    description: "Result conflicts with domain priors; audit trigger, not a veto."
+  - id: controversial_choice
+    description: "Disputed method choice requiring sensitivity analysis."
+
+rule_groups:
+  - id: split_cv_leakage_integrity
+    section: "2A"
+    label: "Split / CV / Leakage Integrity"
+  - id: design_model_mismatch
+    section: "2B"
+    label: "Design-Model Mismatch"
+  - id: multiple_comparisons_inference
+    section: "2C"
+    label: "Multiple Comparisons and Inference Framework"
+  - id: circularity
+    section: "2D"
+    label: "Circularity"
+  - id: confound_hard_block
+    section: "2E"
+    label: "Confound - Hard Block"
+  - id: confound_measurement_quality
+    section: "3A"
+    label: "Confound and Measurement Quality"
+  - id: multiple_comparisons_soft
+    section: "3B"
+    label: "Multiple Comparisons - Soft"
+  - id: multivariate_rsa_predictive_soft
+    section: "3C"
+    label: "Multivariate, RSA, and Predictive Modeling - Soft"
+  - id: reliability_sample_size
+    section: "3D"
+    label: "Reliability and Sample Size"
+  - id: claim_inflation
+    section: "3E"
+    label: "Claim Inflation"
+  - id: controversial_choices
+    section: "3F"
+    label: "Controversial Choices"
+  - id: novelty_prior_conflict
+    section: "3G"
+    label: "Novelty / Prior Conflict"
+  - id: reporting_reproducibility
+    section: "3H"
+    label: "Reporting and Reproducibility"
+
+policy_decisions:
+  - id: standardized_effect_sizes_only
+    question: "Allow generic statistic_value as effect-size prior?"
+    decision: "No"
+    rationale: "t, F, z, and p are not comparable across sample sizes and model families."
+  - id: exclude_synthetic_demo_priors
+    question: "Allow synthetic/demo data into automated priors?"
+    decision: "No"
+    rationale: "Synthetic data are for unit tests only and must not pollute prior-conflict calibration."
+  - id: prior_conflict_is_not_veto
+    question: "Block on prior_conflict alone?"
+    decision: "No"
+    rationale: "Prior conflict is an audit trigger unless the result is logically impossible or paired with a method error."
+  - id: novelty_cannot_override_hard_error
+    question: "Can novelty override a hard method error?"
+    decision: "No"
+    rationale: "Novelty is orthogonal to deterministic validity failures."
+  - id: claim_inflation_can_warn_with_correct_stats
+    question: "Can claim_inflation warn when statistics are formally correct?"
+    decision: "Yes"
+    rationale: "Reverse inference, correlation-as-prediction, and fit-as-mechanism are inferential errors independent of computation."
+  - id: controversial_choices_default_warn
+    question: "Auto-block controversial preprocessing choices?"
+    decision: "Usually no"
+    rationale: "GSR, dynamic FC, and related choices default to warn plus sensitivity analysis unless a deterministic hard error is present."
+
+positive_modifiers:
+  - id: BIDS_STATS_MODELS_PRESENT
+    description: "BIDS Stats Models JSON is provided."
+    effect: "Positive reporting modifier; does not create a warning or block."
+    metadata_fields: [reproducibility.bids_stats_models_present]
+
+rules:
+  - id: NESTED_CV_MANIFEST_SCHEMA
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Fold manifest missing outer_fold, inner_fold, or partition columns."
+    detection: "Manifest column check."
+    metadata_fields: [split.fold_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_NESTED_CV_SCHEMA_MISSING_FOLD_KEYS]
+  - id: NESTED_CV_OUTER_HOLDOUT_CONFLICT
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Outer-holdout subjects are reused inside inner train/validation partitions."
+    detection: "Partition set per outer fold."
+    metadata_fields: [split.fold_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_NESTED_CV_OUTER_HOLDOUT_CONFLICT]
+  - id: NESTED_CV_OUTER_PARTITION_GAP
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Outer fold lacks a holdout or training-side partitions."
+    detection: "Partition set per outer fold."
+    metadata_fields: [split.fold_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_NESTED_CV_OUTER_PARTITION_GAP]
+  - id: NESTED_CV_INNER_PARTITION_GAP
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Inner fold lacks train or validation/evaluation partition."
+    detection: "Partition set per inner fold."
+    metadata_fields: [split.fold_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_NESTED_CV_INNER_PARTITION_GAP]
+  - id: NESTED_CV_OUTER_MISSING_INNER_RESAMPLING
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Outer fold has training rows but no inner-fold assignments."
+    detection: "Inner-fold presence on training rows."
+    metadata_fields: [split.fold_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_NESTED_CV_OUTER_MISSING_INNER_RESAMPLING]
+  - id: SPLIT_GROUPING_MISMATCH
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "CV split is not grouped by required keys such as subject, family, site, run, or story."
+    detection: "Required grouping key leak across fold partitions."
+    metadata_fields: [split.required_group_keys, split.grouped_split_keys, split.fold_manifest_path]
+    implementation_rule_ids:
+      - REVIEW_NEUROAI_SPLIT_GROUPING_MISMATCH
+      - REVIEW_NEUROAI_SPLIT_MANIFEST_MISSING_GROUP_KEYS
+      - REVIEW_NEUROAI_SPLIT_MANIFEST_PARTITION_CONFLICT
+  - id: SUBJECT_MANIFEST_COVERAGE
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Subject manifest does not cover fold manifest subjects."
+    detection: "Set difference between fold and subject manifests."
+    metadata_fields: [split.subject_manifest_path, split.fold_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_SUBJECT_MANIFEST_COVERAGE]
+  - id: SUBJECT_INTERSECTION_COVERAGE
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Subject intersection manifest does not cover fold manifest subjects."
+    detection: "Set difference between fold and subject-intersection manifests."
+    metadata_fields: [split.subject_intersection_manifest_path, split.fold_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_SUBJECT_INTERSECTION_COVERAGE]
+  - id: SUBJECT_SELECTION_SOURCE_COVERAGE
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Selection source does not cover manifest subjects."
+    detection: "Set difference between fold manifest subjects and subject-selection source."
+    metadata_fields: [split.subject_selection_source, split.fold_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_SUBJECT_SELECTION_SOURCE_COVERAGE]
+  - id: SUBJECT_INTERSECTION_SUBSET_CONFLICT
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Intersection manifest is not a subset of the subject manifest."
+    detection: "Subset check."
+    metadata_fields: [split.subject_intersection_manifest_path, split.subject_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_SUBJECT_INTERSECTION_SUBSET_CONFLICT]
+  - id: SUBJECT_MANIFEST_SELECTION_SOURCE_CONFLICT
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Subject manifest has IDs absent from the selection source."
+    detection: "Subset check."
+    metadata_fields: [split.subject_manifest_path, split.subject_selection_source]
+    implementation_rule_ids: [REVIEW_NEUROAI_SUBJECT_MANIFEST_SELECTION_SOURCE_CONFLICT]
+  - id: SUBJECT_INTERSECTION_SELECTION_SOURCE_CONFLICT
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Subject intersection has IDs absent from the selection source."
+    detection: "Subset check."
+    metadata_fields: [split.subject_intersection_manifest_path, split.subject_selection_source]
+    implementation_rule_ids: [REVIEW_NEUROAI_SUBJECT_INTERSECTION_SELECTION_SOURCE_CONFLICT]
+  - id: DECLARED_SUBJECT_SET_MISSING_SUBJECT_COLUMN
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Structured subject manifest lacks subject, subject_id, or participant_id."
+    detection: "Column name check."
+    metadata_fields: [split.subject_manifest_path]
+    implementation_rule_ids: [REVIEW_NEUROAI_DECLARED_SUBJECT_SET_MISSING_SUBJECT_COLUMN]
+  - id: FEATURE_SELECTION_OUTSIDE_CV
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: deterministic_candidate
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Feature selection fitted on full data before cross-validation."
+    detection: "Parse pipeline DAG and check fit_scope."
+    metadata_fields: [pipeline_steps.name, pipeline_steps.fit_scope]
+  - id: STANDARDIZATION_OUTSIDE_CV
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: deterministic_candidate
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Standardization or PCA fitted on full data before cross-validation."
+    detection: "Parse pipeline DAG and check fit_scope."
+    metadata_fields: [pipeline_steps.name, pipeline_steps.fit_scope]
+  - id: HARMONIZATION_OUTSIDE_CV
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: deterministic_candidate
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "ComBat or harmonization fitted on full data before cross-validation."
+    detection: "Parse pipeline DAG and check fit_scope."
+    metadata_fields: [pipeline_steps.name, pipeline_steps.fit_scope]
+  - id: CONFOUND_REGRESSION_OUTSIDE_CV
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: deterministic_candidate
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Confound regression fitted on full data before cross-validation."
+    detection: "Parse pipeline DAG and check fit_scope."
+    metadata_fields: [pipeline_steps.name, pipeline_steps.fit_scope]
+  - id: TEST_SET_MODEL_SELECTION
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity]
+    reason_tags: [leakage]
+    description: "Test set used for model, layer, or hyperparameter selection."
+    detection: "Pipeline log shows best model chosen after test evaluation."
+    metadata_fields: [selection.selection_on_test, selection.selection_scope]
+    implementation_rule_ids: [REVIEW_NEUROAI_SELECTION_ON_TEST]
+  - id: TEMPORAL_SPLIT_AUTOCORRELATION
+    group: split_cv_leakage_integrity
+    severity: BLOCK
+    lifecycle_status: deterministic_candidate
+    validity_layers: [generalization_validity, statistical_validity]
+    reason_tags: [leakage]
+    description: "Time-series CV split by TR rather than run, story, or segment."
+    detection: "Split unit versus data structure."
+    metadata_fields: [split.split_unit, split.split_strategy_detail, split.required_group_keys]
+  - id: REPEATED_MEASURES_INDEPENDENT_TEST
+    group: design_model_mismatch
+    severity: BLOCK
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "Repeated-measures design analyzed with an independent-samples test."
+    detection: "Repeated sessions or runs with no paired structure or subject effect."
+    metadata_fields: [model.type, model.subject_effect]
+  - id: FACTORIAL_SEPARATE_SIMPLE_EFFECTS
+    group: design_model_mismatch
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, claim_validity]
+    reason_tags: [null_mismatch, claim_inflation]
+    description: "Factorial design analyzed through isolated simple effects without testing the overarching interaction."
+    detection: "Multiple grouping dimensions with no interaction term in the statistical model."
+    metadata_fields: [model.type, model.interaction_terms, design.factors]
+  - id: LONGITUDINAL_NO_SUBJECT_EFFECT
+    group: design_model_mismatch
+    severity: BLOCK
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "Longitudinal design analyzed with OLS/GLM that ignores within-subject variance."
+    detection: "At least three timepoints and no random or fixed subject effect."
+    metadata_fields: [model.type, model.subject_effect, design.n_timepoints]
+  - id: POOLED_VARIANCE_POPULATION_CLAIM
+    group: design_model_mismatch
+    severity: BLOCK
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, claim_validity]
+    reason_tags: [null_mismatch]
+    description: "Fixed-effects group analysis pools scan variance but claims population-level inference."
+    detection: "Pure concatenated fixed-effects model plus population/generalization claim."
+    metadata_fields: [model.type, model.subject_effect, claims.text]
+  - id: PSEUDOREPLICATION
+    group: design_model_mismatch
+    severity: BLOCK
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, generalization_validity]
+    reason_tags: [null_mismatch]
+    description: "Runs or timepoints are treated as independent group-level samples."
+    detection: "n_observations greatly exceeds n_subjects with no aggregation or subject effect."
+    metadata_fields: [model.subject_effect, design.n_subjects, design.n_observations]
+  - id: UNCORRECTED_WHOLEBRAIN
+    group: multiple_comparisons_inference
+    severity: BLOCK
+    lifecycle_status: deterministic_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "Whole-brain mass-univariate p < 0.05 reported uncorrected."
+    detection: "Result metadata lacks FWE, FDR, or permutation correction."
+    metadata_fields: [correction.method, correction.level]
+  - id: SPATIAL_DOMAIN_MISMATCH
+    group: multiple_comparisons_inference
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [statistical_validity, measurement_validity]
+    reason_tags: [null_mismatch]
+    description: "Surface or CIFTI data corrected with volume-based cluster inference."
+    detection: "File type versus correction domain."
+    metadata_fields: [correction.domain, data.domain]
+    implementation_rule_ids: [REVIEW_SURFACE_VOLUME_CORRECTION_DOMAIN_MISMATCH]
+  - id: PERMUTATION_EXCHANGEABILITY
+    group: multiple_comparisons_inference
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "Permutation test ignores hierarchical data structure."
+    detection: "Hierarchical structure plus unrestricted permutation scheme."
+    metadata_fields: [null_model.permutation_scheme, design.grouping_structure]
+    implementation_rule_ids: [REVIEW_PERMUTATION_EXCHANGEABILITY_INVALID]
+  - id: BRAINMAP_CORRELATION_NO_SPATIAL_NULL
+    group: multiple_comparisons_inference
+    severity: BLOCK
+    lifecycle_status: implemented
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "Brain map correlation uses Pearson p without a spatial null."
+    detection: "Map-map analysis with no spin, BrainSMASH, or equivalent spatial null."
+    metadata_fields: [correction.spatial_null, null_model.spatial_null]
+    implementation_rule_ids: [REVIEW_SPATIAL_NULL_INVALID]
+  - id: DOUBLE_DIPPING
+    group: circularity
+    severity: BLOCK
+    lifecycle_status: deterministic_candidate
+    validity_layers: [statistical_validity, construct_validity]
+    reason_tags: [circularity]
+    description: "ROI or feature defined from the same model/data used for effect testing."
+    detection: "ROI provenance equals same model and dataset with no independent localizer."
+    metadata_fields: [roi_provenance.source, roi_provenance.dataset_id, roi_provenance.model_id]
+  - id: MOTION_UNCONTROLLED_GROUP_DIFF
+    group: confound_hard_block
+    severity: BLOCK
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity, statistical_validity]
+    reason_tags: [confound]
+    description: "Group-by-motion imbalance in FC/resting-state data without modeling or censoring."
+    detection: "Compute group delta FD and check model covariates for motion controls."
+    metadata_fields: [qc.group_fd_comparison, model.confound_regressors, data.data_type]
+  - id: DEMOGRAPHIC_CONFOUND_UNCONTROLLED
+    group: confound_hard_block
+    severity: BLOCK
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, construct_validity]
+    reason_tags: [confound]
+    description: "Group difference in age or sex exists but is missing from the group-level model."
+    detection: "Subject manifest demographic imbalance and missing covariate."
+    metadata_fields: [subject_manifest.demographics, model.confound_regressors]
+  - id: MOTION_REPORTING_GAP
+    group: confound_measurement_quality
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity]
+    reason_tags: [confound]
+    description: "rsFC/FC analysis without motion distribution reporting."
+    detection: "FC analysis and no FD distribution or group comparison in QC."
+    metadata_fields: [data.data_type, qc.group_fd_comparison, qc.motion_distribution_reported]
+  - id: QC_MISSING
+    group: confound_measurement_quality
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity]
+    reason_tags: [low_reliability]
+    description: "No MRIQC metrics or visual QA report."
+    detection: "Absence of QC metrics file or QA figures."
+    metadata_fields: [qc.mriqc_provided, qc.visual_qa_provided]
+  - id: EPI_DISTORTION_UNADDRESSED
+    group: confound_measurement_quality
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity]
+    reason_tags: [low_reliability]
+    description: "Significant EPI distortion or dropout is not corrected or discussed."
+    detection: "Dropout flagged in QC and no distortion correction."
+    metadata_fields: [qc.epi_t1w_mask_overlap, preprocessing.distortion_correction]
+  - id: ICV_NOT_CONTROLLED
+    group: confound_measurement_quality
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity, statistical_validity]
+    reason_tags: [confound]
+    description: "VBM or cortical thickness analysis lacks ICV/TIV or global covariate control."
+    detection: "Morphometric analysis and model lacks ICV/TIV/global covariate."
+    metadata_fields: [analysis.type, model.confound_regressors]
+  - id: MULTISITE_SITE_CONFOUND
+    group: confound_measurement_quality
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, measurement_validity]
+    reason_tags: [confound]
+    description: "Multi-site case-control design with diagnosis-site coupling and no site modeling."
+    detection: "Multiple sites and group labels with no site effect, harmonization, or restricted permutation."
+    metadata_fields: [site.count, model.confound_regressors, null_model.permutation_scheme]
+  - id: CLUSTER_FORMING_THRESHOLD_LENIENT
+    group: multiple_comparisons_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "RFT cluster correction uses a primary threshold above p = 0.001."
+    detection: "Primary threshold greater than 0.001 and null framework is not permutation-based."
+    metadata_fields: [correction.method, correction.primary_threshold, correction.null_framework]
+    exemptions:
+      - "correction.null_framework == permutation"
+  - id: AD_HOC_CLUSTER_EXTENT
+    group: multiple_comparisons_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch, low_reliability]
+    description: "Arbitrary cluster extent threshold without statistically derived null distribution."
+    detection: "Cluster extent cutoff with no formal FWE/FDR correction method declared."
+    metadata_fields: [correction.method, correction.level, correction.cluster_extent_threshold]
+  - id: CLUSTER_LOCALIZATION_OVERCLAIM
+    group: multiple_comparisons_soft
+    severity: WARN
+    lifecycle_status: nlp_llm_candidate
+    validity_layers: [statistical_validity, claim_validity]
+    reason_tags: [null_mismatch, claim_inflation]
+    description: "Voxel-level localization claim from cluster-extent inference."
+    detection: "Voxel-localization claim and no ARI/TDP method."
+    metadata_fields: [correction.level, correction.localization_method]
+  - id: ROI_MULTIPLE_COMPARISONS
+    group: multiple_comparisons_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "Multiple ROIs or metrics tested without correction."
+    detection: "Multiple ROI tests and no FDR or Bonferroni correction."
+    metadata_fields: [roi.n_tests, correction.method]
+  - id: ANALYTIC_FLEXIBILITY
+    group: multiple_comparisons_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, measurement_validity]
+    reason_tags: [low_reliability]
+    description: "Multiple pipelines or parameters were tried but only the best result is reported."
+    detection: "Parameter sweep with a single reported result path."
+    metadata_fields: [analysis.parameter_sweep, reporting.reported_paths, sensitivity.pipeline_variants]
+  - id: GENE_MAP_NO_SPATIAL_NULL
+    group: multiple_comparisons_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "Gene or histology map correlated with fMRI map without spatial null."
+    detection: "Cross-modal map correlation with no spin, BrainSMASH, or equivalent spatial null."
+    metadata_fields: [analysis.cross_modal_map_correlation, correction.spatial_null, null_model.spatial_null]
+  - id: RSA_MODEL_COMPARISON_NO_CORRECTION
+    group: multivariate_rsa_predictive_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "RSA across many models or layers without correction."
+    detection: "RSA with many compared models and no correction."
+    metadata_fields: [analysis.type, rsa.n_models, correction.method]
+  - id: RSA_HIERARCHICAL_UNCERTAINTY
+    group: multivariate_rsa_predictive_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [null_mismatch]
+    description: "RSA inference omits cross-subject or cross-stimulus uncertainty."
+    detection: "RSA without hierarchical uncertainty framework."
+    metadata_fields: [analysis.type, rsa.hierarchical_uncertainty]
+  - id: RSA_WITHIN_RUN_ESTIMATION
+    group: multivariate_rsa_predictive_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, measurement_validity]
+    reason_tags: [null_mismatch, confound]
+    description: "Pattern similarity computed between trials or stimuli from the same functional run without appropriate regularization."
+    detection: "Trial-level within-run RSA/MVPA without ridge regression or advanced within-run correction."
+    metadata_fields: [analysis.type, rsa.within_run_estimation, model.regularization]
+  - id: RSA_VOXELWISE_CENTERING_SCALING
+    group: multivariate_rsa_predictive_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, measurement_validity]
+    reason_tags: [null_mismatch, confound]
+    description: "Pattern similarity from voxel-wise centered/scaled data may induce spurious condition differences."
+    detection: "RSA compares similarities after voxel-wise z-scoring, mean-centering, or correlation-based similarity."
+    metadata_fields: [analysis.type, preprocessing.voxelwise_scaling, rsa.similarity_metric]
+  - id: LAYER_SELECTION_POST_HOC
+    group: multivariate_rsa_predictive_soft
+    severity: WARN
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity, statistical_validity]
+    reason_tags: [leakage, null_mismatch]
+    description: "Best model or layer selected after viewing full results."
+    detection: "Post-hoc selection with no nested CV or correction."
+    metadata_fields: [selection.best_layer, selection.candidate_count, selection.selection_accounting]
+    implementation_rule_ids:
+      - REVIEW_NEUROAI_SELECTION_MULTIPLICITY_ACCOUNTING
+      - REVIEW_NEUROAI_SELECTION_VALIDATION_GAP
+  - id: ABOVE_CHANCE_NO_PERMUTATION
+    group: multivariate_rsa_predictive_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity, generalization_validity]
+    reason_tags: [low_reliability]
+    description: "Above-chance classification claim without permutation test or confidence interval."
+    detection: "Classification result lacks permutation_p or CI."
+    metadata_fields: [result.metric, result.permutation_p, result.confidence_interval]
+  - id: CV_FOLD_ERROR_AS_INDEPENDENT
+    group: multivariate_rsa_predictive_soft
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [generalization_validity, statistical_validity]
+    reason_tags: [low_reliability]
+    description: "Fold-wise standard error is treated as independent for confidence intervals."
+    detection: "CI from fold-wise SE without accounting for fold dependence."
+    metadata_fields: [cv.ci_method, cv.fold_errors_independent]
+  - id: SMALL_SAMPLE_STRONG_CLAIM
+    group: reliability_sample_size
+    severity: WARN
+    lifecycle_status: nlp_llm_candidate
+    validity_layers: [generalization_validity, claim_validity]
+    reason_tags: [low_reliability, claim_inflation]
+    description: "N < 30 with strong prediction, biomarker, or BWAS claim."
+    detection: "Small N plus strong-claim keywords."
+    metadata_fields: [sample.n_subjects, claims.text]
+  - id: NO_EXTERNAL_VALIDATION
+    group: reliability_sample_size
+    severity: WARN
+    lifecycle_status: nlp_llm_candidate
+    validity_layers: [generalization_validity, claim_validity]
+    reason_tags: [low_reliability, claim_inflation]
+    description: "Replicable or predictive claim without independent test set."
+    detection: "Claim keywords and no external validation dataset."
+    metadata_fields: [validation.external_dataset, claims.text]
+  - id: ICC_MISSING_FOR_INDIVIDUAL_DIFF
+    group: reliability_sample_size
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity, generalization_validity]
+    reason_tags: [low_reliability]
+    description: "Individual-difference claim lacks test-retest reliability or stability evidence."
+    detection: "Individual-difference analysis with no ICC or stability metric."
+    metadata_fields: [analysis.individual_difference, reliability.icc, reliability.stability]
+  - id: REVERSE_INFERENCE
+    group: claim_inflation
+    severity: WARN
+    lifecycle_status: nlp_llm_candidate
+    validity_layers: [construct_validity, claim_validity]
+    reason_tags: [claim_inflation]
+    description: "Region-to-process inference without forward evidence or decoding."
+    detection: "Region implies process in text without manipulation or decoder evidence."
+    metadata_fields: [claims.text, evidence.forward_decoding]
+  - id: CORRELATION_AS_PREDICTION
+    group: claim_inflation
+    severity: WARN
+    lifecycle_status: nlp_llm_candidate
+    validity_layers: [generalization_validity, claim_validity]
+    reason_tags: [claim_inflation]
+    description: "In-sample correlation described as prediction or biomarker."
+    detection: "Prediction claim keywords and in-sample correlation only."
+    metadata_fields: [claims.text, validation.out_of_sample]
+  - id: FIT_AS_MECHANISM
+    group: claim_inflation
+    severity: WARN
+    lifecycle_status: nlp_llm_candidate
+    validity_layers: [construct_validity, claim_validity]
+    reason_tags: [claim_inflation]
+    description: "Model fit interpreted as mechanistic evidence without alternatives."
+    detection: "NeuroAI mechanism claims without ablation or alternative models."
+    metadata_fields: [claims.text, model.ablation, model.alternative_models]
+  - id: STIMULUS_FIXED_EFFECT
+    group: claim_inflation
+    severity: WARN
+    lifecycle_status: implemented
+    validity_layers: [generalization_validity, claim_validity]
+    reason_tags: [claim_inflation]
+    description: "Stimulus is treated as fixed but broad stimulus generalization is claimed."
+    detection: "Multiple stimuli and generalization claim with no random stimulus factor."
+    metadata_fields: [model.stimulus_effect, claims.text, design.stimuli]
+    implementation_rule_ids: [REVIEW_STIMULUS_FIXED_EFFECT_RISK]
+  - id: BEHAVIOR_COVARIATE_MISSING
+    group: claim_inflation
+    severity: WARN
+    lifecycle_status: implemented
+    validity_layers: [construct_validity, claim_validity]
+    reason_tags: [claim_inflation]
+    description: "Cognitive interpretation is made without RT, accuracy, or related behavioral covariates."
+    detection: "Cognitive claim with behavioral covariates absent from the model."
+    metadata_fields: [claims.text, model.confound_regressors, behavior.covariates]
+    implementation_rule_ids: [REVIEW_BEHAVIORAL_IMBALANCE_NOT_MODELED]
+  - id: GSR_NO_SENSITIVITY
+    group: controversial_choices
+    severity: WARN
+    lifecycle_status: implemented
+    validity_layers: [measurement_validity, statistical_validity]
+    reason_tags: [controversial_choice]
+    description: "Global signal regression used without on/off sensitivity analysis."
+    detection: "Preprocessing includes GSR with no sensitivity comparison."
+    metadata_fields: [preprocessing.global_signal_regression, sensitivity.gsr]
+    sensitivity_template: gsr
+    implementation_rule_ids: [REVIEW_GSR_SENSITIVITY_PACKAGE]
+  - id: DYNAMIC_FC_NO_NULL
+    group: controversial_choices
+    severity: WARN
+    lifecycle_status: implemented
+    validity_layers: [statistical_validity, measurement_validity]
+    reason_tags: [controversial_choice]
+    description: "Dynamic FC / TVFC without null model or window sensitivity."
+    detection: "TVFC detected with no surrogate null or window sweep."
+    metadata_fields: [analysis.dynamic_fc, null_model.surrogate, sensitivity.window_lengths]
+    sensitivity_template: dynamic_fc
+    implementation_rule_ids: [REVIEW_DYNAMIC_FC_SENSITIVITY_PACKAGE]
+  - id: GRAPH_THRESHOLD_NO_SENSITIVITY
+    group: controversial_choices
+    severity: WARN
+    lifecycle_status: implemented
+    validity_layers: [statistical_validity]
+    reason_tags: [controversial_choice]
+    description: "Proportional graph thresholding without a multi-threshold curve."
+    detection: "Graph proportional threshold and no density-threshold sweep."
+    metadata_fields: [analysis.graph_threshold, sensitivity.graph_thresholds]
+    sensitivity_template: graph_thresholding
+    implementation_rule_ids: [REVIEW_GRAPH_ATLAS_HRF_SENSITIVITY_PACKAGE]
+  - id: TASK_FC_HRF_RESIDUAL
+    group: controversial_choices
+    severity: WARN
+    lifecycle_status: implemented
+    validity_layers: [statistical_validity, construct_validity]
+    reason_tags: [confound, null_mismatch]
+    description: "Task FC / PPI without adequate task-evoked response removal."
+    detection: "PPI/task-FC and insufficient HRF modeling or mean removal."
+    metadata_fields: [analysis.task_fc, model.hrf_model, preprocessing.evoked_response_control]
+    implementation_rule_ids: [REVIEW_TASK_FC_PPI_EVOKED_RESPONSE_CONTROL_MISSING]
+  - id: PPI_SPECIFICATION
+    group: controversial_choices
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity, statistical_validity]
+    reason_tags: [low_reliability]
+    description: "PPI model specification is missing or problematic."
+    detection: "PPI detected and key model specification details are absent or problematic."
+    metadata_fields: [analysis.ppi, model.ppi_specification]
+  - id: HRF_CANONICAL_ASSUMPTION
+    group: controversial_choices
+    severity: WARN
+    lifecycle_status: implemented
+    validity_layers: [measurement_validity, statistical_validity]
+    reason_tags: [controversial_choice]
+    description: "Fixed canonical HRF is used in clinical or aging populations without addressing neurovascular coupling differences."
+    detection: "Task fMRI in clinical/aging population and HRF model is canonical only."
+    metadata_fields: [model.hrf_model, population.clinical, population.aging]
+    sensitivity_template: hrf_model
+    implementation_rule_ids: [REVIEW_GRAPH_ATLAS_HRF_SENSITIVITY_PACKAGE]
+  - id: HARMONIZATION_METHOD_SENSITIVITY
+    group: controversial_choices
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity, statistical_validity]
+    reason_tags: [controversial_choice]
+    description: "A single harmonization method is used without comparison to alternatives."
+    detection: "Harmonization used and no method comparison or residual site-predictability check."
+    metadata_fields: [pipeline_steps.name, sensitivity.harmonization_methods, site.residual_predictability]
+    sensitivity_template: harmonization
+  - id: EXTREME_EFFECT
+    group: novelty_prior_conflict
+    severity: WARN
+    lifecycle_status: nlp_llm_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [prior_conflict]
+    novelty: prior_conflict
+    description: "Effect size is extreme without robustness analysis."
+    detection: "Standardized effect exceeds domain threshold with no robust regression or sensitivity."
+    metadata_fields: [effect.size, effect.metric, sensitivity.robustness]
+  - id: SINGLE_ROI_EXTREME
+    group: novelty_prior_conflict
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [statistical_validity]
+    reason_tags: [prior_conflict, circularity]
+    novelty: prior_conflict
+    description: "Single ROI has an extreme effect while the overall distribution is modest."
+    detection: "ROI-level outlier relative to the effect-size distribution."
+    metadata_fields: [roi.effect_size, effect.distribution, sensitivity.robustness]
+  - id: ACTIVATION_MISMATCH
+    group: novelty_prior_conflict
+    severity: WARN
+    lifecycle_status: nlp_llm_candidate
+    validity_layers: [construct_validity]
+    reason_tags: [prior_conflict]
+    novelty: prior_conflict
+    description: "Activation is dominated by regions unexpected for the task."
+    detection: "Peak regions compared with task-expected network from KG."
+    metadata_fields: [activation.peak_regions, task.expected_network]
+  - id: COBIDAS_MANDATORY_MISSING
+    group: reporting_reproducibility
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity]
+    reason_tags: [low_reliability]
+    description: "Missing COBIDAS mandatory fields."
+    detection: "Check review_context against COBIDAS field registry."
+    metadata_fields: [cobidas.fields]
+  - id: BIDS_VALIDATION_FAILED
+    group: reporting_reproducibility
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity]
+    reason_tags: [low_reliability]
+    description: "BIDS dataset did not pass BIDS Validator."
+    detection: "BIDS Validator output has errors."
+    metadata_fields: [reproducibility.bids_validator_passed]
+  - id: RANDOM_SEED_MISSING
+    group: reporting_reproducibility
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [generalization_validity]
+    reason_tags: [low_reliability]
+    description: "Stochastic method lacks a declared random seed."
+    detection: "Stochastic analysis and missing seed in review_context."
+    metadata_fields: [analysis.stochastic, reproducibility.random_seed]
+  - id: SOFTWARE_VERSION_MISSING
+    group: reporting_reproducibility
+    severity: WARN
+    lifecycle_status: schema_dependent_candidate
+    validity_layers: [measurement_validity]
+    reason_tags: [low_reliability]
+    description: "Key software versions are not declared."
+    detection: "Absence of software_versions field."
+    metadata_fields: [reproducibility.software_versions]
+
+sensitivity_templates:
+  - id: gsr
+    choice: "GSR"
+    minimum_requirement: "Report main findings with and without GSR; report global signal correlation with FD/respiration."
+  - id: dynamic_fc
+    choice: "Dynamic FC / TVFC"
+    minimum_requirement: "Report results across at least three window lengths and provide a phase-randomized surrogate null."
+  - id: graph_thresholding
+    choice: "Graph thresholding"
+    minimum_requirement: "Report key metrics across at least three density thresholds and include a weighted-network comparison."
+  - id: hrf_model
+    choice: "HRF model"
+    minimum_requirement: "Compare canonical, canonical plus derivatives, and FIR models for key results."
+  - id: harmonization
+    choice: "Harmonization"
+    minimum_requirement: "Compare inside-CV versus full-data fit and report residual site predictability."
+
+calibration_cases:
+  - id: C01
+    scenario: "Repeated-measures design analyzed with independent t-test."
+    severity: block
+    calibrates_rules: [REPEATED_MEASURES_INDEPENDENT_TEST]
+  - id: C02
+    scenario: "Repeated-measures design analyzed with paired t-test."
+    severity: allow
+    calibrates_rules: []
+  - id: C03
+    scenario: "2x2 factorial design analyzed with a single t-test and no interaction."
+    severity: warn
+    calibrates_rules: [FACTORIAL_SEPARATE_SIMPLE_EFFECTS]
+  - id: C04
+    scenario: "Mixed design such as group by time analyzed with one-way ANOVA."
+    severity: block
+    calibrates_rules: [FACTORIAL_SEPARATE_SIMPLE_EFFECTS]
+  - id: C05
+    scenario: "Longitudinal design with three timepoints analyzed by OLS with no subject effect."
+    severity: block
+    calibrates_rules: [LONGITUDINAL_NO_SUBJECT_EFFECT]
+  - id: C06
+    scenario: "Surface or CIFTI data corrected with volume cluster correction."
+    severity: block
+    calibrates_rules: [SPATIAL_DOMAIN_MISMATCH]
+  - id: C07
+    scenario: "ADHD versus control rsFC result with DMN d = 2.5."
+    severity: warn
+    novelty: prior_conflict
+    calibrates_rules: [EXTREME_EFFECT]
+  - id: C08
+    scenario: "Case-control morphometry with hippocampus d = 0.45."
+    severity: allow
+    calibrates_rules: []
+  - id: C09
+    scenario: "Single ROI d > 3.0 while the overall effect distribution is modest."
+    severity: warn
+    novelty: prior_conflict
+    calibrates_rules: [SINGLE_ROI_EXTREME]
+  - id: C10
+    scenario: "Small-sample rsFC d = 1.9 with motion confound."
+    severity: warn
+    calibrates_rules: [MOTION_REPORTING_GAP]
+  - id: C11
+    scenario: "Working memory activation map dominated by V1."
+    severity: warn
+    novelty: prior_conflict
+    calibrates_rules: [ACTIVATION_MISMATCH]
+  - id: C12
+    scenario: "Motor task shows sensorimotor activation."
+    severity: allow
+    calibrates_rules: []
+  - id: C13
+    scenario: "Whole-brain voxel p < 0.05 uncorrected."
+    severity: block
+    calibrates_rules: [UNCORRECTED_WHOLEBRAIN]
+  - id: C14
+    scenario: "Cluster correction with primary threshold p < 0.01."
+    severity: warn
+    calibrates_rules: [CLUSTER_FORMING_THRESHOLD_LENIENT]
+  - id: C15
+    scenario: "Cluster-significant result is used for voxel localization claim."
+    severity: warn
+    calibrates_rules: [CLUSTER_LOCALIZATION_OVERCLAIM]
+  - id: C16
+    scenario: "Same-data ROI definition plus effect test."
+    severity: block
+    calibrates_rules: [DOUBLE_DIPPING]
+  - id: C17
+    scenario: "Independent localizer defines ROI before effect test."
+    severity: allow
+    calibrates_rules: []
+  - id: C18
+    scenario: "Multiple ROIs tested without correction."
+    severity: warn
+    calibrates_rules: [ROI_MULTIPLE_COMPARISONS]
+  - id: C19
+    scenario: "Multiple pipelines tried but only the best result is reported."
+    severity: warn
+    calibrates_rules: [ANALYTIC_FLEXIBILITY]
+  - id: C20
+    scenario: "Runs treated as independent group-level samples."
+    severity: block
+    calibrates_rules: [PSEUDOREPLICATION]
+  - id: C21
+    scenario: "Fixed-effects analysis paired with population-level claim."
+    severity: block
+    calibrates_rules: [POOLED_VARIANCE_POPULATION_CLAIM]
+  - id: C22
+    scenario: "Permutation inference ignores exchangeability restrictions."
+    severity: block
+    calibrates_rules: [PERMUTATION_EXCHANGEABILITY]
+  - id: C23
+    scenario: "Brain map correlation, Pearson p only."
+    severity: block
+    calibrates_rules: [BRAINMAP_CORRELATION_NO_SPATIAL_NULL]
+  - id: C24
+    scenario: "Gene or histology map correlated with fMRI map without spatial null."
+    severity: warn
+    calibrates_rules: [GENE_MAP_NO_SPATIAL_NULL]
+  - id: C25
+    scenario: "rsFC analysis without motion reporting."
+    severity: warn
+    calibrates_rules: [MOTION_REPORTING_GAP]
+  - id: C26
+    scenario: "Group motion imbalance, not controlled."
+    severity: block
+    calibrates_rules: [MOTION_UNCONTROLLED_GROUP_DIFF]
+  - id: C27
+    scenario: "GSR without on/off sensitivity."
+    severity: warn
+    calibrates_rules: [GSR_NO_SENSITIVITY]
+  - id: C28
+    scenario: "Dynamic FC without null model or window sensitivity."
+    severity: warn
+    calibrates_rules: [DYNAMIC_FC_NO_NULL]
+  - id: C29
+    scenario: "Proportional graph thresholding without sensitivity sweep."
+    severity: warn
+    calibrates_rules: [GRAPH_THRESHOLD_NO_SENSITIVITY]
+  - id: C30
+    scenario: "Task FC/PPI without task-evoked response removal."
+    severity: warn
+    calibrates_rules: [TASK_FC_HRF_RESIDUAL]
+  - id: C31
+    scenario: "PPI specification issues or missing details."
+    severity: warn
+    calibrates_rules: [PPI_SPECIFICATION]
+  - id: C32
+    scenario: "EPI distortion or dropout unaddressed."
+    severity: warn
+    calibrates_rules: [EPI_DISTORTION_UNADDRESSED]
+  - id: C33
+    scenario: "No MRIQC metrics or visual QA report."
+    severity: warn
+    calibrates_rules: [QC_MISSING]
+  - id: C34
+    scenario: "N < 30 BWAS with strong claim."
+    severity: warn
+    calibrates_rules: [SMALL_SAMPLE_STRONG_CLAIM]
+  - id: C35
+    scenario: "Replicable BWAS claim without external validation."
+    severity: warn
+    calibrates_rules: [NO_EXTERNAL_VALIDATION]
+  - id: C36
+    scenario: "Multiband acquisition without noise or QC assessment."
+    severity: warn
+    calibrates_rules: [QC_MISSING]
+  - id: C37
+    scenario: "Reverse inference from activation to psychological process."
+    severity: warn
+    calibrates_rules: [REVERSE_INFERENCE]
+  - id: C38
+    scenario: "Stimulus modeled as fixed effect while broad generalization is claimed."
+    severity: warn
+    calibrates_rules: [STIMULUS_FIXED_EFFECT]
+  - id: C39
+    scenario: "Cognitive interpretation without behavioral covariates."
+    severity: warn
+    calibrates_rules: [BEHAVIOR_COVARIATE_MISSING]
+  - id: C40
+    scenario: "VBM or cortical thickness analysis without ICV control."
+    severity: warn
+    calibrates_rules: [ICV_NOT_CONTROLLED]
+  - id: C41
+    scenario: "Multi-site case-control design with diagnosis-site confound unmodeled."
+    severity: warn
+    calibrates_rules: [MULTISITE_SITE_CONFOUND]
+  - id: C42
+    scenario: "ComBat/harmonization outside CV."
+    severity: block
+    calibrates_rules: [HARMONIZATION_OUTSIDE_CV]
+  - id: C43
+    scenario: "Feature selection outside CV."
+    severity: block
+    calibrates_rules: [FEATURE_SELECTION_OUTSIDE_CV]
+  - id: C44
+    scenario: "Standardization/PCA outside CV."
+    severity: block
+    calibrates_rules: [STANDARDIZATION_OUTSIDE_CV]
+  - id: C45
+    scenario: "Test set used for model selection."
+    severity: block
+    calibrates_rules: [TEST_SET_MODEL_SELECTION]
+  - id: C46
+    scenario: "Cross-validation is not grouped by subject."
+    severity: block
+    calibrates_rules: [SPLIT_GROUPING_MISMATCH]
+  - id: C47
+    scenario: "Cross-validation ignores family or repeated-scan dependence."
+    severity: warn
+    calibrates_rules: [SPLIT_GROUPING_MISMATCH]
+  - id: C48
+    scenario: "Above-chance classification without permutation test."
+    severity: warn
+    calibrates_rules: [ABOVE_CHANCE_NO_PERMUTATION]
+  - id: C49
+    scenario: "Fold-wise standard error treated as independent."
+    severity: warn
+    calibrates_rules: [CV_FOLD_ERROR_AS_INDEPENDENT]
+  - id: C50
+    scenario: "Predictive biomarker claim without out-of-sample evaluation."
+    severity: warn
+    calibrates_rules: [CORRELATION_AS_PREDICTION]
+  - id: C51
+    scenario: "Encoding model split by TR rather than run or stimulus segment."
+    severity: warn
+    calibrates_rules: [TEMPORAL_SPLIT_AUTOCORRELATION]
+  - id: C52
+    scenario: "Best layer selected post hoc."
+    severity: warn
+    calibrates_rules: [LAYER_SELECTION_POST_HOC]
+  - id: C53
+    scenario: "RSA compares many models without correction."
+    severity: warn
+    calibrates_rules: [RSA_MODEL_COMPARISON_NO_CORRECTION]
+  - id: C54
+    scenario: "RSA inference lacks hierarchical uncertainty."
+    severity: warn
+    calibrates_rules: [RSA_HIERARCHICAL_UNCERTAINTY]
+  - id: C55
+    scenario: "Individual-difference FC claim without ICC."
+    severity: warn
+    calibrates_rules: [ICC_MISSING_FOR_INDIVIDUAL_DIFF]
+  - id: C56
+    scenario: "Extreme effect size such as d > 2 without robustness analysis."
+    severity: warn
+    novelty: prior_conflict
+    calibrates_rules: [EXTREME_EFFECT]
+  - id: C57
+    scenario: "Significant result appears under only one pipeline."
+    severity: warn
+    calibrates_rules: [ANALYTIC_FLEXIBILITY]
+  - id: C58
+    scenario: "Missing COBIDAS mandatory fields."
+    severity: warn
+    calibrates_rules: [COBIDAS_MANDATORY_MISSING]
+  - id: C59
+    scenario: "BIDS Validator fails."
+    severity: warn
+    calibrates_rules: [BIDS_VALIDATION_FAILED]
+  - id: C60
+    scenario: "BIDS Stats Models JSON is provided."
+    severity: allow
+    calibrates_rules: []
+    calibrates_modifiers: [BIDS_STATS_MODELS_PRESENT]

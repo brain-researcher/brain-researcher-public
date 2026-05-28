@@ -1,0 +1,47 @@
+\documentclass[11pt,letterpaper]{report}
+\usepackage{scientific_report}
+\hypersetup{
+    pdftitle={<< title >>},
+    pdfauthor={<< authors >>},
+}
+\begin{document}
+
+\makereporttitlewithnotice
+    {<< title >>}
+    {<< subtitle if subtitle else "~" >>}
+    {<< authors >>}
+    {<< institution if institution else "~" >>}
+    {<< date_str >>}
+    {<< generated_note if generated_note else "" >>}
+
+<% if front_matter %>
+\clearpage
+<< front_matter >>
+<% endif %>
+
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+<% if has_figures %>
+\listoffigures
+\newpage
+<% endif %>
+<% if has_tables %>
+\listoftables
+\newpage
+<% endif %>
+\pagenumbering{arabic}
+
+<% for name, content in sections.items() %>
+\reportsection{<< name >>}
+
+<< content >>
+
+<% endfor %>
+
+<% if back_matter %>
+\reportbackmatter
+<< back_matter >>
+<% endif %>
+
+\end{document}

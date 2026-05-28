@@ -1,0 +1,403 @@
+id: tf_social_cognition
+label: Social Cognition & Interaction
+description: >-
+  Inferring others’ beliefs, intentions, emotions, and traits; evaluating fairness and cooperation in interactive games;
+  perceiving socially relevant cues (faces, gaze, biological motion); empathy and vicarious valuation; social learning,
+  influence, and norm enforcement. Emphasizes mechanistic readouts (e.g., inequity aversion, reciprocity, ToM accuracy)
+  alongside behavioral DVs.
+
+# ────────────────────────────────────────────────────────────────────────────────
+# LEVEL 2: Subfamilies, each with LEVEL 3 paradigms
+# ────────────────────────────────────────────────────────────────────────────────
+subfamilies:
+
+  - id: sf_social_value_games
+    label: Social Value-Based Decision & Cooperation Games
+    description: Interactive economic paradigms quantifying fairness, reciprocity, cooperation, punishment, and social discounting.
+    paradigms:
+      - name: Ultimatum Game (UG)
+        typical_DVs: [acceptance_rate, min_acceptable_offer_MAO, rejection_rate_unfair, rt_ms]
+        common_manipulations: [offer_amount, endowment, stake_size, partner_type (human/bot), reputation_info, repeated_vs_one_shot, inequity_type (advantageous/disadvantageous)]
+        model_families: [Inequity_aversion_Fehr_Schmidt, ERC, Social_utility]
+        model_params: [alpha_disadvantage, beta_advantage, rho_reciprocity]
+        variant_tags: [one_shot, repeated]
+        design_flags: [role_rotation, responder_focus]
+        qa_checks: [comprehension_pass]
+        keywords: [fairness, punishment]
+      - name: Dictator Game (DG)
+        typical_DVs: [donation_amount, generosity_rate]
+        common_manipulations: [endowment, frame (give/take), anonymity, recipient_need, inequity_type (advantageous/disadvantageous)]
+        model_families: [Social_value_orientation, Warm_glow]
+        model_params: [svo_angle, warm_glow_phi]
+        variant_tags: [third_party_punishment_optional]
+        design_flags: [anonymity_emphasis]
+        qa_checks: []
+        keywords: [altruism]
+      - name: Trust Game (TG)
+        typical_DVs: [investment_amount, back_transfer, trust_rate, reciprocity_index]
+        common_manipulations: [return_rate_multiplier, partner_type, reputation_info, noise_in_returns]
+        model_families: [Reciprocity_models, Social_belief_update]
+        model_params: [theta_reciprocity, alpha_belief, beta_inverse_temp]
+        variant_tags: [single_round, repeated]
+        design_flags: [role_switching]
+        qa_checks: [honesty_checks_for_bots]
+        keywords: [trust, reciprocity]
+      - name: Trust Game with Reputation Learning
+        typical_DVs: [investment_amount, back_transfer, trust_rate, reciprocity_index]
+        common_manipulations: [return_rate_multiplier, partner_type, reputation_feedback, volatility]
+        model_families: [Bayesian_reputation, RL_belief_update]
+        model_params: [alpha_reputation, beta_inverse_temp]
+        variant_tags: [reputation_learning]
+        design_flags: [separate_learning_phase]
+        qa_checks: [manipulation_checks]
+        keywords: [reputation, belief_update]
+      - name: Prisoner’s Dilemma / Public Goods
+        typical_DVs: [cooperation_rate, contribution_amount, punishment_usage_rate]
+        common_manipulations: [multiplier, group_size, partner_matching (fixed/random), punishment_condition (peer/third_party)]
+        model_families: [Conditional_cooperation, Social_preference]
+        model_params: [w_conditional, alpha_inequity, beta_advantage]
+        variant_tags: [iterated, one_shot]
+        design_flags: [belief_elicitation_optional]
+        qa_checks: []
+        keywords: [cooperation, free_riding]
+      - name: Social Discounting
+        typical_DVs: [indifference_point_by_social_distance, discount_rate_social]
+        common_manipulations: [social_distance_index, reward_magnitude, frame]
+        model_families: [Hyperbolic_social_discount]
+        model_params: [k_social, beta_inverse_temp]
+        variant_tags: [recipient_known_vs_unknown]
+        design_flags: []
+        qa_checks: []
+        keywords: [altruism_gradient]
+
+  - id: sf_theory_of_mind_mentalizing
+    label: Theory of Mind / Mental State Inference
+    description: Inferring beliefs, desires, intentions; explicit/implicit ToM across stories, animations, and faces.
+    paradigms:
+      - name: False-Belief Stories (Adults/Children)
+        typical_DVs: [belief_inference_accuracy, rt_ms]
+        common_manipulations: [story_complexity, first_vs_second_order_belief, counterfactuals, belief_vs_reality_conflict]
+        model_families: []
+        model_params: []
+        variant_tags: [first_order, second_order]
+        design_flags: [comprehension_questions]
+        qa_checks: [language_comprehension_control]
+        keywords: [belief_inference]
+      - name: Implicit Theory of Mind (Anticipatory Looking)
+        typical_DVs: [anticipatory_fixation, violation_of_expectation]
+        common_manipulations: [belief_type (true/false), occluder_presence, timing_of_cue]
+        model_families: []
+        model_params: []
+        variant_tags: [implicit, infant, nonverbal]
+        design_flags: [eye_tracking_required]
+        qa_checks: [calibration_pass]
+        keywords: [implicit_tom, anticipatory_looking]
+      - name: Frith–Happé Animations (Triangles)
+        typical_DVs: [mentalizing_score, intentionality_rating, accuracy]
+        common_manipulations: [animation_type (mentalizing/goal-directed/random)]
+        model_families: []
+        model_params: []
+        variant_tags: [nonverbal]
+        design_flags: [standardized_scoring]
+        qa_checks: []
+        keywords: [mentalizing, animations]
+      - name: Reading the Mind in the Eyes (RMET)
+        typical_DVs: [accuracy]
+        common_manipulations: [item_difficulty, time_limit]
+        model_families: []
+        model_params: []
+        variant_tags: [static_images]
+        design_flags: [forced_choice]
+        qa_checks: []
+        keywords: [affective_tom]
+      - name: Strange Stories / MASC
+        typical_DVs: [mental_state_inference_accuracy, error_types_distribution]
+        common_manipulations: [story_genre (sarcasm/white_lie/irony), film_scene_context]
+        model_families: []
+        model_params: []
+        variant_tags: [narrative, film]
+        design_flags: [coded_responses]
+        qa_checks: [inter_rater_reliability]
+        keywords: [pragmatics, sarcasm]
+
+  - id: sf_social_perception_attention
+    label: Social Perception & Attention
+    description: Detecting and interpreting socially relevant cues (gaze, biological motion, identity/emotion).
+    paradigms:
+      - name: Gaze Direction / Joint Attention
+        typical_DVs: [gaze_following_rate, joint_attention_success, gaze_cueing_effect_ms]
+        common_manipulations: [gaze_validity, face_orientation, social_context, occlusion_reliability]
+        model_families: []
+        model_params: []
+        variant_tags: [overt, covert]
+        design_flags: []
+        qa_checks: []
+        keywords: [gaze_following, joint_attention]
+      - name: Biological Motion (Point-Light)
+        typical_DVs: [biological_motion_detection_accuracy, direction_judgment]
+        common_manipulations: [noise_dots, scrambling, viewpoint]
+        model_families: []
+        model_params: []
+        variant_tags: [point_light]
+        design_flags: []
+        qa_checks: []
+        keywords: [biological_motion]
+      - name: Identity/Emotion Recognition (Social)
+        typical_DVs: [emotion_recognition_accuracy, identity_accuracy, rt_ms]
+        common_manipulations: [emotion_intensity, occlusion, dynamic_vs_static]
+        model_families: []
+        model_params: []
+        variant_tags: [faces, voices]
+        design_flags: []
+        qa_checks: []
+        keywords: [emotion_recognition]
+      - name: Dynamic Facial Expressions
+        typical_DVs: [emotion_recognition_accuracy, temporal_dynamics_sensitivity, rt_ms]
+        common_manipulations: [expression_dynamics (onset/offset/speed), gaze_congruency]
+        model_families: []
+        model_params: []
+        variant_tags: [dynamic_faces]
+        design_flags: []
+        qa_checks: []
+        keywords: [dynamic_expression]
+      - name: Voice Prosody Emotion Recognition
+        typical_DVs: [prosody_recognition_accuracy, rt_ms]
+        common_manipulations: [prosody_type, noise_level, semantic_content_control]
+        model_families: []
+        model_params: []
+        variant_tags: [voices]
+        design_flags: []
+        qa_checks: []
+        keywords: [prosody, vocal_emotion]
+
+  - id: sf_empathy_vicarious
+    label: Empathy & Vicarious Response
+    description: Affective/cognitive empathy, vicarious pain/value; prosocial predictors.
+    paradigms:
+      - name: Empathy for Pain (Pictures/Video)
+        typical_DVs: [empathy_rating, SCR_change, EMG_corrugator, BOLD_response]
+        common_manipulations: [body_part, context (intentional/accidental), perspective_take_flag, perspective_taking_load]
+        model_families: []
+        model_params: []
+        variant_tags: [vicarious_pain]
+        design_flags: [rating_or_neural]
+        qa_checks: [desensitization_control]
+        keywords: [empathy_pain]
+      - name: Empathy for Social Pain (Exclusion/Rejection)
+        typical_DVs: [empathy_rating, BOLD_response]
+        common_manipulations: [scenario_type (exclusion/rejection), relationship_closeness]
+        model_families: []
+        model_params: []
+        variant_tags: [social_pain]
+        design_flags: []
+        qa_checks: []
+        keywords: [social_pain, empathy]
+      - name: Vicarious Reward / Outcome for Other
+        typical_DVs: [vicarious_choice_rate, self_vs_other_weight_w]
+        common_manipulations: [recipient_identity, relationship_closeness, stake_size]
+        model_families: [Weighted_utility_self_other]
+        model_params: [w_other, beta_inverse_temp]
+        variant_tags: [other_regarding]
+        design_flags: []
+        qa_checks: []
+        keywords: [vicarious_reward]
+      - name: Prosocial Choice (Costly Helping)
+        typical_DVs: [helping_rate, donation_amount]
+        common_manipulations: [cost_to_self, benefit_to_other, time_pressure]
+        model_families: [Altruism_models]
+        model_params: [w_altruism, beta_inverse_temp]
+        variant_tags: [helping]
+        design_flags: []
+        qa_checks: []
+        keywords: [prosocial]
+
+  - id: sf_social_learning_influence
+    label: Social Learning, Conformity & Advice
+    description: Learning from others via observation/advice; conformity to group norms.
+    paradigms:
+      - name: Observational Reinforcement Learning
+        typical_DVs: [imitation_rate, observational_learning_rate, social_RPE]
+        common_manipulations: [model_accuracy, visibility_of_outcomes, similarity_with_observed, imitation_vs_emulation_cues]
+        model_families: [Observational_RL]
+        model_params: [alpha_obs, beta_inverse_temp]
+        variant_tags: [observation]
+        design_flags: []
+        qa_checks: []
+        keywords: [social_learning]
+      - name: Social Conformity (Rating Update)
+        typical_DVs: [conformity_susceptibility, change_of_opinion_delta]
+        common_manipulations: [group_opinion_distance, group_size, anonymity, expertise_cue]
+        model_families: [Advice_weighting, Bayesian_social_influence]
+        model_params: [w_social, w_expert, beta_inverse_temp]
+        variant_tags: [normative, informational]
+        design_flags: []
+        qa_checks: []
+        keywords: [conformity]
+      - name: Advice-Taking (Judge–Advisor System)
+        typical_DVs: [weight_of_advice_WOA, accuracy_gain]
+        common_manipulations: [advisor_reliability, incentive_scheme, feedback_presence]
+        model_families: [Advice_weighting]
+        model_params: [w_advice, beta_inverse_temp]
+        variant_tags: [advice]
+        design_flags: []
+        qa_checks: []
+        keywords: [advice_taking]
+
+  - id: sf_moral_norms_enforcement
+    label: Moral Judgment & Norm Enforcement
+    description: Harm/utility trade-offs; punishment of norm violations; third-party enforcement.
+    paradigms:
+      - name: Moral Dilemmas (Trolley/Footbridge)
+        typical_DVs: [utilitarian_choice_rate, deontological_index, rt_ms]
+        common_manipulations: [personal_force, certainty_of_outcomes, number_saved, time_pressure, intention_vs_outcome]
+        model_families: [Dual_process_moral]
+        model_params: [w_utilitarian, w_deontological]
+        variant_tags: [personal, impersonal]
+        design_flags: [vignette_randomization]
+        qa_checks: []
+        keywords: [moral_judgment]
+      - name: Second-Party Punishment
+        typical_DVs: [punishment_spend, retaliation_rate]
+        common_manipulations: [harm_intent, cost_of_punishing, stake_size]
+        model_families: [Retaliatory_punishment]
+        model_params: [w_retal, beta_inverse_temp]
+        variant_tags: [second_party]
+        design_flags: []
+        qa_checks: []
+        keywords: [retaliation, punishment]
+      - name: Third-Party Punishment
+        typical_DVs: [punishment_spend, norm_enforcement_rate]
+        common_manipulations: [inequity_level, intentionality, cost_of_punishing]
+        model_families: [Norm_enforcement_utility]
+        model_params: [w_norm, beta_inverse_temp]
+        variant_tags: [third_party]
+        design_flags: []
+        qa_checks: []
+        keywords: [norms, punishment]
+
+  - id: sf_social_exclusion_belonging
+    label: Social Inclusion/Exclusion & Belonging
+    description: Needs for belonging, fairness of inclusion; exclusion responses.
+    paradigms:
+      - name: Cyberball (Exclusion)
+        typical_DVs: [throw_rate_to_self, exclusion_index, affect_rating_change, physio_markers]
+        common_manipulations: [inclusion_ratio, group_identity, deception_disclosure, over_inclusion, re_inclusion_phase]
+        model_families: []
+        model_params: []
+        variant_tags: [exclusion]
+        design_flags: [debrief_required]
+        qa_checks: [ethical_protocols]
+        keywords: [belonging, exclusion]
+
+  - id: sf_perspective_joint_attention
+    label: Perspective-Taking & Joint Attention
+    description: Inferring and using others’ visual perspectives; shared attention.
+    paradigms:
+      - name: Director Task (Perspective-Taking)
+        typical_DVs: [egocentric_interference_cost_ms, accuracy]
+        common_manipulations: [blocked_vs_interleaved_perspective, instruction_salience]
+        model_families: []
+        model_params: []
+        variant_tags: [level_1_perspective]
+        design_flags: []
+        qa_checks: []
+        keywords: [perspective_taking]
+      - name: Level-2 Mental Rotation Perspective
+        typical_DVs: [perspective_transform_time, error_rate]
+        common_manipulations: [angular_disparity_deg, time_pressure]
+        model_families: []
+        model_params: []
+        variant_tags: [level_2_perspective]
+        design_flags: []
+        qa_checks: []
+        keywords: [mental_rotation_perspective]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Ultimatum Game
+    - Dictator Game
+    - Trust Game
+    - Public Goods / Prisoner’s Dilemma
+    - Social Discounting
+    - False-Belief Stories
+    - Frith–Happé Animations
+    - Reading the Mind in the Eyes
+    - Biological Motion
+    - Moral Judgment
+    - Cyberball
+    - Advice-Taking / Social Influence
+  cogpo_candidate_labels:
+    - Ultimatum Game
+    - Dictator Game
+    - Trust Game
+    - Public Goods / Prisoner’s Dilemma
+    - False-Belief Stories
+    - Reading the Mind in the Eyes
+    - Frith–Happé Animations
+    - Biological Motion
+    - Moral Judgment
+constructs:
+  primary: [Theory of Mind (Mentalizing), Social Value-Based Choice, Cooperation/Reciprocity, Empathy]
+  secondary: [Fairness/Inequity Aversion, Trust, Social Influence/Conformity, Perspective-Taking, Norm Enforcement, Social Reward]
+uri_brainmap: []
+uri_cogpo: []
+status: plausible
+provenance:
+  - source: task_families_master_20.yaml + social cognition expansion
+    fields: [subfamilies, paradigms, dv_vocab, factor_vocab, model_families, model_params]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns:
+    - onset
+    - duration
+    - trial_type            # e.g., offer, choice, outcome, vignette, rating
+    - partner_type          # human/bot/confederate
+    - reputation_info
+    - response
+    - correct
+    - rt
+  per_subfamily:
+    sf_social_value_games:
+      events_columns: [onset, duration, trial_type, offer_amount, endowment, return_rate, outcome_amount_self, outcome_amount_other, partner_type, reputation_info, belief_report, contribution_amount, punishment_cost, social_distance, response, rt]
+      hed_examples:
+        - "Social-decision, Ultimatum, Offer"
+        - "Cooperation, Public-goods, Contribution"
+    sf_theory_of_mind_mentalizing:
+      events_columns: [onset, duration, trial_type, story_type, belief_level, belief_accuracy, justification_text, response, correct, rt]
+      hed_examples:
+        - "Mentalizing, False-belief, Story"
+        - "Mentalizing, Triangles, Animation"
+    sf_social_perception_attention:
+      events_columns: [onset, duration, trial_type, gaze_validity, emotion_intensity, scrambling_level, response, correct, rt]
+      hed_examples:
+        - "Perception, Gaze, Joint-attention"
+        - "Perception, Biological-motion"
+    sf_empathy_vicarious:
+      events_columns: [onset, duration, trial_type, body_part, context, rating, physio_markers, response]
+      hed_examples:
+        - "Empathy, Vicarious-pain"
+    sf_social_learning_influence:
+      events_columns: [onset, duration, trial_type, advisor_reliability, group_opinion, advice_value, response, rt]
+      hed_examples:
+        - "Social-learning, Advice-taking"
+        - "Social-influence, Conformity"
+    sf_moral_norms_enforcement:
+      events_columns: [onset, duration, trial_type, scenario_type, personal_force, punishment_option, cost, response, rt]
+      hed_examples:
+        - "Moral, Trolley, Personal"
+        - "Norms, Third-party-punishment"
+    sf_social_exclusion_belonging:
+      events_columns: [onset, duration, trial_type, inclusion_ratio, thrower_id, throw_target, affect_rating]
+      hed_examples:
+        - "Social-exclusion, Cyberball"
+    sf_perspective_joint_attention:
+      events_columns: [onset, duration, trial_type, perspective_condition, angular_disparity_deg, response, correct, rt]
+      hed_examples:
+        - "Perspective-taking, Director-task"

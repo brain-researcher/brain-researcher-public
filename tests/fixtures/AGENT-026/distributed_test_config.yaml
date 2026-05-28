@@ -1,0 +1,125 @@
+# Test Configuration for Distributed Agent Architecture (AGENT-026)
+
+test_cluster_configs:
+  small_cluster:
+    coordinator_count: 1
+    worker_count: 3
+    redis_url: "redis://localhost:6379/1"
+    heartbeat_interval: 1
+    leader_election_timeout: 5
+    
+  medium_cluster:
+    coordinator_count: 3
+    worker_count: 8
+    redis_url: "redis://localhost:6379/2"
+    heartbeat_interval: 2
+    leader_election_timeout: 10
+    
+  large_cluster:
+    coordinator_count: 5
+    worker_count: 20
+    redis_url: "redis://localhost:6379/3"
+    heartbeat_interval: 3
+    leader_election_timeout: 15
+
+node_capacities:
+  small_node:
+    cpu_cores: 2
+    memory_gb: 4.0
+    gpu_count: 0
+    storage_gb: 100.0
+    network_mbps: 1000.0
+    
+  medium_node:
+    cpu_cores: 8
+    memory_gb: 16.0
+    gpu_count: 1
+    storage_gb: 500.0
+    network_mbps: 10000.0
+    
+  large_node:
+    cpu_cores: 32
+    memory_gb: 64.0
+    gpu_count: 4
+    storage_gb: 2000.0
+    network_mbps: 25000.0
+
+task_types:
+  fmri_preprocessing:
+    cpu_requirement: 4
+    memory_requirement: 8.0
+    gpu_requirement: 0
+    estimated_duration: 300
+    
+  statistical_analysis:
+    cpu_requirement: 8
+    memory_requirement: 16.0
+    gpu_requirement: 1
+    estimated_duration: 600
+    
+  deep_learning:
+    cpu_requirement: 16
+    memory_requirement: 32.0
+    gpu_requirement: 2
+    estimated_duration: 1800
+    
+  data_transfer:
+    cpu_requirement: 1
+    memory_requirement: 2.0
+    gpu_requirement: 0
+    estimated_duration: 120
+
+fault_scenarios:
+  single_node_failure:
+    type: "node_failure"
+    affected_nodes: 1
+    recovery_time: 30
+    
+  network_partition:
+    type: "network_partition"
+    partition_size: 0.4  # 40% of nodes partitioned
+    recovery_time: 60
+    
+  coordinator_failure:
+    type: "coordinator_failure"
+    leader_failure: true
+    recovery_time: 15
+    
+  cascade_failure:
+    type: "cascade_failure"
+    failure_rate: 0.2  # 20% of nodes fail progressively
+    recovery_time: 120
+
+load_balancing_scenarios:
+  round_robin_test:
+    strategy: "round_robin"
+    task_count: 50
+    expected_distribution: "uniform"
+    
+  least_loaded_test:
+    strategy: "least_loaded"
+    task_count: 100
+    node_load_variance: "high"
+    
+  adaptive_test:
+    strategy: "adaptive"
+    task_mix: ["fmri_preprocessing", "statistical_analysis"]
+    optimization_target: "throughput"
+
+consensus_test_scenarios:
+  simple_majority:
+    proposal_type: "scale_up"
+    cluster_size: 5
+    required_majority: 3
+    
+  byzantine_tolerance:
+    proposal_type: "configuration_change"
+    cluster_size: 7
+    byzantine_nodes: 2
+    required_majority: 4
+    
+  partition_tolerance:
+    proposal_type: "leader_election"
+    partition_scenario: "network_split"
+    majority_partition_size: 3
+    minority_partition_size: 2

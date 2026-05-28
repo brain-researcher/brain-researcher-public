@@ -1,0 +1,65 @@
+- cao_id: CAO_00912
+  confidence: 0.99
+  label: working memory
+  method: exact
+  trm_id: concept:working_memory
+- cao_id: CAO_00456
+  confidence: 0.99
+  label: response inhibition
+  method: exact
+  trm_id: concept:inhibition
+- cao_id: CAO_00636
+  confidence: 0.99
+  label: reward processing
+  method: exact
+  trm_id: concept:reward_processing
+- cao_id: CAO_00475
+  confidence: 0.99
+  label: language comprehension
+  method: exact
+  trm_id: concept:language_comprehension
+- cao_id: CAO_00476
+  confidence: 0.99
+  label: language production
+  method: exact
+  trm_id: concept:language_production
+- cao_id: CAO_00514
+  confidence: 0.99
+  label: motor control
+  method: exact
+  trm_id: concept:motor_control
+- cao_id: CAO_00299
+  confidence: 0.99
+  label: emotion regulation
+  method: exact
+  trm_id: concept:emotion_regulation
+- cao_id: CAO_00333
+  confidence: 0.99
+  label: face perception
+  method: exact
+  trm_id: concept:face_perception
+- cao_id: CAO_00030
+  confidence: 0.99
+  label: attention
+  method: exact
+  trm_id: concept:attention
+- cao_id: CAO_00303
+  confidence: 0.99
+  label: episodic memory
+  method: exact
+  trm_id: concept:episodic_memory
+- cao_id: CAO_00720
+  confidence: 0.99
+  label: social cognition
+  method: exact
+  trm_id: concept:theory_of_mind
+- cao_id: CAO_00640
+  confidence: 0.99
+  label: risk taking
+  method: exact
+  trm_id: concept:risk_taking
+- cao_id: CAO_00052
+  confidence: 0.99
+  label: executive control
+  method: exact
+  trm_id: concept:cognitive_control

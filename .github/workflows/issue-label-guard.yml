@@ -1,0 +1,103 @@
+name: Issue Label Guard
+
+on:
+  issues:
+    types:
+      - opened
+      - reopened
+      - edited
+      - labeled
+      - unlabeled
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate taxonomy labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = "<!-- label-guard -->";
+            const issue = context.payload.issue;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = issue.number;
+
+            let labels = issue.labels.map((l) =>
+              typeof l === "string" ? l : l.name
+            );
+
+            const body = issue.body || "";
+            const areaMatch = body.match(/###\s*Area\s*\n+([^\n\r]+)/i);
+            const selectedArea = areaMatch ? areaMatch[1].trim() : null;
+
+            if (
+              selectedArea &&
+              selectedArea.startsWith("area/") &&
+              !labels.includes(selectedArea)
+            ) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number,
+                  labels: [selectedArea],
+                });
+                labels.push(selectedArea);
+              } catch (e) {
+                core.info(`Unable to add inferred area label: ${selectedArea}`);
+              }
+            }
+
+            const hasArea = labels.some((l) => l.startsWith("area/"));
+            const hasType = labels.some((l) => l.startsWith("type/"));
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(
+              (c) => c.body && c.body.includes(marker)
+            );
+
+            if (hasArea && hasType) {
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: existing.id,
+                });
+              }
+              return;
+            }
+
+            const guidance =
+              `${marker}\n` +
+              "This issue is missing required taxonomy labels.\n\n" +
+              "- Required: at least one `area/*` label\n" +
+              "- Required: at least one `type/*` label\n\n" +
+              "Please add labels so this issue can be triaged consistently.";
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body: guidance,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: guidance,
+              });
+            }
+

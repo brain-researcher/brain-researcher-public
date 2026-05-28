@@ -1,0 +1,128 @@
+version: "1.0"
+as_of: "2026-03-10"
+program: "brain_researcher"
+source_doc: "docs/planning/roadmap.md"
+review_cadence: "weekly"
+active_tracks:
+  - track_id: graph_substrate_readiness
+    title: BR-KG graph substrate readiness before graph learning
+    area: neurokg
+    priority: P0
+    status: active
+    owner: neurokg-architecture
+    target_date: "2026-04-21"
+    summary: Freeze the BrainRegion-canonical substrate contract, pass the spatial backbone sub-gate, and isolate anatomy hierarchy as the remaining blocker before graph learning.
+    next_milestone: Publish the revised graph contract, baseline, and typed-path probes with `A1 spatial backbone` separated from `A2 anatomy hierarchy`.
+    dependencies: []
+    deliverables:
+      - Source-of-truth graph contract covering config, docs, and snapshot counts
+      - Canonical substrate contract for `Publication -> HAS_COORDINATE -> Coordinate`, `StatsMap -> IN_REGION -> BrainRegion`, and `BrainRegion -> PART_OF -> BrainRegion`
+      - `A1`/`A2` gate split with `ACTIVATES` removed from substrate blocking status
+      - Frozen `graph_snapshot_v1` with typed path probes and coverage diagnostics
+    exit_criteria:
+      - The graph clears the minimum structural floor defined in the execution plan
+      - `A1 spatial backbone` passes on the canonical BrainRegion contract
+      - `A2 anatomy hierarchy` is either passed or explicitly called out as the only remaining blocker
+      - Config, docs, and snapshot counts are aligned closely enough for benchmark use
+      - A frozen `graph_snapshot_v1` exists with reproducible coverage and typed path probes
+
+  - track_id: claim_spine_readiness
+    title: BR-KG claim-centric spine and claim-first verification readiness
+    area: neurokg
+    priority: P0
+    status: active
+    owner: neurokg-quality
+    target_date: "2026-05-05"
+    summary: Make claim-first evidence a real audited runtime path by operationalizing claim ingest, provenance, and bounded verification benchmarks.
+    next_milestone: Get the bounded GABRIEL ingest path green for `Claim`, `EvidenceSpan`, and `MeasurementRun`, then benchmark `kg_verify_hypothesis` claim-first mode against mention fallback.
+    dependencies: []
+    deliverables:
+      - Working bounded ingest path for `Claim`, `EvidenceSpan`, `MeasurementRun`, and claim-centric edge types
+      - Claim-first verifier benchmark with reviewed positives, negatives, and fallback comparisons
+      - Frozen `claim_snapshot_v1` with provenance-complete outputs and audit trails
+    exit_criteria:
+      - Claim-first verification is operational and auditable end to end
+      - Required claim/evidence/run fields are present and validated on ingest
+      - The bounded benchmark shows claim-first evidence is better than or materially more auditable than mention fallback
+      - A frozen `claim_snapshot_v1` exists with reviewed examples and provenance outputs
+
+  - track_id: evidence_coverage_expansion
+    title: BR-KG evidence coverage expansion with guarded candidate lanes
+    area: neurokg
+    priority: P0
+    status: active
+    owner: neurokg-quality
+    target_date: "2026-05-19"
+    summary: Expand auditable evidence coverage through a guarded GABRIEL candidate lane and a KGGEN to ONVOC to task-panel normalization lane, without polluting the benchmark graph.
+    next_milestone: Publish the evidence coverage expansion plan, fix registry parity, deduplicate the review queue, and run the first broader GABRIEL candidate ingest plus KGGEN evaluation slice.
+    dependencies:
+      - claim_spine_readiness
+    deliverables:
+      - Registry parity report for richer claim-first relations across schema, bulk validation, and canonical mapping
+      - Deduplicated review-queue accounting and adjudication package flow
+      - KGGEN coverage evaluation and ONVOC mapping reports
+      - Task-panel ingest package and normalized task coverage report
+      - Promotion policy for what graduates from candidate lane into accepted graph evidence
+    exit_criteria:
+      - Accepted claim and evidence objects grow materially without benchmark-lane contamination
+      - ONVOC-backed task normalization yields measurable task coverage growth
+      - Richer claim-first relation families appear at usable nonzero counts
+      - Claim-first runtime paths measurably use the richer evidence rather than silently falling back to mention-only behavior
+
+  - track_id: hypothesis_quality
+    title: Hypothesis sampler quality, gating, and exact resolution
+    area: neurokg
+    priority: P0
+    status: active
+    owner: neurokg-quality
+    target_date: "2026-03-17"
+    summary: Keep the main line on grounded hypothesis generation by improving sampler quality, preserving meaningful rejections, and stabilizing exact entity resolution.
+    next_milestone: Lock rejection diagnostics, exact-ID precedence, and one grounded non-empty hypothesis path or explicit explained rejection for the current gold queries.
+    dependencies: []
+    deliverables:
+      - Stable rejection diagnostics for novelty and hypothesis probes
+      - Regression coverage for exact entity resolution precedence
+      - Local probe path that exposes quality-gate reasons without HTTP ambiguity
+    exit_criteria:
+      - At least one representative probe returns a grounded non-empty candidate or an explicit explained rejection
+      - Exact-ID regression remains green for subject-vs-task and region-vs-task collisions
+      - Quality-gate behavior is visible in tests and no longer inferred indirectly
+
+  - track_id: dataset_asset_browse
+    title: Browse-first dataset asset surface
+    area: datasets
+    priority: P1
+    status: active
+    owner: datasets-runtime
+    target_date: "2026-03-24"
+    summary: Add a browse-first dataset asset surface and provenance contract so asset tooling is no longer a parallel drift source.
+    next_milestone: Ship list-before-resolve browsing for BIDS, events, confounds, derivatives, and stat maps with stable provenance fields.
+    dependencies: []
+    deliverables:
+      - Hosted browse tool next to dataset summary and resolve surfaces
+      - Stable canonical_id, source, relative_path, checksum, estimator, and level fields
+      - Router and workflow hooks that prefer browse before strict resolve
+    exit_criteria:
+      - Browse and resolve responsibilities remain separate
+      - Hosted contract is stable enough for MCP and agent usage
+      - Exact-path requests still bypass browse safely
+
+  - track_id: novelty_architecture
+    title: Novelty and research-taste architecture
+    area: neurokg
+    priority: P2
+    status: blocked
+    owner: neurokg-architecture
+    target_date: "2026-03-31"
+    summary: Defer new novelty/taste surface design until the hypothesis-quality baseline is validated on real probes.
+    next_milestone: Re-open architecture choices only after the P0 quality exit criteria are met and documented.
+    dependencies:
+      - hypothesis_quality
+    deliverables:
+      - Explicit architecture decision record tied to validated quality evidence
+      - Narrow problem statement for novelty/taste work that excludes already-solved resolution bugs
+      - Entry criteria for when architecture work is allowed to resume
+    exit_criteria:
+      - Architecture work is unblocked only by explicit P0 completion
+      - Future novelty work starts from grounded evidence rather than fresh exploration
+      - Deferred scope is documented clearly enough to avoid parallel drift

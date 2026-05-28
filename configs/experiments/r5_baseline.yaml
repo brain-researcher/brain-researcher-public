@@ -1,0 +1,27 @@
+schema_version: experiment-config-v1
+experiment_id: r5_baseline_ds000001_workflow_preprocessing_qc
+comparison_type: integrated_vs_isolated
+seeds:
+  global_seed: 42
+  planner_seed: 42
+runs:
+  - run_key: integrated
+    mode: integrated
+    dataset_id: ds:openneuro:ds000001
+    workflow_id: workflow_preprocessing_qc
+    parameters:
+      kg_hints: true
+      notes: "Integrated setting with KG hints enabled."
+    tags:
+      - r5
+      - integrated
+  - run_key: isolated
+    mode: isolated
+    dataset_id: ds:openneuro:ds000001
+    workflow_id: workflow_preprocessing_qc
+    parameters:
+      kg_hints: false
+      notes: "Isolated setting with KG hints disabled."
+    tags:
+      - r5
+      - isolated

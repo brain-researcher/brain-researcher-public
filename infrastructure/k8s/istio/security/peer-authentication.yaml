@@ -1,0 +1,273 @@
+---
+# Default mTLS policy for the entire Brain Researcher namespace
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    security-policy: mtls
+spec:
+  # Enable strict mTLS for all services in the namespace
+  mtls:
+    mode: STRICT
+
+---
+# BR-KG Service specific peer authentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: neurokg-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: neurokg
+spec:
+  selector:
+    matchLabels:
+      app: neurokg
+  mtls:
+    mode: STRICT
+  # Port-specific mTLS settings
+  portLevelMtls:
+    5000:  # API port
+      mode: STRICT
+    9090:  # Metrics port
+      mode: PERMISSIVE  # Allow Prometheus to scrape without mTLS
+
+---
+# Agent Service peer authentication with special handling for streaming
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: agent-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: agent
+spec:
+  selector:
+    matchLabels:
+      app: agent
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    8000:  # Main API port
+      mode: STRICT
+    8001:  # Health check port
+      mode: PERMISSIVE
+    9091:  # Metrics port
+      mode: PERMISSIVE
+
+---
+# Web UI peer authentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: web-ui-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: web-ui
+spec:
+  selector:
+    matchLabels:
+      app: web-ui
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    3000:  # Main UI port
+      mode: STRICT
+    3000:  # Development port
+      mode: PERMISSIVE
+    9092:  # Metrics port
+      mode: PERMISSIVE
+
+---
+# Orchestrator service peer authentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: orchestrator-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: orchestrator
+spec:
+  selector:
+    matchLabels:
+      app: orchestrator
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    3001:  # Main API port
+      mode: STRICT
+    8081:  # Admin port
+      mode: STRICT
+    9093:  # Metrics port
+      mode: PERMISSIVE
+
+---
+# Database services peer authentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: redis-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    6379:  # Redis port
+      mode: STRICT
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: postgres-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    5432:  # PostgreSQL port
+      mode: STRICT
+
+---
+# Neo4j peer authentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: neo4j-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: neo4j
+spec:
+  selector:
+    matchLabels:
+      app: neo4j
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    7474:  # HTTP port
+      mode: STRICT
+    7687:  # Bolt port
+      mode: STRICT
+    7473:  # HTTPS port
+      mode: STRICT
+
+---
+# Monitoring services peer authentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: prometheus-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  mtls:
+    mode: PERMISSIVE  # Prometheus needs to scrape various endpoints
+  portLevelMtls:
+    9090:  # Prometheus server
+      mode: PERMISSIVE
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: grafana-peer-authentication
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: grafana
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    3000:  # Grafana UI
+      mode: STRICT
+
+---
+# Development and testing environments with permissive mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: dev-peer-authentication
+  namespace: brain-researcher-dev
+  labels:
+    app: brain-researcher
+    environment: development
+spec:
+  mtls:
+    mode: PERMISSIVE  # More relaxed for development
+
+---
+# External traffic peer authentication (ingress gateway)
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: ingress-gateway-peer-authentication
+  namespace: istio-system
+  labels:
+    app: istio-ingressgateway
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  mtls:
+    mode: PERMISSIVE  # Allow external traffic without mTLS
+  portLevelMtls:
+    80:   # HTTP traffic
+      mode: DISABLE
+    443:  # HTTPS traffic
+      mode: DISABLE
+    5000: # BR-KG API
+      mode: DISABLE
+    8000: # Agent API
+      mode: DISABLE
+    3000: # Web UI
+      mode: DISABLE
+
+---
+# Egress gateway peer authentication
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: egress-gateway-peer-authentication
+  namespace: istio-system
+  labels:
+    app: istio-egressgateway
+spec:
+  selector:
+    matchLabels:
+      istio: egressgateway
+  mtls:
+    mode: STRICT  # Strict mTLS for internal communication
+  portLevelMtls:
+    80:   # External HTTP
+      mode: DISABLE
+    443:  # External HTTPS
+      mode: DISABLE

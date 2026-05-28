@@ -1,0 +1,22 @@
+{{- if .Values.redis.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-redis-config
+  namespace: {{ .Values.namespaces.data }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cache
+data:
+  redis.conf: |
+    bind 0.0.0.0
+    port 6379
+    dir /data
+    protected-mode {{ .Values.redis.config.protectedMode | default "no" }}
+
+    appendonly yes
+
+    # Memory policy
+    maxmemory {{ .Values.redis.config.maxMemory | default "512mb" }}
+    maxmemory-policy {{ .Values.redis.config.maxMemoryPolicy | default "allkeys-lru" }}
+{{- end }}

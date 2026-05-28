@@ -1,0 +1,131 @@
+version: 1
+rules:
+  - rule_id: QC_MISSING_T1W
+    description: "T1w anatomical missing for subject/session"
+    applies_to: step
+    stage: preflight
+    metric: fmriprep.inputs.t1w_present
+    comparator: eq
+    threshold: false
+    severity: critical
+    action: block
+    message: "Required T1w image is missing; cannot run fMRIPrep."
+    suggested_fix: "Provide at least one T1w per subject/session before running."
+    tags: [fmriprep, bids, inputs]
+
+  - rule_id: QC_MEAN_FD_HIGH
+    description: "Framewise displacement too high"
+    applies_to: step
+    stage: postcheck
+    metric: qc.motion.mean_fd
+    comparator: gt
+    threshold: 0.5
+    severity: error
+    action: block
+    message: "Excessive motion detected (mean FD > 0.5mm)."
+    suggested_fix: "Review motion, consider scrubbing or exclusion."
+    tags: [glm, qc, motion]
+
+  - rule_id: QC_NO_CONFOUNDS
+    description: "Confound regressors missing"
+    applies_to: step
+    stage: postcheck
+    metric: qc.confounds.count
+    comparator: lt
+    threshold: 1
+    severity: error
+    action: block
+    message: "No confound regressors produced."
+    suggested_fix: "Inspect preprocessing pipeline; ensure confound export enabled."
+    tags: [glm, qc, confounds]
+
+  - rule_id: QC_BRAINMASK_FAIL
+    description: "Brainmask generation failed"
+    applies_to: step
+    stage: postcheck
+    metric: qc.brainmask.success
+    comparator: eq
+    threshold: false
+    severity: critical
+    action: block
+    message: "Brainmask failed; downstream stats are unreliable."
+    suggested_fix: "Check inputs; rerun fMRIPrep with alternative skull-stripper."
+    tags: [fmriprep, qc, masking]
+
+  - rule_id: QC_NAN_STATS
+    description: "GLM produced NaNs"
+    applies_to: step
+    stage: postcheck
+    metric: glm.stats.nan_fraction
+    comparator: gt
+    threshold: 0.0
+    severity: critical
+    action: block
+    message: "GLM outputs contain NaNs."
+    suggested_fix: "Verify design matrix and contrasts; inspect logs for upstream errors."
+    tags: [glm, qc, statistics]
+
+  - rule_id: QC_EMPTY_DESIGN
+    description: "Design matrix is empty"
+    applies_to: step
+    stage: preflight
+    metric: glm.design.is_empty
+    comparator: eq
+    threshold: true
+    severity: error
+    action: block
+    message: "Design matrix is empty; cannot fit GLM."
+    suggested_fix: "Check events.tsv files and timing; regenerate design."
+    tags: [glm, design]
+
+  - rule_id: QC_BAD_TR
+    description: "Unrealistic TR detected"
+    applies_to: step
+    stage: preflight
+    metric: bids.tr_seconds
+    comparator: lt
+    threshold: 0.2
+    severity: warn
+    action: warn
+    message: "TR appears too small (<0.2s); verify metadata."
+    suggested_fix: "Fix TR in BIDS metadata if incorrect."
+    tags: [bids, inputs, metadata]
+
+  - rule_id: QC_MISSING_SURFACES
+    description: "FreeSurfer surfaces missing"
+    applies_to: step
+    stage: postcheck
+    metric: freesurfer.outputs.surfaces_present
+    comparator: eq
+    threshold: false
+    severity: error
+    action: block
+    message: "Expected cortical surfaces not produced."
+    suggested_fix: "Inspect FreeSurfer logs; rerun with expert options."
+    tags: [freesurfer, surfaces]
+
+  - rule_id: QC_CHECKSUM_MISMATCH
+    description: "Artifact checksum mismatch"
+    applies_to: artifact
+    stage: postcheck
+    metric: artifacts.integrity.mismatched
+    comparator: gt
+    threshold: 0
+    severity: critical
+    action: block
+    message: "One or more artifacts failed checksum verification."
+    suggested_fix: "Recompute or re-download corrupted artifacts."
+    tags: [artifacts, integrity]
+
+  - rule_id: QC_QCFLAG_FAILED
+    description: "QC flags present from upstream tool"
+    applies_to: step
+    stage: postcheck
+    metric: qc.flags.failed
+    comparator: gt
+    threshold: 0
+    severity: error
+    action: block
+    message: "Upstream QC flagged the run."
+    suggested_fix: "Review QC report and address flagged issues."
+    tags: [qc, aggregate]

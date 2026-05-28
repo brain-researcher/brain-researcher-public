@@ -1,0 +1,392 @@
+---
+# Global telemetry configuration for Brain Researcher
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: brain-researcher-telemetry
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    component: telemetry
+spec:
+  # Metrics configuration for neuroimaging workloads
+  metrics:
+  # Custom metrics for Brain Researcher services
+  - providers:
+    - name: prometheus
+  - overrides:
+    # BR-KG specific metrics
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        brain_researcher_service:
+          value: "neurokg"
+        analysis_type:
+          value: "%{REQUEST_HEADER_X_ANALYSIS_TYPE}"
+        session_id:
+          value: "%{REQUEST_HEADER_X_SESSION_ID}"
+        user_id:
+          value: "%{REQUEST_HEADER_X_USER_ID}"
+        query_type:
+          value: "%{REQUEST_HEADER_X_QUERY_TYPE}"
+        
+    # Agent service metrics
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+        customTags:
+          llm_model:
+            header:
+              name: x-llm-model
+          conversation_id:
+            header:
+              name: x-conversation-id
+          tool_used:
+            header:
+              name: x-tool-used
+              
+    # Request duration histogram with neuroimaging-specific buckets
+    - match:
+        metric: requests_duration_milliseconds
+      histogram:
+        buckets: [0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000, 60000, 300000]
+        
+    # Request size histogram for large neuroimaging data transfers
+    - match:
+        metric: request_bytes
+      histogram:
+        buckets: [1024, 10240, 102400, 1048576, 10485760, 104857600, 1073741824, 5368709120]
+        
+    # Response size histogram
+    - match:
+        metric: response_bytes
+      histogram:
+        buckets: [1024, 10240, 102400, 1048576, 10485760, 104857600, 1073741824, 5368709120]
+
+  # Distributed tracing configuration
+  tracing:
+  - providers:
+    - name: jaeger
+  # Custom span tags for Brain Researcher workflows
+  - customTags:
+      brain_researcher.service:
+        header:
+          name: x-brain-researcher-service
+      brain_researcher.analysis_type:
+        header:
+          name: x-analysis-type
+      brain_researcher.session_id:
+        header:
+          name: x-session-id
+      brain_researcher.user_id:
+        header:
+          name: x-user-id
+      # Neuroimaging-specific tags
+      brain_researcher.dataset:
+        header:
+          name: x-dataset
+      brain_researcher.subject_id:
+        header:
+          name: x-subject-id
+      brain_researcher.task:
+        header:
+          name: x-task
+      brain_researcher.contrast:
+        header:
+          name: x-contrast
+        
+  # Access logging configuration
+  accessLogging:
+  - providers:
+    - name: envoy
+  # Custom access log format for neuroimaging workflows
+  - format:
+      text: |
+        [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%"
+        %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+        %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% "%REQ(X-FORWARDED-FOR)%"
+        "%REQ(USER-AGENT)%" "%REQ(X-REQUEST-ID)%" "%REQ(:AUTHORITY)%" "%UPSTREAM_HOST%"
+        service="%REQ(X-BRAIN-RESEARCHER-SERVICE)%" analysis="%REQ(X-ANALYSIS-TYPE)%"
+        session="%REQ(X-SESSION-ID)%" user="%REQ(X-USER-ID)%" dataset="%REQ(X-DATASET)%"
+        subject="%REQ(X-SUBJECT-ID)%" task="%REQ(X-TASK)%" contrast="%REQ(X-CONTRAST)%"
+
+---
+# BR-KG specific telemetry configuration
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: neurokg-telemetry
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: neurokg
+spec:
+  selector:
+    matchLabels:
+      app: neurokg
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    # Database query metrics
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        query_type:
+          value: "%{REQUEST_HEADER_X_QUERY_TYPE}"
+        database:
+          value: "neo4j"
+        search_index:
+          value: "%{REQUEST_HEADER_X_SEARCH_INDEX}"
+          
+    # Custom metrics for knowledge graph operations
+    - match:
+        metric: requests_total
+      tagOverrides:
+        kg_operation:
+          value: "%{REQUEST_HEADER_X_KG_OPERATION}"
+        spatial_query:
+          value: "%{REQUEST_HEADER_X_SPATIAL_QUERY}"
+        vector_search:
+          value: "%{REQUEST_HEADER_X_VECTOR_SEARCH}"
+
+---
+# Agent service telemetry for LLM operations
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: agent-telemetry
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: agent
+spec:
+  selector:
+    matchLabels:
+      app: agent
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    # LLM-specific metrics
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        llm_model:
+          value: "%{REQUEST_HEADER_X_LLM_MODEL}"
+        conversation_id:
+          value: "%{REQUEST_HEADER_X_CONVERSATION_ID}"
+        tool_used:
+          value: "%{REQUEST_HEADER_X_TOOL_USED}"
+        analysis_complexity:
+          value: "%{REQUEST_HEADER_X_ANALYSIS_COMPLEXITY}"
+          
+    # Token usage metrics
+    - match:
+        metric: requests_total
+      tagOverrides:
+        input_tokens:
+          value: "%{REQUEST_HEADER_X_INPUT_TOKENS}"
+        output_tokens:
+          value: "%{REQUEST_HEADER_X_OUTPUT_TOKENS}"
+        total_tokens:
+          value: "%{REQUEST_HEADER_X_TOTAL_TOKENS}"
+
+---
+# Web UI telemetry for user interactions
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: web-ui-telemetry
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: web-ui
+spec:
+  selector:
+    matchLabels:
+      app: web-ui
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    # User interaction metrics
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        ui_component:
+          value: "%{REQUEST_HEADER_X_UI_COMPONENT}"
+        page_route:
+          value: "%{REQUEST_HEADER_X_PAGE_ROUTE}"
+        user_action:
+          value: "%{REQUEST_HEADER_X_USER_ACTION}"
+        
+    # Performance metrics
+    - match:
+        metric: requests_total
+      tagOverrides:
+        load_time:
+          value: "%{REQUEST_HEADER_X_LOAD_TIME}"
+        bundle_size:
+          value: "%{REQUEST_HEADER_X_BUNDLE_SIZE}"
+
+---
+# Distributed tracing specific configuration
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: brain-researcher-tracing
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    component: tracing
+spec:
+  tracing:
+  - providers:
+    - name: jaeger
+  # Sampling rate for different service types
+  - randomSamplingPercentage: 1.0  # 1% default sampling
+  - customTags:
+      # Workflow tracing
+      workflow.id:
+        header:
+          name: x-workflow-id
+      workflow.step:
+        header:
+          name: x-workflow-step
+      workflow.retry_count:
+        header:
+          name: x-retry-count
+      
+      # Analysis pipeline tracing
+      pipeline.stage:
+        header:
+          name: x-pipeline-stage
+      pipeline.data_size:
+        header:
+          name: x-data-size
+      pipeline.processing_time:
+        header:
+          name: x-processing-time
+      
+      # Resource utilization
+      resource.cpu_usage:
+        header:
+          name: x-cpu-usage
+      resource.memory_usage:
+        header:
+          name: x-memory-usage
+      resource.gpu_usage:
+        header:
+          name: x-gpu-usage
+
+---
+# High-priority service telemetry with increased sampling
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: high-priority-tracing
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    priority: high
+spec:
+  selector:
+    matchLabels:
+      priority: high
+  tracing:
+  - randomSamplingPercentage: 10.0  # 10% sampling for high-priority services
+  - providers:
+    - name: jaeger
+
+---
+# Error tracking telemetry
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: error-tracking-telemetry
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    component: error-tracking
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    # Error-specific metrics
+    - match:
+        metric: requests_total
+      tagOverrides:
+        error_type:
+          value: "%{REQUEST_HEADER_X_ERROR_TYPE}"
+        error_code:
+          value: "%{REQUEST_HEADER_X_ERROR_CODE}"
+        recovery_action:
+          value: "%{REQUEST_HEADER_X_RECOVERY_ACTION}"
+          
+    # Alert on error rates
+    - match:
+        metric: requests_total
+        mode: CLIENT
+      disabled: false
+      
+  tracing:
+  - randomSamplingPercentage: 100.0  # Sample all error traces
+  - customTags:
+      error.message:
+        header:
+          name: x-error-message
+      error.stack_trace:
+        header:
+          name: x-stack-trace
+      error.context:
+        header:
+          name: x-error-context
+
+---
+# Performance monitoring telemetry
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: performance-monitoring
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    component: performance
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    # Custom performance metrics
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        processing_stage:
+          value: "%{REQUEST_HEADER_X_PROCESSING_STAGE}"
+        data_volume:
+          value: "%{REQUEST_HEADER_X_DATA_VOLUME}"
+        compute_resources:
+          value: "%{REQUEST_HEADER_X_COMPUTE_RESOURCES}"
+        
+    # SLA tracking
+    - match:
+        metric: requests_duration_milliseconds
+      histogram:
+        buckets: [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 60000, 300000]
+        
+  accessLogging:
+  - format:
+      text: |
+        [%START_TIME%] performance_log service="%REQ(X-BRAIN-RESEARCHER-SERVICE)%"
+        method="%REQ(:METHOD)%" path="%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+        duration=%DURATION% response_code=%RESPONSE_CODE%
+        bytes_received=%BYTES_RECEIVED% bytes_sent=%BYTES_SENT%
+        processing_stage="%REQ(X-PROCESSING-STAGE)%" data_volume="%REQ(X-DATA-VOLUME)%"
+        cpu_usage="%REQ(X-CPU-USAGE)%" memory_usage="%REQ(X-MEMORY-USAGE)%"

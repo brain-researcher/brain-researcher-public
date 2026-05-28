@@ -1,0 +1,187 @@
+Thank you for installing {{ .Chart.Name }}!
+
+## Brain Researcher Istio Service Mesh
+
+Your Brain Researcher service mesh has been deployed with the following configuration:
+
+### Service Mesh Details
+- Mesh ID: {{ include "brain-researcher-istio.meshId" . }}
+- Namespace: {{ include "brain-researcher-istio.namespace" . }}
+- Istio Version: {{ .Chart.AppVersion }}
+
+### Gateway Configuration
+{{- if .Values.gateways.main.enabled }}
+Main Gateway: {{ .Values.gateways.main.name }}
+- External Hosts: {{ join ", " .Values.gateways.main.hosts }}
+{{- if .Values.gateways.main.tls.enabled }}
+- TLS Enabled: {{ .Values.gateways.main.tls.enabled }}
+- Certificate: {{ .Values.gateways.main.tls.credentialName }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.gateways.egress.enabled }}
+Egress Gateway: {{ .Values.gateways.egress.name }}
+- External Services: {{ join ", " .Values.gateways.egress.externalHosts }}
+{{- end }}
+
+### Services Configured
+{{- range $serviceName, $config := .Values.services }}
+{{- if $config.enabled }}
+- {{ $config.name }}:
+  - Load Balancer: {{ $config.trafficPolicy.loadBalancer }}
+  - mTLS Mode: {{ $config.security.mtlsMode }}
+  {{- if $config.security.authorizationRules }}
+  - Authorization Rules: Enabled
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.services.databases }}
+### Database Services
+{{- range $dbName, $dbConfig := .Values.services.databases }}
+{{- if $dbConfig.enabled }}
+- {{ $dbConfig.name }}: {{ $dbConfig.security.mtlsMode }} mTLS
+{{- end }}
+{{- end }}
+{{- end }}
+
+### Security Features
+{{- if .Values.security.globalMtls.enabled }}
+- Global mTLS: {{ .Values.security.globalMtls.mode }}
+{{- end }}
+{{- if .Values.security.authorizationPolicies.denyAll.enabled }}
+- Default Deny Policy: Enabled
+{{- end }}
+{{- if .Values.security.jwt.enabled }}
+- JWT Authentication: Enabled
+{{- end }}
+
+### Observability
+{{- if .Values.telemetry.metrics.enabled }}
+- Metrics Collection: Enabled (Prometheus)
+{{- end }}
+{{- if .Values.telemetry.tracing.enabled }}
+- Distributed Tracing: Enabled (Jaeger)
+- Sampling Rate: {{ .Values.telemetry.tracing.samplingRate }}%
+{{- end }}
+{{- if .Values.telemetry.accessLogging.enabled }}
+- Access Logging: Enabled
+{{- end }}
+{{- if .Values.observability.kiali.enabled }}
+- Kiali Dashboard: Enabled ({{ .Values.observability.kiali.version }})
+{{- end }}
+
+## Next Steps
+
+### 1. Verify Installation
+```bash
+kubectl get gateway,virtualservice,destinationrule,peerauthentication,authorizationpolicy -n {{ include "brain-researcher-istio.namespace" . }}
+```
+
+### 2. Check Service Mesh Status
+```bash
+istioctl proxy-status
+istioctl analyze
+```
+
+### 3. Access Services
+{{- if .Values.gateways.main.enabled }}
+
+Web UI: 
+{{- range .Values.gateways.main.hosts }}
+- https://{{ . }}
+{{- end }}
+
+BR-KG API:
+{{- range .Values.gateways.main.hosts }}
+- https://{{ . }}:{{ .Values.gateways.main.ports.neurokg }}
+{{- end }}
+
+Agent Service:
+{{- range .Values.gateways.main.hosts }}
+- https://{{ . }}:{{ .Values.gateways.main.ports.agent }}
+{{- end }}
+{{- end }}
+
+### 4. Monitor Service Mesh
+{{- if .Values.observability.kiali.enabled }}
+
+Kiali Dashboard:
+```bash
+kubectl port-forward svc/kiali 20001:20001 -n {{ include "brain-researcher-istio.istioNamespace" . }}
+```
+Then access: http://localhost:20001
+{{- end }}
+
+{{- if .Values.telemetry.metrics.enabled }}
+Prometheus Metrics:
+```bash
+kubectl port-forward svc/prometheus 9090:9090 -n {{ include "brain-researcher-istio.namespace" . }}
+```
+{{- end }}
+
+### 5. Migration (if enabled)
+{{- if .Values.migration.enabled }}
+{{- if .Values.migration.dryRun }}
+
+Run migration dry-run to validate:
+```bash
+kubectl exec -it deployment/brain-researcher-migration -n {{ include "brain-researcher-istio.namespace" . }} -- python -c "
+from brain_researcher.services.communication.migration_manager import execute_brain_researcher_migration
+import asyncio
+result = asyncio.run(execute_brain_researcher_migration(dry_run=True))
+print(result)
+"
+```
+{{- else }}
+
+Start migration:
+```bash
+kubectl exec -it deployment/brain-researcher-migration -n {{ include "brain-researcher-istio.namespace" . }} -- python -c "
+from brain_researcher.services.communication.migration_manager import execute_brain_researcher_migration
+import asyncio
+result = asyncio.run(execute_brain_researcher_migration())
+print(result)
+"
+```
+{{- end }}
+{{- end }}
+
+## Troubleshooting
+
+### Common Commands
+```bash
+# Check sidecar injection
+istioctl analyze
+
+# View service mesh configuration
+istioctl proxy-config cluster <pod-name> -n {{ include "brain-researcher-istio.namespace" . }}
+
+# Debug traffic routing
+istioctl proxy-config routes <pod-name> -n {{ include "brain-researcher-istio.namespace" . }}
+
+# Check security policies
+istioctl authn tls-check <service-name>.<namespace>.svc.cluster.local
+
+# View telemetry configuration
+kubectl get telemetry -n {{ include "brain-researcher-istio.namespace" . }} -o yaml
+```
+
+### Validation
+Run the following to validate your setup:
+```bash
+# Test internal service communication
+kubectl exec -it <pod-name> -n {{ include "brain-researcher-istio.namespace" . }} -- curl -v http://<service-name>:8080/health
+
+# Check mTLS status
+istioctl authn tls-check <service-name>.<namespace>.svc.cluster.local
+
+# Verify gateway configuration
+istioctl analyze --namespace {{ include "brain-researcher-istio.namespace" . }}
+```
+
+For more information, visit:
+- Istio Documentation: https://istio.io/latest/docs/
+- Brain Researcher Documentation: {{ .Values.global.brainResearcher.documentationUrl | default "https://github.com/brain-researcher/brain-researcher" }}
+
+Happy researching! 🧠🔬

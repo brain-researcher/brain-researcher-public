@@ -1,0 +1,60 @@
+{
+  "trace_1": {
+    "query": "Analyze working memory activation in the prefrontal cortex",
+    "reasoning_type": "analytical",
+    "steps": [
+      {
+        "step_id": "step_1",
+        "step_number": 1,
+        "premise": "User wants to analyze working memory activation in prefrontal cortex",
+        "inference": "This requires identifying specific prefrontal regions involved in working memory",
+        "conclusion": "Need to define PFC ROIs and extract working memory contrast data",
+        "confidence": 0.9,
+        "evidence": ["Working memory consistently activates dorsolateral PFC", "Meta-analyses show reliable PFC activation"],
+        "assumptions": ["Data contains working memory task", "PFC regions are well-defined"]
+      },
+      {
+        "step_id": "step_2", 
+        "step_number": 2,
+        "premise": "Have identified PFC regions for working memory analysis",
+        "inference": "Need to compute statistical measures of activation",
+        "conclusion": "Extract beta weights or contrast values from PFC ROIs",
+        "confidence": 0.85,
+        "evidence": ["Beta weights represent activation strength", "Contrast values show task-specific activation"],
+        "assumptions": ["GLM has been properly specified", "Motion artifacts have been addressed"]
+      }
+    ],
+    "final_conclusion": "To analyze working memory activation in PFC, extract contrast values from dorsolateral prefrontal ROIs and compute descriptive statistics and significance tests.",
+    "overall_confidence": 0.87,
+    "explanation": "This analysis follows a systematic approach: first identifying the relevant brain regions (dorsolateral prefrontal cortex), then extracting the appropriate statistical measures (contrast values), and finally computing summary statistics to characterize working memory activation patterns."
+  },
+  "trace_2": {
+    "query": "Compare connectivity between default mode network nodes in young vs old adults",
+    "reasoning_type": "comparative",
+    "steps": [
+      {
+        "step_id": "step_1",
+        "step_number": 1,
+        "premise": "Need to compare DMN connectivity between age groups",
+        "inference": "This requires defining DMN nodes and computing connectivity matrices",
+        "conclusion": "Define DMN ROIs (PCC, mPFC, angular gyrus, hippocampus) and extract time series",
+        "confidence": 0.9,
+        "evidence": ["DMN nodes are well-established", "Age differences in DMN connectivity are documented"],
+        "assumptions": ["Data includes both age groups", "DMN can be reliably measured"]
+      },
+      {
+        "step_id": "step_2",
+        "step_number": 2,
+        "premise": "Have DMN time series for both age groups",
+        "inference": "Need to compute connectivity matrices and compare between groups",
+        "conclusion": "Calculate correlation matrices and perform statistical comparison",
+        "confidence": 0.8,
+        "evidence": ["Correlation is standard connectivity measure", "Group comparisons require appropriate statistics"],
+        "assumptions": ["Time series are properly preprocessed", "Groups are matched on relevant variables"]
+      }
+    ],
+    "final_conclusion": "To compare DMN connectivity between age groups, extract time series from key DMN nodes, compute connectivity matrices for each group, and perform statistical tests to identify significant differences.",
+    "overall_confidence": 0.85,
+    "explanation": "This comparative analysis systematically addresses the research question by: (1) defining the network of interest, (2) measuring connectivity within each group, and (3) statistically comparing connectivity patterns to identify age-related differences."
+  }
+}

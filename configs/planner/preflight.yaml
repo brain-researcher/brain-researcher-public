@@ -1,0 +1,54 @@
+# Preflight Check Configuration
+# Controls caching behavior and validation settings for tool preflight checks
+
+version: "0.1.0"
+
+cache:
+  # Time-to-live for cached preflight results (seconds)
+  # Can be overridden with BR_PREFLIGHT_TTL_SECONDS env var
+  ttl_seconds: 900  # 15 minutes
+
+  # Maximum latency allowed for preflight checks (milliseconds)
+  # If checks exceed this, short-circuit and return cached/unknown
+  max_latency_ms: 100
+
+  # Enable Redis caching if BR_REDIS_URL is set
+  # Falls back to in-memory TTL dict if Redis unavailable
+  use_redis: true
+
+# Preflight check settings
+checks:
+  container:
+    # Check container image accessibility
+    enabled: true
+
+    # Timeout for image path checks (seconds)
+    timeout_seconds: 5
+
+    # CVMFS-specific settings
+    cvmfs:
+      # Check CVMFS mount before image validation
+      check_mount: true
+      # Assume CVMFS images are accessible if mount exists
+      trust_mount: true
+
+  python:
+    # Check Python module importability
+    enabled: true
+
+    # Timeout for import checks (seconds)
+    timeout_seconds: 3
+
+    # Cache import results (imports can be expensive)
+    cache_imports: true
+
+# Batch processing settings
+batch:
+  # Enable concurrent preflight checks for batch operations
+  concurrent: true
+
+  # Maximum number of concurrent checks
+  max_workers: 4
+
+  # Timeout for entire batch operation (seconds)
+  timeout_seconds: 30

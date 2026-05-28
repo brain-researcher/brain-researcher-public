@@ -1,0 +1,385 @@
+# Service Mesh Configuration for Brain Researcher
+# This file defines the service mesh topology, security policies, and traffic management rules
+
+cluster_name: "brain_researcher"
+version: "1.0.0"
+
+# Global settings
+settings:
+  enable_mtls: false  # Set to true for production
+  enable_tracing: true
+  enable_metrics: true
+  default_timeout_seconds: 30.0
+  default_retries: 3
+  health_check_interval_seconds: 30
+  redis_url: "redis://localhost:6379/1"
+
+# Traffic routing rules
+traffic_routes:
+  # Agent Service Routes
+  - name: "agent_api_routes"
+    destination_service: "agent"
+    path_patterns:
+      - "/api/agent/**"
+      - "/api/v1/agent/**"
+    policy: "round_robin"
+    timeout_seconds: 60.0
+    retries: 3
+    endpoints:
+      - name: "agent-primary"
+        url: "http://localhost:8000"
+        version: "v1"
+        weight: 100
+        health_check_path: "/health"
+      # Blue-green deployment endpoints
+      - name: "agent-blue"
+        url: "http://localhost:8000"
+        version: "blue"
+        weight: 0  # Initially inactive
+        health_check_path: "/health"
+      - name: "agent-green"  
+        url: "http://localhost:8001"
+        version: "green" 
+        weight: 0  # Initially inactive
+        health_check_path: "/health"
+    circuit_breaker:
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_calls: 3
+
+  # BR-KG Service Routes
+  - name: "neurokg_api_routes"
+    destination_service: "neurokg"
+    path_patterns:
+      - "/api/kg/**"
+      - "/api/v1/kg/**"
+      - "/kg/**"
+    policy: "weighted"
+    timeout_seconds: 45.0
+    retries: 2
+    endpoints:
+      - name: "neurokg-primary"
+        url: "http://localhost:5000"
+        version: "v1"
+        weight: 100
+        health_check_path: "/"
+      - name: "neurokg-blue"
+        url: "http://localhost:5000"
+        version: "blue"
+        weight: 0
+        health_check_path: "/"
+      - name: "neurokg-green"
+        url: "http://localhost:5002"
+        version: "green"
+        weight: 0
+        health_check_path: "/"
+
+  # NICLIP Service Routes  
+  - name: "niclip_api_routes"
+    destination_service: "niclip"
+    path_patterns:
+      - "/api/niclip/**"
+      - "/api/v1/niclip/**"
+    policy: "least_connections"
+    timeout_seconds: 30.0
+    retries: 3
+    endpoints:
+      - name: "niclip-primary"
+        url: "http://localhost:8001"
+        version: "v1"
+        weight: 100
+        health_check_path: "/health"
+
+  # Orchestrator Routes
+  - name: "orchestrator_api_routes"
+    destination_service: "orchestrator"
+    path_patterns:
+      - "/api/orchestrator/**"
+      - "/api/v1/orchestrator/**"
+    policy: "round_robin"
+    timeout_seconds: 30.0
+    retries: 2
+    endpoints:
+      - name: "orchestrator-primary"
+        url: "http://localhost:3001"
+        version: "v1"
+        weight: 100
+        health_check_path: "/health"
+
+  # Web UI Routes
+  - name: "ui_routes"
+    destination_service: "web_ui"
+    path_patterns:
+      - "/**"  # Catch-all for UI routes
+    policy: "sticky_session"
+    timeout_seconds: 10.0
+    retries: 1
+    endpoints:
+      - name: "ui-primary"
+        url: "http://localhost:3000"
+        version: "v1"
+        weight: 100
+        health_check_path: "/api/health"
+
+  # Internal Service Communication Routes
+  - name: "internal_agent_to_kg"
+    source_service: "agent"
+    destination_service: "neurokg"
+    path_patterns:
+      - "/internal/**"
+    policy: "round_robin"
+    timeout_seconds: 60.0
+    retries: 3
+
+  - name: "internal_agent_to_niclip"
+    source_service: "agent"
+    destination_service: "niclip"
+    path_patterns:
+      - "/predict/**"
+      - "/embed/**"
+    policy: "least_response_time"
+    timeout_seconds: 30.0
+    retries: 2
+
+# Security policies
+security_rules:
+  # JWT Authentication for API routes
+  - name: "api_jwt_auth"
+    policy: "jwt_validation"
+    destination_services:
+      - "agent"
+      - "neurokg"
+      - "niclip"
+    config:
+      secret: "${JWT_SECRET:-brain_researcher_secret}"
+      algorithm: "HS256"
+      required_claims:
+        - "user_id"
+        - "exp"
+    enabled: true
+
+  # RBAC for admin endpoints
+  - name: "admin_rbac"
+    policy: "rbac"
+    destination_services:
+      - "orchestrator"
+    config:
+      required_roles:
+        - "admin"
+        - "superuser"
+    enabled: true
+
+  # Rate limiting for public endpoints
+  - name: "public_rate_limit"
+    policy: "rate_limiting"
+    destination_services:
+      - "orchestrator"
+      - "web_ui"
+    config:
+      requests_per_minute: 100
+      burst_size: 20
+    enabled: true
+
+  # Internal service authentication
+  - name: "internal_service_auth"
+    policy: "jwt_validation"
+    source_services:
+      - "agent"
+      - "orchestrator"
+    destination_services:
+      - "neurokg"
+      - "niclip"
+    config:
+      secret: "${INTERNAL_JWT_SECRET:-internal_secret}"
+      algorithm: "HS256"
+    enabled: false  # Enable for production
+
+# Load balancing configurations
+load_balancing:
+  # Default configuration
+  default:
+    strategy: "round_robin"
+    health_check_enabled: true
+    session_affinity: "none"
+    max_connections_per_instance: 1000
+    connection_timeout_seconds: 30
+    enable_circuit_breaker: true
+    circuit_breaker_failure_threshold: 5
+    circuit_breaker_recovery_time: 60
+
+  # Service-specific overrides
+  services:
+    agent:
+      strategy: "least_connections"
+      max_connections_per_instance: 500  # Lower for compute-intensive service
+      circuit_breaker_failure_threshold: 3
+
+    neurokg:
+      strategy: "weighted"
+      session_affinity: "client_ip"  # For consistent query results
+      max_connections_per_instance: 2000
+
+    niclip:
+      strategy: "least_response_time"
+      max_connections_per_instance: 100  # GPU-limited service
+
+    web_ui:
+      strategy: "sticky_session"
+      session_affinity: "session_id"
+      circuit_breaker_failure_threshold: 10
+
+# Blue-green deployment configuration
+deployment:
+  health_check_timeout_seconds: 300
+  health_check_interval_seconds: 10
+  readiness_timeout_seconds: 180
+  traffic_switch_strategy: "gradual"
+  gradual_switch_duration_seconds: 300
+  canary_percentage: 10.0
+  rollback_on_failure: true
+  keep_previous_version: true
+  drain_timeout_seconds: 60
+  
+  required_readiness_checks:
+    - "database_connectivity"
+    - "external_services"
+    - "cache_warmup"
+
+# Monitoring and observability
+monitoring:
+  metrics:
+    enabled: true
+    collection_interval_seconds: 30
+    retention_seconds: 86400  # 24 hours
+    
+  tracing:
+    enabled: true
+    sampling_rate: 0.1  # 10% sampling
+    jaeger_endpoint: "http://localhost:14268/api/traces"
+    
+  logging:
+    level: "INFO"
+    structured: true
+    include_request_ids: true
+
+# Circuit breaker defaults
+circuit_breaker:
+  failure_threshold: 5
+  recovery_timeout_seconds: 60
+  half_open_max_calls: 3
+  success_threshold: 2
+  timeout_seconds: 30
+  exclude_exceptions:
+    - "ValidationError"
+    - "AuthenticationError"
+
+# Retry policy defaults  
+retry_policy:
+  max_attempts: 3
+  base_delay_seconds: 1.0
+  max_delay_seconds: 30.0
+  backoff_strategy: "exponential"
+  backoff_multiplier: 2.0
+  jitter: true
+  jitter_max_seconds: 1.0
+  retryable_exceptions:
+    - "ConnectionError"
+    - "TimeoutError"
+    - "ServiceUnavailable"
+  non_retryable_exceptions:
+    - "ValidationError" 
+    - "AuthenticationError"
+    - "AuthorizationError"
+    - "NotFoundError"
+
+# Content transformation rules
+transformations:
+  request:
+    - name: "add_request_metadata"
+      path_patterns: ["/api/**"]
+      headers:
+        rules:
+          - name: "add_request_id"
+            action: "add"
+            target: "X-Request-ID"
+            template: "{{ request_id }}"
+          - name: "add_timestamp"
+            action: "add"
+            target: "X-Request-Timestamp"  
+            template: "{{ timestamp }}"
+      enabled: true
+
+  response:
+    - name: "add_security_headers"
+      path_patterns: ["/**"]
+      status_codes: [200, 201, 202, 204]
+      headers:
+        rules:
+          - name: "add_cors_headers"
+            action: "add"
+            target: "Access-Control-Allow-Origin"
+            value: "*"
+          - name: "add_security_headers"
+            action: "add"
+            target: "X-Content-Type-Options"
+            value: "nosniff"
+          - name: "remove_server_header"
+            action: "remove"
+            target: "Server"
+      enabled: true
+
+# Event-driven communication
+events:
+  dispatcher_workers: 4
+  queue_backend: "redis"
+  
+  handlers:
+    - name: "deployment_events"
+      event_types:
+        - "deployment.started"
+        - "deployment.completed" 
+        - "deployment.failed"
+      async_processing: true
+      max_retries: 3
+
+    - name: "health_events"
+      event_types:
+        - "service.health_changed"
+        - "circuit_breaker.opened"
+        - "circuit_breaker.closed"
+      async_processing: true
+      max_retries: 1
+
+# Environment-specific overrides
+environments:
+  development:
+    settings:
+      enable_mtls: false
+      enable_tracing: false
+    security_rules:
+      - name: "dev_bypass_auth"
+        policy: "allow_all"
+        enabled: true
+        
+  staging:
+    settings:
+      enable_mtls: false
+      enable_tracing: true
+    monitoring:
+      tracing:
+        sampling_rate: 0.5  # Higher sampling in staging
+        
+  production:
+    settings:
+      enable_mtls: true
+      enable_tracing: true
+    security_rules:
+      - name: "prod_strict_auth"
+        policy: "jwt_validation"
+        enabled: true
+    monitoring:
+      tracing:
+        sampling_rate: 0.01  # Lower sampling in production
+    circuit_breaker:
+      failure_threshold: 3  # Stricter in production
+      recovery_timeout_seconds: 120

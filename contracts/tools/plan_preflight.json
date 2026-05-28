@@ -1,0 +1,93 @@
+{
+  "name": "plan_preflight",
+  "tier": "default",
+  "surface_tier": "default",
+  "capability_family": "planning",
+  "description": "Read-only planning preflight for dataset facts, blockers, and candidate tools.",
+  "input_schema": {
+    "properties": {
+      "query": {
+        "title": "Query",
+        "type": "string"
+      },
+      "domain": {
+        "default": "neuroimaging",
+        "title": "Domain",
+        "type": "string"
+      },
+      "modality": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Modality"
+      },
+      "inputs": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Inputs"
+      },
+      "allowlist_mode": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Allowlist Mode"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "plan_preflightArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "plan_preflightDictOutput",
+    "type": "object"
+  },
+  "examples": [
+    {
+      "input": {
+        "query": "summarize ds000114",
+        "modality": [
+          "fmri"
+        ]
+      },
+      "output": {
+        "ok": true,
+        "facts": {
+          "dataset_refs": [
+            "ds000114"
+          ]
+        },
+        "tool_candidates": [],
+        "routing_diagnostics": {}
+      },
+      "tested": false
+    }
+  ],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

@@ -1,0 +1,9 @@
+{
+  "Name": "Synthetic Golden Test Dataset",
+  "BIDSVersion": "1.6.0",
+  "Authors": [
+    "Brain Researcher Test Suite"
+  ],
+  "License": "CC0",
+  "ReferencesAndLinks": []
+}

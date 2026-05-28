@@ -1,0 +1,5 @@
+((fMRI[Title/Abstract] OR "functional MRI"[Title/Abstract] OR BOLD[Title/Abstract])
+ AND ("resting state"[Title/Abstract] OR "resting-state"[Title/Abstract] OR rsfMRI[Title/Abstract]
+      OR "functional connectivity"[Title/Abstract] OR connectome[Title/Abstract] OR "brain network"[Title/Abstract]
+      OR "default mode network"[Title/Abstract] OR DMN[Title/Abstract])
+ AND ("2015/01/01"[PDAT] : "2025/12/31"[PDAT]))

@@ -1,0 +1,682 @@
+# Task Synonyms Mapping
+# Maps various task names and aliases to canonical task labels
+# Used by CrossSourceLinker and ingestion loaders
+
+# Working memory tasks
+- canonical: "n-back"
+  cognitive_atlas_id: "cogat:TRM_4a3fd79d0a5c8"
+  task_id: "task:n-back"
+  synonyms:
+    - "N-back"
+    - "N back"
+    - "Nback"
+    - "n back"
+    - "working memory n-back"
+    - "n-back working memory"
+    - "n-back task"
+    - "figure 2 back with 1 back lures"
+  source_aliases:
+    brainmap:
+      - "N-BACK WM"
+      - "N-BACK"
+      - "NBACK_WM"
+    neurosynth:
+      - "nback"
+      - "n back"
+    openneuro:
+      - "nback"
+      - "n_back"
+
+- canonical: "Sternberg memory"
+  cognitive_atlas_id: "cogat:TRM_5535dd0a8e4ce"
+  task_id: "task:sternberg_memory"
+  synonyms:
+    - "Sternberg"
+    - "Sternberg WM"
+    - "Sternberg working memory"
+    - "Sternberg task"
+    - "item recognition"
+  source_aliases:
+    brainmap:
+      - "STERNBERG"
+      - "STERNBERG WM"
+    neurosynth:
+      - "sternberg"
+
+# Executive function tasks
+- canonical: "Go/No-Go"
+  cognitive_atlas_id: "cogat:TRM_4d559bcd67c18"
+  task_id: "task:go_no-go"
+  synonyms:
+    - "Go-NoGo"
+    - "Go No Go"
+    - "Go/NoGo"
+    - "GNG"
+    - "go no-go"
+    - "go-nogo task"
+  source_aliases:
+    brainmap:
+      - "GO/NO-GO"
+      - "GO_NOGO"
+    neurosynth:
+      - "go nogo"
+      - "gonogo"
+    openneuro:
+      - "gonogo"
+      - "go_nogo"
+
+- canonical: "Stroop"
+  cognitive_atlas_id: "cogat:TRM_525331a9dc89f"
+  task_id: "task:stroop"
+  synonyms:
+    - "Stroop task"
+    - "Stroop test"
+    - "color-word Stroop"
+    - "Stroop interference"
+  source_aliases:
+    brainmap:
+      - "STROOP"
+      - "STROOP INTERFERENCE"
+    neurosynth:
+      - "stroop"
+
+# Auto-added from dataset catalog unmatched tasks (2026-01-05)
+- canonical: "movie watching task"
+  synonyms:
+    - "movie"
+    - "restmovieadaptive"
+    - "restmoviefixed"
+    - "pixar"
+    - "merlin movie"
+    - "sesame street blocked language"
+    - "sesame street interleaved dialogue"
+    - "theprestige"
+    - "theshawshankredemption"
+    - "theusualsuspects"
+    - "becomingindian"
+    - "birthofanation"
+    - "forgettingfear"
+    - "gpsformylostidentity"
+    - "itsabox"
+    - "kiksuya"
+    - "metsmagic"
+    - "quietfire"
+    - "reachingoutbetweenthebars"
+    - "singlewomanseekingmanwich"
+    - "stagefright"
+    - "sweetaspie"
+    - "thecurse"
+    - "threemonths"
+    - "undertheinfluence"
+    - "laluna"
+    - "partlycloudy"
+    - "sherlock movie"
+    - "part 1 of sherlock episode"
+    - "part 2 of sherlock episode"
+    - "satellite"
+    - "5000scenes"
+    - "12yearsaslave"
+    - "500daysofsummer"
+    - "backtothefuture"
+    - "citizenfour"
+    - "littlemisssunshine"
+    - "adollshouse"
+    - "adventuresinsayingyes"
+    - "afatherscover"
+    - "againstthewind"
+    - "avatar"
+    - "backsideofthestorm"
+    - "beneaththemushroomcloud"
+    - "bluehope"
+    - "breakingupintheageofgoogle"
+    - "catfishingstrangerstofindmyself"
+    - "christmas1940"
+    - "cocoonoflove"
+    - "comingofageondeathrow"
+    - "exorcism"
+    - "firetestforlove"
+    - "fromboyhoodtofatherhood"
+    - "gangstersandcookies"
+    - "goingthelibertyway"
+    - "goldiethegoldfish"
+    - "golfclubbing"
+    - "haveyoumethimyet"
+    - "howtodraw"
+    - "ifthishaircouldtalk"
+    - "jugglingandjesus"
+    - "leavingbaghdad"
+    - "lifeanddeathontheoregontrail"
+    - "mayorofthefreaks"
+    - "mybackseatviewofagreatromance"
+    - "myfathershands"
+    - "myfirstdaywiththeyankees"
+    - "notontheusualtour"
+    - "odetostepfather"
+    - "onlyonewaytofindout"
+    - "stumblinginthedark"
+    - "superheroesjustforeachother"
+    - "swimmingwithastronauts"
+    - "thatthingonmyarm"
+    - "theadvancedbeginner"
+    - "theclosetthatateeverything"
+    - "thefreedomridersandme"
+    - "thepostmanalwayscalls"
+    - "theshower"
+    - "thetiniestbouquet"
+    - "thetriangleshirtwaistconnection"
+    - "thumbsup"
+    - "vixenandtheussr"
+    - "whenmothersbullyback"
+    - "wheretheressmoke"
+    - "wildwomenanddancingqueens"
+
+- canonical: "audio narrative"
+  synonyms:
+    - "sherlock audio"
+
+- canonical: "functional localizer fMRI tasks"
+  synonyms:
+    - "floc"
+    - "locapsms16iso"
+    - "locpaepi3d5vol"
+    - "locpasms16iso5vol"
+    - "locapcovsos"
+    - "locpasos5vol"
+    - "dyloc"
+    - "ppaffalomapper"
+    - "locapepi3d"
+    - "loclreye"
+    - "locapstarc"
+    - "locapstarctsm"
+    - "circrun"
+    - "langloc"
+    - "faceshouseste27"
+
+- canonical: "retinotopic mapping task"
+  synonyms:
+    - "retmapccw"
+    - "retmapclw"
+    - "retmapexp"
+    - "detect changes in checkerboard rotation direction"
+
+- canonical: "antisaccade/prosaccade task"
+  synonyms:
+    - "antisaccade as rewarded neutral with varying dot position"
+
+- canonical: "Food Image Viewing Task"
+  synonyms:
+    - "rating non calorie labeled food images"
+    - "viewing alternating blocks presenting either ready to eat edible objects or pictures of items unrelated to food"
+
+- canonical: "Action Recognition Task"
+  synonyms:
+    - "action recognition task to identify whether the presented action is a sport or not"
+
+- canonical: "Flanker"
+  cognitive_atlas_id: "cogat:TRM_4d559bcd67c19"
+  task_id: "task:flanker"
+  synonyms:
+    - "Eriksen Flanker"
+    - "Flanker task"
+    - "Eriksen flanker task"
+    - "arrow flanker"
+  source_aliases:
+    brainmap:
+      - "FLANKER"
+      - "ERIKSEN FLANKER"
+    neurosynth:
+      - "flanker"
+    openneuro:
+      - "flanker"
+      - "eriksen_flanker"
+
+- canonical: "Stop signal"
+  cognitive_atlas_id: "cogat:TRM_5271fb985b3b7"
+  task_id: "task:stop_signal"
+  synonyms:
+    - "Stop-signal"
+    - "Stop signal task"
+    - "SST"
+    - "stopping task"
+  source_aliases:
+    brainmap:
+      - "STOP SIGNAL"
+      - "STOP-SIGNAL"
+    neurosynth:
+      - "stop signal"
+      - "stopsignal"
+    openneuro:
+      - "stopsignal"
+      - "stop_signal"
+
+# Language tasks
+- canonical: "Word generation"
+  cognitive_atlas_id: "cogat:TRM_4d559bcd67c1a"
+  task_id: "task:word_generation"
+  synonyms:
+    - "Verbal fluency"
+    - "Word production"
+    - "Letter fluency"
+    - "Category fluency"
+    - "Phonemic fluency"
+  source_aliases:
+    brainmap:
+      - "WORD GENERATION"
+      - "VERBAL FLUENCY"
+      - "LETTER FLUENCY"
+    neurosynth:
+      - "word generation"
+      - "verbal fluency"
+
+- canonical: "Sentence comprehension"
+  cognitive_atlas_id: "cogat:TRM_525331b1dc954"
+  task_id: "task:sentence_comprehension"
+  synonyms:
+    - "Sentence processing"
+    - "Sentence reading"
+    - "Syntactic processing"
+  source_aliases:
+    brainmap:
+      - "SENTENCE COMPREHENSION"
+      - "SENTENCE PROCESSING"
+    neurosynth:
+      - "sentence"
+      - "sentence comprehension"
+
+# Emotion tasks
+- canonical: "Emotion regulation"
+  cognitive_atlas_id: "cogat:TRM_4e4dfab4e1b46"
+  task_id: "task:emotion_regulation"
+  synonyms:
+    - "Emotional regulation"
+    - "Affect regulation"
+    - "Reappraisal"
+    - "Emotion control"
+  source_aliases:
+    brainmap:
+      - "EMOTION REGULATION"
+      - "AFFECT REGULATION"
+    neurosynth:
+      - "emotion regulation"
+      - "emotional regulation"
+
+- canonical: "Face processing"
+  cognitive_atlas_id: "cogat:TRM_5140925277336"
+  task_id: "task:face_processing"
+  synonyms:
+    - "Face perception"
+    - "Face recognition"
+    - "Facial emotion"
+    - "Emotional faces"
+  source_aliases:
+    brainmap:
+      - "FACE PROCESSING"
+      - "FACE PERCEPTION"
+      - "EMOTIONAL FACES"
+    neurosynth:
+      - "face"
+      - "faces"
+      - "facial"
+
+# Memory tasks
+- canonical: "Episodic memory encoding"
+  cognitive_atlas_id: "cogat:TRM_551b1bcb29a02"
+  task_id: "task:episodic_memory_encoding"
+  synonyms:
+    - "Memory encoding"
+    - "Episodic encoding"
+    - "Encoding task"
+  source_aliases:
+    brainmap:
+      - "ENCODING"
+      - "MEMORY ENCODING"
+    neurosynth:
+      - "encoding"
+      - "memory encoding"
+
+- canonical: "Episodic memory retrieval"
+  cognitive_atlas_id: "cogat:TRM_551b1c0729f3e"
+  task_id: "task:episodic_memory_retrieval"
+  synonyms:
+    - "Memory retrieval"
+    - "Episodic retrieval"
+    - "Recognition memory"
+    - "Recall"
+  source_aliases:
+    brainmap:
+      - "RETRIEVAL"
+      - "MEMORY RETRIEVAL"
+      - "RECOGNITION"
+    neurosynth:
+      - "retrieval"
+      - "recall"
+      - "recognition"
+
+# Motor tasks
+- canonical: "Finger tapping"
+  cognitive_atlas_id: "cogat:TRM_50df0a5501ac9"
+  task_id: "task:finger_tapping"
+  synonyms:
+    - "Finger-tapping"
+    - "Motor tapping"
+    - "Sequential finger tapping"
+    - "Simple motor"
+  source_aliases:
+    brainmap:
+      - "FINGER TAPPING"
+      - "FINGER-TAPPING"
+      - "MOTOR TAPPING"
+    neurosynth:
+      - "finger tapping"
+      - "motor"
+    openneuro:
+      - "fingertapping"
+      - "finger_tapping"
+
+# Attention tasks
+- canonical: "Sustained attention"
+  cognitive_atlas_id: "cogat:TRM_5023d913bb94c"
+  task_id: "task:sustained_attention"
+  synonyms:
+    - "Vigilance"
+    - "Continuous performance"
+    - "CPT"
+    - "Attention task"
+  source_aliases:
+    brainmap:
+      - "SUSTAINED ATTENTION"
+      - "VIGILANCE"
+      - "CPT"
+    neurosynth:
+      - "sustained attention"
+      - "vigilance"
+
+- canonical: "Spatial attention"
+  cognitive_atlas_id: "cogat:TRM_4f24126c5ef29"
+  task_id: "task:spatial_attention"
+  synonyms:
+    - "Visuospatial attention"
+    - "Posner task"
+    - "Spatial cueing"
+    - "Attention orienting"
+  source_aliases:
+    brainmap:
+      - "SPATIAL ATTENTION"
+      - "POSNER"
+    neurosynth:
+      - "spatial attention"
+      - "posner"
+
+# Reward/decision tasks
+- canonical: "Gambling task"
+  cognitive_atlas_id: "cogat:TRM_4f2419110168f"
+  task_id: "task:gambling"
+  synonyms:
+    - "Iowa gambling"
+    - "Card gambling"
+    - "Risk taking"
+    - "Decision making"
+  source_aliases:
+    brainmap:
+      - "GAMBLING"
+      - "IOWA GAMBLING"
+    neurosynth:
+      - "gambling"
+      - "risk"
+
+- canonical: "Reward processing"
+  cognitive_atlas_id: "cogat:TRM_4f24190a92895"
+  task_id: "task:reward_processing"
+  synonyms:
+    - "Reward anticipation"
+    - "Monetary incentive delay"
+    - "MID"
+    - "Reward task"
+  source_aliases:
+    brainmap:
+      - "REWARD"
+      - "MID"
+      - "MONETARY INCENTIVE"
+    neurosynth:
+      - "reward"
+      - "monetary"
+    openneuro:
+      - "mid"
+      - "monetary_incentive_delay"
+
+- canonical: "Resting State"
+  source_aliases:
+    openneuro:
+      - "rest"
+      - "resting"
+      - "baseline"
+      - "todo full task name for rest"
+      - "restbaseline"
+      - "restfixationadaptive"
+      - "rest_1400"
+      - "restbold"
+      - "restpre"
+      - "restpost"
+
+- canonical: "Cue Exposure Task"
+  source_aliases:
+    openneuro:
+      - "cueexposure"
+
+- canonical: "Flavor Perception Task"
+  source_aliases:
+    openneuro:
+      - "flavor"
+
+- canonical: "Flavor Preference Task"
+  source_aliases:
+    openneuro:
+      - "ons flavour"
+      - "rp flavour"
+
+- canonical: "Gustatory stimulation with liquid tastes or flavors"
+  synonyms:
+    - "Flavor Perception Task"
+    - "Flavor Preference Task"
+    - "Flavor Tasting Task"
+    - "Flavor Processing Task"
+  source_aliases:
+    openneuro:
+      - "milky"
+
+- canonical: "Temporal Community Structure Learning Task"
+  source_aliases:
+    openneuro:
+      - "commstruc"
+
+- canonical: "Spatial Navigation"
+  source_aliases:
+    openneuro:
+      - "navlearn"
+
+- canonical: "navigation task"
+  synonyms:
+    - "Spatial Navigation"
+    - "Spatial Navigation Task"
+    - "3D Spatial Navigation Task"
+    - "Active Navigation Task"
+
+- canonical: "episodic recall"
+  synonyms:
+    - "Episodic Memory Retrieval"
+    - "Episodic memory retrieval"
+  source_aliases:
+    openneuro:
+      - "subjects recall the end of three basketball games"
+
+- canonical: "predictive-inference helicopter task"
+  source_aliases:
+    openneuro:
+      - "change point helicopter fmri"
+      - "change-point helicopter fmri"
+
+- canonical: "Multiplication task"
+  synonyms:
+    - "Single-Digit Multiplication"
+
+- canonical: "numerosity estimation task"
+  synonyms:
+    - "Numerosity Judgment"
+
+- canonical: "breath-holding"
+  synonyms:
+    - "Breath Hold"
+    - "Breath-Hold"
+
+- canonical: "motor fMRI task paradigm"
+  synonyms:
+    - "HCP Motor"
+
+- canonical: "imagined movement"
+  source_aliases:
+    openneuro:
+      - "mipre"
+
+- canonical: "finger tapping task"
+  source_aliases:
+    openneuro:
+      - "cuedsfm"
+      - "cuedmfm"
+
+- canonical: "instrumental learning task"
+  source_aliases:
+    openneuro:
+      - "genInstrAv"
+
+- canonical: "language processing fMRI task paradigm"
+  source_aliases:
+    openneuro:
+      - "compL1"
+      - "compLn"
+      - "prodL1"
+      - "prodLn"
+
+- canonical: "Eye tracking paradigms"
+  source_aliases:
+    openneuro:
+      - "EyeMag"
+
+- canonical: "mental imagery task"
+  source_aliases:
+    openneuro:
+      - "Functional task using imagery of facial expressions without feedback (control run)"
+
+- canonical: "retinotopic mapping task"
+  source_aliases:
+    openneuro:
+      - "retmap"
+      - "todo full task name for retmap"
+      - "prf"
+
+- canonical: "Neurofeedback Paradigm"
+  source_aliases:
+    openneuro:
+      - "1dnf"
+      - "2dnf"
+      - "1dnf_run 01"
+      - "2dnf_run 02"
+      - "dmn_tracking_train"
+      - "eegnf"
+      - "rt fmri regulation of medial prefrontal cortex"
+
+- canonical: "Point Subtraction Aggression Paradigm"
+  source_aliases:
+    openneuro:
+      - "psap"
+      - "todo full task name for psap"
+
+- canonical: "passive listening"
+  synonyms:
+    - "merlin audio"
+  source_aliases:
+    openneuro:
+      - "classicalmusic"
+      - "classicalMusic"
+  regex:
+    - "^genMusic\\d+$"
+
+- canonical: "Eye Gaze Processing Task"
+  synonyms:
+    - "peer1"
+    - "peer2"
+
+- canonical: "sustained attention to response task"
+  synonyms:
+    - "guardduty"
+
+- canonical: "motor fMRI task paradigm"
+  synonyms:
+    - "finger_foot_lips"
+
+- canonical: "flashing checkerboard"
+  synonyms:
+    - "fullchecker"
+    - "halfchecker"
+    - "checker"
+
+- canonical: "passive viewing"
+  synonyms:
+    - "full field of view visual stimulation only"
+  source_aliases:
+    openneuro:
+      - "viewclips"
+
+- canonical: "visual attention task"
+  synonyms:
+    - "full field of view visual stimulation attention control"
+    - "attendfixgazecenter"
+    - "attendfixgazecenterfs"
+    - "attendfixgazeleft"
+    - "attendfixgazeright"
+    - "attendstimgazecenter"
+    - "attendstimgazecenterfs"
+    - "attendstimgazeleft"
+    - "attendstimgazeright"
+    - "conjunction target 1 and 9 shapes feature selection"
+    - "feature target 1 and 9 shapes feature selection"
+
+- canonical: "retinotopic mapping task"
+  synonyms:
+    - "population receptive field model mapping"
+
+- canonical: "Incidental encoding task"
+  synonyms:
+    - "med8"
+    - "quick4n"
+    - "quick6"
+    - "slow10"
+    - "slow12"
+
+- canonical: "Driving Simulator Task"
+  synonyms:
+    - "driverandomsound"
+    - "drivewithspeedchange"
+    - "drivewithtaskaudio"
+    - "drivewithcomplexity"
+
+- canonical: "divided auditory attention"
+  synonyms:
+    - "attendfemalespeaker"
+    - "attendmalespeaker"
+
+- canonical: "auditory scene perception"
+  synonyms:
+    - "musicvsspeech"
+
+- canonical: "Experience Sampling"
+  synonyms:
+    - "expsamp"
+
+- canonical: "Food viewing (passive)"
+  synonyms:
+    - "rating calorie labled food images"
+    - "rating calorie labeled food images"
+
+- canonical: "Statistical Learning Task"
+  synonyms:
+    - "structured object sequences"

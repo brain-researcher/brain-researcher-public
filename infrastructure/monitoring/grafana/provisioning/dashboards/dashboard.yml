@@ -1,0 +1,22 @@
+apiVersion: 1
+
+providers:
+  - name: 'Brain Researcher Dashboards'
+    orgId: 1
+    folder: 'Brain Researcher'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+  
+  - name: 'System Dashboards'
+    orgId: 1
+    folder: 'System'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/system

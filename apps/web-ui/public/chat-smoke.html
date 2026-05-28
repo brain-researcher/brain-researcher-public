@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Smoke Test (Same-Origin)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        #status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            display: block;
+        }
+        #status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+        #status.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+        #response {
+            padding: 20px;
+            background: #f5f7fa;
+            border-radius: 8px;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .metadata {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e1e8ed;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Brain Researcher Chat</h1>
+        <p class="subtitle">Same-origin smoke test using /api/chat proxy</p>
+        
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="message" 
+                placeholder="Ask a neuroscience question..." 
+                value="What is the n-back task?"
+                autocomplete="off"
+            >
+            <button id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+        
+        <div id="status"></div>
+        <div id="response">Ready to send queries...</div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const messageInput = document.getElementById('message');
+            const responseDiv = document.getElementById('response');
+            const statusDiv = document.getElementById('status');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            const message = messageInput.value.trim();
+            if (!message) {
+                statusDiv.className = 'error';
+                statusDiv.innerHTML = '⚠️ Please enter a message';
+                return;
+            }
+            
+            sendBtn.disabled = true;
+            statusDiv.className = 'info';
+            statusDiv.innerHTML = 'Sending to DeepSeek... <span class="loading"></span>';
+            responseDiv.textContent = 'Waiting for response...';
+            
+            const startTime = Date.now();
+            
+            try {
+                // Same-origin request to Next.js API route
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Extract response content
+                let content = '';
+                if (data.message && data.message.content) {
+                    content = data.message.content;
+                } else if (data.content) {
+                    content = data.content;
+                } else {
+                    content = JSON.stringify(data, null, 2);
+                }
+                
+                responseDiv.textContent = content;
+                
+                // Show metadata
+                let metadata = `✅ Response received in ${elapsedTime}s`;
+                if (data.runCard && data.runCard.execution) {
+                    const exec = data.runCard.execution;
+                    metadata += ` | Model: ${exec.model || 'unknown'} | Latency: ${(exec.latency_ms/1000).toFixed(1)}s`;
+                }
+                
+                statusDiv.className = 'success';
+                statusDiv.innerHTML = metadata;
+                
+            } catch (error) {
+                const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                statusDiv.className = 'error';
+                statusDiv.innerHTML = `❌ Error after ${elapsedTime}s: ${error.message}`;
+                responseDiv.textContent = 'Error: ' + error.message;
+                console.error('Chat error:', error);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+        
+        // Enter key to send
+        document.getElementById('message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !document.getElementById('sendBtn').disabled) {
+                sendMessage();
+            }
+        });
+        
+        // Focus on load
+        window.addEventListener('load', () => {
+            document.getElementById('message').focus();
+        });
+    </script>
+</body>
+</html>

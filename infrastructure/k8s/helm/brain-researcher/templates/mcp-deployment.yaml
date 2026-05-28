@@ -1,0 +1,193 @@
+{{- if or .Values.mcp.enabled .Values.global.mcpEnabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-mcp
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+spec:
+  {{- $strategy := .Values.mcp.strategy | default dict }}
+  {{- $rollingUpdate := get $strategy "rollingUpdate" | default dict }}
+  replicas: {{ .Values.mcp.replicaCount | default 2 }}
+  strategy:
+    type: {{ get $strategy "type" | default "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{- if hasKey $rollingUpdate "maxUnavailable" }} {{ get $rollingUpdate "maxUnavailable" }}{{- else }} 1{{- end }}
+      maxSurge: {{- if hasKey $rollingUpdate "maxSurge" }} {{ get $rollingUpdate "maxSurge" }}{{- else }} 1{{- end }}
+  selector:
+    matchLabels:
+      {{- include "brain-researcher.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mcp
+  template:
+    metadata:
+      labels:
+        {{- include "brain-researcher.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mcp
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7000"
+        prometheus.io/path: "/metrics"
+        {{- with .Values.mcp.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "brain-researcher.serviceAccountName" . }}
+      {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: mcp
+          image: "{{ .Values.global.imageRegistry }}/mcp:{{ .Values.mcp.imageTag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 7000
+              protocol: TCP
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: BR_MCP_TRANSPORT
+              value: "streamable-http"
+            - name: BR_MCP_HOST
+              value: "0.0.0.0"
+            - name: BR_MCP_PORT
+              value: "7000"
+            - name: BR_MCP_MOUNT_PATH
+              value: {{ .Values.mcp.mountPath | default "/mcp" | quote }}
+            - name: BR_MCP_LOG_LEVEL
+              value: "INFO"
+            {{- if .Values.mcp.runRoot }}
+            - name: BR_MCP_RUN_ROOT
+              value: {{ .Values.mcp.runRoot | quote }}
+            {{- else if .Values.jobStore.enabled }}
+            - name: BR_MCP_RUN_ROOT
+              value: {{ printf "%s/mcp_runs" .Values.jobStore.mountPath | quote }}
+            {{- end }}
+            {{- if .Values.mcp.runRootAliases }}
+            - name: BR_MCP_RUN_ROOT_ALIASES
+              value: {{ .Values.mcp.runRootAliases | quote }}
+            {{- end }}
+            {{- if .Values.mcp.openneuroMounts.enabled }}
+            - name: OPENNEURO_MOUNT_ROOT
+              value: {{ .Values.mcp.openneuroMounts.root.mountPath | quote }}
+            - name: OPENNEURO_ROOT
+              value: {{ .Values.mcp.openneuroMounts.root.mountPath | quote }}
+            - name: OPENNEURO_DERIV_ROOT
+              value: {{ .Values.mcp.openneuroMounts.derivatives.mountRootPath | quote }}
+            {{- end }}
+            - name: REDIS_URL
+              value: "redis://{{ include "brain-researcher.fullname" . }}-redis.{{ .Values.namespaces.data }}:6379/0"
+            # Reuse the platform auth secret for JWT verification (HS256 by default).
+            # This lets MCP run in `jwt` auth mode without introducing a new secret type.
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "brain-researcher.fullname" . }}-external-services
+                  key: NEXTAUTH_SECRET
+                  optional: true
+            {{- if .Values.mcp.extraEnv }}
+            {{- tpl (toYaml .Values.mcp.extraEnv) $ | nindent 12 }}
+            {{- end }}
+            {{- if .Values.mcp.freesurferLicense.enabled }}
+            - name: FREESURFER_HOME
+              value: {{ .Values.mcp.freesurferLicense.mountDir | quote }}
+            - name: FS_LICENSE
+              value: {{ printf "%s/%s" .Values.mcp.freesurferLicense.mountDir .Values.mcp.freesurferLicense.secretKey | quote }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-database-credentials
+                optional: true
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-llm-api-keys
+                optional: true
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-external-services
+                optional: true
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-mcp-auth
+                optional: true
+          volumeMounts:
+            {{- if .Values.jobStore.enabled }}
+            - name: jobstore
+              mountPath: {{ .Values.jobStore.mountPath | quote }}
+            {{- end }}
+            {{- if .Values.mcp.openneuroMounts.enabled }}
+            - name: openneuro-root
+              mountPath: {{ .Values.mcp.openneuroMounts.root.mountPath | quote }}
+              readOnly: {{ .Values.mcp.openneuroMounts.root.readOnly }}
+            {{- range .Values.mcp.openneuroMounts.derivatives.buckets }}
+            - name: {{ printf "openneuro-deriv-%s" . | quote }}
+              mountPath: {{ printf "%s/%s" $.Values.mcp.openneuroMounts.derivatives.mountRootPath . | quote }}
+              readOnly: {{ $.Values.mcp.openneuroMounts.derivatives.readOnly }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.mcp.freesurferLicense.enabled }}
+            - name: freesurfer-license
+              mountPath: {{ .Values.mcp.freesurferLicense.mountDir | quote }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.mcp.extraVolumeMounts }}
+            {{- toYaml .Values.mcp.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.mcp.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      {{- with .Values.global.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.global.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.global.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.jobStore.enabled .Values.mcp.openneuroMounts.enabled .Values.mcp.freesurferLicense.enabled .Values.mcp.extraVolumes }}
+      volumes:
+        {{- if .Values.jobStore.enabled }}
+        - name: jobstore
+          hostPath:
+            path: {{ .Values.jobStore.hostPath | quote }}
+            type: DirectoryOrCreate
+        {{- end }}
+        {{- if .Values.mcp.openneuroMounts.enabled }}
+        - name: openneuro-root
+          hostPath:
+            path: {{ .Values.mcp.openneuroMounts.root.hostPath | quote }}
+            type: Directory
+        {{- range .Values.mcp.openneuroMounts.derivatives.buckets }}
+        - name: {{ printf "openneuro-deriv-%s" . | quote }}
+          hostPath:
+            path: {{ printf "%s/%s" $.Values.mcp.openneuroMounts.derivatives.hostRootPath . | quote }}
+            type: Directory
+        {{- end }}
+        {{- end }}
+        {{- if .Values.mcp.freesurferLicense.enabled }}
+        - name: freesurfer-license
+          secret:
+            secretName: {{ .Values.mcp.freesurferLicense.secretName | quote }}
+            items:
+              - key: {{ .Values.mcp.freesurferLicense.secretKey | quote }}
+                path: {{ .Values.mcp.freesurferLicense.secretKey | quote }}
+        {{- end }}
+        {{- if .Values.mcp.extraVolumes }}
+        {{- toYaml .Values.mcp.extraVolumes | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}

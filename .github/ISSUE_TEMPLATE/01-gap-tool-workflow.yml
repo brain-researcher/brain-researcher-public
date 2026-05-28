@@ -1,0 +1,74 @@
+name: Add Tool/Workflow Gap
+description: Propose a missing tool or workflow after checking Tools/Library.
+title: "[GAP] "
+labels:
+  - type/feature-request
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area/tool
+        - area/workflow
+    validations:
+      required: true
+
+  - type: dropdown
+    id: entry_surface
+    attributes:
+      label: Entry surface
+      options:
+        - Tools (Advanced)
+        - Library
+        - Both
+    validations:
+      required: true
+
+  - type: input
+    id: search_terms
+    attributes:
+      label: Search terms used
+      placeholder: motion correction, harmonization, load_dataset
+    validations:
+      required: true
+
+  - type: input
+    id: missing_name
+    attributes:
+      label: Missing or problematic item
+      placeholder: Tool/workflow name, alias, or expected ID
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_gap
+    attributes:
+      label: What is missing or inconsistent
+      placeholder: Missing capability, duplicate item, naming inconsistency, metadata gaps
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_placement
+    attributes:
+      label: Suggested placement and metadata
+      placeholder: Suggested workflow, stage, cost tier, and metadata fields to add
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_impact
+    attributes:
+      label: Expected impact
+      placeholder: Why this improves scientific quality or execution reliability
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I did not include PHI, secrets, or private credentials.
+          required: true

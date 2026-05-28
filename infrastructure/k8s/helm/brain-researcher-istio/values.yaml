@@ -1,0 +1,627 @@
+# Brain Researcher Istio Service Mesh Configuration
+
+# Global configuration
+global:
+  # Brain Researcher specific settings
+  brainResearcher:
+    namespace: brain-researcher
+    meshId: brain-researcher-mesh
+    clusterName: brain-researcher-primary
+    version: "1.0.0"
+  
+  # Istio global settings
+  istioNamespace: istio-system
+  meshConfig:
+    defaultConfig:
+      # Proxy configuration optimized for neuroimaging workloads
+      proxyStatsMatcher:
+        inclusionRegexps:
+          - ".*_cx_.*"
+          - ".*_rq_.*"
+          - ".*_pending.*"
+          - ".*brain_researcher.*"
+      # Extended timeouts for long-running analysis tasks
+      gatewayTopology:
+        numTrustedProxies: 2
+      # Discovery settings
+      discoveryAddress: istiod.istio-system.svc:15012
+      # Tracing configuration
+      tracing:
+        zipkin:
+          address: jaeger-collector.istio-system:14268
+      # Access logging
+      accessLogFile: /dev/stdout
+      accessLogFormat: |
+        [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%"
+        %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+        %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% "%REQ(X-FORWARDED-FOR)%"
+        "%REQ(USER-AGENT)%" "%REQ(X-REQUEST-ID)%" "%REQ(:AUTHORITY)%" "%UPSTREAM_HOST%"
+        brain_researcher_service="%REQ(X-BRAIN-RESEARCHER-SERVICE)%"
+        analysis_type="%REQ(X-ANALYSIS-TYPE)%" session_id="%REQ(X-SESSION-ID)%"
+
+# Istio installation configuration
+istio:
+  # Control installation of Istio components
+  installBase: true
+  installIstiod: true
+  installGateway: true
+  
+  # Istio base configuration
+  base:
+    global:
+      istioNamespace: istio-system
+      
+  # Istiod configuration
+  pilot:
+    # High availability configuration
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    # Autoscaling
+    autoscaleEnabled: true
+    autoscaleMin: 2
+    autoscaleMax: 5
+    # Environment variables
+    env:
+      PILOT_ENABLE_ALPHA_GATEWAY_API: true
+      PILOT_ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION: true
+      EXTERNAL_ISTIOD: false
+      
+  # Gateway configuration
+  gateway:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    service:
+      type: LoadBalancer
+      ports:
+        - port: 80
+          targetPort: 8080
+          name: http2
+        - port: 443
+          targetPort: 8443
+          name: https
+        - port: 5000
+          targetPort: 5000
+          name: neurokg
+        - port: 8000
+          targetPort: 8000
+          name: agent
+        - port: 3000
+          targetPort: 3000
+          name: web-ui
+        - port: 9090
+          targetPort: 9090
+          name: metrics
+    autoscaleEnabled: true
+    autoscaleMin: 2
+    autoscaleMax: 5
+
+# Brain Researcher service configurations
+services:
+  # BR-KG service configuration
+  neurokg:
+    name: neurokg-service
+    enabled: true
+    trafficPolicy:
+      loadBalancer: LEAST_CONN
+      connectionPool:
+        tcp:
+          maxConnections: 50
+          connectTimeout: 30s
+          keepalive:
+            time: 7200s
+            interval: 75s
+        http:
+          http1MaxPendingRequests: 20
+          http2MaxRequests: 100
+          maxRequestsPerConnection: 10
+          maxRetries: 5
+          h2UpgradePolicy: UPGRADE
+      outlierDetection:
+        consecutiveGatewayErrors: 5
+        consecutive5xxErrors: 5
+        interval: 30s
+        baseEjectionTime: 30s
+        maxEjectionPercent: 50
+        minHealthPercent: 30
+    security:
+      mtlsMode: STRICT
+      authorizationRules:
+        - from:
+          - source:
+              principals:
+                - "cluster.local/ns/brain-researcher/sa/agent-service-account"
+                - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
+                - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
+          to:
+          - operation:
+              methods: ["GET", "POST"]
+              paths: ["/search/*", "/vector/*", "/spatial/*", "/api/*"]
+
+  # Agent service configuration
+  agent:
+    name: agent-service
+    enabled: true
+    trafficPolicy:
+      loadBalancer: ROUND_ROBIN
+      connectionPool:
+        tcp:
+          maxConnections: 100
+          connectTimeout: 60s
+          keepalive:
+            time: 3600s
+            interval: 60s
+        http:
+          http1MaxPendingRequests: 50
+          http2MaxRequests: 200
+          maxRequestsPerConnection: 5
+          maxRetries: 3
+          h2UpgradePolicy: UPGRADE
+          timeout: 300s
+      outlierDetection:
+        consecutiveGatewayErrors: 3
+        consecutive5xxErrors: 3
+        interval: 60s
+        baseEjectionTime: 60s
+        maxEjectionPercent: 30
+        minHealthPercent: 50
+    security:
+      mtlsMode: STRICT
+      authorizationRules:
+        - from:
+          - source:
+              principals:
+                - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
+                - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
+                - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+          to:
+          - operation:
+              methods: ["GET", "POST"]
+              paths: ["/chat/*", "/analysis/*", "/tools/*"]
+
+  # Web UI service configuration
+  webui:
+    name: web-ui-service
+    enabled: true
+    trafficPolicy:
+      loadBalancer: LEAST_CONN
+      connectionPool:
+        tcp:
+          maxConnections: 200
+          connectTimeout: 10s
+          keepalive:
+            time: 600s
+            interval: 30s
+        http:
+          http1MaxPendingRequests: 100
+          http2MaxRequests: 300
+          maxRequestsPerConnection: 50
+          maxRetries: 2
+          h2UpgradePolicy: UPGRADE
+      outlierDetection:
+        consecutiveGatewayErrors: 3
+        consecutive5xxErrors: 3
+        interval: 30s
+        baseEjectionTime: 30s
+        maxEjectionPercent: 20
+        minHealthPercent: 70
+    security:
+      mtlsMode: STRICT
+      authorizationRules:
+        - from:
+          - source:
+              principals:
+                - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+                - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+                - "cluster.local/ns/brain-researcher/sa/agent-service-account"
+          to:
+          - operation:
+              methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+
+  # Orchestrator service configuration
+  orchestrator:
+    name: orchestrator-service
+    enabled: true
+    trafficPolicy:
+      loadBalancer: ROUND_ROBIN
+      connectionPool:
+        tcp:
+          maxConnections: 150
+          connectTimeout: 30s
+          keepalive:
+            time: 1800s
+            interval: 60s
+        http:
+          http1MaxPendingRequests: 75
+          http2MaxRequests: 250
+          maxRequestsPerConnection: 20
+          maxRetries: 3
+          h2UpgradePolicy: UPGRADE
+          timeout: 180s
+      outlierDetection:
+        consecutiveGatewayErrors: 5
+        consecutive5xxErrors: 5
+        interval: 30s
+        baseEjectionTime: 30s
+        maxEjectionPercent: 40
+        minHealthPercent: 60
+    security:
+      mtlsMode: STRICT
+      authorizationRules:
+        - from:
+          - source:
+              principals:
+                - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
+                - "cluster.local/ns/brain-researcher/sa/agent-service-account"
+                - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+          to:
+          - operation:
+              methods: ["GET", "POST", "PUT"]
+              paths: ["/jobs/*", "/workflow/*", "/api/*"]
+
+  # Database services
+  databases:
+    redis:
+      name: redis-service
+      enabled: true
+      trafficPolicy:
+        loadBalancer: LEAST_CONN
+        connectionPool:
+          tcp:
+            maxConnections: 100
+            connectTimeout: 5s
+            keepalive:
+              time: 3600s
+              interval: 30s
+        outlierDetection:
+          consecutiveGatewayErrors: 2
+          consecutive5xxErrors: 2
+          interval: 10s
+          baseEjectionTime: 10s
+          maxEjectionPercent: 10
+          minHealthPercent: 80
+      security:
+        mtlsMode: STRICT
+
+    postgres:
+      name: postgres-service
+      enabled: true
+      trafficPolicy:
+        loadBalancer: LEAST_CONN
+        connectionPool:
+          tcp:
+            maxConnections: 50
+            connectTimeout: 10s
+            keepalive:
+              time: 7200s
+              interval: 60s
+        outlierDetection:
+          consecutiveGatewayErrors: 1
+          consecutive5xxErrors: 1
+          interval: 30s
+          baseEjectionTime: 60s
+          maxEjectionPercent: 0
+          minHealthPercent: 100
+      security:
+        mtlsMode: STRICT
+
+    neo4j:
+      name: neo4j-service
+      enabled: true
+      trafficPolicy:
+        loadBalancer: LEAST_CONN
+        connectionPool:
+          tcp:
+            maxConnections: 50
+            connectTimeout: 10s
+            keepalive:
+              time: 7200s
+              interval: 60s
+      security:
+        mtlsMode: STRICT
+
+# Gateway configuration
+gateways:
+  main:
+    enabled: true
+    name: brain-researcher-gateway
+    hosts:
+      - "brain-researcher.local"
+      - "*.brain-researcher.local" 
+      - "app.brain-researcher.com"
+      - "*.app.brain-researcher.com"
+    tls:
+      enabled: true
+      credentialName: brain-researcher-tls-cert
+    ports:
+      http: 80
+      https: 443
+      neurokg: 5000
+      agent: 8000
+      webui: 3000
+      metrics: 9090
+
+  egress:
+    enabled: true
+    name: brain-researcher-egress-gateway
+    externalHosts:
+      - "openneuro.org"
+      - "*.openneuro.org"
+      - "neurovault.org"
+      - "*.neurovault.org"
+      - "eutils.ncbi.nlm.nih.gov"
+      - "pubmed.ncbi.nlm.nih.gov"
+      - "fcon_1000.projects.nitrc.org"
+      - "central.xnat.org"
+
+# Virtual Services configuration
+virtualServices:
+  webui:
+    enabled: true
+    hosts:
+      - "brain-researcher.local"
+      - "app.brain-researcher.com"
+      - "ui.brain-researcher.local"
+    routes:
+      - match:
+          - uri:
+              exact: "/health"
+        route:
+          - destination:
+              host: web-ui-service.brain-researcher.svc.cluster.local
+              port:
+                number: 3000
+        timeout: 5s
+        retries:
+          attempts: 2
+          perTryTimeout: 2s
+      - match:
+          - uri:
+              prefix: "/api/"
+        route:
+          - destination:
+              host: web-ui-service.brain-researcher.svc.cluster.local
+              port:
+                number: 3000
+        timeout: 30s
+        retries:
+          attempts: 3
+          perTryTimeout: 10s
+
+  neurokg:
+    enabled: true
+    hosts:
+      - "api.brain-researcher.local"
+      - "neurokg.brain-researcher.local"
+    routes:
+      - match:
+          - uri:
+              prefix: "/search/"
+        route:
+          - destination:
+              host: neurokg-service.brain-researcher.svc.cluster.local
+              port:
+                number: 5000
+        timeout: 120s
+        retries:
+          attempts: 2
+          perTryTimeout: 60s
+      - match:
+          - uri:
+              prefix: "/vector/"
+        route:
+          - destination:
+              host: neurokg-service.brain-researcher.svc.cluster.local
+              port:
+                number: 5000
+        timeout: 300s
+        retries:
+          attempts: 1
+          perTryTimeout: 300s
+
+  agent:
+    enabled: true
+    hosts:
+      - "agent.brain-researcher.local"
+      - "llm.brain-researcher.local"
+    routes:
+      - match:
+          - uri:
+              prefix: "/chat/stream/"
+        route:
+          - destination:
+              host: agent-service.brain-researcher.svc.cluster.local
+              port:
+                number: 8000
+        timeout: 3600s
+      - match:
+          - uri:
+              prefix: "/analysis/"
+        route:
+          - destination:
+              host: agent-service.brain-researcher.svc.cluster.local
+              port:
+                number: 8000
+        timeout: 1800s
+        retries:
+          attempts: 1
+          perTryTimeout: 1800s
+
+# Security configuration
+security:
+  # Global mTLS policy
+  globalMtls:
+    enabled: true
+    mode: STRICT
+
+  # JWT authentication
+  jwt:
+    enabled: false
+    jwksUri: ""
+    issuer: ""
+
+  # Authorization policies
+  authorizationPolicies:
+    denyAll:
+      enabled: true
+      name: default-deny-all
+    allowIngress:
+      enabled: true
+      name: allow-ingress-gateway
+    serviceSpecific:
+      enabled: true
+
+# Telemetry configuration
+telemetry:
+  # Metrics
+  metrics:
+    enabled: true
+    prometheus:
+      enabled: true
+      customMetrics:
+        - name: brain_researcher_requests_total
+          dimensions:
+            brain_researcher_service: "%{REQUEST_HEADER_X_BRAIN_RESEARCHER_SERVICE}"
+            analysis_type: "%{REQUEST_HEADER_X_ANALYSIS_TYPE}"
+            session_id: "%{REQUEST_HEADER_X_SESSION_ID}"
+        - name: brain_researcher_request_duration
+          unit: "milliseconds"
+          buckets: [0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000, 60000, 300000]
+
+  # Distributed tracing
+  tracing:
+    enabled: true
+    jaeger:
+      enabled: true
+      samplingRate: 1.0
+    customTags:
+      brain_researcher_service:
+        header:
+          name: x-brain-researcher-service
+      analysis_type:
+        header:
+          name: x-analysis-type
+      session_id:
+        header:
+          name: x-session-id
+      dataset:
+        header:
+          name: x-dataset
+
+  # Access logging
+  accessLogging:
+    enabled: true
+    format: |
+      [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%"
+      %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+      %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% "%REQ(X-FORWARDED-FOR)%"
+      service="%REQ(X-BRAIN-RESEARCHER-SERVICE)%" analysis="%REQ(X-ANALYSIS-TYPE)%"
+      session="%REQ(X-SESSION-ID)%" dataset="%REQ(X-DATASET)%"
+
+# Observability configuration
+observability:
+  # Kiali
+  kiali:
+    enabled: true
+    version: v1.73.0
+    auth:
+      strategy: anonymous
+    externalServices:
+      prometheus:
+        url: http://prometheus.brain-researcher.svc.cluster.local:9090
+      grafana:
+        enabled: true
+        url: http://grafana.brain-researcher.svc.cluster.local:3000
+      tracing:
+        enabled: true
+        url: http://jaeger-query.istio-system:16686
+
+  # Custom dashboards
+  dashboards:
+    brainResearcher:
+      enabled: true
+      title: "Brain Researcher Platform Overview"
+      charts:
+        - name: "Request Rate"
+          metric: "request_total"
+          type: "rate"
+        - name: "Success Rate"  
+          metric: "request_total"
+          type: "success_rate"
+        - name: "Response Time"
+          metric: "request_duration_milliseconds"
+          type: "histogram"
+
+# Multi-cluster configuration
+multiCluster:
+  enabled: false
+  primary:
+    cluster: brain-researcher-primary
+    region: us-west-2
+    network: brain-researcher-network-primary
+  secondary:
+    cluster: brain-researcher-secondary
+    region: us-east-1
+    network: brain-researcher-network-secondary
+  crossClusterServices:
+    - neurokg-service
+    - agent-service
+    - orchestrator-service
+
+# Migration configuration
+migration:
+  enabled: false
+  dryRun: false
+  serviceOrder:
+    - redis-service
+    - postgres-service
+    - neo4j-service
+    - neurokg-service
+    - orchestrator-service
+    - agent-service
+    - web-ui-service
+  trafficSplitIncrements: [10, 25, 50, 75, 90, 100]
+  healthThresholds:
+    successRateMin: 0.95
+    errorRateMax: 0.05
+    latencyP95Max: 5000
+    healthScoreMin: 80
+
+# Resource requirements
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
+# Node selection
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Additional labels and annotations
+labels:
+  project: brain-researcher
+  component: service-mesh
+  managed-by: helm
+
+annotations:
+  meta.helm.sh/release-name: brain-researcher-istio
+  meta.helm.sh/release-namespace: brain-researcher

@@ -1,0 +1,53 @@
+############################################################
+# Brain Researcher — LiteLLM proxy config
+#
+# Model provider is controlled by env vars in .env / docker-compose:
+#
+#   BR_PRIMARY_MODEL   e.g. gemini/gemini-3-pro-preview
+#                           anthropic/claude-sonnet-4-6
+#                           openai/gpt-4o
+#   BR_FAST_MODEL      e.g. gemini/gemini-3-flash-preview
+#                           anthropic/claude-haiku-4-5-20251001
+#                           openai/gpt-4o-mini
+#   BR_MODEL_API_KEY   provider API key (GEMINI_API_KEY / sk-ant-... / sk-openai-...)
+#   BR_MODEL_API_BASE  optional — only needed for OpenAI-compatible custom endpoints
+#
+# CC always sends claude-sonnet-4-6 / claude-haiku-4-5-20251001;
+# litellm routes them to whatever backend is configured.
+############################################################
+
+model_list:
+  # Main loop: NeuroPlan + main CC agent
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: os.environ/BR_PRIMARY_MODEL
+      api_key: os.environ/BR_MODEL_API_KEY
+      api_base: os.environ/BR_MODEL_API_BASE   # ignored when empty
+      max_tokens: 8192
+
+  # Also accept claude-opus-4-6 (same backend as primary)
+  - model_name: claude-opus-4-6
+    litellm_params:
+      model: os.environ/BR_PRIMARY_MODEL
+      api_key: os.environ/BR_MODEL_API_KEY
+      api_base: os.environ/BR_MODEL_API_BASE
+      max_tokens: 8192
+
+  # Fast/cheap: NeuroExplore + BrainDream consolidation
+  - model_name: claude-haiku-4-5-20251001
+    litellm_params:
+      model: os.environ/BR_FAST_MODEL
+      api_key: os.environ/BR_MODEL_API_KEY
+      api_base: os.environ/BR_MODEL_API_BASE
+      max_tokens: 8192
+
+litellm_settings:
+  drop_params: true                        # drop Anthropic-specific body params
+  modify_params: true                      # let litellm reshape params per provider
+  forward_client_headers_to_llm_api: false # don't forward anthropic-beta headers to Gemini/OpenAI
+  request_timeout: 120
+  num_retries: 2
+  set_verbose: false
+
+general_settings:
+  master_key: "<REPLACE_ME>"  # local-dev only; rotate before production

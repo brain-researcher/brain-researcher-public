@@ -1,0 +1,60 @@
+# Demo ID to Real Job/Output Mapping
+# Maps frontend demo IDs to actual analysis outputs
+
+demos:
+  # Decision-making GLM Analysis - ds000009 balloon analog risk task
+  # NOTE: "glm_motor" is a legacy naming anomaly - this demo analyzes
+  # decision-making/risk-taking behavior, not motor tasks
+  glm_motor:
+    output_path: "openneuro_glmfitlins/stat_maps/ds000009/task-balloonanalogrisktask"
+    title: "Decision-Making Analysis - Balloon Analog Risk Task"
+    description: "GLM analysis of risk-taking behavior during balloon analog risk task"
+    dataset_id: "ds000009"
+    task: "balloonanalogrisktask"
+    paper2_case: "bold_neural_coupling"
+    paper2_stage_focus: ["R2", "R4", "R5"]
+
+  # Music perception GLM - ds000171 bidssm
+  connectivity_dmn:
+    output_path: "openneuro_glmfitlins/stat_maps/bidssm_ds000171/task-music"
+    title: "Music Perception Analysis"
+    description: "Statistical analysis of music vs sound perception"
+    dataset_id: "ds000171"
+    task: "music"
+
+  # Default Mode Network Analysis
+  dmn_default:
+    output_path: "agent_outputs/nilearn"
+    title: "Default Mode Network Analysis"
+    description: "Investigation of default mode network connectivity and spatial patterns"
+    analysis_type: "dmn"
+    method: "ica"
+
+  # Group-level GLM analysis using emotional regulation paradigm
+  group_analysis:
+    output_path: "openneuro_glmfitlins/stat_maps/ds000009/task-emotionalregulation"
+    title: "Group Emotion Regulation Analysis"
+    description: "Compare cognitive reappraisal versus baseline across 24 subjects"
+    dataset_id: "ds000009"
+    task: "emotionalregulation"
+    analysis_stage: "group_glm"
+    paper2_case: "lesion_network_mapping_robustness"
+    paper2_stage_focus: ["R3", "R4", "R5"]
+
+  # Preprocessing + QC demo using stop-signal task outputs
+  smart_preprocessing:
+    output_path: "openneuro_glmfitlins/stat_maps/ds000009/task-stopsignal"
+    title: "Stop-Signal QC Pipeline"
+    description: "Preprocessed GLM outputs with QC metrics for inhibitory control task"
+    dataset_id: "ds000009"
+    task: "stopsignal"
+    analysis_stage: "preprocessing_glm"
+
+  # Discounting task meta-style aggregation (multi-contrast comparison)
+  meta_analysis:
+    output_path: "openneuro_glmfitlins/stat_maps/ds000009/task-discounting"
+    title: "Reward Discounting Summary Analysis"
+    description: "Aggregate contrasts illustrating delay discounting decision networks"
+    dataset_id: "ds000009"
+    task: "discounting"
+    analysis_stage: "aggregate_glm"

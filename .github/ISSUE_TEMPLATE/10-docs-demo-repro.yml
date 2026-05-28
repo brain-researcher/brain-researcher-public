@@ -1,0 +1,43 @@
+name: Docs/Demo Trace Reproducibility
+description: Reproduce docs or demo trace and report exact break point.
+title: "[DOCS] Repro failed - "
+labels:
+  - area/docs
+  - type/bug
+body:
+  - type: input
+    id: doc_or_demo
+    attributes:
+      label: Doc/demo page or section
+      placeholder: Home demo #3
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps followed
+      placeholder: Numbered list, no hidden assumptions
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected outcome
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual break point and message
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_doc_change
+    attributes:
+      label: Suggested documentation change
+    validations:
+      required: true

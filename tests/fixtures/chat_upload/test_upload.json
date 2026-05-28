@@ -1,0 +1,17 @@
+{
+  "test_data": {
+    "name": "Test Upload File",
+    "description": "This is a test JSON file for chat upload functionality",
+    "timestamp": "2025-08-27T14:30:00Z",
+    "metadata": {
+      "format": "json",
+      "version": "1.0",
+      "purpose": "integration_testing"
+    },
+    "sample_values": [1, 2, 3, 4, 5],
+    "nested": {
+      "field1": "value1",
+      "field2": "value2"
+    }
+  }
+}

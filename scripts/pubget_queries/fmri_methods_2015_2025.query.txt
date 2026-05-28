@@ -1,0 +1,9 @@
+((fMRI[Title/Abstract] OR "functional MRI"[Title/Abstract] OR BOLD[Title/Abstract])
+ AND (ICA[Title/Abstract] OR "independent component"[Title/Abstract] OR "seed-based"[Title/Abstract]
+      OR "graph theory"[Title/Abstract] OR "network analysis"[Title/Abstract]
+      OR "dynamic functional connectivity"[Title/Abstract] OR dFC[Title/Abstract]
+      OR ALFF[Title/Abstract] OR fALFF[Title/Abstract] OR ReHo[Title/Abstract]
+      OR "degree centrality"[Title/Abstract]
+      OR PPI[Title/Abstract] OR "psychophysiological interaction"[Title/Abstract]
+      OR DCM[Title/Abstract] OR "dynamic causal modeling"[Title/Abstract])
+ AND ("2015/01/01"[PDAT] : "2025/12/31"[PDAT]))

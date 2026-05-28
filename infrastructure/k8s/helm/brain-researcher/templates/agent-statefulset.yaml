@@ -1,0 +1,241 @@
+{{- if .Values.agent.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-agent
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+spec:
+  serviceName: {{ include "brain-researcher.fullname" . }}-agent-headless
+  replicas: {{ .Values.agent.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "brain-researcher.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: agent
+  template:
+    metadata:
+      labels:
+        {{- include "brain-researcher.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: agent
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+        {{- with .Values.agent.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "brain-researcher.serviceAccountName" . }}
+      {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: agent
+          image: "{{ .Values.global.imageRegistry }}/agent:{{ .Values.agent.imageTag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          {{- if .Values.agent.apptainerSecurityContext.enabled }}
+          securityContext:
+            privileged: {{ .Values.agent.apptainerSecurityContext.privileged }}
+            runAsUser: {{ .Values.agent.apptainerSecurityContext.runAsUser }}
+            runAsGroup: {{ .Values.agent.apptainerSecurityContext.runAsGroup }}
+            runAsNonRoot: {{ .Values.agent.apptainerSecurityContext.runAsNonRoot }}
+            allowPrivilegeEscalation: {{ .Values.agent.apptainerSecurityContext.allowPrivilegeEscalation }}
+            seccompProfile:
+              type: {{ .Values.agent.apptainerSecurityContext.seccompProfileType | quote }}
+            capabilities:
+              add:
+                {{- range .Values.agent.apptainerSecurityContext.capabilities }}
+                - {{ . | quote }}
+                {{- end }}
+          {{- end }}
+          {{- if .Values.agent.command }}
+          command:
+            {{- toYaml .Values.agent.command | nindent 12 }}
+          {{- end }}
+          {{- if .Values.agent.args }}
+          args:
+            {{- toYaml .Values.agent.args | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: PYTHONPATH
+              value: "/app"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: NEUROKG_API_URL
+              value: "http://{{ include "brain-researcher.fullname" . }}-neurokg:5000"
+            - name: REDIS_URL
+              value: "redis://{{ include "brain-researcher.fullname" . }}-redis.{{ .Values.namespaces.data }}:6379/2"
+            - name: LOG_LEVEL
+              value: "INFO"
+            {{- if .Values.jobStore.enabled }}
+            - name: BR_QUEUE_BACKEND
+              value: "sqlite"
+            - name: BR_QUEUE_DB_PATH
+              value: "{{ .Values.jobStore.mountPath }}/jobs.sqlite"
+            - name: BR_SQLITE_BUSY_TIMEOUT_MS
+              value: "10000"
+            {{- if .Values.mcp.runRoot }}
+            - name: BR_MCP_RUN_ROOT
+              value: {{ .Values.mcp.runRoot | quote }}
+            {{- else }}
+            - name: BR_MCP_RUN_ROOT
+              value: {{ printf "%s/mcp_runs" .Values.jobStore.mountPath | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.mcp.runRootAliases }}
+            - name: BR_MCP_RUN_ROOT_ALIASES
+              value: {{ .Values.mcp.runRootAliases | quote }}
+            {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            {{- if .Values.agent.openneuroMounts.enabled }}
+            - name: OPENNEURO_ROOT
+              value: {{ .Values.agent.openneuroMounts.root.mountPath | quote }}
+            - name: OPENNEURO_DERIV_ROOT
+              value: {{ .Values.agent.openneuroMounts.derivatives.mountRootPath | quote }}
+            {{- end }}
+            {{- if .Values.agent.publicBucketMounts.enabled }}
+            - name: PUBLIC_BUCKETS_ROOT
+              value: {{ .Values.agent.publicBucketMounts.root.mountPath | quote }}
+            {{- end }}
+            {{- if .Values.agent.freesurferLicense.enabled }}
+            - name: FREESURFER_HOME
+              value: {{ .Values.agent.freesurferLicense.mountDir | quote }}
+            - name: FS_LICENSE
+              value: {{ printf "%s/%s" .Values.agent.freesurferLicense.mountDir .Values.agent.freesurferLicense.secretKey | quote }}
+            {{- end }}
+            {{- if .Values.agent.extraEnv }}
+            {{- tpl (toYaml .Values.agent.extraEnv) $ | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-llm-api-keys
+                optional: true
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-external-services
+                optional: true
+          volumeMounts:
+            - name: session-storage
+              mountPath: /app/data/sessions
+            - name: logs-storage
+              mountPath: /app/logs
+            - name: shared-data
+              mountPath: /app/data/shared
+            {{- if .Values.jobStore.enabled }}
+            - name: jobstore
+              mountPath: {{ .Values.jobStore.mountPath | quote }}
+            {{- end }}
+            {{- if .Values.agent.openneuroMounts.enabled }}
+            - name: openneuro-root
+              mountPath: {{ .Values.agent.openneuroMounts.root.mountPath | quote }}
+              readOnly: {{ .Values.agent.openneuroMounts.root.readOnly }}
+            {{- range .Values.agent.openneuroMounts.derivatives.buckets }}
+            - name: {{ printf "openneuro-deriv-%s" . | quote }}
+              mountPath: {{ printf "%s/%s" $.Values.agent.openneuroMounts.derivatives.mountRootPath . | quote }}
+              readOnly: {{ $.Values.agent.openneuroMounts.derivatives.readOnly }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.agent.publicBucketMounts.enabled }}
+            - name: public-buckets-root
+              mountPath: {{ .Values.agent.publicBucketMounts.root.mountPath | quote }}
+              readOnly: {{ .Values.agent.publicBucketMounts.root.readOnly }}
+            {{- end }}
+            {{- if .Values.agent.freesurferLicense.enabled }}
+            - name: freesurfer-license
+              mountPath: {{ .Values.agent.freesurferLicense.mountDir | quote }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.agent.extraVolumeMounts }}
+            {{- toYaml .Values.agent.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.agent.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+      volumes:
+        - name: shared-data
+          {{- if .Values.storage.sharedData.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "brain-researcher.fullname" . }}-shared-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.jobStore.enabled }}
+        - name: jobstore
+          hostPath:
+            path: {{ .Values.jobStore.hostPath | quote }}
+            type: DirectoryOrCreate
+        {{- end }}
+        {{- if .Values.agent.openneuroMounts.enabled }}
+        - name: openneuro-root
+          hostPath:
+            path: {{ .Values.agent.openneuroMounts.root.hostPath | quote }}
+            type: Directory
+        {{- range .Values.agent.openneuroMounts.derivatives.buckets }}
+        - name: {{ printf "openneuro-deriv-%s" . | quote }}
+          hostPath:
+            path: {{ printf "%s/%s" $.Values.agent.openneuroMounts.derivatives.hostRootPath . | quote }}
+            type: Directory
+        {{- end }}
+        {{- end }}
+        {{- if .Values.agent.publicBucketMounts.enabled }}
+        - name: public-buckets-root
+          hostPath:
+            path: {{ .Values.agent.publicBucketMounts.root.hostPath | quote }}
+            type: DirectoryOrCreate
+        {{- end }}
+        {{- if .Values.agent.freesurferLicense.enabled }}
+        - name: freesurfer-license
+          secret:
+            secretName: {{ .Values.agent.freesurferLicense.secretName | quote }}
+            items:
+              - key: {{ .Values.agent.freesurferLicense.secretKey | quote }}
+                path: {{ .Values.agent.freesurferLicense.secretKey | quote }}
+        {{- end }}
+        {{- if .Values.agent.extraVolumes }}
+        {{- toYaml .Values.agent.extraVolumes | nindent 8 }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: session-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ .Values.agent.persistence.sessions.storageClass | default .Values.global.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.agent.persistence.sessions.size }}
+    - metadata:
+        name: logs-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ .Values.agent.persistence.logs.storageClass | default .Values.global.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.agent.persistence.logs.size }}
+{{- end }}

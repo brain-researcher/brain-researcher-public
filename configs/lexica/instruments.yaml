@@ -1,0 +1,1143 @@
+# =======================================================
+# ONVOC VOCAB — INSTRUMENT LEXICON (expanded synonyms)
+# =======================================================
+# Comprehensive lexicon of psychological assessment instruments
+# Organized by domain: Cognitive, Clinical/Disease, Behavioral, Mood/Affect, etc.
+# Used for matching instrument names in BIDS participants.tsv files
+
+# =======================================================
+# ANXIETY ASSESSMENTS
+# =======================================================
+
+STAI:
+  synonyms:
+    - state-trait anxiety inventory
+    - stai
+    - stai-y
+    - stai-form y
+    - state trait anxiety inventory
+
+BAI:
+  synonyms:
+    - beck anxiety inventory
+    - bai
+    - beck anxiety
+
+GAD7:
+  synonyms:
+    - generalized anxiety disorder 7
+    - gad-7
+    - gad7
+    - gad 7
+
+SCARED:
+  synonyms:
+    - screen for child anxiety related disorders
+    - scared
+    - scared-c
+    - scared-p
+
+HAMA:
+  synonyms:
+    - hamilton anxiety rating scale
+    - hama
+    - hamilton anxiety
+    - hars
+
+DASS21:
+  synonyms:
+    - depression anxiety stress scales 21
+    - dass-21
+    - dass21
+    - dass 21
+
+# =======================================================
+# DEPRESSION ASSESSMENTS
+# =======================================================
+
+BDI:
+  synonyms:
+    - beck depression inventory
+    - bdi
+    - bdi-ii
+    - bdi ii
+    - beck depression inventory ii
+
+PHQ9:
+  synonyms:
+    - patient health questionnaire 9
+    - phq-9
+    - phq9
+    - phq 9
+
+HAM-D:
+  synonyms:
+    - hamilton depression rating scale
+    - ham-d
+    - hamd
+    - hamilton depression
+    - hdrs
+    - hdr
+
+CDI:
+  synonyms:
+    - children's depression inventory
+    - cdi
+    - cdi-2
+    - children depression inventory
+
+MADRS:
+  synonyms:
+    - montgomery-asberg depression rating scale
+    - madrs
+    - montgomery asberg
+
+CES-D:
+  synonyms:
+    - center for epidemiologic studies depression scale
+    - ces-d
+    - cesd
+    - ces d
+
+# =======================================================
+# MOOD AND AFFECT
+# =======================================================
+
+PANAS:
+  synonyms:
+    - positive and negative affect schedule
+    - panas
+    - panas-x
+    - affect schedule
+
+POMS:
+  synonyms:
+    - profile of mood states
+    - poms
+    - profile mood states
+
+YMRS:
+  synonyms:
+    - young mania rating scale
+    - ymrs
+    - young mania
+
+GBI:
+  synonyms:
+    - general behavior inventory
+    - gbi
+    - general behavior
+
+# =======================================================
+# ADHD ASSESSMENTS
+# =======================================================
+
+ASRS:
+  synonyms:
+    - adult adhd self-report
+    - adult adhd self-report scale
+    - asrs
+    - asrs v1.1
+    - asrs v1
+
+VADRS:
+  synonyms:
+    - vanderbilt adhd diagnostic rating scale
+    - vadrs
+    - vanderbilt adhd
+
+CAARS:
+  synonyms:
+    - conners adult adhd rating scales
+    - caars
+    - conners adult adhd
+
+CPRS:
+  synonyms:
+    - conners parent rating scale
+    - cprs
+    - conners parent
+
+CTRS:
+  synonyms:
+    - conners teacher rating scale
+    - ctrs
+    - conners teacher
+
+SNAP:
+  synonyms:
+    - swanson nolan and pelham rating scale
+    - snap
+    - snap-iv
+    - snap iv
+
+# =======================================================
+# COGNITIVE ASSESSMENTS - GENERAL INTELLIGENCE
+# =======================================================
+
+WAIS:
+  synonyms:
+    - wechsler adult intelligence scale
+    - wais
+    - wais-iv
+    - wais iv
+    - wais-iii
+    - wais iii
+
+WISC:
+  synonyms:
+    - wechsler intelligence scale for children
+    - wisc
+    - wisc-v
+    - wisc v
+    - wisc-iv
+    - wisc iv
+
+WPPSI:
+  synonyms:
+    - wechsler preschool and primary scale of intelligence
+    - wppsi
+    - wppsi-iv
+    - wppsi iv
+
+SB5:
+  synonyms:
+    - stanford-binet intelligence scales
+    - sb5
+    - stanford binet
+    - stanford-binet 5
+
+RIAS:
+  synonyms:
+    - reynolds intellectual assessment scales
+    - rias
+    - rias-2
+    - reynolds intellectual
+
+KABC:
+  synonyms:
+    - kaufman assessment battery for children
+    - kabc
+    - kabc-ii
+    - kabc ii
+
+KBIT:
+  synonyms:
+    - kaufman brief intelligence test
+    - kbit
+    - kbit-2
+    - kbit 2
+
+WJ:
+  synonyms:
+    - woodcock-johnson tests of cognitive abilities
+    - wj
+    - wj-iv
+    - wj iv
+    - woodcock johnson
+
+# =======================================================
+# COGNITIVE ASSESSMENTS - DEMENTIA AND MCI
+# =======================================================
+
+MMSE:
+  synonyms:
+    - mini-mental state examination
+    - mmse
+    - mini mental state
+    - mini mental state exam
+
+MoCA:
+  synonyms:
+    - montreal cognitive assessment
+    - moca
+    - montreal cognitive
+    - moca test
+
+SLUMS:
+  synonyms:
+    - saint louis university mental status examination
+    - slums
+    - saint louis mental status
+
+CDR:
+  synonyms:
+    - clinical dementia rating
+    - cdr
+    - clinical dementia rating scale
+
+FAQ:
+  synonyms:
+    - functional activities questionnaire
+    - faq
+    - functional activities
+
+ADAS:
+  synonyms:
+    - alzheimer's disease assessment scale
+    - adas
+    - adas-cog
+    - adas cog
+
+NPI:
+  synonyms:
+    - neuropsychiatric inventory
+    - npi
+    - neuropsychiatric inventory questionnaire
+
+# =======================================================
+# COGNITIVE ASSESSMENTS - EXECUTIVE FUNCTION
+# =======================================================
+
+BRIEF:
+  synonyms:
+    - behavior rating inventory of executive function
+    - brief
+    - brief-2
+    - brief 2
+
+D-KEFS:
+  synonyms:
+    - delis-kaplan executive function system
+    - d-kefs
+    - dkefs
+    - delis kaplan executive
+
+WCST:
+  synonyms:
+    - wisconsin card sorting test
+    - wcst
+    - wisconsin card sort
+    - card sorting test
+
+TMT:
+  synonyms:
+    - trail making test
+    - tmt
+    - trail making
+    - tmt-a
+    - tmt-b
+    - tmt a
+    - tmt b
+
+BADS:
+  synonyms:
+    - behavioral assessment of the dysexecutive syndrome
+    - bads
+    - dysexecutive syndrome
+
+CEFI:
+  synonyms:
+    - comprehensive executive function inventory
+    - cefi
+    - executive function inventory
+
+# =======================================================
+# COGNITIVE ASSESSMENTS - MEMORY
+# =======================================================
+
+RAVLT:
+  synonyms:
+    - rey auditory verbal learning test
+    - ravlt
+    - rey auditory verbal
+    - rey verbal learning
+
+CVLT:
+  synonyms:
+    - california verbal learning test
+    - cvlt
+    - cvlt-ii
+    - cvlt ii
+    - california verbal learning
+
+WMS:
+  synonyms:
+    - wechsler memory scale
+    - wms
+    - wms-iv
+    - wms iv
+
+RBMT:
+  synonyms:
+    - rivermead behavioural memory test
+    - rbmt
+    - rivermead memory
+
+# =======================================================
+# COGNITIVE ASSESSMENTS - LANGUAGE
+# =======================================================
+
+BNT:
+  synonyms:
+    - boston naming test
+    - bnt
+    - boston naming
+
+COWAT:
+  synonyms:
+    - controlled oral word association test
+    - cowat
+    - verbal fluency
+    - fas test
+    - f-a-s test
+
+Token:
+  synonyms:
+    - token test
+    - token test for children
+    - token test revised
+
+MAE:
+  synonyms:
+    - multilingual aphasia examination
+    - mae
+    - multilingual aphasia
+
+# =======================================================
+# COGNITIVE ASSESSMENTS - VISUOSPATIAL
+# =======================================================
+
+Block_Design:
+  synonyms:
+    - block design
+    - block design test
+    - wais block design
+
+VOSP:
+  synonyms:
+    - visual object and space perception battery
+    - vosp
+    - visual object space perception
+
+JLO:
+  synonyms:
+    - judgment of line orientation
+    - jlo
+    - benton line orientation
+
+# =======================================================
+# COGNITIVE ASSESSMENTS - ATTENTION
+# =======================================================
+
+CPT:
+  synonyms:
+    - continuous performance test
+    - cpt
+    - cpt-ii
+    - cpt ii
+    - continuous performance task
+
+TOVA:
+  synonyms:
+    - test of variables of attention
+    - tova
+    - test variables attention
+
+ANT:
+  synonyms:
+    - attention network test
+    - ant
+    - attention network
+
+# =======================================================
+# AUTISM SPECTRUM DISORDERS
+# =======================================================
+
+ADOS:
+  synonyms:
+    - autism diagnostic observation schedule
+    - ados
+    - ados-2
+    - ados 2
+
+ADI-R:
+  synonyms:
+    - autism diagnostic interview revised
+    - adi-r
+    - adir
+    - autism diagnostic interview
+
+SRS:
+  synonyms:
+    - social responsiveness scale
+    - srs
+    - srs-2
+    - srs 2
+    - social responsiveness
+
+ASRS_Autism:
+  synonyms:
+    - autism spectrum rating scales
+    - asrs autism
+    - autism spectrum rating
+
+AQ:
+  synonyms:
+    - autism spectrum quotient
+    - aq
+    - autism quotient
+
+SCQ:
+  synonyms:
+    - social communication questionnaire
+    - scq
+    - social communication
+
+# =======================================================
+# BEHAVIORAL ASSESSMENTS - CHILDREN
+# =======================================================
+
+CBCL:
+  synonyms:
+    - child behavior checklist
+    - cbcl
+    - child behavior
+
+BASC:
+  synonyms:
+    - behavior assessment system for children
+    - basc
+    - basc-3
+    - basc 3
+
+Conners_CBRS:
+  synonyms:
+    - conners comprehensive behavior rating scales
+    - conners cbrs
+    - conners comprehensive
+
+SDQ:
+  synonyms:
+    - strengths and difficulties questionnaire
+    - sdq
+    - strengths difficulties
+
+VABS:
+  synonyms:
+    - vineland adaptive behavior scales
+    - vineland
+    - vabs
+    - vineland-3
+    - vineland 3
+
+SSIS:
+  synonyms:
+    - social skills improvement system
+    - ssis
+    - social skills improvement
+
+# =======================================================
+# PERSONALITY ASSESSMENTS
+# =======================================================
+
+MMPI:
+  synonyms:
+    - minnesota multiphasic personality inventory
+    - mmpi
+    - mmpi-2
+    - mmpi 2
+    - mmpi-2-rf
+    - mmpi 2 rf
+
+NEO-PI:
+  synonyms:
+    - neo personality inventory
+    - neo-pi
+    - neo pi
+    - neo-pi-r
+    - neo pi r
+    - neo five factor
+
+BFI:
+  synonyms:
+    - big five inventory
+    - bfi
+    - big five
+    - five factor
+
+16PF:
+  synonyms:
+    - 16 personality factor questionnaire
+    - 16pf
+    - 16 pf
+    - sixteen personality factor
+
+# =======================================================
+# BEHAVIORAL ASSESSMENTS - ADULT
+# =======================================================
+
+BISBAS:
+  synonyms:
+    - bis-bas
+    - behavioral inhibition system
+    - behavioral activation system
+    - bis/bas scales
+    - bis bas
+
+BARRATT:
+  synonyms:
+    - barratt impulsiveness scale
+    - barratt
+    - bis-11
+    - bis 11
+    - barratt impulsiveness
+
+UPPS:
+  synonyms:
+    - upps impulsive behavior scale
+    - upps
+    - upps-p
+    - upps p
+
+# =======================================================
+# ANGER AND AGGRESSION
+# =======================================================
+
+STAXI:
+  synonyms:
+    - state-trait anger expression inventory
+    - staxi
+    - staxi-2
+    - staxi 2
+    - state trait anger
+
+AQ_Anger:
+  synonyms:
+    - aggression questionnaire
+    - aq anger
+    - buss perry aggression
+
+# =======================================================
+# TRAUMA AND PTSD
+# =======================================================
+
+PCL:
+  synonyms:
+    - ptsd checklist
+    - pcl
+    - pcl-5
+    - pcl 5
+    - ptsd checklist 5
+
+CAPS:
+  synonyms:
+    - clinician administered ptsd scale
+    - caps
+    - caps-5
+    - caps 5
+
+IES-R:
+  synonyms:
+    - impact of event scale revised
+    - ies-r
+    - iesr
+    - impact event scale
+
+PTSD_Checklist:
+  synonyms:
+    - ptsd checklist civilian version
+    - ptsd checklist
+    - pcl-c
+    - pcl c
+
+# =======================================================
+# EATING DISORDERS
+# =======================================================
+
+EDI:
+  synonyms:
+    - eating disorder inventory
+    - edi
+    - edi-3
+    - edi 3
+
+EDE:
+  synonyms:
+    - eating disorder examination
+    - ede
+    - ede-q
+    - ede q
+
+EAT:
+  synonyms:
+    - eating attitudes test
+    - eat
+    - eat-26
+    - eat 26
+
+SCOFF:
+  synonyms:
+    - sick control one fat food
+    - scoff
+    - eating disorder screening
+
+# =======================================================
+# SUBSTANCE USE
+# =======================================================
+
+AUDIT:
+  synonyms:
+    - alcohol use disorders identification test
+    - audit
+    - alcohol use disorders
+
+DAST:
+  synonyms:
+    - drug abuse screening test
+    - dast
+    - dast-10
+    - dast 10
+
+CAGE:
+  synonyms:
+    - cage questionnaire
+    - cage
+    - cage-aid
+    - cage aid
+
+ASSIST:
+  synonyms:
+    - alcohol smoking and substance involvement screening test
+    - assist
+    - who assist
+
+# =======================================================
+# PAIN ASSESSMENTS
+# =======================================================
+
+VAS_Pain:
+  synonyms:
+    - visual analog scale pain
+    - vas pain
+    - visual analog scale
+    - vas
+
+NRS_Pain:
+  synonyms:
+    - numeric rating scale pain
+    - nrs pain
+    - numeric rating scale
+    - nrs
+
+BPI:
+  synonyms:
+    - brief pain inventory
+    - bpi
+    - brief pain
+
+McGill:
+  synonyms:
+    - mcgill pain questionnaire
+    - mcgill pain
+    - mpq
+    - mcgill
+
+# =======================================================
+# SLEEP ASSESSMENTS
+# =======================================================
+
+PSQI:
+  synonyms:
+    - pittsburgh sleep quality index
+    - psqi
+    - pittsburgh sleep quality
+
+ISI:
+  synonyms:
+    - insomnia severity index
+    - isi
+    - insomnia severity
+
+ESS:
+  synonyms:
+    - epworth sleepiness scale
+    - ess
+    - epworth sleepiness
+
+AIS:
+  synonyms:
+    - athens insomnia scale
+    - ais
+    - athens insomnia
+
+# =======================================================
+# QUALITY OF LIFE
+# =======================================================
+
+SF36:
+  synonyms:
+    - short form 36 health survey
+    - sf-36
+    - sf36
+    - sf 36
+    - short form 36
+
+SF12:
+  synonyms:
+    - short form 12 health survey
+    - sf-12
+    - sf12
+    - sf 12
+    - short form 12
+
+WHOQOL:
+  synonyms:
+    - world health organization quality of life
+    - whoqol
+    - whoqol-bref
+    - who qol
+
+EQ5D:
+  synonyms:
+    - euroqol 5 dimensions
+    - eq-5d
+    - eq5d
+    - eq 5d
+    - euroqol
+
+# =======================================================
+# SOCIAL COGNITION
+# =======================================================
+
+RMET:
+  synonyms:
+    - reading the mind in the eyes test
+    - rmet
+    - reading mind eyes
+    - eyes test
+
+Faux_Pas:
+  synonyms:
+    - faux pas recognition test
+    - faux pas
+    - faux pas test
+
+TASIT:
+  synonyms:
+    - the awareness of social inference test
+    - tasit
+    - social inference test
+
+# =======================================================
+# OBSESSIVE-COMPULSIVE DISORDER
+# =======================================================
+
+Y-BOCS:
+  synonyms:
+    - yale-brown obsessive compulsive scale
+    - y-bocs
+    - ybocs
+    - yale brown obsessive
+    - y-bocs ii
+
+OCI:
+  synonyms:
+    - obsessive-compulsive inventory
+    - oci
+    - oci-r
+    - oci r
+
+# =======================================================
+# BIPOLAR DISORDER
+# =======================================================
+
+MDQ:
+  synonyms:
+    - mood disorder questionnaire
+    - mdq
+    - mood disorder
+
+BSDS:
+  synonyms:
+    - bipolar spectrum diagnostic scale
+    - bsds
+    - bipolar spectrum
+
+HCL:
+  synonyms:
+    - hypomania checklist
+    - hcl-32
+    - hcl 32
+    - hypomania checklist 32
+
+# =======================================================
+# SCHIZOPHRENIA
+# =======================================================
+
+PANSS:
+  synonyms:
+    - positive and negative syndrome scale
+    - panss
+    - positive negative syndrome
+
+SANS:
+  synonyms:
+    - scale for the assessment of negative symptoms
+    - sans
+    - negative symptoms scale
+
+SAPS:
+  synonyms:
+    - scale for the assessment of positive symptoms
+    - saps
+    - positive symptoms scale
+
+# =======================================================
+# PARKINSON'S DISEASE
+# =======================================================
+
+UPDRS:
+  synonyms:
+    - unified parkinson's disease rating scale
+    - updrs
+    - parkinson's disease rating scale
+
+PDQ:
+  synonyms:
+    - parkinson's disease questionnaire
+    - pdq
+    - pdq-39
+    - pdq 39
+
+PD-CRS:
+  synonyms:
+    - parkinson's disease cognitive rating scale
+    - pd-crs
+    - pd crs
+    - parkinson cognitive
+
+# =======================================================
+# MULTIPLE SCLEROSIS
+# =======================================================
+
+MSFC:
+  synonyms:
+    - multiple sclerosis functional composite
+    - msfc
+    - ms functional composite
+
+EDSS:
+  synonyms:
+    - expanded disability status scale
+    - edss
+    - disability status scale
+
+# =======================================================
+# EPILEPSY
+# =======================================================
+
+QOLIE:
+  synonyms:
+    - quality of life in epilepsy
+    - qolie
+    - qolie-31
+    - qolie 31
+
+# =======================================================
+# STROKE
+# =======================================================
+
+NIHSS:
+  synonyms:
+    - national institutes of health stroke scale
+    - nihss
+    - nih stroke scale
+
+mRS:
+  synonyms:
+    - modified rankin scale
+    - mrs
+    - modified rankin
+    - rankin scale
+
+# =======================================================
+# ADDITIONAL CLINICAL SCALES
+# =======================================================
+
+WHODAS:
+  synonyms:
+    - world health organization disability assessment schedule
+    - whodas
+    - who disability assessment
+    - whodas 2.0
+
+FIM:
+  synonyms:
+    - functional independence measure
+    - fim
+    - functional independence
+
+GDS:
+  synonyms:
+    - geriatric depression scale
+    - gds
+    - geriatric depression
+    - gds-15
+    - gds 15
+
+FAST:
+  synonyms:
+    - functional assessment staging tool
+    - fast
+    - functional assessment staging
+
+# =======================================================
+# NEUROLOGICAL ASSESSMENTS
+# =======================================================
+
+ECAS:
+  synonyms:
+    - edinburgh cognitive and behavioural als screen
+    - ecas
+    - edinburgh cognitive als
+
+BNT_Memory:
+  synonyms:
+    - benton visual retention test
+    - bnt memory
+    - benton visual retention
+
+HVLT:
+  synonyms:
+    - hopkins verbal learning test
+    - hvlt
+    - hopkins verbal learning
+    - hvlt-r
+    - hvlt r
+
+# =======================================================
+# STRESS AND COPING
+# =======================================================
+
+PSS:
+  synonyms:
+    - perceived stress scale
+    - pss
+    - perceived stress
+    - pss-10
+    - pss 10
+
+COPE:
+  synonyms:
+    - coping orientation to problems experienced
+    - cope
+    - coping scale
+
+# =======================================================
+# MOTIVATION AND REWARD
+# =======================================================
+
+SPSRQ:
+  synonyms:
+    - sensitivity to punishment and sensitivity to reward questionnaire
+    - spsrq
+    - sensitivity punishment reward
+
+TEPS:
+  synonyms:
+    - temporal experience of pleasure scale
+    - tep
+    - temporal pleasure scale
+
+# =======================================================
+# SELF-REPORT SCALES
+# =======================================================
+
+RSES:
+  synonyms:
+    - rosenberg self-esteem scale
+    - rses
+    - rosenberg self esteem
+    - self esteem scale
+
+SWLS:
+  synonyms:
+    - satisfaction with life scale
+    - swls
+    - satisfaction life
+
+WHO-5:
+  synonyms:
+    - world health organization well-being index
+    - who-5
+    - who 5
+    - who wellbeing
+
+# =======================================================
+# ATTENTION AND CONCENTRATION
+# =======================================================
+
+d2:
+  synonyms:
+    - d2 test of attention
+    - d2
+    - d2 test
+    - d2 attention test
+
+TEA:
+  synonyms:
+    - test of everyday attention
+    - tea
+    - everyday attention
+
+# =======================================================
+# SOCIAL ANXIETY
+# =======================================================
+
+LSAS:
+  synonyms:
+    - liebowitz social anxiety scale
+    - lsas
+    - liebowitz social anxiety
+
+SPAI:
+  synonyms:
+    - social phobia and anxiety inventory
+    - spai
+    - social phobia anxiety
+
+# =======================================================
+# BODY IMAGE
+# =======================================================
+
+BSQ:
+  synonyms:
+    - body shape questionnaire
+    - bsq
+    - body shape
+
+EAT_Body:
+  synonyms:
+    - eating attitudes test
+    - eat body
+    - eating attitudes
+
+# =======================================================
+# ADDITIONAL ASSESSMENTS
+# =======================================================
+
+FAS:
+  synonyms:
+    - functional assessment scale
+    - fas
+    - functional assessment
+
+ADL:
+  synonyms:
+    - activities of daily living
+    - adl
+    - activities daily living
+    - katz adl
+
+IADL:
+  synonyms:
+    - instrumental activities of daily living
+    - iadl
+    - instrumental activities daily living
+
+MoCA_Memory:
+  synonyms:
+    - montreal cognitive assessment memory index
+    - moca memory
+    - moca memory index

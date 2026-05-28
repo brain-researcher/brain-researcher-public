@@ -1,0 +1,457 @@
+# Sample DAG definitions for testing
+# These represent various neuroimaging workflow scenarios
+
+simple_preprocessing:
+  name: simple_preprocessing_pipeline
+  description: Basic preprocessing pipeline for fMRI data
+  version: "1.0"
+  
+  parameters:
+    bids_dir: ${BIDS_DIR}
+    output_dir: ${OUTPUT_DIR}
+    subject_id: ${SUBJECT_ID}
+    
+  nodes:
+    validate_input:
+      type: tool
+      tool: bids_validator
+      parameters:
+        bids_dir: ${bids_dir}
+        
+    skull_strip:
+      type: tool
+      tool: fsl_bet
+      parameters:
+        input: ${bids_dir}/sub-${subject_id}/anat/sub-${subject_id}_T1w.nii.gz
+        output: ${output_dir}/sub-${subject_id}_brain.nii.gz
+      dependencies: [validate_input]
+      
+    motion_correction:
+      type: tool
+      tool: fsl_mcflirt
+      parameters:
+        input: ${bids_dir}/sub-${subject_id}/func/sub-${subject_id}_task-rest_bold.nii.gz
+        output: ${output_dir}/sub-${subject_id}_mcf.nii.gz
+      dependencies: [validate_input]
+
+---
+
+conditional_workflow:
+  name: conditional_quality_control
+  description: Workflow with conditional processing based on quality metrics
+  version: "1.0"
+  
+  parameters:
+    input_data: ${INPUT_DATA}
+    quality_threshold: 0.8
+    
+  nodes:
+    initial_processing:
+      type: tool
+      tool: basic_preprocessing
+      parameters:
+        input: ${input_data}
+        
+    quality_assessment:
+      type: tool
+      tool: compute_fd_dvars
+      parameters:
+        input: ${initial_processing_result}
+      dependencies: [initial_processing]
+      
+    quality_gate:
+      type: conditional
+      condition: "quality_assessment_result.mean_fd < 0.5 and quality_assessment_result.dvars_score > quality_threshold"
+      dependencies: [quality_assessment]
+      true_branch:
+        - advanced_processing
+        - generate_report
+      false_branch:
+        - enhanced_preprocessing
+        - manual_review
+        
+    advanced_processing:
+      type: tool
+      tool: advanced_glm_analysis
+      parameters:
+        input: ${initial_processing_result}
+        
+    enhanced_preprocessing:
+      type: tool
+      tool: advanced_motion_correction
+      parameters:
+        input: ${initial_processing_result}
+        aggressive: true
+        
+    generate_report:
+      type: tool
+      tool: create_qc_report
+      parameters:
+        input: ${advanced_processing_result}
+        
+    manual_review:
+      type: tool
+      tool: flag_for_manual_review
+      parameters:
+        subject: ${subject_id}
+        reason: "Poor data quality"
+
+---
+
+loop_processing:
+  name: multi_subject_analysis
+  description: Process multiple subjects in parallel with loops
+  version: "1.0"
+  
+  parameters:
+    subjects: ${SUBJECT_LIST}
+    bids_dir: ${BIDS_DIR}
+    output_dir: ${OUTPUT_DIR}
+    max_subjects: 20
+    
+  nodes:
+    setup_analysis:
+      type: tool
+      tool: create_analysis_directories
+      parameters:
+        output_dir: ${output_dir}
+        
+    subject_loop:
+      type: loop
+      dependencies: [setup_analysis]
+      loop_config:
+        loop_type: for
+        items: subjects
+        max_iterations: ${max_subjects}
+        body:
+          - preprocess_subject
+          - first_level_analysis
+          
+    preprocess_subject:
+      type: tool
+      tool: fmriprep
+      parameters:
+        bids_dir: ${bids_dir}
+        participant_label: ${loop_item}
+        output_dir: ${output_dir}/fmriprep
+        
+    first_level_analysis:
+      type: tool
+      tool: nilearn_glm
+      parameters:
+        fmriprep_dir: ${output_dir}/fmriprep
+        subject: ${loop_item}
+        output_dir: ${output_dir}/first_level
+      dependencies: [preprocess_subject]
+      
+    group_analysis:
+      type: conditional
+      dependencies: [subject_loop]
+      condition: "len(successful_subjects) >= 10"
+      true_branch:
+        - second_level_glm
+        - statistical_maps
+      false_branch:
+        - insufficient_data_report
+        
+    second_level_glm:
+      type: tool
+      tool: nilearn_second_level
+      parameters:
+        first_level_dir: ${output_dir}/first_level
+        output_dir: ${output_dir}/group
+        
+    statistical_maps:
+      type: tool
+      tool: generate_thresholded_maps
+      parameters:
+        input_dir: ${output_dir}/group
+        threshold: 0.05
+        cluster_size: 10
+      dependencies: [second_level_glm]
+      
+    insufficient_data_report:
+      type: tool
+      tool: generate_warning_report
+      parameters:
+        message: "Insufficient subjects for group analysis"
+
+---
+
+complex_nested_workflow:
+  name: complex_multimodal_analysis
+  description: Complex workflow with nested conditionals and loops
+  version: "1.0"
+  
+  parameters:
+    subjects: ${SUBJECT_LIST}
+    modalities: ["T1w", "func", "dwi"]
+    analysis_types: ["structural", "functional", "connectivity"]
+    
+  nodes:
+    data_availability_check:
+      type: loop
+      loop_config:
+        loop_type: for
+        items: subjects
+        max_iterations: 100
+        body:
+          - check_subject_data
+          
+    check_subject_data:
+      type: tool
+      tool: validate_subject_data
+      parameters:
+        subject: ${loop_item}
+        required_modalities: ${modalities}
+        
+    modality_processing:
+      type: loop
+      dependencies: [data_availability_check]
+      loop_config:
+        loop_type: for
+        items: modalities
+        max_iterations: 10
+        body:
+          - modality_specific_processing
+          
+    modality_specific_processing:
+      type: conditional
+      condition: "loop_item == 'T1w'"
+      true_branch: [structural_pipeline]
+      false_branch:
+        - functional_dwi_check
+        
+    structural_pipeline:
+      type: tool
+      tool: freesurfer_recon_all
+      parameters:
+        modality: ${loop_item}
+        
+    functional_dwi_check:
+      type: conditional
+      condition: "loop_item == 'func'"
+      true_branch: [functional_pipeline]
+      false_branch: [dwi_pipeline]
+      
+    functional_pipeline:
+      type: tool
+      tool: functional_connectivity_analysis
+      parameters:
+        modality: ${loop_item}
+        
+    dwi_pipeline:
+      type: tool
+      tool: diffusion_tensor_imaging
+      parameters:
+        modality: ${loop_item}
+        
+    integration_analysis:
+      type: loop
+      dependencies: [modality_processing]
+      loop_config:
+        loop_type: for
+        items: analysis_types
+        max_iterations: 5
+        body:
+          - multimodal_integration
+          
+    multimodal_integration:
+      type: conditional
+      condition: "loop_item == 'connectivity' and functional_pipeline_result.success and dwi_pipeline_result.success"
+      true_branch: [structural_functional_connectivity]
+      false_branch: [single_modality_analysis]
+      
+    structural_functional_connectivity:
+      type: tool
+      tool: combined_connectivity_analysis
+      parameters:
+        functional_data: ${functional_pipeline_result}
+        structural_data: ${dwi_pipeline_result}
+        
+    single_modality_analysis:
+      type: tool
+      tool: individual_modality_analysis
+      parameters:
+        analysis_type: ${loop_item}
+
+---
+
+error_recovery_workflow:
+  name: robust_preprocessing_with_recovery
+  description: Workflow designed to handle and recover from various error conditions
+  version: "1.0"
+  
+  parameters:
+    subjects: ${SUBJECT_LIST}
+    max_retries: 5
+    fallback_enabled: true
+    
+  nodes:
+    primary_preprocessing:
+      type: loop
+      loop_config:
+        loop_type: for
+        items: subjects
+        max_iterations: 50
+        body:
+          - attempt_primary_processing
+          - evaluate_primary_result
+          
+    attempt_primary_processing:
+      type: tool
+      tool: fmriprep_standard
+      parameters:
+        subject: ${loop_item}
+        use_aroma: true
+        output_spaces: ["MNI152NLin2009cAsym", "T1w"]
+      retry_policy:
+        max_attempts: ${max_retries}
+        backoff_multiplier: 2.0
+        max_delay: 300
+        retry_on_errors: ["OutOfMemoryError", "TimeoutError", "FSLError"]
+        
+    evaluate_primary_result:
+      type: conditional
+      condition: "attempt_primary_processing_result.status == 'success' and attempt_primary_processing_result.completion_rate > 0.8"
+      dependencies: [attempt_primary_processing]
+      true_branch: [quality_check_primary]
+      false_branch: [fallback_preprocessing]
+      
+    quality_check_primary:
+      type: tool
+      tool: comprehensive_qc_check
+      parameters:
+        input: ${attempt_primary_processing_result}
+        
+    fallback_preprocessing:
+      type: conditional
+      condition: "fallback_enabled == true"
+      true_branch: [minimal_preprocessing]
+      false_branch: [mark_subject_failed]
+      
+    minimal_preprocessing:
+      type: tool
+      tool: fmriprep_minimal
+      parameters:
+        subject: ${loop_item}
+        use_aroma: false
+        output_spaces: ["MNI152NLin2009cAsym"]
+        skip_bids_validation: true
+      retry_policy:
+        max_attempts: 3
+        backoff_multiplier: 1.5
+        max_delay: 180
+        
+    mark_subject_failed:
+      type: tool
+      tool: log_subject_failure
+      parameters:
+        subject: ${loop_item}
+        reason: "Primary and fallback preprocessing failed"
+        
+    final_quality_assessment:
+      type: tool
+      dependencies: [primary_preprocessing]
+      tool: aggregate_qc_metrics
+      parameters:
+        preprocessing_results: ${primary_preprocessing_results}
+        
+    recovery_report:
+      type: tool
+      dependencies: [final_quality_assessment]
+      tool: generate_recovery_report
+      parameters:
+        qc_results: ${final_quality_assessment_result}
+        failed_subjects: ${failed_subjects}
+
+---
+
+parallel_computation_workflow:
+  name: parallel_statistical_analysis
+  description: Workflow demonstrating parallel computation strategies
+  version: "1.0"
+  
+  parameters:
+    input_data: ${INPUT_DATA}
+    analysis_methods: ["parametric", "nonparametric", "bayesian"]
+    n_permutations: 10000
+    
+  nodes:
+    data_preparation:
+      type: tool
+      tool: prepare_group_data
+      parameters:
+        input: ${input_data}
+        
+    parallel_statistical_tests:
+      type: parallel
+      dependencies: [data_preparation]
+      parallel_nodes:
+        - parametric_analysis
+        - nonparametric_analysis
+        - bayesian_analysis
+      parallel_strategy: all_success
+      
+    parametric_analysis:
+      type: tool
+      tool: parametric_group_analysis
+      parameters:
+        data: ${data_preparation_result}
+        method: "t_test"
+        multiple_comparisons: "fdr"
+        
+    nonparametric_analysis:
+      type: tool
+      tool: nonparametric_group_analysis
+      parameters:
+        data: ${data_preparation_result}
+        method: "permutation"
+        n_permutations: ${n_permutations}
+        
+    bayesian_analysis:
+      type: tool
+      tool: bayesian_group_analysis
+      parameters:
+        data: ${data_preparation_result}
+        prior_type: "informative"
+        mcmc_samples: 5000
+        
+    cross_validation:
+      type: parallel
+      dependencies: [parallel_statistical_tests]
+      parallel_nodes:
+        - leave_one_out_cv
+        - k_fold_cv
+        - bootstrap_validation
+      parallel_strategy: continue_on_failure
+      
+    leave_one_out_cv:
+      type: tool
+      tool: leave_one_out_validation
+      parameters:
+        statistical_results: ${parallel_statistical_tests_result}
+        
+    k_fold_cv:
+      type: tool
+      tool: k_fold_validation
+      parameters:
+        statistical_results: ${parallel_statistical_tests_result}
+        k: 10
+        
+    bootstrap_validation:
+      type: tool
+      tool: bootstrap_validation
+      parameters:
+        statistical_results: ${parallel_statistical_tests_result}
+        n_bootstrap: 1000
+        
+    consensus_analysis:
+      type: tool
+      dependencies: [cross_validation]
+      tool: meta_analytical_consensus
+      parameters:
+        parametric_results: ${parametric_analysis_result}
+        nonparametric_results: ${nonparametric_analysis_result}
+        bayesian_results: ${bayesian_analysis_result}
+        validation_results: ${cross_validation_result}

@@ -1,0 +1,1133 @@
+# Supplemental tool catalog entries (tracked).
+#
+# Why this file exists:
+# - `configs/tools_catalog_merged.json` is a generated artifact and is gitignored.
+# - We still need a stable, reviewable source of truth for a small set of
+#   Python tools so ToolSpec-based execution can work in CI/other machines.
+#
+# Loader behavior:
+# - `services/tools/catalog_loader.py` merges this file on top of the merged JSON.
+#
+version: 1
+
+tools:
+  - name: google.file_search
+    display_name: Google File Search
+    runtime_kind: mcp
+    runtime: mcp
+    domain: retrieval
+    function: query
+    risk: dangerous
+    python_module: brain_researcher.services.tools.google_file_search_tool.GoogleFileSearchTool
+    tags: [google, gemini, file_search, retrieval, rag]
+    description: Query-only Google File Search backend for publications and codebase retrieval; store mutation remains explicit and dangerous.
+
+  - name: mcp.sherlock_guide
+    display_name: Sherlock Guide
+    runtime_kind: mcp
+    runtime: mcp
+    domain: infrastructure
+    function: search
+    risk: safe
+    tags: [mcp, sherlock, oak, slurm, guide, commands, safe]
+    description: Sherlock/OAK guide and command renderer behind one MCP entrypoint.
+
+  - name: mcp.sherlock_slurm
+    display_name: Sherlock Slurm Assistant
+    runtime_kind: mcp
+    runtime: mcp
+    domain: infrastructure
+    function: analysis
+    risk: safe
+    tags: [mcp, sherlock, slurm, sbatch, logs, debugging, safe]
+    description: Render, validate, and patch Sherlock sbatch scripts; inspect jobs; read logs; and diagnose job failures behind one MCP entrypoint.
+
+  - name: prefetch.openneuro_cache
+    display_name: OpenNeuro Cache (rsync)
+    runtime_kind: python
+    runtime: python
+    domain: datasets
+    function: ingest
+    risk: safe
+    python_module: brain_researcher.services.tools.archive_tools.OpenNeuroCacheTool
+    tags: [datasets, openneuro, prefetch, cache, python, safe]
+    description: Cache an OpenNeuro dataset locally using rsync from the OpenNeuro mount.
+
+  - name: bids.manifest
+    display_name: BIDS Dataset Manifest
+    runtime_kind: python
+    runtime: python
+    domain: datasets
+    function: ingest
+    risk: safe
+    python_module: brain_researcher.services.tools.bids_tools.BIDSManifestTool
+    tags: [datasets, bids, manifest, provenance, python, safe]
+    description: Generate and write dataset_manifest.json for a BIDS dataset.
+
+  - name: datasets.describe_resources
+    display_name: Dataset Resource Description
+    runtime_kind: python
+    runtime: python
+    domain: datasets
+    function: search
+    risk: safe
+    python_module: brain_researcher.services.tools.dataset_resources_tool
+    tags: [datasets, resources, readiness, mount, python, safe]
+    description: Describe dataset accessibility and content summary including subjects, versions, readiness, derivatives, and required-file coverage.
+
+  - name: tribe_predict
+    display_name: TRIBE v2 Predict
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    category: advanced_analysis
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.tribe_tool.TribePredictTool
+    intents: [brain_response_prediction, multimodal_encoding, foundation_model]
+    function: analysis
+    risk: safe
+    tags: [tribe, tribev2, foundation_model, fmri, video, audio, text, fsaverage5, python, safe]
+    description: Predict fsaverage5 cortical fMRI responses from video, audio, or text stimuli using TRIBE v2.
+
+  - name: python.data_harmonization.run
+    display_name: Data Harmonization (ComBat)
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri, smri, dmri, eeg]
+    python_module: brain_researcher.services.tools.phase2_batch_tools.HarmonizationTool
+    capabilities: [data_harmonization, preprocessing, combat]
+    intents: [data_harmonization]
+    consumes: [file_paths, site_labels]
+    produces: [harmonized_data, report_json]
+    function: preprocessing
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Multi-site data harmonization to remove site/scanner effects (ComBat).
+
+  - name: python.brain_simulation.run
+    display_name: Brain Simulation
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri, eeg, meg]
+    python_module: brain_researcher.services.tools.brain_simulation_tool.BrainSimulationTool
+    capabilities: [brain_simulation, simulation, modeling]
+    intents: [brain_simulation]
+    consumes: [simulation_parameters]
+    produces: [timeseries, simulation_results]
+    function: analysis
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Run simplified brain simulations (neural mass, spiking, whole-brain).
+
+  - name: python.realtime_fmri.run
+    display_name: Real-time fMRI (Neurofeedback)
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.realtime_fmri_tool.RealtimeFMRITool
+    capabilities: [realtime_fmri, neurofeedback, fmri_preprocessing, preprocessing, quality_control]
+    intents: [realtime_fmri]
+    consumes: [volume_4d, roi_mask]
+    produces: [metrics_json, neurofeedback_signal]
+    function: preprocessing
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Real-time fMRI processing for neurofeedback/closed-loop experiments.
+
+  - name: python.realtime_fmri_tool.run
+    display_name: Real-time fMRI (Legacy Alias)
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.realtime_fmri_tool.RealtimeFMRITool
+    capabilities: [realtime_fmri, neurofeedback, fmri_preprocessing, preprocessing, quality_control]
+    intents: [realtime_fmri]
+    consumes: [volume_4d, roi_mask]
+    produces: [metrics_json, neurofeedback_signal]
+    function: preprocessing
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Alias entry for real-time fMRI processing tool.
+
+  - name: python.realtime_twophoton.run
+    display_name: Real-time Two-Photon
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [optical]
+    python_module: brain_researcher.services.tools.realtime_twophoton_tool.RealtimeTwoPhotonTool
+    capabilities: [realtime_twophoton, optical_motion_correction, decoding, preprocessing, quality_control]
+    intents: [realtime_twophoton]
+    consumes: [optical_timeseries, roi_manifest]
+    produces: [metrics_json, decoder_outputs, control_events]
+    function: preprocessing
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Replay-first real-time two-photon processing with motion correction, decoding, and optional closed-loop control.
+
+  - name: workflow_realtime_twophoton_closed_loop
+    display_name: "Workflow: Real-time Two-Photon Closed Loop"
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [optical]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [workflow, realtime_twophoton, closed_loop]
+    intents: [realtime_twophoton]
+    consumes: [roi_manifest, optical_timeseries]
+    produces: [metrics_json, decoder_outputs, control_events]
+    function: preprocessing
+    risk: safe
+    tags: [grandmaster, workflow, optical, python, safe]
+    description: High-level workflow for raw-socket real-time two-photon decoding and optional closed-loop control.
+
+  - name: workflow_realtime_twophoton_file_replay
+    display_name: "Workflow: Real-time Two-Photon File Replay"
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [optical]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [workflow, realtime_twophoton, file_replay]
+    intents: [realtime_twophoton]
+    consumes: [roi_manifest, optical_timeseries]
+    produces: [metrics_json, decoder_outputs, control_events]
+    function: preprocessing
+    risk: safe
+    tags: [grandmaster, workflow, optical, python, safe]
+    description: High-level workflow for replaying saved two-photon data through the realtime pipeline without live hardware.
+
+  - name: realtime_connectivity
+    display_name: Real-time Connectivity
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.realtime_fmri_tool.RealtimeConnectivityTool
+    capabilities: [realtime_connectivity, realtime_fmri]
+    intents: [realtime_fmri]
+    consumes: [volume_4d, roi_mask]
+    produces: [connectivity_metrics]
+    function: analysis
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Real-time connectivity analysis for neurofeedback/monitoring.
+
+  - name: neurofeedback_training
+    display_name: Neurofeedback Training
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.realtime_fmri_tool.NeurofeedbackTrainingTool
+    capabilities: [neurofeedback_training, realtime_fmri]
+    intents: [realtime_fmri]
+    consumes: [training_data, roi_mask]
+    produces: [training_report]
+    function: analysis
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Multi-session neurofeedback training management.
+
+  - name: closed_loop_stimulation
+    display_name: Closed-loop Stimulation
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.realtime_fmri_tool.ClosedLoopStimulationTool
+    capabilities: [closed_loop_stimulation, realtime_fmri]
+    intents: [realtime_fmri]
+    consumes: [neurofeedback_signal]
+    produces: [stimulation_events]
+    function: analysis
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Closed-loop stimulation control for neurofeedback experiments.
+
+  - name: python.lesion_detection.run
+    display_name: Lesion Detection
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [smri, dmri]
+    python_module: brain_researcher.services.tools.lesion_detection_tool.LesionDetectionTool
+    capabilities: [lesion_detection, segmentation, preprocessing]
+    intents: [lesion_detection]
+    consumes: [volume_3d]
+    produces: [mask_path, report_json]
+    function: analysis
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Detect lesions from MRI and output lesion masks and summary report.
+
+  - name: python.coordinate_meta_analysis.run
+    display_name: Coordinate Meta-analysis
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.enhanced_meta_analysis.CoordinateMetaAnalysisTool
+    capabilities: [meta_analysis, coordinate_meta_analysis]
+    intents: [meta_analysis_cbma]
+    consumes: [coordinates, study_ids]
+    produces: [stats_map]
+    function: analysis
+    risk: safe
+    tags: [advanced, python, safe]
+    description: Coordinate-based meta-analysis (ALE/MKDA) via NiMARE when available.
+
+  - name: fitlins.multiverse_robustness_report
+    display_name: Multiverse Robustness Report
+    runtime_kind: python
+    runtime: python
+    domain: fmri.glm
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.multiverse_robustness_tool.FitLinsMultiverseRobustnessReportTool
+    capabilities: [multiverse, robustness_report, reliability_audit, visualization]
+    intents: [multiverse_robustness]
+    consumes: [summary_csv, manifest_json]
+    produces: [report_json, figure_png]
+    function: analysis
+    risk: safe
+    tags: [fmri, glm, multiverse, robustness, python, safe]
+    description: Generate a multiverse robustness report (JSON + 4-panel figure) from FitLins multiverse Yeo17 summary outputs.
+
+  # ---------------------------------------------------------------------------
+  # Grandmaster workflows (small, curated entrypoints)
+  #
+  # Note: python_module points to a module with get_all_tools(); ToolSpec executor
+  # selects the matching tool by name at runtime.
+  # ---------------------------------------------------------------------------
+
+  - name: workflow_rest_connectome_e2e
+    display_name: "Workflow: Resting-state Connectome (E2E)"
+    runtime_kind: python
+    runtime: python
+    domain: fmri.connectivity
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [workflow, connectivity]
+    intents: [rest_connectome]
+    consumes: [img, atlas]
+    produces: [connectivity_matrix]
+    risk: safe
+    tags: [grandmaster, workflow, python, safe]
+    description: High-level workflow that builds a resting-state connectome from an fMRI image.
+
+  - name: workflow_task_glm_group
+    display_name: "Workflow: Task GLM (Group)"
+    runtime_kind: python
+    runtime: python
+    domain: fmri.glm
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [workflow, glm]
+    intents: [task_glm]
+    consumes: [img, events]
+    produces: [stat_maps]
+    risk: safe
+    tags: [grandmaster, workflow, python, safe]
+    description: High-level workflow for first-level + second-level task GLM analysis.
+
+  - name: workflow_ml_decoding_pipeline
+    display_name: "Workflow: ML Decoding Pipeline"
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri, eeg, meg]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [workflow, ml, cross_validation]
+    intents: [ml_decoding]
+    consumes: [data_file, labels_file]
+    produces: [metrics, predictions]
+    risk: safe
+    tags: [grandmaster, workflow, python, safe]
+    description: High-level workflow for cross-validated decoding on feature matrices.
+
+  - name: run_bids_app
+    display_name: "Run BIDS App"
+    runtime_kind: python
+    runtime: python
+    domain: preprocessing
+    modality: [fmri, smri, dmri]
+    python_module: brain_researcher.services.tools.grandmaster_tools.RunBIDSAppTool
+    capabilities: [pipeline_wrapper, bids_app]
+    intents: [bids_app_run]
+    consumes: [bids_dir, output_dir]
+    produces: [derivatives]
+    risk: safe
+    tags: [grandmaster, preprocessing, python, safe]
+    description: Run common BIDS Apps via the shared run_bids_app wrapper.
+
+  - name: run_fitlins_recipe
+    display_name: "Run FitLins Recipe"
+    runtime_kind: python
+    runtime: python
+    domain: fmri.glm
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.pipeline_tools.RunFitLinsRecipeTool
+    capabilities: [pipeline_wrapper, fitlins, glm]
+    intents: [task_glm]
+    consumes: [bids_dir, output_dir]
+    produces: [derivatives]
+    risk: safe
+    tags: [fitlins, glm, python, safe]
+    description: Execute the FitLins GLM pipeline via local runtime wrappers.
+
+  - name: neurokg.find_structural_leverage
+    display_name: "BR-KG Structural Leverage"
+    runtime_kind: python
+    runtime: python
+    domain: knowledge_graph
+    modality: [kg]
+    python_module: brain_researcher.services.tools.kg_novelty_tools.FindStructuralLeverageTool
+    capabilities: [neurokg, novelty, leverage]
+    intents: [kg_novelty_audit]
+    consumes: [query, seed_kg_ids]
+    produces: [json]
+    function: analysis
+    risk: safe
+    tags: [neurokg, novelty, wrapper, python, safe]
+    description: Find high-leverage KG structures that could shift construct-level interpretations.
+
+  - name: neurokg.detect_contradiction_motifs
+    display_name: "BR-KG Contradiction Motifs"
+    runtime_kind: python
+    runtime: python
+    domain: knowledge_graph
+    modality: [kg]
+    python_module: brain_researcher.services.tools.kg_novelty_tools.DetectContradictionMotifsTool
+    capabilities: [neurokg, novelty, contradiction]
+    intents: [kg_novelty_audit]
+    consumes: [query, seed_kg_ids, evidence_items]
+    produces: [json]
+    function: analysis
+    risk: safe
+    tags: [neurokg, novelty, wrapper, python, safe]
+    description: Detect recurrent contradiction motifs in KG evidence and relation patterns.
+
+  - name: neurokg.find_contradiction_frontiers
+    display_name: "BR-KG Contradiction Frontiers"
+    runtime_kind: python
+    runtime: python
+    domain: knowledge_graph
+    modality: [kg]
+    python_module: brain_researcher.services.tools.kg_novelty_tools.FindContradictionFrontiersTool
+    capabilities: [neurokg, wow_ideation, contradiction]
+    intents: [kg_novelty_audit]
+    consumes: [query, seed_kg_ids]
+    produces: [json]
+    function: analysis
+    risk: safe
+    tags: [neurokg, wow, wrapper, python, safe]
+    description: Find contradiction-heavy frontiers around a topic or seed neighborhood.
+
+  - name: neurokg.mine_assumption_cracks
+    display_name: "BR-KG Assumption Cracks"
+    runtime_kind: python
+    runtime: python
+    domain: knowledge_graph
+    modality: [kg]
+    python_module: brain_researcher.services.tools.kg_novelty_tools.MineAssumptionCracksTool
+    capabilities: [neurokg, wow_ideation, assumptions]
+    intents: [kg_novelty_audit]
+    consumes: [query, seed_kg_ids, contradiction_frontiers]
+    produces: [json]
+    function: analysis
+    risk: safe
+    tags: [neurokg, wow, wrapper, python, safe]
+    description: Mine challenged default assumptions from contradiction frontiers.
+
+  - name: neurokg.find_analogy_transfers
+    display_name: "BR-KG Analogy Transfers"
+    runtime_kind: python
+    runtime: python
+    domain: knowledge_graph
+    modality: [kg]
+    python_module: brain_researcher.services.tools.kg_novelty_tools.FindAnalogyTransfersTool
+    capabilities: [neurokg, wow_ideation, transfer]
+    intents: [kg_novelty_audit]
+    consumes: [query, seed_kg_ids]
+    produces: [json]
+    function: analysis
+    risk: safe
+    tags: [neurokg, wow, wrapper, python, safe]
+    description: Find method-family transfers that appear absent in the local target neighborhood.
+
+  - name: neurokg.synthesize_wow_candidate_cards
+    display_name: "BR-KG Wow Candidate Cards"
+    runtime_kind: python
+    runtime: python
+    domain: knowledge_graph
+    modality: [kg]
+    python_module: brain_researcher.services.tools.kg_novelty_tools.SynthesizeWowCandidateCardsTool
+    capabilities: [neurokg, wow_ideation, candidate_cards]
+    intents: [kg_novelty_audit]
+    consumes: [query, contradiction_frontiers, assumption_cracks, analogy_transfers]
+    produces: [candidate_cards]
+    function: analysis
+    risk: safe
+    tags: [neurokg, wow, wrapper, python, safe]
+    description: Synthesize wow-style candidate cards from contradiction, assumption, and transfer signals.
+
+  - name: neurokg.sample_ood_hypothesis
+    display_name: "BR-KG OOD Hypothesis Sampler"
+    runtime_kind: python
+    runtime: python
+    domain: knowledge_graph
+    modality: [kg]
+    python_module: brain_researcher.services.tools.kg_novelty_tools.SampleOODHypothesisTool
+    capabilities: [neurokg, novelty, hypothesis_generation]
+    intents: [kg_novelty_audit]
+    consumes: [query, seed_kg_ids]
+    produces: [json]
+    function: analysis
+    risk: safe
+    tags: [neurokg, novelty, wrapper, python, safe]
+    description: Sample out-of-distribution hypotheses from KG structure and evidence context.
+
+  - name: neurokg.detect_topology_shifts
+    display_name: "BR-KG Topology Shift Detector"
+    runtime_kind: python
+    runtime: python
+    domain: knowledge_graph
+    modality: [kg]
+    python_module: brain_researcher.services.tools.kg_novelty_tools.DetectTopologyShiftsTool
+    capabilities: [neurokg, novelty, topology]
+    intents: [kg_novelty_audit]
+    consumes: [query, seed_kg_ids]
+    produces: [json]
+    function: analysis
+    risk: safe
+    tags: [neurokg, novelty, wrapper, python, safe]
+    description: Detect graph topology shifts for a construct/task across conditions.
+
+# ---------------------------------------------------------------------------
+# Connectivity tool fixes for executor resolution
+# ---------------------------------------------------------------------------
+
+  - name: connectivity_matrix
+    display_name: Connectivity Matrix (Nilearn)
+    runtime_kind: python
+    runtime: python
+    domain: fmri.connectivity
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.nilearn_connectivity.ConnectivityMatrixTool
+    capabilities: [connectivity]
+    intents: [connectivity_matrix]
+    consumes: [timeseries]
+    produces: [connectivity_matrix]
+    function: connectivity
+    risk: safe
+    tags: [fmri, connectivity, python, safe]
+    description: Compute ROI-ROI connectivity using nilearn (correlation/partial/tangent).
+
+  - name: seed_based_fc
+    display_name: Seed-based Connectivity (Nilearn)
+    runtime_kind: python
+    runtime: python
+    domain: fmri.connectivity
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.nilearn_connectivity.SeedBasedConnectivityTool
+    capabilities: [connectivity]
+    intents: [seed_connectivity]
+    consumes: [img]
+    produces: [stat_map]
+    function: connectivity
+    risk: safe
+    tags: [fmri, connectivity, python, safe]
+    description: Whole-brain seed connectivity using nilearn (sphere or mask seed).
+
+  - name: glm_first_level
+    display_name: GLM First Level (Nilearn)
+    runtime_kind: python
+    runtime: python
+    domain: fmri.glm
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.nilearn_glm.GLMFirstLevelTool
+    capabilities: [glm]
+    intents: [task_glm]
+    consumes: [img, events]
+    produces: [zmaps]
+    function: glm
+    risk: safe
+    tags: [fmri, glm, python, safe]
+    description: First-level task GLM using nilearn.
+
+  - name: glm_second_level
+    display_name: GLM Second Level (Nilearn)
+    runtime_kind: python
+    runtime: python
+    domain: fmri.glm
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.nilearn_glm.SecondLevelGLMTool
+    capabilities: [glm]
+    intents: [group_glm]
+    consumes: [stat_maps]
+    produces: [group_stats]
+    function: glm
+    risk: safe
+    tags: [fmri, glm, python, safe]
+    description: Group-level GLM using nilearn.
+
+  - name: workflow_preprocessing_qc
+    display_name: "Workflow: Preprocessing + QC"
+    runtime_kind: python
+    runtime: python
+    domain: fmri.qc
+    modality: [fmri, smri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [workflow, qc]
+    intents: [qc]
+    consumes: [bids_dir]
+    produces: [qc_table, report_html]
+    risk: safe
+    tags: [grandmaster, workflow, python, safe]
+    description: High-level workflow for QC table normalization, outlier flagging, and dashboard generation.
+
+  - name: workflow_visual_decoding
+    display_name: "Workflow: Visual Decoding"
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [workflow, decoding, visual_feature_decoder]
+    intents: [ml_decoding]
+    consumes: [features, labels]
+    produces: [predictions, weights]
+    risk: safe
+    tags: [grandmaster, workflow, python, safe]
+    description: High-level workflow for visual feature decoding and output artifact generation.
+
+  - name: workflow_hypothesis_candidate_cards
+    display_name: "Workflow: Hypothesis Candidate Cards"
+    runtime_kind: python
+    runtime: python
+    domain: interpretation
+    modality: [kg]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [workflow, novelty, hypothesis_generation]
+    intents: [kg_novelty_audit]
+    consumes: [query]
+    produces: [candidate_cards]
+    risk: safe
+    tags: [grandmaster, workflow, python, safe]
+    execution_capabilities:
+      needs_network: true
+    description: High-level workflow for KG novelty-based candidate hypothesis cards.
+
+  - name: compute_brain_age
+    display_name: "Brain Age (ridge)"
+    runtime_kind: python
+    runtime: python
+    domain: clinical
+    modality: [fmri, smri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [brain_age, prediction]
+    intents: [brain_age]
+    consumes: [features_file, ages_file]
+    produces: [brain_age_table]
+    risk: safe
+    tags: [grandmaster, python, safe]
+    description: Lightweight ridge regression brain-age estimator.
+
+  - name: individual_parcellation
+    display_name: "Individual Parcellation (NMF-lite)"
+    runtime_kind: python
+    runtime: python
+    domain: fmri.connectivity
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [individual_parcellation, connectivity]
+    intents: [parcellation]
+    consumes: [timeseries_file]
+    produces: [npz]
+    risk: safe
+    tags: [grandmaster, python, safe]
+    description: NMF-based individualized parcellation producing parcel components.
+
+  - name: visual_feature_decoder
+    display_name: "Visual Feature Decoder (ridge/logreg)"
+    runtime_kind: python
+    runtime: python
+    domain: advanced
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [decoding, visual_feature_decoder]
+    intents: [decoding]
+    consumes: [features_file, targets_file]
+    produces: [weights, pred]
+    risk: safe
+    tags: [grandmaster, python, safe]
+    description: Lightweight decoder with ridge/logreg and weight export.
+
+  - name: query_neuromaps
+    display_name: "Neuromaps (light) spatial summary"
+    runtime_kind: python
+    runtime: python
+    domain: interpretation
+    modality: [fmri, smri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [neuromaps, spatial_correlation]
+    intents: [map_decode]
+    consumes: [map1]
+    produces: [summary_json]
+    risk: safe
+    tags: [grandmaster, python, safe]
+    description: Lightweight neuromaps placeholder computing mean/std and placeholder correlation.
+
+  - name: resolve_reference_map
+    display_name: "Resolve Reference Map"
+    runtime_kind: python
+    runtime: python
+    domain: interpretation
+    modality: [fmri, smri]
+    python_module: brain_researcher.services.tools.resolve_reference_map_tool
+    capabilities: [reference_map_resolution, neuromaps, glm_stat_map_resolution]
+    intents: [map_decode, reference_map, stat_map]
+    consumes: [reference_map_query]
+    produces: [reference_map_file]
+    risk: safe
+    tags: [reference-map, neuromaps, python, safe]
+    description: Resolve reusable reference maps and annotations, including structured GLM stat-map lookups, from local caches.
+
+  - name: resolve_neuroimage_asset
+    display_name: "Resolve Neuroimage Asset"
+    runtime_kind: python
+    runtime: python
+    domain: interpretation
+    modality: [fmri, smri]
+    python_module: brain_researcher.services.tools.resolve_neuroimage_asset_tool
+    capabilities: [asset_resolution, atlas_resolution, template_resolution, transform_resolution, reference_map_resolution, glm_stat_map_resolution]
+    intents: [asset_inventory, template, parcellation, transform, reference_map, stat_map]
+    consumes: [asset_query]
+    produces: [asset_file]
+    risk: safe
+    tags: [neuroimage, templates, atlases, transforms, reference-maps, stat-maps, python, safe]
+    description: Resolve templates, transforms, atlases, reference maps, or GLM stat maps through a single registry-backed entrypoint.
+
+  - name: resolve_dataset_asset
+    display_name: "Resolve Dataset Asset"
+    runtime_kind: python
+    runtime: python
+    domain: dataset
+    modality: [fmri, smri, dmri, eeg, ieeg, pet]
+    python_module: brain_researcher.services.tools.resolve_dataset_asset_tool
+    capabilities: [dataset_asset_resolution, bids_resolution, derivative_resolution, events_resolution, confounds_resolution, glm_stat_map_resolution]
+    intents: [dataset_inventory, dataset_resolution, bids, derivatives, stat_map]
+    consumes: [dataset_ref]
+    produces: [dataset_asset]
+    risk: safe
+    tags: [dataset, bids, derivatives, confounds, events, python, safe]
+    description: Resolve dataset metadata, BIDS files, derivative roots, events, confounds, and structured GLM stat maps through one local entrypoint.
+
+  - name: list_dataset_assets
+    display_name: "List Dataset Assets"
+    runtime_kind: python
+    runtime: python
+    domain: dataset
+    modality: [fmri, smri, dmri, eeg, ieeg, pet]
+    python_module: brain_researcher.services.tools.list_dataset_assets_tool
+    capabilities: [dataset_asset_inventory, bids_inventory, derivative_inventory, events_inventory, confounds_inventory, glm_stat_map_inventory]
+    intents: [dataset_inventory, browse_assets, bids, derivatives, stat_map]
+    consumes: [dataset_ref]
+    produces: [dataset_asset_inventory_json]
+    risk: safe
+    tags: [dataset, dataset_catalog, inventory, bids, derivatives, derivative, confounds, events, stat-maps, python, safe]
+    description: Browse dataset metadata, derivative roots, targeted BIDS/events/confounds files, and structured GLM stat-map candidates before resolving a specific file.
+
+  - name: resolve_transform
+    display_name: "Resolve Transform"
+    runtime_kind: python
+    runtime: python
+    domain: interpretation
+    modality: [fmri, smri]
+    python_module: brain_researcher.services.tools.resolve_transform_tool
+    capabilities: [transform_resolution, warp_resolution, registration]
+    intents: [transform, registration]
+    consumes: [source_space, target_space]
+    produces: [transform_file]
+    risk: safe
+    tags: [transform, warp, regfusion, python, safe]
+    description: Resolve reusable transform assets such as regfusion warps from registry-backed local caches.
+
+  - name: list_neuroimage_assets
+    display_name: "List Neuroimage Assets"
+    runtime_kind: python
+    runtime: python
+    domain: interpretation
+    modality: [fmri, smri]
+    python_module: brain_researcher.services.tools.list_neuroimage_assets_tool
+    capabilities: [asset_inventory, neuroimage_registry, atlas_inventory, reference_map_inventory, glm_stat_map_inventory]
+    intents: [asset_inventory, browse_assets, stat_map]
+    consumes: [asset_inventory_query]
+    produces: [asset_inventory_json]
+    risk: safe
+    tags: [inventory, neuroimage, atlases, templates, reference-maps, stat-maps, python, safe]
+    description: List registry-backed local neuroimage templates, transforms, atlases, reference maps, and GLM stat maps.
+
+  - name: visualize_interactive
+    display_name: "Interactive Viz (placeholder)"
+    runtime_kind: python
+    runtime: python
+    domain: visualization
+    modality: [fmri]
+    python_module: brain_researcher.services.tools.grandmaster.exposed
+    capabilities: [visualization, interactive]
+    intents: [visualization]
+    consumes: [connectivity_matrix]
+    produces: [html]
+    risk: safe
+    tags: [grandmaster, python, safe]
+    description: Saves connectivity matrix and a simple HTML placeholder for interactive viewing.
+
+# ---------------------------------------------------------------------------
+# Behavior ingest / QC / export tools
+# ---------------------------------------------------------------------------
+  - name: behavior.ingest_taps
+    display_name: "Behavior: Ingest TAPS/PsychoPy"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.behavior_tools.BehaviorIngestTAPSTool
+    capabilities: [behavior_ingest, behavior_normalize]
+    intents: [behavior_ingest]
+    consumes: [behavior_raw]
+    produces: [behavior_trial_table]
+    function: preprocessing
+    risk: safe
+    tags: [behavior, ingest, python]
+    description: Parse TAPS/psyflow/PsychoPy CSV into canonical BehaviorTrial rows; supports custom column_map/column_map_path for variant schemas.
+    example_queries:
+      - "Load PsychoPy CSV and normalize trials"
+      - "Ingest TAPS task data with custom column map"
+
+  - name: behavior.qc_scan
+    display_name: "Behavior: QC/Outlier Scan"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.behavior_tools.BehaviorQCScanTool
+    capabilities: [behavior_qc, outlier_detection]
+    intents: [behavior_qc]
+    consumes: [behavior_trial_table]
+    produces: [behavior_qc_report, behavior_trial_table]
+    function: quality_control
+    risk: safe
+    tags: [behavior, qc, python]
+    description: Apply behavior outlier policy (policy_path) and emit QC report plus marked trials, returning policy_id for downstream routing.
+    example_queries:
+      - "Apply default behavior outlier policy"
+      - "Run behavior QC with custom policy file configs/behavior_outlier_policy.yaml"
+
+  - name: behavior.export_bids
+    display_name: "Behavior: Export BIDS events.tsv"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior, fmri]
+    python_module: brain_researcher.services.tools.behavior_tools.BehaviorExportBIDSEventsTool
+    capabilities: [behavior_export, bids_events]
+    intents: [behavior_export]
+    consumes: [behavior_trial_table]
+    produces: [events_tsv]
+    function: preprocessing
+    risk: safe
+    tags: [behavior, bids, python]
+    description: Convert BehaviorTrial rows to BIDS-compliant events.tsv, optionally dropping excluded trials; writes events.json sidecar, SHA256 hash, captures policy_id, and can annotate parametric modulators (param_modulators or sidecar_template_path).
+    example_queries:
+      - "Export cleaned behavior trials to events.tsv with sidecar"
+      - "Export events with parametric modulators and policy_id"
+
+  - name: behavior.paradigm_planner
+    display_name: "Behavior: Paradigm Planner"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.behavior_paradigm_planner.BehaviorParadigmPlannerTool
+    capabilities: [behavior_planning, paradigm_resolution, workflow]
+    intents: [behavior_planning]
+    consumes: [task_description]
+    produces: [plan_json]
+    function: analysis
+    risk: safe
+    tags: [behavior, workflow, planner, python, safe]
+    description: Resolve a free-text behavior task description to a supported canonical paradigm, extract structured overrides, and propose an ingest/QC/export plan.
+    example_queries:
+      - "Plan a two-back working memory task"
+      - "Propose behavior pipeline for go/no-go with 40 subjects"
+
+  - name: behavior.resolve_task_spec
+    display_name: "Behavior: Resolve Task Spec"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.behavior_tools.BehaviorResolveTaskSpecTool
+    capabilities: [behavior_task_spec, paradigm_defaults]
+    intents: [behavior_task_spec]
+    consumes: [paradigm_key]
+    produces: [behavior_task_spec_v1]
+    function: analysis
+    risk: safe
+    tags: [behavior, python, safe, task_spec]
+    description: Resolve paradigm defaults into a behavior-task-spec-v1 plus spec digest.
+    example_queries:
+      - "Resolve defaults for n_back"
+      - "Get a go_no_go task spec with 120 trials"
+
+  - name: behavior.validate_task_spec
+    display_name: "Behavior: Validate Task Spec"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.behavior_tools.BehaviorValidateTaskSpecTool
+    capabilities: [behavior_task_spec, validation]
+    intents: [behavior_task_spec]
+    consumes: [behavior_task_spec_v1]
+    produces: [validation_report]
+    function: quality_control
+    risk: safe
+    tags: [behavior, python, safe, task_spec, validation]
+    description: Validate a behavior-task-spec-v1 payload and return its spec digest.
+
+  - name: behavior.generate_psyflow_task
+    display_name: "Behavior: Generate Psyflow Task"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.behavior_tools.BehaviorGeneratePsyflowTaskTool
+    capabilities: [behavior_task_generation, psyflow_scaffold, approval_gate]
+    intents: [behavior_task_generation]
+    consumes: [behavior_task_spec_v1, behavior_review_v1]
+    produces: [psyflow_task_bundle_v1]
+    function: preprocessing
+    risk: safe
+    tags: [behavior, python, safe, psyflow, task_generation]
+    description: Generate a psyflow task scaffold under <out>/planned/<paradigm>/ after a spec-digest-bound approval gate.
+    example_queries:
+      - "Generate psyflow scaffold for approved n_back spec"
+
+  - name: behavior.ingest_psyflow_run
+    display_name: "Behavior: Ingest Psyflow Run"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.behavior_tools.BehaviorIngestPsyflowRunTool
+    capabilities: [behavior_ingest, psyflow_run_ingest]
+    intents: [behavior_ingest]
+    consumes: [psyflow_task_bundle_v1, run_data_dir]
+    produces: [behavior_trial_table, ingest_report]
+    function: preprocessing
+    risk: safe
+    tags: [behavior, python, safe, psyflow, ingest]
+    description: Ingest a psyflow run output (must live under <out>/run/) via the shared behavior.ingest_taps normalizer.
+
+# ---------------------------------------------------------------------------
+# TaskBeacon MCP-backed catalog/download/localization tools
+# ---------------------------------------------------------------------------
+  - name: taskbeacon.list_tasks
+    display_name: "TaskBeacon: List Tasks"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.taskbeacon_tools
+    capabilities: [taskbeacon_catalog, task_catalog]
+    intents: [taskbeacon_catalog, behavior_task_selection]
+    consumes: [task_query]
+    produces: [taskbeacon_task_list]
+    function: search
+    risk: safe
+    tags: [taskbeacon, mcp, catalog, python, safe]
+    execution_capabilities:
+      needs_network: true
+      allowed_domains: [github.com, api.github.com, raw.githubusercontent.com]
+    description: List available TaskBeacon task repositories from the public GitHub org catalog, falling back to taskbeacon-mcp when needed.
+    example_queries:
+      - "List available TaskBeacon tasks"
+      - "Find TaskBeacon ANT tasks"
+
+  - name: taskbeacon.download_task
+    display_name: "TaskBeacon: Download Task"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.taskbeacon_tools
+    capabilities: [taskbeacon_download, workspace_materialization]
+    intents: [taskbeacon_download, behavior_task_import]
+    consumes: [taskbeacon_repo, workspace_root]
+    produces: [taskbeacon_workspace_repo]
+    function: preprocessing
+    risk: safe
+    tags: [taskbeacon, mcp, download, workspace, python]
+    description: Download a TaskBeacon repo into a BR workspace, preferring taskbeacon-mcp and falling back to BR's direct GitHub materializer; applies BR-hosted runtime overlays.
+    example_queries:
+      - "Download TaskBeacon/T000015-ant into my workspace"
+
+  - name: taskbeacon.localize_task
+    display_name: "TaskBeacon: Localize Task"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.taskbeacon_tools
+    capabilities: [taskbeacon_localization, task_config_translation]
+    intents: [taskbeacon_localize, behavior_task_localization]
+    consumes: [taskbeacon_workspace_repo, target_language]
+    produces: [localization_prompt_messages]
+    function: preprocessing
+    risk: safe
+    tags: [taskbeacon, mcp, localization, python]
+    description: Ask taskbeacon-mcp for localization prompt messages for a workspace TaskBeacon task while BR enforces workspace path safety.
+    example_queries:
+      - "Localize this TaskBeacon task to French"
+
+  - name: taskbeacon.run_qa_sim
+    display_name: "TaskBeacon: Run QA/Sim"
+    runtime_kind: python
+    runtime: python
+    domain: behavior
+    modality: [behavior]
+    python_module: brain_researcher.services.tools.taskbeacon_tools
+    capabilities: [taskbeacon_qa, taskbeacon_sim, psychopy_shell]
+    intents: [taskbeacon_qa, behavior_task_simulation]
+    consumes: [taskbeacon_workspace_repo]
+    produces: [taskbeacon_run_artifacts]
+    function: execution
+    risk: dangerous
+    approval_level: confirm
+    tags: [taskbeacon, psychopy, qa, sim, shell, python, dangerous]
+    description: Run a workspace TaskBeacon task through BR's hosted QA/sim shell boundary; this executes task code locally and is not delegated to TaskBeacon MCP.
+    example_queries:
+      - "Run QA for this TaskBeacon task"
+      - "Run the TaskBeacon simulated participant"
+
+  # ---------------------------------------------------------------------------
+  # Execution capabilities overlays (P0/M3)
+  #
+  # These entries annotate tools with runtime policy requirements without
+  # duplicating the full generated catalog.
+  # ---------------------------------------------------------------------------
+
+  # Gemini search tools (catalog fallback: add minimal entry so ToolSpec can
+  # declare network requirements deterministically).
+  - name: gemini.fs
+    runtime_kind: mcp
+    description: "Gemini file search tool (external_api backend)."
+    execution_capabilities:
+      needs_network: true
+
+  - name: gemini.net
+    runtime_kind: mcp
+    description: "Gemini web search tool (external_api backend)."
+    execution_capabilities:
+      needs_network: true
+
+  # Dataset/archive tools (generated catalog contains these entries; we only
+  # overlay execution_capabilities).
+  - name: find_related_concepts
+    execution_capabilities:
+      needs_network: true
+
+  - name: kg_multihop_qa
+    execution_capabilities:
+      needs_network: true
+
+  - name: kg_hypothesis_candidate_cards
+    runtime_kind: mcp
+    category: knowledge_graph
+    description: "Generate KG-backed hypothesis candidate cards with optional external literature enrichment."
+    intents: ["kg_hypothesis", "candidate_card_generation", "hypothesis_generation"]
+    execution_capabilities:
+      needs_network: true
+
+  - name: kg_hypothesis_candidate_cards_start
+    runtime_kind: mcp
+    category: knowledge_graph
+    description: "Start a background KG-backed hypothesis candidate-card run and return a pollable run_id."
+    intents: ["kg_hypothesis", "candidate_card_generation", "background_run"]
+    execution_capabilities:
+      needs_network: true
+
+  - name: kg_hypothesis_candidate_cards_get
+    runtime_kind: mcp
+    category: knowledge_graph
+    description: "Poll a background KG-backed hypothesis candidate-card run by run_id."
+    intents: ["kg_hypothesis", "candidate_card_generation", "run_polling"]
+    execution_capabilities:
+      needs_network: true
+
+  - name: hypothesis_hot_load_research
+    runtime_kind: mcp
+    category: knowledge_graph
+    description: "Run high-level hot-load hypothesis research from a free-text query through anchor resolution, KG mining, verify, and candidate cards."
+    intents: ["kg_hypothesis", "hypothesis_generation", "deep_research"]
+    execution_capabilities:
+      needs_network: true
+
+  - name: hypothesis_run_start
+    runtime_kind: mcp
+    category: knowledge_graph
+    description: "Start a background hot-load hypothesis research run and return a pollable run_id."
+    intents: ["kg_hypothesis", "hypothesis_generation", "background_run"]
+    execution_capabilities:
+      needs_network: true
+
+  - name: hypothesis_run_get
+    runtime_kind: mcp
+    category: knowledge_graph
+    description: "Poll a background hot-load hypothesis research run by run_id."
+    intents: ["kg_hypothesis", "hypothesis_generation", "run_polling"]
+    execution_capabilities:
+      needs_network: true
+
+  - name: task_to_concept_mapping
+    # Avoid ambiguous module discovery that can hit legacy aliases.
+    python_module: brain_researcher.services.tools.neurokg_tools.TaskMappingTool
+
+  - name: openneuro_download
+    execution_capabilities:
+      needs_network: true
+      writes_files: true
+
+  - name: openneuro_list_files
+    execution_capabilities:
+      needs_network: true
+
+  - name: dandi_search
+    execution_capabilities:
+      needs_network: true
+
+  - name: dandi_download
+    execution_capabilities:
+      needs_network: true
+      writes_files: true
+
+  - name: neurovault_search_images
+    execution_capabilities:
+      needs_network: true
+
+  - name: neurovault_download_collection
+    execution_capabilities:
+      needs_network: true
+      writes_files: true
+
+  # Coding agent tool (LLM calls + filesystem outputs).
+  - name: code_agent
+    execution_capabilities:
+      needs_network: true
+      writes_files: true

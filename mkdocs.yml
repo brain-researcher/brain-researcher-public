@@ -1,0 +1,160 @@
+site_name: Brain Researcher Documentation
+site_description: A neuroimaging analysis platform combining LLM-powered natural language understanding with advanced fMRI analysis tools
+site_author: Brain Researcher Team
+site_url: https://brain-researcher.readthedocs.io
+
+# Repository
+repo_name: brain-researcher
+repo_url: https://github.com/your-org/brain-researcher
+edit_uri: edit/main/docs/
+
+# Theme configuration
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    logo: material/brain
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+            show_object_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            docstring_style: google
+  - autorefs
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: material.extensions.emoji.to_svg
+      emoji_index: material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: your-org
+      repo: brain-researcher
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+  - User Guide:
+      - CLI Usage: user-guide/cli.md
+      - Natural Language Interface: user-guide/chat.md
+      - Data Management: user-guide/data-management.md
+      - Analysis Tools: user-guide/analysis-tools.md
+      - Knowledge Graph: user-guide/knowledge-graph.md
+  - API Reference:
+      - Overview: api/overview.md
+      - REST API: api/rest.md
+      - Python API: api/python.md
+      - CLI Reference: api/cli-reference.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Architecture: development/architecture.md
+      - Code Standards: development/code-standards.md
+      - Testing: development/testing.md
+      - Docker: development/docker.md
+  - Tutorials:
+      - Basic fMRI Analysis: tutorials/basic-fmri.md
+      - Using the Knowledge Graph: tutorials/knowledge-graph.md
+      - Custom Tool Development: tutorials/custom-tools.md
+      - LLM Integration: tutorials/llm-integration.md
+  - Migration:
+      - From Scripts to CLI: migration/cli-migration.md
+      - Legacy Code: migration/legacy.md
+  - About:
+      - Changelog: about/changelog.md
+      - License: about/license.md
+      - Support: about/support.md
+
+# Extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/your-org/brain-researcher
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/your-org/brain-researcher
+  version:
+    provider: mike
+    default: stable
+
+# Extra CSS
+extra_css:
+  - stylesheets/extra.css
+
+# Extra JavaScript
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js

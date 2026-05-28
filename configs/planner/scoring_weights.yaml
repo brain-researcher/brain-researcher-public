@@ -1,0 +1,257 @@
+# Scoring Weights Configuration v0.2.0
+# Controls multi-factor scoring and constraint filtering for tool selection
+# Supports hierarchical overrides and feature toggles for adaptive planning
+#
+# Environment variable overrides:
+#   BR_SCORE_WEIGHT_<FACTOR>=<value>  - Override individual weights
+#   BR_PLANNER_STRATEGY=top1|diverse_topk - Override selection strategy
+#   BR_PLANNER_CONSTRAINT_MODE=strict|relaxed - Override constraint mode
+
+version: "0.2.0"
+
+policy:
+  # Hard constraints (applied before scoring)
+  # These filter out tools that don't meet minimum requirements
+  constraints:
+    # Require preflight checks to pass (true = drop failing tools)
+    require_preflight: true
+
+    # Capability matching mode: strict (exact match) or relaxed (partial/synonym)
+    require_capability_match: "strict"
+
+    # Require container image to be available locally
+    require_container_availability: false
+
+    # Require GPU for specific operators (empty = none)
+    # Example: ["deep_denoise", "ml_registration"]
+    gpu_required_if: []
+
+    # KG-backed hard constraints (requires Neo4j + tool catalog ingest)
+    # Enable with BR_PLANNER_USE_KG_CONSTRAINTS=1 or set use_kg_constraints: true
+    use_kg_constraints: false
+    kg_constraint_mode: "relaxed"  # relaxed = skip if KG returns no matches
+    kg_modalities: []  # Optional override; defaults to request modality when empty
+    kg_required_consumes: []  # Optional ResourceType names (ToolVersion -> CONSUMES_RESOURCE)
+    kg_required_produces: []  # Optional ResourceType names (ToolVersion -> PRODUCES_RESOURCE)
+
+  # Soft scoring (applied after constraint filtering)
+  # Weights must sum to 1.0 after applying overrides
+  scoring:
+    weights:
+      # Intent match: How well tool capabilities match user query
+      # Computed via: exact match (1.0), synonym match (0.8), embedding similarity
+      intent_match: 0.30
+
+      # Preflight: Tool availability and readiness
+      # NOTE: Set to 0.00 because preflight is now a hard constraint
+      # Kept for backward compatibility but not used in scoring
+      preflight: 0.00
+
+      # Description relevance: Text similarity between query and tool description
+      # Computed via: TF-IDF cosine similarity or embedding similarity
+      description: 0.20
+
+      # Metadata quality: Completeness and quality signals
+      # Factors: has_documentation (0.4), has_examples (0.3), recent_updates (0.3)
+      metadata: 0.10
+
+      # Resource fit: How well tool matches available resources
+      # Factors: container_available (0.5), cvmfs_mounted (0.3), dependencies_met (0.2)
+      resource_fit: 0.15
+
+      # Historical quality: Success rate from past executions (NEW in v0.2)
+      # Stub implementation: defaults to 0.5 until telemetry data available
+      historical_quality: 0.15
+
+      # Latency prediction: Estimated execution time (NEW in v0.2)
+      # Lower latency = higher score; stub implementation uses tool defaults
+      latency_pred: 0.10
+
+    # Minimum score threshold for candidate inclusion (0.0 - 1.0)
+    min_candidate_score: 0.10
+
+    # Boost for exact capability match (added to final score)
+    exact_match_boost: 0.05
+
+    # Feature toggles (enable/disable scoring components)
+    features:
+      # Embedding-based similarity (requires sentence transformers)
+      embedding_similarity: false  # Not implemented yet, use TF-IDF
+
+      # TF-IDF text similarity (fallback for embeddings)
+      tfidf_similarity: true
+
+      # Historical quality scoring (requires telemetry data)
+      historical_quality: true  # Stub: defaults to neutral 0.5
+
+      # Latency prediction (requires historical timing data)
+      latency_pred: true  # Stub: uses resource time_min_default
+
+    # Scoring behavior flags
+    generate_explanations: true
+    explanation_verbosity: "brief"  # brief | detailed
+
+# Hierarchical overrides
+# Applied in order: modality → operator → environment → env vars
+# Later overrides take precedence; weights auto-renormalized after merge
+overrides:
+  # Per-modality overrides
+  modality:
+    fmri:
+      scoring.weights.intent_match: 0.30
+      scoring.weights.description: 0.25
+      scoring.weights.resource_fit: 0.10
+
+    dmri:
+      scoring.weights.resource_fit: 0.20
+      scoring.weights.latency_pred: 0.15
+
+    eeg:
+      scoring.weights.historical_quality: 0.20
+      scoring.weights.latency_pred: 0.15
+
+  # Per-operator overrides
+  operator:
+    skull_strip:
+      constraints.require_container_availability: true
+      scoring.weights.resource_fit: 0.25
+      scoring.weights.latency_pred: 0.05
+
+    connectivity:
+      scoring.weights.historical_quality: 0.20
+      scoring.weights.metadata: 0.05
+
+  # Per-environment overrides
+  environment:
+    local:
+      # On local laptop, prioritize fast tools
+      scoring.weights.latency_pred: 0.20
+      scoring.weights.resource_fit: 0.20
+      scoring.weights.historical_quality: 0.05
+      constraints.require_container_availability: false
+
+    cloud:
+      # On cloud, prioritize quality over speed
+      scoring.weights.latency_pred: 0.05
+      scoring.weights.historical_quality: 0.20
+      constraints.require_container_availability: true
+
+    hpc:
+      # On HPC, assume everything available, focus on quality
+      scoring.weights.resource_fit: 0.05
+      scoring.weights.historical_quality: 0.25
+
+    benchmark:
+      # Benchmark mode: prefer semantic relevance over infra readiness.
+      # Used by benchmarks/planner_microtooling/runner.py --semantic
+      constraints.require_preflight: false
+      constraints.require_capability_match: "relaxed"
+      constraints.require_container_availability: false
+      scoring.weights.intent_match: 0.45
+      scoring.weights.description: 0.35
+      scoring.weights.metadata: 0.10
+      scoring.weights.historical_quality: 0.10
+      scoring.weights.resource_fit: 0.00
+      scoring.weights.latency_pred: 0.00
+
+# Selection strategy configuration
+strategy:
+  # Default strategy: top1 | diverse_topk | budget_aware
+  default: "top1"
+
+  # Strategy-specific parameters
+  diverse_topk:
+    k: 3  # Return top 3 tools
+    diversity_penalty: 0.1  # Penalize same package (0.0 = no penalty, 1.0 = exclude)
+
+  budget_aware:
+    max_latency_min: 60  # Maximum acceptable latency in minutes
+    max_cost_usd: 10.0  # Maximum acceptable cost (future)
+
+# Experiment configuration (A/B testing, bandits, etc.)
+experiments:
+  # Selection policy type: weighted | rules | ml
+  selection_policy:
+    type: "weighted"  # Use weighted scoring (default)
+
+    # Optional A/B test arms (for online evaluation)
+    # Each arm gets a weight; system randomly selects arm per request
+    arms: []
+    # Example arms (disabled by default):
+    # - name: "baseline_rules"
+    #   weight: 0.6
+    #   patch: {}  # No overrides, use base config
+    #
+    # - name: "resource_heavy_bias"
+    #   weight: 0.2
+    #   patch:
+    #     scoring.weights.resource_fit: 0.30
+    #     scoring.weights.latency_pred: 0.05
+    #
+    # - name: "fast_bias"
+    #   weight: 0.2
+    #   patch:
+    #     constraints.require_container_availability: false
+    #     scoring.weights.latency_pred: 0.25
+
+# Telemetry and logging
+telemetry:
+  # Log feature vectors for each candidate (for learning)
+  log_features: true
+
+  # How many top candidates to log: "all" | "top-N" | integer
+  log_selected_candidates: "top-3"
+
+  # Experiment/version tag for tracking
+  tag: "planner-v0.2"
+
+  # Output directory for planner decision logs (relative to repo root)
+  log_dir: "data/planner_logs"
+
+# Resource fit scoring (detailed breakdown)
+resource_fit:
+  # Weight for container availability check
+  container_available: 0.5
+
+  # Weight for CVMFS mount check
+  cvmfs_mounted: 0.3
+
+  # Weight for Python dependencies check
+  dependencies_met: 0.2
+
+  # Enable deep resource checking (may be slower)
+  deep_check: false
+
+# Metadata scoring (detailed breakdown)
+metadata:
+  # Weight for having documentation
+  has_documentation: 0.4
+
+  # Weight for having code examples
+  has_examples: 0.3
+
+  # Weight for recent updates (last 12 months)
+  recent_updates: 0.3
+
+# Explanation templates (for generate_explanations=true)
+explanations:
+  intent_match_high: "Excellent match for '{query}' - tool provides {capabilities}"
+  intent_match_medium: "Good match - tool supports {capabilities}"
+  intent_match_low: "Partial match - may require additional configuration"
+
+  preflight_pass: "All readiness checks passed"
+  preflight_fail: "Preflight failed: {details}"
+
+  resource_fit_high: "Tool resources fully available"
+  resource_fit_medium: "Tool mostly available, minor setup may be needed"
+  resource_fit_low: "Significant setup required for tool usage"
+
+  description_relevant: "Tool description closely matches your query"
+  metadata_complete: "Well-documented with examples"
+
+  historical_quality_high: "High success rate in past executions"
+  historical_quality_medium: "Moderate success rate"
+  historical_quality_low: "Low success rate or insufficient data"
+
+  latency_low: "Fast execution (< {threshold} min)"
+  latency_high: "Slow execution (> {threshold} min)"

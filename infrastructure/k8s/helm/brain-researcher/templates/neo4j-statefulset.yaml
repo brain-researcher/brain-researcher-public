@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-neo4j
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: neo4j
+spec:
+  serviceName: {{ include "brain-researcher.fullname" . }}-neo4j-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "brain-researcher.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: neo4j
+  template:
+    metadata:
+      labels:
+        {{- include "brain-researcher.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: neo4j
+    spec:
+      {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: neo4j
+          image: "{{ .Values.neo4j.imageRepository | default "neo4j" }}:{{ .Values.neo4j.imageTag | default "5.22.0" }}"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              pw_file="/etc/neo4j-secrets/{{ .Values.neo4j.auth.passwordKey | default "password" }}";
+              if [ ! -f "${pw_file}" ]; then
+                echo "Neo4j password file missing: ${pw_file}" >&2;
+                exit 1;
+              fi
+
+              neo4j_password="$(cat "${pw_file}")";
+              export NEO4J_AUTH="${BR_NEO4J_USER}/${neo4j_password}";
+              exec /startup/docker-entrypoint.sh neo4j
+          env:
+            - name: BR_NEO4J_USER
+              value: "{{ .Values.neo4j.auth.user | default "neo4j" }}"
+            - name: NEO4J_dbms_memory_heap_initial__size
+              value: "512m"
+            - name: NEO4J_dbms_memory_heap_max__size
+              value: "512m"
+          {{- with .Values.neo4j.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: 7474
+              name: http
+            - containerPort: 7687
+              name: bolt
+          volumeMounts:
+            - name: neo4j-data
+              mountPath: /data
+            - name: neo4j-auth
+              mountPath: /etc/neo4j-secrets
+              readOnly: true
+      volumes:
+        - name: neo4j-auth
+          secret:
+            secretName: {{ .Values.neo4j.auth.existingSecret | default "br-neo4j-password-k8s" }}
+  volumeClaimTemplates:
+    - metadata:
+        name: neo4j-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ .Values.neo4j.persistence.storageClass | default .Values.global.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.neo4j.persistence.size | default "10Gi" }}

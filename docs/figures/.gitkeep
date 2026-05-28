@@ -1,0 +1,5 @@
+# Placeholder: docs/figures/ is intentionally empty in this OSS release.
+# Private benchmark figures are deferred per the v0.1.0 launch decision.
+# Without these assets, the web-ui builds successfully but is missing some
+# illustration images. Populate this directory with your own figures
+# (PNG/SVG) for a fully-illustrated UI.

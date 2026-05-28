@@ -1,0 +1,264 @@
+# Test Template Library for AGENT-018 Testing
+
+templates:
+  # Simple test template
+  simple_analysis:
+    id: simple_analysis
+    name: "Simple Analysis Template"
+    description: "Basic template for testing"
+    version: "1.0.0"
+    category: "test"
+    author: "Test Suite"
+    created_at: "2025-01-01T00:00:00Z"
+    status: "active"
+    tags: ["test", "simple"]
+    
+    parameters:
+      - name: input_file
+        type: path
+        description: "Input data file"
+        required: true
+        
+      - name: output_dir
+        type: path
+        description: "Output directory"
+        required: true
+        default: "/tmp/test_output"
+        
+      - name: threshold
+        type: float
+        description: "Statistical threshold"
+        default: 0.05
+        min_value: 0.001
+        max_value: 0.1
+    
+    steps:
+      - name: load_data
+        tool: test_loader
+        description: "Load input data"
+        parameters:
+          input_file: "${input_file}"
+          
+      - name: analyze
+        tool: test_analyzer
+        description: "Analyze the data"
+        depends_on: ["load_data"]
+        parameters:
+          data: "${load_data.output}"
+          threshold: "${threshold}"
+          
+      - name: save_results
+        tool: test_saver
+        description: "Save analysis results"
+        depends_on: ["analyze"]
+        parameters:
+          results: "${analyze.results}"
+          output_dir: "${output_dir}"
+    
+    outputs:
+      results: "${analyze.results}"
+      output_files: "${save_results.output_files}"
+
+  # Template with inheritance
+  advanced_analysis:
+    id: advanced_analysis
+    name: "Advanced Analysis Template"
+    description: "Extended analysis template"
+    version: "1.0.0"
+    category: "test"
+    author: "Test Suite"
+    created_at: "2025-01-01T00:00:00Z"
+    status: "active"
+    tags: ["test", "advanced"]
+    inherits_from: "simple_analysis"
+    
+    # Additional parameters
+    parameters:
+      - name: advanced_option
+        type: boolean
+        description: "Enable advanced processing"
+        default: false
+        
+      - name: iterations
+        type: integer
+        description: "Number of iterations"
+        default: 100
+        min_value: 10
+        max_value: 1000
+    
+    # Additional steps
+    steps:
+      - name: advanced_processing
+        tool: test_advanced_processor
+        description: "Advanced processing step"
+        depends_on: ["analyze"]
+        parameters:
+          results: "${analyze.results}"
+          advanced_option: "${advanced_option}"
+          iterations: "${iterations}"
+        conditions:
+          - "advanced_option == true"
+
+  # Template with validation errors (for testing)
+  invalid_template:
+    id: invalid_template
+    name: "Invalid Template"
+    description: "Template with validation issues"
+    version: "1.0.0"
+    category: "test"
+    author: "Test Suite"
+    created_at: "2025-01-01T00:00:00Z"
+    status: "active"
+    tags: ["test", "invalid"]
+    
+    parameters:
+      - name: "invalid name"  # Invalid parameter name
+        type: path
+        description: "Bad parameter name"
+        
+      - name: duplicate_param
+        type: string
+        description: "First instance"
+        
+      - name: duplicate_param  # Duplicate parameter name
+        type: integer
+        description: "Second instance"
+    
+    steps:
+      - name: step1
+        tool: nonexistent_tool  # Tool doesn't exist
+        description: "First step"
+        
+      - name: step2
+        tool: test_tool
+        description: "Second step"
+        depends_on: ["nonexistent_step"]  # Depends on non-existent step
+        
+      - name: step1  # Duplicate step name
+        tool: another_tool
+        description: "Duplicate step"
+
+  # Complex template for comprehensive testing
+  complex_workflow:
+    id: complex_workflow
+    name: "Complex Workflow Template"
+    description: "Multi-step workflow for comprehensive testing"
+    version: "2.1.0"
+    category: "neuroimaging"
+    author: "Brain Researcher Team"
+    created_at: "2025-01-15T10:30:00Z"
+    status: "active"
+    tags: ["neuroimaging", "fmri", "complex", "multi-step"]
+    
+    parameters:
+      - name: bids_dataset
+        type: path
+        description: "Path to BIDS dataset"
+        required: true
+        validation_rules:
+          - "must_be_bids_format"
+          
+      - name: subjects
+        type: list
+        description: "List of subjects to process"
+        default: ["sub-01", "sub-02"]
+        
+      - name: task_name
+        type: task
+        description: "Task name"
+        required: true
+        choices: ["rest", "task", "workingmemory", "nback"]
+        
+      - name: preprocessing_options
+        type: dict
+        description: "Preprocessing configuration"
+        default: {
+          "smoothing_fwhm": 6.0,
+          "high_pass_filter": 0.01,
+          "motion_correction": true
+        }
+        
+      - name: analysis_level
+        type: string
+        description: "Level of analysis"
+        default: "first_level"
+        choices: ["first_level", "group_level", "both"]
+        
+      - name: parallel_jobs
+        type: integer
+        description: "Number of parallel jobs"
+        default: 4
+        min_value: 1
+        max_value: 16
+    
+    steps:
+      - name: validate_input
+        tool: bids_validator
+        description: "Validate BIDS dataset"
+        parameters:
+          dataset_path: "${bids_dataset}"
+          
+      - name: subject_preprocessing
+        tool: fmriprep_parallel
+        description: "Preprocess subjects in parallel"
+        depends_on: ["validate_input"]
+        parameters:
+          dataset_path: "${bids_dataset}"
+          subjects: "${subjects}"
+          task: "${task_name}"
+          preprocessing_options: "${preprocessing_options}"
+          n_jobs: "${parallel_jobs}"
+        timeout_seconds: 7200
+        retry_count: 1
+        
+      - name: first_level_analysis
+        tool: glm_first_level
+        description: "First-level GLM analysis"
+        depends_on: ["subject_preprocessing"]
+        parameters:
+          preprocessed_data: "${subject_preprocessing.output_dir}"
+          subjects: "${subjects}"
+          task: "${task_name}"
+        conditions:
+          - "analysis_level in ['first_level', 'both']"
+          
+      - name: group_level_analysis
+        tool: glm_group_level
+        description: "Group-level analysis"
+        depends_on: ["first_level_analysis"]
+        parameters:
+          first_level_results: "${first_level_analysis.results}"
+          subjects: "${subjects}"
+        conditions:
+          - "analysis_level in ['group_level', 'both']"
+        optional: true
+        
+      - name: quality_control
+        tool: qc_generator
+        description: "Generate QC reports"
+        depends_on: ["subject_preprocessing"]
+        parameters:
+          preprocessed_data: "${subject_preprocessing.output_dir}"
+          subjects: "${subjects}"
+          
+      - name: visualization
+        tool: result_visualizer
+        description: "Create result visualizations"
+        depends_on: ["first_level_analysis", "group_level_analysis"]
+        parameters:
+          first_level_results: "${first_level_analysis.results}"
+          group_level_results: "${group_level_analysis.results}"
+        conditions:
+          - "first_level_analysis.completed or group_level_analysis.completed"
+    
+    outputs:
+      preprocessed_data: "${subject_preprocessing.output_dir}"
+      first_level_results: "${first_level_analysis.results}"
+      group_level_results: "${group_level_analysis.results}"
+      qc_reports: "${quality_control.reports}"
+      visualizations: "${visualization.plots}"
+      
+    metadata:
+      estimated_runtime_hours: 4
+      memory_requirements_gb: 16
+      storage_requirements_gb: 50

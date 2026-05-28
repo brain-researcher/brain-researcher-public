@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use Brain Researcher in academic work, please cite both the software and the accompanying paper (when available)."
+title: "Brain Researcher: An LLM-driven Research Assistant for Neuroimaging"
+abstract: >-
+  Brain Researcher combines large-language-model planning with a
+  neuroscience knowledge graph (Neo4j), a curated catalog of
+  fMRI/diffusion/EEG analysis tools, and an evidence-grounded
+  scientific-review system. It converts natural-language research
+  questions into reproducible analyses, with every step traceable to
+  its plan, inputs, and primary literature.
+type: software
+license: MIT
+repository-code: "https://github.com/zjc062/brain_researcher"
+url: "https://github.com/zjc062/brain_researcher"
+# Update at v1.0 release:
+# - `version`, `date-released`, `doi` (Zenodo) below
+# - the `preferred-citation` block (arXiv preprint)
+version: "0.0-dev"
+authors:
+  - family-names: "Chen"
+    given-names: "Zijiao"
+    email: "zijiao@stanford.edu"
+    affiliation: "Stanford University"
+  - name: "Brain Researcher contributors"
+keywords:
+  - "neuroimaging"
+  - "fMRI"
+  - "knowledge graph"
+  - "large language model"
+  - "research assistant"
+  - "reproducibility"
+  - "MCP"
+  - "Model Context Protocol"
+# Uncomment and fill in once the preprint is on arXiv:
+# preferred-citation:
+#   type: article
+#   title: "Brain Researcher: An LLM-driven Research Assistant for Neuroimaging"
+#   authors:
+#     - family-names: "Chen"
+#       given-names: "Zijiao"
+#       affiliation: "Stanford University"
+#   year: 2026
+#   journal: "arXiv preprint"
+#   identifiers:
+#     - type: other
+#       value: "arXiv:XXXX.XXXXX"
+#       description: "arXiv preprint"

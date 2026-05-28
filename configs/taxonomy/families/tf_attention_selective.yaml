@@ -1,0 +1,274 @@
+# TODO CMD: refine descriptions, paradigms, and crosswalk IDs before publishing.
+id: tf_attention_selective
+label: Selective & Spatial Attention
+description: >
+  Paradigms probing orienting, selection, and sustained/temporal attention via cue–target structures,
+  visual search streams, vigilance demands, and dynamic selection (tracking). Covers spatial/feature/object-based
+  attention, temporal attention in RSVP (rapid serial visual presentation), sustained attention/vigilance (CPT/Continuous Performance Test family), and selection under movement.
+# ────────────────────────────────────────────────────────────────────────────────
+# LEVEL 2: Subfamilies (families), each with Level 3 paradigms
+# ────────────────────────────────────────────────────────────────────────────────
+subfamilies:
+  - id: sf_spatial_orienting_cueing
+    label: Spatial Orienting & Cueing
+    description: Endogenous/exogenous spatial cueing, object-based and feature-based cueing, spotlight/zoom-lens, prior/location probability.
+    paradigms:
+      - name: Posner Spatial Cueing (Endogenous)
+        aliases: [Spatial Cueing, Central Symbolic Cueing, Posner Task, Posner Paradigm, Endogenous Cueing, Voluntary Spatial Attention]
+        typical_DVs: [rt_ms, accuracy, cueing_effect_ms]
+        common_manipulations: [cue_validity, soa_ms, cue_type, eccentricity]
+        notes: Arrow/central symbolic cues directing voluntary attention.
+      - name: Posner Spatial Cueing (Exogenous/Peripheral)
+        aliases: [Peripheral Cueing, Reflexive Cueing, Exogenous Cueing, Peripheral Attention, Reflexive Attention]
+        typical_DVs: [rt_ms, accuracy, cueing_effect_ms]
+        common_manipulations: [cue_validity, soa_ms, cue_type, eccentricity]
+        notes: Abrupt-onset peripheral cues; stronger at short SOAs (stimulus onset asynchrony).
+      - name: Inhibition of Return (IOR)
+        aliases: [IOR Effect, IOR Paradigm, Inhibition of Return Effect]
+        typical_DVs: [ior_effect_ms, rt_ms, accuracy]
+        common_manipulations: [cue_target_soa_ms, cue_type, eccentricity]
+        notes: Slowed responses at previously cued locations at longer SOAs.
+      - name: Feature-Based Cueing
+        aliases: [Attend-Color, Attend-Motion, Feature-Based Attention, Feature Attention, Non-Spatial Feature Attention]
+        typical_DVs: [feature_benefit_ms, accuracy, ssvep_gain]
+        common_manipulations: [feature_validity, feature_probability, frequency_tagging]
+        notes: Attention to features enhances processing across the visual field.
+      - name: Zoom-Lens / Spotlight Size
+        aliases: [Attentional Zoom Lens, Attentional Spotlight, Spotlight Model, Zoom Lens Model, Spotlight Size Task]
+        typical_DVs: [rt_by_aperture_size, accuracy]
+        common_manipulations: [aperture_size, eccentricity, set_size]
+        notes: Manipulates the breadth of the attended region (narrow vs wide).
+      - name: Spatial Probability Cueing
+        aliases: [Location Prior Learning]
+        typical_DVs: [rt_ms, accuracy, learned_posterior_bias]
+        common_manipulations: [probability_map, training_blocks, transfer_blocks]
+        notes: Learned priors bias spatial attention to high-probability regions.
+
+  - id: sf_visual_search_capture
+    label: Visual Search & Attentional Capture
+    description: Classic search (feature, conjunction) and capture (stimulus-driven, contingent, value-driven); includes preview/marking and hybrid search.
+    paradigms:
+      - name: Feature Search
+        aliases: [Pop-out, Pop-out Search, Feature Pop-out, Parallel Search, Efficient Search]
+        typical_DVs: [search_slope_ms_per_item, accuracy]
+        common_manipulations: [set_size, target_presence, target_distractor_similarity]
+        notes: Pop-out (slope≈0) when target differs on a single salient dimension.
+      - name: Conjunction Search
+        aliases: [Conjunction Visual Search, Serial Search, Inefficient Search]
+        typical_DVs: [search_slope_ms_per_item, accuracy]
+        common_manipulations: [set_size, target_presence, distractor_type]
+        notes: Serial-like search when target defined by a conjunction of features.
+      - name: Additional Singleton Interference
+        aliases: [Stimulus-Driven Capture, Bottom-Up Capture, Salience-Driven Capture, Additional Singleton]
+        typical_DVs: [singleton_cost_ms, accuracy]
+        common_manipulations: [singleton_presence, singleton_salience, set_size]
+        notes: A salient irrelevant singleton slows target search.
+      - name: Contingent Attentional Capture
+        aliases: [Set-Contingent Capture, Top-Down Capture, Contingent Capture]
+        typical_DVs: [capture_cost_ms, accuracy]
+        common_manipulations: [distractor_matches_attentional_set, set_size, color_match]
+        notes: Capture occurs only when distractor matches the current attentional set.
+      - name: Value-Driven Attentional Capture (VDAC)
+        aliases: [Reward-Associated Capture, Value-Driven Capture, VDAC Task, Learned Attention Capture]
+        typical_DVs: [value_capture_cost_ms, accuracy]
+        common_manipulations: [reward_history, reversal, extinction]
+        notes: Previously rewarded features capture attention even when irrelevant.
+      - name: Preview Search / Visual Marking
+        aliases: [Preview Benefit, Visual Marking, Preview Benefit Paradigm, Marking Benefit]
+        typical_DVs: [preview_benefit_ms, search_slope_ms_per_item]
+        common_manipulations: [preview_duration_ms, set_size, onset_asynchrony]
+        notes: Pre-exposure to distractors can reduce their interference.
+      - name: Hybrid Search (Memory Set × Visual Set)
+        aliases: [Hybrid Search Task, Memory-Visual Search, Combined Search]
+        typical_DVs: [rt_by_memory_set_size, search_slope_ms_per_item]
+        common_manipulations: [memory_set_size, search_set_size, similarity]
+        notes: Search for any of many memorized targets.
+
+  - id: sf_temporal_attention_rsvp
+    label: Temporal Attention (RSVP)
+    description: Attention over time in rapid streams, including AB and temporal orienting/foreperiod effects.
+    paradigms:
+      - name: Attentional Blink (AB)
+        aliases: [RSVP Dual-Target, AB Effect, Attentional Blink Effect, RSVP Dual Target, Temporal Attention Blink]
+        typical_DVs: [t2_given_t1_accuracy, blink_magnitude]
+        common_manipulations: [lag, stream_rate_hz, target_count]
+        notes: Reduced T2 (target 2) report 200–500 ms after T1 (target 1); lag-1 sparing.
+      - name: Single-Target RSVP Detection
+        aliases: [Rapid Stream Target Detection, RSVP Detection, Rapid Serial Visual Presentation Detection, Single Target RSVP]
+        typical_DVs: [hit_rate, dprime, rt_ms]
+        common_manipulations: [stream_rate_hz, target_probability, masking]
+        notes: Detect a target defined by a rule in a rapid stream.
+      - name: Temporal Foreperiod / Hazard
+        aliases: [Foreperiod Effect, Temporal Orienting, Hazard Rate Effect, Foreperiod Paradigm, Temporal Expectancy]
+        typical_DVs: [rt_ms_by_foreperiod, accuracy]
+        common_manipulations: [foreperiod_distribution, cue_validity, warning_signal]
+        notes: RT (reaction time) depends on elapsed time since warning (hazard-rate).
+      - name: Rhythmic Entrainment / Temporal Cueing
+        aliases: [Beat-Based Attention, Rhythmic Attention, Temporal Entrainment, Beat-Based Cueing, Rhythmic Cueing]
+        typical_DVs: [beat_advantage_ms, accuracy]
+        common_manipulations: [rhythm_regular_vs_irregular, cue_validity]
+        notes: Regular rhythms improve temporal predictions and detection.
+
+  - id: sf_sustained_attention_vigilance
+    label: Sustained Attention & Vigilance
+    description: Continuous monitoring for rare events or degraded targets; proactive vs reactive control.
+    paradigms:
+      - name: AX-CPT (Proactive Control)
+        aliases: [AX-CPT, AX Continuous Performance Test, AX CPT Task, Context Maintenance Task]
+        typical_DVs: [hit_rate, false_alarm_rate, dprime, rt_ms, ay_error_rate, bx_false_alarm_rate]
+        common_manipulations: [target_probability, cue_target_soa_ms, degradation, proactive_bias]
+        notes: AY vs BX patterns index proactive vs reactive control.
+      - name: CPT Variants (BX/Not-AX/Simple CPT)
+        aliases: [CPT, BX-CPT, Continuous Performance Test, Continuous Performance Task, BX CPT, Not-AX CPT]
+        typical_DVs: [hit_rate, false_alarm_rate, dprime, rt_ms]
+        common_manipulations: [target_probability, degradation, no_go_frequency]
+        notes: General sustained attention/vigilance measures.
+      - name: SART (Sustained Attention to Response Task)
+        aliases: [Sustained Attention to Response Task, SART Task, Sustained Attention Task]
+        typical_DVs: [commission_error_rate, omission_error_rate, rt_ms]
+        common_manipulations: [no_go_frequency, speed_emphasis, degradation]
+        notes: Frequent go responses with rare withhold trials.
+      - name: GradCPT (Gradual-Onset CPT)
+        aliases: [Gradual-Onset CPT, Grad CPT, Gradual-Onset Continuous Performance Test, Gradual-Onset Continuous Performance Task]
+        typical_DVs: [dprime, mind_wandering_proxy, rt_ms]
+        common_manipulations: [image_morph_rate, target_probability]
+        notes: Gradual stimulus transitions reduce abrupt onsets; sensitive to lapses.
+      - name: Psychomotor Vigilance Task (PVT)
+        aliases: [PVT Task, Psychomotor Vigilance Test, PVT]
+        typical_DVs: [lapses_count, median_rt_ms, 90th_rt_ms]
+        common_manipulations: [trial_interval_distribution, sleep_deprivation]
+        notes: Gold-standard vigilance assay for fatigue/sleep loss.
+
+  - id: sf_tracking_dynamic_selection
+    label: Tracking & Dynamic Selection
+    description: Selection under motion; tracking of multiple moving targets/identities.
+    paradigms:
+      - name: Multiple Object Tracking (MOT)
+        aliases: [MOT Task, Multiple Object Tracking Task, Object Tracking, Multiple Object Tracking Paradigm]
+        typical_DVs: [tracking_accuracy, critical_speed_deg_s, capacity_targets]
+        common_manipulations: [targets_count, speed_deg_s, crowding, trajectory_crossing, occlusion]
+        notes: Track a subset of moving items among distractors.
+      - name: Multiple Identity Tracking (MIT)
+        aliases: [MIT Task, Multiple Identity Tracking Task, Identity Tracking, Multiple Identity Tracking Paradigm]
+        typical_DVs: [identity_accuracy, tracking_accuracy]
+        common_manipulations: [items_count, speed_deg_s, identity_change_rate]
+        notes: Track who is who (identity) rather than just positions.
+      - name: Dynamic Tracking with Occlusion/Reappearance
+        aliases: [Occlusion Tracking, Occlusion Reappearance Tracking, Dynamic Occlusion Task]
+        typical_DVs: [reacquisition_error, tracking_accuracy]
+        common_manipulations: [occlusion_duration_ms, reappearance_location, speed_deg_s]
+        notes: Tests prediction during temporary loss of visibility.
+
+  - id: sf_feature_object_based_selection
+    label: Feature- & Object-Based Selection
+    description: Selection by non-spatial features or object membership; global–local precedence.
+    paradigms:
+      - name: Feature-Based Attention (Non-spatial)
+        aliases: [Attend-Color, Attend-Motion, Feature-Based Attention Task, Non-Spatial Feature Attention, Feature Attention Task]
+        typical_DVs: [feature_gain_rt_ms, accuracy, ssvep_gain]
+        common_manipulations: [feature_validity, feature_probability, frequency_tagging]
+        notes: Enhances processing of a feature across space.
+      - name: Object-Based Attention (Egly–Driver)
+        aliases: [Object Cueing, Egly-Driver Task, Egly-Driver Paradigm, OBA Task]
+        typical_DVs: [same_object_advantage_ms, rt_ms, accuracy]
+        common_manipulations: [same_object_vs_different_object, gap_presence]
+        notes: Attention spreads within objects; advantage when target appears on the cued object versus an equidistant location on another object.
+      - name: Global–Local (Navon Letters)
+        aliases: [Navon, Navon Task, Navon Letters Task, Global-Local Processing, Global Local Task, Hierarchical Processing]
+        typical_DVs: [global_precedence_effect_ms, accuracy]
+        common_manipulations: [target_level_global_vs_local, congruency, size]
+        notes: Bias toward global or local features depending on task set.
+
+  - id: sf_change_blindness_attention
+    label: Change Blindness (Attention-Limited)
+    description: Changes in a scene are missed under flicker/masking when attention fails to select the changing item.
+    paradigms:
+      - name: Flicker Change Detection
+        aliases: [Change Blindness, Flicker Change Blindness, Change Detection Flicker, Flicker Paradigm]
+        typical_DVs: [detection_rt_ms, accuracy]
+        common_manipulations: [flicker_mask_duration_ms, set_size, change_location_salience]
+        notes: Alternating original/modified images with masks produce change blindness.
+      - name: One-Shot Change Detection (No Flicker)
+        aliases: [One-Shot Change Blindness, Single-Shot Change Detection, Brief Change Detection, Change Detection No Flicker]
+        typical_DVs: [accuracy, detection_rt_ms]
+        common_manipulations: [isi_ms, mask_presence, change_probability]
+        notes: Single brief presentations pre/post change, often with masking.
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Posner Spatial Cueing
+    - Visual Search
+    - Attentional Blink
+    - Continuous Performance Test (CPT)
+    - Sustained Attention to Response Task (SART)
+    - Psychomotor Vigilance Task (PVT)
+    - Multiple Object Tracking (MOT)
+    - Multiple Identity Tracking (MIT)
+    - Object-Based Attention (Egly–Driver)
+    - Feature-Based Attention (Non-spatial)
+    - Global–Local (Navon Letters)
+    - Change Detection (Flicker)
+    - Temporal Foreperiod (Hazard)
+    - Rhythmic Entrainment (Beat-Based Attention)
+    - Temporal Cueing (Beat-Based Attention)
+  cogpo_candidate_labels:
+    - Spatial Cueing
+    - Visual Search
+    - Attentional Blink
+    - Continuous Performance
+    - SART
+    - PVT
+    - MOT
+    - Object Cueing
+    - Change Detection (Flicker)
+    - Foreperiod/Hazard
+  uri_brainmap: []
+  uri_cogpo: []
+  status: plausible
+  provenance:
+    - source: task_families_master_20.yaml + selective_attention expansion
+      fields: [subfamilies, paradigms, dv_vocab, factor_vocab]
+      confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily special columns)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, response, correct, rt]
+  per_subfamily:
+    sf_spatial_orienting_cueing:
+      events_columns: [onset, duration, trial_type, cue_type, cue_validity, soa_ms, target_eccentricity_deg, response, correct, rt]
+      hed_examples:
+        - "Experimental-stimulus, Visual, Cue, Spatial-cueing, Valid-cue"
+        - "Experimental-stimulus, Visual, Target, Spatial-attention"
+    sf_visual_search_capture:
+      events_columns: [onset, duration, trial_type, set_size, target_presence, distractor_type, singleton_presence, feature_match, response, correct, rt]
+      hed_examples:
+        - "Experimental-stimulus, Visual, Array, Visual-search, Target-present"
+        - "Distractor, Visual, Singleton, Attentional-capture"
+    sf_temporal_attention_rsvp:
+      events_columns: [onset, duration, stream_rate_hz, target_number, lag_t1_t2, response, correct, rt]
+      hed_examples:
+        - "Experimental-stimulus, RSVP, Target, Attention-blink"
+        - "Experimental-stimulus, RSVP, Temporal-cue"
+    sf_sustained_attention_vigilance:
+      events_columns: [onset, duration, trial_type, target_probability, degradation_level, no_go_trial, cue_target_soa_ms, response, correct, rt]
+      hed_examples:
+        - "Experimental-stimulus, Sustained-attention, CPT"
+        - "Inhibition-task, SART"
+    sf_tracking_dynamic_selection:
+      events_columns: [onset, duration, trial_type, targets_count, speed_deg_s, occlusion, response, tracking_accuracy]
+      hed_examples:
+        - "Experimental-stimulus, Visual, Tracking, Multiple-object"
+    sf_feature_object_based_selection:
+      events_columns: [onset, duration, trial_type, feature_cue_validity, feature_type, object_same_vs_different, response, correct, rt]
+      hed_examples:
+        - "Experimental-stimulus, Feature-attention, Color"
+        - "Experimental-stimulus, Object-attention"
+    sf_change_blindness_attention:
+      events_columns: [onset, duration, trial_type, flicker_mask_duration_ms, change_presence, response, correct, detection_rt_ms]
+      hed_examples:
+        - "Experimental-stimulus, Visual, Flicker, Change-blindness"

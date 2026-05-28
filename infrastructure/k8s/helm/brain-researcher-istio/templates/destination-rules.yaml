@@ -1,0 +1,91 @@
+{{/*
+Generate destination rules for all configured services
+*/}}
+{{- range $serviceName, $config := .Values.services }}
+{{- if $config.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ $config.name }}-destination-rule
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    service: {{ $serviceName }}
+  annotations:
+    {{- toYaml $.Values.annotations | nindent 4 }}
+spec:
+  {{- $context := dict "serviceName" $config.name "trafficPolicy" $config.trafficPolicy "security" $config.security }}
+  {{- include "brain-researcher-istio.destinationRuleSpec" $context | nindent 2 }}
+  {{- if $config.subsets }}
+  subsets:
+  {{- range $config.subsets }}
+  - name: {{ .name }}
+    labels:
+      {{- toYaml .labels | nindent 6 }}
+    {{- if .trafficPolicy }}
+    trafficPolicy:
+      {{- toYaml .trafficPolicy | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Database services destination rules
+*/}}
+{{- if .Values.services.databases }}
+{{- range $dbName, $dbConfig := .Values.services.databases }}
+{{- if $dbConfig.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ $dbConfig.name }}-destination-rule
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    service: {{ $dbName }}
+    type: database
+spec:
+  {{- $context := dict "serviceName" $dbConfig.name "trafficPolicy" $dbConfig.trafficPolicy "security" $dbConfig.security }}
+  {{- include "brain-researcher-istio.destinationRuleSpec" $context | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+External services destination rules
+*/}}
+{{- range .Values.gateways.egress.externalHosts }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ . | replace "." "-" }}-destination-rule
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    type: external-service
+spec:
+  host: {{ . }}
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 20
+        connectTimeout: 30s
+      http:
+        http1MaxPendingRequests: 10
+        http2MaxRequests: 40
+        maxRequestsPerConnection: 2
+        maxRetries: 3
+        timeout: 120s
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      interval: 60s
+      baseEjectionTime: 60s
+{{- end }}

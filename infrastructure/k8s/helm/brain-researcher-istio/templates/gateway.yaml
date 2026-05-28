@@ -1,0 +1,46 @@
+{{- if .Values.gateways.main.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateways.main.name }}
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    component: gateway
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  {{- include "brain-researcher-istio.gatewayPorts" . | nindent 2 }}
+{{- end }}
+
+{{- if .Values.gateways.egress.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateways.egress.name }}
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    component: egress-gateway
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+  {{- range .Values.gateways.egress.externalHosts }}
+  - port:
+      number: 443
+      name: {{ . | replace "." "-" }}-https
+      protocol: HTTPS
+    hosts:
+    - {{ . | quote }}
+    tls:
+      mode: PASSTHROUGH
+  {{- end }}
+{{- end }}

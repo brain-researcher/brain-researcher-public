@@ -1,0 +1,139 @@
+{
+  "failure_scenarios": {
+    "memory_exhaustion": {
+      "description": "Out of memory error scenarios",
+      "error_patterns": [
+        "out of memory",
+        "memory allocation failed", 
+        "OOMKilled",
+        "cannot allocate memory"
+      ],
+      "context": {
+        "resource_usage": {"memory": 95.0, "cpu": 30.0},
+        "tool_name": "fmriprep",
+        "error_message": "RuntimeError: out of memory (tried to allocate 2.34 GiB)",
+        "stack_trace": "Traceback (most recent call last):\n  File 'preprocess.py', line 145\n    RuntimeError: out of memory"
+      },
+      "recovery_strategies": [
+        "increase_memory_allocation",
+        "use_memory_optimized_instance",
+        "implement_data_chunking",
+        "reduce_parallelism"
+      ]
+    },
+    "network_timeout": {
+      "description": "Network connectivity and timeout issues",
+      "error_patterns": [
+        "connection timeout",
+        "network unreachable",
+        "connection refused",
+        "timeout occurred"
+      ],
+      "context": {
+        "resource_usage": {"memory": 45.0, "cpu": 25.0},
+        "tool_name": "neurosynth_api",
+        "error_message": "requests.exceptions.ConnectTimeout: HTTPSConnectionPool(host='neurosynth.org', port=443): Read timed out.",
+        "stack_trace": "Traceback (most recent call last):\n  File 'api_client.py', line 67\n    requests.exceptions.ConnectTimeout"
+      },
+      "recovery_strategies": [
+        "retry_with_exponential_backoff",
+        "use_alternative_endpoint",
+        "check_service_status",
+        "increase_timeout_duration"
+      ]
+    },
+    "tool_execution_error": {
+      "description": "Tool-specific execution errors",
+      "error_patterns": [
+        "command not found",
+        "invalid argument",
+        "execution failed",
+        "tool error"
+      ],
+      "context": {
+        "resource_usage": {"memory": 60.0, "cpu": 75.0},
+        "tool_name": "fsl_feat",
+        "error_message": "FSL Error: FEAT setup failed - invalid design matrix",
+        "stack_trace": "FSL Error in feat_model\n  Design matrix validation failed"
+      },
+      "recovery_strategies": [
+        "validate_tool_inputs",
+        "use_alternative_tool",
+        "fix_configuration_error",
+        "regenerate_design_matrix"
+      ]
+    },
+    "data_corruption": {
+      "description": "Data corruption and file system errors",
+      "error_patterns": [
+        "file corrupted",
+        "invalid file format",
+        "checksum mismatch",
+        "io error"
+      ],
+      "context": {
+        "resource_usage": {"memory": 30.0, "cpu": 20.0},
+        "tool_name": "nibabel_loader",
+        "error_message": "nibabel.filebasedimages.ImageFileError: Cannot read file header",
+        "stack_trace": "Traceback (most recent call last):\n  File 'data_loader.py', line 23\n    nibabel.filebasedimages.ImageFileError"
+      },
+      "recovery_strategies": [
+        "restore_from_backup",
+        "redownload_data",
+        "validate_file_integrity",
+        "use_alternative_format"
+      ]
+    },
+    "infrastructure_failure": {
+      "description": "Infrastructure and system-level failures",
+      "error_patterns": [
+        "node failure",
+        "disk full",
+        "permission denied",
+        "system error"
+      ],
+      "context": {
+        "resource_usage": {"memory": 40.0, "cpu": 15.0},
+        "tool_name": "system_monitor",
+        "error_message": "OSError: [Errno 28] No space left on device",
+        "stack_trace": "Traceback (most recent call last):\n  File 'file_writer.py', line 89\n    OSError: [Errno 28] No space left on device"
+      },
+      "recovery_strategies": [
+        "cleanup_temporary_files",
+        "migrate_to_new_node",
+        "increase_storage_capacity",
+        "compress_intermediate_results"
+      ]
+    }
+  },
+  "recovery_success_rates": {
+    "increase_memory_allocation": 0.85,
+    "retry_with_exponential_backoff": 0.75,
+    "use_alternative_tool": 0.70,
+    "restore_from_backup": 0.90,
+    "cleanup_temporary_files": 0.80,
+    "migrate_to_new_node": 0.95,
+    "validate_tool_inputs": 0.65,
+    "use_memory_optimized_instance": 0.88
+  },
+  "historical_patterns": {
+    "fmriprep_memory_issues": {
+      "frequency": 0.15,
+      "typical_resources": {"memory": 85.0, "cpu": 50.0},
+      "common_solutions": ["increase_memory_allocation", "reduce_parallelism"],
+      "success_rate": 0.82
+    },
+    "network_api_timeouts": {
+      "frequency": 0.25,
+      "typical_resources": {"memory": 30.0, "cpu": 20.0},
+      "common_solutions": ["retry_with_exponential_backoff", "use_alternative_endpoint"],
+      "success_rate": 0.78
+    },
+    "fsl_configuration_errors": {
+      "frequency": 0.08,
+      "typical_resources": {"memory": 40.0, "cpu": 60.0},
+      "common_solutions": ["validate_tool_inputs", "fix_configuration_error"],
+      "success_rate": 0.73
+    }
+  }
+}

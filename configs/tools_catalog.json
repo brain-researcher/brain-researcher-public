@@ -1,0 +1,1004 @@
+{
+  "version": 1,
+  "tools": [
+    {
+      "name": "fetch_atlas",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "atlas_name": "parcellation_labels"
+      },
+      "produces": {
+        "atlas_path": "parcellation_labels"
+      },
+      "python_module": "brain_researcher.services.tools.fetch_atlas_tool",
+      "python_function": "FetchAtlasTool",
+      "constraints": {
+        "space": [
+          "MNI152NLin2009cAsym"
+        ],
+        "supports_resolver": true
+      }
+    },
+    {
+      "name": "extract_timeseries",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "fmri_img": "volume_4d",
+        "atlas_path": "parcellation_labels"
+      },
+      "produces": {
+        "timeseries": "timeseries"
+      },
+      "python_module": "brain_researcher.services.tools.extract_timeseries_tool",
+      "python_function": "ExtractTimeseriesTool",
+      "constraints": {
+        "min_tr": 0.5,
+        "max_tr": 3.0
+      }
+    },
+    {
+      "name": "nilearn_connectivity_matrix",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "timeseries": "timeseries"
+      },
+      "produces": {
+        "connectivity_matrix": "connectivity_matrix"
+      },
+      "python_module": "brain_researcher.services.tools.nilearn_connectivity_matrix_tool",
+      "python_function": "NilearnConnectivityMatrixTool",
+      "constraints": {
+        "methods": [
+          "correlation",
+          "partial_correlation"
+        ]
+      }
+    },
+    {
+      "name": "resolve_montage",
+      "domain": "neuroimaging",
+      "modality": [
+        "eeg",
+        "meg"
+      ],
+      "consumes": {
+        "montage_request": "montage"
+      },
+      "produces": {
+        "montage_def": "montage"
+      },
+      "constraints": {
+        "templates": [
+          "standard_1020",
+          "biosemi64"
+        ],
+        "supports_bem": false
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "eeg_preprocess",
+      "domain": "neuroimaging",
+      "modality": [
+        "eeg"
+      ],
+      "consumes": {
+        "raw_eeg": "raw_eeg",
+        "montage_def": "montage"
+      },
+      "produces": {
+        "clean_eeg": "clean_eeg"
+      },
+      "constraints": {
+        "filters_hz": [
+          1,
+          40
+        ],
+        "ica": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "ieeg_electrode_localize",
+      "domain": "neuroimaging",
+      "modality": [
+        "ieeg"
+      ],
+      "consumes": {
+        "ct_image": "volume_3d",
+        "mri_image": "volume_3d"
+      },
+      "produces": {
+        "contacts_mni": "contacts_mni"
+      },
+      "constraints": {
+        "requires_coreg": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "ieeg_preprocess",
+      "domain": "neuroimaging",
+      "modality": [
+        "ieeg"
+      ],
+      "consumes": {
+        "raw_ieeg": "raw_eeg"
+      },
+      "produces": {
+        "clean_ieeg": "clean_eeg"
+      },
+      "constraints": {
+        "referencing": [
+          "car",
+          "bipolar",
+          "average"
+        ],
+        "notch_hz": [
+          50,
+          60
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "ieeg_epoch_features",
+      "domain": "neuroimaging",
+      "modality": [
+        "ieeg"
+      ],
+      "consumes": {
+        "clean_ieeg": "clean_eeg",
+        "events": "events_tsv"
+      },
+      "produces": {
+        "features_table": "features_table"
+      },
+      "constraints": {
+        "bands": [
+          "delta",
+          "theta",
+          "alpha",
+          "beta",
+          "gamma"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "ieeg_connectivity",
+      "domain": "neuroimaging",
+      "modality": [
+        "ieeg"
+      ],
+      "consumes": {
+        "features_table": "features_table"
+      },
+      "produces": {
+        "connectivity_matrix": "connectivity_matrix"
+      },
+      "constraints": {
+        "metrics": [
+          "plv",
+          "pli",
+          "coh",
+          "gc"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "epoch_events",
+      "domain": "neuroimaging",
+      "modality": [
+        "eeg"
+      ],
+      "consumes": {
+        "clean_eeg": "clean_eeg"
+      },
+      "produces": {
+        "epochs": "epochs"
+      },
+      "constraints": {
+        "event_source": "events_tsv"
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "timefreq_tfr",
+      "domain": "neuroimaging",
+      "modality": [
+        "eeg"
+      ],
+      "consumes": {
+        "epochs": "epochs"
+      },
+      "produces": {
+        "power_spectra": "power_spectra"
+      },
+      "constraints": {
+        "method": [
+          "morlet",
+          "multitaper"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "connectivity_measures",
+      "domain": "neuroimaging",
+      "modality": [
+        "eeg"
+      ],
+      "consumes": {
+        "epochs": "epochs"
+      },
+      "produces": {
+        "connectivity_matrix": "connectivity_matrix"
+      },
+      "constraints": {
+        "methods": [
+          "pli",
+          "wpli",
+          "plv"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "dmri_resolve_dwi_triplet",
+      "domain": "neuroimaging",
+      "modality": [
+        "dmri"
+      ],
+      "consumes": {
+        "bids_root": "bids_root",
+        "subject_id": "subject_label"
+      },
+      "produces": {
+        "dwi_image": "volume_4d",
+        "bvals": "bvals",
+        "bvecs": "bvecs"
+      },
+      "constraints": {
+        "requires_bids": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "dmri_fit_model",
+      "domain": "neuroimaging",
+      "modality": [
+        "dmri"
+      ],
+      "consumes": {
+        "dwi_image": "volume_4d",
+        "bvals": "bvals",
+        "bvecs": "bvecs"
+      },
+      "produces": {
+        "fa_map": "stat_map",
+        "fodf": "volume_4d"
+      },
+      "constraints": {
+        "models": [
+          "dti",
+          "csd",
+          "noddi"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "dmri_parcellate_connectome",
+      "domain": "neuroimaging",
+      "modality": [
+        "dmri"
+      ],
+      "consumes": {
+        "fodf": "volume_4d",
+        "parcellation_labels": "parcellation_labels"
+      },
+      "produces": {
+        "connectivity_matrix": "connectivity_matrix"
+      },
+      "constraints": {
+        "requires_atlas": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "coreg_register",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "dmri",
+        "smri",
+        "ieeg"
+      ],
+      "consumes": {
+        "moving_image": "volume_3d",
+        "fixed_image": "volume_3d"
+      },
+      "produces": {
+        "transform_matrix": "volume_3d",
+        "registered_image": "volume_3d"
+      },
+      "constraints": {
+        "cost_functions": [
+          "mi",
+          "nmi",
+          "corratio"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "coreg_apply_xfm",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "dmri",
+        "smri",
+        "ieeg"
+      ],
+      "consumes": {
+        "input_volume": "volume_3d",
+        "transform_matrix": "volume_3d",
+        "reference_image": "volume_3d"
+      },
+      "produces": {
+        "transformed_volume": "volume_3d"
+      },
+      "constraints": {
+        "interpolation": [
+          "trilinear",
+          "nearest",
+          "spline"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "parcellation_fetch",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "dmri"
+      ],
+      "consumes": {
+        "atlas_name": "parcellation_labels",
+        "space": "parcellation_labels"
+      },
+      "produces": {
+        "parcellation_volume": "parcellation_labels",
+        "labels_tsv": "parcellation_labels"
+      },
+      "constraints": {
+        "atlases": [
+          "Schaefer2018_200",
+          "aparc+aseg",
+          "DKT"
+        ],
+        "spaces": [
+          "MNI152NLin2009cAsym",
+          "MNI152NLin6Asym"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "label_transfer",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "dmri",
+        "smri"
+      ],
+      "consumes": {
+        "source_labels": "parcellation_labels",
+        "transform_matrix": "volume_3d",
+        "reference_image": "volume_3d"
+      },
+      "produces": {
+        "transferred_labels": "parcellation_labels"
+      },
+      "constraints": {
+        "interpolation": [
+          "nearest"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "resolve_bids",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "dmri",
+        "smri",
+        "ieeg",
+        "eeg"
+      ],
+      "consumes": {
+        "bids_root": "bids_root",
+        "subject_id": "subject_label"
+      },
+      "produces": {
+        "resolved_path": "volume_3d"
+      },
+      "constraints": {
+        "requires_bids": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "resolve_space",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "dmri",
+        "smri"
+      ],
+      "consumes": {
+        "space_name": "parcellation_labels"
+      },
+      "produces": {
+        "template_volume": "volume_3d",
+        "brain_mask": "mask_path"
+      },
+      "constraints": {
+        "spaces": [
+          "MNI152NLin2009cAsym",
+          "MNI152NLin6Asym",
+          "T1w"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "smri_recon",
+      "domain": "neuroimaging",
+      "modality": [
+        "smri"
+      ],
+      "consumes": {
+        "t1w_image": "volume_3d"
+      },
+      "produces": {
+        "surfaces_dir": "surface_mesh",
+        "aseg": "parcellation_labels",
+        "aparcaseg": "parcellation_labels"
+      },
+      "constraints": {
+        "supports_fastsurfer": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "smri_parcellation_stats",
+      "domain": "neuroimaging",
+      "modality": [
+        "smri"
+      ],
+      "consumes": {
+        "surfaces_dir": "surface_mesh"
+      },
+      "produces": {
+        "thickness_table": "timeseries",
+        "volume_table": "timeseries"
+      },
+      "constraints": {
+        "stats_types": [
+          "thickness",
+          "volume",
+          "area"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "smri_surface_export",
+      "domain": "neuroimaging",
+      "modality": [
+        "smri"
+      ],
+      "consumes": {
+        "surfaces_dir": "surface_mesh"
+      },
+      "produces": {
+        "surface_mesh": "surface_mesh"
+      },
+      "constraints": {
+        "formats": [
+          "gifti",
+          "obj",
+          "ply"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "pet_coreg",
+      "domain": "neuroimaging",
+      "modality": [
+        "pet"
+      ],
+      "consumes": {
+        "pet_image": "volume_3d",
+        "t1w_image": "volume_3d"
+      },
+      "produces": {
+        "pet_in_t1": "volume_3d",
+        "transform_matrix": "volume_3d"
+      },
+      "constraints": {
+        "methods": [
+          "rigid",
+          "affine"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "pet_suvr",
+      "domain": "neuroimaging",
+      "modality": [
+        "pet"
+      ],
+      "consumes": {
+        "pet_image": "volume_3d",
+        "reference_mask": "mask_path"
+      },
+      "produces": {
+        "suvr_map": "stat_map",
+        "qc_volume": "volume_3d"
+      },
+      "constraints": {
+        "reference_regions": [
+          "cerebellum",
+          "pons",
+          "whole_cerebellum"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "pet_parcellate",
+      "domain": "neuroimaging",
+      "modality": [
+        "pet"
+      ],
+      "consumes": {
+        "suvr_map": "stat_map",
+        "parcellation_labels": "parcellation_labels"
+      },
+      "produces": {
+        "roi_suvr_table": "timeseries"
+      },
+      "constraints": {
+        "output_formats": [
+          "csv",
+          "tsv"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "neurosynth_meta_analysis",
+      "domain": "literature",
+      "modality": [],
+      "capabilities": [
+        "term_meta_map"
+      ],
+      "consumes": {
+        "keyword": "subject_label"
+      },
+      "produces": {
+        "activation_map_paths": "stat_map",
+        "coordinates": "coord_table"
+      },
+      "constraints": {
+        "databases": [
+          "neurosynth"
+        ],
+        "n_studies": 14000
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "neurosynth_visualize",
+      "domain": "literature",
+      "modality": [],
+      "capabilities": [
+        "viz_activation"
+      ],
+      "consumes": {
+        "activation_map_paths": "stat_map"
+      },
+      "produces": {
+        "saved_files": "report_html"
+      },
+      "constraints": {
+        "formats": [
+          "png",
+          "base64"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "neurosynth_search_terms",
+      "domain": "literature",
+      "modality": [],
+      "capabilities": [
+        "term_search"
+      ],
+      "consumes": {
+        "query": "subject_label"
+      },
+      "produces": {
+        "terms": "subject_label"
+      },
+      "constraints": {
+        "fuzzy_match": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "find_related_concepts",
+      "domain": "neurokg",
+      "modality": [],
+      "capabilities": [
+        "kg_traverse"
+      ],
+      "consumes": {
+        "concept": "subject_label"
+      },
+      "produces": {
+        "related_concepts": "kg_nodes"
+      },
+      "constraints": {
+        "max_depth": 5
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "coordinate_to_concept",
+      "domain": "neurokg",
+      "modality": [],
+      "capabilities": [
+        "spatial_decode"
+      ],
+      "consumes": {
+        "coordinates": "coord_table"
+      },
+      "produces": {
+        "concepts": "kg_nodes"
+      },
+      "constraints": {
+        "uses_niclip": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "concept_literature_search",
+      "domain": "neurokg",
+      "modality": [],
+      "capabilities": [
+        "lit_search"
+      ],
+      "consumes": {
+        "concept": "subject_label"
+      },
+      "produces": {
+        "papers": "kg_nodes"
+      },
+      "constraints": {
+        "max_results": 100
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "graph_query",
+      "domain": "neurokg",
+      "modality": [],
+      "capabilities": [
+        "kg_query"
+      ],
+      "consumes": {
+        "query_type": "subject_label",
+        "node_label": "subject_label"
+      },
+      "produces": {
+        "subgraph": "kg_nodes",
+        "edges": "kg_edges"
+      },
+      "constraints": {
+        "query_types": [
+          "subgraph",
+          "path",
+          "neighbors"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "task_to_concept_mapping",
+      "domain": "neurokg",
+      "modality": [],
+      "capabilities": [
+        "task_map"
+      ],
+      "consumes": {
+        "task_name": "subject_label"
+      },
+      "produces": {
+        "concepts": "kg_nodes"
+      },
+      "constraints": {
+        "synonym_expansion": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "meta_brainmap",
+      "domain": "literature",
+      "modality": [],
+      "consumes": {
+        "term": "subject_label"
+      },
+      "produces": {
+        "coord_table": "coord_table",
+        "stat_map": "stat_map"
+      },
+      "constraints": {
+        "database": "brainmap",
+        "max_results": 5000
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "meta_align",
+      "domain": "literature",
+      "modality": [],
+      "consumes": {
+        "stat_map": "stat_map",
+        "target_space": "subject_label"
+      },
+      "produces": {
+        "aligned_map": "stat_map"
+      },
+      "constraints": {
+        "spaces": [
+          "MNI152NLin2009cAsym",
+          "MNI152NLin6Asym",
+          "fsaverage"
+        ]
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "meta_combine",
+      "domain": "literature",
+      "modality": [],
+      "consumes": {
+        "stat_map": "stat_map"
+      },
+      "produces": {
+        "meta_stat_map": "stat_map",
+        "report_html": "report_html"
+      },
+      "constraints": {
+        "methods": [
+          "ibma",
+          "cbma"
+        ],
+        "supports_weights": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "kg_ingest",
+      "domain": "neurokg",
+      "modality": [],
+      "consumes": {
+        "nodes_file": "kg_nodes",
+        "edges_file": "kg_edges"
+      },
+      "produces": {
+        "kg_nodes": "kg_nodes",
+        "kg_edges": "kg_edges"
+      },
+      "constraints": {
+        "format": "csv",
+        "supports_neo4j": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "kg_shacl_validate",
+      "domain": "neurokg",
+      "modality": [],
+      "consumes": {
+        "kg_nodes": "kg_nodes",
+        "kg_edges": "kg_edges"
+      },
+      "produces": {
+        "report_html": "report_html"
+      },
+      "constraints": {
+        "schemas": [
+          "brain_schema_v1"
+        ],
+        "enforces_shacl": true
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "kg_multihop_qa",
+      "domain": "neurokg",
+      "modality": [],
+      "consumes": {
+        "question": "subject_label",
+        "max_hops": "subject_label"
+      },
+      "produces": {
+        "answer": "subject_label",
+        "subgraph": "kg_nodes"
+      },
+      "constraints": {
+        "max_hops": 4
+      },
+      "runtime_kind": "container"
+    },
+    {
+      "name": "repr_spd_covariance_estimate",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "eeg"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "timeseries": "timeseries"
+      },
+      "produces": {
+        "covariance_matrix": "spd_matrix"
+      },
+      "python_module": "brain_researcher.services.tools.spd_tools",
+      "python_function": "CovarianceEstimateTool",
+      "constraints": {
+        "methods": [
+          "empirical",
+          "ledoit_wolf",
+          "oas",
+          "shrinkage"
+        ]
+      }
+    },
+    {
+      "name": "repr_spd_project",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "eeg"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "matrix": "matrix"
+      },
+      "produces": {
+        "spd_matrix": "spd_matrix"
+      },
+      "python_module": "brain_researcher.services.tools.spd_tools",
+      "python_function": "SPDProjectTool",
+      "constraints": {
+        "methods": [
+          "eig_clamp",
+          "add_epsilon"
+        ]
+      }
+    },
+    {
+      "name": "geom_spd_logm",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "eeg"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "spd_matrix": "spd_matrix"
+      },
+      "produces": {
+        "tangent_vector": "matrix"
+      },
+      "python_module": "brain_researcher.services.tools.spd_tools",
+      "python_function": "SPDLogmTool",
+      "constraints": {}
+    },
+    {
+      "name": "geom_spd_geodesic_distance",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "eeg"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "spd_matrix_a": "spd_matrix",
+        "spd_matrix_b": "spd_matrix"
+      },
+      "produces": {
+        "distance": "scalar"
+      },
+      "python_module": "brain_researcher.services.tools.spd_tools",
+      "python_function": "SPDDistanceTool",
+      "constraints": {
+        "metrics": [
+          "log_euclidean",
+          "airm",
+          "euclidean"
+        ]
+      }
+    },
+    {
+      "name": "nn_spd_bimap",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "eeg"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "spd_matrices": "spd_matrix"
+      },
+      "produces": {
+        "projected_matrices": "spd_matrix",
+        "model": "model"
+      },
+      "python_module": "brain_researcher.services.tools.spd_tools",
+      "python_function": "SPDBiMapTool",
+      "constraints": {}
+    },
+    {
+      "name": "nn_spd_train_spdnet",
+      "domain": "neuroimaging",
+      "modality": [
+        "fmri",
+        "eeg"
+      ],
+      "runtime_kind": "python",
+      "consumes": {
+        "spd_matrices": "spd_matrix",
+        "labels": "labels"
+      },
+      "produces": {
+        "model": "model",
+        "predictions": "labels",
+        "metrics": "metrics"
+      },
+      "python_module": "brain_researcher.services.tools.spd_tools",
+      "python_function": "SPDNetTrainTool",
+      "constraints": {
+        "architectures": [
+          "spdnet",
+          "eeg_spdnet"
+        ]
+      }
+    }
+  ]
+}

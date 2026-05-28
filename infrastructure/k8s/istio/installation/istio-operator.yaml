@@ -1,0 +1,265 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: brain-researcher-istio
+  namespace: istio-system
+spec:
+  # Core Istio configuration for Brain Researcher platform
+  values:
+    global:
+      # Mesh configuration
+      meshID: brain-researcher-mesh
+      network: brain-researcher-network
+      
+      # Proxy configuration for neuroimaging workloads
+      proxy:
+        # Increased memory and CPU for data-intensive operations
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        # Extended timeouts for long-running analysis tasks
+        readinessInitialDelaySeconds: 5
+        readinessFailureThreshold: 10
+        readinessPeriodSeconds: 5
+        
+      # Traffic management
+      tracer:
+        zipkin:
+          address: jaeger-collector.istio-system:14268
+      
+      # Security settings
+      defaultPodDisruptionBudget:
+        enabled: true
+      
+      # Logging and monitoring
+      logging:
+        level: "default:info"
+      
+    # Pilot configuration for service discovery
+    pilot:
+      # Environment variables for Brain Researcher services
+      env:
+        EXTERNAL_ISTIOD: false
+        ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION: true
+        PILOT_ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION: true
+        
+    # Gateway configuration
+    gateways:
+      istio-ingressgateway:
+        # High availability for production
+        replicaCount: 2
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        # Service configuration
+        service:
+          type: LoadBalancer
+          ports:
+            - port: 80
+              targetPort: 8080
+              name: http2
+            - port: 443
+              targetPort: 8443
+              name: https
+            - port: 5000  # BR-KG API
+              targetPort: 5000
+              name: neurokg
+            - port: 8000  # Agent Service
+              targetPort: 8000
+              name: agent
+            - port: 3000  # Web UI
+              targetPort: 3000
+              name: web-ui
+            - port: 9090  # Metrics
+              targetPort: 9090
+              name: metrics
+        # Autoscaling
+        autoscaleEnabled: true
+        autoscaleMin: 2
+        autoscaleMax: 5
+        
+      istio-egressgateway:
+        enabled: true
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+            
+  # Component-specific configurations
+  components:
+    # Istiod configuration
+    pilot:
+      k8s:
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        # High availability
+        replicaCount: 2
+        hpaSpec:
+          maxReplicas: 5
+          minReplicas: 2
+          scaleTargetRef:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: istiod
+          targetCPUUtilizationPercentage: 70
+        env:
+          # Enable debug logging for development
+          - name: PILOT_ENABLE_ALPHA_GATEWAY_API
+            value: "true"
+          - name: PILOT_ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION
+            value: "true"
+            
+    # Ingress gateway
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          service:
+            type: LoadBalancer
+            # Brain Researcher specific ports
+            ports:
+              - port: 80
+                targetPort: 8080
+                name: http2
+                protocol: TCP
+              - port: 443
+                targetPort: 8443
+                name: https
+                protocol: TCP
+              - port: 5000
+                targetPort: 5000
+                name: neurokg-api
+                protocol: TCP
+              - port: 8000
+                targetPort: 8000
+                name: agent-service
+                protocol: TCP
+              - port: 3000
+                targetPort: 3000
+                name: web-ui
+                protocol: TCP
+              - port: 9090
+                targetPort: 9090
+                name: prometheus
+                protocol: TCP
+                
+    # Egress gateway for external neuroimaging data sources
+    egressGateways:
+      - name: istio-egressgateway
+        enabled: true
+        k8s:
+          service:
+            type: ClusterIP
+            ports:
+              - port: 80
+                name: http2
+              - port: 443
+                name: https
+                
+  # Add-ons configuration
+  addonComponents:
+    # Prometheus for metrics collection
+    prometheus:
+      enabled: true
+      k8s:
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+            
+    # Grafana for visualization
+    grafana:
+      enabled: true
+      k8s:
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+            
+    # Jaeger for distributed tracing
+    tracing:
+      enabled: true
+      
+    # Kiali for service mesh observability
+    kiali:
+      enabled: true
+      k8s:
+        replicaCount: 1
+        
+  # Mesh configuration specific to neuroimaging workflows
+  meshConfig:
+    # Extended timeouts for long-running analysis tasks
+    defaultConfig:
+      # Connection timeouts
+      connectTimeout: 30s
+      # HTTP request timeouts for large data transfers
+      gatewayTopology:
+        numTrustedProxies: 2
+      # Proxy statistics
+      proxyStatsMatcher:
+        inclusionRegexps:
+          - ".*_cx_.*"
+          - ".*_rq_.*"
+          - ".*_pending.*"
+          - ".*brain_researcher.*"
+      # Discovery settings for microservices
+      discoveryAddress: istiod.istio-system.svc:15012
+      # Tracing configuration
+      tracing:
+        zipkin:
+          address: jaeger-collector.istio-system:14268
+      # Access logging for neuroimaging requests
+      accessLogFile: /dev/stdout
+      accessLogFormat: |
+        [%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%"
+        %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+        %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% "%REQ(X-FORWARDED-FOR)%"
+        "%REQ(USER-AGENT)%" "%REQ(X-REQUEST-ID)%" "%REQ(:AUTHORITY)%" "%UPSTREAM_HOST%"
+        brain_researcher_service="%REQ(X-BRAIN-RESEARCHER-SERVICE)%"
+        analysis_type="%REQ(X-ANALYSIS-TYPE)%" session_id="%REQ(X-SESSION-ID)%"
+        
+    # Service discovery settings
+    defaultProviders:
+      metrics:
+        - prometheus
+      tracing:
+        - jaeger
+      accessLogging:
+        - envoy
+        
+    # Extension providers for Brain Researcher specific features
+    extensionProviders:
+      - name: oauth2-proxy
+        envoyOauthFilter:
+          service: oauth2-proxy.istio-system.svc.cluster.local
+          port: 4180
+          
+  # Hub and tag for custom proxy images if needed
+  hub: docker.io/istio
+  tag: 1.19.0
+  revision: ""

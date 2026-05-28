@@ -1,0 +1,48 @@
+{{- if .Values.agent.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-agent
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: {{ .Values.agent.service.type }}
+  ports:
+    - port: {{ .Values.agent.service.ports.http }}
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "brain-researcher.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+  sessionAffinity: {{ .Values.agent.service.sessionAffinity }}
+  {{- if eq .Values.agent.service.sessionAffinity "ClientIP" }}
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: {{ .Values.agent.service.sessionAffinityConfig.clientIP.timeoutSeconds }}
+  {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-agent-headless
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+spec:
+  clusterIP: None
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    {{- include "brain-researcher.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+{{- end }}

@@ -1,0 +1,42 @@
+version: 0.1.0
+
+scoring_defaults:
+  accept:
+    min_score: 0.85
+    min_margin: 0.10
+    allow_multi: false
+  weights:
+    id_exact: 1.0
+    slug_exact: 0.9
+    bids_exact: 0.9
+    hed_all: 0.45
+    hed_any: 0.35
+    keywords_all: 0.35
+    keywords_any: 0.25
+    regex: 0.25
+
+normalization:
+  ascii_fold: true
+  min_token_len: 2
+  stopwords: ["the", "a", "an", "and", "of", "for", "to"]
+  include_contrast_names: true
+  include_task_description: true
+  include_hed: true
+
+proposer:
+  only_unmapped: true
+  limit: null
+  # Keep default source scope open so proposer can recover links across
+  # non-CA task ingests (OpenNeuro/NeuroStore/etc.). Use --sources to narrow.
+  sources: null
+
+review:
+  borderline_delta: 0.10
+
+hierarchical_mapping:
+  mode: "l2_only"
+  l2_threshold: 0.88
+  l3_threshold: 0.90
+  require_parent_consistency: true
+  max_l2_candidates: 25
+  max_l3_candidates: 20

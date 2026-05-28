@@ -1,0 +1,107 @@
+# Recording Rules for Brain Researcher Platform
+groups:
+  - name: brain_researcher.rules
+    interval: 30s
+    rules:
+      # Request rate calculations
+      - record: brain_researcher:request_rate_5m
+        expr: rate(http_requests_total[5m])
+        labels:
+          rule_type: "request_rate"
+
+      - record: brain_researcher:error_rate_5m
+        expr: rate(http_requests_total{status=~"4..|5.."}[5m])
+        labels:
+          rule_type: "error_rate"
+
+      # Response time percentiles
+      - record: brain_researcher:response_time_p95_5m
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+        labels:
+          rule_type: "latency"
+
+      - record: brain_researcher:response_time_p99_5m
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+        labels:
+          rule_type: "latency"
+
+      # Service availability
+      - record: brain_researcher:service_availability_5m
+        expr: avg_over_time(up[5m])
+        labels:
+          rule_type: "availability"
+
+      # CPU utilization
+      - record: brain_researcher:cpu_utilization_5m
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+        labels:
+          rule_type: "system"
+
+      # Memory utilization
+      - record: brain_researcher:memory_utilization_5m
+        expr: ((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes) * 100
+        labels:
+          rule_type: "system"
+
+  - name: agent.rules
+    interval: 15s
+    rules:
+      # LLM Agent specific metrics
+      - record: agent:query_processing_rate_5m
+        expr: rate(agent_queries_total{job="brain-researcher-agent"}[5m])
+        labels:
+          service: "brain-researcher-agent"
+
+      - record: agent:tool_execution_rate_5m
+        expr: rate(agent_tool_executions_total{job="brain-researcher-agent"}[5m])
+        labels:
+          service: "brain-researcher-agent"
+
+      - record: agent:llm_token_usage_rate_5m
+        expr: rate(agent_llm_tokens_total{job="brain-researcher-agent"}[5m])
+        labels:
+          service: "brain-researcher-agent"
+
+      - record: agent:graph_execution_time_p95_5m
+        expr: histogram_quantile(0.95, rate(agent_graph_execution_duration_seconds_bucket{job="brain-researcher-agent"}[5m]))
+        labels:
+          service: "brain-researcher-agent"
+
+  - name: neurokg.rules
+    interval: 30s
+    rules:
+      # Knowledge Graph specific metrics
+      - record: neurokg:query_rate_5m
+        expr: rate(neurokg_queries_total{job="brain-researcher-neurokg"}[5m])
+        labels:
+          service: "brain-researcher-neurokg"
+
+      - record: neurokg:database_connection_pool_usage
+        expr: neurokg_db_connections_active{job="brain-researcher-neurokg"} / neurokg_db_connections_max{job="brain-researcher-neurokg"} * 100
+        labels:
+          service: "brain-researcher-neurokg"
+
+      - record: neurokg:semantic_search_latency_p95_5m
+        expr: histogram_quantile(0.95, rate(neurokg_semantic_search_duration_seconds_bucket{job="brain-researcher-neurokg"}[5m]))
+        labels:
+          service: "brain-researcher-neurokg"
+
+  - name: system.rules
+    interval: 30s
+    rules:
+      # Disk usage
+      - record: system:disk_usage_percentage
+        expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/"} * 100) / node_filesystem_size_bytes{mountpoint="/"})
+        labels:
+          rule_type: "system"
+
+      # Network I/O
+      - record: system:network_receive_bytes_rate_5m
+        expr: rate(node_network_receive_bytes_total[5m])
+        labels:
+          rule_type: "system"
+
+      - record: system:network_transmit_bytes_rate_5m
+        expr: rate(node_network_transmit_bytes_total[5m])
+        labels:
+          rule_type: "system"

@@ -1,0 +1,316 @@
+id: tf_spatial_navigation
+name: Spatial Navigation
+description: >-
+  Navigation and spatial memory in virtual/realistic environments: place learning in mazes, route learning/wayfinding,
+  path integration (dead reckoning), landmark learning and reorientation, and spatial orientation/pointing. Covers
+  allocentric (map-based) vs egocentric (route-based) strategies, boundary geometry vs landmark cues, and cue-conflict
+  manipulations. Readouts include efficiency/optimality (path length/time), heading/pointing error, and probe-based
+  memory indices.
+examples: [virtual_maze_navigation, virtual_morris_water_maze, radial_arm_maze, route_learning, wayfinding, path_integration_triangle_completion, landmark_recognition, pointing_to_target]
+typical_DVs: [path_length, path_efficiency, time_to_goal_ms, navigation_error_m, heading_error_deg, pointing_error_deg, goal_quadrant_time, revisit_rate]
+common_manipulations: [landmark_visibility, landmark_stability, goal_location (visible/hidden), maze_complexity, branching_factor, boundary_geometry, cue_conflict (landmark_vs_geometry), optic_flow_gain, locomotion_mode (joystick/treadmill), instruction_type (survey/route)]
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Place Learning in Virtual Mazes (Hidden vs Visible Goals)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_virtual_maze_place_learning
+    label: Virtual Maze Place Learning
+    description: Hidden/visible goal learning in arenas/labyrinths; probe trials without the goal to test spatial memory.
+    paradigms:
+      - name: Virtual Morris Water Maze (VMWM)
+        typical_DVs: [time_to_goal_ms, path_length, path_efficiency, goal_quadrant_time, search_preference_index]
+        common_manipulations: [goal_location (hidden/visible), start_position_set, landmark_visibility, boundary_geometry (circular/square), probe_trial_flag]
+        model_families: [Cognitive_map_SR, Model_based_planning]
+        model_params: [successor_discount_gamma, planning_depth, exploration_rate]
+        variant_tags: [hidden_goal, visible_goal, probe]
+        design_flags: [probe_without_platform, randomized_starts]
+        qa_checks: [motion_sickness_screen, collision_filter]
+        keywords: [place_learning, probe]
+      - name: Radial Arm Maze (Virtual)
+        typical_DVs: [working_error_count, reference_error_count, arms_visited_unique, time_to_complete_ms]
+        common_manipulations: [baited_arms, landmark_visibility, trial_length, interference_load]
+        model_families: [Working_memory_route]
+        model_params: [wm_capacity_proxy]
+        variant_tags: [working_memory, reference_memory]
+        design_flags: [revisit_cost_defined]
+        qa_checks: [visit_order_logged]
+        keywords: [radial_arm]
+      - name: Grid/Corridor Maze (Place vs Cue Navigation)
+        typical_DVs: [path_length, optimal_path_deviation, decision_accuracy]
+        common_manipulations: [beacon_presence, cue_salience, maze_complexity, branching_factor]
+        model_families: [Graph_search (Dijkstra/A*)]
+        model_params: [heuristic_weight_w, exploration_bonus]
+        variant_tags: [beacon, place]
+        design_flags: [blocked_vs_randomized_layout]
+        qa_checks: [learning_plateau_check]
+        keywords: [beacon_vs_place]
+      - name: Shortcut Discovery / Novel Path Use
+        typical_DVs: [shortcut_taken_rate, optimality_gap_pct, time_to_discovery_ms]
+        common_manipulations: [novel_shortcut_available, detour_barriers, visibility]
+        model_families: [Model_based_planning, Cognitive_map_SR]
+        model_params: [planning_depth, sr_discount_gamma]
+        variant_tags: [novel_shortcut]
+        design_flags: [shortcut_revealed_on_probe]
+        qa_checks: [instruction_blinding]
+        keywords: [shortcut]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Wayfinding & Route Planning (Survey vs Route Knowledge)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_wayfinding_route_planning
+    label: Wayfinding & Route Planning
+    description: Learn routes with decision points; plan shortest paths, detours, and reversals; survey (map-like) vs route (turn-by-turn) strategies.
+    paradigms:
+      - name: Route Learning / Decision-Point Navigation
+        typical_DVs: [decision_point_accuracy, response_latency_ms, wrong_turn_rate, path_efficiency]
+        common_manipulations: [maze_complexity, decision_point_salience, signage_presence, instruction_type (survey/route)]
+        model_families: [Graph_search, Policy_reuse]
+        model_params: [planning_depth, w_landmark_attn]
+        variant_tags: [guided, unguided]
+        design_flags: [detour_blocks_optional]
+        qa_checks: [signage_consistency]
+        keywords: [route_learning]
+      - name: Detour / Shortest-Path Planning
+        typical_DVs: [optimality_gap_pct, planning_time_ms]
+        common_manipulations: [detour_barriers, graph_size_nodes, visibility]
+        model_families: [Astar, Successor_representation_SR]
+        model_params: [sr_discount_gamma, heuristic_weight_w]
+        variant_tags: [detour, planning]
+        design_flags: [goal_revealed]
+        qa_checks: [dead_end_trap_logged]
+        keywords: [planning, detour]
+      - name: Map Reading → Route Guidance
+        typical_DVs: [map_to_environment_alignment_score, guidance_success_rate]
+        common_manipulations: [map_rotation_deg, scale, landmark_alignment]
+        model_families: [Mental_transformation]
+        model_params: [rotation_cost_slope]
+        variant_tags: [survey_to_route]
+        design_flags: []
+        qa_checks: []
+        keywords: [map_alignment]
+      - name: Cognitive Map Inference from Overlapping Routes
+        typical_DVs: [novel_link_inference_rate, survey_knowledge_score]
+        common_manipulations: [overlap_degree, route_fragmentation, instruction_type]
+        model_families: [Graph_integration, SR_merge]
+        model_params: [integration_noise]
+        variant_tags: [overlapping_routes]
+        design_flags: [fragmented_learning_blocks]
+        qa_checks: [instruction_compliance]
+        keywords: [map_inference]
+      - name: Backtracking / Exploration vs Exploitation
+        typical_DVs: [backtrack_rate, exploration_ratio, path_efficiency]
+        common_manipulations: [penalty_for_backtrack, reward_uncertainty]
+        model_families: [Explore_exploit]
+        model_params: [epsilon_greedy]
+        variant_tags: [exploration]
+        design_flags: [explicit_rewards_optional]
+        qa_checks: [reward_mapping_clear]
+        keywords: [exploration]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Path Integration / Dead Reckoning (Idiothetic vs Allothetic Cues)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_path_integration
+    label: Path Integration / Dead Reckoning
+    description: Homing/triangle-completion after out-and-back paths; manipulate visual/vestibular cues, optic flow gain, and occlusions.
+    paradigms:
+      - name: Triangle Completion (Homing)
+        typical_DVs: [endpoint_error_m, heading_error_deg, path_length]
+        common_manipulations: [rotation_deg, translation_m, occlusion, optic_flow_gain, vestibular_cues (on/off)]
+        model_families: [Vector_summation, Kalman_PI]
+        model_params: [process_noise_q, obs_noise_r, flow_gain_k]
+        variant_tags: [virtual, treadmill, wheelchair]
+        design_flags: [outbound_segments_logged]
+        qa_checks: [idiothetic_cue_check, cybersickness_monitor]
+        keywords: [triangle_completion]
+      - name: Out-and-Back / L-Path Homing
+        typical_DVs: [endpoint_error_m, homing_vector_bias]
+        common_manipulations: [path_length, rotation_deg, landmark_visibility]
+        model_families: [Kalman_PI]
+        model_params: [process_noise_q, obs_noise_r]
+        variant_tags: [with_landmarks, in_dark]
+        design_flags: []
+        qa_checks: []
+        keywords: [dead_reckoning]
+      - name: Landmark-Aided Path Integration
+        typical_DVs: [endpoint_error_m, landmark_reliance_index]
+        common_manipulations: [landmark_stability, landmark_density, cue_conflict (landmark_vs_geometry)]
+        model_families: [Bayesian_cue_integration]
+        model_params: [w_landmark, w_idiothetic]
+        variant_tags: [cue_conflict]
+        design_flags: [cue_conflict_rotations]
+        qa_checks: [landmark_salience_ratings]
+        keywords: [cue_integration]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Reorientation & Cognitive Map (Boundary vs Landmark Cues)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_reorientation_cognitive_map
+    label: Reorientation & Cognitive Map
+    description: Use boundary geometry vs landmarks to regain orientation after disorientation; cue conflict tests cognitive map reliance.
+    paradigms:
+      - name: Boundary Geometry Reorientation
+        typical_DVs: [correct_corner_rate, geometry_bias_index]
+        common_manipulations: [boundary_shape (rect/diamond), disorientation (spin), landmark_presence]
+        model_families: [Geometry_landmark_weight]
+        model_params: [w_geometry, w_landmark]
+        variant_tags: [children_adults]
+        design_flags: [pretrial_disorientation]
+        qa_checks: [spin_protocol_logged]
+        keywords: [reorientation]
+      - name: Landmark vs Geometry Cue Conflict
+        typical_DVs: [cue_preference_index, heading_error_deg]
+        common_manipulations: [landmark_shift_deg, boundary_rotation_deg, landmark_stability]
+        model_families: [Bayesian_cue_integration]
+        model_params: [w_geometry, w_landmark]
+        variant_tags: [cue_conflict]
+        design_flags: []
+        qa_checks: []
+        keywords: [cognitive_map]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Spatial Orientation & Pointing
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_spatial_orientation_pointing
+    label: Spatial Orientation & Pointing
+    description: Compute bearings to targets/landmarks; absolute/relative orientation and pointing-to-target tasks.
+    paradigms:
+      - name: Pointing to Remembered Targets
+        typical_DVs: [pointing_error_deg, response_latency_ms]
+        common_manipulations: [initial_viewpoint, occlusion, path_complexity, rotation_deg]
+        model_families: [Vector_bearing_model]
+        model_params: [bearing_noise_sigma]
+        variant_tags: [allocentric, egocentric]
+        design_flags: [response_device (mouse/laser/pointer)]
+        qa_checks: [outlier_angle_filter]
+        keywords: [pointing]
+      - name: Judgments of Relative Direction (JRD)
+        typical_DVs: [heading_error_deg, rt_ms]
+        common_manipulations: [reference_objects, angular_separation_deg, environment_scale]
+        model_families: [Cognitive_map_bearing]
+        model_params: [bearing_noise_sigma]
+        variant_tags: [survey_knowledge]
+        design_flags: []
+        qa_checks: []
+        keywords: [JRD]
+      - name: Absolute Orientation / JOS (House/Street)
+        typical_DVs: [absolute_orientation_error_deg, rt_ms]
+        common_manipulations: [map_alignment, compass_cue, visual_context]
+        model_families: []
+        model_params: []
+        variant_tags: [absolute_orientation]
+        design_flags: []
+        qa_checks: []
+        keywords: [JOS]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Landmark Memory & Recognition
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_landmark_memory
+    label: Landmark Memory & Recognition
+    description: Learn and recognize landmarks; assess salience and route-relevant decision points.
+    paradigms:
+      - name: Landmark Recognition / Salience Rating
+        typical_DVs: [recognition_accuracy, salience_rating]
+        common_manipulations: [landmark_visibility, distinctiveness, decision_point_vs_nondecision]
+        model_families: []
+        model_params: []
+        variant_tags: [decision_point]
+        design_flags: [rating_scale_defined]
+        qa_checks: [response_style_control]
+        keywords: [landmark_salience]
+      - name: Landmark Order / Sequence Memory
+        typical_DVs: [sequence_recall_accuracy, order_confusions]
+        common_manipulations: [route_length, landmark_spacing]
+        model_families: []
+        model_params: []
+        variant_tags: [route_memory]
+        design_flags: []
+        qa_checks: []
+        keywords: [order_memory]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Virtual Morris Water Maze
+    - Radial Arm Maze (Virtual)
+    - Wayfinding / Route Planning
+    - Detour / Shortest Path
+    - Path Integration / Triangle Completion
+    - Reorientation (Boundary vs Landmark)
+    - Pointing to Target / JRD
+    - Landmark Recognition
+    - Shortcut Discovery
+    - Cognitive Map Inference (Overlapping Routes)
+    - Backtracking / Exploration
+  cogpo_candidate_labels:
+    - Virtual Maze Navigation
+    - Path Integration
+    - Route Planning / Wayfinding
+    - Reorientation
+    - Spatial Orientation / Pointing
+    - Landmark Recognition
+    - Shortcut
+    - Map Inference
+    - Exploration
+constructs:
+  primary: [Navigation, Spatial Memory]
+  secondary: [Allocentric Mapping, Egocentric Route Knowledge, Path Integration, Cognitive Map, Cue Integration]
+uri_brainmap: []
+uri_cogpo: []
+status: draft
+provenance:
+  - source: TODO CMD (spatial navigation) + prior families (wayfinding/path integration/reorientation)
+    fields: [subfamilies, paradigms, model_families, model_params, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns:
+    - onset
+    - duration
+    - trial_type             # e.g., start, decision_point, choice, outcome, probe
+    - position_x             # environment coordinates (standardized units)
+    - position_y
+    - heading_deg
+    - speed
+    - locomotion_mode        # joystick | treadmill | walking_in_place | wheelchair
+    - response
+    - correct
+    - rt
+  per_subfamily:
+    sf_virtual_maze_place_learning:
+      events_columns: [onset, duration, trial_type, start_pos_xy, goal_pos_xy, landmark_visibility, boundary_geometry, probe_trial_flag, teleport_flag, locomotion_mode, path_length, time_to_goal_ms]
+      hed_examples:
+        - "Navigation, Virtual-maze, Place-learning, Hidden-goal"
+        - "Navigation, Probe, Goal-removed"
+    sf_wayfinding_route_planning:
+      events_columns: [onset, duration, trial_type, decision_point_id, signage_presence, instruction_type, novel_shortcut_available, choice, correct, rt, path_efficiency]
+      hed_examples:
+        - "Navigation, Wayfinding, Decision-point"
+        - "Navigation, Planning, Detour"
+        - "Navigation, Shortcut, Discovery"
+    sf_path_integration:
+      events_columns: [onset, duration, trial_type, outbound_segments, rotation_deg, translation_m, optic_flow_gain, optic_flow_noise, vestibular_cues, endpoint_error_m, heading_error_deg]
+      hed_examples:
+        - "Navigation, Path-integration, Triangle-completion"
+    sf_reorientation_cognitive_map:
+      events_columns: [onset, duration, trial_type, disorientation_flag, boundary_shape, landmark_shift_deg, cue_conflict_condition, cue_preference_index]
+      hed_examples:
+        - "Navigation, Reorientation, Geometry"
+        - "Navigation, Cue-conflict"
+    sf_spatial_orientation_pointing:
+      events_columns: [onset, duration, trial_type, initial_viewpoint, rotation_deg, target_pos_xy, pointing_angle_deg, pointing_error_deg, rt]
+      hed_examples:
+        - "Navigation, Pointing, Remembered-target"
+        - "Navigation, Relative-direction, JRD"
+    sf_landmark_memory:
+      events_columns: [onset, duration, trial_type, landmark_id, decision_point_flag, salience_rating, recognition_response, correct, rt]
+      hed_examples:
+        - "Navigation, Landmark, Recognition"
+        - "Navigation, Landmark, Salience"

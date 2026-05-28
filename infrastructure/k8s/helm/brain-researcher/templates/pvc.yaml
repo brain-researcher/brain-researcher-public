@@ -1,0 +1,16 @@
+{{- if .Values.storage.sharedData.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-shared-data
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml .Values.storage.sharedData.accessModes | nindent 4 }}
+  storageClassName: {{ .Values.storage.sharedData.storageClass | default .Values.global.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.sharedData.size }}
+{{- end }}

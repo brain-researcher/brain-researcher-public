@@ -1,0 +1,1116 @@
+% scientific_report.sty - Professional Scientific Report Styling
+% For use with XeLaTeX or LuaLaTeX
+% Designed for research reports, technical reports, white papers, and similar documents
+% NOT for journal manuscripts (use venue-templates for those)
+
+\ProvidesPackage{scientific_report}[2024/01/01 Scientific Report Style]
+
+% ============================================================================
+% REQUIRED PACKAGES
+% ============================================================================
+
+% Page layout and geometry
+\RequirePackage[margin=1in, headheight=22pt]{geometry}
+\RequirePackage{setspace}
+\raggedbottom
+
+% Typography - Helvetica font family
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{helvet}
+\RequirePackage{microtype}
+\renewcommand{\familydefault}{\sfdefault}
+
+% Colors and graphics
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{tikz}
+
+% Tables
+\RequirePackage{longtable}
+\RequirePackage{booktabs}
+\RequirePackage{multirow}
+\RequirePackage{array}
+\RequirePackage{colortbl}
+\RequirePackage{tabularx}
+\RequirePackage{pdflscape}
+
+% Lists and formatting
+\RequirePackage{enumitem}
+\RequirePackage{parskip}
+
+% Boxes and callouts
+\RequirePackage[most]{tcolorbox}
+
+% Headers and footers
+\RequirePackage{fancyhdr}
+\RequirePackage{titlesec}
+
+% Hyperlinks and references
+\RequirePackage{hyperref}
+\RequirePackage[numbers,sort&compress]{natbib}
+
+% Math and scientific notation
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{siunitx}
+
+% Captions
+\RequirePackage{caption}
+\RequirePackage{subcaption}
+\RequirePackage{chngcntr}
+\RequirePackage{xurl}
+
+% ============================================================================
+% COLOR DEFINITIONS - PROFESSIONAL SCIENTIFIC PALETTE
+% ============================================================================
+
+% Primary colors (professional blue palette)
+\definecolor{primaryblue}{RGB}{0, 51, 102}        % Deep navy blue - headers, titles
+\definecolor{secondaryblue}{RGB}{74, 144, 226}    % Medium blue - subsections
+\definecolor{lightblue}{RGB}{220, 235, 252}       % Light blue for backgrounds
+\definecolor{accentblue}{RGB}{0, 120, 215}        % Bright accent blue
+
+% Scientific accent colors
+\definecolor{sciencegreen}{RGB}{0, 168, 150}      % Teal green - positive findings
+\definecolor{lightgreen}{RGB}{220, 245, 240}      % Light green background
+\definecolor{darkgreen}{RGB}{0, 128, 96}          % Dark green for emphasis
+
+% Warning and caution colors
+\definecolor{cautionorange}{RGB}{255, 140, 66}    % Orange for warnings/limitations
+\definecolor{lightorange}{RGB}{255, 243, 224}     % Light orange background
+\definecolor{criticalred}{RGB}{198, 40, 40}       % Red for critical items
+\definecolor{lightred}{RGB}{255, 235, 238}        % Light red background
+
+% Recommendation and action colors
+\definecolor{recommendpurple}{RGB}{103, 58, 183}  % Purple for recommendations
+\definecolor{lightpurple}{RGB}{237, 231, 246}     % Light purple background
+
+% Neutral colors
+\definecolor{darkgray}{RGB}{66, 66, 66}           % Dark gray for body text
+\definecolor{mediumgray}{RGB}{117, 117, 117}      % Medium gray for secondary text
+\definecolor{lightgray}{RGB}{245, 245, 245}       % Light gray backgrounds
+\definecolor{tablealt}{RGB}{248, 250, 252}        % Alternating table row color
+\definecolor{tableborder}{RGB}{200, 200, 200}     % Table border color
+
+% ============================================================================
+% HYPERLINK CONFIGURATION
+% ============================================================================
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    filecolor=primaryblue,
+    urlcolor=accentblue,
+    citecolor=secondaryblue,
+    pdftitle={Scientific Report},
+    pdfauthor={},
+    pdfsubject={Scientific Research},
+}
+
+% Robust line-breaking for long paths, URLs, DOIs, and generated command lines.
+\Urlmuskip=0mu plus 2mu
+\emergencystretch=3em
+
+% ============================================================================
+% CHAPTER AND SECTION FORMATTING
+% ============================================================================
+
+% Chapter formatting - large number with colored title
+\titleformat{\chapter}[display]
+{\normalfont\huge\bfseries\color{primaryblue}}
+{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{40pt}
+
+% MCP report sections are already structured upstream. Render each top-level
+% section as a clean report section instead of "Chapter N <section>" so outputs
+% read like scientific/technical reports rather than books.
+\newcommand{\reportsection}[1]{%
+    \clearpage
+    \phantomsection
+    \chapter*{#1}
+    \addcontentsline{toc}{chapter}{#1}
+    \markboth{\MakeUppercase{#1}}{\MakeUppercase{#1}}%
+}
+
+% Section formatting
+\titleformat{\section}
+{\normalfont\Large\bfseries\color{primaryblue}}
+{\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{3.5ex plus 1ex minus .2ex}{2.3ex plus .2ex}
+
+% Subsection formatting
+\titleformat{\subsection}
+{\normalfont\large\bfseries\color{secondaryblue}}
+{\thesubsection}{1em}{}
+
+% Subsubsection formatting
+\titleformat{\subsubsection}
+{\normalfont\normalsize\bfseries\color{darkgray}}
+{\thesubsubsection}{1em}{}
+
+% Paragraph formatting
+\titleformat{\paragraph}[runin]
+{\normalfont\normalsize\bfseries\color{darkgray}}
+{\theparagraph}{1em}{}
+
+% ============================================================================
+% HEADER AND FOOTER CONFIGURATION
+% ============================================================================
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{\leftmark}}
+\fancyhead[R]{\small\textit{Brain Researcher}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{primaryblue}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{lightgray}\leaders\hrule height \footrulewidth\hfill}}
+
+% Plain page style for chapter pages
+\fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyfoot[C]{\thepage}
+    \renewcommand{\headrulewidth}{0pt}
+    \renewcommand{\footrulewidth}{0.4pt}
+}
+
+% ============================================================================
+% BOX ENVIRONMENTS - SCIENTIFIC CONTENT ORGANIZATION
+% ============================================================================
+
+% Key Findings Box (Blue) - For major findings and discoveries
+\newtcolorbox{keyfindings}[1][Key Findings]{
+    colback=lightblue,
+    colframe=primaryblue,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=primaryblue,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Methodology Box (Green) - For methods and procedures
+\newtcolorbox{methodology}[1][Methodology]{
+    colback=lightgreen,
+    colframe=sciencegreen,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=sciencegreen,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Results Box (Blue-Green) - For highlighting key results
+\newtcolorbox{resultsbox}[1][Results Highlight]{
+    colback=lightblue!50!lightgreen!50,
+    colframe=darkgreen,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=darkgreen,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Recommendations Box (Purple) - For recommendations and implications
+\newtcolorbox{recommendations}[1][Recommendations]{
+    colback=lightpurple,
+    colframe=recommendpurple,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=recommendpurple,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Warning/Limitations Box (Orange) - For limitations, cautions, caveats
+\newtcolorbox{limitations}[1][Limitations]{
+    colback=lightorange,
+    colframe=cautionorange,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=cautionorange,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Critical Notice Box (Red) - For critical warnings or important notices
+\newtcolorbox{criticalnotice}[1][Critical Notice]{
+    colback=lightred,
+    colframe=criticalred,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=criticalred,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Definition Box (Gray) - For definitions, notes, supplementary info
+\newtcolorbox{definition}[1][Definition]{
+    colback=lightgray,
+    colframe=mediumgray,
+    fonttitle=\bfseries\color{darkgray},
+    title=#1,
+    coltitle=darkgray,
+    colbacktitle=lightgray,
+    boxrule=0.5pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Executive Summary Box (Special styling with shadow)
+\newtcolorbox{executivesummary}[1][Executive Summary]{
+    enhanced,
+    colback=white,
+    colframe=primaryblue,
+    fonttitle=\Large\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=primaryblue,
+    boxrule=2pt,
+    arc=5pt,
+    left=15pt,
+    right=15pt,
+    top=12pt,
+    bottom=12pt,
+    before skip=15pt,
+    after skip=15pt,
+    shadow={2mm}{-2mm}{0mm}{black!20},
+}
+
+% Hypothesis Box (Light blue with border) - For stating hypotheses
+\newtcolorbox{hypothesis}[1][Hypothesis]{
+    enhanced,
+    colback=lightblue!50,
+    colframe=accentblue,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=accentblue,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Evidence Box (Green) - For evidence tiers and validation support
+\newtcolorbox{evidencebox}[1][Evidence]{
+    enhanced,
+    colback=lightgreen!65,
+    colframe=darkgreen,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=darkgreen,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Claim Boundary Box (Orange) - For what can/cannot be claimed
+\newtcolorbox{claimboundary}[1][Claim Boundary]{
+    enhanced,
+    colback=lightorange,
+    colframe=cautionorange,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=cautionorange,
+    boxrule=1.2pt,
+    arc=3pt,
+    borderline west={3pt}{0pt}{criticalred},
+    left=12pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Execution Pack Box (Gray/Blue) - For reproducible command packs
+\newtcolorbox{executionpack}[1][Execution Pack]{
+    enhanced,
+    breakable,
+    colback=lightgray,
+    colframe=primaryblue,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=primaryblue,
+    boxrule=0.8pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% Reproducibility Box (Neutral) - For paths, hashes, inputs, and outputs
+\newtcolorbox{reproducibility}[1][Reproducibility]{
+    enhanced,
+    breakable,
+    colback=white,
+    colframe=mediumgray,
+    fonttitle=\bfseries\color{darkgray},
+    title=#1,
+    coltitle=darkgray,
+    colbacktitle=lightgray,
+    boxrule=0.6pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% ============================================================================
+% PULL QUOTE ENVIRONMENT
+% ============================================================================
+
+\newtcolorbox{pullquote}{
+    enhanced,
+    colback=lightgray,
+    colframe=lightgray,
+    boxrule=0pt,
+    borderline west={4pt}{0pt}{primaryblue},
+    arc=0pt,
+    left=15pt,
+    right=15pt,
+    top=10pt,
+    bottom=10pt,
+    before skip=15pt,
+    after skip=15pt,
+    fontupper=\large\itshape\color{darkgray},
+}
+
+% ============================================================================
+% STATISTIC HIGHLIGHT BOX
+% ============================================================================
+
+\newcommand{\statbox}[2]{%
+    \begin{tcolorbox}[
+        colback=primaryblue,
+        colframe=primaryblue,
+        coltext=white,
+        arc=5pt,
+        boxrule=0pt,
+        width=0.3\textwidth,
+        halign=center,
+        valign=center,
+        before skip=10pt,
+        after skip=10pt,
+    ]
+    {\Huge\bfseries #1}\\[5pt]
+    {\small #2}
+    \end{tcolorbox}
+}
+
+% ============================================================================
+% PUBLICATION-GRADE MANUSCRIPT PRIMITIVES
+% ============================================================================
+
+% Structured abstract helper for IMRAD-like manuscripts.
+% #1 = Background, #2 = Methods, #3 = Results, #4 = Conclusions
+\newcommand{\structuredabstract}[4]{%
+    \begin{executivesummary}[Structured Abstract]
+    \textbf{\textcolor{primaryblue}{Background.}} #1\par\medskip
+    \textbf{\textcolor{primaryblue}{Methods.}} #2\par\medskip
+    \textbf{\textcolor{primaryblue}{Results.}} #3\par\medskip
+    \textbf{\textcolor{primaryblue}{Conclusions.}} #4
+    \end{executivesummary}
+}
+
+% Compact keyword line for manuscript front matter.
+\newcommand{\keywords}[1]{%
+    \par\medskip
+    \noindent\textbf{\textcolor{primaryblue}{Keywords:}} #1
+    \par\medskip
+}
+
+% Optional manuscript metadata block for article type, version, and contact.
+% #1 = Article type, #2 = Version/status, #3 = Correspondence/contact
+\newcommand{\manuscriptmetadata}[3]{%
+    \begin{definition}[Manuscript Metadata]
+    \textbf{Article type.} #1\par\medskip
+    \textbf{Version / status.} #2\par\medskip
+    \textbf{Correspondence.} #3
+    \end{definition}
+}
+
+% Methods card for reproducible method summaries.
+% #1 = Study design, #2 = Inputs/data, #3 = Analysis, #4 = Validation
+\newcommand{\methodcard}[4]{%
+    \begin{methodology}[Methods Summary]
+    \textbf{\textcolor{darkgreen}{Study design.}} #1\par\medskip
+    \textbf{\textcolor{darkgreen}{Inputs.}} #2\par\medskip
+    \textbf{\textcolor{darkgreen}{Analysis.}} #3\par\medskip
+    \textbf{\textcolor{darkgreen}{Validation.}} #4
+    \end{methodology}
+}
+
+% Discussion card for interpretation, implications, limitations, and next steps.
+% #1 = Interpretation, #2 = Implication, #3 = Limitation, #4 = Next step
+\newcommand{\discussioncard}[4]{%
+    \begin{recommendations}[Discussion Summary]
+    \textbf{\textcolor{recommendpurple}{Interpretation.}} #1\par\medskip
+    \textbf{\textcolor{recommendpurple}{Implication.}} #2\par\medskip
+    \textbf{\textcolor{cautionorange}{Limitation.}} #3\par\medskip
+    \textbf{\textcolor{recommendpurple}{Next step.}} #4
+    \end{recommendations}
+}
+
+% Research-question card for the end of an introduction.
+% #1 = Question, #2 = Rationale/gap, #3 = Decision criterion or test
+\newcommand{\researchquestion}[3]{%
+    \begin{hypothesis}[Research Question]
+    \textbf{\textcolor{primaryblue}{Question.}} #1\par\medskip
+    \textbf{\textcolor{primaryblue}{Rationale.}} #2\par\medskip
+    \textbf{\textcolor{primaryblue}{Decision criterion.}} #3
+    \end{hypothesis}
+}
+
+% Contribution summary for manuscript introductions.
+% #1 = Scientific contribution, #2 = Methodological contribution, #3 = Reproducibility contribution
+\newcommand{\contributionbox}[3]{%
+    \begin{keyfindings}[Contributions]
+    \textbf{\textcolor{primaryblue}{Scientific.}} #1\par\medskip
+    \textbf{\textcolor{primaryblue}{Methodological.}} #2\par\medskip
+    \textbf{\textcolor{primaryblue}{Reproducibility.}} #3
+    \end{keyfindings}
+}
+
+% Data/provenance card for methods sections.
+% #1 = Source/dataset, #2 = Version/access, #3 = Inclusion/exclusion, #4 = Known limitations
+\newcommand{\dataprovenancecard}[4]{%
+    \begin{reproducibility}[Data Provenance]
+    \textbf{Source / dataset.} #1\par\medskip
+    \textbf{Version / access.} #2\par\medskip
+    \textbf{Inclusion / exclusion.} #3\par\medskip
+    \textbf{Known limitations.} #4
+    \end{reproducibility}
+}
+
+% Model/procedure provenance card for ML, encoding, and computational reports.
+% #1 = Model/procedure, #2 = Inputs, #3 = Outputs, #4 = Failure modes/boundaries
+\newcommand{\modelprovenancecard}[4]{%
+    \begin{reproducibility}[Model Provenance]
+    \textbf{Model / procedure.} #1\par\medskip
+    \textbf{Inputs.} #2\par\medskip
+    \textbf{Outputs.} #3\par\medskip
+    \textbf{Failure modes / boundaries.} #4
+    \end{reproducibility}
+}
+
+% Statistical analysis card for inference details.
+% #1 = Primary estimand, #2 = Null/exchangeability, #3 = Multiplicity, #4 = Sensitivity checks
+\newcommand{\statisticalanalysiscard}[4]{%
+    \begin{methodology}[Statistical Analysis]
+    \textbf{\textcolor{darkgreen}{Primary estimand.}} #1\par\medskip
+    \textbf{\textcolor{darkgreen}{Null model / exchangeability.}} #2\par\medskip
+    \textbf{\textcolor{darkgreen}{Multiplicity control.}} #3\par\medskip
+    \textbf{\textcolor{darkgreen}{Sensitivity checks.}} #4
+    \end{methodology}
+}
+
+% Robustness and falsification card for results/discussion.
+% #1 = Internal validation, #2 = Sensitivity checks, #3 = Negative/falsification tests, #4 = Residual risk
+\newcommand{\robustnesscard}[4]{%
+    \begin{evidencebox}[Robustness And Falsification]
+    \textbf{\textcolor{darkgreen}{Internal validation.}} #1\par\medskip
+    \textbf{\textcolor{darkgreen}{Sensitivity checks.}} #2\par\medskip
+    \textbf{\textcolor{criticalred}{Negative / falsification tests.}} #3\par\medskip
+    \textbf{\textcolor{cautionorange}{Residual risk.}} #4
+    \end{evidencebox}
+}
+
+% Limitations card for explicit claim boundaries.
+% #1 = Evidence boundary, #2 = Confounds, #3 = Generalizability, #4 = Missing validation
+\newcommand{\limitationscard}[4]{%
+    \begin{claimboundary}[Limitations And Claim Boundary]
+    \textbf{Evidence boundary.} #1\par\medskip
+    \textbf{Potential confounds.} #2\par\medskip
+    \textbf{Generalizability.} #3\par\medskip
+    \textbf{Missing validation.} #4
+    \end{claimboundary}
+}
+
+% Reproducibility manifest for paths, scripts, environment, and outputs.
+% #1 = Repository/code, #2 = Scripts/commands, #3 = Environment, #4 = Data/artifacts, #5 = Outputs
+\newcommand{\reproducibilitymanifest}[5]{%
+    \begin{reproducibility}[Reproducibility Manifest]
+    \textbf{Repository / code.} #1\par\medskip
+    \textbf{Scripts / commands.} #2\par\medskip
+    \textbf{Environment.} #3\par\medskip
+    \textbf{Data / artifacts.} #4\par\medskip
+    \textbf{Outputs.} #5
+    \end{reproducibility}
+}
+
+% Compact artifact/path entry for execution packs.
+% #1 = Purpose, #2 = Path/identifier, #3 = Status or checksum
+\newcommand{\artifactentry}[3]{%
+    \par\noindent
+    \textbf{\textcolor{primaryblue}{#1.}} \path|#2|\par
+    {\small\textit{Status: #3}}\par\medskip
+}
+
+% Claim matrix row helper for manuscript-style evidence summaries.
+% #1 = Claim, #2 = Status/level, #3 = Evidence, #4 = Boundary/next test
+\newcommand{\claimmatrixitem}[4]{%
+    \par\noindent
+    \textbf{\textcolor{primaryblue}{Claim.}} #1\par
+    \textbf{Status.} #2\par
+    \textbf{Evidence.} #3\par
+    \textbf{Boundary / next test.} #4
+    \par\medskip
+}
+
+% Scientific review/adjudication box.
+\newtcolorbox{reviewbox}[1][Scientific Review]{
+    enhanced,
+    breakable,
+    colback=white,
+    colframe=primaryblue,
+    fonttitle=\bfseries\color{white},
+    title=#1,
+    coltitle=white,
+    colbacktitle=primaryblue,
+    boxrule=0.9pt,
+    arc=3pt,
+    borderline west={3pt}{0pt}{secondaryblue},
+    left=10pt,
+    right=10pt,
+    top=8pt,
+    bottom=8pt,
+    before skip=12pt,
+    after skip=12pt,
+}
+
+% #1 = finding label, #2 = severity/status, #3 = review text
+\newcommand{\reviewfinding}[3]{%
+    \par\noindent
+    \textbf{\textcolor{primaryblue}{#1.}}
+    \textbf{Severity / status:} #2. #3
+    \par\medskip
+}
+
+% #1 = verdict label, #2 = rationale
+\newcommand{\reviewverdict}[2]{%
+    \par\medskip
+    \noindent\textbf{\textcolor{primaryblue}{Review verdict:}} #1\par
+    \noindent #2
+    \par\medskip
+}
+
+% Reviewer-response helper for revised reports and review appendices.
+% #1 = Reviewer comment, #2 = Response, #3 = Manuscript/template change
+\newcommand{\reviewresponse}[3]{%
+    \begin{reviewbox}[Reviewer Response]
+    \textbf{\textcolor{primaryblue}{Comment.}} #1\par\medskip
+    \textbf{\textcolor{darkgreen}{Response.}} #2\par\medskip
+    \textbf{\textcolor{recommendpurple}{Change made.}} #3
+    \end{reviewbox}
+}
+
+\newenvironment{reviewchecklist}{%
+    \begin{itemize}[leftmargin=1.5em]
+}{%
+    \end{itemize}
+}
+
+\newcommand{\reviewpass}[1]{\item \textbf{\textcolor{darkgreen}{PASS}} -- #1}
+\newcommand{\reviewwarn}[1]{\item \textbf{\textcolor{cautionorange}{WARN}} -- #1}
+\newcommand{\reviewblock}[1]{\item \textbf{\textcolor{criticalred}{BLOCK}} -- #1}
+
+% Reporting/checklist table for CONSORT/STROBE/PRISMA-like requirements.
+\newenvironment{reportingchecklist}[1][Reporting Checklist]{%
+    \begin{reproducibility}[#1]
+    \begin{itemize}[leftmargin=1.5em]
+}{%
+    \end{itemize}
+    \end{reproducibility}
+}
+
+% #1 = Checklist item, #2 = Location/status
+\newcommand{\checklistitem}[2]{%
+    \item \textbf{\textcolor{primaryblue}{#1.}} #2%
+}
+
+% Publication statement helpers for manuscript end matter.
+\newcommand{\publicationstatement}[2]{%
+    \begin{definition}[#1]
+    #2
+    \end{definition}
+}
+
+\newcommand{\ethicsstatement}[1]{\publicationstatement{Ethics Statement}{#1}}
+\newcommand{\dataavailability}[1]{\publicationstatement{Data Availability}{#1}}
+\newcommand{\codeavailability}[1]{\publicationstatement{Code Availability}{#1}}
+\newcommand{\authorcontributions}[1]{\publicationstatement{Author Contributions}{#1}}
+\newcommand{\fundingstatement}[1]{\publicationstatement{Funding}{#1}}
+\newcommand{\conflictsofinterest}[1]{\publicationstatement{Competing Interests}{#1}}
+\newcommand{\acknowledgements}[1]{\publicationstatement{Acknowledgements}{#1}}
+
+% Lightweight reference helpers for reports that do not use a .bib file.
+\newenvironment{publicationreferences}{%
+    \begin{small}
+}{%
+    \end{small}
+}
+
+\newcommand{\doiurl}[1]{\href{https://doi.org/#1}{doi:\nolinkurl{#1}}}
+
+% #1 = reference key/number, #2 = citation text, #3 = DOI/URL or empty
+\newcommand{\referenceentry}[3]{%
+    \par\noindent\hangindent=1.5em\hangafter=1
+    \textbf{#1.} #2%
+    \if\relax\detokenize{#3}\relax\else\ \url{#3}\fi
+    \par\medskip
+}
+
+\newcommand{\referencesnote}[1]{%
+    \par\smallskip
+    {\small\itshape Note: #1}
+    \par\medskip
+}
+
+% BibTeX helper for reports that provide a .bib file next to the .tex file.
+% #1 = bibliography style, #2 = bibliography file stem/path
+\newcommand{\reportbibliography}[2]{%
+    \bibliographystyle{#1}
+    \bibliography{#2}
+}
+
+% ============================================================================
+% TABLE STYLING
+% ============================================================================
+
+% Alternating row colors command
+\newcommand{\tablerowcolor}{\rowcolor{tablealt}}
+
+% Table header styling
+\newcommand{\tableheader}[1]{\textbf{\color{white}#1}}
+\newcommand{\tableheaderrow}{\rowcolor{primaryblue}}
+
+% Professional table environment
+\newenvironment{sciencetable}[2][htbp]{%
+    \begin{table}[#1]
+    \centering
+    \caption{#2}
+    \small
+}{%
+    \end{table}
+}
+
+% ============================================================================
+% FIGURE STYLING
+% ============================================================================
+
+% Keep figures and tables numbered globally instead of chapter-prefixed
+% (e.g. Figure 1 instead of Figure 3.1) because generated MCP reports often
+% already use manuscript-style figure ordering.
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+
+% Caption formatting
+\captionsetup{
+    font=small,
+    labelfont={bf,color=primaryblue},
+    textfont={color=darkgray},
+    justification=centering,
+    margin=20pt,
+}
+
+% Figure with source attribution
+\newcommand{\figuresource}[1]{%
+    \par\vspace{-8pt}
+    {\small\textit{Source: #1}}
+}
+
+% Figure note (use outside table environments, after \end{tabular})
+\newcommand{\figurenote}[1]{%
+    \par\vspace{-8pt}
+    {\small\textit{Note: #1}}
+}
+
+% Graphical abstract / hero figure helper.
+% #1 = image path, #2 = caption, #3 = note/source text
+\newcommand{\graphicalabstract}[3]{%
+    \begin{figure}[htbp]
+    \centering
+    \IfFileExists{#1}{%
+        \includegraphics[width=0.95\linewidth]{#1}%
+    }{%
+        \fbox{\parbox{0.9\linewidth}{\centering Graphical abstract unavailable: \path|#1|}}%
+    }%
+    \caption{#2}
+    \if\relax\detokenize{#3}\relax\else
+        \figurenote{#3}
+    \fi
+    \end{figure}
+}
+
+% Report figure helper with separate short and full captions.
+% #1 = image path, #2 = short list-of-figures caption, #3 = full caption, #4 = note/source text
+\newcommand{\reportfigure}[4]{%
+    \begin{figure}[htbp]
+    \centering
+    \IfFileExists{#1}{%
+        \includegraphics[width=0.95\linewidth]{#1}%
+    }{%
+        \fbox{\parbox{0.9\linewidth}{\centering Figure unavailable: \path|#1|}}%
+    }%
+    \caption[#2]{#3}
+    \if\relax\detokenize{#4}\relax\else
+        \figurenote{#4}
+    \fi
+    \end{figure}
+}
+
+% Supplementary numbering helpers. Use at the start of supplementary sections.
+\newcommand{\beginsupplement}{%
+    \setcounter{figure}{0}
+    \setcounter{table}{0}
+    \renewcommand{\thefigure}{S\arabic{figure}}
+    \renewcommand{\thetable}{S\arabic{table}}
+}
+
+% Compact claim-card helper.
+% #1 = title, #2 = claim text, #3 = evidence text, #4 = boundary/next-test text
+\newcommand{\claimcard}[4]{%
+    \begin{tcolorbox}[
+        enhanced,
+        colback=white,
+        colframe=primaryblue,
+        title=#1,
+        coltitle=white,
+        colbacktitle=primaryblue,
+        fonttitle=\bfseries,
+        boxrule=0.9pt,
+        arc=3pt,
+        left=10pt,
+        right=10pt,
+        top=8pt,
+        bottom=8pt,
+        before skip=12pt,
+        after skip=12pt,
+    ]
+    \textbf{\textcolor{primaryblue}{Claim.}} #2\par\medskip
+    \textbf{\textcolor{darkgreen}{Evidence.}} #3\par\medskip
+    \textbf{\textcolor{cautionorange}{Boundary / Next test.}} #4
+    \end{tcolorbox}
+}
+
+% Table note (use INSIDE tabular, before \bottomrule)
+% #1 = number of columns in the tabular
+% #2 = note text
+% Usage: \tablenote{4}{DMN-A labels are unreliable...}
+\newcommand{\tablenote}[2]{%
+    \multicolumn{#1}{@{}p{0.95\linewidth}@{}}{%
+        {\small\itshape Note: #2}%
+    } \\
+}
+
+% ============================================================================
+% LIST STYLING
+% ============================================================================
+
+% Bullet list styling with blue bullets
+\setlist[itemize]{
+    leftmargin=*,
+    label=\textcolor{primaryblue}{\textbullet},
+    topsep=5pt,
+    itemsep=3pt,
+}
+
+% Numbered list styling with blue numbers
+\setlist[enumerate]{
+    leftmargin=*,
+    label=\textcolor{primaryblue}{\arabic*.},
+    topsep=5pt,
+    itemsep=3pt,
+}
+
+% ============================================================================
+% SCIENTIFIC NOTATION COMMANDS
+% ============================================================================
+
+% Highlight important text
+\newcommand{\highlight}[1]{\textbf{\textcolor{primaryblue}{#1}}}
+
+% P-value formatting (with significance indicators)
+\newcommand{\pvalue}[1]{%
+    \textit{p}~=~#1%
+}
+
+% Significant p-value (bold)
+\newcommand{\psig}[1]{%
+    \textbf{\textit{p}~=~#1}%
+}
+
+% Confidence interval
+\newcommand{\CI}[2]{%
+    95\% CI [#1, #2]%
+}
+
+% Effect size formatting
+\newcommand{\effectsize}[2]{%
+    #1~=~#2%
+}
+
+% Sample size
+\newcommand{\samplesize}[1]{%
+    \textit{n}~=~#1%
+}
+
+% Mean with SD
+\newcommand{\meansd}[2]{%
+    #1~$\pm$~#2%
+}
+
+% Significance indicators
+\newcommand{\sigone}{\textsuperscript{*}}          % p < 0.05
+\newcommand{\sigtwo}{\textsuperscript{**}}         % p < 0.01
+\newcommand{\sigthree}{\textsuperscript{***}}      % p < 0.001
+\newcommand{\signs}{\textsuperscript{ns}}          % not significant
+
+% Significance legend (for table footnotes)
+\newcommand{\siglegend}{%
+    \textsuperscript{*}\textit{p}~<~0.05;
+    \textsuperscript{**}\textit{p}~<~0.01;
+    \textsuperscript{***}\textit{p}~<~0.001;
+    \textsuperscript{ns}not significant%
+}
+
+% ============================================================================
+% STATUS INDICATORS
+% ============================================================================
+
+% Trend indicators
+\newcommand{\trendup}{\textcolor{darkgreen}{$\blacktriangle$}}
+\newcommand{\trenddown}{\textcolor{criticalred}{$\blacktriangledown$}}
+\newcommand{\trendflat}{\textcolor{mediumgray}{$\rightarrow$}}
+
+% Quality/Rating indicators
+\newcommand{\qualityhigh}{\textbf{\textcolor{darkgreen}{HIGH}}}
+\newcommand{\qualitymedium}{\textbf{\textcolor{cautionorange}{MEDIUM}}}
+\newcommand{\qualitylow}{\textbf{\textcolor{criticalred}{LOW}}}
+
+% Evidence strength
+\newcommand{\evidencestrong}{\textbf{\textcolor{darkgreen}{Strong}}}
+\newcommand{\evidencemoderate}{\textbf{\textcolor{cautionorange}{Moderate}}}
+\newcommand{\evidenceweak}{\textbf{\textcolor{criticalred}{Weak}}}
+
+% Claim status labels
+\newcommand{\claimsupported}{\textbf{\textcolor{darkgreen}{SUPPORTED}}}
+\newcommand{\claimcandidate}{\textbf{\textcolor{cautionorange}{CANDIDATE}}}
+\newcommand{\claimbounded}{\textbf{\textcolor{cautionorange}{BOUNDED}}}
+\newcommand{\claimmissing}{\textbf{\textcolor{mediumgray}{MISSING}}}
+\newcommand{\claimrejected}{\textbf{\textcolor{criticalred}{REJECTED}}}
+
+% ============================================================================
+% TITLE PAGE COMMAND
+% ============================================================================
+
+\newcommand{\autoreportnotice}[1]{%
+    \begin{tcolorbox}[
+        colback=lightgray,
+        colframe=mediumgray,
+        fonttitle=\bfseries\color{darkgray},
+        title=Automatically Generated Report,
+        coltitle=darkgray,
+        colbacktitle=lightgray,
+        boxrule=0.5pt,
+        arc=3pt,
+        left=10pt,
+        right=10pt,
+        top=8pt,
+        bottom=8pt,
+        width=\textwidth,
+        halign=left,
+    ]
+    {\small #1}
+    \end{tcolorbox}
+}
+
+\newcommand{\makereporttitlewithnotice}[6]{%
+    % #1 = Report Title
+    % #2 = Subtitle
+    % #3 = Author(s)
+    % #4 = Institution/Organization
+    % #5 = Date
+    % #6 = Optional automatically generated report notice
+    \begin{titlepage}
+    \centering
+    \if\relax\detokenize{#6}\relax
+        \vspace*{2cm}
+    \else
+        \vspace*{0.25cm}
+        \autoreportnotice{#6}
+        \vspace{0.9cm}
+    \fi
+
+    {\Huge\bfseries\color{primaryblue} #1\\[0.5cm]}
+    {\LARGE #2\\[2cm]}
+
+    \vspace{2cm}
+
+    {\Large\bfseries #3\\[0.5cm]}
+    {\large #4\\[2cm]}
+
+    {\large\bfseries Date: #5\\[0.3cm]}
+
+    \vfill
+
+    \begin{tikzpicture}
+        \fill[primaryblue] (0,0) rectangle (\textwidth,0.5);
+    \end{tikzpicture}
+
+    \end{titlepage}
+}
+
+\newcommand{\makereporttitle}[5]{%
+    \makereporttitlewithnotice{#1}{#2}{#3}{#4}{#5}{}
+}
+
+% Alternative title page with image
+\newcommand{\makereporttitlewithimage}[6]{%
+    % #1 = Report Title
+    % #2 = Subtitle
+    % #3 = Hero Image Path
+    % #4 = Author(s)
+    % #5 = Institution/Organization
+    % #6 = Date
+    \begin{titlepage}
+    \centering
+    \vspace*{1cm}
+
+    {\Huge\bfseries\color{primaryblue} #1\\[0.5cm]}
+    {\LARGE #2\\[1.5cm]}
+
+    \ifx&#3&
+        \vspace{4cm}
+    \else
+        \includegraphics[width=0.8\textwidth]{#3}\\[1.5cm]
+    \fi
+
+    {\Large\bfseries #4\\[0.5cm]}
+    {\large #5\\[1.5cm]}
+
+    {\large\bfseries Date: #6}
+
+    \vfill
+
+    \begin{tikzpicture}
+        \fill[primaryblue] (0,0) rectangle (\textwidth,0.5);
+    \end{tikzpicture}
+
+    \end{titlepage}
+}
+
+% ============================================================================
+% APPENDIX SECTION COMMAND
+% ============================================================================
+
+\newcommand{\appendixsection}[1]{%
+    \section*{#1}
+    \addcontentsline{toc}{section}{#1}
+}
+
+\newcommand{\reportbackmatter}{%
+    \clearpage
+    \phantomsection
+}
+
+\newcommand{\reportappendix}[1]{%
+    \clearpage
+    \phantomsection
+    \section*{#1}
+    \addcontentsline{toc}{section}{#1}
+    \markboth{\MakeUppercase{#1}}{\MakeUppercase{#1}}%
+}
+
+% ============================================================================
+% PAGE LAYOUT ADJUSTMENTS
+% ============================================================================
+
+% Spacing
+\setstretch{1.15}
+\setlength{\parskip}{0.5em}
+
+% Prevent orphans and widows
+\clubpenalty=10000
+\widowpenalty=10000
+
+% Float placement
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.7}
+
+% ============================================================================
+% END OF STYLE FILE
+% ============================================================================
+
+\endinput

@@ -1,0 +1,21 @@
+groups:
+  - name: planner-catalog
+    interval: 30s
+    rules:
+      - alert: CatalogLoadFailures
+        expr: increase(catalog_load_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Catalog loader failures detected"
+          description: "catalog_load_failures_total increased in the last 5m. Check agent logs for catalog_loader_failed and verify capabilities.yaml/tools_catalog.json."
+
+      - alert: PlannerErrorRateHigh
+        expr: rate(planner_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Planner error rate elevated"
+          description: "Planner errors >0.1 per second over 5m. Investigate planner logs and recent requests."

@@ -1,0 +1,68 @@
+import sys, os
+# import pdb; pdb.set_trace()
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from data_ingestion.neuro_downloads import (
+    download_openneuro,
+    search_dandi,
+    download_neurovault_collection,
+    search_neurovault_images,
+)
+import responses
+from pathlib import Path
+
+
+def test_download_openneuro_stub():
+    assert callable(download_openneuro)
+
+
+def test_neuro_downloads_lazy_import():
+    import sys
+
+    assert "openneuro" not in sys.modules
+    try:
+        download_openneuro("ds000001", "out")
+    except Exception:
+        pass
+
+
+def test_search_dandi_mock():
+    with responses.RequestsMock() as rsps:
+        rsps.add(
+            responses.GET,
+            "https://api.dandiarchive.org/api/dandisets/v1",
+            json={"results": [{"id": "1"}]},
+            status=200,
+        )
+        res = search_dandi("foo", 1)
+        assert res == [{"id": "1"}]
+
+
+def test_search_neurovault_images_mock():
+    with responses.RequestsMock() as rsps:
+        rsps.add(
+            responses.GET,
+            "https://neurovault.org/api/images/",
+            json={"results": [{"id": 10}]},
+            status=200,
+        )
+        out = search_neurovault_images("brain")
+        assert out == [{"id": 10}]
+
+
+def test_download_neurovault_collection_mock(tmp_path):
+    images = [{"file": "https://neurovault.org/media/file1.nii.gz"}]
+    with responses.RequestsMock() as rsps:
+        rsps.add(
+            responses.GET,
+            "https://neurovault.org/api/collections/123/images/",
+            json={"results": images},
+            status=200,
+        )
+        rsps.add(
+            responses.GET,
+            "https://neurovault.org/media/file1.nii.gz",
+            body=b"dummy",
+            status=200,
+        )
+        paths = download_neurovault_collection(123, tmp_path)
+        assert Path(paths[0]).exists()

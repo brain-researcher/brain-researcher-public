@@ -1,0 +1,177 @@
+# Sample backend configurations for AGENT-012 testing
+
+backends:
+  # Kubernetes cluster for GPU-accelerated neuroimaging
+  university_k8s:
+    type: kubernetes
+    config:
+      namespace: neuroimaging
+      image_pull_policy: IfNotPresent
+      service_account: neuroimaging-service-account
+      node_selector:
+        workload: neuroimaging
+        gpu: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      backoff_limit: 3
+      
+  # SLURM HPC cluster for large-scale processing
+  hpc_slurm:
+    type: slurm
+    config:
+      host: slurm-head.university.edu
+      username: brain_researcher
+      key_file: ~/.ssh/id_rsa_slurm
+      partition: gpu
+      account: neuroimaging_lab
+      qos: high
+      modules:
+        - fsl/6.0.4
+        - freesurfer/7.2
+        - cuda/11.8
+        - singularity/3.8
+      container_runtime: singularity
+      scratch_dir: /scratch/neuroimaging
+      
+  # AWS Batch for elastic cloud processing
+  aws_cloud:
+    type: aws_batch
+    config:
+      region: us-west-2
+      job_queue: neuroimaging-gpu-queue
+      job_definition: brain-researcher-gpu
+      role_arn: arn:aws:iam::123456789012:role/BatchExecutionRole
+      subnets:
+        - subnet-12345678
+        - subnet-87654321
+      security_groups:
+        - sg-neuroimaging
+
+selection:
+  default_strategy: most_available
+  preferred_order:
+    - university_k8s
+    - hpc_slurm
+    - aws_cloud
+  cost_optimization: true
+  health_check_interval: 300  # 5 minutes
+  capacity_cache_ttl: 300     # 5 minutes
+
+resource_profiles:
+  # Quick preprocessing tasks
+  light:
+    cpu: 2.0
+    memory_gb: 8.0
+    gpu: 0
+    storage_gb: 20.0
+    walltime_minutes: 30
+    
+  # Standard fMRI analysis
+  standard:
+    cpu: 8.0
+    memory_gb: 32.0
+    gpu: 1
+    storage_gb: 100.0
+    walltime_minutes: 120
+    
+  # Heavy computational tasks
+  heavy:
+    cpu: 32.0
+    memory_gb: 128.0
+    gpu: 4
+    storage_gb: 500.0
+    walltime_minutes: 480
+    node_count: 1
+    
+  # Multi-node parallel processing
+  distributed:
+    cpu: 64.0
+    memory_gb: 256.0
+    gpu: 8
+    storage_gb: 1000.0
+    walltime_minutes: 1440  # 24 hours
+    node_count: 4
+
+job_templates:
+  fsl_preprocessing:
+    name: fsl-preprocessing-{session_id}
+    image: brain-researcher/fsl:6.0.4
+    command: |
+      bet {input_t1} {output_brain} -f 0.5 -g 0 -m
+      fast -t 1 -n 3 -H 0.1 -I 4 -l 20.0 -o {output_fast} {output_brain}
+    environment:
+      FSLDIR: /usr/local/fsl
+      FSLOUTPUTTYPE: NIFTI_GZ
+    resource_profile: standard
+    
+  freesurfer_recon:
+    name: freesurfer-recon-{subject_id}
+    image: brain-researcher/freesurfer:7.2
+    command: |
+      recon-all -i {input_t1} -s {subject_id} -all
+    environment:
+      FREESURFER_HOME: /usr/local/freesurfer
+      SUBJECTS_DIR: /outputs/subjects
+    resource_profile: heavy
+    
+  fmri_glm_analysis:
+    name: fmri-glm-{run_id}
+    image: brain-researcher/nilearn:latest
+    command: |
+      python /app/glm_analysis.py \
+        --input {input_func} \
+        --design {design_matrix} \
+        --mask {mask} \
+        --output {output_dir}
+    environment:
+      PYTHONPATH: /app
+      OMP_NUM_THREADS: "8"
+    resource_profile: standard
+
+failover_rules:
+  # If Kubernetes fails, try SLURM
+  - primary: university_k8s
+    fallback: hpc_slurm
+    conditions:
+      - health_check_failed
+      - insufficient_gpu_resources
+      
+  # If SLURM queue is too long, try AWS
+  - primary: hpc_slurm
+    fallback: aws_cloud
+    conditions:
+      - queue_time_exceeds: 60  # minutes
+      - queue_depth_exceeds: 50
+      
+  # Cost-based failover
+  - primary: aws_cloud
+    fallback: hpc_slurm
+    conditions:
+      - cost_exceeds: 10.0  # USD per hour
+      - walltime_exceeds: 240  # minutes
+
+monitoring:
+  job_status_check_interval: 30  # seconds
+  log_retrieval_interval: 60     # seconds
+  health_check_interval: 300     # seconds
+  capacity_update_interval: 180  # seconds
+  
+alerts:
+  backend_down:
+    enabled: true
+    notification_channels:
+      - email: admin@neuroimaging.lab
+      - slack: "#neuroimaging-alerts"
+      
+  job_failed:
+    enabled: true
+    retry_attempts: 2
+    retry_delay: 300  # seconds
+    
+  high_queue_depth:
+    enabled: true
+    threshold: 100
+    action: scale_out

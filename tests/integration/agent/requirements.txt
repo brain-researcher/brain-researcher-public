@@ -1,0 +1,65 @@
+# Core LangGraph and LangChain dependencies
+langgraph>=0.0.20
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-openai>=0.0.5
+langchain-anthropic>=0.0.1
+langchain-community>=0.0.1
+
+# State management and persistence
+redis>=5.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# API framework
+fastapi>=0.104.0
+uvicorn>=0.24.0
+httpx>=0.25.0
+
+# Scientific computing (for integration with existing tools)
+numpy>=1.24.0
+pandas>=2.0.0
+nibabel>=5.0.0
+nilearn>=0.10.0
+nimare>=0.0.13
+matplotlib>=3.5.0
+rapidfuzz>=3.0.0
+scipy>=1.10.0
+statsmodels>=0.14.0
+scikit-learn>=1.3.0
+
+# Vector search
+sentence-transformers>=2.2.0
+faiss-cpu>=1.7.4
+
+# Monitoring and system info
+psutil>=5.9.0
+
+# Utilities
+python-dotenv>=1.0.0
+typing-extensions>=4.8.0
+aiofiles>=23.0.0
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.10.0
+pytest-cov>=4.1.0
+pytest-timeout>=2.1.0
+pytest-xdist>=3.3.0
+hypothesis>=6.0.0
+fakeredis>=2.19.0
+responses>=0.23.0
+
+# Development tools
+black>=23.0.0
+isort>=5.12.0
+flake8>=6.0.0
+mypy>=1.5.0
+pre-commit>=3.4.0
+
+# Documentation
+mkdocs>=1.5.0
+mkdocs-material>=9.0.0
+mkdocstrings>=0.23.0
+mkdocstrings-python>=1.7.0

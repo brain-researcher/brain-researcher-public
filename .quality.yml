@@ -1,0 +1,50 @@
+# Quality Configuration for Brain Researcher
+
+quality_gates:
+  test_coverage: 80.0          # Minimum test coverage percentage
+  test_pass_rate: 95.0         # Minimum test pass rate percentage
+  max_complexity: 15           # Maximum cyclomatic complexity
+  max_errors: 0                # Maximum number of errors allowed
+  max_security_issues: 0       # Maximum number of security issues
+
+enabled_tools:
+  - unit_tests
+  - integration_tests
+  - ruff
+  - mypy
+  - security
+  - complexity
+  - formatting
+
+# Test configuration
+test:
+  timeout: 300                 # Test timeout in seconds
+  parallel: true               # Run tests in parallel
+  fail_fast: false            # Stop on first failure
+
+# Analysis configuration
+analysis:
+  ignore_paths:
+    - "tests/"
+    - "docs/"
+    - "build/"
+    - "__pycache__/"
+
+  ruff:
+    select:
+      - E      # pycodestyle errors
+      - F      # pyflakes
+      - I      # isort
+      - N      # pep8-naming
+      - UP     # pyupgrade
+      - B      # flake8-bugbear
+      - C90    # mccabe complexity
+      - RUF    # ruff-specific rules
+
+  mypy:
+    strict: false
+    ignore_missing_imports: true
+
+  security:
+    severity_threshold: "medium"  # low, medium, high
+    confidence_threshold: "medium"

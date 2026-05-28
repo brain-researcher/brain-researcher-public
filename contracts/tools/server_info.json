@@ -1,0 +1,43 @@
+{
+  "name": "server_info",
+  "tier": "ops",
+  "surface_tier": "ops",
+  "capability_family": "server_ops",
+  "description": "Return server configuration/capabilities for clients.",
+  "input_schema": {
+    "properties": {},
+    "title": "server_infoArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "server_infoDictOutput",
+    "type": "object"
+  },
+  "examples": [
+    {
+      "input": {},
+      "output": {
+        "ok": true,
+        "data": {
+          "name": "brain-researcher",
+          "run_root": "/path/to/artifacts/mcp_runs",
+          "allowed_roots": [
+            "/path/to/artifacts",
+            "/path/to/data",
+            "/path/to/tmp"
+          ],
+          "allow_network": false,
+          "allow_dangerous": false,
+          "enable_tool_execute": false,
+          "tool_execute_allowlist": [],
+          "max_text_bytes": 200000,
+          "max_binary_bytes": 5000000
+        }
+      },
+      "tested": false
+    }
+  ],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

@@ -1,0 +1,535 @@
+id: tf_ltm_declarative
+label: Episodic & Declarative Memory
+description: >-
+  Encoding and retrieval in long-term memory across recall, recognition, associative/source/context memory,
+  prospective memory, metamemory, and canonical encoding manipulations (levels-of-processing, generation, spacing,
+  testing effect, enactment, imagery, consolidation/sleep). Includes false memory and interference paradigms
+  (DRM, misinformation, retrieval-induced forgetting, directed forgetting).
+
+# ────────────────────────────────────────────────────────────────────────────────
+# LEVEL 2: Subfamilies, each with LEVEL 3 paradigms
+# ────────────────────────────────────────────────────────────────────────────────
+subfamilies:
+
+  - id: sf_free_cued_serial_recall
+    label: Free / Cued / Serial Recall
+    description: Immediate/delayed recall with list structure; serial position, temporal contiguity and clustering.
+    paradigms:
+      - name: Free Recall (Immediate/Delayed)
+        aliases: [Free List Word Recall]
+        typical_DVs: [recalled_count, serial_position_curve, temporal_clustering_score, semantic_clustering_score]
+        common_manipulations: [list_length, presentation_rate, retention_interval_ms, distractor_task, list_id]
+        variant_tags: [immediate, delayed, continual_distractor]
+        design_flags: [list_learning, temporal_contiguity_analysis]
+        qa_checks: [primacy_recency_present, intrusions_flag]
+        keywords: [serial_position, contiguity, clustering]
+      - name: Cued Recall
+        aliases: []
+        typical_DVs: [recalled_count, cue_dependency, intrusions_count]
+        common_manipulations: [cue_type, cue_validity, cue_strength, retention_interval_ms]
+        variant_tags: [category_cued, paired_cued]
+        design_flags: []
+        qa_checks: [cue_balance, lure_control]
+        keywords: [cued_retrieval]
+      - name: Category-Cued Recall
+        aliases: []
+        typical_DVs: [recalled_count, category_clustering, semantic_clustering_score]
+        common_manipulations: [category_type, category_size, retention_interval_ms]
+        variant_tags: [category_cued]
+        design_flags: [semantic_clustering_analysis]
+        qa_checks: [category_balance]
+        keywords: [category_cued, semantic_clustering]
+      - name: Part-Set Cueing (Inhibition)
+        aliases: []
+        typical_DVs: [part_set_cost, cueing_effect_size]
+        common_manipulations: [cue_set_size, cue_proportion, cue_type]
+        variant_tags: [part_set]
+        design_flags: [cueing_manipulation]
+        qa_checks: [baseline_full_recall_control]
+        keywords: [part_set_cueing, retrieval_inhibition]
+      - name: Serial Recall
+        aliases: []
+        typical_DVs: [recalled_in_order, transposition_error_rate, serial_position_curve]
+        common_manipulations: [list_length, presentation_rate, phonological_similarity]
+        variant_tags: [immediate, delayed]
+        design_flags: [order_memory]
+        qa_checks: [order_scoring_spec]
+        keywords: [serial_order]
+
+  - id: sf_item_recognition
+    label: Item Recognition (Old/New, 2AFC)
+    description: Signal-detection based recognition with lure similarity/relatedness and confidence/RK variants.
+    paradigms:
+      - name: Old/New Recognition (Yes/No)
+        aliases: [Recognition Memory (Old/New)]
+        typical_DVs: [hit_rate, false_alarm_rate, dprime, criterion, auroc]
+        common_manipulations: [retention_interval_ms, lure_similarity, response_deadline_ms, confidence_scale]
+        variant_tags: [YN]
+        design_flags: [sdt_modeling]
+        qa_checks: [fa_rate_bounded, dprime_reported]
+        keywords: [recognition, SDT]
+      - name: 2AFC Recognition
+        aliases: []
+        typical_DVs: [choice_accuracy, rt_ms]
+        common_manipulations: [lure_similarity, retention_interval_ms, pair_order_counterbalance]
+        variant_tags: [2AFC]
+        design_flags: [pairing_control]
+        qa_checks: []
+        keywords: [forced_choice]
+      - name: Remember/Know (Recollection/Familiarity)
+        aliases: [R/K]
+        typical_DVs: [remember_rate, know_rate, corrected_recollection, familiarity_index]
+        common_manipulations: [retention_interval_ms, encoding_depth, confidence_scale]
+        variant_tags: [rk, confidence]
+        design_flags: [dual_process_metrics]
+        qa_checks: [rk_instruction_check]
+        keywords: [recollection, familiarity]
+      - name: Confidence ROC / Ratings
+        aliases: []
+        typical_DVs: [auroc, slope_zROC, meta_dprime]
+        common_manipulations: [confidence_scale, response_deadline_ms]
+        variant_tags: [confidence]
+        design_flags: [sdt_roc]
+        qa_checks: [monotonic_confidence_bins]
+        keywords: [ROC, meta_d]
+      - name: Remember/Know with Confidence
+        aliases: [R/K Confidence]
+        typical_DVs: [remember_rate, know_rate, confidence_ratings, meta_dprime]
+        common_manipulations: [confidence_scale, retention_interval_ms, encoding_depth]
+        variant_tags: [rk, confidence]
+        design_flags: [dual_process_metrics, confidence_ratings]
+        qa_checks: [rk_instruction_check, confidence_monotonicity]
+        keywords: [recollection, familiarity, confidence]
+      - name: List Length / Strength-Based Mirror Effects
+        aliases: []
+        typical_DVs: [list_length_effect, mirror_effect_size, strength_based_dprime]
+        common_manipulations: [list_length, item_strength, lure_similarity]
+        variant_tags: [list_length]
+        design_flags: [strength_manipulation]
+        qa_checks: [strength_validation]
+        keywords: [list_length, mirror_effect]
+
+  - id: sf_associative_memory
+    label: Associative Memory (Pairs/Relations)
+    description: Pair learning and recognition of associations (intact vs rearranged); unitization vs relational encoding.
+    paradigms:
+      - name: Paired-Associate Learning (PAL)
+        aliases: [Word-Pair Learning]
+        typical_DVs: [paired_recall_accuracy, trials_to_criterion]
+        common_manipulations: [semantic_relatedness, unitization_instruction, presentation_rate]
+        variant_tags: [verbal_pairs, picture_pairs]
+        design_flags: [criterion_training_optional]
+        qa_checks: [relatedness_balance]
+        keywords: [associative_binding]
+      - name: Associative Recognition (Intact vs Rearranged)
+        aliases: []
+        typical_DVs: [associative_dprime, intact_hit_rate, rearranged_false_alarm_rate]
+        common_manipulations: [semantic_relatedness, unitization_instruction, retention_interval_ms]
+        variant_tags: [intact_rearranged]
+        design_flags: [relational_vs_unitized]
+        qa_checks: []
+        keywords: [associative_recognition]
+      - name: Triplet / Higher-Order Associations
+        aliases: []
+        typical_DVs: [link_accuracy, relational_inference_rate]
+        common_manipulations: [structure (A-B, B-C), inference_phase, delay]
+        variant_tags: [transitive_inference]
+        design_flags: []
+        qa_checks: []
+        keywords: [relational_memory]
+
+  - id: sf_source_context_memory
+    label: Source / Context Memory
+    description: Memory for contextual attributes (voice, font, location, task) and encoding specificity/context reinstatement.
+    paradigms:
+      - name: Source Memory
+        aliases: []
+        typical_DVs: [source_accuracy, source_dprime, rt_ms]
+        common_manipulations: [source_types, encoding_contexts, retention_interval_ms]
+        variant_tags: [voice, modality, location, color]
+        design_flags: [source_query_explicit]
+        qa_checks: [guess_correction_rule]
+        keywords: [context_memory]
+      - name: Context Reinstatement / Encoding Specificity
+        aliases: []
+        typical_DVs: [context_match_benefit, accuracy]
+        common_manipulations: [context_match (same_vs_different), cue_reinstatement]
+        variant_tags: [visual_context, auditory_context, state_dependent]
+        design_flags: [match_mismatch]
+        qa_checks: []
+        keywords: [reinstatement]
+      - name: State-Dependent Memory (Mood/Context)
+        aliases: []
+        typical_DVs: [state_match_benefit, context_switch_cost]
+        common_manipulations: [encoding_state, retrieval_state, state_match (same_vs_different)]
+        variant_tags: [mood_dependent, context_dependent]
+        design_flags: [state_manipulation]
+        qa_checks: [state_manipulation_validated]
+        keywords: [state_dependent, mood_dependent]
+      - name: What-Where-When Binding
+        aliases: []
+        typical_DVs: [binding_accuracy, what_where_when_integration]
+        common_manipulations: [feature_types, temporal_order, spatial_location]
+        variant_tags: [episodic_binding]
+        design_flags: [feature_integration]
+        qa_checks: [feature_independence_check]
+        keywords: [episodic_binding, what_where_when]
+
+  - id: sf_false_memory_interference
+    label: False Memory & Interference
+    description: Robust distortions and interference phenomena in episodic memory.
+    paradigms:
+      - name: DRM False Memory
+        aliases: [Deese–Roediger–McDermott]
+        typical_DVs: [critical_lure_false_alarm_rate, confidence_on_lures]
+        common_manipulations: [list_length, associative_strength, warning_instruction]
+        variant_tags: [verbal]
+        design_flags: []
+        qa_checks: [critical_lure_present]
+        keywords: [false_memory, DRM]
+      - name: Misinformation Effect
+        aliases: []
+        typical_DVs: [misinformation_acceptance_rate, source_misattribution_rate]
+        common_manipulations: [post_event_misinformation, delay_ms, suggestibility_cues]
+        variant_tags: []
+        design_flags: []
+        qa_checks: [time_lock_post_event]
+        keywords: [misinformation]
+      - name: Retrieval-Induced Forgetting (RIF)
+        aliases: [RP+/RP−/NRP]
+        typical_DVs: [rif_forgetting_index]
+        common_manipulations: [retrieval_practice_condition (RP_plus/RP_minus/NRP), category_cue, delay_ms]
+        variant_tags: [category_exemplar]
+        design_flags: [competition_based]
+        qa_checks: [baseline_control_NRP]
+        keywords: [RIF]
+      - name: Directed Forgetting
+        aliases: [Item-Method DF, List-Method DF]
+        typical_DVs: [df_cost_item, df_cost_list]
+        common_manipulations: [remember_forget_cues, list_switch, post_list_cue]
+        variant_tags: [item_method, list_method]
+        design_flags: [instructional_cues]
+        qa_checks: [post_cue_compliance]
+        keywords: [directed_forgetting]
+      - name: Imagination Inflation
+        aliases: []
+        typical_DVs: [imagination_increase_rate, false_recognition_rate]
+        common_manipulations: [imagination_count, delay_ms, imagination_vividness]
+        variant_tags: [imagination]
+        design_flags: [imagination_manipulation]
+        qa_checks: [baseline_control]
+        keywords: [imagination_inflation, false_memory]
+
+  - id: sf_prospective_memory
+    label: Prospective Memory (PM)
+    description: Remembering to perform an intended action in the future amidst ongoing tasks.
+    paradigms:
+      - name: Event-Based PM (Focal vs Non-Focal)
+        aliases: []
+        typical_DVs: [pm_hit_rate, pm_false_alarm_rate, ongoing_task_cost]
+        common_manipulations: [cue_type (focal/nonfocal), pm_load, retention_interval_ms, importance_incentive]
+        variant_tags: [focal, nonfocal]
+        design_flags: [embedded_in_ongoing_task]
+        qa_checks: [ongoing_task_performance_stable]
+        keywords: [PM_event]
+      - name: Time-Based PM
+        aliases: []
+        typical_DVs: [pm_hit_rate, clock_checks_count, ongoing_task_cost]
+        common_manipulations: [deadline_ms, clock_availability, load]
+        variant_tags: [time_based]
+        design_flags: [self_initiated_monitoring]
+        qa_checks: [time_window_defined]
+        keywords: [PM_time]
+
+  - id: sf_encoding_manipulations_transfer
+    label: Encoding Manipulations & Transfer
+    description: Manipulations at study that impact later memory; near/far transfer and consolidation.
+    paradigms:
+      - name: Levels of Processing (LoP)
+        aliases: []
+        typical_DVs: [final_test_accuracy, deep_minus_shallow]
+        common_manipulations: [deep_vs_shallow, orienting_task_type, retention_interval_ms]
+        variant_tags: [semantic, phonemic, orthographic]
+        design_flags: [incidental_vs_intentional]
+        qa_checks: []
+        keywords: [LoP]
+      - name: Generation Effect (Generate vs Read)
+        aliases: []
+        typical_DVs: [generation_benefit]
+        common_manipulations: [generate_vs_read, constraint_strength]
+        variant_tags: [anagram, stem_completion]
+        design_flags: []
+        qa_checks: []
+        keywords: [generation]
+      - name: Spacing Effect (Massed vs Distributed)
+        aliases: []
+        typical_DVs: [spacing_benefit, retention_gain]
+        common_manipulations: [lag_spacing, schedule, retention_interval_ms]
+        variant_tags: [uniform, expanding]
+        design_flags: [schedule_control]
+        qa_checks: []
+        keywords: [spacing]
+      - name: Testing Effect (Retrieval Practice)
+        aliases: [Test-Enhanced Learning]
+        typical_DVs: [retrieval_benefit, long_delay_retention]
+        common_manipulations: [practice_test_vs_restudy, schedule, feedback]
+        variant_tags: []
+        design_flags: [retrieval_practice]
+        qa_checks: [no_leak_between_lists]
+        keywords: [testing_effect]
+      - name: Enactment / Imagery Encoding
+        aliases: [Subject-Performed Tasks]
+        typical_DVs: [enactment_benefit, imagery_benefit]
+        common_manipulations: [enact_vs_read, imagery_instruction]
+        variant_tags: [action, imagery]
+        design_flags: []
+        qa_checks: []
+        keywords: [enactment, imagery]
+      - name: Consolidation (Sleep/Wake)
+        aliases: []
+        typical_DVs: [sleep_benefit, forgetting_rate]
+        common_manipulations: [sleep_stage, nap_vs_full_night, retention_interval_ms]
+        variant_tags: [sleep, wake]
+        design_flags: [polysomnography_optional]
+        qa_checks: [clock_time_control]
+        keywords: [consolidation, sleep]
+      - name: Reconsolidation (Memory Updating)
+        aliases: []
+        typical_DVs: [reconsolidation_effect, memory_update_score]
+        common_manipulations: [retrieval_trigger, update_manipulation, delay_ms]
+        variant_tags: [reconsolidation]
+        design_flags: [retrieval_trigger_required]
+        qa_checks: [reconsolidation_window_control]
+        keywords: [reconsolidation, memory_updating]
+      - name: Emotional Memory (Encoding/Retrieval)
+        aliases: []
+        typical_DVs: [emotional_enhancement, valence_effect, arousal_effect]
+        common_manipulations: [item_valence, arousal_level, retention_interval_ms]
+        variant_tags: [emotional, valence, arousal]
+        design_flags: [emotional_manipulation]
+        qa_checks: [valence_arousal_balance]
+        keywords: [emotional_memory]
+      - name: Memory for Scenes vs Objects
+        aliases: []
+        typical_DVs: [scene_advantage, object_scene_dissociation]
+        common_manipulations: [scene_vs_object, context_richness, retention_interval_ms]
+        variant_tags: [scene, object]
+        design_flags: [scene_object_contrast]
+        qa_checks: [scene_object_balance]
+        keywords: [scene_memory, object_memory]
+
+  - id: sf_metamemory
+    label: Metamemory (JOL/FOK/Calibration)
+    description: Monitoring and control of memory; subjective predictions and postdictions.
+    paradigms:
+      - name: Judgments of Learning (JOL)
+        aliases: []
+        typical_DVs: [calibration_bias, resolution_gamma, metacognitive_sensitivity]
+        common_manipulations: [JOL_timing (immediate/delayed), cue_type, feedback]
+        variant_tags: [immediate, delayed]
+        design_flags: [prediction]
+        qa_checks: [resolution_reported]
+        keywords: [JOL]
+      - name: Feeling of Knowing (FOK)
+        aliases: []
+        typical_DVs: [calibration_bias, resolution_gamma]
+        common_manipulations: [cue_strength, delay_ms]
+        variant_tags: []
+        design_flags: [tip_of_the_tongue_optional]
+        qa_checks: []
+        keywords: [FOK]
+      - name: Tip-of-the-Tongue (TOT) States
+        aliases: []
+        typical_DVs: [tot_incidence_rate, tot_resolution_rate, partial_information_accuracy]
+        common_manipulations: [cue_strength, word_frequency, delay_ms]
+        variant_tags: [tot]
+        design_flags: [tot_self_report]
+        qa_checks: [tot_criteria_validated]
+        keywords: [tip_of_the_tongue, tot]
+      - name: Confidence / Calibration
+        aliases: []
+        typical_DVs: [calibration_bias, auroc, meta_dprime]
+        common_manipulations: [confidence_scale, feedback]
+        variant_tags: [confidence]
+        design_flags: [postdiction]
+        qa_checks: [overconfidence_flag]
+        keywords: [confidence, calibration]
+
+  - id: sf_autobiographical_memory
+    label: Autobiographical Memory (Optional)
+    description: Personal event memory; internal/external detail scoring.
+    paradigms:
+      - name: Autobiographical Cue-Word Method
+        aliases: []
+        typical_DVs: [internal_details_count, external_details_count, vividness_rating]
+        common_manipulations: [time_period_bin, cue_valence]
+        variant_tags: []
+        design_flags: [AM_scoring_scheme]
+        qa_checks: [rater_reliability]
+        keywords: [autobiographical_memory]
+      - name: Autobiographical Interview (AI)
+        aliases: []
+        typical_DVs: [internal_details_count, external_details_count]
+        common_manipulations: [free_recall_vs_specific, probe_depth]
+        variant_tags: []
+        design_flags: []
+        qa_checks: [double_coding]
+        keywords: [AI]
+
+  - id: sf_temporal_order_memory
+    label: Temporal Order Memory
+    description: Memory for the order/sequence of events and temporal distances between events.
+    paradigms:
+      - name: Temporal Order Judgment (Memory)
+        aliases: []
+        typical_DVs: [order_accuracy, temporal_distance_estimation, recency_judgment]
+        common_manipulations: [list_length, temporal_lag_items, retention_interval_ms]
+        variant_tags: [temporal_order]
+        design_flags: [order_memory]
+        qa_checks: [order_balance]
+        keywords: [temporal_order_memory]
+      - name: Recency Judgment
+        aliases: []
+        typical_DVs: [recency_accuracy, temporal_distance_error]
+        common_manipulations: [list_length, retention_interval_ms, temporal_lag]
+        variant_tags: [recency]
+        design_flags: [recency_judgment]
+        qa_checks: [recency_balance]
+        keywords: [recency_judgment]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs optional)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Free Recall
+    - Cued Recall
+    - Category-Cued Recall
+    - Part-Set Cueing
+    - Serial Recall
+    - Old/New Recognition
+    - 2AFC Recognition
+    - Remember/Know
+    - Remember/Know with Confidence
+    - List Length Effects
+    - Source Memory
+    - State-Dependent Memory
+    - What-Where-When Binding
+    - Paired-Associate Learning
+    - Associative Recognition
+    - DRM False Memory
+    - Misinformation
+    - Imagination Inflation
+    - Retrieval-Induced Forgetting
+    - Directed Forgetting
+    - Prospective Memory
+    - Levels of Processing
+    - Generation Effect
+    - Spacing Effect
+    - Testing Effect
+    - Reconsolidation
+    - Emotional Memory
+    - Memory for Scenes vs Objects
+    - Judgments of Learning
+    - Feeling of Knowing
+    - Tip-of-the-Tongue States
+    - Temporal Order Memory
+    - Recency Judgment
+    - Autobiographical Memory
+  cogpo_candidate_labels:
+    - Free Recall
+    - Cued Recall
+    - Category-Cued Recall
+    - Recognition Memory
+    - Source Memory
+    - State-Dependent Memory
+    - Paired-Associate Learning
+    - Prospective Memory
+    - Directed Forgetting
+    - Retrieval-Induced Forgetting
+    - False Memory
+    - Emotional Memory
+    - Metamemory (JOL/FOK/TOT)
+    - Temporal Order Memory
+constructs:
+  primary: [Encoding, Retrieval, Recollection, Familiarity, Associative Binding, Context Memory, Prospective Memory, Temporal Order Memory]
+  secondary: [Interference, False Memory, Consolidation, Reconsolidation, Metacognition, Emotional Enhancement]
+uri_brainmap: []
+uri_cogpo: []
+status: plausible
+provenance:
+  - source: task_families_master_20.yaml + LTM expansion
+    fields: [subfamilies, paradigms, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns:
+    - onset
+    - duration
+    - trial_type           # study, test, filler, distractor
+    - list_id
+    - item_id
+    - response
+    - correct
+    - rt
+  per_subfamily:
+    sf_free_cued_serial_recall:
+      events_columns: [onset, duration, trial_type, serial_position, list_length, retention_interval_ms, cue_type, category_type, cue_set_size, response, correct]
+      hed_examples:
+        - "Memory, Free-recall, List-learning"
+        - "Memory, Cued-recall"
+        - "Memory, Category-cued-recall"
+        - "Memory, Part-set-cueing"
+    sf_item_recognition:
+      events_columns: [onset, duration, trial_type, probe_type (old/new), lure_type, confidence, rk_judgment, list_length, item_strength, response, correct, rt]
+      hed_examples:
+        - "Memory, Recognition, Old-new"
+        - "Memory, Recognition, Remember-know"
+        - "Memory, Recognition, Remember-know-confidence"
+        - "Memory, Recognition, List-length"
+    sf_associative_memory:
+      events_columns: [onset, duration, trial_type, pair_type (intact/rearranged), relatedness, response, correct, rt]
+      hed_examples:
+        - "Memory, Associative-recognition, Intact"
+    sf_source_context_memory:
+      events_columns: [onset, duration, trial_type, source_query, source_response, context_match, encoding_state, retrieval_state, state_match, feature_types, temporal_order, spatial_location, response, correct, rt]
+      hed_examples:
+        - "Memory, Source-memory, Context"
+        - "Memory, State-dependent, Mood"
+        - "Memory, Episodic-binding, What-where-when"
+    sf_false_memory_interference:
+      events_columns: [onset, duration, trial_type, condition, critical_lure_flag, misinformation_flag, imagination_count, imagination_vividness, rp_condition, df_method, response, correct, rt]
+      hed_examples:
+        - "Memory, False-memory, DRM"
+        - "Memory, False-memory, Imagination-inflation"
+        - "Memory, Interference, Retrieval-induced-forgetting"
+    sf_prospective_memory:
+      events_columns: [onset, duration, trial_type, pm_cue_present, pm_hit, ongoing_task_type, ongoing_task_rt, response]
+      hed_examples:
+        - "Memory, Prospective, Event-based"
+        - "Memory, Prospective, Time-based"
+    sf_encoding_manipulations_transfer:
+      events_columns: [onset, duration, trial_type, lop_level, generate_flag, spacing_lag, practice_test_flag, enactment_flag, imagery_flag, sleep_condition, retrieval_trigger, update_manipulation, item_valence, arousal_level, scene_vs_object, response]
+      hed_examples:
+        - "Memory, Encoding, Levels-of-processing"
+        - "Memory, Encoding, Testing-effect"
+        - "Memory, Encoding, Reconsolidation"
+        - "Memory, Encoding, Emotional"
+        - "Memory, Encoding, Scenes-vs-objects"
+    sf_metamemory:
+      events_columns: [onset, duration, trial_type, jol_value, fok_value, tot_flag, tot_resolution, partial_information, confidence, feedback_flag, response]
+      hed_examples:
+        - "Memory, Metamemory, JOL"
+        - "Memory, Metamemory, Tip-of-the-tongue"
+    sf_autobiographical_memory:
+      events_columns: [onset, duration, trial_type, time_period_bin, internal_details_count, external_details_count, vividness_rating]
+      hed_examples:
+        - "Memory, Autobiographical, Cue-word"
+    sf_temporal_order_memory:
+      events_columns: [onset, duration, trial_type, temporal_lag_items, order_query, temporal_distance_estimation, recency_judgment, response, correct]
+      hed_examples:
+        - "Memory, Temporal-order, Judgment"
+        - "Memory, Recency-judgment"

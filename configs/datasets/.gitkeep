@@ -1,0 +1,4 @@
+# Placeholder: configs/datasets is intentionally empty in this OSS release.
+# Per the v0.1.0 plan, lab-specific/dataset-tied configs are not bundled
+# in the public repo. Populate this directory with your own files or
+# bind-mount a directory at deployment time.

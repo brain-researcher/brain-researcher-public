@@ -1,0 +1,282 @@
+# Intent taxonomy for factorized tool search (method → software → version).
+#
+# impl_intents: intents that describe implementation details rather than user-facing methods.
+# priority: ordered list of preferred method intents (highest priority first).
+#
+# This file is read by BR-KG tool ingestion and structured tool search.
+# It is intentionally small and stable; add intents only when they are used
+# consistently across software backends (AFNI/FSL/SPM/etc.).
+
+impl_intents:
+  - generic_container_op
+  - python_op
+  - mcp_tool
+  - wrapper_tool
+  - service_tool
+
+# Canonicalize tool-provided intents into a stable, cross-software method set.
+# These aliases should map *to* entries that appear in `priority` whenever possible.
+aliases:
+  # Align with configs/catalog/intents.yaml intent ids (tool-provided intents may use these).
+  fmri_preprocessing: preprocessing
+  fmriprep_preprocessing: preprocessing
+  cpac_preprocessing: preprocessing
+  fmri_motion_correction: motion_correction_fmri
+  fmri_temporal_smoothing: spatial_smooth
+  fmri_ica_denoising: ica_denoising
+  fsl_fix_denoising: ica_denoising
+  roi_timeseries_fmri: roi_statistics_extraction
+  connectivity_matrix_fmri: connectivity_analysis
+  registration_linear_mri: linear_registration
+  registration_nonlinear_mri: nonlinear_registration
+  fitlins_glm: glm_first_level_fmri
+  glm_group_level_fmri: glm_second_level_fmri
+  meta_analysis_cbma: meta_analysis
+  mriqc_single: quality_control
+  mriqc_group: quality_control
+  qsiprep_preprocessing: diffusion_modeling
+  qsiprep_reconstruction: dmri_tractography
+  qsiprep_qc: quality_control
+  fsl_palm_permutation: permutation_testing
+  fsl_melodic_ica: ica_decomposition
+  fsl_dual_regression: ica_denoising
+  nilearn_ica: ica_decomposition
+  fmri_visualization: visualization
+
+  # GLM (first-level)
+  fmri_glm_analysis: glm_first_level_fmri
+  glm_fmri: glm_first_level_fmri
+  first_level_glm: glm_first_level_fmri
+  firstlevel_glm: glm_first_level_fmri
+  first_level_model: glm_first_level_fmri
+  glm_first_level: glm_first_level_fmri
+  task_fmri_glm: glm_first_level_fmri
+  glm_task_fmri: glm_first_level_fmri
+  design_matrix: glm_first_level_fmri
+  design_matrix_generation: glm_first_level_fmri
+  model_specification: glm_first_level_fmri
+  film_gls: glm_first_level_fmri
+  filmgls: glm_first_level_fmri
+
+  # GLM (second-level)
+  second_level_glm: glm_second_level_fmri
+  group_glm: glm_second_level_fmri
+  glm_second_level: glm_second_level_fmri
+  group_level_glm: glm_second_level_fmri
+
+  # Preprocessing (common synonyms)
+  brain_extraction: skull_strip_mri
+  skullstrip: skull_strip_mri
+  brain_mask: skull_strip_mri
+  motion_correction: motion_correction_fmri
+  realignment: motion_correction_fmri
+  slice_timing_correction: slice_timing
+  smoothing: spatial_smooth
+
+  # Registration
+  registration_linear: linear_registration
+  linear_registration_to_mni: linear_registration
+  registration_nonlinear: nonlinear_registration
+  nonlinear_registration_to_mni: nonlinear_registration
+  registration_to_template: registration_to_mni
+  registration_linear_mri: linear_registration
+  registration_nonlinear_mri: nonlinear_registration
+
+  # Connectivity
+  resting_state_connectivity: connectivity_analysis
+  functional_connectivity: connectivity_analysis
+  correlation_connectivity: connectivity_analysis
+  rsfc: connectivity_analysis
+  connectivity: connectivity_analysis
+
+  # ROI / signal extraction
+  roi_extraction: roi_statistics_extraction
+  roi_timeseries: roi_statistics_extraction
+  timeseries_extraction: roi_statistics_extraction
+
+  # dMRI
+  dmri_preprocessing: diffusion_modeling
+  dmri_model_fit: diffusion_modeling
+  diffusion: diffusion_modeling
+
+  # Knowledge/literature
+  knowledge_graph: knowledge_graph_query
+  data_management: data_access
+  statistical_analysis: statistical_inference
+  afni_clustsim_correction: multiple_comparison_correction
+
+# Map implementation "op keys" (normalized operation names) to canonical methods.
+# This is the main escape hatch for tools that are missing curated intents but have
+# informative, stable operation names (e.g. FSL film_gls).
+op_key_aliases:
+  # BIDS apps (pipeline-level) - promote from data_access bucket to meaningful methods.
+  fmriprep: preprocessing
+  mriqc: quality_control
+  qsiprep: diffusion_modeling
+  xcpd: connectivity_analysis
+
+  # Data access / validation utilities (promote to specific methods where possible).
+  validate: quality_control
+  graphquery: knowledge_graph_query
+
+  # FSL GLM
+  filmgls: glm_first_level_fmri
+  film_gls: glm_first_level_fmri
+  film-gls: glm_first_level_fmri
+  filmcifti: glm_first_level_fmri
+  film_cifti: glm_first_level_fmri
+  flameo: glm_second_level_fmri
+  feat: glm_first_level_fmri
+  featmodel: glm_first_level_fmri
+  feat_model: glm_first_level_fmri
+  cutoffcalc: glm_first_level_fmri
+  design_ttest2: glm_second_level_fmri
+
+  # FSL segmentation / anatomical utilities
+  fast: segmentation
+  first: segmentation
+  bianca: segmentation
+
+  # FSL registration / fieldmap helpers
+  epireg: linear_registration
+  fslreg: registration
+  fslpreparefieldmap: preprocessing
+
+  # FSL wrappers / misc (still useful for method bucketing)
+  fslanat: preprocessing
+  fsldeface: quality_control
+  fslents: ica_decomposition
+  fslregfilt: ica_denoising
+  fslgen3d: visualization
+
+  # FEAT post-processing (treat as ROI/stat extraction rather than model fitting)
+  featquery: roi_statistics_extraction
+  feat_query: roi_statistics_extraction
+
+  # Registration application (apply an existing transform)
+  featregapply: registration_apply
+  feat_regapply: registration_apply
+
+  # Common preprocessing
+  bet: skull_strip_mri
+  flirt: linear_registration
+  fnirt: nonlinear_registration
+  applywarp: registration_apply
+  mcflirt: motion_correction_fmri
+  slicetimer: slice_timing
+  susan: spatial_smooth
+  smooth: spatial_smooth
+  applyxfm4d: registration_apply
+  fsl_sbca: seed_based_connectivity
+  fslmeants: roi_statistics_extraction
+  easythresh: statistical_inference
+  fslanimate: visualization
+
+  # AFNI GLM / preprocessing
+  "3ddeconvolve": glm_first_level_fmri
+  "3dremlfit": glm_first_level_fmri
+  "3dmema": glm_second_level_fmri
+  "3dttest": glm_second_level_fmri
+  "3dmvm": glm_second_level_fmri
+  "3dlme": glm_second_level_fmri
+  "3dlmer": glm_second_level_fmri
+  "3dvolreg": motion_correction_fmri
+  "3dtshift": slice_timing
+  "3dclustsim": multiple_comparison_correction
+  "3dallineate": linear_registration
+  "3dautomask": skull_strip_mri
+  "3ddespike": preprocessing
+  "3dbandpass": preprocessing
+  "3dresample": preprocessing
+  whirlgif: visualization
+
+  # SPM GLM
+  fmrispec: glm_first_level_fmri
+  fmriest: glm_first_level_fmri
+
+  # Nilearn / FitLins GLM
+  firstlevelmodel: glm_first_level_fmri
+  fitlins: glm_first_level_fmri
+
+  # Inference
+  randomise: permutation_testing
+
+  # ANTs (common)
+  antsbrainextractionsh: skull_strip_mri
+  atropos: segmentation
+  antsregistration: nonlinear_registration
+  antsapplytransforms: registration_apply
+
+  # FSL ICA / denoising
+  melodic: ica_decomposition
+  dualregression: ica_denoising
+  fslfix: ica_denoising
+  fix: ica_denoising
+
+  # Workbench (surface ops)
+  wbcommand: surface_ops
+
+  # Neuropixels / IBL
+  kilosort: spike_sorting
+  deeplabcut: pose_tracking
+  lightningpose: pose_tracking
+  lightning_pose: pose_tracking
+  spikebehavioralignment: behavior_alignment
+  spike_behavior_alignment: behavior_alignment
+  neuropixelsworkflow: pipeline_run
+  neuropixels_workflow: pipeline_run
+
+  # FreeSurfer (cortical reconstruction)
+  reconall: cortical_reconstruction
+
+# Broad prefix/pattern rules for long-tail utilities.
+# These are only applied when a tool has no method intents yet.
+op_key_prefix_aliases:
+  # AFNI command families (utility-heavy). Exposure is still governed separately in
+  # configs/tool_exposure_policy.yaml to avoid polluting default tool selection.
+  "1d": timeseries_utilities
+  "2d": image_utilities
+
+op_key_patterns:
+  # AFNI converters (keep in data_access bucket; exposure policy denies data_access by default).
+  - pattern: "to(nifti|analyze|raw|niml|afni|3d)$"
+    method: data_access
+
+priority:
+  - glm_first_level_fmri
+  - glm_second_level_fmri
+  - registration_to_mni
+  - nonlinear_registration
+  - linear_registration
+  - registration_apply
+  - registration
+  - skull_strip_mri
+  - motion_correction_fmri
+  - slice_timing
+  - spatial_smooth
+  - preprocessing
+  - spike_sorting
+  - pose_tracking
+  - behavior_alignment
+  - roi_statistics_extraction
+  - connectivity_analysis
+  - seed_based_connectivity
+  - diffusion_modeling
+  - dmri_tractography
+  - cortical_reconstruction
+  - segmentation
+  - surface_ops
+  - surface
+  - ica_denoising
+  - ica_decomposition
+  - permutation_testing
+  - multiple_comparison_correction
+  - statistical_inference
+  - quality_control
+  - visualization
+  - data_access
+  - pipeline_search
+  - pipeline_run
+  - meta_analysis
+  - literature_search
+  - knowledge_graph_query

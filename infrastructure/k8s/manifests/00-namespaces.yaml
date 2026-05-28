@@ -1,0 +1,38 @@
+# Namespaces for Brain Researcher platform
+# Provides logical separation and security boundaries
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: brain-researcher-core
+  labels:
+    name: brain-researcher-core
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: core
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    description: "Core services namespace for Brain Researcher platform"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: brain-researcher-data
+  labels:
+    name: brain-researcher-data
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: data
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    description: "Data services namespace for Brain Researcher platform"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: brain-researcher-monitoring
+  labels:
+    name: brain-researcher-monitoring
+    app.kubernetes.io/name: brain-researcher
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: brain-researcher-platform
+  annotations:
+    description: "Monitoring and observability namespace for Brain Researcher platform"

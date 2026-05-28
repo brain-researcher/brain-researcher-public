@@ -1,0 +1,251 @@
+name: brain_researcher
+channels:
+  - conda-forge
+  - defaults
+  - bioconda
+dependencies:
+  # Python version
+  - python=3.11
+  
+  # Core scientific packages (conda-managed for better performance)
+  - numpy=1.26.4
+  - scipy=1.11.4
+  - scikit-learn=1.3.2
+  - pandas=2.2.0
+  - matplotlib=3.8.2
+  - seaborn=0.13.0
+  - statsmodels=0.14.1
+  
+  # Jupyter ecosystem
+  - jupyter
+  - notebook
+  - ipykernel
+  - jupyterlab
+  
+  # Build tools
+  - pip
+  - setuptools
+  - wheel
+  
+  # System libraries
+  - gcc
+  - gxx
+  - make
+  
+  # Pip packages
+  - pip:
+      # Web frameworks
+      - Flask>=3.1.0
+      - Flask-CORS>=4.0.0
+      - fastapi>=0.115.12
+      - uvicorn[standard]>=0.34.0
+      - gunicorn>=23.0.0
+      - dash>=2.14.0
+      - dash-cytoscape>=0.3.0
+      
+      # LangChain ecosystem
+      - langchain>=0.1.0
+      - langchain-core>=0.1.0
+      - langgraph>=0.3.18
+      - langchain-openai>=0.0.5
+      - langchain-anthropic>=0.0.1
+      - langchain-community>=0.0.1
+      - langchain-google-genai
+      - langchain_ollama
+      - openneuro-py>=2026.3.0
+      
+      # AI/ML libraries
+      - openai
+      - transformers
+      - sentencepiece
+      - sentence-transformers>=2.2.0
+      - faiss-cpu>=1.7.4
+      - xgboost>=2.1.0
+      - lightgbm>=4.5.0
+      - torch-geometric>=2.6.0
+      - pytorch-tabnet>=4.1.0
+      
+      # MCP tools
+      - mcp
+      - tooluniverse
+      - sequential-thinking-mcp>=0.1.0
+      
+      # Database and storage
+      - neo4j>=5.28.0
+      - py2neo>=2021.2.4
+      - psycopg2-binary>=2.9.10
+      - redis>=6.2.0
+      - fakeredis>=2.19.0
+      - SQLAlchemy==1.4.54
+      - SQLAlchemy-JSONField>=1.0.2
+      - SQLAlchemy-Utils>=0.41.2
+      - alembic>=1.16.0
+      - aiosqlite>=0.21.0
+      
+      # Neuroimaging packages
+      - nibabel>=5.3.2
+      - nilearn>=0.11.1
+      - nimare>=0.5.0
+      - neuromaps>=0.0.5
+      - templateflow>=24.1.0
+      - cognitiveatlas>=0.1.11
+      - PyMARE>=0.0.10
+      - pyneurovault>=0.1.3
+      - "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git"
+      
+      # Apache Airflow (for workflow orchestration)
+      - apache-airflow>=3.0.1
+      - apache-airflow-providers-common-sql>=1.27.1
+      - apache-airflow-providers-smtp>=2.1.0
+      - apache-airflow-providers-standard>=1.2.0
+      
+      # PDF and document processing
+      - weasyprint>=65.1
+      - xhtml2pdf>=0.2.17
+      - reportlab>=4.4.1
+      - fpdf2>=2.8.3
+      - PyPDF2>=3.0.0
+      - pillow>=11.2.0
+      
+      # Data processing and validation
+      - pydantic>=2.11.0
+      - pydantic-settings>=2.0.0
+      - pydantic_core>=2.33.0
+      - python-dotenv>=1.1.0
+      - python-multipart>=0.0.20
+      - typing-extensions>=4.14.0
+      - typing-inspection>=0.4.1
+      
+      # HTTP and networking
+      - requests>=2.32.0
+      - httpx>=0.28.0
+      - aiohttp>=3.9.0
+      - httpcore>=1.0.9
+      - urllib3>=2.4.0
+      - certifi>=2025.0.0
+      - charset-normalizer>=3.4.0
+      
+      # Visualization
+      - plotly>=6.1.0
+      - ridgeplot>=0.3.2
+      - networkx>=3.4.0
+      
+      # Search and text processing
+      - rapidfuzz>=3.0.0
+      - fuzzywuzzy>=0.18.0
+      - beautifulsoup4>=4.13.0
+      - lxml>=5.4.0
+      - html5lib>=1.1
+      - markdown>=3.8
+      - markdown-it-py>=3.0.0
+      
+      # SPARQL and RDF
+      - SPARQLWrapper>=2.0.0
+      - rdflib>=7.1.0
+      
+      # Async and concurrency
+      - aiofiles>=23.0.0
+      - anyio>=4.9.0
+      - asyncio
+      - aiologic>=0.14.0
+      
+      # CLI tools: keep aligned with pyproject.toml and openneuro-py.
+      - click>=8.2.1
+      - typer>=0.24.0
+      - rich>=14.0.0
+      - rich-argparse>=1.7.0
+      - structlog>=25.0.0
+      - colorlog>=6.9.0
+      - tabulate>=0.9.0
+      - tqdm>=4.67.0
+      
+      # Biology and chemistry
+      - biopython>=1.85
+      
+      # Testing
+      - pytest>=8.4.0
+      - pytest-asyncio>=0.21.0
+      - pytest-mock>=3.10.0
+      - pytest-cov>=6.1.0
+      - pytest-timeout>=2.1.0
+      - pytest-xdist>=3.3.0
+      - hypothesis>=6.0.0
+      - responses>=0.23.0
+      - coverage>=7.8.0
+      
+      # Development tools
+      - black>=23.0.0
+      - isort>=5.12.0
+      - flake8>=6.0.0
+      - mypy>=1.5.0
+      - pre-commit>=3.4.0
+      - ruff>=0.1.0
+      
+      # Documentation
+      - mkdocs>=1.5.0
+      - mkdocs-material>=9.5.0
+      - mkdocstrings[python]>=0.24.0
+      - mkdocs-autorefs>=0.5.0
+      - mkdocs-git-revision-date-localized-plugin>=1.2.0
+      - pymdown-extensions>=10.0
+      - mike>=2.0.0
+      
+      # System monitoring
+      - psutil>=7.0.0
+      - supervisor>=4.2.1
+      
+      # Date and time
+      - pendulum>=3.1.0
+      - python-dateutil>=2.9.0
+      - pytz>=2025.2
+      - tzdata>=2025.2
+      - tzlocal>=5.3.0
+      
+      # Additional utilities
+      - pyyaml>=6.0.2
+      - jsonschema>=4.24.0
+      - jsonschema-specifications>=2025.0.0
+      - joblib>=1.5.0
+      - dill>=0.4.0
+      - wirerope>=1.0.0
+      - wrapt>=1.17.0
+      - more-itertools>=10.7.0
+      - six>=1.17.0
+      - attrs>=25.3.0
+      - packaging>=25.0
+      - pathspec>=0.12.0
+      - distro>=1.7.0
+      
+      # Workflow and scheduling
+      - croniter>=6.0.0
+      - cron-descriptor>=1.4.0
+      
+      # Email
+      - email_validator>=2.2.0
+      
+      # Compression
+      - Brotli>=1.1.0
+      - zopfli>=0.2.3
+      
+      # Graphics and fonts
+      - fonttools>=4.58.0
+      - contourpy>=1.3.0
+      - kiwisolver>=1.4.8
+      - cycler>=0.12.0
+      
+      # Additional web dependencies
+      - asgiref>=3.8.0
+      - blinker>=1.9.0
+      - itsdangerous>=2.2.0
+      - Werkzeug>=3.1.0
+      - Jinja2>=3.1.6
+      - MarkupSafe>=3.0.2
+      
+      # Project-specific
+      - gradio  # For UI demos
+      - interchange>=2021.0.4
+      - sparse>=0.17.0
+      - cadwyn>=5.4.0  # API versioning
+      
+      # Install the project itself in editable mode
+      - -e .[all]

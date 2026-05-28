@@ -1,0 +1,4114 @@
+version: vFinal
+
+# ---------------------------------------------------------------------------
+# Workflow Catalog (vFinal)
+#
+# Purpose:
+# - Declare high-level workflows as first-class entities for routing
+# - Each workflow is an orchestration of atomic tools (plus presets/guards)
+#
+# Notes:
+# - This file is declarative; it does not execute anything by itself.
+# - Implementations typically live under brain_researcher/services/workflows/
+#   and may also be exposed as callable tools.
+# ---------------------------------------------------------------------------
+
+workflows:
+  # Tier 1: Data Preparation & QC
+  - id: workflow_preprocessing_qc
+    stage: preprocessing
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    recipe_family: preprocessing_qc
+    origin: core32
+    modalities: ["fmri", "smri"]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_preprocessing_qc_ds000114_smoke.py
+    artifact_contract:
+      required_outputs:
+        - qc_table.csv
+        - qc_outliers.csv
+        - qc_summary.json
+        - index.html
+      optional_outputs:
+        - fmriprep_dir
+        - mriqc_dir
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_preprocessing_qc_ds000114_smoke.py
+      execute_gate_script: scripts/workflows/run_external_repo_minimal_execute_gate.py
+      execute_gate_test: tests/integration/realdata/test_workflow_external_repo_minimal_execute_gate.py
+    runbook: docs/runbooks/workflow_preprocessing_qc.md
+    params:
+      schema:
+        type: object
+        required: [bids_dir, output_dir]
+        properties:
+          bids_dir:
+            type: string
+            description: Input BIDS dataset root.
+          output_dir:
+            type: string
+            description: Root directory for fMRIPrep, MRIQC, and QC summary outputs.
+          qc_tsv:
+            type: string
+            description: Optional precomputed QC TSV. If omitted, get_qc_table will try MRIQC outputs.
+          participant_label:
+            type: array
+            items:
+              type: string
+          work_dir:
+            type: string
+          fmriprep_work_dir:
+            type: string
+          mriqc_work_dir:
+            type: string
+          fs_license_file:
+            type: string
+          output_spaces:
+            type: array
+            items:
+              type: string
+          analysis_level:
+            type: string
+          modalities:
+            type: array
+            items:
+              type: string
+          modality:
+            type: string
+          bids_filter_file:
+            type: string
+          n_cpus:
+            type: integer
+          omp_nthreads:
+            type: integer
+          mem_mb:
+            type: integer
+          n_procs:
+            type: integer
+          mem_gb:
+            type: number
+          extra_args:
+            type: array
+            items:
+              type: string
+          fmriprep_extra_args:
+            type: array
+            items:
+              type: string
+          mriqc_extra_args:
+            type: array
+            items:
+              type: string
+          skip_bids_validation:
+            type: boolean
+          outlier_metric:
+            type: string
+          outlier_z:
+            type: number
+          dashboard_title:
+            type: string
+          dry_run:
+            type: boolean
+            description: Return preview commands from fMRIPrep/MRIQC instead of executing them.
+      defaults:
+        analysis_level: participant
+        modalities: [bold]
+        modality: bold
+        skip_bids_validation: false
+        outlier_metric: fd_mean
+        outlier_z: 3.0
+        dashboard_title: QC Summary
+        dry_run: true
+    impl: "workflow: validate_bids_structure -> run_bids_app(fmriprep) -> run_bids_app(mriqc) -> get_qc_table -> detect_outliers -> qc_aggregator -> dashboard_generator"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: validate
+          tool: validate_bids_structure
+          params:
+            bids_dir: "${inputs.bids_dir}"
+            strict: false
+        - id: fmriprep
+          tool: run_bids_app
+          params:
+            app: "fmriprep"
+            bids_dir: "${inputs.bids_dir}"
+            output_dir: "${inputs.output_dir}/fmriprep"
+            participant_label: "${inputs.participant_label}"
+            work_dir: "${inputs.work_dir}"
+            fs_license_file: "${inputs.fs_license_file}"
+            output_spaces: "${inputs.output_spaces}"
+            bids_filter_file: "${inputs.bids_filter_file}"
+            n_cpus: "${inputs.n_cpus}"
+            omp_nthreads: "${inputs.omp_nthreads}"
+            mem_mb: "${inputs.mem_mb}"
+            skip_bids_validation: "${inputs.skip_bids_validation:-false}"
+            dry_run: "${inputs.dry_run:-true}"
+            extra_args: "${inputs.extra_args}"
+        - id: mriqc
+          tool: run_bids_app
+          params:
+            app: "mriqc"
+            bids_dir: "${inputs.bids_dir}"
+            output_dir: "${inputs.output_dir}/mriqc"
+            analysis_level: "${inputs.analysis_level:-participant}"
+            participant_label: "${inputs.participant_label}"
+            modalities: "${inputs.modalities}"
+            work_dir: "${inputs.work_dir}"
+            bids_filter_file: "${inputs.bids_filter_file}"
+            n_procs: "${inputs.n_procs}"
+            mem_gb: "${inputs.mem_gb}"
+            dry_run: "${inputs.dry_run:-true}"
+            extra_args: "${inputs.extra_args}"
+        - id: qc_table
+          tool: get_qc_table
+          params:
+            qc_tsv: "${inputs.qc_tsv}"
+            mriqc_dir: "${inputs.output_dir}/mriqc"
+            modality: "${inputs.modality:-bold}"
+            output_file: "${inputs.output_dir}/qc/qc_table.csv"
+        - id: outliers
+          tool: detect_outliers
+          params:
+            qc_table: "${steps.qc_table.data.outputs.qc_table}"
+            metric: "${inputs.outlier_metric:-fd_mean}"
+            z_threshold: "${inputs.outlier_z:-3.0}"
+            output_file: "${inputs.output_dir}/qc/qc_outliers.csv"
+        - id: aggregate
+          tool: qc_aggregator
+          params:
+            qc_table: "${steps.outliers.data.outputs.outliers_table}"
+            output_file: "${inputs.output_dir}/qc/qc_summary.json"
+        - id: dashboard
+          tool: dashboard_generator
+          params:
+            qc_table: "${steps.outliers.data.outputs.outliers_table}"
+            output_html: "${inputs.output_dir}/qc/index.html"
+            title: "${inputs.dashboard_title:-QC Summary}"
+
+  - id: workflow_realtime_twophoton_closed_loop
+    stage: acquisition
+    cost_tier: moderate
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: realtime_twophoton
+    origin: core32
+    modalities: ["optical"]
+    example_dataset:
+      dataset_id: synthetic_twophoton_stream
+      source: synthetic
+      smoke_test: tests/integration/realdata/test_workflow_realtime_twophoton_closed_loop_smoke.py
+    artifact_contract:
+      required_outputs:
+        - summary.json
+        - motion.jsonl
+        - decoder.jsonl
+        - controller.jsonl
+        - trace_df_f.npy
+      optional_outputs:
+        - registered_frames.npy
+        - timing.jsonl
+    runbook: docs/runbooks/workflow_realtime_twophoton_closed_loop.md
+    params:
+      schema:
+        type: object
+        required: [reference_template, roi_manifest, decoder_path, output_dir]
+        properties:
+          data_source:
+            type: string
+            enum: [raw_socket, file_replay, simulator]
+          input_file:
+            type: string
+          mode:
+            type: string
+            enum: [monitoring, shadow, closed_loop]
+          reference_template:
+            type: string
+          roi_manifest:
+            type: string
+          decoder_path:
+            type: string
+          calibration_meta:
+            type: string
+          state_space:
+            type: string
+          stream_host:
+            type: string
+          stream_port:
+            type: integer
+          stream_timeout_s:
+            type: number
+          stream_max_frames:
+            type: integer
+          frame_rate_hz:
+            type: number
+          motion_correction:
+            type: boolean
+          motion_backend:
+            type: string
+          motion_confidence_threshold:
+            type: number
+          max_translation_px:
+            type: number
+          drop_on_low_confidence:
+            type: boolean
+          baseline_window_frames:
+            type: integer
+          neuropil_correction:
+            type: boolean
+          controller_backend:
+            type: string
+            enum: [none, udp, websocket]
+          controller_host:
+            type: string
+          controller_port:
+            type: integer
+          controller_target:
+            type: string
+          decoder_threshold:
+            type: number
+          decoder_release_threshold:
+            type: number
+          state_hold_frames:
+            type: integer
+          refractory_frames:
+            type: integer
+          save_frames:
+            type: boolean
+          output_dir:
+            type: string
+      defaults:
+        data_source: raw_socket
+        mode: closed_loop
+        stream_host: 127.0.0.1
+        stream_port: 7788
+        stream_timeout_s: 5.0
+        frame_rate_hz: 30.0
+        motion_correction: true
+        controller_backend: none
+        decoder_threshold: 0.5
+        decoder_release_threshold: 0.35
+        state_hold_frames: 2
+        refractory_frames: 2
+        save_frames: false
+    impl: "workflow: microscope_callback_adapter -> realtime_twophoton(raw_socket) -> optional controller feedback"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: realtime
+          tool: realtime_twophoton
+          params:
+            data_source: "${inputs.data_source:-raw_socket}"
+            input_file: "${inputs.input_file}"
+            mode: "${inputs.mode:-closed_loop}"
+            reference_template: "${inputs.reference_template}"
+            roi_manifest: "${inputs.roi_manifest}"
+            decoder_path: "${inputs.decoder_path}"
+            calibration_meta: "${inputs.calibration_meta}"
+            state_space: "${inputs.state_space}"
+            stream_host: "${inputs.stream_host:-127.0.0.1}"
+            stream_port: "${inputs.stream_port:-7788}"
+            stream_timeout_s: "${inputs.stream_timeout_s:-5.0}"
+            stream_max_frames: "${inputs.stream_max_frames}"
+            frame_rate_hz: "${inputs.frame_rate_hz:-30.0}"
+            motion_correction: "${inputs.motion_correction:-true}"
+            motion_backend: "${inputs.motion_backend}"
+            motion_confidence_threshold: "${inputs.motion_confidence_threshold}"
+            max_translation_px: "${inputs.max_translation_px}"
+            drop_on_low_confidence: "${inputs.drop_on_low_confidence}"
+            baseline_window_frames: "${inputs.baseline_window_frames}"
+            neuropil_correction: "${inputs.neuropil_correction}"
+            controller_backend: "${inputs.controller_backend:-none}"
+            controller_host: "${inputs.controller_host}"
+            controller_port: "${inputs.controller_port}"
+            controller_target: "${inputs.controller_target}"
+            decoder_threshold: "${inputs.decoder_threshold:-0.5}"
+            decoder_release_threshold: "${inputs.decoder_release_threshold:-0.35}"
+            state_hold_frames: "${inputs.state_hold_frames:-2}"
+            refractory_frames: "${inputs.refractory_frames:-2}"
+            save_frames: "${inputs.save_frames:-false}"
+            output_dir: "${inputs.output_dir}"
+
+  - id: workflow_realtime_twophoton_file_replay
+    stage: acquisition
+    cost_tier: moderate
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: realtime_twophoton_file_replay
+    origin: core32
+    modalities: ["optical"]
+    example_dataset:
+      dataset_id: synthetic_twophoton_replay
+      source: synthetic
+      smoke_test: tests/integration/realdata/test_workflow_realtime_twophoton_file_replay_smoke.py
+    artifact_contract:
+      required_outputs:
+        - summary.json
+        - motion.jsonl
+        - decoder.jsonl
+        - controller.jsonl
+        - trace_df_f.npy
+      optional_outputs:
+        - registered_frames.npy
+        - timing.jsonl
+    runbook: docs/runbooks/workflow_realtime_twophoton_file_replay.md
+    params:
+      schema:
+        type: object
+        required: [input_file, reference_template, roi_manifest, decoder_path, output_dir]
+        properties:
+          data_source:
+            type: string
+            enum: [file_replay]
+          input_file:
+            type: string
+          mode:
+            type: string
+            enum: [monitoring, shadow, closed_loop]
+          reference_template:
+            type: string
+          roi_manifest:
+            type: string
+          decoder_path:
+            type: string
+          calibration_meta:
+            type: string
+          state_space:
+            type: string
+          frame_rate_hz:
+            type: number
+          motion_correction:
+            type: boolean
+          motion_backend:
+            type: string
+          motion_confidence_threshold:
+            type: number
+          max_translation_px:
+            type: number
+          drop_on_low_confidence:
+            type: boolean
+          baseline_window_frames:
+            type: integer
+          neuropil_correction:
+            type: boolean
+          controller_backend:
+            type: string
+            enum: [none, udp, websocket]
+          controller_host:
+            type: string
+          controller_port:
+            type: integer
+          controller_target:
+            type: string
+          decoder_threshold:
+            type: number
+          decoder_release_threshold:
+            type: number
+          state_hold_frames:
+            type: integer
+          refractory_frames:
+            type: integer
+          save_frames:
+            type: boolean
+          output_dir:
+            type: string
+      defaults:
+        data_source: file_replay
+        mode: shadow
+        frame_rate_hz: 20.0
+        motion_correction: true
+        controller_backend: none
+        decoder_threshold: 0.5
+        decoder_release_threshold: 0.35
+        state_hold_frames: 2
+        refractory_frames: 2
+        save_frames: false
+    impl: "workflow: realtime_twophoton(file_replay) -> optional decoder/controller evaluation"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: replay
+          tool: realtime_twophoton
+          params:
+            data_source: file_replay
+            input_file: "${inputs.input_file}"
+            mode: "${inputs.mode:-shadow}"
+            reference_template: "${inputs.reference_template}"
+            roi_manifest: "${inputs.roi_manifest}"
+            decoder_path: "${inputs.decoder_path}"
+            calibration_meta: "${inputs.calibration_meta}"
+            state_space: "${inputs.state_space}"
+            frame_rate_hz: "${inputs.frame_rate_hz:-20.0}"
+            motion_correction: "${inputs.motion_correction:-true}"
+            motion_backend: "${inputs.motion_backend}"
+            motion_confidence_threshold: "${inputs.motion_confidence_threshold}"
+            max_translation_px: "${inputs.max_translation_px}"
+            drop_on_low_confidence: "${inputs.drop_on_low_confidence}"
+            baseline_window_frames: "${inputs.baseline_window_frames}"
+            neuropil_correction: "${inputs.neuropil_correction}"
+            controller_backend: "${inputs.controller_backend:-none}"
+            controller_host: "${inputs.controller_host}"
+            controller_port: "${inputs.controller_port}"
+            controller_target: "${inputs.controller_target}"
+            decoder_threshold: "${inputs.decoder_threshold:-0.5}"
+            decoder_release_threshold: "${inputs.decoder_release_threshold:-0.35}"
+            state_hold_frames: "${inputs.state_hold_frames:-2}"
+            refractory_frames: "${inputs.refractory_frames:-2}"
+            save_frames: "${inputs.save_frames:-false}"
+            output_dir: "${inputs.output_dir}"
+
+  - id: workflow_data_harmonization
+    stage: dataset
+    cost_tier: moderate
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: data_harmonization
+    origin: core32
+    lifecycle: stable_pack
+    stable_workflow_pack: true
+    source_repo: "https://github.com/ThomasYeoLab/Standalone_An2024_DeepResBat"
+    source_paper: "An et al. 2024 DeepResBat: deep residual batch harmonization accounting for covariate distribution differences"
+    tested_release: "brain_researcher stable-pack baseline 2026-03-09"
+    backend_options:
+      default: combat
+      available: [combat, deepresbat_external]
+      optional_external: [deepresbat_external]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_data_harmonization_ds000114_smoke.py
+    reference_assets: []
+    artifact_contract:
+      required_outputs: [harmonized.csv, harmonization_report.json, provenance.json]
+      report_files: [harmonization_report.json]
+      provenance_files: [provenance.json]
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_data_harmonization_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_data_harmonization.md
+    params:
+      schema:
+        type: object
+        required: [bids_dir, features, batch, output_dir]
+        properties:
+          bids_dir:
+            type: string
+            description: BIDS dataset root used for dataset context and provenance.
+          features:
+            type: string
+            description: CSV/TSV/NPY features table (rows are samples).
+          batch:
+            oneOf:
+              - type: string
+              - type: array
+            description: Batch labels file or inline batch labels.
+          covars:
+            type: string
+            description: Optional CSV/TSV covariates table.
+          output_dir:
+            type: string
+            description: Output directory for harmonized features and reports.
+          backend:
+            type: string
+            enum: [combat, deepresbat_external]
+            description: Harmonization backend. Default is local ComBat-like harmonization.
+      defaults:
+        backend: combat
+    impl: "workflow: load_dataset -> harmonize_data(ComBat) -> regenerate downstream-ready features + reports"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: load
+          tool: load_dataset
+          params:
+            bids_dir: "${inputs.bids_dir}"
+        - id: harmonize
+          tool: harmonize_data
+          params:
+            features: "${inputs.features}"
+            batch: "${inputs.batch}"
+            covars: "${inputs.covars}"
+            method: "${inputs.backend:-combat}"
+            output_file: "${inputs.output_dir}/harmonized.csv"
+            report_file: "${inputs.output_dir}/harmonization_report.json"
+            provenance_file: "${inputs.output_dir}/provenance.json"
+
+  - id: workflow_fmriprep_preprocessing
+    stage: preprocessing
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    recipe_family: bids_app_preprocessing
+    origin: trend_addition
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/nipreps/fmriprep"
+    source_paper: "NiPreps fMRIPrep BIDS App"
+    tested_release: "wrapper-backed execution adapter baseline 2026-03-10"
+    backend_options:
+      default: fmriprep_bids_app
+      available: [fmriprep_bids_app]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+    artifact_contract:
+      required_outputs:
+        - dataset_description
+        - derivatives_dir
+      optional_outputs:
+        - figures_dir
+        - logs_dir
+        - subject_reports
+        - confounds
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+      execute_gate_script: scripts/workflows/run_external_repo_minimal_execute_gate.py
+      execute_gate_test: tests/integration/realdata/test_workflow_external_repo_minimal_execute_gate.py
+    runbook: docs/runbooks/workflow_fmriprep_preprocessing.md
+    params:
+      schema:
+        type: object
+        required: [bids_dir, output_dir]
+        properties:
+          bids_dir:
+            type: string
+          output_dir:
+            type: string
+          participant_label:
+            type: array
+            items:
+              type: string
+          work_dir:
+            type: string
+          fs_license_file:
+            type: string
+          output_spaces:
+            type: array
+            items:
+              type: string
+          n_cpus:
+            type: integer
+          omp_nthreads:
+            type: integer
+          mem_mb:
+            type: integer
+          extra_args:
+            type: array
+            items:
+              type: string
+          dry_run:
+            type: boolean
+            description: Return the resolved command instead of executing the backend.
+      defaults:
+        dry_run: true
+    impl: "workflow: run_bids_app(fmriprep) -> preview by default, execute real wrapper-backed backend when dry_run=false"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: fmriprep
+          tool: run_bids_app
+          params:
+            app: "fmriprep"
+            bids_dir: "${inputs.bids_dir}"
+            output_dir: "${inputs.output_dir}/fmriprep"
+            participant_label: "${inputs.participant_label}"
+            work_dir: "${inputs.work_dir}"
+            fs_license_file: "${inputs.fs_license_file}"
+            output_spaces: "${inputs.output_spaces}"
+            n_cpus: "${inputs.n_cpus}"
+            omp_nthreads: "${inputs.omp_nthreads}"
+            mem_mb: "${inputs.mem_mb}"
+            dry_run: "${inputs.dry_run:-true}"
+            extra_args: "${inputs.extra_args}"
+
+  - id: workflow_mriqc
+    stage: qc
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    recipe_family: bids_app_qc
+    origin: trend_addition
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/nipreps/mriqc"
+    source_paper: "NiPreps MRIQC BIDS App"
+    tested_release: "wrapper-backed execution adapter baseline 2026-03-10"
+    backend_options:
+      default: mriqc_bids_app
+      available: [mriqc_bids_app]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+    artifact_contract:
+      required_outputs:
+        - mriqc_dir
+      optional_outputs:
+        - subject_reports
+        - group_reports
+        - group_tables
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+      execute_gate_script: scripts/workflows/run_external_repo_minimal_execute_gate.py
+      execute_gate_test: tests/integration/realdata/test_workflow_external_repo_minimal_execute_gate.py
+    runbook: docs/runbooks/workflow_mriqc.md
+    params:
+      schema:
+        type: object
+        required: [bids_dir, output_dir]
+        properties:
+          bids_dir:
+            type: string
+          output_dir:
+            type: string
+          analysis_level:
+            type: string
+          participant_label:
+            type: array
+            items:
+              type: string
+          modalities:
+            type: array
+            items:
+              type: string
+          work_dir:
+            type: string
+          bids_filter_file:
+            type: string
+          n_procs:
+            type: integer
+          mem_gb:
+            type: number
+          extra_args:
+            type: array
+            items:
+              type: string
+          dry_run:
+            type: boolean
+      defaults:
+        analysis_level: participant
+        dry_run: true
+    impl: "workflow: run_bids_app(mriqc) -> preview by default, execute real wrapper-backed backend when dry_run=false"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: mriqc
+          tool: run_bids_app
+          params:
+            app: "mriqc"
+            bids_dir: "${inputs.bids_dir}"
+            output_dir: "${inputs.output_dir}/mriqc"
+            analysis_level: "${inputs.analysis_level:-participant}"
+            participant_label: "${inputs.participant_label}"
+            modalities: "${inputs.modalities}"
+            work_dir: "${inputs.work_dir}"
+            bids_filter_file: "${inputs.bids_filter_file}"
+            n_procs: "${inputs.n_procs}"
+            mem_gb: "${inputs.mem_gb}"
+            dry_run: "${inputs.dry_run:-true}"
+            extra_args: "${inputs.extra_args}"
+
+  - id: workflow_qsiprep
+    stage: preprocessing
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    recipe_family: dwi_preprocessing
+    origin: trend_addition
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/PennLINC/qsiprep"
+    source_paper: "PennLINC QSIPrep BIDS App"
+    tested_release: "wrapper-backed execution adapter baseline 2026-03-10"
+    backend_options:
+      default: qsiprep_bids_app
+      available: [qsiprep_bids_app]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+    artifact_contract:
+      required_outputs:
+        - dataset_description
+        - derivatives_dir
+      optional_outputs:
+        - logs_dir
+        - subject_reports
+        - figures
+        - dwi_files
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+      execute_gate_script: scripts/workflows/run_external_repo_minimal_execute_gate.py
+      execute_gate_test: tests/integration/realdata/test_workflow_external_repo_minimal_execute_gate.py
+    runbook: docs/runbooks/workflow_qsiprep.md
+    params:
+      schema:
+        type: object
+        required: [bids_dir, output_dir]
+        properties:
+          bids_dir:
+            type: string
+            description: Input diffusion-capable BIDS dataset root.
+          output_dir:
+            type: string
+            description: Root directory where the QSIPrep derivatives will be written.
+          participant_label:
+            type: array
+            items:
+              type: string
+            description: Optional participant labels without the `sub-` prefix.
+          work_dir:
+            type: string
+            description: Optional working directory for intermediate files.
+          fs_license_file:
+            type: string
+            description: Optional FreeSurfer license file passed through to the backend.
+          bids_filter_file:
+            type: string
+            description: Optional BIDS filter file used to restrict app inputs.
+          n_cpus:
+            type: integer
+            description: Optional total CPU count.
+          omp_nthreads:
+            type: integer
+            description: Optional OpenMP thread count.
+          mem_mb:
+            type: integer
+            description: Optional memory limit in MB.
+          output_resolution:
+            type: string
+            description: Optional QSIPrep output resolution.
+          hmc_model:
+            type: string
+            description: Optional QSIPrep head-motion correction model.
+          distortion_correction:
+            type: string
+            description: Optional distortion-correction mode selector.
+          eddy_config:
+            type: string
+            description: Optional eddy configuration file.
+          low_mem:
+            type: boolean
+            description: Request lower-memory execution mode when supported.
+          extra_args:
+            type: array
+            items:
+              type: string
+            description: Additional raw CLI arguments. This remains the safest escape hatch.
+          dry_run:
+            type: boolean
+            description: Return the resolved command preview instead of executing the app.
+      defaults:
+        dry_run: true
+    impl: "workflow: run_bids_app(qsiprep) -> emit command preview or execute diffusion backend"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: qsiprep
+          tool: run_bids_app
+          params:
+            app: "qsiprep"
+            bids_dir: "${inputs.bids_dir}"
+            output_dir: "${inputs.output_dir}/qsiprep"
+            participant_label: "${inputs.participant_label}"
+            work_dir: "${inputs.work_dir}"
+            fs_license_file: "${inputs.fs_license_file}"
+            bids_filter_file: "${inputs.bids_filter_file}"
+            n_cpus: "${inputs.n_cpus}"
+            omp_nthreads: "${inputs.omp_nthreads}"
+            mem_mb: "${inputs.mem_mb}"
+            output_resolution: "${inputs.output_resolution}"
+            hmc_model: "${inputs.hmc_model}"
+            distortion_correction: "${inputs.distortion_correction}"
+            eddy_config: "${inputs.eddy_config}"
+            low_mem: "${inputs.low_mem}"
+            dry_run: "${inputs.dry_run:-true}"
+            extra_args: "${inputs.extra_args}"
+
+  - id: workflow_smriprep
+    stage: preprocessing
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [container, slurm]
+    primary_target: container
+    recipe_family: structural_preprocessing
+    origin: trend_addition
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/nipreps/smriprep"
+    source_paper: "NiPreps sMRIPrep BIDS App"
+    tested_release: "wrapper-backed execution adapter baseline 2026-03-10"
+    backend_options:
+      default: smriprep_bids_app
+      available: [smriprep_bids_app]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+    artifact_contract:
+      required_outputs:
+        - dataset_description
+        - derivatives_dir
+      optional_outputs:
+        - logs_dir
+        - subject_reports
+        - surfaces
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+      execute_gate_script: scripts/workflows/run_external_repo_minimal_execute_gate.py
+      execute_gate_test: tests/integration/realdata/test_workflow_external_repo_minimal_execute_gate.py
+    runbook: docs/runbooks/workflow_smriprep.md
+    params:
+      schema:
+        type: object
+        required: [bids_dir, output_dir]
+        properties:
+          bids_dir:
+            type: string
+            description: Input BIDS dataset root.
+          output_dir:
+            type: string
+            description: Root directory where the sMRIPrep derivatives will be written.
+          participant_label:
+            type: array
+            items:
+              type: string
+            description: Optional participant labels without the `sub-` prefix.
+          work_dir:
+            type: string
+            description: Optional working directory for intermediate files.
+          fs_license_file:
+            type: string
+            description: Optional FreeSurfer license file passed through to the backend.
+          bids_filter_file:
+            type: string
+            description: Optional BIDS filter file used to restrict app inputs.
+          n_cpus:
+            type: integer
+            description: Optional total CPU count.
+          omp_nthreads:
+            type: integer
+            description: Optional OpenMP thread count.
+          mem_mb:
+            type: integer
+            description: Optional memory limit in MB.
+          extra_args:
+            type: array
+            items:
+              type: string
+            description: Additional raw CLI arguments. This remains the safest escape hatch.
+          dry_run:
+            type: boolean
+            description: Return the resolved command preview instead of executing the app.
+      defaults:
+        dry_run: true
+    impl: "workflow: run_bids_app(smriprep) -> emit command preview or execute structural backend"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: smriprep
+          tool: run_bids_app
+          params:
+            app: "smriprep"
+            bids_dir: "${inputs.bids_dir}"
+            output_dir: "${inputs.output_dir}/smriprep"
+            participant_label: "${inputs.participant_label}"
+            work_dir: "${inputs.work_dir}"
+            fs_license_file: "${inputs.fs_license_file}"
+            bids_filter_file: "${inputs.bids_filter_file}"
+            n_cpus: "${inputs.n_cpus}"
+            omp_nthreads: "${inputs.omp_nthreads}"
+            mem_mb: "${inputs.mem_mb}"
+            dry_run: "${inputs.dry_run:-true}"
+            extra_args: "${inputs.extra_args}"
+
+  - id: workflow_qsirecon
+    stage: connectivity
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [container, slurm]
+    primary_target: container
+    recipe_family: dwi_reconstruction
+    origin: trend_addition
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/PennLINC/qsirecon"
+    source_paper: "PennLINC QSIRecon reconstruction workflow family"
+    tested_release: "wrapper-backed execution adapter baseline 2026-03-10"
+    backend_options:
+      default: qsirecon_wrapper
+      available: [qsirecon_wrapper, qsirecon_preview]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+    artifact_contract:
+      required_outputs:
+        - qsirecon_dir
+      optional_outputs:
+        - dataset_description
+        - subject_dirs
+        - recon_outputs
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+      execute_gate_script: scripts/workflows/run_external_repo_minimal_execute_gate.py
+      execute_gate_test: tests/integration/realdata/test_workflow_external_repo_minimal_execute_gate.py
+    runbook: docs/runbooks/workflow_qsirecon.md
+    params:
+      schema:
+        type: object
+        required: [qsiprep_dir, output_dir, recon_spec]
+        properties:
+          qsiprep_dir:
+            type: string
+          output_dir:
+            type: string
+          recon_spec:
+            type: string
+          participant_label:
+            type: array
+            items:
+              type: string
+          work_dir:
+            type: string
+          fs_license_file:
+            type: string
+          n_cpus:
+            type: integer
+          mem_mb:
+            type: integer
+          omp_nthreads:
+            type: integer
+          extra_args:
+            type: array
+            items:
+              type: string
+          dry_run:
+            type: boolean
+      defaults:
+        dry_run: true
+    impl: "workflow: qsiprep_reconstruction -> preview by default, execute constrained qsirecon backend when dry_run=false"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: qsirecon
+          tool: qsiprep_reconstruction
+          params:
+            qsiprep_dir: "${inputs.qsiprep_dir}"
+            output_dir: "${inputs.output_dir}/qsirecon"
+            recon_spec: "${inputs.recon_spec}"
+            participant_label: "${inputs.participant_label}"
+            work_dir: "${inputs.work_dir}"
+            fs_license_file: "${inputs.fs_license_file}"
+            n_cpus: "${inputs.n_cpus}"
+            mem_mb: "${inputs.mem_mb}"
+            omp_nthreads: "${inputs.omp_nthreads}"
+            extra_args: "${inputs.extra_args}"
+            dry_run: "${inputs.dry_run:-true}"
+
+  - id: workflow_fastsurfer
+    stage: preprocessing
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [container]
+    primary_target: container
+    recipe_family: structural_reconstruction
+    origin: trend_addition
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/Deep-MI/FastSurfer"
+    source_paper: "Deep-MI FastSurfer structural reconstruction workflow family"
+    tested_release: "container-backed adapter baseline 2026-03-10"
+    backend_options:
+      default: fastsurfer_container
+      available: [fastsurfer_container, stub_fastsurfer]
+      optional_external: [fastsurfer_container]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+    artifact_contract:
+      required_outputs:
+        - subject_dir
+        - surfaces_dir
+        - aseg_volume
+        - aparcaseg_volume
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_external_repo_preproc_candidates_smoke.py
+      execute_gate_script: scripts/workflows/run_external_repo_minimal_execute_gate.py
+      execute_gate_test: tests/integration/realdata/test_workflow_external_repo_minimal_execute_gate.py
+    runbook: docs/runbooks/workflow_fastsurfer.md
+    params:
+      schema:
+        type: object
+        required: [t1w_image, subject_id, output_dir]
+        properties:
+          t1w_image:
+            type: string
+          subject_id:
+            type: string
+          output_dir:
+            type: string
+          fs_license_file:
+            type: string
+          n_threads:
+            type: integer
+          use_gpu:
+            type: boolean
+          runtime:
+            type: string
+          container_image:
+            type: string
+          dry_run:
+            type: boolean
+          extra_args:
+            type: array
+            items:
+              type: string
+      defaults:
+        dry_run: true
+        runtime: apptainer
+        n_threads: 1
+        use_gpu: false
+    impl: "workflow: run_fastsurfer -> preview by default, execute real FastSurfer container backend when dry_run=false"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: fastsurfer
+          tool: run_fastsurfer
+          params:
+            t1w_image: "${inputs.t1w_image}"
+            subject_id: "${inputs.subject_id}"
+            output_dir: "${inputs.output_dir}/fastsurfer"
+            fs_license_file: "${inputs.fs_license_file}"
+            n_threads: "${inputs.n_threads:-1}"
+            use_gpu: "${inputs.use_gpu:-false}"
+            runtime: "${inputs.runtime:-apptainer}"
+            container_image: "${inputs.container_image}"
+            dry_run: "${inputs.dry_run:-true}"
+            extra_args: "${inputs.extra_args}"
+
+  - id: workflow_multiverse_analysis
+    stage: preprocessing
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: run multiple presets (confounds/atlas/threshold) -> compare outcomes -> stability report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: variants
+          tool: standardize_confounds
+          params:
+            confounds_file: "${inputs.confounds}"
+            strategy: "${inputs.preset}"
+            output_file: "${inputs.output_dir}/confounds_variant.csv"
+        - id: compare
+          tool: derivatives_sanity_checker
+          params:
+            derivatives_dir: "${inputs.output_dir}"
+            required_patterns:
+              - "confounds_variant.csv"
+            output_file: "${inputs.output_dir}/multiverse_report.json"
+
+  # Tier 2: Basic Connectivity
+  - id: workflow_rest_connectome_e2e
+    stage: connectivity
+    cost_tier: expensive
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: rest_connectome
+    lifecycle: active
+    origin: core32
+    modalities: ["fmri"]
+    backend_options:
+      default: nilearn_connectome_local
+      available: [nilearn_connectome_local]
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - nilearn>=0.10.0
+      - numpy>=1.24.0
+      - pandas>=2.2.0
+      - scikit-learn>=1.3.0
+    resource_profile:
+      cpu: "2+"
+      mem: "8G+"
+      est_runtime: "minutes"
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_rest_connectome_ds000114_smoke.py
+    artifact_contract:
+      required_outputs:
+        - timeseries/timeseries.npy
+        - timeseries/timeseries.csv
+        - connectivity_matrix.npy
+        - feature_contract.json
+      optional_outputs:
+        - atlas/*.nii.gz
+        - atlas/*_labels.tsv
+        - atlas/*_labels.json
+        - timeseries/timeseries_summary.json
+      report_files:
+        - timeseries/timeseries_summary.json
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_rest_connectome_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_rest_connectome_e2e.md
+    params:
+      schema:
+        type: object
+        required: [img, output_dir]
+        properties:
+          img:
+            type: string
+            description: Preprocessed BOLD image in a common volumetric space.
+          atlas_name:
+            type: string
+            description: Atlas identifier to resolve through `fetch_atlas`.
+          atlas_path:
+            type: string
+            description: Optional explicit atlas image path to use instead of a fetched atlas.
+          connectivity_kind:
+            type: string
+            description: Connectivity estimator passed to `compute_connectivity`.
+          fisher_z:
+            type: boolean
+            description: Apply Fisher z-transform before saving the connectivity matrix.
+          standardize:
+            type: boolean
+            description: Standardize ROI time series during extraction.
+          detrend:
+            type: boolean
+            description: Detrend ROI time series during extraction.
+          t_r:
+            type: number
+            description: Repetition time in seconds for Nilearn filtering during ROI extraction.
+          low_pass:
+            type: number
+            description: Optional low-pass cutoff in Hz during ROI extraction.
+          high_pass:
+            type: number
+            description: Optional high-pass cutoff in Hz during ROI extraction.
+          output_dir:
+            type: string
+            description: Root directory for atlas, timeseries, and connectivity outputs.
+      defaults:
+        atlas_name: Schaefer2018_100
+        connectivity_kind: correlation
+        fisher_z: true
+        standardize: true
+        detrend: true
+        output_dir: /tmp/brain-researcher/workflow_rest_connectome_e2e
+    impl: "workflow: fetch_atlas -> extract_timeseries -> compute_connectivity -> plot_matrix/report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: atlas
+          tool: fetch_atlas
+          params:
+            atlas_name: "${inputs.atlas_name}"
+            atlas_path: "${inputs.atlas_path}"
+            reference_img: "${inputs.img}"
+            output_dir: "${inputs.output_dir}/atlas"
+        - id: timeseries
+          tool: extract_timeseries
+          params:
+            img: "${inputs.img}"
+            atlas: "${steps.atlas.data.outputs.atlas_path}"
+            output_dir: "${inputs.output_dir}/timeseries"
+        - id: connectivity
+          tool: compute_connectivity
+          params:
+            timeseries: "${steps.timeseries.data.outputs.timeseries}"
+            kind: "${inputs.connectivity_kind}"
+            output_file: "${inputs.output_dir}/connectivity_matrix.npy"
+
+  - id: workflow_seed_based_connectivity
+    stage: connectivity
+    cost_tier: moderate
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: seed_based_connectivity
+    lifecycle: active
+    origin: core32
+    modalities: ["fmri"]
+    backend_options:
+      default: nilearn_seed_based_local
+      available: [nilearn_seed_based_local]
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - nilearn>=0.10.0
+      - numpy>=1.24.0
+      - pandas>=2.2.0
+    resource_profile:
+      cpu: "2+"
+      mem: "8G+"
+      est_runtime: "minutes"
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_seed_based_connectivity_ds000114_smoke.py
+    artifact_contract:
+      required_outputs:
+        - seed_based_fc.nii.gz
+      report_files: []
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_seed_based_connectivity_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_seed_based_connectivity.md
+    params:
+      schema:
+        type: object
+        required: [img, output_dir]
+        properties:
+          img:
+            type: string
+            description: Preprocessed BOLD image in a common volumetric space.
+          seed_coords:
+            type: array
+            items:
+              type: number
+            description: Optional MNI/world-space seed coordinates. Provide either `seed_coords` or `seed_mask`.
+          seed_mask:
+            type: string
+            description: Optional seed ROI mask. Provide either `seed_mask` or `seed_coords`.
+          radius:
+            type: number
+            description: Sphere radius in mm for coordinate seeds.
+          mask_img:
+            type: string
+            description: Optional brain mask used for voxelwise correlation.
+          smoothing_fwhm:
+            type: number
+          standardize:
+            type: boolean
+          detrend:
+            type: boolean
+          low_pass:
+            type: number
+          high_pass:
+            type: number
+          t_r:
+            type: number
+          confounds:
+            type: string
+          output_dir:
+            type: string
+            description: Directory where `seed_based_fc.nii.gz` will be written.
+      defaults:
+        radius: 8.0
+        standardize: true
+        detrend: true
+        output_dir: /tmp/brain-researcher/workflow_seed_based_connectivity
+    impl: "workflow: define seed -> extract_timeseries(seed) -> voxel/roi correlation -> stats -> correction -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: seed_fc
+          tool: seed_based_fc
+          params:
+            img: "${inputs.img}"
+            seed_coords: "${inputs.seed_coords}"
+            seed_mask: "${inputs.seed_mask}"
+            radius: "${inputs.radius}"
+            mask_img: "${inputs.mask_img}"
+            smoothing_fwhm: "${inputs.smoothing_fwhm}"
+            standardize: "${inputs.standardize}"
+            detrend: "${inputs.detrend}"
+            low_pass: "${inputs.low_pass}"
+            high_pass: "${inputs.high_pass}"
+            t_r: "${inputs.t_r}"
+            confounds: "${inputs.confounds}"
+            output_file: "${inputs.output_dir}/seed_based_fc.nii.gz"
+
+  - id: workflow_network_based_statistics
+    stage: connectivity
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: network_based_statistics
+    lifecycle: active
+    origin: core32
+    modalities: ["fmri"]
+    backend_options:
+      default: python_nilearn_connectivity_nbs
+      available: [python_nilearn_connectivity_nbs]
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - nilearn>=0.10.0
+      - numpy>=1.24.0
+      - pandas>=2.2.0
+      - scipy>=1.11.0
+    resource_profile:
+      cpu: "4+"
+      mem: "12G+"
+      est_runtime: "minutes-to-hours"
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_network_based_statistics_ds000114_smoke.py
+    artifact_contract:
+      required_outputs:
+        - group_connectivity.npy
+        - nbs.npy
+        - nbs.mask.npy
+        - nbs.components.json
+      optional_outputs:
+        - nbs.json
+      report_files:
+        - nbs.json
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_network_based_statistics_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_network_based_statistics.md
+    params:
+      schema:
+        type: object
+        required: [timeseries, labels, output_dir]
+        properties:
+          timeseries:
+            type: string
+            description: Path to subject-stacked ROI timeseries array.
+          labels:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: integer
+            description: Two-group labels as a file path or inline list.
+          connectivity_kind:
+            type: string
+            description: Connectivity estimator passed to `compute_connectivity`.
+          fisher_z:
+            type: boolean
+            description: Apply Fisher z-transform before network-based statistics.
+          threshold:
+            type: number
+            description: Edge-wise NBS threshold.
+          n_permutations:
+            type: integer
+            description: Number of label-shuffle permutations.
+          tail:
+            type: string
+            description: Tail selection for thresholding (`two`, `pos`, or `neg`).
+          output_dir:
+            type: string
+            description: Root directory for group connectivity and NBS outputs.
+      defaults:
+        connectivity_kind: correlation
+        fisher_z: true
+        threshold: 1.0
+        n_permutations: 100
+        tail: two
+        output_dir: /tmp/brain-researcher/workflow_network_based_statistics
+    impl: "workflow: compute_connectivity(group) -> nbs_engine(permutation) -> summary"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: connectivity
+          tool: compute_connectivity
+          params:
+            timeseries: "${inputs.timeseries}"
+            kind: "${inputs.connectivity_kind}"
+            output_file: "${inputs.output_dir}/group_connectivity.npy"
+        - id: similarity
+          tool: nbs_engine
+          params:
+            connectivity_matrices: "${steps.connectivity.data.outputs.matrix}"
+            labels: "${inputs.labels}"
+            threshold: "${inputs.threshold}"
+            n_permutations: "${inputs.n_permutations}"
+            tail: "two"
+            output_file: "${inputs.output_dir}/nbs"
+
+  - id: workflow_connectivity_gradients
+    stage: connectivity
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: connectivity_gradients
+    lifecycle: active
+    origin: core32
+    modalities: ["fmri"]
+    backend_options:
+      default: python_connectivity_graph_theory
+      available: [python_connectivity_graph_theory]
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - nilearn>=0.10.0
+      - numpy>=1.24.0
+      - pandas>=2.2.0
+    resource_profile:
+      cpu: "2+"
+      mem: "8G+"
+      est_runtime: "minutes"
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_connectivity_gradients_ds000114_smoke.py
+    artifact_contract:
+      required_outputs:
+        - connectivity.npy
+        - gradients/graph_metrics.json
+        - gradients/graph_summary.json
+      optional_outputs:
+        - gradients/thresholded_connectivity.npy
+        - gradients/communities.json
+        - gradients/graph_theory_plot.png
+      report_files:
+        - gradients/graph_summary.json
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_connectivity_gradients_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_connectivity_gradients.md
+    params:
+      schema:
+        type: object
+        required: [timeseries, output_dir]
+        properties:
+          timeseries:
+            type: string
+            description: Path to ROI timeseries array.
+          connectivity_kind:
+            type: string
+            description: Connectivity estimator passed to `compute_connectivity`.
+          fisher_z:
+            type: boolean
+            description: Apply Fisher z-transform before graph analysis.
+          graph_type:
+            type: string
+            description: Graph interpretation passed to `analyze_graph_topology`.
+          threshold_method:
+            type: string
+            description: Threshold strategy passed to the graph analysis backend.
+          threshold_value:
+            type: number
+            description: Threshold value used for graph sparsification.
+          compute_basic_metrics:
+            type: boolean
+          compute_centrality:
+            type: boolean
+          detect_communities:
+            type: boolean
+          detect_hubs:
+            type: boolean
+          compute_rich_club:
+            type: boolean
+          compute_small_world:
+            type: boolean
+          compute_efficiency:
+            type: boolean
+          test_robustness:
+            type: boolean
+          removal_fraction:
+            type: number
+          permutation_test:
+            type: boolean
+          n_permutations:
+            type: integer
+          community_method:
+            type: string
+          hub_method:
+            type: string
+          visualize:
+            type: boolean
+          output_dir:
+            type: string
+            description: Root directory for connectivity and graph-topology outputs.
+      defaults:
+        connectivity_kind: correlation
+        fisher_z: true
+        graph_type: weighted
+        threshold_method: proportional
+        threshold_value: 0.1
+        compute_basic_metrics: true
+        compute_centrality: true
+        detect_communities: true
+        detect_hubs: true
+        compute_rich_club: false
+        compute_small_world: true
+        compute_efficiency: true
+        test_robustness: false
+        removal_fraction: 0.5
+        permutation_test: false
+        n_permutations: 1000
+        community_method: louvain
+        hub_method: degree
+        visualize: true
+        output_dir: /tmp/brain-researcher/workflow_connectivity_gradients
+    impl: "workflow: compute_connectivity -> graph-topology summaries (current BR baseline) -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: connectivity
+          tool: compute_connectivity
+          params:
+            timeseries: "${inputs.timeseries}"
+            kind: "${inputs.connectivity_kind}"
+            output_file: "${inputs.output_dir}/connectivity.npy"
+        - id: gradients
+          tool: analyze_graph_topology
+          params:
+            connectivity_file: "${steps.connectivity.data.outputs.matrix}"
+            output_dir: "${inputs.output_dir}/gradients"
+
+  - id: workflow_group_ica
+    stage: connectivity
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: group_ica
+    lifecycle: active
+    origin: core32
+    modalities: ["fmri"]
+    backend_options:
+      default: python_canica_nbs
+      available: [python_canica_nbs]
+    python_packages:
+      - brain_researcher
+      - nibabel>=5.0.0
+      - nilearn>=0.10.0
+      - numpy>=1.24.0
+      - pandas>=2.2.0
+      - scikit-learn>=1.3.0
+      - scipy>=1.11.0
+    resource_profile:
+      cpu: "4+"
+      mem: "16G+"
+      est_runtime: "minutes-to-hours"
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_group_ica_ds000114_smoke.py
+    artifact_contract:
+      required_outputs:
+        - group_ica/canica_components.nii.gz
+        - group_ica/canica_timecourses.npy
+        - group_ica/connectivity.npy
+        - group_ica/nbs.npy
+      optional_outputs:
+        - group_ica/canica_summary.json
+        - group_ica/nbs.mask.npy
+        - group_ica/nbs.components.json
+        - group_ica/nbs.json
+      report_files:
+        - group_ica/canica_summary.json
+        - group_ica/nbs.json
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_group_ica_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_group_ica.md
+    params:
+      schema:
+        type: object
+        required: [img, labels, output_dir]
+        properties:
+          img:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+            description: One or more preprocessed BOLD images.
+          n_components:
+            type: integer
+            description: Number of ICA components.
+          t_r:
+            type: number
+            description: Repetition time in seconds passed to CanICA.
+          mask:
+            type: string
+            description: Optional common analysis mask passed to CanICA.
+          labels:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: integer
+            description: Two-group labels aligned to the subject order.
+          connectivity_kind:
+            type: string
+            description: Connectivity estimator used on ICA time courses.
+          fisher_z:
+            type: boolean
+            description: Apply Fisher z-transform before NBS.
+          threshold:
+            type: number
+            description: Edge-wise NBS threshold.
+          n_permutations:
+            type: integer
+            description: Number of label-shuffle permutations.
+          tail:
+            type: string
+            description: Tail selection for thresholding (`two`, `pos`, or `neg`).
+          output_dir:
+            type: string
+            description: Root directory for group ICA, connectivity, and NBS outputs.
+      defaults:
+        n_components: 20
+        connectivity_kind: correlation
+        fisher_z: true
+        threshold: 1.0
+        n_permutations: 100
+        tail: two
+        output_dir: /tmp/brain-researcher/workflow_group_ica
+    impl: "workflow: python ICA (CanICA) -> connectivity -> nbs_engine stats -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: ica
+          tool: group_ica
+          params:
+            img: "${inputs.img}"
+            n_components: "${inputs.n_components}"
+            output_dir: "${inputs.output_dir}/group_ica"
+        - id: conn
+          tool: compute_connectivity
+          params:
+            timeseries: "${steps.ica.data.outputs.timecourses_file}"
+            kind: "correlation"
+            output_file: "${inputs.output_dir}/group_ica/connectivity.npy"
+        - id: stats
+          tool: nbs_engine
+          params:
+            connectivity_matrices: "${steps.conn.data.outputs.matrix}"
+            labels: "${inputs.labels}"
+            threshold: "${inputs.threshold}"
+            n_permutations: "${inputs.n_permutations}"
+            tail: "two"
+            output_file: "${inputs.output_dir}/group_ica/nbs"
+
+  # Tier 3: Task fMRI
+  - id: workflow_task_glm_group
+    stage: task_glm
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: task_glm_group
+    origin: core32
+    modalities: ["fmri"]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_task_glm_group_ds000114_smoke.py
+    artifact_contract:
+      required_outputs:
+        - first_level_dirs
+        - selected_zmaps
+        - second_level/group_zmap.nii.gz
+        - second_level/glm_second_level_summary.json
+      optional_outputs:
+        - first_level/<subject>/glm_first_level_summary.json
+        - first_level/<subject>/<contrast_name>_zmap.nii.gz
+      report_files:
+        - second_level/glm_second_level_summary.json
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_task_glm_group_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_task_glm_group.md
+    params:
+      schema:
+        type: object
+        required: [output_dir]
+        properties:
+          img:
+            type: array
+            items:
+              type: string
+            description: Subject-level preprocessed BOLD images aligned to a common space.
+          events:
+            type: array
+            items:
+              type: string
+            description: Per-subject events TSV files aligned to `img`.
+          bids_dir:
+            type: string
+            description: Optional BIDS root used to resolve events when direct `img`/`events` inputs are not passed.
+          fmriprep_dir:
+            type: string
+            description: Optional fMRIPrep derivatives root used with `bids_dir` + `task` to resolve first-level inputs.
+          task:
+            type: string
+            description: Task label used for BIDS + fMRIPrep resolution mode.
+          participant_label:
+            type: array
+            items:
+              type: string
+            description: Optional participant subset for BIDS + fMRIPrep resolution mode.
+          session:
+            type: string
+            description: Optional session label when resolving inputs from BIDS/fMRIPrep roots.
+          space:
+            type: string
+            description: Optional derivative space filter when resolving preprocessed BOLD inputs.
+          t_r:
+            type: number
+            description: Repetition time in seconds. Optional when available in the NIfTI header.
+          smoothing_fwhm:
+            type: number
+            description: Optional smoothing kernel passed to the first-level Nilearn GLM.
+          mask_img:
+            type: string
+            description: Optional analysis mask shared across subjects.
+          contrast_name:
+            type: string
+            description: First-level contrast name to select consistently across subjects.
+          output_dir:
+            type: string
+            description: Root directory for `first_level/` and `second_level/` outputs.
+      defaults:
+        output_dir: /tmp/brain-researcher/workflow_task_glm_group
+    impl: "workflow: resolve direct or BIDS/fMRIPrep subject inputs -> batch first-level Nilearn GLM -> intercept-only second-level GLM -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: first_level
+          tool: glm_first_level_batch
+          params:
+            img: "${inputs.img}"
+            events: "${inputs.events}"
+            t_r: "${inputs.t_r}"
+            smoothing_fwhm: "${inputs.smoothing_fwhm}"
+            mask_img: "${inputs.mask_img}"
+            contrast_name: "${inputs.contrast_name}"
+            output_dir: "${inputs.output_dir}/first_level"
+        - id: second_level
+          tool: run_glm_second_level
+          params:
+            contrast_maps: "${steps.first_level.data.outputs.selected_zmaps}"
+            contrast: "intercept"
+            output_dir: "${inputs.output_dir}/second_level"
+
+  - id: workflow_ppi_analysis
+    stage: task_glm
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    origin: core32
+    impl: "workflow: define seed -> ppi_analyzer -> group GLM + correction -> interpret + report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: ppi_first_level
+          tool: ppi_analyzer
+          params:
+            img: "${inputs.img}"
+            events: "${inputs.events}"
+            seed_coords: "${inputs.seed_coords}"
+            t_r: "${inputs.t_r}"
+            output_dir: "${inputs.output_dir}/ppi"
+        - id: ppi_group
+          tool: run_glm_second_level
+          params:
+            contrast_maps: "${steps.ppi_first_level.data.outputs.contrast_maps}"
+            contrast: "intercept"
+            output_dir: "${inputs.output_dir}/group"
+
+  # FitLins pipelines (direct + multiverse)
+  - id: workflow_fitlins_direct
+    stage: task_glm
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: fitlins_direct
+    origin: core32
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/poldracklab/fitlins"
+    source_paper: "FitLins BIDS App / BIDS Stats Models GLM"
+    tested_release: "container-first FitLins direct baseline 2026-03-10"
+    backend_options:
+      default: fitlins_container
+      available: [fitlins_container, fitlins_wrapper]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_fitlins_direct_ds000114_smoke.py
+    artifact_contract:
+      required_outputs:
+        - fitlins/dataset_description.json
+      optional_outputs:
+        - fitlins/*_stat-*_statmap.nii.gz
+        - fitlins/*/*.html
+        - fitlins/logs/*
+      report_files:
+        - fitlins/*/*.html
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_fitlins_direct_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_fitlins_direct.md
+    params:
+      schema:
+        type: object
+        required: [bids_dir, fmriprep_dir, output_dir]
+        properties:
+          bids_dir:
+            type: string
+          fmriprep_dir:
+            type: string
+          output_dir:
+            type: string
+          model:
+            type: string
+          task:
+            type: string
+          analysis_level:
+            type: string
+          participant_label:
+            type: array
+            items:
+              type: string
+          work_dir:
+            type: string
+          reports_only:
+            type: boolean
+          runtime:
+            type: string
+            description: FitLins runtime backend (`apptainer`, `docker`, or `wrapper`; wrapper is development fallback only).
+          container_type:
+            type: string
+            description: Backward-compatible alias for `runtime`.
+          container_image:
+            type: string
+          extra_args:
+            type: array
+            items:
+              type: string
+          dry_run:
+            type: boolean
+            description: Preview the resolved FitLins command instead of executing.
+      defaults:
+        analysis_level: run
+        runtime: apptainer
+        dry_run: true
+        output_dir: /tmp/brain-researcher/workflow_fitlins_direct
+    impl: "workflow: run FitLins single-pass given BIDS + fMRIPrep derivatives; preview-first, execute-capable through local BR runtime"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: fitlins_direct
+          tool: run_bids_app
+          params:
+            app: "fitlins"
+            bids_dir: "${inputs.bids_dir}"
+            output_dir: "${inputs.output_dir}/fitlins"
+            participant_label: "${inputs.participant_label}"
+            analysis_level: "${inputs.analysis_level:-run}"
+            model: "${inputs.model}"
+            runtime: "${inputs.runtime:-apptainer}"
+            container_type: "${inputs.container_type}"
+            container_image: "${inputs.container_image}"
+            work_dir: "${inputs.work_dir}"
+            reports_only: "${inputs.reports_only:-false}"
+            derivatives: "${inputs.fmriprep_dir}"
+            task: "${inputs.task}"
+            extra_args: "${inputs.extra_args}"
+            dry_run: "${inputs.dry_run:-true}"
+
+  - id: workflow_fitlins_multiverse_yeo17
+    stage: task_glm
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: fitlins_multiverse
+    origin: trend_addition
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/poldracklab/fitlins"
+    source_paper: "FitLins multiverse orchestration with Yeo17 robustness summaries"
+    tested_release: "local multiverse execute baseline 2026-03-10"
+    backend_options:
+      default: fitlins_multiverse_container
+      available: [fitlins_multiverse_container, fitlins_multiverse_wrapper]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_fitlins_multiverse_yeo17_smoke.py
+    artifact_contract:
+      required_outputs:
+        - fitlins_multiverse/run_manifest.json
+      optional_outputs:
+        - fitlins_multiverse/specs/multiverse_manifest.json
+        - fitlins_multiverse/fitlins/yeo17_summary.csv
+        - fitlins_multiverse/fitlins/robustness_yeo17.json
+        - fitlins_multiverse/fitlins/robustness_yeo17.md
+      report_files:
+        - fitlins_multiverse/fitlins/robustness_yeo17.md
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_fitlins_multiverse_yeo17_smoke.py
+    runbook: docs/runbooks/workflow_fitlins_multiverse_yeo17.md
+    params:
+      schema:
+        type: object
+        required: [bids_dir, fmriprep_dir, output_dir]
+        properties:
+          bids_dir:
+            type: string
+          fmriprep_dir:
+            type: string
+          output_dir:
+            type: string
+          task:
+            type: string
+          participant_label_csv:
+            type: string
+            description: Comma-separated participant labels passed to the multiverse execution script.
+          analysis_level:
+            type: string
+          runtime:
+            type: string
+          k:
+            type: integer
+          no_priors:
+            type: boolean
+          skip_yeo17:
+            type: boolean
+      defaults:
+        task: linebisection
+        participant_label_csv: "01,02"
+        analysis_level: run
+        runtime: apptainer
+        k: 1
+        no_priors: true
+        skip_yeo17: false
+        output_dir: /tmp/brain-researcher/workflow_fitlins_multiverse_yeo17
+    impl: "workflow: generate and execute a compact FitLins multiverse, then collect Yeo17 robustness summaries"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: multiverse_execute
+          tool: run_local_script
+          params:
+            script: "scripts/workflows/run_fitlins_multiverse_execute.py"
+            args:
+              # Defaults: local ds000114 subset (no s3fs crawl).
+              - "--dataset-id=ds000114"
+              - "--task=${inputs.task:-linebisection}"
+              - "--bids-root"
+              - "${inputs.bids_dir}"
+              - "--derivatives-root"
+              - "${inputs.fmriprep_dir}"
+              - "--output-root=${inputs.output_dir}/fitlins_multiverse"
+              - "--participant-label=${inputs.participant_label_csv:-01,02}"
+              - "--analysis-level=${inputs.analysis_level:-run}"
+              - "--k=${inputs.k:-1}"
+              - "--runtime=${inputs.runtime:-apptainer}"
+              - "--execute"
+
+  - id: workflow_naturalistic_isc
+    stage: dynamics
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: time-align -> ISC/ISFC (tooling via python/BrainIAK wrapper if available) -> stats -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: isc
+          tool: hyperalignment
+          params:
+            data_files: "${inputs.data_files}"
+            method: "${inputs.method}"
+            output_dir: "${inputs.output_dir}/isc"
+
+  # Tier 4: Prediction & ML
+  - id: workflow_ml_decoding_pipeline
+    stage: prediction
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: feature builder -> ml_cross_validation(leakage-guarded) -> train_decoder -> evaluate_model -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: cv
+          tool: ml_cross_validation
+          params:
+            data_file: "${inputs.data_file}"
+            labels_file: "${inputs.labels_file}"
+            groups_file: "${inputs.groups_file}"
+            cv_type: "${inputs.cv_type}"
+            n_splits: "${inputs.n_splits}"
+            task_type: "${inputs.task_type}"
+            output_dir: "${inputs.output_dir}/cv"
+        - id: decode
+          tool: decoding_classifier
+          params:
+            img: "${inputs.data_file}"
+            labels: "${inputs.labels_file}"
+            cv_folds: "${inputs.n_splits}"
+            standardize: true
+            output_dir: "${inputs.output_dir}/decoder"
+
+  - id: workflow_cpm_prediction
+    stage: prediction
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: compute_connectivity -> feature selection -> CPM -> CV -> permutation -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: connectivity
+          tool: compute_connectivity
+          params:
+            timeseries: "${inputs.timeseries}"
+            kind: "${inputs.connectivity_kind}"
+            output_file: "${inputs.output_dir}/connectivity.npy"
+        - id: cv
+          tool: ml_cross_validation
+          params:
+            data_file: "${steps.connectivity.data.outputs.matrix}"
+            labels_file: "${inputs.labels}"
+            cv_type: "${inputs.cv_type}"
+            n_splits: "${inputs.n_splits}"
+            task_type: "${inputs.task_type}"
+            output_dir: "${inputs.output_dir}/cv"
+
+  - id: workflow_gnn_classification
+    stage: prediction
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: connectome->graph -> train_gnn_classifier -> evaluate_model -> report (usually requires_user_request)"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: graph
+          tool: compute_connectivity
+          params:
+            timeseries: "${inputs.timeseries}"
+            kind: "${inputs.connectivity_kind}"
+            output_file: "${inputs.output_dir}/connectivity.npy"
+        - id: gnn
+          tool: train_gnn_classifier
+          params:
+            adjacency: "${steps.graph.data.outputs.matrix}"
+            labels: "${inputs.labels}"
+            output_dir: "${inputs.output_dir}/gnn"
+        - id: eval
+          tool: evaluate_model
+          params:
+            data_file: "${steps.graph.data.outputs.matrix}"
+            labels_file: "${inputs.labels}"
+            cv_type: "kfold"
+            n_splits: 2
+            task_type: "classification"
+            metrics: ["accuracy"]
+            output_dir: "${inputs.output_dir}/eval"
+
+  - id: workflow_model_comparison
+    stage: prediction
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: compare (features x models x CV schemes) -> corrected stats -> winner selection + report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: eval
+          tool: evaluate_model
+          params:
+            data_file: "${inputs.data_file}"
+            labels_file: "${inputs.labels_file}"
+            cv_type: "kfold"
+            n_splits: 2
+            task_type: "classification"
+            metrics: ["accuracy"]
+            output_dir: "${inputs.output_dir}/evaluation"
+        - id: promote
+          tool: copy_file
+          params:
+            source_file: "${steps.eval.data.outputs.summary}"
+            output_file: "${inputs.output_dir}/model_comparison.json"
+
+  # Tier 5: Dynamics & Simulation
+  - id: workflow_dynamic_states_hmm
+    stage: dynamics
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: sliding_window or HMM/CAPs engine -> state metrics -> group compare -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: windows
+          tool: sliding_window
+          params:
+            timeseries: "${inputs.timeseries}"
+            window_length: "${inputs.window_length}"
+            step_size: "${inputs.step_size}"
+            output_dir: "${inputs.output_dir}"
+
+  - id: workflow_sc_fc_coupling
+    stage: connectivity
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    origin: core32
+    impl: "workflow: build_structural_connectome + compute_connectivity -> coupling stats -> neuromaps/interpret -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: sc
+          tool: build_structural_connectome
+          params:
+            tractogram: "${inputs.tractogram}"
+            atlas: "${inputs.atlas}"
+            output_file: "${inputs.output_dir}/sc.npy"
+        - id: fc
+          tool: compute_connectivity
+          params:
+            timeseries: "${inputs.timeseries}"
+            kind: "${inputs.connectivity_kind}"
+            output_file: "${inputs.output_dir}/fc.npy"
+
+  - id: workflow_test_retest_metrics
+    stage: dynamics
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: reliability (ICC) + fingerprinting style metrics over FC/features -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: reliability
+          tool: test_retest_metrics
+          params:
+            features: "${inputs.features}"
+            subject_ids: "${inputs.subject_ids}"
+            session_ids: "${inputs.session_ids}"
+            output_dir: "${inputs.output_dir}/reliability"
+
+  - id: workflow_brain_simulation
+    stage: dynamics
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: SC -> simulation (TVB-style wrapper) -> simulated FC -> compare empirical vs simulated"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: simulate
+          tool: brain_simulation
+          params:
+            sc_matrix: "${inputs.sc_matrix}"
+            model: "${inputs.model}"
+            output_dir: "${inputs.output_dir}/simulation"
+
+  # Tier 6: Structural & Surface
+  - id: workflow_dwi_connectome
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    recipe_family: dwi_connectome
+    origin: core32
+    lifecycle: candidate_pack
+    source_repo: "https://github.com/MRtrix3/mrtrix3"
+    source_paper: "MRtrix3 tractography and connectomics workflow family"
+    tested_release: "derivative-first DWI connectome adapter baseline 2026-03-10"
+    backend_options:
+      default: qsirecon_derivatives
+      available: [qsirecon_derivatives, qsiprep_to_qsirecon, raw_tractography_fallback]
+    modalities: ["dmri"]
+    example_dataset:
+      dataset_id: ds000117
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_dwi_connectome_ds000117_smoke.py
+    artifact_contract:
+      required_outputs:
+        - sc/connectivity_matrix.csv
+        - sc/connectivity_matrix.npy
+        - sc/graph_metrics.json
+        - sc/connectome_manifest.json
+      optional_outputs:
+        - qsirecon_dir
+        - tractogram
+        - source_connectome
+        - tracts/streamlines.npy
+        - tracts/tractography_summary.json
+        - tracts/tractography_provenance.json
+        - tracts/fa_map.npy
+        - tracts/md_map.npy
+        - tracts/rd_map.npy
+        - tracts/ad_map.npy
+        - tracts/connectivity.npy
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_dwi_connectome_ds000117_smoke.py
+    runbook: docs/runbooks/workflow_dwi_connectome.md
+    params:
+      schema:
+        type: object
+        required: [atlas, output_dir]
+        properties:
+          qsiprep_dir:
+            type: string
+            description: QSIPrep derivative root. Preferred mature input path when QSIRecon outputs are not already available.
+          qsirecon_dir:
+            type: string
+            description: Existing QSIRecon derivative root. Preferred direct derivative route.
+          recon_dir:
+            type: string
+            description: Alias for `qsirecon_dir`.
+          tractogram:
+            type: string
+            description: Optional precomputed tractogram used to materialize a standardized connectome directly.
+          connectome_file:
+            type: string
+            description: Optional precomputed connectome file used when no tractogram is available.
+          dwi:
+            type: string
+            description: Legacy raw DWI volume or lightweight proxy volume for fallback tractography.
+          bvals:
+            type: string
+            description: Legacy diffusion b-values file aligned to `dwi`.
+          bvecs:
+            type: string
+            description: Legacy diffusion b-vectors file aligned to `dwi`.
+          bval:
+            type: string
+            description: Alias for `bvals`.
+          bvec:
+            type: string
+            description: Alias for `bvecs`.
+          atlas:
+            type: string
+            description: Atlas/parcellation image used to build or rematerialize the structural connectome.
+          output_dir:
+            type: string
+            description: Root directory for derivative materialization outputs.
+          participant_label:
+            type: array
+            items:
+              type: string
+            description: Optional participant labels used to scope derivative resolution and QSIRecon execution.
+          session_label:
+            type: string
+            description: Optional session label metadata.
+          recon_spec:
+            type: string
+            description: Reconstruction preset used when promoting `qsiprep_dir` into QSIRecon derivatives.
+          work_dir:
+            type: string
+          fs_license_file:
+            type: string
+          n_cpus:
+            type: integer
+          omp_nthreads:
+            type: integer
+          extra_args:
+            type: array
+            items:
+              type: string
+          qsirecon_extra_args:
+            type: array
+            items:
+              type: string
+          dry_run:
+            type: boolean
+            description: Preview the derivative-first route instead of executing it.
+      defaults:
+        output_dir: /tmp/brain-researcher/workflow_dwi_connectome
+        recon_spec: mrtrix_multishell_msmt_ACT-hsvs
+        dry_run: false
+    impl: "workflow: use qsirecon_dir directly or qsiprep_dir -> QSIRecon -> materialize standardized connectome (preferred) | raw dwi/bvals/bvecs -> run_tractography -> build_structural_connectome (compatibility fallback)"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: tracts
+          tool: run_tractography
+          params:
+            qsiprep_dir: "${inputs.qsiprep_dir}"
+            participant_label: "${inputs.participant_label}"
+            dwi: "${inputs.dwi}"
+            bval: "${inputs.bvals}"
+            bvec: "${inputs.bvecs}"
+            output_dir: "${inputs.output_dir}/tracts"
+        - id: sc
+          tool: build_structural_connectome
+          params:
+            streamlines: "${steps.tracts.data.outputs.streamlines}"
+            atlas: "${inputs.atlas}"
+            output_dir: "${inputs.output_dir}/sc"
+
+  - id: workflow_surface_projection_analysis
+    stage: preprocessing
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: project volume -> surface -> parcellate (fsLR 32k) -> stack hemis"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: project_left
+          tool: map_volume_to_surface
+          params:
+            volume: "${inputs.volume}"
+            surface: "data/neurokg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-L_midthickness.surf.gii"
+            hemi: "left"
+            output_file: "${inputs.output_dir}/surface_L.func.gii"
+        - id: project_right
+          tool: map_volume_to_surface
+          params:
+            volume: "${inputs.volume}"
+            surface: "data/neurokg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-R_midthickness.surf.gii"
+            hemi: "right"
+            output_file: "${inputs.output_dir}/surface_R.func.gii"
+        - id: surface_bilateral
+          tool: stack_surface_hemis
+          params:
+            left_file: "${steps.project_left.data.outputs.surfaces.left}"
+            right_file: "${steps.project_right.data.outputs.surfaces.right}"
+            output_file: "${inputs.output_dir}/surface.func.gii"
+        - id: parcellate_left
+          tool: parcellate_cifti
+          params:
+            cifti_file: "${steps.project_left.data.outputs.surfaces.left}"
+            atlas: "data/neurokg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-L_desc-nomedialwall_dparc.label.gii"
+            output_file: "${inputs.output_dir}/parcellation_L.func.gii"
+        - id: parcellate_right
+          tool: parcellate_cifti
+          params:
+            cifti_file: "${steps.project_right.data.outputs.surfaces.right}"
+            atlas: "data/neurokg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-R_desc-nomedialwall_dparc.label.gii"
+            output_file: "${inputs.output_dir}/parcellation_R.func.gii"
+        - id: parcellation_bilateral
+          tool: stack_surface_hemis
+          params:
+            left_file: "${steps.parcellate_left.data.outputs.parcellated_gifti}"
+            right_file: "${steps.parcellate_right.data.outputs.parcellated_gifti}"
+            output_file: "${inputs.output_dir}/parcellation.func.gii"
+
+  - id: workflow_eeg_source_estimation
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: preprocess_eeg -> localize_source -> ROI/network summaries -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: preprocess
+          tool: preprocess_eeg
+          params:
+            raw_eeg: "${inputs.raw_eeg}"
+            montage_def: "${inputs.montage}"
+            output_dir: "${inputs.output_dir}/preproc"
+        - id: source
+          tool: localize_source
+          params:
+            evoked_file: "${steps.preprocess.data.outputs.clean_eeg}"
+            output_dir: "${inputs.output_dir}/source"
+
+  - id: workflow_vbm_analysis
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    origin: core32
+    impl: "workflow: (prefer established pipeline) segmentation->normalize->smooth->stats->correction->report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: segment
+          tool: unified_segmenter
+          params:
+            t1w: "${inputs.t1w}"
+            output_dir: "${inputs.output_dir}/segment"
+        - id: stats
+          tool: run_glm_second_level
+          params:
+            contrast_maps: "${inputs.gm_maps}"
+            contrast: "intercept"
+            output_dir: "${inputs.output_dir}/stats"
+
+  - id: workflow_myelin_mapping
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: T1/T2-derived myelin maps -> surface/volume analyses -> group compare -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: myelin_map
+          tool: compute_myelin_map
+          params:
+            t1w: "${inputs.t1w}"
+            output_file: "${inputs.output_dir}/myelin_map.nii.gz"
+
+  # Tier 7: Clinical & Translational
+  - id: workflow_lesion_network_mapping
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: segment_lesion -> normalize_with_lesion -> lesion-network mapping -> interpret -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: segment
+          tool: segment_lesion
+          params:
+            t1: "${inputs.t1w}"
+            output_dir: "${inputs.output_dir}/lesion"
+        - id: normalize
+          tool: normalize_with_lesion
+          params:
+            t1: "${inputs.t1w}"
+            lesion_mask: "${steps.segment.data.outputs.lesion_mask}"
+            output_dir: "${inputs.output_dir}/normalized"
+
+  - id: workflow_normative_modeling
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: build/load normative model -> compare_to_normative_model -> deviation maps + summaries"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: compare
+          tool: compare_to_normative_model
+          params:
+            features: "${inputs.features}"
+            model: "${inputs.model}"
+            output_file: "${inputs.output_dir}/deviation.csv"
+
+  - id: workflow_longitudinal_lme
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: longitudinal_lme
+    origin: core32
+    lifecycle: stable_pack
+    stable_workflow_pack: true
+    backend_options:
+      default: python_lme
+      available: [python_lme]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_longitudinal_lme_ds000114_smoke.py
+    reference_assets: []
+    artifact_contract:
+      required_outputs: [lme_results.csv]
+      report_files: []
+      provenance_files: []
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_longitudinal_lme_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_longitudinal_lme.md
+    impl: "workflow: longitudinal features -> analyze_longitudinal_lme -> trajectories + stats -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: lme
+          tool: analyze_longitudinal_lme
+          params:
+            data_file: "${inputs.data_file}"
+            subject_col: "${inputs.subject_col}"
+            time_col: "${inputs.time_col}"
+            output_file: "${inputs.output_dir}/lme_results.csv"
+
+  - id: workflow_subtype_discovery
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: subtype_discovery
+    origin: core32
+    lifecycle: stable_pack
+    stable_workflow_pack: true
+    backend_options:
+      default: hierarchical_clustering
+      available: [hierarchical_clustering]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_subtype_discovery_ds000114_smoke.py
+    reference_assets:
+      - nilearn.atlas.schaefer2018.400.17networks
+      - nilearn.atlas.yeo2011.17networks.volume
+    artifact_contract:
+      required_outputs: [clusters.csv]
+      report_files: []
+      provenance_files: []
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_subtype_discovery_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_subtype_discovery.md
+    impl: "workflow: multimodal feature extraction -> clustering -> stability/validity -> subtype characterization"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: cluster
+          tool: hierarchical_clustering
+          params:
+            features: "${inputs.features}"
+            n_clusters: "${inputs.n_clusters}"
+            output_file: "${inputs.output_dir}/clusters.csv"
+
+  # Tier 8: Knowledge & Meta
+  - id: workflow_neurosynth_roi_analysis
+    stage: interpretation
+    cost_tier: moderate
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: core32
+    impl: "workflow: define ROI -> perform_meta_analysis -> cognitive decoding + report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: meta
+          tool: perform_meta_analysis
+          params:
+            roi_mask: "${inputs.roi_mask}"
+            term: "${inputs.term}"
+            output_dir: "${inputs.output_dir}/meta"
+        - id: decode
+          tool: decode_brain_map
+          params:
+            stat_map: "${steps.meta.data.outputs.stat_map}"
+            top_k: 5
+        - id: roi
+          tool: extract_roi_values
+          params:
+            stat_map: "${steps.meta.data.outputs.stat_map}"
+            atlas_name: "${inputs.roi_mask}"
+            output_dir: "${inputs.output_dir}/roi"
+
+  - id: workflow_rsa_model_brain
+    stage: interpretation
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: optional NeuroVLM model-RDM builder -> RSA -> stats -> interpretation + report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: model_rdm
+          tool: neurovlm_build_rdm
+          params:
+            input_rdm: "${inputs.model_rdm}"
+            texts: "${inputs.model_texts}"
+            text_file: "${inputs.model_text_file}"
+            head: "${inputs.model_head}"
+            datasets: "${inputs.model_datasets}"
+            device: "${inputs.model_device}"
+            output_file: "${inputs.output_dir}/model_rdm.npy"
+        - id: rsa
+          tool: rsa_analyzer
+          params:
+            brain_rdm: "${inputs.brain_rdm}"
+            model_rdm: "${steps.model_rdm.data.outputs.rdm}"
+            output_file: "${inputs.output_dir}/rsa.csv"
+
+  - id: workflow_gene_enrichment
+    stage: interpretation
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: core32
+    impl: "workflow: map->genes (Allen-style) -> enrichment -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: enrich
+          tool: gene_expression_mapping
+          params:
+            map_file: "${inputs.map_file}"
+            output_file: "${inputs.output_dir}/gene_enrichment.csv"
+
+  - id: workflow_literature_search_synthesis
+    stage: meta_analysis
+    cost_tier: moderate
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: core32
+    modalities: ["meta"]
+    description: >
+      Concept-driven literature search and lightweight synthesis over BR-KG-backed
+      paper retrieval. Accepts a free-text query or concept list, returns a JSON
+      literature set, and keeps the workflow surface aligned with the generic
+      literature-search smoke tests.
+    impl: >
+      workflow: search_literature(query|concepts)
+        -> write literature.json
+    artifact_contract:
+      required_outputs:
+        - literature.json
+    params:
+      schema:
+        type: object
+        required: [output_dir]
+        properties:
+          query:
+            type: string
+            description: Free-text literature query.
+          concepts:
+            type: array
+            items:
+              type: string
+            description: Optional explicit concept terms passed to the literature search tool.
+          max_results:
+            type: integer
+            description: Maximum number of papers to return.
+            default: 20
+          output_dir:
+            type: string
+            description: Directory for literature.json.
+      defaults:
+        max_results: 20
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: search
+          tool: search_literature
+          params:
+            query: "${inputs.query}"
+            concepts: "${inputs.concepts}"
+            max_results: "${inputs.max_results:-20}"
+            output_file: "${inputs.output_dir}/literature.json"
+
+  - id: workflow_psych101_ingest_eval
+    stage: reporting
+    cost_tier: cheap
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: trend_addition
+    modalities: ["behavioral"]
+    runbook: docs/runbooks/workflow_psych101_ingest_eval.md
+    example_dataset:
+      dataset_id: psych101_synthetic
+      source: synthetic
+      smoke_test: tests/integration/realdata/test_workflow_psych101_ingest_eval_smoke.py
+    description: >
+      Minimal Psych-101 scaffold for ingesting a trial TSV export and preparing
+      a lightweight eval manifest. The workflow is intentionally non-GPU and is
+      designed for Phase 0/1 integration work: normalize the trial table,
+      compute a compact summary, and write a manifest artifact for downstream
+      evaluation or reporting.
+    impl: >
+      workflow: psych101_ingest(qc_tsv -> normalized trials)
+        -> psych101_prepare_eval_manifest(qc_table -> summary manifest)
+    artifact_contract:
+      required_outputs:
+        - psych101_trials.csv
+        - psych101_eval_manifest.json
+    params:
+      schema:
+        type: object
+        required: [psych101_tsv, output_dir]
+        properties:
+          psych101_tsv:
+            type: string
+            description: Psych-101 trial export TSV/CSV to normalize.
+          output_dir:
+            type: string
+            description: Directory where normalized trials and the eval manifest are written.
+          output_stem:
+            type: string
+            description: Optional basename for the manifest artifact.
+          dataset_id:
+            type: string
+            description: Dataset identifier to write into the graph plan and eval manifest.
+          source_name:
+            type: string
+            description: Human-readable dataset title used in scaffold metadata.
+          heldout_ratio:
+            type: number
+            description: Placeholder held-out split ratio to record in the eval manifest.
+          audit_group_keys:
+            type: array
+            items:
+              type: string
+            description: Optional subgroup columns to audit, such as site, sex, or ethnicity_group.
+          target_population:
+            type: string
+            description: Optional prose description of the target population represented by the benchmark.
+          sampling_frame:
+            type: string
+            description: Optional sampling-frame note carried into the eval manifest.
+          inclusion_criteria:
+            type: string
+            description: Optional inclusion criteria note recorded for bias audit purposes.
+          exclusion_criteria:
+            type: string
+            description: Optional exclusion criteria note recorded for bias audit purposes.
+          sample_weight_column:
+            type: string
+            description: Optional normalized trial-table column containing sample weights.
+          min_group_count:
+            type: integer
+            description: Minimum participant count before a subgroup is flagged as underpowered.
+      defaults:
+        output_stem: psych101_eval_manifest
+        dataset_id: psych101
+        source_name: Psych-101
+        heldout_ratio: 0.1
+        min_group_count: 5
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: ingest
+          tool: psych101_ingest
+          params:
+            qc_tsv: "${inputs.psych101_tsv}"
+            output_file: "${inputs.output_dir}/psych101_trials.csv"
+            dataset_id: "${inputs.dataset_id:-psych101}"
+            source_name: "${inputs.source_name:-Psych-101}"
+        - id: prepare_eval_manifest
+          tool: psych101_prepare_eval_manifest
+          params:
+            qc_table: "${steps.ingest.data.outputs.qc_table}"
+            output_file: "${inputs.output_dir}/${inputs.output_stem:-psych101_eval_manifest}.json"
+            dataset_id: "${inputs.dataset_id:-psych101}"
+            heldout_ratio: "${inputs.heldout_ratio:-0.1}"
+            audit_group_keys: "${inputs.audit_group_keys}"
+            target_population: "${inputs.target_population}"
+            sampling_frame: "${inputs.sampling_frame}"
+            inclusion_criteria: "${inputs.inclusion_criteria}"
+            exclusion_criteria: "${inputs.exclusion_criteria}"
+            sample_weight_column: "${inputs.sample_weight_column}"
+            min_group_count: "${inputs.min_group_count:-5}"
+
+  - id: workflow_psych101_hf_snapshot
+    stage: dataset
+    cost_tier: cheap
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: trend_addition
+    modalities: ["behavioral"]
+    runbook: docs/runbooks/workflow_psych101_hf_snapshot.md
+    example_dataset:
+      dataset_id: psych101
+      source: huggingface
+      smoke_test: tests/integration/realdata/test_workflow_psych101_hf_snapshot_smoke.py
+    description: >
+      Fetch the official Psych-101 dataset metadata from Hugging Face and
+      datasets-server, aggregate experiment-level parquet summaries, and write
+      graph-ready artifacts while attempting a direct BR-KG Neo4j ingest
+      without any GPU model serving.
+    impl: >
+      workflow: psych101_fetch_hf_snapshot(repo_id -> metadata + experiment summary + graph plan + optional Neo4j ingest)
+    artifact_contract:
+      required_outputs:
+        - psych101_hf_metadata.json
+        - psych101_hf_metadata_experiments.json
+        - psych101_hf_metadata_graph_plan.json
+        - psych101_hf_metadata_neo4j_ingest.json
+    params:
+      schema:
+        type: object
+        required: [output_dir]
+        properties:
+          output_dir:
+            type: string
+            description: Directory where snapshot artifacts are written.
+          repo_id:
+            type: string
+            description: Hugging Face dataset id to snapshot.
+          dataset_id:
+            type: string
+            description: Local dataset identifier to embed in graph-plan artifacts.
+          source_name:
+            type: string
+            description: Human-readable source name for generated graph metadata.
+          sample_text:
+            type: boolean
+            description: Attempt to capture a sample text field during parquet aggregation.
+          write_to_neo4j:
+            type: boolean
+            description: Attempt to write the snapshot directly into Neo4j.
+          neo4j_database:
+            type: string
+            description: Optional Neo4j database name override.
+      defaults:
+        repo_id: marcelbinz/Psych-101
+        dataset_id: psych101
+        source_name: Psych-101
+        sample_text: true
+        write_to_neo4j: true
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: snapshot
+          tool: psych101_fetch_hf_snapshot
+          params:
+            repo_id: "${inputs.repo_id:-marcelbinz/Psych-101}"
+            output_file: "${inputs.output_dir}/psych101_hf_metadata.json"
+            dataset_id: "${inputs.dataset_id:-psych101}"
+            source_name: "${inputs.source_name:-Psych-101}"
+            sample_text: "${inputs.sample_text:-true}"
+            write_to_neo4j: "${inputs.write_to_neo4j:-true}"
+            neo4j_database: "${inputs.neo4j_database}"
+
+  - id: workflow_psych101_centaur_task_payloads
+    stage: dataset
+    cost_tier: cheap
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: trend_addition
+    modalities: ["behavioral"]
+    runbook: docs/runbooks/workflow_psych101_centaur_task_payloads.md
+    example_dataset:
+      dataset_id: psych101
+      source: huggingface
+      smoke_test: tests/integration/realdata/test_workflow_psych101_centaur_task_payloads_smoke.py
+    description: >
+      Fetch the official Psych-101 snapshot and derive a non-GPU Centaur/Minitaur
+      feature pack from the graph-plan artifact. This workflow does not run model
+      inference; it writes structured task and experiment payloads plus JSONL
+      prompt sidecars for later offline batch embedding, retrieval evaluation,
+      or external-tool integration.
+    impl: >
+      workflow: psych101_fetch_hf_snapshot(repo_id -> metadata + graph plan)
+        -> centaur_prepare_task_payloads(graph plan -> task payload JSON + prompt JSONL sidecars)
+    artifact_contract:
+      required_outputs:
+        - psych101_hf_metadata.json
+        - psych101_hf_metadata_experiments.json
+        - psych101_hf_metadata_graph_plan.json
+        - psych101_hf_metadata_neo4j_ingest.json
+        - psych101_centaur_task_payloads.json
+        - psych101_centaur_task_prompts.jsonl
+        - psych101_centaur_experiment_prompts.jsonl
+    params:
+      schema:
+        type: object
+        required: [output_dir]
+        properties:
+          output_dir:
+            type: string
+            description: Directory where Psych-101 snapshot and Centaur payload artifacts are written.
+          repo_id:
+            type: string
+            description: Hugging Face dataset id to snapshot.
+          dataset_id:
+            type: string
+            description: Local dataset identifier to embed in graph-plan artifacts.
+          source_name:
+            type: string
+            description: Human-readable source name for graph metadata.
+          sample_text:
+            type: boolean
+            description: Attempt to capture a sample text field during parquet aggregation.
+          write_to_neo4j:
+            type: boolean
+            description: Attempt to write the HF snapshot directly into Neo4j before packaging payloads.
+          neo4j_database:
+            type: string
+            description: Optional Neo4j database name override.
+          include_unmapped:
+            type: boolean
+            description: Keep unmapped tasks and experiments in the payload pack for later curation or abstaining models.
+          include_experiments:
+            type: boolean
+            description: Emit experiment-level payloads in addition to task-level payloads.
+          recommended_model:
+            type: string
+            description: Informational model label to stamp into payloads, for example minitaur or centaur.
+      defaults:
+        repo_id: marcelbinz/Psych-101
+        dataset_id: psych101
+        source_name: Psych-101
+        sample_text: true
+        write_to_neo4j: false
+        include_unmapped: true
+        include_experiments: true
+        recommended_model: minitaur
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: snapshot
+          tool: psych101_fetch_hf_snapshot
+          params:
+            repo_id: "${inputs.repo_id:-marcelbinz/Psych-101}"
+            output_file: "${inputs.output_dir}/psych101_hf_metadata.json"
+            dataset_id: "${inputs.dataset_id:-psych101}"
+            source_name: "${inputs.source_name:-Psych-101}"
+            sample_text: "${inputs.sample_text:-true}"
+            write_to_neo4j: "${inputs.write_to_neo4j:-false}"
+            neo4j_database: "${inputs.neo4j_database}"
+        - id: prepare_payloads
+          tool: centaur_prepare_task_payloads
+          params:
+            graph_plan_json: "${steps.snapshot.data.outputs.graph_plan}"
+            output_file: "${inputs.output_dir}/psych101_centaur_task_payloads.json"
+            include_unmapped: "${inputs.include_unmapped:-true}"
+            include_experiments: "${inputs.include_experiments:-true}"
+            recommended_model: "${inputs.recommended_model:-minitaur}"
+
+  - id: workflow_psych101_centaur_behavior_embeddings
+    stage: dataset
+    cost_tier: moderate
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: trend_addition
+    modalities: ["behavioral"]
+    runbook: docs/runbooks/workflow_psych101_centaur_behavior_embeddings.md
+    example_dataset:
+      dataset_id: psych101
+      source: huggingface
+      smoke_test: tests/integration/realdata/test_workflow_psych101_centaur_behavior_embeddings_smoke.py
+    description: >
+      Build the Psych-101 Centaur/Minitaur payload pack, run offline behavioral
+      embedding extraction over the prompt JSONL sidecars, and optionally write
+      a sibling KG feature space such as embedding_centaur_behavior_v1 onto
+      local Psych-101 Task nodes.
+    impl: >
+      workflow: psych101_fetch_hf_snapshot(repo_id -> metadata + graph plan)
+        -> centaur_prepare_task_payloads(graph plan -> prompt sidecars)
+        -> centaur_offline_behavior_embeddings(prompt sidecars -> embedding JSONL + optional Neo4j writes)
+    artifact_contract:
+      required_outputs:
+        - psych101_hf_metadata.json
+        - psych101_hf_metadata_experiments.json
+        - psych101_hf_metadata_graph_plan.json
+        - psych101_hf_metadata_neo4j_ingest.json
+        - psych101_centaur_task_payloads.json
+        - psych101_centaur_task_prompts.jsonl
+        - psych101_centaur_experiment_prompts.jsonl
+        - psych101_centaur_behavior_embeddings.json
+        - psych101_centaur_task_embeddings.jsonl
+        - psych101_centaur_experiment_embeddings.jsonl
+        - psych101_centaur_neo4j_ingest.json
+    params:
+      schema:
+        type: object
+        required: [output_dir, model_name_or_path]
+        properties:
+          output_dir:
+            type: string
+            description: Directory where Psych-101 snapshot, payload, and embedding artifacts are written.
+          model_name_or_path:
+            type: string
+            description: Local or Hugging Face model path for offline Minitaur/Centaur embedding extraction.
+          embedding_backend:
+            type: string
+            description: Backend used for embedding extraction. Use hf_hidden_state for real models or hash for deterministic dry runs/tests.
+          pooling:
+            type: string
+            description: Hidden-state pooling method, typically mean or last_token.
+          batch_size:
+            type: integer
+            description: Embedding batch size.
+          max_length:
+            type: integer
+            description: Maximum token length for prompt encoding.
+          normalize:
+            type: boolean
+            description: L2-normalize the resulting embeddings.
+          device:
+            type: string
+            description: Optional explicit torch device override such as cpu or cuda.
+          trust_remote_code:
+            type: boolean
+            description: Forward trust_remote_code to Hugging Face model loading.
+          repo_id:
+            type: string
+            description: Hugging Face dataset id to snapshot.
+          dataset_id:
+            type: string
+            description: Local dataset identifier to embed in graph-plan artifacts.
+          source_name:
+            type: string
+            description: Human-readable source name for graph metadata.
+          sample_text:
+            type: boolean
+            description: Attempt to capture a sample text field during parquet aggregation.
+          include_unmapped:
+            type: boolean
+            description: Keep unmapped tasks and experiments in the payload pack before embedding.
+          include_experiments:
+            type: boolean
+            description: Emit and embed experiment-level prompt sidecars in addition to task-level sidecars.
+          write_snapshot_to_neo4j:
+            type: boolean
+            description: Attempt to write the HF snapshot directly into Neo4j before embedding.
+          write_embeddings_to_neo4j:
+            type: boolean
+            description: Attempt to write embedding_centaur_behavior_v1-style properties into Neo4j.
+          write_experiment_embeddings:
+            type: boolean
+            description: Also write experiment-node embeddings into Neo4j instead of only Task-node embeddings.
+          neo4j_database:
+            type: string
+            description: Optional Neo4j database name override.
+          embedding_property:
+            type: string
+            description: Node property used for the sibling behavioral feature space.
+          recommended_model:
+            type: string
+            description: Informational model label stamped into the payload pack.
+      defaults:
+        embedding_backend: hf_hidden_state
+        pooling: mean
+        batch_size: 4
+        max_length: 512
+        normalize: true
+        repo_id: marcelbinz/Psych-101
+        dataset_id: psych101
+        source_name: Psych-101
+        sample_text: true
+        include_unmapped: true
+        include_experiments: true
+        write_snapshot_to_neo4j: false
+        write_embeddings_to_neo4j: true
+        write_experiment_embeddings: false
+        embedding_property: embedding_centaur_behavior_v1
+        recommended_model: minitaur
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: snapshot
+          tool: psych101_fetch_hf_snapshot
+          params:
+            repo_id: "${inputs.repo_id:-marcelbinz/Psych-101}"
+            output_file: "${inputs.output_dir}/psych101_hf_metadata.json"
+            dataset_id: "${inputs.dataset_id:-psych101}"
+            source_name: "${inputs.source_name:-Psych-101}"
+            sample_text: "${inputs.sample_text:-true}"
+            write_to_neo4j: "${inputs.write_snapshot_to_neo4j:-false}"
+            neo4j_database: "${inputs.neo4j_database}"
+        - id: prepare_payloads
+          tool: centaur_prepare_task_payloads
+          params:
+            graph_plan_json: "${steps.snapshot.data.outputs.graph_plan}"
+            output_file: "${inputs.output_dir}/psych101_centaur_task_payloads.json"
+            include_unmapped: "${inputs.include_unmapped:-true}"
+            include_experiments: "${inputs.include_experiments:-true}"
+            recommended_model: "${inputs.recommended_model:-minitaur}"
+        - id: build_behavior_embeddings
+          tool: centaur_offline_behavior_embeddings
+          params:
+            task_prompts_jsonl: "${steps.prepare_payloads.data.outputs.task_prompts}"
+            experiment_prompts_jsonl: "${steps.prepare_payloads.data.outputs.experiment_prompts}"
+            output_file: "${inputs.output_dir}/psych101_centaur_behavior_embeddings.json"
+            model_name_or_path: "${inputs.model_name_or_path}"
+            embedding_backend: "${inputs.embedding_backend:-hf_hidden_state}"
+            pooling: "${inputs.pooling:-mean}"
+            batch_size: "${inputs.batch_size:-4}"
+            max_length: "${inputs.max_length:-512}"
+            normalize: "${inputs.normalize:-true}"
+            device: "${inputs.device:-}"
+            trust_remote_code: "${inputs.trust_remote_code:-false}"
+            write_to_neo4j: "${inputs.write_embeddings_to_neo4j:-true}"
+            write_experiment_embeddings: "${inputs.write_experiment_embeddings:-false}"
+            neo4j_database: "${inputs.neo4j_database}"
+            embedding_property: "${inputs.embedding_property:-embedding_centaur_behavior_v1}"
+
+  - id: workflow_behavior_to_fmri_retrieval
+    stage: reporting
+    cost_tier: cheap
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: trend_addition
+    modalities: ["behavioral", "fmri"]
+    runbook: docs/runbooks/workflow_behavior_to_fmri_retrieval.md
+    example_dataset:
+      dataset_id: psych101
+      source: neurokg
+      smoke_test: tests/integration/realdata/test_workflow_behavior_to_fmri_retrieval_smoke.py
+    description: >
+      Behavior fMRI retrieval workflow: retrieve task-fMRI evidence for a
+      behavioral seed such as a Psych-101 task or experiment, and export a
+      workflow-friendly JSON artifact summarizing ranked TaskAnalysis, Contrast,
+      StatsMap, Dataset, and BrainRegion hits.
+    impl: >
+      workflow: behavior_to_fmri_retrieval_export(seed_id/name -> retrieval JSON artifact)
+    artifact_contract:
+      required_outputs:
+        - behavior_to_fmri_retrieval.json
+    params:
+      schema:
+        type: object
+        required: [output_dir]
+        properties:
+          output_dir:
+            type: string
+            description: Directory where the retrieval JSON artifact is written.
+          output_stem:
+            type: string
+            description: Basename for the retrieval artifact without extension.
+          seed_id:
+            type: string
+            description: Preferred KG seed identifier, e.g. psych101:task:go-no-go.
+          label:
+            type: string
+            description: Optional node label/type hint when resolving by name.
+          name:
+            type: string
+            description: Optional seed name when seed_id is not provided.
+          limit:
+            type: integer
+            description: Maximum number of ranked retrieval items to keep.
+          max_maps:
+            type: integer
+            description: Maximum maps to traverse while building evidence packs.
+          max_paths:
+            type: integer
+            description: Maximum graph paths to retain per evidence pack.
+          max_regions_per_map:
+            type: integer
+            description: Maximum brain regions to retain per stats map.
+          max_behavior_neighbors:
+            type: integer
+            description: Maximum behavior-neighbor tasks to traverse.
+          min_behavior_similarity:
+            type: number
+            description: Minimum behavior embedding similarity for neighbor expansion.
+          neo4j_database:
+            type: string
+            description: Optional Neo4j database name override.
+      defaults:
+        output_stem: behavior_to_fmri_retrieval
+        seed_id: psych101:task:go-no-go
+        limit: 12
+        max_maps: 20
+        max_paths: 20
+        max_regions_per_map: 8
+        max_behavior_neighbors: 4
+        min_behavior_similarity: 0.0
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: retrieve
+          tool: behavior_to_fmri_retrieval_export
+          params:
+            output_file: "${inputs.output_dir}/${inputs.output_stem:-behavior_to_fmri_retrieval}.json"
+            seed_id: "${inputs.seed_id:-psych101:task:go-no-go}"
+            label: "${inputs.label}"
+            name: "${inputs.name}"
+            limit: "${inputs.limit:-12}"
+            max_maps: "${inputs.max_maps:-20}"
+            max_paths: "${inputs.max_paths:-20}"
+            max_regions_per_map: "${inputs.max_regions_per_map:-8}"
+            max_behavior_neighbors: "${inputs.max_behavior_neighbors:-4}"
+            min_behavior_similarity: "${inputs.min_behavior_similarity:-0.0}"
+            neo4j_database: "${inputs.neo4j_database}"
+
+  - id: workflow_psych101_benchmark_import
+    stage: reporting
+    cost_tier: cheap
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: trend_addition
+    modalities: ["behavioral"]
+    runbook: docs/runbooks/workflow_psych101_benchmark_import.md
+    example_dataset:
+      dataset_id: psych101_synthetic
+      source: synthetic
+      smoke_test: tests/integration/realdata/test_workflow_psych101_benchmark_import_smoke.py
+    description: >
+      Register benchmark tasks from a Psych-101 eval manifest into the local
+      benchmark board SQLite registry. This is the lightweight bridge from the
+      Psych-101 scaffold into Brain Researcher's benchmark surfaces.
+    impl: >
+      workflow: psych101_import_eval_manifest(eval_manifest_json -> benchmark db + import summary)
+    artifact_contract:
+      required_outputs:
+        - psych101_benchmark_import.json
+    params:
+      schema:
+        type: object
+        required: [eval_manifest_json, output_dir]
+        properties:
+          eval_manifest_json:
+            type: string
+            description: Path to a Psych-101 eval manifest containing benchmark_tasks.
+          output_dir:
+            type: string
+            description: Directory where import summary artifacts are written.
+          output_stem:
+            type: string
+            description: Optional basename for the import summary artifact.
+          dataset_id:
+            type: string
+            description: Override dataset id for the benchmark board dataset row.
+          version:
+            type: string
+            description: Version label to store in the benchmark board.
+          benchmark_db_path:
+            type: string
+            description: Optional explicit SQLite path for benchmark board imports.
+          overwrite_governance:
+            type: boolean
+            description: Reset governance rows on update instead of preserving them.
+      defaults:
+        output_stem: psych101_benchmark_import
+        version: "1.0"
+        overwrite_governance: false
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: benchmark_import
+          tool: psych101_import_eval_manifest
+          params:
+            eval_manifest_json: "${inputs.eval_manifest_json}"
+            output_file: "${inputs.output_dir}/${inputs.output_stem:-psych101_benchmark_import}.json"
+            dataset_id: "${inputs.dataset_id:-}"
+            version: "${inputs.version:-1.0}"
+            benchmark_db_path: "${inputs.benchmark_db_path:-}"
+            overwrite_governance: "${inputs.overwrite_governance:-false}"
+
+  - id: workflow_neurometabench_official_adapter
+    stage: meta_analysis
+    cost_tier: expensive
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    origin: core32
+    modalities: ["meta"]
+    description: >
+      Official-asset-aware NeurometaBench adapter. Dispatches each benchmark case
+      to the appropriate official route: NiMADS/BrainMap reproduction,
+      PMC bibliography-first screening, or PubMed-metadata fallback. Writes
+      case_adapter.json and results.json for the selected meta-analysis.
+    impl: >
+      workflow: resolve official benchmark route(meta_pmid)
+        -> run neurometabench_screening_pipeline.py
+        -> write case_adapter.json + results.json
+    script: scripts/neurometabench_screening_pipeline.py
+    artifact_contract:
+      required_outputs:
+        - case_adapter.json
+        - results.json
+      optional_outputs:
+        - screening_decisions.jsonl
+        - missed_gt.json
+    params:
+      schema:
+        type: object
+        required: [meta_pmid, output_dir]
+        properties:
+          meta_pmid:
+            type: string
+            description: PMID of the target NeurometaBench meta-analysis.
+          output_dir:
+            type: string
+            description: Directory for case_adapter.json and results.json.
+          data_dir:
+            type: string
+            description: Directory containing NeurometaBench benchmark assets.
+            default: external/neurometabench/data
+          max_candidates:
+            type: integer
+            description: Cap on PubMed-metadata candidate screening when fallback retrieval is used.
+            default: 500
+          llm_model:
+            type: string
+            description: Screening model for routes that require abstract screening.
+            default: gemini-2.5-pro
+      defaults:
+        data_dir: external/neurometabench/data
+        max_candidates: 500
+        llm_model: gemini-2.5-pro
+    env_requirements:
+      - GEMINI_API_KEY
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: run_adapter
+          tool: run_local_script
+          params:
+            script: "scripts/neurometabench_screening_pipeline.py"
+            args:
+              - "--meta-pmid=${inputs.meta_pmid}"
+              - "--data-dir=${inputs.data_dir:-external/neurometabench/data}"
+              - "--max-candidates=${inputs.max_candidates:-500}"
+              - "--llm-model=${inputs.llm_model:-gemini-2.5-pro}"
+              - "--output-dir=${inputs.output_dir}"
+
+  # Trend additions: +8 workflows (32 -> 40)
+  - id: workflow_local_activity_analysis
+    stage: local_activity
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: trend_addition
+    impl: "workflow: confounds + filtering -> compute_alff/compute_falff/compute_reho -> group compare -> correction -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: alff
+          tool: compute_alff
+          params:
+            img: "${inputs.img}"
+            mask: "${inputs.mask}"
+            output_file: "${inputs.output_dir}/alff.nii.gz"
+        - id: reho
+          tool: compute_reho
+          params:
+            img: "${inputs.img}"
+            mask: "${inputs.mask}"
+            output_file: "${inputs.output_dir}/reho.nii.gz"
+
+  - id: workflow_precision_parcellation
+    stage: preprocessing
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: precision_parcellation
+    origin: trend_addition
+    lifecycle: stable_pack
+    stable_workflow_pack: true
+    backend_options:
+      default: individual_parcellation
+      available: [individual_parcellation]
+    example_dataset:
+      dataset_id: ds000114
+      source: OpenNeuro
+      smoke_test: tests/integration/realdata/test_workflow_precision_parcellation_ds000114_smoke.py
+    reference_assets:
+      - nilearn.atlas.schaefer2018.400.17networks
+      - nilearn.atlas.yeo2011.17networks.volume
+    artifact_contract:
+      required_outputs:
+        [
+          parcellation.npz,
+          parcellation_labels.npy,
+          parcellation_stability_report.json,
+          parcellation_provenance.json,
+        ]
+      report_files: [parcellation_stability_report.json]
+      provenance_files: [parcellation_provenance.json]
+    acceptance_gate:
+      script: scripts/workflows/run_workflow_realdata_gate.py
+      smoke_test: tests/integration/realdata/test_workflow_precision_parcellation_ds000114_smoke.py
+    runbook: docs/runbooks/workflow_precision_parcellation.md
+    impl: "workflow: individual_parcellation -> validate (test-retest if available) -> individualized networks + report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: parcel
+          tool: individual_parcellation
+          params:
+            timeseries_file: "${inputs.timeseries}"
+            n_components: "${inputs.n_components}"
+            method: "pca"
+            output_file: "${inputs.output_dir}/parcellation.npz"
+            reference_asset_ids:
+              - "nilearn.atlas.schaefer2018.400.17networks"
+              - "nilearn.atlas.yeo2011.17networks.volume"
+            atlas_family: "precision_parcellation_reference"
+            atlas_version: "brain_researcher stable-pack baseline 2026-03-09"
+
+  - id: workflow_visual_decoding
+    stage: prediction
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: trend_addition
+    impl: "workflow: ROI/features -> visual_feature_decoder -> (optional) generative reconstruction + metrics + report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: decode
+          tool: visual_feature_decoder
+          params:
+            features_file: "${inputs.features}"
+            targets_file: "${inputs.labels}"
+            output_dir: "${inputs.output_dir}/visual_decode"
+
+  - id: workflow_brain_age_prediction
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: trend_addition
+    impl: "workflow: feature extraction -> compute_brain_age -> age_gap + associations + report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: brain_age
+          tool: compute_brain_age
+          params:
+            features_file: "${inputs.features}"
+            ages_file: "${inputs.ages}"
+            output_file: "${inputs.output_dir}/brain_age.csv"
+
+  - id: workflow_tms_targeting
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: trend_addition
+    impl: "workflow: individualized connectivity -> target selection heuristics -> (optional) e-field modeling hook -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: target
+          tool: tms_target_selector
+          params:
+            connectivity_matrix: "${inputs.connectivity_matrix}"
+            output_file: "${inputs.output_dir}/tms_target.json"
+
+
+  - id: workflow_asl_perfusion
+    stage: clinical
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [neurodesk, container, slurm]
+    primary_target: neurodesk
+    origin: trend_addition
+    impl: "workflow: run_aslprep -> CBF maps -> group stats -> report"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: aslprep
+          tool: run_aslprep
+          params:
+            bids_dir: "${inputs.bids_dir}"
+            output_dir: "${inputs.output_dir}/aslprep"
+            participant_label: "${inputs.participant_label}"
+            container_type: "${inputs.container_type}"
+            container_image: "${inputs.container_image}"
+
+  - id: workflow_hypothesis_candidate_cards
+    stage: interpretation
+    cost_tier: moderate
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: hypothesis_candidate_cards
+    origin: novelty_agent_path
+    impl: "workflow: neurokg.find_structural_leverage -> neurokg.sample_ood_hypothesis -> neurokg.verify_sampled_hypotheses -> neurokg.detect_contradiction_motifs -> neurokg.detect_topology_shifts -> neurokg.synthesize_hypothesis_candidate_cards"
+    params:
+      schema:
+        type: object
+        required:
+          - query
+        properties:
+          query:
+            type: string
+            description: "Construct/task query used to resolve seed KG nodes."
+            example: "fmri based image decoding"
+          frontier_mode:
+            type: string
+            enum:
+              - "off"
+              - "frontier"
+            description: "Whether to mix contradiction/assumption/analogy frontier candidates into final cards."
+            default: "off"
+          seed_kg_ids:
+            type: array
+            items:
+              type: string
+            description: "Optional explicit seed KG IDs."
+            default: []
+          relation_types:
+            type: array
+            items:
+              type: string
+            description: "Optional relation filter."
+            default: []
+          top_k:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+          n_samples:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 5
+          taste_mode:
+            type: string
+            enum:
+              - novelty_first
+              - balanced
+              - evidence_first
+            default: novelty_first
+          candidate_lane_mode:
+            type: string
+            enum:
+              - broad
+              - strict
+            default: broad
+          use_external_literature:
+            type: boolean
+            default: false
+          verify_use_external_literature:
+            anyOf:
+              - type: boolean
+              - type: "null"
+            description: "Optional override for external literature lookup inside verify_sampled_hypotheses. When omitted, the verify step falls back to use_external_literature."
+            default: null
+          external_literature_top_k:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 5
+          external_literature_recency_days:
+            type: integer
+            minimum: 0
+            maximum: 3650
+            default: 365
+          external_literature_exclude_domains:
+            type: array
+            items:
+              type: string
+            default: []
+          controller_mode:
+            type: string
+            enum:
+              - legacy
+              - principle_v0
+            default: legacy
+      defaults:
+        frontier_mode: "off"
+        seed_kg_ids: []
+        relation_types: []
+        top_k: 20
+        n_samples: 5
+        taste_mode: novelty_first
+        candidate_lane_mode: broad
+        use_external_literature: false
+        external_literature_top_k: 5
+        external_literature_recency_days: 365
+        external_literature_exclude_domains: []
+        controller_mode: legacy
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: leverage
+          tool: neurokg.find_structural_leverage
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${inputs.seed_kg_ids}"
+            relation_types: "${inputs.relation_types}"
+            limit: "${inputs.top_k}"
+            taste_mode: "${inputs.taste_mode}"
+        - id: principle_state_init
+          tool: neurokg.principle_state_init
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
+            relation_types: "${inputs.relation_types}"
+            taste_mode: "${inputs.taste_mode}"
+            controller_mode: "${inputs.controller_mode:-legacy}"
+            leverage_items: "${steps.leverage.data.result.items}"
+        - id: ood_sampling
+          tool: neurokg.sample_ood_hypothesis
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
+            relation_types: "${inputs.relation_types}"
+            n_samples: "${inputs.n_samples}"
+            taste_mode: "${inputs.taste_mode}"
+            controller_mode: "${inputs.controller_mode:-legacy}"
+            leverage_items: "${steps.leverage.data.result.items}"
+            leverage_context: "${steps.leverage.data.result}"
+            principle_state: "${steps.principle_state_init.data.result}"
+        - id: verify_sampled_hypotheses
+          tool: neurokg.verify_sampled_hypotheses
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
+            sampled_hypotheses: "${steps.ood_sampling.data.result.hypotheses}"
+            verify_top_k: "${inputs.n_samples}"
+            candidate_lane_mode: "${inputs.candidate_lane_mode:-broad}"
+            use_external_literature: "${inputs.verify_use_external_literature}"
+            external_literature_top_k: "${inputs.external_literature_top_k:-5}"
+            external_literature_recency_days: "${inputs.external_literature_recency_days:-365}"
+            external_literature_exclude_domains: "${inputs.external_literature_exclude_domains:-[]}"
+        - id: contradiction_scan
+          tool: neurokg.detect_contradiction_motifs
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
+            evidence_items: "${steps.verify_sampled_hypotheses.data.result.evidence_items:-[]}"
+            max_evidence: "${inputs.top_k}"
+        - id: topology_shift_scan
+          tool: neurokg.detect_topology_shifts
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
+            mode: proposal
+            limit: "${inputs.top_k}"
+            taste_mode: "${inputs.taste_mode}"
+        - id: contradiction_frontiers
+          tool: neurokg.find_contradiction_frontiers
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
+            relation_types: "${inputs.relation_types}"
+            limit: "${inputs.top_k}"
+            max_evidence: "${inputs.top_k}"
+        - id: assumption_cracks
+          tool: neurokg.mine_assumption_cracks
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.contradiction_frontiers.data.result.seed_kg_ids}"
+            contradiction_frontiers: "${steps.contradiction_frontiers.data.result}"
+            limit: "${inputs.top_k}"
+        - id: analogy_transfers
+          tool: neurokg.find_analogy_transfers
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.contradiction_frontiers.data.result.seed_kg_ids}"
+            relation_types: "${inputs.relation_types}"
+            limit: "${inputs.top_k}"
+        - id: principle_state_update
+          tool: neurokg.principle_state_update
+          params:
+            query: "${inputs.query}"
+            seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
+            relation_types: "${inputs.relation_types}"
+            taste_mode: "${inputs.taste_mode}"
+            controller_mode: "${inputs.controller_mode:-legacy}"
+            principle_state: "${steps.principle_state_init.data.result}"
+            ood_result: "${steps.ood_sampling.data.result}"
+            contradiction_result: "${steps.contradiction_scan.data.result}"
+            topology_result: "${steps.topology_shift_scan.data.result}"
+        - id: candidate_card_rewrite
+          tool: neurokg.synthesize_hypothesis_candidate_cards
+          params:
+            query: "${inputs.query}"
+            frontier_mode: "${inputs.frontier_mode:-\"off\"}"
+            top_n: "${inputs.n_samples}"
+            source_workflow: "workflow_hypothesis_candidate_cards"
+            resolved_seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
+            leverage_result: "${steps.leverage.data.result}"
+            principle_state_init_result: "${steps.principle_state_init.data.result}"
+            ood_result: "${steps.ood_sampling.data.result}"
+            verify_result: "${steps.verify_sampled_hypotheses.data.result}"
+            contradiction_result: "${steps.contradiction_scan.data.result}"
+            topology_result: "${steps.topology_shift_scan.data.result}"
+            principle_state_update_result: "${steps.principle_state_update.data.result}"
+            contradiction_frontiers_result: "${steps.contradiction_frontiers.data.result}"
+            assumption_cracks_result: "${steps.assumption_cracks.data.result}"
+            analogy_transfers_result: "${steps.analogy_transfers.data.result}"
+
+  - id: workflow_spatial_correlation
+    stage: interpretation
+    cost_tier: moderate
+    execution_story_kind: portable_python_compute
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: spatial_correlation
+    origin: trend_addition
+    lifecycle: active
+    impl: "workflow: query_neuromaps -> align maps -> spatial correlation + nulls -> report"
+    params:
+      schema:
+        type: object
+        required:
+          - reference_term
+          - map_file
+        properties:
+          reference_term:
+            type: string
+            description: "Search term for query_neuromaps."
+            example: "default mode network"
+          map_file:
+            type: string
+            description: "Path to the local map file to compare."
+            example: "/tmp/sub-01_map.func.gii"
+          n_perm:
+            type: integer
+            description: "Number of null permutations for spatial correlation."
+            minimum: 10
+            maximum: 100000
+            default: 1000
+          output_dir:
+            type: string
+            description: "Directory for workflow outputs."
+            default: "/tmp/brain-researcher/workflow_spatial_correlation"
+      defaults:
+        n_perm: 1000
+        output_dir: "/tmp/brain-researcher/workflow_spatial_correlation"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: fetch_reference
+          tool: query_neuromaps
+          params:
+            term: "${inputs.reference_term}"
+            output_file: "${inputs.output_dir}/neuromaps/query_neuromaps.json"
+        - id: spatial_corr
+          tool: compare_surface_maps
+          params:
+            map1: "${inputs.map_file}"
+            map2: "${steps.fetch_reference.data.outputs.map_path}"
+            null_permutations: "${inputs.n_perm}"
+            output_file: "${inputs.output_dir}/spatial_correlation.json"
+
+  - id: workflow_spatial_correlation_surface
+    stage: interpretation
+    cost_tier: moderate
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: trend_addition
+    impl: "workflow: stack L/R surfaces -> compare_surface_maps with spins"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: stack_map
+          tool: stack_surface_hemis
+          params:
+            left_file: "${inputs.map_left}"
+            right_file: "${inputs.map_right}"
+            output_file: "${inputs.output_dir}/stacked_map.func.gii"
+        - id: stack_ref
+          tool: stack_surface_hemis
+          params:
+            left_file: "${inputs.ref_left}"
+            right_file: "${inputs.ref_right}"
+            output_file: "${inputs.output_dir}/stacked_ref.func.gii"
+        - id: spatial_corr
+          tool: compare_surface_maps
+          params:
+            map1: "${steps.stack_map.data.outputs.stacked_gifti}"
+            map2: "${steps.stack_ref.data.outputs.stacked_gifti}"
+            null_permutations: "${inputs.n_perm}"
+            output_file: "${inputs.output_dir}/spatial_correlation_surface.json"
+
+  # SPD (Symmetric Positive Definite) Connectome Analysis
+  - id: workflow_spd_connectome_analysis
+    stage: connectivity
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: []
+    primary_target: ""
+    origin: spd_learn_mvp
+    modalities: ["fmri", "eeg"]
+    impl: "workflow: repr_spd_covariance_estimate -> repr_spd_project -> geom_spd_logm -> geom_spd_geodesic_distance"
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: cov_a
+          tool: repr_spd_covariance_estimate
+          params:
+            data_file: "${inputs.timeseries_a}"
+            output_file: "${inputs.output_dir}/cov_a.npz"
+            method: "${inputs.cov_method}"
+            standardize: true
+        - id: cov_b
+          tool: repr_spd_covariance_estimate
+          params:
+            data_file: "${inputs.timeseries_b}"
+            output_file: "${inputs.output_dir}/cov_b.npz"
+            method: "${inputs.cov_method}"
+            standardize: true
+        - id: spd_a
+          tool: repr_spd_project
+          params:
+            matrix_file: "${steps.cov_a.data.covariance_file}"
+            output_file: "${inputs.output_dir}/spd_a.npz"
+            epsilon: "${inputs.epsilon}"
+        - id: spd_b
+          tool: repr_spd_project
+          params:
+            matrix_file: "${steps.cov_b.data.covariance_file}"
+            output_file: "${inputs.output_dir}/spd_b.npz"
+            epsilon: "${inputs.epsilon}"
+        - id: logm_a
+          tool: geom_spd_logm
+          params:
+            spd_matrix_file: "${steps.spd_a.data.spd_file}"
+            output_file: "${inputs.output_dir}/logm_a.npz"
+            reference: "identity"
+        - id: logm_b
+          tool: geom_spd_logm
+          params:
+            spd_matrix_file: "${steps.spd_b.data.spd_file}"
+            output_file: "${inputs.output_dir}/logm_b.npz"
+            reference: "identity"
+        - id: distance
+          tool: geom_spd_geodesic_distance
+          params:
+            matrix_a_file: "${steps.spd_a.data.spd_file}"
+            matrix_b_file: "${steps.spd_b.data.spd_file}"
+            metric: "${inputs.distance_metric}"
+            output_file: "${inputs.output_dir}/spd_distance.json"
+
+  - id: workflow_ibl_neuropixels
+    stage: ephys
+    cost_tier: expensive
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: ibl_neuropixels
+    origin: core32
+    lifecycle: active
+    modalities: ["ephys", "optical", "behavior"]
+    description: IBL Neuropixels pipeline for mounted Brain-Wide Map sessions using Kilosort4, optional pose, and spike-behavior alignment.
+    impl: "workflow: ibl_neuropixels_workflow"
+    example_dataset:
+      dataset_id: ds:manual:ibl_brainwide
+      source: public_s3
+      smoke_test: tests/integration/realdata/test_workflow_ibl_neuropixels_smoke.py
+    artifact_contract:
+      required_outputs:
+        - workflow_summary.json
+        - kilosort/spike_times.parquet
+        - alignment/aligned_spikes.parquet
+        - alignment/trial_features.parquet
+      optional_outputs:
+        - pose/lightning_pose_coords_leftCamera.parquet
+        - alignment/aligned_behavior.parquet
+    params:
+      schema:
+        type: object
+        required: [dataset_ref, session_id, probe_label, output_dir]
+        properties:
+          dataset_ref:
+            type: string
+            description: Dataset reference, typically ds:manual:ibl_brainwide.
+          session_id:
+            type: string
+            description: IBL session id in lab/subject/date/number or subject/date/number form.
+          subject_id:
+            type: string
+          probe_label:
+            type: string
+            description: Probe label such as probe00.
+          raw_ephys_dir:
+            type: string
+            description: Optional raw ephys override path.
+          video_path:
+            type: string
+            description: Optional raw video override path.
+          behavior_events_path:
+            type: string
+            description: Optional precomputed trial/events table path.
+          pose_backend:
+            type: string
+            enum: [lightning_pose, deeplabcut]
+          include_pose:
+            type: boolean
+          output_dir:
+            type: string
+          spike_limit:
+            type: integer
+          max_duration_s:
+            type: number
+            description: Optional duration cap for manageable Kilosort smoke runs.
+          dry_run:
+            type: boolean
+      defaults:
+        dataset_ref: ds:manual:ibl_brainwide
+        pose_backend: lightning_pose
+        include_pose: true
+        spike_limit: 5000
+        max_duration_s: 60
+        dry_run: false
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: ibl_neuropixels
+          tool: ibl_neuropixels_workflow
+          params:
+            dataset_ref: "${inputs.dataset_ref}"
+            session_id: "${inputs.session_id}"
+            subject_id: "${inputs.subject_id}"
+            probe_label: "${inputs.probe_label}"
+            raw_ephys_dir: "${inputs.raw_ephys_dir}"
+            video_path: "${inputs.video_path}"
+            behavior_events_path: "${inputs.behavior_events_path}"
+            pose_backend: "${inputs.pose_backend:-lightning_pose}"
+            include_pose: "${inputs.include_pose:-true}"
+            output_dir: "${inputs.output_dir}"
+            spike_limit: "${inputs.spike_limit}"
+            max_duration_s: "${inputs.max_duration_s:-60}"
+            dry_run: "${inputs.dry_run:-false}"
+
+  - id: workflow_ibl_decoding_inputs
+    stage: decoding
+    cost_tier: moderate
+    execution_story_kind: composite_workflow
+    supported_recipe_targets: [python]
+    primary_target: python
+    recipe_family: ibl_decoding_inputs
+    origin: core32
+    lifecycle: active
+    modalities: ["ephys", "behavior"]
+    description: Build analysis-ready X/y/groups decoding inputs from mounted IBL Brain-Wide Map sessions without making downstream scientific claims.
+    impl: "workflow: ibl_decoding_dataset"
+    example_dataset:
+      dataset_id: ds:manual:ibl_brainwide
+      source: public_s3
+      smoke_test: tests/integration/realdata/test_workflow_ibl_decoding_inputs_smoke.py
+    artifact_contract:
+      required_outputs:
+        - X.npy
+        - y.npy
+        - groups.npy
+        - sample_metadata.parquet
+        - feature_metadata.parquet
+        - metadata.json
+      optional_outputs:
+        - label_map.json
+    params:
+      schema:
+        type: object
+        required: [dataset_ref, session_id, probe_label, output_dir]
+        properties:
+          dataset_ref:
+            type: string
+            description: Dataset reference, typically ds:manual:ibl_brainwide.
+          session_id:
+            type: string
+            description: IBL session id in lab/subject/date/number or subject/date/number form.
+          session_ids:
+            type: array
+            items:
+              type: string
+            description: Optional multi-session override for cross-session builders.
+          subject_id:
+            type: string
+          probe_label:
+            type: string
+            description: Probe label such as probe00.
+          spike_times_path:
+            type: string
+            description: Optional precomputed spike table path.
+          trials_path:
+            type: string
+            description: Optional trials table path.
+          trial_features_path:
+            type: string
+            description: Optional trial-features sidecar path.
+          regions_path:
+            type: string
+            description: Optional region lookup table path.
+          label_field:
+            type: string
+            description: Label field for y, for example choice, feedbackType, stimulus_side, or signed_contrast.
+          feature_level:
+            type: string
+            enum: [unit, region]
+          group_by:
+            type: string
+            enum: [session, subject]
+          anchor_field:
+            type: string
+          window_start_s:
+            type: number
+          window_end_s:
+            type: number
+          min_feature_count:
+            type: integer
+          output_dir:
+            type: string
+          spike_limit:
+            type: integer
+          dry_run:
+            type: boolean
+      defaults:
+        dataset_ref: ds:manual:ibl_brainwide
+        label_field: choice
+        feature_level: unit
+        group_by: session
+        anchor_field: stimOn_times
+        window_start_s: 0.0
+        window_end_s: 0.2
+        min_feature_count: 1
+        dry_run: false
+    runtime:
+      kind: declarative_workflow
+      steps:
+        - id: ibl_decoding_inputs
+          tool: ibl_decoding_dataset
+          params:
+            dataset_ref: "${inputs.dataset_ref}"
+            session_id: "${inputs.session_id}"
+            session_ids: "${inputs.session_ids}"
+            subject_id: "${inputs.subject_id}"
+            probe_label: "${inputs.probe_label}"
+            spike_times_path: "${inputs.spike_times_path}"
+            trials_path: "${inputs.trials_path}"
+            trial_features_path: "${inputs.trial_features_path}"
+            regions_path: "${inputs.regions_path}"
+            label_field: "${inputs.label_field:-choice}"
+            feature_level: "${inputs.feature_level:-unit}"
+            group_by: "${inputs.group_by:-session}"
+            anchor_field: "${inputs.anchor_field:-stimOn_times}"
+            window_start_s: "${inputs.window_start_s:-0.0}"
+            window_end_s: "${inputs.window_end_s:-0.2}"
+            min_feature_count: "${inputs.min_feature_count:-1}"
+            output_dir: "${inputs.output_dir}"
+            spike_limit: "${inputs.spike_limit}"
+            dry_run: "${inputs.dry_run:-false}"

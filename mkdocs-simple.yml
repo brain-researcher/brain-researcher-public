@@ -1,0 +1,41 @@
+site_name: Brain Researcher Documentation
+site_description: A neuroimaging analysis platform combining LLM-powered natural language understanding with advanced fMRI analysis tools
+site_author: Brain Researcher Team
+
+# Theme configuration
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - search.suggest
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+
+# Basic plugins
+plugins:
+  - search
+
+# Navigation
+nav:
+  - Home: index-simple.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+  - User Guide:
+      - CLI Usage: user-guide/cli.md
+  - API Reference:
+      - CLI Reference: api/cli-reference.md
+  - Development:
+      - Architecture: development/architecture.md
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true

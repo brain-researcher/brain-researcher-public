@@ -1,0 +1,567 @@
+{
+  "execution_plans": {
+    "simple_neuroimaging_plan": {
+      "plan_id": "simple_neuro_001",
+      "description": "Simple neuroimaging pipeline for optimization testing",
+      "steps": [
+        {
+          "step_id": "step_001",
+          "step_number": 1,
+          "description": "Anatomical preprocessing with FreeSurfer",
+          "tool_name": "freesurfer_recon_all",
+          "tool_args": {
+            "subject_id": "sub-01",
+            "input_dir": "/data/bids",
+            "output_dir": "/data/derivatives/freesurfer"
+          },
+          "dependencies": [],
+          "expected_output": "recon-all completed",
+          "estimated_time_seconds": 28800,
+          "resource_requirements": {
+            "cpu": 8.0,
+            "memory": 16.0,
+            "storage": 50.0
+          }
+        },
+        {
+          "step_id": "step_002",
+          "step_number": 2,
+          "description": "Functional preprocessing with fMRIPrep",
+          "tool_name": "fmriprep",
+          "tool_args": {
+            "bids_dir": "/data/bids",
+            "output_dir": "/data/derivatives/fmriprep",
+            "participant_label": "sub-01"
+          },
+          "dependencies": [],
+          "expected_output": "fMRIPrep completed",
+          "estimated_time_seconds": 14400,
+          "resource_requirements": {
+            "cpu": 4.0,
+            "memory": 8.0,
+            "storage": 30.0
+          }
+        },
+        {
+          "step_id": "step_003",
+          "step_number": 3,
+          "description": "GLM analysis",
+          "tool_name": "fsl_feat",
+          "tool_args": {
+            "input_file": "/data/derivatives/fmriprep/sub-01_task-rest_bold.nii.gz",
+            "design_file": "/data/design.fsf"
+          },
+          "dependencies": ["step_002"],
+          "expected_output": "GLM results",
+          "estimated_time_seconds": 3600,
+          "resource_requirements": {
+            "cpu": 2.0,
+            "memory": 4.0,
+            "storage": 10.0
+          }
+        },
+        {
+          "step_id": "step_004",
+          "step_number": 4,
+          "description": "Connectivity analysis",
+          "tool_name": "connectivity_analysis",
+          "tool_args": {
+            "preprocessed_data": "/data/derivatives/fmriprep/sub-01_task-rest_bold.nii.gz",
+            "atlas": "schaefer400"
+          },
+          "dependencies": ["step_002"],
+          "expected_output": "Connectivity matrices",
+          "estimated_time_seconds": 7200,
+          "resource_requirements": {
+            "cpu": 4.0,
+            "memory": 8.0,
+            "storage": 20.0
+          }
+        },
+        {
+          "step_id": "step_005",
+          "step_number": 5,
+          "description": "Surface-based analysis",
+          "tool_name": "surface_analysis",
+          "tool_args": {
+            "freesurfer_dir": "/data/derivatives/freesurfer",
+            "functional_data": "/data/derivatives/fmriprep/sub-01_task-rest_bold.nii.gz"
+          },
+          "dependencies": ["step_001", "step_002"],
+          "expected_output": "Surface analysis results",
+          "estimated_time_seconds": 5400,
+          "resource_requirements": {
+            "cpu": 2.0,
+            "memory": 6.0,
+            "storage": 15.0
+          }
+        },
+        {
+          "step_id": "step_006",
+          "step_number": 6,
+          "description": "Report generation",
+          "tool_name": "generate_report",
+          "tool_args": {
+            "glm_results": "step_003",
+            "connectivity_results": "step_004",
+            "surface_results": "step_005"
+          },
+          "dependencies": ["step_003", "step_004", "step_005"],
+          "expected_output": "Analysis report",
+          "estimated_time_seconds": 1800,
+          "resource_requirements": {
+            "cpu": 1.0,
+            "memory": 2.0,
+            "storage": 5.0
+          }
+        }
+      ]
+    },
+    "complex_multisubject_plan": {
+      "plan_id": "complex_multi_001",
+      "description": "Complex multi-subject neuroimaging pipeline",
+      "steps": [
+        {
+          "step_id": "bids_validation",
+          "step_number": 1,
+          "description": "BIDS dataset validation",
+          "tool_name": "bids_validator",
+          "tool_args": {
+            "dataset_path": "/data/bids"
+          },
+          "dependencies": [],
+          "expected_output": "Validation report",
+          "estimated_time_seconds": 600,
+          "resource_requirements": {
+            "cpu": 1.0,
+            "memory": 2.0,
+            "storage": 1.0
+          }
+        },
+        {
+          "step_id": "preproc_sub01",
+          "step_number": 2,
+          "description": "Preprocessing subject 01",
+          "tool_name": "fmriprep",
+          "tool_args": {
+            "participant_label": "sub-01"
+          },
+          "dependencies": ["bids_validation"],
+          "expected_output": "Preprocessed data",
+          "estimated_time_seconds": 14400,
+          "resource_requirements": {
+            "cpu": 4.0,
+            "memory": 8.0,
+            "storage": 30.0
+          }
+        },
+        {
+          "step_id": "preproc_sub02",
+          "step_number": 3,
+          "description": "Preprocessing subject 02",
+          "tool_name": "fmriprep",
+          "tool_args": {
+            "participant_label": "sub-02"
+          },
+          "dependencies": ["bids_validation"],
+          "expected_output": "Preprocessed data",
+          "estimated_time_seconds": 14400,
+          "resource_requirements": {
+            "cpu": 4.0,
+            "memory": 8.0,
+            "storage": 30.0
+          }
+        },
+        {
+          "step_id": "preproc_sub03",
+          "step_number": 4,
+          "description": "Preprocessing subject 03",
+          "tool_name": "fmriprep",
+          "tool_args": {
+            "participant_label": "sub-03"
+          },
+          "dependencies": ["bids_validation"],
+          "expected_output": "Preprocessed data",
+          "estimated_time_seconds": 14400,
+          "resource_requirements": {
+            "cpu": 4.0,
+            "memory": 8.0,
+            "storage": 30.0
+          }
+        },
+        {
+          "step_id": "glm_sub01",
+          "step_number": 5,
+          "description": "GLM analysis subject 01",
+          "tool_name": "fsl_feat",
+          "tool_args": {
+            "subject": "sub-01"
+          },
+          "dependencies": ["preproc_sub01"],
+          "expected_output": "GLM results",
+          "estimated_time_seconds": 3600,
+          "resource_requirements": {
+            "cpu": 2.0,
+            "memory": 4.0,
+            "storage": 10.0
+          }
+        },
+        {
+          "step_id": "glm_sub02",
+          "step_number": 6,
+          "description": "GLM analysis subject 02",
+          "tool_name": "fsl_feat",
+          "tool_args": {
+            "subject": "sub-02"
+          },
+          "dependencies": ["preproc_sub02"],
+          "expected_output": "GLM results",
+          "estimated_time_seconds": 3600,
+          "resource_requirements": {
+            "cpu": 2.0,
+            "memory": 4.0,
+            "storage": 10.0
+          }
+        },
+        {
+          "step_id": "glm_sub03",
+          "step_number": 7,
+          "description": "GLM analysis subject 03",
+          "tool_name": "fsl_feat",
+          "tool_args": {
+            "subject": "sub-03"
+          },
+          "dependencies": ["preproc_sub03"],
+          "expected_output": "GLM results",
+          "estimated_time_seconds": 3600,
+          "resource_requirements": {
+            "cpu": 2.0,
+            "memory": 4.0,
+            "storage": 10.0
+          }
+        },
+        {
+          "step_id": "group_analysis",
+          "step_number": 8,
+          "description": "Group-level GLM analysis",
+          "tool_name": "fsl_randomise",
+          "tool_args": {
+            "input_files": ["glm_sub01", "glm_sub02", "glm_sub03"]
+          },
+          "dependencies": ["glm_sub01", "glm_sub02", "glm_sub03"],
+          "expected_output": "Group statistics",
+          "estimated_time_seconds": 7200,
+          "resource_requirements": {
+            "cpu": 8.0,
+            "memory": 16.0,
+            "storage": 25.0
+          }
+        },
+        {
+          "step_id": "meta_analysis",
+          "step_number": 9,
+          "description": "Meta-analysis with external datasets",
+          "tool_name": "nimare_meta_analysis",
+          "tool_args": {
+            "local_results": "group_analysis",
+            "external_datasets": ["neurosynth", "brainmap"]
+          },
+          "dependencies": ["group_analysis"],
+          "expected_output": "Meta-analysis results",
+          "estimated_time_seconds": 10800,
+          "resource_requirements": {
+            "cpu": 4.0,
+            "memory": 12.0,
+            "storage": 20.0
+          }
+        }
+      ]
+    }
+  },
+  "optimization_preferences": {
+    "cost_minimization": {
+      "primary_objective": "cost",
+      "secondary_objectives": ["time"],
+      "strategy": "pareto",
+      "constraints": [
+        {
+          "objective": "time",
+          "constraint_type": "max",
+          "value": 86400.0,
+          "weight": 1.0,
+          "priority": 1
+        }
+      ],
+      "max_cost_budget": 100.0,
+      "target_reliability": 0.95,
+      "preferred_cloud_provider": "aws"
+    },
+    "time_minimization": {
+      "primary_objective": "time",
+      "secondary_objectives": ["cost", "reliability"],
+      "strategy": "weighted",
+      "constraints": [
+        {
+          "objective": "cost",
+          "constraint_type": "max",
+          "value": 200.0,
+          "weight": 1.0,
+          "priority": 2
+        }
+      ],
+      "max_time_budget": 43200.0,
+      "target_reliability": 0.90,
+      "preferred_cloud_provider": "gcp"
+    },
+    "balanced_optimization": {
+      "primary_objective": "cost",
+      "secondary_objectives": ["time", "reliability", "throughput"],
+      "strategy": "pareto",
+      "constraints": [
+        {
+          "objective": "time",
+          "constraint_type": "max",
+          "value": 64800.0,
+          "weight": 1.0,
+          "priority": 1
+        },
+        {
+          "objective": "cost",
+          "constraint_type": "max",
+          "value": 150.0,
+          "weight": 0.8,
+          "priority": 2
+        }
+      ],
+      "target_reliability": 0.93,
+      "preferred_cloud_provider": "azure"
+    }
+  },
+  "cost_model_test_data": {
+    "aws_pricing": {
+      "region": "us-east-1",
+      "instances": {
+        "t3.medium": {
+          "vcpus": 2,
+          "memory_gb": 4.0,
+          "storage_gb": 20.0,
+          "on_demand_price": 0.0416,
+          "spot_price": 0.0125,
+          "reserved_price": 0.025
+        },
+        "m5.xlarge": {
+          "vcpus": 4,
+          "memory_gb": 16.0,
+          "storage_gb": 50.0,
+          "on_demand_price": 0.192,
+          "spot_price": 0.058,
+          "reserved_price": 0.115
+        },
+        "c5.2xlarge": {
+          "vcpus": 8,
+          "memory_gb": 16.0,
+          "storage_gb": 50.0,
+          "on_demand_price": 0.34,
+          "spot_price": 0.102,
+          "reserved_price": 0.204
+        },
+        "r5.xlarge": {
+          "vcpus": 4,
+          "memory_gb": 32.0,
+          "storage_gb": 50.0,
+          "on_demand_price": 0.252,
+          "spot_price": 0.076,
+          "reserved_price": 0.151
+        }
+      },
+      "storage_price_per_gb_month": 0.023,
+      "network_price_per_gb": 0.09
+    },
+    "gcp_pricing": {
+      "region": "us-central1",
+      "instances": {
+        "e2-medium": {
+          "vcpus": 1,
+          "memory_gb": 4.0,
+          "storage_gb": 10.0,
+          "on_demand_price": 0.033,
+          "spot_price": 0.010,
+          "reserved_price": 0.020
+        },
+        "n1-standard-4": {
+          "vcpus": 4,
+          "memory_gb": 15.0,
+          "storage_gb": 10.0,
+          "on_demand_price": 0.190,
+          "spot_price": 0.057,
+          "reserved_price": 0.114
+        },
+        "c2-standard-8": {
+          "vcpus": 8,
+          "memory_gb": 32.0,
+          "storage_gb": 10.0,
+          "on_demand_price": 0.393,
+          "spot_price": 0.118,
+          "reserved_price": 0.236
+        }
+      },
+      "storage_price_per_gb_month": 0.020,
+      "network_price_per_gb": 0.12
+    }
+  },
+  "optimization_scenarios": {
+    "scenario_1_cost_focused": {
+      "description": "Cost-focused optimization with aggressive cost reduction",
+      "target_cost_reduction": 30.0,
+      "acceptable_time_increase": 20.0,
+      "reliability_threshold": 0.90,
+      "optimization_strategies": [
+        "spot_instances",
+        "right_sizing",
+        "tool_substitution",
+        "parameter_optimization"
+      ]
+    },
+    "scenario_2_time_focused": {
+      "description": "Time-focused optimization for urgent analysis",
+      "target_time_reduction": 40.0,
+      "acceptable_cost_increase": 50.0,
+      "reliability_threshold": 0.95,
+      "optimization_strategies": [
+        "parallelization",
+        "performance_instances",
+        "parameter_optimization",
+        "resource_scaling"
+      ]
+    },
+    "scenario_3_reliability_focused": {
+      "description": "Reliability-focused optimization for production",
+      "target_reliability": 0.98,
+      "acceptable_cost_increase": 25.0,
+      "acceptable_time_increase": 15.0,
+      "optimization_strategies": [
+        "redundancy",
+        "checkpointing",
+        "reliable_instances",
+        "failure_handling"
+      ]
+    }
+  },
+  "pareto_frontier_test_cases": {
+    "small_problem": {
+      "description": "Small optimization problem for Pareto frontier testing",
+      "solutions": [
+        {"cost": 10.0, "time": 100.0, "reliability": 0.95},
+        {"cost": 15.0, "time": 80.0, "reliability": 0.93},
+        {"cost": 20.0, "time": 60.0, "reliability": 0.90},
+        {"cost": 25.0, "time": 50.0, "reliability": 0.88},
+        {"cost": 12.0, "time": 90.0, "reliability": 0.94},
+        {"cost": 18.0, "time": 70.0, "reliability": 0.91},
+        {"cost": 22.0, "time": 65.0, "reliability": 0.89}
+      ]
+    },
+    "medium_problem": {
+      "description": "Medium optimization problem with more solutions",
+      "solutions": [
+        {"cost": 50.0, "time": 500.0, "reliability": 0.98, "throughput": 0.8},
+        {"cost": 75.0, "time": 400.0, "reliability": 0.96, "throughput": 0.9},
+        {"cost": 100.0, "time": 300.0, "reliability": 0.94, "throughput": 1.0},
+        {"cost": 125.0, "time": 250.0, "reliability": 0.92, "throughput": 1.1},
+        {"cost": 60.0, "time": 450.0, "reliability": 0.97, "throughput": 0.85},
+        {"cost": 90.0, "time": 350.0, "reliability": 0.95, "throughput": 0.95},
+        {"cost": 110.0, "time": 280.0, "reliability": 0.93, "throughput": 1.05},
+        {"cost": 80.0, "time": 380.0, "reliability": 0.96, "throughput": 0.92},
+        {"cost": 95.0, "time": 320.0, "reliability": 0.94, "throughput": 0.98}
+      ]
+    }
+  },
+  "tool_substitution_rules": {
+    "fmriprep": {
+      "alternatives": [
+        {
+          "tool_name": "afni_3dTcat",
+          "performance_factor": 0.7,
+          "cost_factor": 0.6,
+          "reliability_factor": 0.85,
+          "compatibility": 0.8
+        },
+        {
+          "tool_name": "spm_preprocess",
+          "performance_factor": 0.8,
+          "cost_factor": 0.7,
+          "reliability_factor": 0.9,
+          "compatibility": 0.9
+        }
+      ]
+    },
+    "fsl_feat": {
+      "alternatives": [
+        {
+          "tool_name": "afni_3ddeconvolve",
+          "performance_factor": 0.85,
+          "cost_factor": 0.75,
+          "reliability_factor": 0.88,
+          "compatibility": 0.85
+        },
+        {
+          "tool_name": "spm_glm",
+          "performance_factor": 0.9,
+          "cost_factor": 0.8,
+          "reliability_factor": 0.92,
+          "compatibility": 0.95
+        }
+      ]
+    },
+    "freesurfer_recon_all": {
+      "alternatives": [
+        {
+          "tool_name": "fastsurfer",
+          "performance_factor": 0.3,
+          "cost_factor": 0.3,
+          "reliability_factor": 0.85,
+          "compatibility": 0.8
+        }
+      ]
+    }
+  },
+  "parameter_optimization_rules": {
+    "fmriprep": {
+      "optimizable_parameters": {
+        "nprocs": {
+          "default": 4,
+          "range": [2, 16],
+          "cost_impact": "linear",
+          "performance_impact": "logarithmic"
+        },
+        "mem_mb": {
+          "default": 8000,
+          "range": [4000, 32000],
+          "cost_impact": "linear",
+          "performance_impact": "threshold"
+        },
+        "use_syn_sdc": {
+          "default": true,
+          "alternatives": [false],
+          "cost_impact": "none",
+          "performance_impact": "significant"
+        }
+      }
+    },
+    "fsl_feat": {
+      "optimizable_parameters": {
+        "smooth": {
+          "default": 6.0,
+          "range": [4.0, 10.0],
+          "cost_impact": "minimal",
+          "performance_impact": "minimal"
+        },
+        "highpass": {
+          "default": 128,
+          "range": [64, 256],
+          "cost_impact": "none",
+          "performance_impact": "none"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,441 @@
+id: tf_language_semantic
+name: Language (Semantic/Comprehension/Production)
+description: >-
+  Language tasks spanning lexical access/orthography, semantic/conceptual processing, phonology/morphology,
+  sentence-level syntax and integration, discourse/narrative comprehension & pragmatics/prosody, and production
+  (naming/generation/fluency). Aligns subfamilies to ONVOC language nodes for clean crosswalks and downstream use.
+examples: [lexical_decision, semantic_decision, sentence_comprehension, story_listening, picture_naming, verb_generation, category_fluency, rhyme_judgment]
+typical_DVs: [reaction_time, accuracy, comprehension_accuracy, naming_rt_ms, fluency_count, plausibility_effect_ms, surprisal_effect]
+common_manipulations: [lexicality, word_frequency, length, neighborhood_size, semantic_relatedness, syntactic_complexity, semantic_plausibility, context_constraint, noise_snr_db, prosody_condition]
+onvoc_alignment:
+  primary_nodes: [Lexical Access, Orthographic Processing, Phonological Processing, Morphology, Semantic Processing, Syntactic Parsing, Discourse/Pragmatics, Language Production]
+  secondary_nodes: [Auditory Speech Perception, Prosody, Bilingual/Code-Switching]
+  confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# LEVEL 2: Subfamilies, each with LEVEL 3 paradigms
+# ────────────────────────────────────────────────────────────────────────────────
+subfamilies:
+
+  - id: sf_lexical_access_orthography
+    label: Lexical Access & Orthography
+    onvoc_nodes: [Lexical Access, Orthographic Processing]
+    description: Lexical decision, orthographic judgments, word/nonword reading; manipulates lexicality, frequency, length, neighborhood.
+    paradigms:
+      - name: Lexical Decision (Word vs Nonword)
+        typical_DVs: [rt_ms, accuracy, dprime]
+        common_manipulations: [lexicality, word_frequency, length, neighborhood_size, concreteness]
+        model_families: [DDM_value_to_drift]
+        model_params: [drift_v_word, drift_v_nonword, a_boundary, Ter_nondec]
+        variant_tags: [visual, auditory]
+        design_flags: [speed_accuracy_instruction]
+        qa_checks: [nonword_generation_logged]
+        keywords: [lexical_access]
+      - name: Orthographic Decision / Letter-String Legality
+        typical_DVs: [rt_ms, accuracy]
+        common_manipulations: [bigram_trigram_probability, orthographic_legal_vs_illegal]
+        model_families: [DDM]
+        model_params: [drift_v, a_boundary, Ter_nondec]
+        variant_tags: [visual]
+        design_flags: []
+        qa_checks: []
+        keywords: [orthography]
+      - name: Word Reading vs Pseudoword Reading
+        typical_DVs: [rt_ms, accuracy, lexicality_effect_ms]
+        common_manipulations: [lexicality, length, consistency, regularity]
+        model_families: [Dual_route_reading_models (meta)]
+        model_params: [lexical_route_weight, nonlexical_route_weight]
+        variant_tags: [reading_aloud, silent_reading]
+        design_flags: [mouth_mic_or_voice_key]
+        qa_checks: [voice_onset_detection]
+        keywords: [reading]
+      - name: Rapid Serial Visual Presentation (RSVP) Word Recognition
+        typical_DVs: [rt_ms, accuracy]
+        common_manipulations: [presentation_rate_wpm, masking, lexicality, frequency]
+        model_families: []
+        model_params: []
+        variant_tags: [visual]
+        design_flags: [rsvp_stream]
+        qa_checks: []
+        keywords: [rsvp]
+
+  - id: sf_semantic_processing
+    label: Semantic / Conceptual Processing
+    onvoc_nodes: [Semantic Processing]
+    description: Semantic decision/verification, plausibility/incongruity, synonym/antonym, category verification.
+    paradigms:
+      - name: Semantic Decision / Category Verification
+        typical_DVs: [rt_ms, accuracy]
+        common_manipulations: [semantic_relatedness, association_strength, category_membership, context_constraint]
+        model_families: [Surprisal_regression_optional]
+        model_params: [semantic_similarity_weight]
+        variant_tags: [lexical, picture]
+        design_flags: []
+        qa_checks: [relatedness_balance]
+        keywords: [semantic_verification]
+      - name: Sentence Plausibility / Semantic Anomaly
+        typical_DVs: [plausibility_effect_ms, accuracy]
+        common_manipulations: [semantic_plausibility, cloze_probability, context_constraint]
+        model_families: [LM_surprisal, Semantic_integration_scores]
+        model_params: [surprisal, integration_cost]
+        variant_tags: [visual_reading, auditory_listening]
+        design_flags: [self_paced_reading_optional]
+        qa_checks: [comprehension_catch_trials]
+        keywords: [semantic_integration]
+      - name: Word Sense Disambiguation (WSD)
+        typical_DVs: [rt_ms, accuracy]
+        common_manipulations: [sense_bias, contextual_constraint, homograph_ambiguity]
+        model_families: []
+        model_params: []
+        variant_tags: [sentence, discourse]
+        design_flags: []
+        qa_checks: []
+        keywords: [wsd]
+
+  - id: sf_phonology_morphology
+    label: Phonology & Morphology
+    onvoc_nodes: [Phonological Processing, Morphology]
+    description: Phoneme monitoring, rhyme judgment, phonological/phonotactic decision, morphological decomposition/priming.
+    paradigms:
+      - name: Phoneme Monitoring / Detection
+        typical_DVs: [rt_ms, accuracy]
+        common_manipulations: [target_phoneme, position_in_word, noise_snr_db]
+        model_families: []
+        model_params: []
+        variant_tags: [auditory]
+        design_flags: [headphone_check_optional]
+        qa_checks: [snr_logged]
+        keywords: [phoneme_monitoring]
+      - name: Rhyme Judgment / Phonological Decision
+        typical_DVs: [rt_ms, accuracy]
+        common_manipulations: [rhyme_vs_nonrhyme, onset_vs_rime_overlap, orthography_control]
+        model_families: [DDM]
+        model_params: [drift_v, a_boundary, Ter_nondec]
+        variant_tags: [visual, auditory]
+        design_flags: []
+        qa_checks: [orthographic_control]
+        keywords: [phonology]
+      - name: Morphological Decomposition (Derivation/Inflection)
+        typical_DVs: [rt_ms, accuracy, decomposition_benefit]
+        common_manipulations: [morphological_complexity, stem_affix_relation, pseudo_morph_flag]
+        model_families: []
+        model_params: []
+        variant_tags: [visual]
+        design_flags: []
+        qa_checks: [pseudo_morph_controls]
+        keywords: [morphology]
+      - name: Morphological Priming
+        typical_DVs: [rt_ms, priming_effect_ms]
+        common_manipulations: [prime_target_relation (morph/semantic/orthographic), SOA_ms]
+        model_families: []
+        model_params: []
+        variant_tags: [visual, auditory]
+        design_flags: [masked_priming_optional]
+        qa_checks: [prime_balance]
+        keywords: [morph_priming]
+      - name: Phonotactic Decision / Well-Formedness
+        typical_DVs: [rt_ms, accuracy]
+        common_manipulations: [phonotactic_probability, illegal_cluster_presence]
+        model_families: []
+        model_params: []
+        variant_tags: [auditory]
+        design_flags: []
+        qa_checks: []
+        keywords: [phonotactics]
+
+  - id: sf_sentence_syntax
+    label: Sentence Processing & Syntax
+    onvoc_nodes: [Syntactic Parsing, Semantic Processing]
+    description: Syntactic complexity/ambiguity, agreement/word-order manipulations, sentence-picture matching, reading/listening.
+    paradigms:
+      - name: Sentence Comprehension (Question/Probe)
+        typical_DVs: [comprehension_accuracy, rt_ms]
+        common_manipulations: [syntactic_complexity, sentence_length, semantic_plausibility, context_constraint]
+        model_families: [Parser_surprisal (Hale/Levy)]
+        model_params: [syntactic_surprisal, open_nodes, memory_load_index]
+        variant_tags: [auditory, visual]
+        design_flags: [trialwise_comprehension_questions]
+        qa_checks: [min_accuracy_threshold]
+        keywords: [sentence_integration]
+      - name: Syntactic Ambiguity / Garden-Path
+        typical_DVs: [garden_path_cost_ms, regressions_count (if eye-tracking)]
+        common_manipulations: [ambiguity_type (PP-attachment/RC), disambiguation_position, plausibility]
+        model_families: [Surprisal_incremental]
+        model_params: [surprisal_spike_at_disambiguation]
+        variant_tags: [reading, listening]
+        design_flags: [region_by_region]
+        qa_checks: []
+        keywords: [garden_path]
+      - name: Agreement / Word Order Violations
+        typical_DVs: [violation_cost_ms, accuracy]
+        common_manipulations: [number_gender_agreement, word_order_variant, case_marking]
+        model_families: []
+        model_params: []
+        variant_tags: []
+        design_flags: []
+        qa_checks: []
+        keywords: [syntax_violation]
+      - name: Self-Paced Reading (SPR)
+        typical_DVs: [region_rt_ms, spillover_effect_ms]
+        common_manipulations: [region_complexity, syntactic_ambiguity, semantic_plausibility]
+        model_families: [Parser_surprisal]
+        model_params: [surprisal]
+        variant_tags: [reading]
+        design_flags: [region_by_region]
+        qa_checks: [reading_compliance]
+        keywords: [self_paced_reading]
+      - name: Eye-Tracking Reading
+        typical_DVs: [first_pass_fixation_ms, regressions_count, total_reading_time_ms]
+        common_manipulations: [syntactic_complexity, semantic_plausibility]
+        model_families: []
+        model_params: []
+        variant_tags: [eye_tracking]
+        design_flags: [calibration_required]
+        qa_checks: [calibration_pass]
+        keywords: [eye_tracking]
+
+  - id: sf_discourse_pragmatics_prosody
+    label: Discourse, Pragmatics & Prosody
+    onvoc_nodes: [Discourse/Pragmatics, Prosody]
+    description: Coherence building, inference making, sarcasm/irony/metaphor, prosodic/emphasis manipulation, story/narrative.
+    paradigms:
+      - name: Story Listening / Narrative Comprehension
+        typical_DVs: [comprehension_accuracy, inference_score, recall_quality]
+        common_manipulations: [coherence, causal_connectivity, narrative_complexity]
+        model_families: [Topic_model_features_optional]
+        model_params: [topic_shift_rate]
+        variant_tags: [naturalistic]
+        design_flags: [long_block_or_event_ok]
+        qa_checks: [attention_checks]
+        keywords: [discourse]
+      - name: Pragmatics (Sarcasm/Irony/Metaphor)
+        typical_DVs: [pragmatic_inference_accuracy, rt_ms]
+        common_manipulations: [literal_vs_nonliteral, context_provision, prosody_condition]
+        model_families: []
+        model_params: []
+        variant_tags: [narrative, sentence]
+        design_flags: []
+        qa_checks: []
+        keywords: [pragmatics]
+      - name: Prosody / Emphasis Perception
+        typical_DVs: [prosody_discrimination_accuracy, rt_ms]
+        common_manipulations: [pitch_contour, duration, intensity, focus_position]
+        model_families: []
+        model_params: []
+        variant_tags: [auditory]
+        design_flags: [headphone_check]
+        qa_checks: []
+        keywords: [prosody]
+      - name: Naturalistic Language Comprehension (LM Regressors)
+        typical_DVs: [comprehension_accuracy]
+        common_manipulations: [context_constraint]
+        model_families: [LM_surprisal]
+        model_params: [surprisal, entropy, entropy_reduction]
+        variant_tags: [naturalistic]
+        design_flags: [regressor_alignment_required]
+        qa_checks: [transcript_alignment_check]
+        keywords: [naturalistic_lm]
+
+  - id: sf_language_production
+    label: Production (Naming, Generation, Fluency)
+    onvoc_nodes: [Language Production, Phonological Processing, Semantic Processing]
+    description: Picture/word naming, verb generation, semantic/letter fluency; indexes lexical retrieval and control.
+    paradigms:
+      - name: Picture Naming / Object Naming
+        typical_DVs: [naming_rt_ms, error_rate]
+        common_manipulations: [name_agreement, frequency, length, noise]
+        model_families: []
+        model_params: []
+        variant_tags: [overt, covert]
+        design_flags: [voice_key_or_mic]
+        qa_checks: [voice_onset_detection]
+        keywords: [naming]
+      - name: Verb Generation / Word Generation
+        typical_DVs: [rt_ms, response_correctness]
+        common_manipulations: [cue_type (noun/definition/picture), association_strength]
+        model_families: []
+        model_params: []
+        variant_tags: [overt, covert]
+        design_flags: []
+        qa_checks: []
+        keywords: [verb_generation]
+      - name: Category Fluency / Letter Fluency
+        typical_DVs: [fluency_count, switches, clustering_index]
+        common_manipulations: [category_type, letter, time_limit]
+        model_families: [Search_in_sem_memory (meta)]
+        model_params: [switch_cost_proxy, cluster_size_proxy]
+        variant_tags: [semantic_fluency, phonemic_fluency]
+        design_flags: [time_limited_60s]
+        qa_checks: [proper_noun_rule]
+        keywords: [fluency]
+      - name: Sentence Production (Picture Description)
+        typical_DVs: [speech_onset_ms, sentence_length, content_units]
+        common_manipulations: [picture_complexity, content_constraint]
+        model_families: []
+        model_params: []
+        variant_tags: [overt]
+        design_flags: [voice_key_or_mic]
+        qa_checks: [transcript_quality_check]
+        keywords: [sentence_production]
+
+  - id: sf_speech_perception_comprehension
+    label: Auditory Speech Perception & Comprehension
+    onvoc_nodes: [Auditory Speech Perception, Lexical Access, Semantic Processing]
+    description: Word recognition and sentence comprehension in noise; phoneme categorization and word report.
+    paradigms:
+      - name: Speech-in-Noise Word Recognition
+        typical_DVs: [accuracy, rt_ms, srt50]
+        common_manipulations: [noise_snr_db, masker_type (speech/babble/white), lexicality]
+        model_families: []
+        model_params: []
+        variant_tags: [auditory]
+        design_flags: [calibrated_levels]
+        qa_checks: [headphone_check]
+        keywords: [speech_in_noise]
+      - name: Phoneme Identification / Categorical Perception
+        typical_DVs: [identification_slope, boundary_location]
+        common_manipulations: [continuum_steps, talker_variability, noise_snr_db]
+        model_families: [Logistic_boundary_fit]
+        model_params: [alpha_boundary, beta_slope]
+        variant_tags: [auditory]
+        design_flags: []
+        qa_checks: []
+        keywords: [categorical_perception]
+      - name: Vocoded/Degraded Speech Comprehension
+        typical_DVs: [word_report_accuracy, sentence_comprehension_accuracy]
+        common_manipulations: [num_channels_vocoding, noise_snr_db, spectral_rotation]
+        model_families: []
+        model_params: []
+        variant_tags: [auditory]
+        design_flags: [calibrated_levels]
+        qa_checks: [headphone_check]
+        keywords: [vocoded_speech]
+
+  - id: sf_bilingual_switching_translation
+    label: Bilingual / Code-Switching / Translation
+    onvoc_nodes: [Language Production, Lexical Access, Phonological Processing]
+    description: Language switching, cognate effects, translation recognition/production (links to Task Switching family).
+    paradigms:
+      - name: Translation Recognition / Production
+        typical_DVs: [translation_accuracy, rt_ms]
+        common_manipulations: [L1_vs_L2_direction, proficiency, cognate_status]
+        model_families: []
+        model_params: []
+        variant_tags: [bilingual]
+        design_flags: []
+        qa_checks: [proficiency_assessment]
+        keywords: [translation]
+      - name: Code-Switching / Language Switching
+        typical_DVs: [switch_cost_ms, mixing_cost_ms]
+        common_manipulations: [switch_probability, cue_presence, proficiency]
+        model_families: []
+        model_params: []
+        variant_tags: [bilingual]
+        design_flags: [link_to_task_switching_family]
+        qa_checks: []
+        keywords: [code_switching]
+      - name: Cognate Decision / Language Identification (LID)
+        typical_DVs: [rt_ms, accuracy, cognate_advantage_ms]
+        common_manipulations: [cognate_status, language_identity, proficiency]
+        model_families: []
+        model_params: []
+        variant_tags: [bilingual]
+        design_flags: []
+        qa_checks: [proficiency_assessment]
+        keywords: [cognate, language_id]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalks & constructs (URIs to be filled later)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Lexical Decision
+    - Orthographic Decision
+    - Reading (Words/Pseudowords)
+    - Semantic Monitor/Discrimination
+    - Sentence Comprehension
+    - Syntactic Ambiguity (Garden-Path)
+    - Agreement Violation
+    - Picture Naming
+    - Verb/Word Generation
+    - Category Fluency
+    - Phoneme Monitoring
+    - Rhyme Judgment
+    - Story Comprehension / Listening
+    - Prosody Perception
+    - Speech-in-Noise Recognition
+    - Categorical Perception (Speech)
+    - Translation / Language Switching
+  cogpo_candidate_labels:
+    - Lexical Decision
+    - Semantic Decision
+    - Sentence Comprehension
+    - Garden-Path / Syntactic Ambiguity
+    - Picture Naming
+    - Word/Verb Generation
+    - Category Fluency
+    - Phoneme Monitoring
+    - Rhyme Judgment
+    - Prosody Perception
+    - Speech Recognition (in Noise)
+constructs:
+  primary: [Lexical Access, Semantic Integration, Syntactic Parsing, Language Production]
+  secondary: [Phonological Processing, Morphology, Discourse/Pragmatics, Prosody, Bilingual Switching]
+uri_brainmap: []
+uri_cogpo: []
+status: draft
+provenance:
+  - source: TODO CMD + ONVOC alignment (language nodes)
+    fields: [subfamilies, paradigms, onvoc_nodes, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, modality, language, item_id, response, correct, rt]
+  per_subfamily:
+    sf_lexical_access_orthography:
+      events_columns: [onset, duration, trial_type, lexicality, word_frequency, length, neighborhood_size, presentation_rate_wpm, response, correct, rt]
+      hed_examples:
+        - "Language, Lexical-decision, Word"
+        - "Language, Reading, Pseudoword"
+        - "Language, Reading, RSVP"
+    sf_semantic_processing:
+      events_columns: [onset, duration, trial_type, semantic_relatedness, cloze_probability, context_constraint, response, correct, rt]
+      hed_examples:
+        - "Language, Semantic, Decision"
+        - "Language, Sentence, Plausibility"
+    sf_phonology_morphology:
+      events_columns: [onset, duration, trial_type, target_phoneme, rhyme_flag, morphological_complexity, response, correct, rt]
+      hed_examples:
+        - "Language, Phoneme-monitoring"
+        - "Language, Rhyme-judgment"
+    sf_sentence_syntax:
+      events_columns: [onset, duration, trial_type, syntactic_complexity, ambiguity_type, agreement_condition, comprehension_probe, eye_tracking, response, correct, rt]
+      hed_examples:
+        - "Language, Sentence, Comprehension"
+        - "Language, Syntax, Garden-path"
+        - "Language, Reading, SPR"
+    sf_discourse_pragmatics_prosody:
+      events_columns: [onset, duration, trial_type, coherence, prosody_condition, pragmatic_type, lm_surprisal, lm_entropy, comprehension_probe, response, correct, rt]
+      hed_examples:
+        - "Language, Story, Listening"
+        - "Language, Pragmatics, Sarcasm"
+        - "Language, Naturalistic, LM-regressors"
+    sf_language_production:
+      events_columns: [onset, duration, trial_type, cue_type, name_agreement, frequency, response, rt]
+      hed_examples:
+        - "Language, Naming, Picture"
+        - "Language, Generation, Verb"
+    sf_speech_perception_comprehension:
+      events_columns: [onset, duration, trial_type, snr_db, masker_type, continuum_step, num_channels_vocoding, response, correct, rt]
+      hed_examples:
+        - "Language, Speech-in-noise"
+        - "Language, Categorical-perception"
+        - "Language, Vocoded-speech"
+    sf_bilingual_switching_translation:
+      events_columns: [onset, duration, trial_type, language_current, language_previous, switch_flag, cognate_status, proficiency, response, correct, rt]
+      hed_examples:
+        - "Language, Code-switching"
+        - "Language, Translation"

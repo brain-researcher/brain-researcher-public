@@ -1,0 +1,370 @@
+/**
+ * High Contrast Mode Styles
+ * Provides enhanced contrast for better accessibility
+ * Follows WCAG 2.1 AA guidelines for color contrast ratios
+ */
+
+/* High contrast mode activation */
+.high-contrast {
+  /* Color variables for high contrast */
+  --hc-bg-primary: #000000;
+  --hc-bg-secondary: #1a1a1a;
+  --hc-bg-tertiary: #2d2d2d;
+  
+  --hc-text-primary: #ffffff;
+  --hc-text-secondary: #e6e6e6;
+  --hc-text-muted: #cccccc;
+  
+  --hc-border: #666666;
+  --hc-border-focus: #ffff00;
+  
+  --hc-accent: #00ff00;
+  --hc-accent-text: #000000;
+  
+  --hc-error: #ff0000;
+  --hc-error-text: #ffffff;
+  
+  --hc-warning: #ffff00;
+  --hc-warning-text: #000000;
+  
+  --hc-success: #00ff00;
+  --hc-success-text: #000000;
+  
+  --hc-link: #00ffff;
+  --hc-link-visited: #ff00ff;
+  
+  /* Apply high contrast colors */
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 10%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 120 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 18%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 18%;
+  --muted-foreground: 0 0% 80%;
+  --accent: 180 100% 50%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 40%;
+  --input: 0 0% 18%;
+  --ring: 60 100% 50%;
+}
+
+/* Base element overrides in high contrast mode */
+.high-contrast * {
+  /* Remove subtle backgrounds and borders */
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.high-contrast body {
+  background: var(--hc-bg-primary) !important;
+  color: var(--hc-text-primary) !important;
+}
+
+/* Text elements */
+.high-contrast h1,
+.high-contrast h2,
+.high-contrast h3,
+.high-contrast h4,
+.high-contrast h5,
+.high-contrast h6 {
+  color: var(--hc-text-primary) !important;
+  border-bottom: 2px solid var(--hc-border);
+}
+
+.high-contrast p,
+.high-contrast span,
+.high-contrast div {
+  color: var(--hc-text-primary) !important;
+}
+
+.high-contrast .text-muted,
+.high-contrast .text-gray-500,
+.high-contrast .text-gray-600 {
+  color: var(--hc-text-muted) !important;
+}
+
+/* Links */
+.high-contrast a {
+  color: var(--hc-link) !important;
+  text-decoration: underline;
+  border: 1px solid transparent;
+}
+
+.high-contrast a:visited {
+  color: var(--hc-link-visited) !important;
+}
+
+.high-contrast a:hover,
+.high-contrast a:focus {
+  color: var(--hc-link) !important;
+  background: var(--hc-bg-secondary) !important;
+  border-color: var(--hc-border-focus) !important;
+  outline: 2px solid var(--hc-border-focus) !important;
+}
+
+/* Buttons */
+.high-contrast button,
+.high-contrast .btn,
+.high-contrast [role="button"] {
+  background: var(--hc-bg-secondary) !important;
+  color: var(--hc-text-primary) !important;
+  border: 2px solid var(--hc-border) !important;
+  outline: none !important;
+}
+
+.high-contrast button:hover,
+.high-contrast .btn:hover,
+.high-contrast [role="button"]:hover {
+  background: var(--hc-bg-tertiary) !important;
+  border-color: var(--hc-accent) !important;
+}
+
+.high-contrast button:focus,
+.high-contrast .btn:focus,
+.high-contrast [role="button"]:focus {
+  background: var(--hc-bg-tertiary) !important;
+  border-color: var(--hc-border-focus) !important;
+  outline: 3px solid var(--hc-border-focus) !important;
+  outline-offset: 2px !important;
+}
+
+.high-contrast button:disabled,
+.high-contrast .btn:disabled,
+.high-contrast [role="button"]:disabled {
+  background: var(--hc-bg-primary) !important;
+  color: var(--hc-text-muted) !important;
+  border-color: var(--hc-text-muted) !important;
+  cursor: not-allowed;
+}
+
+/* Primary buttons */
+.high-contrast .btn-primary,
+.high-contrast button[data-variant="default"] {
+  background: var(--hc-accent) !important;
+  color: var(--hc-accent-text) !important;
+  border-color: var(--hc-accent) !important;
+}
+
+.high-contrast .btn-primary:hover,
+.high-contrast button[data-variant="default"]:hover {
+  background: var(--hc-success) !important;
+  border-color: var(--hc-success) !important;
+}
+
+/* Form elements */
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+  background: var(--hc-bg-secondary) !important;
+  color: var(--hc-text-primary) !important;
+  border: 2px solid var(--hc-border) !important;
+}
+
+.high-contrast input:focus,
+.high-contrast select:focus,
+.high-contrast textarea:focus {
+  border-color: var(--hc-border-focus) !important;
+  outline: 3px solid var(--hc-border-focus) !important;
+  outline-offset: 1px !important;
+}
+
+.high-contrast input:invalid,
+.high-contrast select:invalid,
+.high-contrast textarea:invalid {
+  border-color: var(--hc-error) !important;
+  outline-color: var(--hc-error) !important;
+}
+
+/* Checkboxes and radio buttons */
+.high-contrast input[type="checkbox"],
+.high-contrast input[type="radio"] {
+  width: 18px !important;
+  height: 18px !important;
+  border: 3px solid var(--hc-border) !important;
+  background: var(--hc-bg-primary) !important;
+}
+
+.high-contrast input[type="checkbox"]:checked,
+.high-contrast input[type="radio"]:checked {
+  background: var(--hc-accent) !important;
+  border-color: var(--hc-accent) !important;
+}
+
+/* Labels */
+.high-contrast label {
+  color: var(--hc-text-primary) !important;
+  font-weight: bold !important;
+}
+
+/* Cards and containers */
+.high-contrast .card,
+.high-contrast .bg-white,
+.high-contrast .bg-gray-50,
+.high-contrast .bg-gray-100 {
+  background: var(--hc-bg-secondary) !important;
+  border: 2px solid var(--hc-border) !important;
+  color: var(--hc-text-primary) !important;
+}
+
+/* Navigation */
+.high-contrast nav {
+  background: var(--hc-bg-secondary) !important;
+  border-bottom: 3px solid var(--hc-border) !important;
+}
+
+.high-contrast .nav-link {
+  color: var(--hc-text-primary) !important;
+  border: 1px solid transparent;
+  padding: 8px 12px !important;
+}
+
+.high-contrast .nav-link:hover,
+.high-contrast .nav-link:focus {
+  background: var(--hc-bg-tertiary) !important;
+  border-color: var(--hc-border-focus) !important;
+  outline: 2px solid var(--hc-border-focus) !important;
+}
+
+.high-contrast .nav-link.active {
+  background: var(--hc-accent) !important;
+  color: var(--hc-accent-text) !important;
+}
+
+/* Modals and overlays */
+.high-contrast .modal,
+.high-contrast .dialog,
+.high-contrast .popover {
+  background: var(--hc-bg-primary) !important;
+  border: 3px solid var(--hc-border) !important;
+  color: var(--hc-text-primary) !important;
+}
+
+.high-contrast .modal-backdrop,
+.high-contrast .overlay {
+  background: var(--hc-bg-primary) !important;
+  opacity: 0.9 !important;
+}
+
+/* Tables */
+.high-contrast table {
+  border: 2px solid var(--hc-border) !important;
+  border-collapse: collapse !important;
+}
+
+.high-contrast th,
+.high-contrast td {
+  border: 1px solid var(--hc-border) !important;
+  padding: 8px !important;
+  background: var(--hc-bg-secondary) !important;
+  color: var(--hc-text-primary) !important;
+}
+
+.high-contrast th {
+  background: var(--hc-bg-tertiary) !important;
+  font-weight: bold !important;
+}
+
+/* Status indicators */
+.high-contrast .text-red-500,
+.high-contrast .text-red-600,
+.high-contrast .text-destructive {
+  color: var(--hc-error) !important;
+}
+
+.high-contrast .text-green-500,
+.high-contrast .text-green-600,
+.high-contrast .text-success {
+  color: var(--hc-success) !important;
+}
+
+.high-contrast .text-yellow-500,
+.high-contrast .text-yellow-600,
+.high-contrast .text-warning {
+  color: var(--hc-warning) !important;
+}
+
+.high-contrast .bg-red-500,
+.high-contrast .bg-red-100 {
+  background: var(--hc-error) !important;
+  color: var(--hc-error-text) !important;
+}
+
+.high-contrast .bg-green-500,
+.high-contrast .bg-green-100 {
+  background: var(--hc-success) !important;
+  color: var(--hc-success-text) !important;
+}
+
+.high-contrast .bg-yellow-500,
+.high-contrast .bg-yellow-100 {
+  background: var(--hc-warning) !important;
+  color: var(--hc-warning-text) !important;
+}
+
+/* Focus indicators */
+.high-contrast *:focus {
+  outline: 3px solid var(--hc-border-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* Skip links */
+.high-contrast .skip-link {
+  background: var(--hc-accent) !important;
+  color: var(--hc-accent-text) !important;
+  border: 2px solid var(--hc-accent) !important;
+  padding: 8px 16px !important;
+  font-weight: bold !important;
+}
+
+/* Scrollbars */
+.high-contrast ::-webkit-scrollbar {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.high-contrast ::-webkit-scrollbar-track {
+  background: var(--hc-bg-secondary) !important;
+  border: 1px solid var(--hc-border) !important;
+}
+
+.high-contrast ::-webkit-scrollbar-thumb {
+  background: var(--hc-border) !important;
+  border: 1px solid var(--hc-text-primary) !important;
+}
+
+.high-contrast ::-webkit-scrollbar-thumb:hover {
+  background: var(--hc-accent) !important;
+}
+
+/* Loading states */
+.high-contrast .loading,
+.high-contrast .spinner {
+  border-color: var(--hc-border) !important;
+  border-top-color: var(--hc-accent) !important;
+}
+
+/* Reduced motion overrides for high contrast */
+.high-contrast.reduce-motion *,
+.high-contrast .reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Print styles for high contrast */
+@media print {
+  .high-contrast * {
+    background: white !important;
+    color: black !important;
+    border-color: black !important;
+  }
+}

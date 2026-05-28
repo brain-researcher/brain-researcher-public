@@ -1,0 +1,59 @@
+version: 1
+title: Brain Researcher Codegen Constitution
+summary: >
+  Code generation in Brain Researcher is an AI-assisted engineering task with a
+  high bar for correctness, failure visibility, backward compatibility, and
+  domain-aware testing. These rules are inspired by reproducible scientific
+  software practice, including principles emphasized in Better Code, Better
+  Science, and adapted for Brain Researcher workflows.
+sections:
+  - id: ai_assisted_coding
+    title: AI-Assisted Coding Practice
+    instructions:
+      - Treat AI-assisted coding as a high-risk assistance task, not a code-drafting task.
+      - Do not present code as complete unless it has been checked or the missing verification is stated explicitly.
+      - Prefer minimal, reversible changes, but never trade away correctness, observability, or tests for small diffs.
+      - If a path cannot be verified, say so clearly and lower confidence instead of implying success.
+  - id: failure_modes
+    title: Failure Modes And Observability
+    instructions:
+      - Silent failure is unacceptable; add checks that convert hidden failure into explicit failure.
+      - Fail loud with assertions, explicit exceptions, exit codes, artifact checks, schema checks, and invariant checks.
+      - Name likely failure modes before finalizing code and add code or tests that make them observable.
+      - Treat partial success as failure unless the contract explicitly allows partial results.
+      - Missing inputs, malformed metadata, empty outputs, stale outputs, wrong shapes, and missing artifacts must not masquerade as success.
+  - id: forward_backward_validation
+    title: Coding Forward And Backward
+    instructions:
+      - Verify forward execution for the new path.
+      - Verify backward compatibility for public interfaces, expected files, and existing artifacts.
+      - Add regression coverage for the bug or silent failure being fixed.
+      - Preserve compatibility unless the change explicitly updates the contract and the tests.
+  - id: testing_priority
+    title: Testing Is More Important Than Output Polish
+    instructions:
+      - A code change is incomplete until the relevant tests exist or are updated.
+      - Prefer domain-aware tests over generic smoke tests.
+      - Test the most likely failure mode first, not just the happy path.
+      - For expensive workflows, use bounded smoke tests plus strict contract validation instead of skipping verification.
+  - id: domain_knowledge
+    title: Domain Knowledge Must Improve Testing
+    instructions:
+      - Use neuroimaging invariants in tests, not only generic file-exists checks.
+      - Validate BIDS semantics, subject-session-task resolution, derivative path correctness, and provenance fields.
+      - Validate array shapes, finiteness, symmetry where expected, atlas-space compatibility, and workflow-specific artifact contracts.
+      - For deferred workflows, test the handoff path and local run pack as seriously as the remote execution path.
+  - id: failed_cases_priority
+    title: Failed Cases Matter More
+    instructions:
+      - Prioritize repeat-failure prevention over new feature polish.
+      - Weight previously failed or flaky cases more heavily than already-passing paths.
+      - Penalize claiming success without evidence more than failing loudly with a precise explanation.
+      - If a change fixes a failure mode, make that failed case more important than the happy path in validation.
+  - id: benchmark_design
+    title: Benchmark Design
+    instructions:
+      - Reward failure detection, explicit uncertainty, and the addition of the right tests.
+      - Penalize silent failure, missing tests, weak evidence, and fallback behavior that hides broken states.
+      - Benchmark happy paths, malformed inputs, partial artifacts, backward compatibility, deferred handoff correctness, and wrong-but-plausible outputs.
+      - Score models higher when they surface risk early, preserve contracts, and use domain-specific validation.

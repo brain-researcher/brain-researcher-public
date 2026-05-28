@@ -1,0 +1,86 @@
+{{/*
+Generate virtual services for configured services
+*/}}
+{{- if .Values.virtualServices.webui.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: web-ui-virtual-service
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    service: web-ui
+spec:
+  {{- include "brain-researcher-istio.virtualServiceSpec" .Values.virtualServices.webui | nindent 2 }}
+{{- end }}
+
+{{- if .Values.virtualServices.neurokg.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: neurokg-api-virtual-service
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    service: neurokg
+spec:
+  {{- include "brain-researcher-istio.virtualServiceSpec" .Values.virtualServices.neurokg | nindent 2 }}
+{{- end }}
+
+{{- if .Values.virtualServices.agent.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: agent-service-virtual-service
+  namespace: {{ include "brain-researcher-istio.namespace" . }}
+  labels:
+    {{- include "brain-researcher-istio.labels" . | nindent 4 }}
+    app: brain-researcher
+    service: agent
+spec:
+  {{- include "brain-researcher-istio.virtualServiceSpec" .Values.virtualServices.agent | nindent 2 }}
+{{- end }}
+
+{{/*
+External services virtual services
+*/}}
+{{- range .Values.gateways.egress.externalHosts }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ . | replace "." "-" }}-virtual-service
+  namespace: {{ include "brain-researcher-istio.namespace" $ }}
+  labels:
+    {{- include "brain-researcher-istio.labels" $ | nindent 4 }}
+    app: brain-researcher
+    type: external-service
+spec:
+  hosts:
+  - {{ . | quote }}
+  gateways:
+  - {{ $.Values.gateways.egress.name }}
+  - mesh
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: {{ . }}
+        port:
+          number: 443
+    timeout: 300s
+    retries:
+      attempts: 3
+      perTryTimeout: 100s
+    headers:
+      request:
+        add:
+          User-Agent: Brain-Researcher/1.0
+{{- end }}

@@ -1,0 +1,397 @@
+---
+# BR-KG Service Destination Rule
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: neurokg-service-destination-rule
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: neurokg
+spec:
+  host: neurokg-service.brain-researcher.svc.cluster.local
+  trafficPolicy:
+    # Connection pooling for database-heavy operations
+    connectionPool:
+      tcp:
+        maxConnections: 50
+        connectTimeout: 30s
+        keepalive:
+          time: 7200s
+          interval: 75s
+      http:
+        http1MaxPendingRequests: 20
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 10
+        maxRetries: 5
+        consecutiveGatewayErrors: 10
+        interval: 30s
+        baseEjectionTime: 30s
+        maxEjectionPercent: 50
+        h2UpgradePolicy: UPGRADE # Enable HTTP/2 for better performance
+        
+    # Circuit breaker for resilience
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 30
+      
+    # Load balancing for Neo4j queries
+    loadBalancer:
+      simple: LEAST_CONN # Good for database connections
+      consistentHash:
+        httpHeaderName: "X-Session-ID" # Session affinity for Neo4j
+        
+    # TLS settings for internal communication
+    tls:
+      mode: ISTIO_MUTUAL
+      
+  # Service subsets for different deployment strategies
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+    trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 30
+        http:
+          maxRequestsPerConnection: 5
+  - name: v2
+    labels:
+      version: v2
+    trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 50
+        http:
+          maxRequestsPerConnection: 10
+  - name: canary
+    labels:
+      version: canary
+    trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 20
+        http:
+          maxRequestsPerConnection: 3
+
+---
+# Agent Service Destination Rule
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: agent-service-destination-rule
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: agent
+spec:
+  host: agent-service.brain-researcher.svc.cluster.local
+  trafficPolicy:
+    # Optimized for LLM processing
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 60s # Longer timeout for LLM processing
+        keepalive:
+          time: 3600s
+          interval: 60s
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 200
+        maxRequestsPerConnection: 5
+        maxRetries: 3
+        consecutiveGatewayErrors: 5
+        interval: 30s
+        baseEjectionTime: 30s
+        maxEjectionPercent: 30
+        h2UpgradePolicy: UPGRADE
+        # Extended timeouts for long-running analysis
+        timeout: 300s
+        
+    # Circuit breaker tuned for AI workloads
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      consecutive5xxErrors: 3
+      interval: 60s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 30
+      minHealthPercent: 50
+      
+    # Load balancing for AI processing
+    loadBalancer:
+      simple: ROUND_ROBIN
+      consistentHash:
+        httpHeaderName: "X-User-ID" # User affinity for conversation continuity
+        
+    tls:
+      mode: ISTIO_MUTUAL
+      
+  subsets:
+  - name: stable
+    labels:
+      version: stable
+  - name: experimental
+    labels:
+      version: experimental
+    trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 50
+        http:
+          timeout: 600s # Longer timeout for experimental features
+
+---
+# Web UI Destination Rule
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: web-ui-destination-rule
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: web-ui
+spec:
+  host: web-ui-service.brain-researcher.svc.cluster.local
+  trafficPolicy:
+    # Optimized for web traffic
+    connectionPool:
+      tcp:
+        maxConnections: 200
+        connectTimeout: 10s
+        keepalive:
+          time: 600s
+          interval: 30s
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 300
+        maxRequestsPerConnection: 50
+        maxRetries: 2
+        consecutiveGatewayErrors: 5
+        interval: 10s
+        baseEjectionTime: 10s
+        maxEjectionPercent: 20
+        h2UpgradePolicy: UPGRADE
+        
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      consecutive5xxErrors: 3
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 20
+      minHealthPercent: 70
+      
+    loadBalancer:
+      simple: LEAST_CONN
+      
+    tls:
+      mode: ISTIO_MUTUAL
+      
+  subsets:
+  - name: production
+    labels:
+      version: production
+  - name: staging
+    labels:
+      version: staging
+
+---
+# Orchestrator Service Destination Rule
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: orchestrator-service-destination-rule
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: orchestrator
+spec:
+  host: orchestrator-service.brain-researcher.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 150
+        connectTimeout: 30s
+        keepalive:
+          time: 1800s
+          interval: 60s
+      http:
+        http1MaxPendingRequests: 75
+        http2MaxRequests: 250
+        maxRequestsPerConnection: 20
+        maxRetries: 3
+        consecutiveGatewayErrors: 7
+        interval: 20s
+        baseEjectionTime: 20s
+        maxEjectionPercent: 40
+        h2UpgradePolicy: UPGRADE
+        timeout: 180s
+        
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 40
+      minHealthPercent: 60
+      
+    loadBalancer:
+      simple: ROUND_ROBIN
+      
+    tls:
+      mode: ISTIO_MUTUAL
+      
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+
+---
+# Redis Destination Rule for session management
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: redis-destination-rule
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: redis
+spec:
+  host: redis-service.brain-researcher.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 5s
+        keepalive:
+          time: 3600s
+          interval: 30s
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 100
+        maxRetries: 1
+        
+    outlierDetection:
+      consecutiveGatewayErrors: 2
+      consecutive5xxErrors: 2
+      interval: 10s
+      baseEjectionTime: 10s
+      maxEjectionPercent: 10
+      minHealthPercent: 80
+      
+    loadBalancer:
+      simple: LEAST_CONN
+      consistentHash:
+        httpHeaderName: "X-Session-ID"
+        
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# PostgreSQL Destination Rule
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: postgres-destination-rule
+  namespace: brain-researcher
+  labels:
+    app: brain-researcher
+    service: postgres
+spec:
+  host: postgres-service.brain-researcher.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 50
+        connectTimeout: 10s
+        keepalive:
+          time: 7200s
+          interval: 60s
+          
+    outlierDetection:
+      consecutiveGatewayErrors: 1
+      consecutive5xxErrors: 1
+      interval: 30s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 0 # Don't eject database
+      minHealthPercent: 100
+      
+    loadBalancer:
+      simple: LEAST_CONN
+      
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# External services destination rules
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: openneuro-destination-rule
+  namespace: brain-researcher
+spec:
+  host: openneuro.org
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 20
+        connectTimeout: 30s
+      http:
+        http1MaxPendingRequests: 10
+        http2MaxRequests: 40
+        maxRequestsPerConnection: 2
+        maxRetries: 3
+        timeout: 120s
+        
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      interval: 60s
+      baseEjectionTime: 60s
+      
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: neurovault-destination-rule
+  namespace: brain-researcher
+spec:
+  host: neurovault.org
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 15
+        connectTimeout: 30s
+      http:
+        http1MaxPendingRequests: 8
+        http2MaxRequests: 30
+        maxRequestsPerConnection: 2
+        maxRetries: 3
+        timeout: 90s
+        
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ncbi-destination-rule
+  namespace: brain-researcher
+spec:
+  host: eutils.ncbi.nlm.nih.gov
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 10
+        connectTimeout: 20s
+      http:
+        http1MaxPendingRequests: 5
+        http2MaxRequests: 20
+        maxRequestsPerConnection: 5
+        maxRetries: 2
+        timeout: 60s

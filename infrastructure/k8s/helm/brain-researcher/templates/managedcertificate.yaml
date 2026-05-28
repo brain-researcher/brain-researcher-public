@@ -1,0 +1,34 @@
+{{- if and .Values.ingress.enabled (hasKey .Values.ingress.annotations "networking.gke.io/managed-certificates") -}}
+{{- $namesCsv := (index .Values.ingress.annotations "networking.gke.io/managed-certificates") -}}
+{{- $defaultDomains := list -}}
+{{- range .Values.ingress.hosts -}}
+{{- $defaultDomains = append $defaultDomains .host -}}
+{{- end -}}
+{{- $overrides := .Values.ingress.managedCertificates | default list -}}
+{{- range $raw := splitList "," $namesCsv }}
+{{- $name := trim $raw }}
+{{- if $name }}
+{{- $domains := $defaultDomains -}}
+{{- range $override := $overrides -}}
+{{- if and (hasKey $override "name") (eq $override.name $name) -}}
+{{- if $override.domains -}}
+{{- $domains = $override.domains -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ $name | quote }}
+  namespace: {{ $.Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" $ | nindent 4 }}
+spec:
+  domains:
+    {{- range $domains }}
+    - {{ . | quote }}
+    {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

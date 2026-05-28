@@ -1,0 +1,181 @@
+{{- if .Values.orchestrator.enabled }}
+{{- if ne (int .Values.orchestrator.replicaCount) 1 }}{{- fail "orchestrator.replicaCount must be 1: SQLite session store + in-process locks are not safe with multiple replicas." }}{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-orchestrator
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestrator
+spec:
+  # Hardcoded to 1 because orchestrator uses SQLite state and in-process locks.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "brain-researcher.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: orchestrator
+  template:
+    metadata:
+      labels:
+        {{- include "brain-researcher.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: orchestrator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+        {{- with .Values.orchestrator.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "brain-researcher.orchestrator.serviceAccountName" . }}
+      {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: orchestrator
+          image: "{{ .Values.global.imageRegistry }}/orchestrator:{{ .Values.orchestrator.imageTag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+          env:
+            - name: PYTHONPATH
+              value: "/app/src"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: AGENT_URL
+              value: "http://{{ include "brain-researcher.fullname" . }}-agent:8000"
+            - name: NEUROKG_URL
+              value: "http://{{ include "brain-researcher.fullname" . }}-neurokg:5000"
+            - name: NICLIP_URL
+              value: "http://{{ include "brain-researcher.fullname" . }}-niclip:8001"
+            - name: REDIS_URL
+              value: "redis://{{ include "brain-researcher.fullname" . }}-redis.{{ .Values.namespaces.data }}:6379/0"
+            - name: LOG_LEVEL
+              value: "INFO"
+            {{- if .Values.jobStore.enabled }}
+            - name: BR_QUEUE_BACKEND
+              value: "sqlite"
+            - name: BR_QUEUE_DB_PATH
+              value: "{{ .Values.jobStore.mountPath }}/jobs.sqlite"
+            - name: BR_SQLITE_BUSY_TIMEOUT_MS
+              value: "10000"
+            {{- end }}
+            - name: CORS_ORIGINS
+              value: "http://{{ include "brain-researcher.fullname" . }}-web-ui:3000,https://{{ .Values.global.domain }}"
+            - name: BR_MARIMO_RUNTIME_PROVISIONER
+              value: {{ .Values.orchestrator.marimoRuntime.provisioner | quote }}
+            - name: BR_MARIMO_RUNTIME_NAMESPACE
+              value: {{ (default .Values.namespaces.core .Values.orchestrator.marimoRuntime.namespace) | quote }}
+            - name: BR_MARIMO_RUNTIME_IMAGE
+              value: {{ printf "%s/%s:%s" .Values.global.imageRegistry (.Values.orchestrator.marimoRuntime.imageRepository | default "marimo-singleuser") (.Values.orchestrator.marimoRuntime.imageTag | default .Values.global.imageTag) | quote }}
+            - name: BR_MARIMO_RUNTIME_IMAGE_PULL_POLICY
+              value: {{ (default .Values.global.imagePullPolicy .Values.orchestrator.marimoRuntime.imagePullPolicy) | quote }}
+            - name: BR_MARIMO_RUNTIME_INTERNAL_URL_TEMPLATE
+              value: {{ .Values.orchestrator.marimoRuntime.internalUrlTemplate | quote }}
+            - name: BR_MARIMO_RUNTIME_WORKSPACE_HOME
+              value: {{ .Values.orchestrator.marimoRuntime.workspaceHome | quote }}
+            - name: BR_MARIMO_RUNTIME_TEMPLATE_SOURCE
+              value: {{ .Values.orchestrator.marimoRuntime.templateSource | quote }}
+            - name: BR_MARIMO_RUNTIME_NOTEBOOK_PATH
+              value: {{ .Values.orchestrator.marimoRuntime.notebookPath | quote }}
+            {{- with .Values.orchestrator.marimoRuntime.publicUrlTemplate }}
+            - name: BR_MARIMO_RUNTIME_PUBLIC_URL_TEMPLATE
+              value: {{ tpl . $ | quote }}
+            {{- end }}
+            {{- with .Values.orchestrator.marimoRuntime.ingressClassName }}
+            - name: BR_MARIMO_RUNTIME_INGRESS_CLASS
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.orchestrator.marimoRuntime.ingressTlsSecretName }}
+            - name: BR_MARIMO_RUNTIME_INGRESS_TLS_SECRET
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.orchestrator.marimoRuntime.podNameTemplate }}
+            - name: BR_MARIMO_RUNTIME_POD_NAME_TEMPLATE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.orchestrator.marimoRuntime.serviceNameTemplate }}
+            - name: BR_MARIMO_RUNTIME_SERVICE_NAME_TEMPLATE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.orchestrator.marimoRuntime.serviceAccountName }}
+            - name: BR_MARIMO_RUNTIME_SERVICE_ACCOUNT
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.orchestrator.marimoRuntime.workspacePVCNameTemplate }}
+            - name: BR_MARIMO_RUNTIME_WORKSPACE_PVC_TEMPLATE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if .Values.orchestrator.extraEnv }}
+            {{- tpl (toYaml .Values.orchestrator.extraEnv) $ | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-database-credentials
+                optional: true
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-external-services
+                optional: true
+            - secretRef:
+                name: {{ include "brain-researcher.fullname" . }}-mcp-auth
+                optional: true
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.py
+              subPath: config.py
+              readOnly: true
+            - name: config
+              mountPath: /app/configs/demo_map.yaml
+              subPath: demo_map.yaml
+              readOnly: true
+            - name: config
+              mountPath: /app/configs/tool_resources.yaml
+              subPath: tool_resources.yaml
+              readOnly: true
+            - name: shared-data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+            {{- if .Values.jobStore.enabled }}
+            - name: jobstore
+              mountPath: {{ .Values.jobStore.mountPath | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.orchestrator.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "brain-researcher.fullname" . }}-orchestrator-config
+        - name: shared-data
+          {{- if .Values.storage.sharedData.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "brain-researcher.fullname" . }}-shared-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: logs
+          emptyDir: {}
+        {{- if .Values.jobStore.enabled }}
+        - name: jobstore
+          hostPath:
+            path: {{ .Values.jobStore.hostPath | quote }}
+            type: DirectoryOrCreate
+        {{- end }}
+{{- end }}

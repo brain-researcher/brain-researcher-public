@@ -1,0 +1,369 @@
+id: tf_rule_category_learning
+label: Category & Probabilistic Learning
+description: >-
+  Learning to assign stimuli to categories based on rules, multi-cue integration, or probabilistic cue–outcome
+  structure. Includes explicit rule discovery vs instructed rules, information-integration (II) with pre-decisional
+  feature combination, prototype/exemplar representation, base-rate/payoff criterion setting, delayed/partial
+  feedback, and generalization/transfer tests across modalities (visual, auditory/phonetic).
+
+# ────────────────────────────────────────────────────────────────────────────────
+# LEVEL 2: Subfamilies, each with LEVEL 3 paradigms
+# ────────────────────────────────────────────────────────────────────────────────
+subfamilies:
+
+  - id: sf_rule_based
+    label: Rule-Based Learning (RB)
+    description: Rules can be verbalized (unidimensional thresholds; logical conjunction/disjunction). Often prefrontal/WM (working memory)-supported.
+    paradigms:
+      - name: Unidimensional Threshold Rule
+        aliases: [1D Rule, One-Dimensional Rule, Unidimensional Category Learning, 1-Dimensional Rule Task, Single Dimension Rule]
+        typical_DVs: [accuracy, rt_ms, rule_consistent_pct, criterion_location]
+        common_manipulations: [relevant_dimension, boundary_location, boundary_complexity, feedback_validity, instruction_vs_discovery]
+        variant_tags: [RB, 1D, instructed, discovery]
+        design_flags: [criterion_learning]
+        qa_checks: [mapping_counterbalanced, dimension_relevance_check]
+        keywords: [verbal_rule, attention_to_dimension]
+      - name: Conjunctive / Disjunctive Rule
+        aliases: [2D Logical Rule, Two-Dimensional Logical Rule, Conjunctive Rule Learning, Disjunctive Rule Learning, AND OR Rule Task, Logical Rule Category Learning]
+        typical_DVs: [accuracy, rt_ms, rule_consistent_pct]
+        common_manipulations: [rule_type (AND/OR), diagnosticity_imbalance, feedback_validity]
+        variant_tags: [RB, 2D]
+        design_flags: [logical_structure]
+        qa_checks: [conflict_trials_included]
+        keywords: [logical_rule]
+      - name: SHJ Types I–VI (Shepard–Hovland–Jenkins)
+        aliases: [SHJ, Shepard Hovland Jenkins, SHJ Task, Concept Learning SHJ, SHJ Types, Shepard-Hovland-Jenkins Task]
+        typical_DVs: [learning_rate, errors_to_criterion, type_difficulty_order]
+        common_manipulations: [structure_type (I..VI), block_randomization, feedback_validity]
+        variant_tags: [RB]
+        design_flags: [structure_control]
+        qa_checks: [type_order_not_leaked]
+        keywords: [concept_learning, structure_complexity]
+      - name: Rule Discovery vs Instructed Rule
+        aliases: [Rule Discovery Task, Instructed Rule Learning, Explicit Rule Learning, Discovery vs Instruction, Rule Finding Task]
+        typical_DVs: [trials_to_rule, post_discovery_accuracy, RT_drop_at_discovery]
+        common_manipulations: [instruction (given/implicit), concurrent_task_load, cue_set_size]
+        variant_tags: [discovery, instructed]
+        design_flags: [insight_point_marking]
+        qa_checks: [dual_task_compliance]
+        keywords: [explicit_strategy]
+      - name: WCST-like Rule Learning (Wisconsin Card Sorting Test)
+        aliases: [WCST, Wisconsin Card Sorting Test, Card Sorting Task, WCST-like Rule Learning, wcst_like_rule_learning, Wisconsin Card Sort, Category Sorting Task]
+        typical_DVs: [perseverative_errors, non_perseverative_errors, categories_achieved, rule_switch_trials]
+        common_manipulations: [rule_complexity, feedback_validity, set_shifting_frequency, stimulus_dimension_diagnosticity]
+        variant_tags: [RB, rule_switching, set_shifting]
+        design_flags: [rule_shift_marking]
+        qa_checks: [rule_order_counterbalanced]
+        keywords: [wcst, rule_switching, set_shifting]
+
+  - id: sf_information_integration
+    label: Information-Integration (II)
+    description: Optimal performance requires pre-decisional integration of features (e.g., x/y linear boundary rotation; non-linear).
+    paradigms:
+      - name: Linear Decision Bound (Rotated)
+        aliases: [Decision-Bound Learning, Linear Decision Boundary, Rotated Boundary Learning, Decision Bound Task, II Linear Boundary]
+        typical_DVs: [accuracy, rt_ms, bound_angle_deg, model_fit_BIC_diff]
+        common_manipulations: [rotation_deg, stimulus_noise, feature_correlation, feedback_validity, dual_task_load]
+        variant_tags: [II, linear]
+        design_flags: [model_comparison_exemplar_prototype_bound]
+        qa_checks: [enough_trials_for_model_fit]
+        keywords: [decision_bound, rotation]
+      - name: Nonlinear Boundary (Quadratic/Configural)
+        aliases: [Nonlinear Decision Bound, Quadratic Boundary Learning, Configural Category Learning, XOR Category Learning, Nonlinear Boundary Task]
+        typical_DVs: [accuracy, rt_ms, model_fit_BIC_diff]
+        common_manipulations: [boundary_complexity (quadratic/XOR), stimulus_noise, feedback_validity]
+        variant_tags: [II, nonlinear]
+        design_flags: [configural_cue_integration]
+        qa_checks: [training_test_distribution_logged]
+        keywords: [configural, nonlinear]
+      - name: Gabor (Orientation × Spatial Frequency)
+        aliases: [Perceptual II, Gabor Category Learning, Gabor Patch Category Learning, Perceptual Information Integration, Orientation Spatial Frequency Learning, information_integration_gabor, Information Integration Gabor]
+        typical_DVs: [accuracy, rt_ms, model_fit_BIC_diff]
+        common_manipulations: [orientation_deg, spatial_frequency_cpd, rotation_deg, stimulus_noise]
+        variant_tags: [visual]
+        design_flags: [perceptual_space_sampling]
+        qa_checks: []
+        keywords: [gabor, perceptual_space]
+      - name: Category Coherence (Within-Category Similarity)
+        aliases: [Category Coherence Manipulation, Within-Category Similarity, Category Structure, Family Resemblance, Category Variability]
+        typical_DVs: [learning_rate, generalization_accuracy, category_coherence_index]
+        common_manipulations: [within_category_similarity, between_category_similarity, category_structure (well_defined/fuzzy), family_resemblance]
+        variant_tags: [II, coherence]
+        design_flags: [category_structure_control]
+        qa_checks: [similarity_matrix_reported]
+        keywords: [category_coherence, family_resemblance]
+      - name: Dual-Task Interference (COVIS)
+        aliases: [Dual-Task Category Learning, COVIS Dual-Task, Working Memory Load Category Learning, Concurrent Task Category Learning]
+        typical_DVs: [learning_rate, dual_task_cost, system_engagement]
+        common_manipulations: [dual_task_load, concurrent_task_type (counting/random_gen/verbal), task_priority, concurrent_task_difficulty]
+        variant_tags: [II, dual_task, covis]
+        design_flags: [explicit_vs_implicit_system]
+        qa_checks: [dual_task_compliance, concurrent_task_performance_validated]
+        keywords: [covis, dual_task, working_memory_interference]
+
+  - id: sf_probabilistic_classification
+    label: Probabilistic Classification (PCL/Probabilistic Classification Learning / Weather Prediction)
+    description: Multi-cue outcomes with probabilistic cue validities; criterion and credit assignment under uncertainty.
+    paradigms:
+      - name: Weather Prediction Task (Cards)
+        aliases: [PCL, Probabilistic Classification, Weather Prediction, Weather Prediction Learning, PCL Task, Probabilistic Category Learning Task, Card Prediction Task]
+        typical_DVs: [accuracy, probability_matching_index, win_stay_lose_shift, learning_rate]
+        common_manipulations: [cue_validity, outcome_probability, feedback_type (veridical/probabilistic), volatility]
+        variant_tags: [probabilistic, multi_cue]
+        design_flags: [credit_assignment]
+        qa_checks: [cue_usage_profile_report]
+        keywords: [weather_prediction]
+      - name: Multi-Cue Probabilistic Category Learning
+        aliases: [Multi-Cue Category Learning, Probabilistic Multi-Cue Learning, Cue Integration Learning, Multi-Cue Classification Task]
+        typical_DVs: [accuracy, cue_weight_estimates, probability_matching_index]
+        common_manipulations: [cue_diagnosticity, base_rate, payoff_matrix, feedback_validity]
+        variant_tags: [probabilistic]
+        design_flags: [regression_or_bayesian_fit]
+        qa_checks: [overfitting_guard]
+        keywords: [multi_cue_integration]
+      - name: Delayed / Partial Feedback Classification
+        aliases: [Delayed Feedback Category Learning, Partial Feedback Learning, Delayed Feedback Task, Partial Feedback Category Task, Temporal Credit Assignment Task]
+        typical_DVs: [asymptotic_accuracy, learning_rate, sensitivity_to_delay]
+        common_manipulations: [feedback_delay_ms, feedback_omission_rate, feedback_validity]
+        variant_tags: [delayed_feedback, partial_feedback]
+        design_flags: [temporal_credit_assignment]
+        qa_checks: [latency_logged]
+        keywords: [delayed_feedback]
+      - name: Feedback Schedule (Immediate vs Summary)
+        aliases: [Feedback Schedule Manipulation, Immediate vs Summary Feedback, Feedback Frequency, Feedback Timing, Trial-by-Trial vs Block Feedback]
+        typical_DVs: [learning_rate, asymptotic_accuracy, feedback_efficiency]
+        common_manipulations: [feedback_frequency, feedback_type (immediate/summary/block), summary_block_size]
+        variant_tags: [feedback_schedule]
+        design_flags: [feedback_efficiency]
+        qa_checks: [feedback_timing_logged]
+        keywords: [feedback_schedule, feedback_frequency]
+      - name: Blocked vs Interleaved Training
+        aliases: [Training Schedule, Blocked vs Mixed Training, Interleaved Learning, Blocked Learning, Training Blocking]
+        typical_DVs: [learning_rate, transfer_accuracy, interference_effects]
+        common_manipulations: [training_schedule (blocked/interleaved), block_size, category_order]
+        variant_tags: [training_schedule]
+        design_flags: [schedule_effects]
+        qa_checks: [category_order_counterbalanced]
+        keywords: [blocked_training, interleaved_training]
+      - name: Category Size Effects
+        aliases: [Number of Categories, Category Set Size, Category Count Manipulation, Category Number Learning]
+        typical_DVs: [learning_rate, asymptotic_accuracy, confusion_errors]
+        common_manipulations: [num_categories, exemplars_per_category, category_structure]
+        variant_tags: [category_size]
+        design_flags: [category_size_effects]
+        qa_checks: [category_balance_checked]
+        keywords: [category_size, set_size]
+
+  - id: sf_representation_generalization
+    label: Representation & Generalization (Prototype / Exemplar)
+    description: What is learned—prototypes, exemplars, decision bounds? Includes distortion, transfer, and hold-out tests.
+    paradigms:
+      - name: Prototype Distortion Learning
+        aliases: [Posner–Keele, Posner Keele Task, Prototype Learning, Distortion Learning, Prototype Abstraction Task, Posner-Keele Prototype, prototype_learning]
+        typical_DVs: [endorsement_rate_by_distortion, generalization_gradient, prototype_endorsement]
+        common_manipulations: [distortion_level, category_variability, retention_interval_ms]
+        variant_tags: [prototype]
+        design_flags: [prototype_abstraction]
+        qa_checks: [lure_balancing]
+        keywords: [prototype_learning]
+      - name: Exemplar Memorization & Generalization
+        aliases: [Exemplar Learning, Exemplar Category Learning, Exemplar Memory Task, Exemplar Generalization, Exemplar-Based Category Learning, exemplar_learning]
+        typical_DVs: [novel_generalization_accuracy, confusion_matrix, model_fit_BIC_diff]
+        common_manipulations: [set_size_train, exemplar_similarity, retention_interval_ms]
+        variant_tags: [exemplar]
+        design_flags: [model_comparison_exemplar_vs_prototype]
+        qa_checks: [train_test_separation]
+        keywords: [exemplar_memory]
+      - name: Transfer & Rotation Generalization
+        aliases: [Transfer Test, Rotation Generalization, Category Transfer Task, Generalization Test, Transfer Learning Task, Rotation Test]
+        typical_DVs: [transfer_accuracy, accuracy_by_rotation_deg]
+        common_manipulations: [rotation_deg, remapping_of_dimensions, distribution_shift]
+        variant_tags: [transfer]
+        design_flags: [out_of_distribution_test]
+        qa_checks: [train_distribution_logged]
+        keywords: [transfer, rotation_test]
+      - name: Multiple Category Systems Learning
+        aliases: [Multiple Category Sets, Learning Multiple Categories, Category System Switching, Multi-System Category Learning]
+        typical_DVs: [learning_rate_per_system, interference_between_systems, system_switching_cost]
+        common_manipulations: [num_category_systems, system_similarity, switching_frequency]
+        variant_tags: [multiple_systems]
+        design_flags: [system_interference]
+        qa_checks: [system_balance_checked]
+        keywords: [multiple_categories, system_switching]
+      - name: Hybrid Model Testing (Prototype + Exemplar)
+        aliases: [Hybrid Category Learning, Prototype Exemplar Hybrid, Multi-Strategy Learning, Mixed Model Category Learning]
+        typical_DVs: [model_fit_BIC_diff, prototype_weight, exemplar_weight, strategy_switching]
+        common_manipulations: [category_structure, training_phase, exemplar_prototype_ratio]
+        variant_tags: [hybrid, prototype, exemplar]
+        design_flags: [model_comparison_hybrid]
+        qa_checks: [model_fit_adequacy]
+        keywords: [hybrid_model, prototype_exemplar]
+
+  - id: sf_criterion_base_rate_payoff
+    label: Criterion Setting (Base-Rate / Payoff)
+    description: Decision criterion adaptation with unequal prior probabilities or asymmetric payoffs.
+    paradigms:
+      - name: Base-Rate Manipulation (Unequal Priors)
+        aliases: [Base-Rate Task, Prior Probability Task, Base Rate Learning, Unequal Prior Learning, Prior Manipulation Task]
+        typical_DVs: [criterion_c, bias, hit_rate, false_alarm_rate]
+        common_manipulations: [base_rate_A, base_rate_B, instruction (explicit/implicit)]
+        variant_tags: [criterion, base_rate]
+        design_flags: [SDT_metrics]
+        notes: "SDT (Signal Detection Theory) metrics for criterion measurement"
+        qa_checks: [confusion_matrix_reported]
+        keywords: [criterion_shift, priors]
+      - name: Payoff Matrix Manipulation (Asymmetric Costs)
+        aliases: [Payoff Matrix Task, Asymmetric Payoff Task, Payoff Manipulation, Utility-Based Learning, Cost-Benefit Task]
+        typical_DVs: [criterion_c, utility, hit_rate, false_alarm_rate]
+        common_manipulations: [payoff_matrix, instruction, feedback_type]
+        variant_tags: [criterion, payoff]
+        design_flags: [utility_reporting]
+        qa_checks: []
+        keywords: [payoff, utility]
+      - name: Base-Rate Neglect / Robust Bias
+        aliases: [Base-Rate Neglect Task, Base Rate Fallacy Task, Prior Neglect Task, Robust Bias Task]
+        typical_DVs: [bias_from_optimal, base_rate_weight]
+        common_manipulations: [prior_strength, sample_size, noise]
+        variant_tags: [bias]
+        design_flags: [optimal_benchmarking]
+        qa_checks: []
+        keywords: [base_rate_neglect]
+
+  - id: sf_modality_specialized
+    label: Modality-Specialized Category Learning (Visual / Phonetic / Other)
+    description: Category learning in specific modalities or domains (e.g., phonetic contrasts).
+    paradigms:
+      - name: Phonetic Category Learning (VOT / Tones)
+        aliases: [Speech Category Learning, Phonetic Category Learning Task, VOT Learning, Voice Onset Time Learning, Tone Category Learning, Phonetic Boundary Learning, CP Task]
+        typical_DVs: [identification_slope, boundary_location, learning_rate]
+        common_manipulations: [continuum_steps, distribution_training (bimodal/unimodal), feedback_type, speaker_variability]
+        variant_tags: [auditory, speech]
+        design_flags: [categorical_perception_link]
+        qa_checks: [hearing_screen]
+        keywords: [phonetic_boundary, CP]
+      - name: Visual Category Learning (Faces/Objects)
+        aliases: [Face Category Learning, Object Category Learning, Visual Category Task, Face Learning Task, Object Learning Task]
+        typical_DVs: [accuracy, rt_ms, generalization]
+        common_manipulations: [viewpoint_change, illumination, feature_noise]
+        variant_tags: [visual]
+        design_flags: []
+        qa_checks: []
+        keywords: [visual_categories]
+      - name: Haptic/Tactile Category Learning
+        aliases: [Haptic Category Learning, Tactile Category Learning, Touch Category Learning, Haptic Object Learning, Tactile Discrimination Learning]
+        typical_DVs: [accuracy, rt_ms, haptic_scanning_time, generalization]
+        common_manipulations: [texture_roughness, shape_complexity, exploration_time, force_level]
+        variant_tags: [haptic, tactile]
+        design_flags: [exploration_control]
+        qa_checks: [exploration_time_logged]
+        keywords: [haptic_learning, tactile_categories]
+      - name: Category Verification / Speeded Classification
+        aliases: [Speeded Category Learning, Category Verification Task, Rapid Classification, Category Decision Task, Category Judgment Speed]
+        typical_DVs: [rt_ms, accuracy, verification_speed, confidence]
+        common_manipulations: [response_deadline, stimulus_duration, category_familiarity, category_structure]
+        variant_tags: [speeded, verification]
+        design_flags: [speed_accuracy_tradeoff]
+        qa_checks: [deadline_compliance]
+        keywords: [category_verification, speeded_classification]
+      - name: Category Typicality Effects
+        aliases: [Typicality Effects, Category Typicality, Typical vs Atypical Exemplars, Category Goodness of Fit]
+        typical_DVs: [rt_ms, accuracy, typicality_rating, classification_confidence]
+        common_manipulations: [typicality_level, exemplar_prototype_distance, category_structure]
+        variant_tags: [typicality]
+        design_flags: [typicality_gradient]
+        qa_checks: [typicality_ratings_validated]
+        keywords: [typicality, category_goodness]
+      - name: Context Effects in Category Learning
+        aliases: [Context-Dependent Category Learning, Contextual Category Learning, Category Learning with Context, Context Modulation]
+        typical_DVs: [learning_rate, context_effect_size, transfer_accuracy]
+        common_manipulations: [context_type, context_category_association, context_switching]
+        variant_tags: [context]
+        design_flags: [context_effects]
+        qa_checks: [context_counterbalanced]
+        keywords: [context_effects, context_dependence]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later; constructs separate)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Weather Prediction Task
+    - Probabilistic Classification
+    - Category Learning (Rule-Based)
+    - Category Learning (Information-Integration)
+    - Shepard–Hovland–Jenkins Types
+    - Wisconsin Card Sorting Test (WCST)
+    - WCST-like Rule Learning
+    - Prototype Distortion
+    - Exemplar Generalization
+    - Base-Rate / Payoff Manipulation
+    - Delayed Feedback Classification
+    - Speech / Phonetic Category Learning
+  cogpo_candidate_labels:
+    - Category Learning
+    - Probabilistic Classification
+    - Prototype Distortion
+    - Exemplar Learning
+    - Decision-Bound Learning
+    - Base-Rate / Payoff
+constructs:
+  primary: [Rule-Based Learning, Information-Integration, Concept Learning]
+  secondary: [Generalization, Criterion Setting, Base-Rate Adaptation, Credit Assignment]
+uri_brainmap: []
+uri_cogpo: []
+status: plausible
+provenance:
+  - source: task_families_master_20.yaml + category learning expansion
+    fields: [subfamilies, paradigms, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (common + per-subfamily specifics)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns:
+    - onset
+    - duration
+    - trial_index
+    - stimulus_id
+    - response
+    - correct
+    - rt
+    - feedback
+  per_subfamily:
+    sf_rule_based:
+      events_columns: [onset, duration, trial_type, relevant_dimension, rule_type, boundary_location, feedback_validity, response, correct, rt]
+      hed_examples:
+        - "Learning, Category, Rule-based, Unidimensional"
+        - "Learning, Category, SHJ"
+    sf_information_integration:
+      events_columns: [onset, duration, trial_type, rotation_deg, boundary_type (linear/nonlinear), stimulus_noise, dual_task_flag, category_coherence, concurrent_task_type, concurrent_task_difficulty, response, correct, rt]
+      hed_examples:
+        - "Learning, Category, Decision-bound, Linear"
+        - "Learning, Category, Decision-bound, Nonlinear"
+        - "Learning, Category, Dual-task, COVIS"
+        - "Learning, Category, Coherence"
+    sf_probabilistic_classification:
+      events_columns: [onset, duration, trial_type, cue_vector, cue_validity, outcome_probability, feedback_type, feedback_validity, feedback_schedule, training_schedule (blocked/interleaved), num_categories, response, correct, rt]
+      hed_examples:
+        - "Learning, Probabilistic-classification, Weather-prediction"
+        - "Learning, Category, Feedback-schedule"
+        - "Learning, Category, Training-schedule"
+    sf_representation_generalization:
+      events_columns: [onset, duration, trial_type, distortion_level, rotation_deg, train_vs_transfer, prototype_weight, exemplar_weight, model_type, response, correct, rt]
+      hed_examples:
+        - "Learning, Prototype-distortion"
+        - "Learning, Transfer-test"
+        - "Learning, Hybrid-model, Prototype-exemplar"
+    sf_criterion_base_rate_payoff:
+      events_columns: [onset, duration, trial_type, base_rate, payoff_matrix, instruction_type, response, correct, rt]
+      hed_examples:
+        - "Decision, Criterion, Base-rate"
+        - "Decision, Criterion, Payoff"
+    sf_modality_specialized:
+      events_columns: [onset, duration, trial_type, modality, continuum_value, feedback_type, exploration_time, response_deadline, response, correct, rt]
+      hed_examples:
+        - "Learning, Category, Phonetic"
+        - "Learning, Category, Haptic"
+        - "Learning, Category, Speeded-classification"
+

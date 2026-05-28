@@ -1,0 +1,40 @@
+# Advanced Visualization Service Dependencies
+# For UI-031: Advanced Visualization Controls
+
+# Core web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Neuroimaging processing
+nibabel>=5.2.0
+nilearn>=0.10.0
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Image and data processing
+matplotlib>=3.7.0
+pillow>=10.0.0
+
+# Video processing for animation export
+opencv-python>=4.8.0
+
+# Data validation and serialization
+pydantic>=2.5.0
+
+# Async and I/O
+aiofiles>=23.0.0
+
+# Optional: Jupyter integration for development
+# jupyter>=1.0.0
+# ipywidgets>=8.0.0
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+
+# Production deployment
+gunicorn>=21.2.0
+
+# Memory optimization for large volumes
+psutil>=5.9.0

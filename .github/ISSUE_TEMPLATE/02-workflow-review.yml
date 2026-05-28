@@ -1,0 +1,112 @@
+name: Workflow Review
+description: Review official workflow defaults, node order, and Verify behavior.
+title: "[WF] "
+labels:
+  - area/workflow
+  - type/scientific-review
+body:
+  - type: dropdown
+    id: entry_surface
+    attributes:
+      label: Entry surface
+      options:
+        - Library
+        - Studio Review pipeline
+        - Both
+    validations:
+      required: true
+
+  - type: textarea
+    id: page_urls
+    attributes:
+      label: Page URL(s)
+      placeholder: Paste exact URLs used during review
+    validations:
+      required: true
+
+  - type: textarea
+    id: click_path
+    attributes:
+      label: Click path / reproduction steps
+      placeholder: |
+        1. Library -> Search workflows
+        2. Open workflow
+        3. Add to Plan -> Studio -> Review pipeline
+    validations:
+      required: true
+
+  - type: input
+    id: workflow_name
+    attributes:
+      label: Workflow name
+      placeholder: Rest Connectome E2e
+    validations:
+      required: true
+
+  - type: input
+    id: pipeline_name
+    attributes:
+      label: Pipeline selected
+      placeholder: Connectivity and Parcellation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: verify_state
+    attributes:
+      label: Verify status observed
+      options:
+        - Not blocked
+        - Blocked
+        - Warning only
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: context_ids
+    attributes:
+      label: IDs and context
+      placeholder: Node IDs, parameter names, defaults reviewed
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested fix
+      placeholder: Reorder nodes, update defaults, or improve Verify guidance
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      placeholder: Screenshots, copied UI text, logs, or payload snippets
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I did not modify benchmark governance during review.
+          required: true
+        - label: I did not include PHI, secrets, or private credentials.
+          required: true

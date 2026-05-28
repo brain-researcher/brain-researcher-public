@@ -1,0 +1,30 @@
+display_information:
+  name: Brain Researcher Sessions
+  description: Monitor and control Brain Researcher coding sessions and MCP runs from Slack.
+  background_color: "#0F172A"
+features:
+  bot_user:
+    display_name: Brain Researcher
+    always_online: true
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read
+      - channels:history
+      - groups:history
+      - chat:write
+      - chat:write.public
+      - channels:join
+settings:
+  event_subscriptions:
+    request_url: __PUBLIC_BASE_URL__/api/integrations/slack/events
+    bot_events:
+      - app_mention
+      - message.channels
+      - message.groups
+  interactivity:
+    is_enabled: true
+    request_url: __PUBLIC_BASE_URL__/api/integrations/slack/interactions
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

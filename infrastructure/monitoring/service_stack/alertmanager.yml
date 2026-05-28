@@ -1,0 +1,146 @@
+# AlertManager Configuration for Brain Researcher Platform
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@brain-researcher.io'
+  smtp_auth_username: 'alerts@brain-researcher.io'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+
+# The root route on which each incoming alert enters.
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'default'
+  routes:
+    # Critical alerts
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 5s
+      repeat_interval: 5m
+
+    # Service-specific routing
+    - match:
+        job: brain-researcher-agent
+      receiver: 'agent-team'
+    - match:
+        job: brain-researcher-neurokg
+      receiver: 'neurokg-team'
+    - match:
+        job: brain-researcher-web-ui
+      receiver: 'ui-team'
+
+    # System alerts
+    - match_re:
+        alertname: 'High(CPU|Memory)Usage|DiskSpace.*'
+      receiver: 'infrastructure-team'
+
+# Inhibition rules allow to mute a set of alerts given that another alert is firing.
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']
+
+receivers:
+  - name: 'default'
+    email_configs:
+      - to: 'devops@brain-researcher.io'
+        subject: '[Brain Researcher] {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'oncall@brain-researcher.io'
+        subject: '[CRITICAL] Brain Researcher Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          CRITICAL ALERT FIRED
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.job }}
+          Instance: {{ .Labels.instance }}
+          Runbook: {{ .Annotations.runbook }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+    slack_configs:
+      - api_url: '${SLACK_API_URL}'
+        channel: '#alerts-critical'
+        title: 'Critical Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Service:* {{ .Labels.job }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook }}
+          {{ end }}
+
+  - name: 'agent-team'
+    email_configs:
+      - to: 'agent-team@brain-researcher.io'
+        subject: '[Agent Service] {{ .GroupLabels.alertname }}'
+        body: |
+          Agent Service Alert
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+    slack_configs:
+      - api_url: '${SLACK_API_URL}'
+        channel: '#agent-alerts'
+
+  - name: 'neurokg-team'
+    email_configs:
+      - to: 'neurokg-team@brain-researcher.io'
+        subject: '[BR-KG Service] {{ .GroupLabels.alertname }}'
+        body: |
+          BR-KG Service Alert
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+    slack_configs:
+      - api_url: '${SLACK_API_URL}'
+        channel: '#neurokg-alerts'
+
+  - name: 'ui-team'
+    email_configs:
+      - to: 'ui-team@brain-researcher.io'
+        subject: '[Web UI Service] {{ .GroupLabels.alertname }}'
+        body: |
+          Web UI Service Alert
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+
+  - name: 'infrastructure-team'
+    email_configs:
+      - to: 'infrastructure@brain-researcher.io'
+        subject: '[Infrastructure] {{ .GroupLabels.alertname }}'
+        body: |
+          Infrastructure Alert
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Instance: {{ .Labels.instance }}
+          Runbook: {{ .Annotations.runbook }}
+          {{ end }}
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        description: 'Infrastructure alert: {{ .GroupLabels.alertname }}'

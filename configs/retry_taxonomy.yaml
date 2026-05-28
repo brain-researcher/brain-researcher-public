@@ -1,0 +1,160 @@
+# Retry Taxonomy Configuration (P2.6)
+#
+# Defines which error categories are retryable and their backoff parameters.
+# Used by brain_researcher.services.orchestrator.retry module.
+
+version: "1.0"
+
+# Global default settings (can be overridden by category)
+defaults:
+  base_delay_seconds: 10      # Initial retry delay
+  max_delay_seconds: 300      # Cap for exponential backoff (5 minutes)
+  jitter_percent: 20          # Add ±20% random jitter to prevent thundering herd
+  max_attempts: 3             # Default retry limit (including initial attempt)
+
+# Error categories and their retry policies
+categories:
+  # Timeout errors - job exceeded time limit
+  timeout:
+    retryable: true
+    max_attempts: 5            # More attempts for timeouts
+    base_delay: 30             # Longer initial delay
+    max_delay: 600             # Up to 10 minutes backoff
+    description: "Job exceeded time limit - may succeed with more time"
+    patterns:
+      - type: exit_code
+        value: 124              # Standard timeout exit code
+      - type: stderr_regex
+        pattern: "(?i)timeout"
+      - type: stderr_regex
+        pattern: "(?i)timed out"
+      - type: stderr_regex
+        pattern: "(?i)deadline exceeded"
+
+  # Transient I/O errors - network, filesystem, CVMFS issues
+  transient_io:
+    retryable: true
+    max_attempts: 3
+    base_delay: 10
+    max_delay: 180
+    description: "Temporary infrastructure issues - network, storage, etc."
+    patterns:
+      - type: stderr_regex
+        pattern: "(?i)connection reset"
+      - type: stderr_regex
+        pattern: "(?i)broken pipe"
+      - type: stderr_regex
+        pattern: "(?i)connection refused"
+      - type: stderr_regex
+        pattern: "(?i)connection timed out"
+      - type: stderr_regex
+        pattern: "(?i)network.*unreachable"
+      - type: stderr_regex
+        pattern: "CVMFS.*temporarily unavailable"
+      - type: stderr_regex
+        pattern: "CVMFS.*transport endpoint"
+      - type: stderr_regex
+        pattern: "(?i)no space left on device"
+      - type: stderr_regex
+        pattern: "(?i)read-only file system"
+      - type: stderr_regex
+        pattern: "(?i)stale.*file handle"
+      - type: stderr_regex
+        pattern: "(?i)input/output error"
+      - type: exit_code
+        value: 141              # SIGPIPE
+
+  # Internal errors - unexpected exceptions in our code
+  internal:
+    retryable: true
+    max_attempts: 2             # Only 1 retry for internal errors
+    base_delay: 5               # Quick retry
+    max_delay: 60
+    description: "Internal system errors - may be transient race conditions"
+    patterns:
+      - type: stderr_regex
+        pattern: "(?i)internal error"
+      - type: stderr_regex
+        pattern: "(?i)unexpected exception"
+      - type: stderr_regex
+        pattern: "(?i)assertion.*failed"
+      - type: stderr_regex
+        pattern: "(?i)traceback"
+      - type: stderr_regex
+        pattern: "(?i)runtime error"
+
+  # Out of memory - NOT retryable (unlikely to succeed)
+  oom:
+    retryable: false
+    description: "Out of memory - retry unlikely to help without resource adjustment"
+    patterns:
+      - type: exit_code
+        value: 137              # SIGKILL (often OOM killer)
+      - type: exit_code
+        value: 9                # SIGKILL
+      - type: stderr_regex
+        pattern: "(?i)MemoryError"
+      - type: stderr_regex
+        pattern: "(?i)out of memory"
+      - type: stderr_regex
+        pattern: "(?i)OOM killed"
+      - type: stderr_regex
+        pattern: "(?i)cannot allocate memory"
+      - type: stderr_regex
+        pattern: "(?i)memory exhausted"
+
+  # User errors - invalid parameters, missing files, etc.
+  user_error:
+    retryable: false
+    description: "User input errors - won't succeed on retry without parameter changes"
+    patterns:
+      # NOTE: Exit code 1 is too generic - only match on stderr patterns
+      - type: exit_code
+        value: 2                # Misuse of shell command
+      - type: stderr_regex
+        pattern: "(?i)FileNotFoundError"
+      - type: stderr_regex
+        pattern: "(?i)file not found"
+      - type: stderr_regex
+        pattern: "(?i)no such file"
+      - type: stderr_regex
+        pattern: "(?i)invalid argument"
+      - type: stderr_regex
+        pattern: "(?i)invalid parameter"
+      - type: stderr_regex
+        pattern: "(?i)invalid option"
+      - type: stderr_regex
+        pattern: "(?i)permission denied"
+      - type: stderr_regex
+        pattern: "(?i)access denied"
+      - type: stderr_regex
+        pattern: "(?i)not a valid.*file"
+      - type: stderr_regex
+        pattern: "(?i)syntax error"
+      - type: stderr_regex
+        pattern: "(?i)parse error"
+      - type: stderr_regex
+        pattern: "(?i)Invalid.*payload"
+      - type: stderr_regex
+        pattern: "(?i)Missing.*tool"
+      - type: stderr_regex
+        pattern: "(?i)invalid.*json"
+
+  # Unknown errors - conservative retry policy
+  unknown:
+    retryable: true
+    max_attempts: 2             # Only 1 retry for unknowns
+    base_delay: 15
+    max_delay: 120
+    description: "Unclassified errors - conservative retry policy"
+    # No patterns - this is the fallback category
+
+# Pattern matching priority (first match wins)
+# Categories are checked in this order:
+priority:
+  - oom                  # Check OOM first (exit 137 can be ambiguous)
+  - user_error          # Check user errors early (exit 1 is common)
+  - timeout             # Check timeouts
+  - transient_io        # Check I/O issues
+  - internal            # Check internal errors
+  - unknown             # Fallback

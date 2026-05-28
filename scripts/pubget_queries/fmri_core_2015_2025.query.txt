@@ -1,0 +1,4 @@
+(fMRI[Title/Abstract] OR "functional MRI"[Title/Abstract] OR "functional magnetic resonance imaging"[Title/Abstract]
+ OR BOLD[Title/Abstract] OR "blood oxygenation level dependent"[Title/Abstract]
+ OR "task fMRI"[Title/Abstract] OR "task-based fMRI"[Title/Abstract])
+AND ("2015/01/01"[PDAT] : "2025/12/31"[PDAT])

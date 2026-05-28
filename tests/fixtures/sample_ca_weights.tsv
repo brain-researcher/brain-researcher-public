@@ -1,0 +1,7 @@
+task	concept	weight
+n-back task	working memory	0.9
+n-back task	attention	0.7
+n-back task	executive control	0.6
+stroop task	attention	0.8
+stroop task	response inhibition	0.9
+stroop task	executive control	0.5

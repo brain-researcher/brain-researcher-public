@@ -1,0 +1,368 @@
+id: tf_neurofeedback
+label: Neurofeedback (Protocol)
+name: Neurofeedback (Protocol)
+meta: true
+description: >-
+  Protocol-oriented paradigms where participants regulate neural signals via real-time feedback. Variants include ROI-based
+  rt-fMRI, MVPA/decoder-based, connectivity/network-based, EEG/MEG band-power feedback, and fNIRS hemodynamic feedback.
+  This family is marked `meta: true` for downstream handling (separate from construct scoring): prioritize calibration,
+  latency/QC reporting, transfer tests, and control/sham designs.
+
+examples: [rtfmri_roi_regulation, decoder_based_nf, connectivity_nf, eeg_alpha_nf, fnirs_pfc_nf, transfer_no_feedback, sham_yoked_control]
+typical_DVs: [regulation_success, percent_signal_change, decoder_score_mean, connectivity_z_change, band_power_change, transfer_performance, learning_rate, retention_index]
+common_manipulations: [roi_vs_mvpa_vs_connectivity, direction_up_vs_down, feedback_schedule (continuous/intermittent), target_roi_or_network, strategy_instruction, reward_incentive, session_count]
+
+usage_policy:
+  roi_definition_only: false
+  exclude_from_construct_metrics: true   # treat as protocol/meta in scoring pipelines
+  prioritize_in_preproc_qc: true
+  required_reports: [latency_budget_ms, motion_FD, physio_confounds, calibration_quality, transfer_presence]
+
+subfamilies:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # ROI-based rt-fMRI neurofeedback
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_rtfmri_roi
+    label: rt-fMRI ROI-based Regulation
+    description: Percent-signal-change feedback from a predefined ROI (e.g., amygdala, insula, dlPFC, M1).
+    paradigms:
+      - name: ROI Up-Regulation (thermometer/bar)
+        typical_DVs: [percent_signal_change, time_above_threshold, regulation_success, learning_rate]
+        common_manipulations: [target_roi, baseline_window_s, direction (up), feedback_schedule, strategy_instruction (imagery/reappraisal/motor)]
+        variant_tags: [amygdala, insula, m1, dlPFC]
+        design_flags: [blocked_regulate_vs_rest, intermittent_feedback_optional]
+        qa_checks: [latency_budget_reported, motion_FD_thresholded, physio_regressors_used]
+        measurement_guidance:
+          rt_pipeline: ["slice-time + motion (minimal)", "ROIs in native space", "percent-signal change vs baseline window", "update every TR or sub-TR if available"]
+          latency_budget_ms: {acq_TR: 800–2000, recon: 100–300, transfer: 20–50, compute: 20–100}
+          confounds: ["motion FD censoring", "RETROICOR/respiratory belt optional"]
+      - name: ROI Down-Regulation / Bidirectional
+        typical_DVs: [percent_signal_change, bidirectional_control_index]
+        common_manipulations: [target_roi, direction (down/bidirectional), feedback_schedule]
+        variant_tags: [bidirectional]
+        design_flags: [counterbalanced_direction_blocks]
+        qa_checks: [drift_control, baseline_recalibration_per_block]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Decoder/MVPA-based rt-fMRI neurofeedback
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_rtfmri_decoder
+    label: Decoder-/MVPA-based rt-fMRI
+    description: Feedback is a classifier/regressor output (e.g., “positive affect” decoder, pain/imagery decoders).
+    paradigms:
+      - name: Decoder-Trained Affect Regulation
+        typical_DVs: [decoder_score_mean, hit_rate_target_state, transfer_performance, learning_rate]
+        common_manipulations: [decoder_label (positive/neutral), training_runs, crossval_scheme, retrain_frequency]
+        variant_tags: [affect_decoder]
+        design_flags: [calibration_runs_required, holdout_transfer]
+        qa_checks: [decoder_AUC_reported, leakage_checks]
+        measurement_guidance:
+          training: ["collect labeled blocks", "fit MVPA (e.g., L2-logistic/SVR)", "cross-validate; lock weights for NF"]
+          online: ["apply z-scoring per run", "project to decoder; smooth 5–10 s optionally"]
+      - name: Pain Decoder Regulation
+        typical_DVs: [decoder_score_mean, pain_rating_change, transfer_performance]
+        common_manipulations: [decoder_label (pain/neutral), pain_induction_type, strategy_instruction]
+        variant_tags: [pain_decoder]
+        design_flags: [calibration_with_pain_induction, holdout_transfer]
+        qa_checks: [decoder_AUC_reported, pain_induction_validated]
+        keywords: [pain_regulation]
+      - name: Motor Imagery Decoder Regulation
+        typical_DVs: [decoder_score_mean, imagery_vividness, transfer_performance]
+        common_manipulations: [imagery_type (hand/foot/tongue), decoder_label, strategy_instruction]
+        variant_tags: [imagery_decoder, motor_imagery]
+        design_flags: [calibration_runs_required]
+        qa_checks: [decoder_AUC_reported, imagery_compliance_check]
+        keywords: [motor_imagery_nf]
+      - name: Pattern-Titration / Shaping
+        typical_DVs: [decoder_score_gain, shaping_threshold_hits]
+        common_manipulations: [target_threshold_schedule, reward_incentive]
+        variant_tags: [shaping]
+        design_flags: [adaptive_thresholds]
+        qa_checks: [ceiling_floor_guardrails]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Connectivity / Network-based neurofeedback
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_rtfmri_connectivity
+    label: Connectivity / Network NF
+    description: Feedback from dynamic coupling (seed–target correlation; network balance).
+    paradigms:
+      - name: Seed–Target Coupling Up/Down
+        typical_DVs: [connectivity_z_change, success_rate, transfer_performance]
+        common_manipulations: [seed_roi, target_roi, window_length_s, direction (up/down)]
+        variant_tags: [fronto-amygdala, DMN-TPN]
+        design_flags: [sliding_window (20–30 s)]
+        qa_checks: [windowed_z_vs_motion, physiological_regressors]
+        measurement_guidance:
+          connectivity: ["detrend, motion + physio regress", "sliding correlation Fisher-z", "update every 1–2 s"]
+      - name: Network Balance Regulation (DMN-TPN Balance)
+        typical_DVs: [network_balance_index, dmn_suppression, tpn_activation, transfer_performance]
+        common_manipulations: [target_balance_ratio, dmn_vs_tpn_weight, window_length_s]
+        variant_tags: [network_balance, DMN-TPN]
+        design_flags: [sliding_window, dual_network_feedback]
+        qa_checks: [network_definition_validated, motion_controls]
+        keywords: [network_balance, dmn_tpn]
+      - name: DMN Suppression / TPN Enhancement
+        typical_DVs: [dmn_suppression_index, tpn_activation, transfer_performance]
+        common_manipulations: [target_network (DMN/TPN), direction (suppress/enhance), window_length_s]
+        variant_tags: [dmn_suppression, tpn]
+        design_flags: [network_parcellation_required]
+        qa_checks: [network_definition_validated]
+        keywords: [dmn_suppression]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # EEG/MEG band-power neurofeedback
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_eeg_meg_nf
+    label: EEG/MEG Band-Power NF
+    description: Visual/auditory feedback from band power (alpha/SMR/mu/beta; frontal alpha asymmetry).
+    paradigms:
+      - name: Alpha Up-Regulation (Occipital)
+        typical_DVs: [band_power_change_db, regulation_success, transfer_performance]
+        common_manipulations: [band_hz (8–12), montage (Oz/Pz), feedback_modality]
+        variant_tags: [alpha]
+        design_flags: [eyes_open_vs_closed_control]
+        qa_checks: [eye_blink_EMG_rejection, impedance_ok]
+        measurement_guidance:
+          sampling_hz: 500–1000
+          preprocessing: ["band-pass + notch 50/60", "artifact subspace or ICA", "Hilbert envelope 250–500 ms window"]
+      - name: SMR Up-Regulation (12–15 Hz) / Mu Suppression
+        typical_DVs: [band_power_change_db, regulation_success, transfer_performance]
+        common_manipulations: [SMR_vs_mu, C3/C4 montage, motor_imagery_instruction]
+        variant_tags: [SMR, mu]
+        design_flags: [motor_imagery_optional]
+        qa_checks: [muscle_artifact_screen]
+        keywords: [smr_nf, mu_suppression]
+      - name: Beta Band Regulation (Motor/Attention)
+        typical_DVs: [band_power_change_db, regulation_success]
+        common_manipulations: [beta_range_hz (13–30), montage (sensorimotor/frontal), direction (up/down)]
+        variant_tags: [beta]
+        design_flags: [motor_imagery_optional]
+        qa_checks: [muscle_artifact_screen]
+        keywords: [beta_nf]
+      - name: Frontal Alpha Asymmetry (FAA)
+        typical_DVs: [asymmetry_index_change, regulation_success]
+        common_manipulations: [faa_direction (left/right), frontal_montage (F3/F4), band_hz (8–12)]
+        variant_tags: [alpha_asymmetry, frontal]
+        design_flags: [reference_electrode_critical]
+        qa_checks: [asymmetry_baseline_validated]
+        keywords: [frontal_alpha_asymmetry]
+      - name: Theta Regulation (Memory/Meditation)
+        typical_DVs: [band_power_change_db, regulation_success]
+        common_manipulations: [theta_range_hz (4–8), montage (frontal/medial), direction (up/down)]
+        variant_tags: [theta]
+        design_flags: [meditation_instruction_optional]
+        qa_checks: [eye_movement_controls]
+        keywords: [theta_nf]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # fNIRS hemodynamic neurofeedback
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_fnirs_nf
+    label: fNIRS Hemodynamic NF
+    description: Oxygenated hemoglobin (HbO) feedback from prefrontal or motor channels.
+    paradigms:
+      - name: PFC HbO Up-Regulation
+        typical_DVs: [hbo_change, regulation_success, transfer_performance]
+        common_manipulations: [channel_set, short_separation_regression, feedback_modality]
+        variant_tags: [pfc]
+        design_flags: [short-separation_channels]
+        qa_checks: [motion_scrub, scalp_bloodflow_controls]
+        measurement_guidance:
+          sampling_hz: 8–50
+          preprocessing: ["short-separation regression", "band-pass 0.01–0.2 Hz", "GLM block model"]
+      - name: Motor Cortex HbO Regulation (fNIRS)
+        typical_DVs: [hbo_change, regulation_success, transfer_performance]
+        common_manipulations: [channel_set (motor_cortex), motor_imagery_instruction, direction (up/down)]
+        variant_tags: [motor, fnirs]
+        design_flags: [short-separation_channels]
+        qa_checks: [motion_scrub, muscle_artifact_controls]
+        keywords: [motor_fnirs_nf]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Calibration/Localizer & Transfer/Retention (Protocol blocks)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_calibration_transfer
+    label: Calibration/Localizer & Transfer/Retention
+    description: Non-feedback blocks used to define ROI/decoder or assess learning without feedback.
+    paradigms:
+      - name: Functional Localizer / Decoder Training
+        typical_DVs: [localizer_contrast_strength, decoder_AUC, calibration_quality]
+        common_manipulations: [contrast_definition, strategy_instruction]
+        variant_tags: [localizer, training]
+        design_flags: [held-out_test_set]
+        qa_checks: [contrast_SNR_reported]
+      - name: Transfer without Feedback
+        typical_DVs: [transfer_performance, retention_index]
+        common_manipulations: [delay_days, context_change, transfer_task_type (behavioral/symptom/neural)]
+        variant_tags: [transfer]
+        design_flags: [no_feedback]
+        qa_checks: [strategy_contamination_check]
+        keywords: [transfer, no_feedback]
+      - name: Behavioral Transfer Task
+        typical_DVs: [behavioral_transfer_score, symptom_change, clinical_outcome]
+        common_manipulations: [transfer_task_type (emotion_regulation_task/pain_tolerance/attention_task), delay_days]
+        variant_tags: [behavioral_transfer]
+        design_flags: [task_specific_transfer]
+        qa_checks: [baseline_behavioral_assessment]
+        keywords: [behavioral_transfer]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Control/Sham Protocols (for causal inference)
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_controls_sham
+    label: Control & Sham Protocols
+    description: Controls to dissociate true NF learning from expectancy/placebo and task demand.
+    paradigms:
+      - name: Sham/Replay/Yoked Feedback
+        typical_DVs: [apparent_success, expectancy_rating]
+        common_manipulations: [replay_source (self/other), double_blind_flag, feedback_delay]
+        variant_tags: [sham, yoked]
+        design_flags: [double_blind_recommended]
+        qa_checks: [blinding_integrity_check]
+      - name: Inverted/Random Feedback
+        typical_DVs: [success_vs_chance]
+        common_manipulations: [invert_sign, random_seed]
+        variant_tags: [inverted, random]
+        design_flags: []
+        qa_checks: []
+      - name: No-Feedback / Strategy-Only
+        typical_DVs: [self-report_effort, physio_change]
+        common_manipulations: [strategy_instruction, reward_incentive]
+        variant_tags: [strategy_only]
+        design_flags: []
+        qa_checks: []
+      - name: Waitlist Control
+        typical_DVs: [baseline_stability, expectancy_change]
+        common_manipulations: [waitlist_duration_days, assessment_frequency]
+        variant_tags: [waitlist]
+        design_flags: [no_intervention]
+        qa_checks: [baseline_stability_check]
+        keywords: [waitlist_control]
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Multi-Modal & Closed-Loop Neurofeedback
+  # ────────────────────────────────────────────────────────────────────────────
+  - id: sf_multimodal_closed_loop
+    label: Multi-Modal & Closed-Loop NF
+    description: Combined modalities (fMRI+EEG) or closed-loop adaptive feedback systems.
+    paradigms:
+      - name: Simultaneous fMRI-EEG Neurofeedback
+        typical_DVs: [fMRI_regulation_success, EEG_regulation_success, multimodal_coupling]
+        common_manipulations: [fMRI_target (roi/decoder), EEG_target (band_power), feedback_modality]
+        variant_tags: [multimodal, simultaneous]
+        design_flags: [synchronization_required, artifact_handling]
+        qa_checks: [fMRI_artifact_on_EEG, temporal_alignment]
+        keywords: [multimodal_nf]
+      - name: Closed-Loop Adaptive Neurofeedback
+        typical_DVs: [adaptation_rate, regulation_success, learning_efficiency]
+        common_manipulations: [adaptation_algorithm, threshold_update_rate, feedback_gain]
+        variant_tags: [closed_loop, adaptive]
+        design_flags: [adaptive_algorithm_specified]
+        qa_checks: [adaptation_stability_check]
+        keywords: [closed_loop_nf]
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk & constructs
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Real-time fMRI Neurofeedback
+    - ROI-based Neurofeedback
+    - Decoder-based Neurofeedback
+    - Connectivity Neurofeedback
+    - Network Balance Neurofeedback
+    - EEG Neurofeedback
+    - Alpha/Beta/Theta Band-Power Neurofeedback
+    - Frontal Alpha Asymmetry Neurofeedback
+    - fNIRS Neurofeedback
+    - Multi-Modal Neurofeedback
+    - Closed-Loop Adaptive Neurofeedback
+  cogpo_candidate_labels:
+    - Neurofeedback
+    - Real-time fMRI
+    - EEG Neurofeedback
+    - Connectivity Neurofeedback
+constructs:
+  primary: [Self-Regulation, Instrumental Control of Brain Signals]
+  secondary: [Learning/Transfer, Network Modulation, Strategy Use, Pain Regulation, Emotion Regulation]
+uri_brainmap: []
+uri_cogpo: []
+status: draft
+provenance:
+  - source: TODO CMD (NF variants/targets/controls) + prior families
+    fields: [subfamilies, paradigms, measurement_guidance, dv_vocab, factor_vocab]
+    confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance (meta/protocol)
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns:
+    - onset
+    - duration
+    - trial_type              # calibrate/regulate/rest/transfer/sham
+    - target_type             # roi/decoder/connectivity/band_power
+    - target_label            # e.g., amygdala, alpha(8–12), seed_target pair
+    - feedback_value          # thermometer/score/band power
+    - direction               # up/down
+    - strategy_instruction
+    - reward
+    - motion_FD               # for fMRI
+    - physio_hr               # optional
+    - physio_resp
+    - confidence_rating       # optional metacog
+    - response
+    - rt
+  per_subfamily:
+    sf_rtfmri_roi:
+      events_columns: [onset, duration, trial_type, target_label, feedback_value, percent_signal_change, direction, baseline_window_s, motion_FD]
+      hed_examples:
+        - "Neurofeedback, fMRI, ROI, Up-regulation"
+    sf_rtfmri_decoder:
+      events_columns: [onset, duration, trial_type, decoder_label, decoder_score, feedback_value, pain_induction_type, imagery_type, retrain_flag, motion_FD]
+      hed_examples:
+        - "Neurofeedback, fMRI, Decoder, Affect"
+        - "Neurofeedback, fMRI, Decoder, Pain"
+        - "Neurofeedback, fMRI, Decoder, Motor-imagery"
+    sf_rtfmri_connectivity:
+      events_columns: [onset, duration, trial_type, seed_roi, target_roi, connectivity_z, network_balance_index, dmn_suppression_index, tpn_activation, window_length_s, feedback_value, motion_FD]
+      hed_examples:
+        - "Neurofeedback, fMRI, Connectivity, Seed-target"
+        - "Neurofeedback, fMRI, Connectivity, Network-balance"
+        - "Neurofeedback, fMRI, Connectivity, DMN-suppression"
+    sf_eeg_meg_nf:
+      events_columns: [onset, duration, trial_type, band_hz, montage, band_power, asymmetry_index, feedback_value, direction]
+      hed_examples:
+        - "Neurofeedback, EEG, Alpha"
+        - "Neurofeedback, EEG, SMR"
+        - "Neurofeedback, EEG, Beta"
+        - "Neurofeedback, EEG, Theta"
+        - "Neurofeedback, EEG, Frontal-alpha-asymmetry"
+    sf_fnirs_nf:
+      events_columns: [onset, duration, trial_type, channel_set, motor_imagery_instruction, hbo_value, feedback_value, direction]
+      hed_examples:
+        - "Neurofeedback, fNIRS, PFC"
+        - "Neurofeedback, fNIRS, Motor-cortex"
+    sf_calibration_transfer:
+      events_columns: [onset, duration, trial_type, contrast_definition, decoder_AUC, transfer_performance, transfer_task_type, behavioral_transfer_score, symptom_change]
+      hed_examples:
+        - "Neurofeedback, Calibration"
+        - "Neurofeedback, Transfer, No-feedback"
+        - "Neurofeedback, Transfer, Behavioral"
+    sf_controls_sham:
+      events_columns: [onset, duration, trial_type, control_type (sham/yoked/inverted/random/waitlist), blinding_flag, feedback_delay_ms, waitlist_duration_days]
+      hed_examples:
+        - "Neurofeedback, Control, Sham"
+        - "Neurofeedback, Control, Waitlist"
+    sf_multimodal_closed_loop:
+      events_columns: [onset, duration, trial_type, fmri_target, eeg_target, adaptation_algorithm, threshold_update_rate, feedback_gain, multimodal_coupling]
+      hed_examples:
+        - "Neurofeedback, Multi-modal, fMRI-EEG"
+        - "Neurofeedback, Closed-loop, Adaptive"
+
+meta_flags:
+  ignore_in_construct_scores: true
+  require_latency_qc: true
+  require_transfer_block: true

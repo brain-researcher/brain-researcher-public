@@ -1,0 +1,1094 @@
+version: 1
+
+# Domain-grounded review rules for BR pipeline plans.
+# Follows the configs/gates.yaml pattern.
+# review_mode: plan | artifact | both
+# check_fn: dotted importlib path for structural checks (tool ordering, modality compat, etc.)
+# tool_filter: restrict metric check to steps whose tool matches any listed value
+
+rules:
+  # ---- Repetition rate / TR ----
+  - rule_id: REVIEW_TR_LOW
+    description: "TR is below the sane fMRI acquisition range"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    metric: params.tr
+    comparator: lt
+    threshold: 0.3
+    severity: warn
+    action: warn
+    message: "TR < 0.3s is extremely fast for fMRI; verify this is not a unit error (ms vs s)."
+    suggested_fix: "Typical fMRI TR range is 0.5–3.0 s. Check whether value should be in seconds."
+    tags: [fmri, tr, params]
+
+  - rule_id: REVIEW_TR_HIGH
+    description: "TR is above the sane fMRI acquisition range"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    metric: params.tr
+    comparator: gt
+    threshold: 5.0
+    severity: warn
+    action: warn
+    message: "TR > 5.0s is unusually long for fMRI; verify this is intentional."
+    suggested_fix: "Typical fMRI TR range is 0.5–3.0 s."
+    tags: [fmri, tr, params]
+
+  # ---- Spatial smoothing / FWHM ----
+  - rule_id: REVIEW_FWHM_OOB
+    description: "Smoothing kernel is too large for fMRI"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [smooth, fslmaths, nilearn_smooth_img, susan]
+    metric: params.fwhm
+    comparator: gt
+    threshold: 12.0
+    severity: warn
+    action: warn
+    message: "FWHM smoothing kernel > 12mm is unusually large for fMRI."
+    suggested_fix: "Typical fMRI FWHM range is 4–8mm."
+    tags: [smoothing, fmri, params]
+
+  - rule_id: REVIEW_FWHM_LOW
+    description: "Smoothing kernel is suspiciously small"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [smooth, fslmaths, nilearn_smooth_img, susan]
+    metric: params.fwhm
+    comparator: lt
+    threshold: 2.0
+    severity: error
+    action: block
+    message: "FWHM smoothing kernel < 2mm is likely a unit error (voxels instead of mm)."
+    suggested_fix: "Specify FWHM in mm. Common values: 4, 6, 8 mm."
+    tags: [smoothing, fmri, params]
+
+  # ---- Plan-level structural rules (check_fn dispatch) ----
+  - rule_id: REVIEW_REGISTRATION_ORDER
+    description: "Atlas/parcellation step appears before registration"
+    review_mode: plan
+    applies_to: plan
+    stage: plan_review
+    metric: plan.step_count
+    comparator: gte
+    threshold: 1
+    check_fn: "brain_researcher.services.review.checks.tool_order.registration_before_atlas_analysis"
+    severity: error
+    action: block
+    message: "An atlas/parcellation step precedes registration; results will be in wrong space."
+    suggested_fix: "Add a registration step (e.g. coreg_register, fsl_flirt) before atlas analysis."
+    tags: [registration, atlas, ordering]
+
+  - rule_id: REVIEW_SKULL_STRIP_ORDER
+    description: "Registration step appears before skull-stripping"
+    review_mode: plan
+    applies_to: plan
+    stage: plan_review
+    metric: plan.step_count
+    comparator: gte
+    threshold: 1
+    check_fn: "brain_researcher.services.review.checks.tool_order.skull_stripping_before_registration"
+    severity: warn
+    action: warn
+    message: "A registration step precedes skull-stripping; registering with skull may degrade accuracy."
+    suggested_fix: "Skull-strip (bet, antsBrainExtraction) before registration."
+    tags: [registration, skull_strip, ordering]
+
+  - rule_id: REVIEW_MISSING_CONFOUND_REGRESSION
+    description: "GLM step present without a prior confound regression step"
+    review_mode: plan
+    applies_to: plan
+    stage: plan_review
+    metric: plan.step_count
+    comparator: gte
+    threshold: 1
+    check_fn: "brain_researcher.services.review.checks.tool_order.confound_regression_before_glm"
+    severity: warn
+    action: warn
+    message: "GLM step found but no confound regression step precedes it."
+    suggested_fix: "Add a confound regression step before GLM to remove motion and physiological noise."
+    tags: [glm, confounds, ordering]
+
+  - rule_id: REVIEW_MODALITY_MISMATCH
+    description: "EEG/MEG modality combined with volumetric MNI atlas"
+    review_mode: plan
+    applies_to: plan
+    stage: plan_review
+    metric: plan.step_count
+    comparator: gte
+    threshold: 0
+    check_fn: "brain_researcher.services.review.checks.space_compat.atlas_modality_compatible"
+    severity: error
+    action: block
+    message: "EEG/MEG data combined with a volumetric MNI atlas — modality/space mismatch."
+    suggested_fix: "Use a surface-based or EEG-compatible atlas (e.g. fsaverage, MNI-template with source imaging)."
+    tags: [eeg, meg, atlas, modality]
+
+  - rule_id: REVIEW_NO_STEPS
+    description: "Pipeline plan has no steps"
+    review_mode: plan
+    applies_to: plan
+    stage: plan_review
+    metric: plan.step_count
+    comparator: lt
+    threshold: 1
+    severity: error
+    action: block
+    message: "Pipeline plan contains no steps."
+    suggested_fix: "Add at least one tool step to the plan."
+    tags: [plan, empty]
+
+  # ---- Artifact-time rules (Phase 2) ----
+  - rule_id: REVIEW_MEAN_FD_HIGH
+    description: "Mean framewise displacement exceeds motion threshold"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    metric: stats_metrics.mean_fd
+    comparator: gt
+    threshold: 0.5
+    severity: warn
+    action: warn
+    message: "Mean framewise displacement > 0.5mm; consider stricter motion exclusion."
+    suggested_fix: "Apply FD < 0.5mm threshold for scrubbing, or exclude high-motion subjects."
+    tags: [motion, qc, fmri]
+
+  - rule_id: REVIEW_SCRUBBING_RATE_HIGH
+    description: "More than 20% of volumes are high-motion"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    metric: stats_metrics.scrubbing_fraction
+    comparator: gt
+    threshold: 0.20
+    severity: error
+    action: block
+    message: "More than 20% of volumes exceed FD 0.5mm; analysis validity is compromised."
+    suggested_fix: "Exclude high-motion subjects or relax the scrubbing threshold with justification."
+    tags: [motion, qc, scrubbing]
+
+  - rule_id: REVIEW_R2_TOO_LOW
+    description: "GLM model explained variance is too low"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    metric: stats_metrics.r_squared
+    comparator: lt
+    threshold: 0.10
+    severity: warn
+    action: warn
+    message: "GLM explained variance R² < 0.10; model may be poorly specified."
+    suggested_fix: "Check design matrix, confound regressors, and HRF model specification."
+    tags: [glm, model_fit, stats]
+
+  - rule_id: REVIEW_EFFECT_SIZE_OOB
+    description: "Max Cohen's d is implausibly large for fMRI"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    metric: stats_metrics.cohens_d_max
+    comparator: gt
+    threshold: 3.0
+    severity: warn
+    action: warn
+    message: "Max Cohen's d > 3.0 is suspicious for fMRI group analysis."
+    suggested_fix: "Verify contrast coding, data scaling, and check for outlier subjects."
+    tags: [glm, effect_size, stats]
+
+  - rule_id: REVIEW_PREDICTIVE_REVIEW_CONTEXT_METADATA
+    description: "Predictive review context is missing split or null-model metadata"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.review_context_validity.predictive_review_context_metadata_check
+    severity: error
+    action: block
+    message: "Predictive review context omits split and/or null-model metadata."
+    suggested_fix: "Populate review_context.split_manifest and review_context.null_model before treating the run as predictive-validation ready."
+    tags: [review_context, predictive, leakage, null_model]
+
+  - rule_id: REVIEW_REVIEW_CONTEXT_MIRROR_CONFLICT
+    description: "Mirrored review_context payloads disagree across staged artifacts"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.review_context_validity.review_context_mirror_conflict_check
+    severity: warn
+    action: warn
+    message: "Mirrored review_context metadata disagrees across staged artifacts."
+    suggested_fix: "Regenerate or restage the run so run.json, analysis_bundle.json, review_contract, and source-side summaries carry the same review_context."
+    tags: [review_context, predictive, provenance]
+    reason_tags: [low_reliability]
+
+  - rule_id: REVIEW_EXTERNAL_EVIDENCE_PATH_INTEGRITY
+    description: "External extraction metadata references evidence paths that do not resolve to staged source artifacts"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.review_context_validity.external_evidence_path_integrity_check
+    severity: warn
+    action: warn
+    message: "External extraction metadata references evidence paths that do not resolve to staged source artifacts."
+    suggested_fix: "Restage the external run so inferred_fields.evidence_path points to real staged source files or indexed artifacts."
+    tags: [external, provenance, evidence_path]
+    reason_tags: [low_reliability]
+
+  - rule_id: REVIEW_REVIEW_CONTEXT_LEAKAGE_CIRCULARITY
+    description: "Review context explicitly flags leakage or circularity"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.review_context_validity.review_context_leakage_circularity_flag_check
+    severity: warn
+    action: warn
+    message: "Review context explicitly flags leakage/circularity."
+    suggested_fix: "Carry the caveat into the review narrative and avoid presenting the result as clean validation until the concern is resolved."
+    tags: [review_context, leakage, circularity, caveat]
+
+  - rule_id: REVIEW_PREDICTIVE_CV_LEAKAGE
+    description: "Predictive provenance explicitly indicates CV leakage or test contamination"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.predictive_integrity.predictive_cv_leakage_check
+    severity: error
+    action: block
+    message: "Predictive provenance explicitly indicates CV leakage or test contamination."
+    suggested_fix: "Move data-dependent transforms inside the training fold only and remove any explicit full-dataset or test-set fit provenance."
+    tags: [predictive, leakage, generalization]
+
+  - rule_id: REVIEW_PREDICTIVE_SPLIT_INTEGRITY
+    description: "Predictive split provenance shows overlapping or non-independent train/test partitions"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.predictive_integrity.predictive_split_integrity_check
+    severity: error
+    action: block
+    message: "Predictive split provenance shows overlapping or non-independent partitions."
+    suggested_fix: "Regenerate the split manifest so train/validation/test sets are mutually exclusive at the declared split unit."
+    tags: [predictive, leakage, generalization, split_integrity]
+
+  - rule_id: REVIEW_PERMUTATION_EXCHANGEABILITY_INVALID
+    description: "Permutation provenance explicitly marks exchangeability as invalid"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.null_model_validity.permutation_exchangeability_check
+    severity: error
+    action: block
+    message: "Explicit permutation provenance indicates exchangeability is not preserved."
+    suggested_fix: "Use a valid restricted-exchangeability permutation design for the repeated-measures, family, or block structure."
+    tags: [null_model, permutation, exchangeability, null_mismatch]
+
+  - rule_id: REVIEW_SPATIAL_NULL_INVALID
+    description: "Spatial-null provenance explicitly marks the spatial null as invalid or unsupported"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.null_model_validity.spatial_null_validity_check
+    severity: error
+    action: block
+    message: "Explicit spatial-null provenance marks the spatial null as invalid or unsupported."
+    suggested_fix: "Provide a spatial-null method that is explicitly valid for the data geometry and correlation structure."
+    tags: [null_model, spatial_null, null_mismatch]
+
+  - rule_id: REVIEW_SURFACE_VOLUME_CORRECTION_DOMAIN_MISMATCH
+    description: "Correction domain conflicts with the surface/CIFTI vs volume data domain"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.null_model_validity.surface_volume_correction_domain_mismatch_check
+    severity: error
+    action: block
+    message: "Explicit review metadata places the correction domain in a different family from the analyzed data domain."
+    suggested_fix: "Keep the correction/inference domain aligned with the data representation, or convert the data before correction."
+    tags: [null_model, domain_mismatch, surface, volume, null_mismatch]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_CLAIM_INFLATION
+    description: "Explicit claim language exceeds the structured support recorded in the bundle"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.claim_validity.claim_inflation_check
+    severity: warn
+    action: warn
+    message: "Claim language exceeds the structured support recorded in the bundle."
+    suggested_fix: "Downgrade mechanism/causal/biomarker/prediction language unless the bundle explicitly records the corresponding support."
+    tags: [claims, validity, inflation]
+    reason_tags: [claim_inflation]
+
+  - rule_id: REVIEW_REVERSE_INFERENCE_RISK
+    description: "Explicit region/signal-to-process claims look like reverse inference without recorded decoder support"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.claim_validity.reverse_inference_risk_check
+    severity: warn
+    action: warn
+    message: "Explicit region/signal-to-process claims look like reverse inference without recorded decoder support."
+    suggested_fix: "Rephrase the claim as compatible-with language or attach explicit decoder/forward-inference evidence."
+    tags: [claims, construct_validity, reverse_inference]
+    reason_tags: [claim_inflation, construct_validity]
+
+  - rule_id: REVIEW_MODEL_FIT_MECHANISM_OVERREACH
+    description: "Model-fit or encoding evidence is being framed as mechanistic or representational equivalence"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.claim_validity.model_fit_mechanism_overreach_check
+    severity: warn
+    action: warn
+    message: "Model-fit or encoding evidence is being framed as mechanistic or representational equivalence."
+    suggested_fix: "Downgrade the claim to consistency or predictive-fit language unless additional causal evidence is provided."
+    tags: [claims, neuroai, mechanism]
+    reason_tags: [claim_inflation]
+
+  - rule_id: REVIEW_CONTROVERSIAL_CHOICE_SENSITIVITY
+    description: "Explicit controversial methodological choices lack recorded sensitivity or robustness checks"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.claim_validity.controversial_choice_sensitivity_check
+    severity: warn
+    action: warn
+    message: "Explicit controversial methodological choices lack recorded sensitivity or robustness checks."
+    suggested_fix: "Record on/off, threshold-sweep, or robustness analyses for the controversial choice before treating it as settled."
+    tags: [sensitivity, robustness, preprocessing]
+    reason_tags: [controversial_choice]
+
+  - rule_id: REVIEW_CONSTRUCT_VALIDITY_CONFOUND
+    description: "Explicit behavioral or alternative confounds are recorded without clear control handling"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.claim_validity.construct_validity_confound_check
+    severity: warn
+    action: warn
+    message: "Explicit behavioral or alternative confounds are recorded without clear control handling."
+    suggested_fix: "Model the explicit imbalance or alternative explanation before making strong cognitive or behavioral claims."
+    tags: [construct_validity, confounds, behavior]
+    reason_tags: [confound]
+
+  - rule_id: REVIEW_DESIGN_MATRIX_CONFOUND_COLUMNS_MISMATCH
+    description: "Declared confound regressors are missing from the observed design-matrix columns"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.design_matrix_confound_column_consistency_check
+    severity: error
+    action: block
+    message: "Declared confound regressors are missing from the observed design-matrix columns."
+    suggested_fix: "Regenerate the design matrix so the declared confounds are included, or update review_context preprocessing metadata to match the actual design."
+    tags: [design_matrix, confounds, glm, artifact_consistency]
+    reason_tags: [confound, null_mismatch]
+
+  - rule_id: REVIEW_MULTIPLE_COMPARISON_METADATA_MISMATCH
+    description: "Declared multiple-comparison metadata contradicts the observed threshold summary artifacts"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.multiple_comparison_metadata_consistency_check
+    severity: error
+    action: block
+    message: "Declared multiple-comparison metadata contradicts the observed threshold summary artifacts."
+    suggested_fix: "Regenerate the threshold summary artifacts or update review_context statistical_inference metadata so the declared correction method and threshold parameters match the observed outputs."
+    tags: [thresholding, multiple_comparisons, artifact_consistency]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_CORRECTION_SUMMARY_NUMERIC_MISMATCH
+    description: "Observed correction-summary arithmetic is internally inconsistent"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.correction_summary_numeric_consistency_check
+    severity: error
+    action: block
+    message: "Observed correction-summary metrics are internally inconsistent."
+    suggested_fix: "Regenerate the correction or threshold summary so alpha, rejection counts, fractions, and cluster counts are numerically self-consistent."
+    tags: [thresholding, correction_summary, artifact_consistency]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_CONTRAST_TABLE_SEMANTICS_INVALID
+    description: "Declared contrast-table artifact is missing, unparseable, or contradicts the reviewed contrast/design matrix"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.contrast_table_semantics_check
+    severity: error
+    action: block
+    message: "Contrast-table artifact is missing, unparseable, or contradicts the reviewed contrast/design matrix."
+    suggested_fix: "Regenerate the contrast table with explicit contrast names and correct vector dimensionality, or align the declared contrast metadata with the actual artifact."
+    tags: [contrast_table, artifact_consistency, glm]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_CLUSTER_TABLE_SEMANTICS_INVALID
+    description: "Declared cluster-table artifact is missing, unparseable, or lacks structured cluster-level semantics"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.cluster_table_semantics_check
+    severity: error
+    action: block
+    message: "Cluster-table artifact is missing, unparseable, or lacks structured cluster-level semantics."
+    suggested_fix: "Regenerate the cluster table with parseable cluster extent/significance/stat columns, or update review_context statistical_inference cluster_table_path."
+    tags: [thresholding, cluster_table, artifact_consistency]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_CLUSTER_TABLE_COUNT_MISMATCH
+    description: "Structured cluster-count metadata contradicts the observed cluster-table row count"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.cluster_table_count_consistency_check
+    severity: error
+    action: block
+    message: "Structured cluster-count metadata contradicts the observed cluster-table row count."
+    suggested_fix: "Regenerate the threshold summary or cluster table so found/surviving cluster counts agree with the structured cluster-table artifact."
+    tags: [thresholding, cluster_table, artifact_consistency]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_PEAK_TABLE_SEMANTICS_INVALID
+    description: "Declared peak-table artifact is missing, unparseable, or lacks structured peak coordinates/statistics"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.peak_table_semantics_check
+    severity: error
+    action: block
+    message: "Peak-table artifact is missing, unparseable, or lacks structured peak coordinates/statistics."
+    suggested_fix: "Regenerate the peak table with parseable coordinate and peak-statistic columns, or update review_context statistical_inference peak_table_path."
+    tags: [thresholding, peak_table, artifact_consistency]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_PEAK_CLUSTER_MEMBERSHIP_INVALID
+    description: "Peak-table cluster membership contradicts the structured cluster table"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.peak_cluster_membership_consistency_check
+    severity: error
+    action: block
+    message: "Peak-table cluster membership contradicts the structured cluster table."
+    suggested_fix: "Regenerate the peak and cluster tables so cluster_id values are explicit, unique, and consistent across both artifacts."
+    tags: [thresholding, peak_table, cluster_table, artifact_consistency]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_CLUSTER_PEAK_CARDINALITY_MISMATCH
+    description: "One or more cluster-table rows have no corresponding peak-table membership"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.cluster_peak_cardinality_check
+    severity: error
+    action: block
+    message: "One or more cluster-table rows have no corresponding peak-table membership."
+    suggested_fix: "Regenerate the cluster and peak tables so every surviving cluster has at least one associated peak row."
+    tags: [thresholding, peak_table, cluster_table, artifact_consistency]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_DESIGN_MODEL_METADATA_MISMATCH
+    description: "Declared HRF or autocorrelation design-model metadata contradicts the observed GLM and design-matrix summaries"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.artifact_structure.design_model_metadata_consistency_check
+    severity: error
+    action: block
+    message: "Declared HRF or autocorrelation design-model metadata contradicts the observed GLM and design-matrix summaries."
+    suggested_fix: "Regenerate the GLM summary/design artifacts or update review_context design_model metadata so the declared HRF, derivative, and autocorrelation settings match the observed model."
+    tags: [glm, hrf, autocorrelation, artifact_consistency]
+    reason_tags: [null_mismatch]
+
+  - rule_id: REVIEW_NEUROAI_SELECTION_ON_TEST
+    description: "Explicit neuroAI winner selection used held-out or test data"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_selection_on_test_check
+    severity: error
+    action: block
+    message: "NeuroAI candidate selection explicitly used held-out or test data."
+    suggested_fix: "Move winner selection into nested CV or an internal training-only selection stage, then evaluate on untouched held-out data."
+    tags: [neuroai, predictive, leakage, winner_selection]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SPLIT_GROUPING_MISMATCH
+    description: "Explicit neuroAI split metadata violates required grouping keys"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_split_grouping_mismatch_check
+    severity: error
+    action: block
+    message: "NeuroAI split metadata shows fine-grained or random partitions that ignore the required grouping structure."
+    suggested_fix: "Regenerate the split with explicit story/session/subject grouping before claiming held-out generalization."
+    tags: [neuroai, predictive, split_integrity, leakage]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SUBJECT_MANIFEST_COVERAGE
+    description: "The split/fold manifest references subject IDs absent from the declared subject manifest"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_subject_manifest_coverage_check
+    severity: error
+    action: block
+    message: "The split/fold manifest references subject IDs that are missing from the declared subject manifest."
+    suggested_fix: "Regenerate the subject and split manifests from the same subject set, or update the declared subject manifest to cover the evaluated split."
+    tags: [neuroai, predictive, split_integrity, subject_manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_DECLARED_SUBJECT_SET_MISSING_SUBJECT_COLUMN
+    description: "A declared structured subject-set manifest omits a usable subject identifier column"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_declared_subject_set_missing_subject_column_check
+    severity: error
+    action: block
+    message: "A declared structured subject-set manifest is missing a usable subject identifier column."
+    suggested_fix: "Regenerate the manifest with `subject`, `subject_id`, or `participant_id`, or switch to a plain one-subject-per-line source file."
+    tags: [neuroai, predictive, split_integrity, subject_manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SUBJECT_MANIFEST_SELECTION_SOURCE_CONFLICT
+    description: "The declared subject manifest contains subject IDs absent from the declared subject-selection source"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_subject_manifest_selection_source_subset_conflict_check
+    severity: error
+    action: block
+    message: "The declared subject manifest contains subject IDs that are not present in the declared subject-selection source."
+    suggested_fix: "Regenerate the subject manifest from the declared subject-selection source, or update the source file to match the reviewed subject set."
+    tags: [neuroai, predictive, split_integrity, subject_manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SUBJECT_INTERSECTION_COVERAGE
+    description: "The split/fold manifest references subject IDs absent from the declared subject-intersection manifest"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_subject_intersection_coverage_check
+    severity: error
+    action: block
+    message: "The split/fold manifest references subject IDs that are missing from the declared subject-intersection manifest."
+    suggested_fix: "Regenerate the split and intersection manifests from the same eligible subject set, or update the declared subject-intersection manifest."
+    tags: [neuroai, predictive, split_integrity, subject_intersection]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SUBJECT_INTERSECTION_SELECTION_SOURCE_CONFLICT
+    description: "The declared subject-intersection manifest contains subject IDs absent from the declared subject-selection source"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_subject_intersection_selection_source_subset_conflict_check
+    severity: error
+    action: block
+    message: "The declared subject-intersection manifest contains subject IDs that are not present in the declared subject-selection source."
+    suggested_fix: "Regenerate the subject-intersection manifest from the declared subject-selection source, or update the source file to match the eligible reviewed set."
+    tags: [neuroai, predictive, split_integrity, subject_intersection]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SUBJECT_INTERSECTION_SUBSET_CONFLICT
+    description: "The subject-intersection manifest contains subject IDs absent from the declared subject manifest"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_subject_intersection_subset_conflict_check
+    severity: error
+    action: block
+    message: "The declared subject-intersection manifest contains subject IDs that are not present in the declared subject manifest."
+    suggested_fix: "Regenerate the subject-intersection manifest from the declared subject manifest, or update the subject manifest to match the eligible set."
+    tags: [neuroai, predictive, split_integrity, subject_intersection]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SUBJECT_SELECTION_SOURCE_COVERAGE
+    description: "The split/fold manifest references subject IDs absent from the declared subject-selection source"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_subject_selection_source_coverage_check
+    severity: error
+    action: block
+    message: "The split/fold manifest references subject IDs that are missing from the declared subject-selection source."
+    suggested_fix: "Regenerate the split manifest from the declared subject-selection source, or update the selection source file to match the evaluated split."
+    tags: [neuroai, predictive, split_integrity, subject_selection]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SPLIT_MANIFEST_MISSING_GROUP_KEYS
+    description: "The split/fold manifest omits one or more declared required grouping columns"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_split_manifest_missing_group_keys_check
+    severity: error
+    action: block
+    message: "The split/fold manifest is missing one or more declared required grouping columns, so grouping-aware generalization cannot be validated."
+    suggested_fix: "Regenerate the manifest with the declared required grouping columns, or downgrade the grouping claim to match the available manifest schema."
+    tags: [neuroai, predictive, split_integrity, manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SPLIT_MANIFEST_PARTITION_CONFLICT
+    description: "The split/fold manifest places the same required grouping tuple into multiple partitions within a fold scope"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_split_manifest_partition_conflict_check
+    severity: error
+    action: block
+    message: "The split/fold manifest assigns the same required group tuple to multiple partitions within the same fold scope."
+    suggested_fix: "Regenerate the split manifest so each required group tuple remains on a single side of train/validation/test within a fold."
+    tags: [neuroai, predictive, split_integrity, manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_NESTED_CV_OUTER_HOLDOUT_CONFLICT
+    description: "A nested-CV manifest reuses outer-holdout subjects inside inner train/validation partitions"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_nested_cv_outer_holdout_conflict_check
+    severity: error
+    action: block
+    message: "A nested-CV manifest assigns the same required grouping tuple to outer test and inner train/validation partitions within the same outer fold."
+    suggested_fix: "Regenerate the nested-CV manifest so outer-holdout subjects never re-enter inner train/validation partitions for the same outer fold."
+    tags: [neuroai, predictive, nested_cv, split_integrity]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_NESTED_CV_SCHEMA_MISSING_FOLD_KEYS
+    description: "A nested-CV claim is backed by a manifest schema that lacks outer-fold, inner-fold, or partition columns"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_nested_cv_schema_missing_fold_keys_check
+    severity: error
+    action: block
+    message: "A nested-CV bundle is missing the manifest fold keys needed to encode outer and inner resampling structure."
+    suggested_fix: "Emit a nested-CV manifest with explicit outer-fold, inner-fold, and partition columns before claiming nested resampling."
+    tags: [neuroai, predictive, nested_cv, manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_NESTED_CV_OUTER_PARTITION_GAP
+    description: "A nested-CV outer fold is missing either a held-out test partition or the training-side partitions needed for inner selection"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_nested_cv_outer_partition_gap_check
+    severity: error
+    action: block
+    message: "A nested-CV outer fold is missing either a held-out test partition or the training-side partitions needed for model selection."
+    suggested_fix: "Regenerate the nested-CV manifest so every outer fold records both a test holdout and the training-side partitions used for inner selection."
+    tags: [neuroai, predictive, nested_cv, manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_NESTED_CV_INNER_PARTITION_GAP
+    description: "A nested-CV inner fold is missing the training or evaluation partition needed for inner-loop selection"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_nested_cv_inner_partition_gap_check
+    severity: error
+    action: block
+    message: "A nested-CV inner fold is missing either the training partition or the evaluation partition needed for inner-loop selection."
+    suggested_fix: "Regenerate the nested-CV manifest so every inner fold records both training and validation/evaluation assignments."
+    tags: [neuroai, predictive, nested_cv, manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_NESTED_CV_OUTER_MISSING_INNER_RESAMPLING
+    description: "A nested-CV outer fold has training-side rows but no explicit inner-fold assignments for model-selection resampling"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_nested_cv_outer_missing_inner_resampling_check
+    severity: error
+    action: block
+    message: "A nested-CV outer fold has training-side rows, but none of those rows record inner-fold assignments for model selection."
+    suggested_fix: "Regenerate the nested-CV manifest so each outer fold records inner-fold assignments on the training-side rows used for model selection."
+    tags: [neuroai, predictive, nested_cv, manifest]
+    reason_tags: [leakage, generalization]
+
+  - rule_id: REVIEW_NEUROAI_SELECTION_MULTIPLICITY_ACCOUNTING
+    description: "A neuroAI winner is reported after broad candidate comparison without selection accounting"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_selection_multiplicity_accounting_check
+    severity: warn
+    action: warn
+    message: "A neuroAI winner is reported after comparing multiple candidates without explicit multiplicity or winner-selection accounting."
+    suggested_fix: "Record nested CV, winner-selection protocol, or multiplicity correction before treating the selected model/layer/ROI/prompt as stable."
+    tags: [neuroai, multiplicity, winner_selection, generalization]
+    reason_tags: [generalization]
+
+  - rule_id: REVIEW_NEUROAI_WINNER_WITHOUT_CANDIDATE_SET
+    description: "A neuroAI winner is declared but the compared candidate set is missing"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_winner_without_candidate_set_check
+    severity: warn
+    action: warn
+    message: "A neuroAI winner is declared, but the compared candidate set is not recorded."
+    suggested_fix: "Record the compared models/layers/ROIs/prompts or replace winner language with a single-candidate description."
+    tags: [neuroai, winner_selection, provenance, generalization]
+    reason_tags: [generalization]
+
+  - rule_id: REVIEW_NEUROAI_SELECTION_VALIDATION_GAP
+    description: "A neuroAI winner is reported without explicit nested or held-out selection-validation metadata"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.neuroai_validity.neuroai_selection_validation_gap_check
+    severity: warn
+    action: warn
+    message: "A neuroAI winner is reported after multi-candidate comparison, but the validation stage used for winner selection is not recorded."
+    suggested_fix: "Record nested CV, a dedicated model-selection holdout, or an independent validation set for winner selection."
+    tags: [neuroai, winner_selection, validation, generalization]
+    reason_tags: [generalization]
+
+  - rule_id: REVIEW_STIMULUS_FIXED_EFFECT_RISK
+    description: "Broad stimulus-class generalization is claimed without explicit stimulus-randomization support"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.task_construct_validity.stimulus_fixed_effect_risk_check
+    severity: warn
+    action: warn
+    message: "Broad stimulus-class generalization is claimed without explicit stimulus-randomization or random-factor support."
+    suggested_fix: "Rephrase the claim to the observed stimulus set or provide explicit stimulus randomization / random-effects support."
+    tags: [construct_validity, task, stimuli]
+    reason_tags: [construct_validity, stimulus_fixed_effect]
+
+  - rule_id: REVIEW_BEHAVIORAL_IMBALANCE_NOT_MODELED
+    description: "Explicit RT/accuracy/difficulty/eye-movement imbalance is present without matching controls"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.task_construct_validity.behavioral_imbalance_not_modeled_check
+    severity: warn
+    action: warn
+    message: "Explicit behavioral imbalance is present without matching control variables or modeling."
+    suggested_fix: "Add the explicit behavioral covariates or downgrade the construct claim until the imbalance is controlled."
+    tags: [construct_validity, behavior, confounds]
+    reason_tags: [construct_validity, confound]
+
+  - rule_id: REVIEW_TASK_FC_PPI_EVOKED_RESPONSE_CONTROL_MISSING
+    description: "Task-FC/PPI style connectivity claims lack explicit mean-evoked-response control"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.task_construct_validity.task_fc_ppi_evoked_response_control_check
+    severity: warn
+    action: warn
+    message: "Task-FC/PPI style connectivity claims lack explicit mean-evoked-response control."
+    suggested_fix: "Record sufficient evoked-response removal or residualization before interpreting task-dependent connectivity changes."
+    tags: [construct_validity, connectivity, task_fc, ppi]
+    reason_tags: [construct_validity, connectivity]
+
+  - rule_id: REVIEW_GSR_SENSITIVITY_PACKAGE
+    description: "GSR is used without a recorded on/off sensitivity package"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.sensitivity_packages.gsr_sensitivity_package_check
+    severity: warn
+    action: warn
+    message: "GSR is used without a recorded GSR on/off sensitivity package."
+    suggested_fix: "Add explicit GSR-on and GSR-off robustness runs before treating the result as stable."
+    tags: [sensitivity, preprocessing, gsr]
+    reason_tags: [controversial_choice, gsr]
+
+  - rule_id: REVIEW_DYNAMIC_FC_SENSITIVITY_PACKAGE
+    description: "Dynamic-FC claims lack a null model or window/parameter sensitivity package"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.sensitivity_packages.dynamic_fc_sensitivity_package_check
+    severity: warn
+    action: warn
+    message: "Dynamic-FC claims lack a null model or window/parameter sensitivity package."
+    suggested_fix: "Add an explicit dynamic-FC null model plus window-length or parameter sensitivity before making strong state/dynamics claims."
+    tags: [sensitivity, dynamic_fc, null_model]
+    reason_tags: [controversial_choice, dynamic_fc, null_mismatch]
+
+  - rule_id: REVIEW_GRAPH_ATLAS_HRF_SENSITIVITY_PACKAGE
+    description: "Graph-threshold, atlas, or HRF choices lack recorded choice-specific sensitivity checks"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.sensitivity_packages.graph_atlas_hrf_sensitivity_package_check
+    severity: warn
+    action: warn
+    message: "Graph-threshold, atlas, or HRF choices lack recorded choice-specific sensitivity checks."
+    suggested_fix: "Add threshold sweeps, atlas variants, or HRF/basis sensitivity checks before treating the result as robust to those choices."
+    tags: [sensitivity, graph, atlas, hrf]
+    reason_tags: [controversial_choice, atlas, hrf]
+
+  - rule_id: REVIEW_QC_FLAG_RATE_ZERO
+    description: "QC flag rate is exactly zero — QC likely did not run"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    metric: stats_metrics.flag_rate
+    comparator: eq
+    threshold: 0.0
+    severity: warn
+    action: warn
+    message: "QC flag rate is exactly 0% — QC may not have run or thresholds are too lenient."
+    suggested_fix: "Verify QC step ran correctly and thresholds are appropriate."
+    tags: [qc, flag_rate]
+
+  - rule_id: REVIEW_ARTIFACT_COMPLETENESS_LOW
+    description: "Fewer than 60% of expected run artifacts are present"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    metric: scorecard_snapshot.artifact_completeness_ratio
+    comparator: lt
+    threshold: 0.60
+    severity: error
+    action: block
+    message: "Less than 60% of expected run artifacts are present."
+    suggested_fix: "Check that the pipeline ran to completion and all output files were written."
+    tags: [artifacts, completeness]
+
+  - rule_id: REVIEW_STEP_SUCCESS_RATE_LOW
+    description: "Not all pipeline steps succeeded"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    metric: scorecard_snapshot.step_success_rate
+    comparator: lt
+    threshold: 1.0
+    severity: error
+    action: block
+    message: "One or more pipeline steps failed."
+    suggested_fix: "Review step error messages and fix upstream failures before re-running."
+    tags: [steps, errors]
+
+  - rule_id: REVIEW_EPISTEMIC_CLAIM_POLICY
+    description: "Claim verdict labels exceed what the evidence provenance supports"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.epistemic_integrity.epistemic_claim_policy_check
+    severity: error
+    action: warn
+    message: "Quote-grounded claim labels overstate what the linked evidence supports."
+    suggested_fix: "Downgrade the verdict/confidence or attach direct single-study statistical evidence before using SUPPORTED/REFUTED."
+    tags: [epistemics, claims, literature]
+
+  - rule_id: REVIEW_CROSS_STUDY_COORDINATE_COMPARISON
+    description: "Cross-study literature synthesis is rendered as a direct coordinate comparison"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.epistemic_integrity.cross_study_coordinate_comparison_check
+    severity: error
+    action: warn
+    message: "A coordinate table implies a direct group difference even though the evidence is cross-study only."
+    suggested_fix: "Remove the faux group-difference column and report the coordinates as separate study-specific observations."
+    tags: [epistemics, coordinates, literature]
+
+  - rule_id: REVIEW_DIRECTIONAL_CLAIM_CONTRADICTION
+    description: "Directional predictions disagree within the same hypothesis family"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.epistemic_integrity.directional_claim_contradiction_check
+    severity: warn
+    action: warn
+    message: "Directional claims conflict and should be presented as unresolved tension rather than confirmed direction."
+    suggested_fix: "List both directions explicitly with evidence provenance and avoid resolving the contradiction without a direct comparison."
+    tags: [epistemics, contradiction, literature]
+
+  - rule_id: REVIEW_CITATION_CONSTRUCT_MISMATCH
+    description: "A cited publication's actual construct does not match the claim it supports"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.epistemic_integrity.citation_construct_mismatch_check
+    severity: error
+    action: warn
+    message: "A cited publication studies a different construct than the claim it is cited to support."
+    suggested_fix: "Replace the citation with a paper that studies the claimed construct, or rewrite the claim to match the cited paper."
+    tags: [epistemics, citation, construct]
+    reason_tags: [citation_mismatch, construct_validity]
+
+  - rule_id: REVIEW_CITATION_POPULATION_MISMATCH
+    description: "A cited publication's sample population does not match the claim scope"
+    review_mode: artifact
+    applies_to: artifact
+    stage: artifact_review
+    check_fn: brain_researcher.services.review.checks.epistemic_integrity.citation_population_mismatch_check
+    severity: error
+    action: warn
+    message: "A cited publication's sample population does not match the population scope of the claim."
+    suggested_fix: "Acknowledge the population mismatch explicitly or replace the citation with a study matching the claimed population."
+    tags: [epistemics, citation, population]
+    reason_tags: [citation_mismatch]
+
+  # ---- GLM design rules ----
+  - rule_id: REVIEW_GLM_N_EVENTS_TOO_FEW
+    description: "Too few events per condition for reliable beta estimation"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [glm_first_level, nilearn_first_level_model, fsl_feat, fsl_film_gls, spm_glm, fitlins]
+    metric: params.n_events_per_condition
+    comparator: lt
+    threshold: 8
+    severity: warn
+    action: warn
+    message: "Fewer than 8 events per condition; beta estimates may be unstable."
+    suggested_fix: "Standard event-related designs need ≥ 10 events/condition. For LSS use ≥ 5."
+    tags: [glm, design, events]
+
+  - rule_id: REVIEW_HIGH_PASS_TOO_AGGRESSIVE
+    description: "High-pass filter cutoff may remove neural signal"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [glm_first_level, nilearn_first_level_model, fsl_feat, fsl_film_gls, nilearn_clean_img]
+    metric: params.high_pass
+    comparator: gt
+    threshold: 0.02
+    severity: warn
+    action: warn
+    message: "High-pass filter > 0.02 Hz (period < 50s) may remove slow neural signal."
+    suggested_fix: "Standard fMRI high-pass is 0.01 Hz (100s). For block designs use period > 2× block cycle."
+    tags: [glm, filter, high_pass]
+    kg_lookup:
+      node_type: GLMDesignPrior
+      property: high_pass
+      query_hint: "task-conditioned GLM high-pass prior"
+      min_confidence: 0.3
+
+  - rule_id: REVIEW_GROUP_N_TOO_SMALL
+    description: "Group-level analysis with very few subjects"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [glm_second_level, nilearn_second_level_model, fsl_randomise, spm_factorial_design, flame]
+    metric: params.n_subjects
+    comparator: lt
+    threshold: 10
+    severity: warn
+    action: warn
+    message: "Group analysis with fewer than 10 subjects is underpowered."
+    suggested_fix: "Standard fMRI group studies need N ≥ 20 for adequate power (80%) at typical effect sizes."
+    tags: [glm, group, power]
+
+  # ---- DWI parameter rules ----
+  - rule_id: REVIEW_DWI_BVALUE_LOW
+    description: "DWI b-value too low for standard tractography"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [mrtrix_tckgen, dsi_studio_tracking, fsl_dtifit, ants_dti, dipy_tracking, dmri_tractography]
+    metric: params.b_value
+    comparator: lt
+    threshold: 700
+    severity: warn
+    action: warn
+    message: "b-value < 700 s/mm² is too low for standard DTI/tractography."
+    suggested_fix: "Standard DTI uses b=1000 s/mm²; HARDI/CSD typically uses b=2000–3000 s/mm²."
+    tags: [dwi, bvalue, tractography]
+
+  - rule_id: REVIEW_DWI_BVALUE_HIGH
+    description: "DWI b-value unusually high without multi-shell justification"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [mrtrix_tckgen, dsi_studio_tracking, fsl_dtifit, dipy_tracking, dmri_tractography]
+    metric: params.b_value
+    comparator: gt
+    threshold: 5000
+    severity: warn
+    action: warn
+    message: "b-value > 5000 s/mm² is extreme; verify this is intentional (e.g. NODDI)."
+    suggested_fix: "Standard HARDI: b=2000–3000. NODDI/advanced models: b=5000+ is valid but must be explicit."
+    tags: [dwi, bvalue, tractography]
+
+  - rule_id: REVIEW_DWI_N_DIRECTIONS_LOW
+    description: "Too few diffusion gradient directions for robust estimation"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [mrtrix_tckgen, fsl_dtifit, dipy_tracking, ants_dti, dmri_tractography, dmri_parcellate_connectome]
+    metric: params.n_directions
+    comparator: lt
+    threshold: 12
+    severity: error
+    action: block
+    message: "Fewer than 12 gradient directions is insufficient for DTI; HARDI requires ≥ 30."
+    suggested_fix: "Use ≥ 32 directions for DTI, ≥ 60 for CSD/HARDI. Minimum 6 is only valid for DKI debugging."
+    tags: [dwi, directions, hardi]
+
+  # ---- Modality mismatch extensions ----
+  - rule_id: REVIEW_DWI_TOOL_ON_BOLD
+    description: "DWI-specific tool applied to BOLD/fMRI modality"
+    review_mode: plan
+    applies_to: plan
+    stage: plan_review
+    metric: plan.step_count
+    comparator: gte
+    threshold: 1
+    check_fn: "brain_researcher.services.review.checks.space_compat.dwi_tool_on_bold_data"
+    severity: error
+    action: block
+    message: "A DWI-specific tool is declared alongside a BOLD/fMRI modality — modality mismatch."
+    suggested_fix: "Verify the correct modality is declared; DWI and BOLD pipelines must not share tractography steps."
+    tags: [dwi, fmri, modality]
+
+  - rule_id: REVIEW_MIXED_MNI_VERSIONS
+    description: "Multiple incompatible MNI template versions in the same plan"
+    review_mode: plan
+    applies_to: plan
+    stage: plan_review
+    metric: plan.step_count
+    comparator: gte
+    threshold: 2
+    check_fn: "brain_researcher.services.review.checks.space_compat.mixed_mni_versions"
+    severity: error
+    action: block
+    message: "Both MNI152NLin2009cAsym and MNI152NLin6Asym appear in the same plan."
+    suggested_fix: "Pick one MNI version and apply it consistently. MNI2009c is standard for fMRIPrep outputs."
+    tags: [mni, space, registration]
+
+  # ---- Statistical validity ----
+  - rule_id: REVIEW_PARAMETRIC_SMALL_N
+    description: "Parametric group test with very small N — nonparametric preferred"
+    review_mode: plan
+    applies_to: step
+    stage: plan_review
+    tool_filter: [scipy_ttest_ind, scipy_ttest_rel, pingouin_ttest, glm_second_level, nilearn_second_level_model]
+    metric: params.n_subjects
+    comparator: lt
+    threshold: 8
+    severity: warn
+    action: warn
+    message: "Parametric test with N < 8 violates normality assumptions; use nonparametric alternative."
+    suggested_fix: "Use FSL randomise (permutation), or scipy.stats.mannwhitneyu / wilcoxon for small N."
+    tags: [stats, parametric, small_n]
+
+  - rule_id: REVIEW_METHOD_APPROPRIATENESS
+    description: "Design-method compatibility check (covers all design-method mismatches via seed/KG)"
+    review_mode: plan
+    applies_to: plan
+    stage: plan_review
+    metric: plan.step_count
+    comparator: gte
+    threshold: 1
+    check_fn: "brain_researcher.services.review.checks.method_appropriateness.method_appropriateness_check"
+    severity: error
+    action: block
+    message: "Statistical method does not match the study design."
+    suggested_fix: "Choose a statistical method that matches the study design's independence/dependence structure."
+    tags: [stats, design, method_compatibility]

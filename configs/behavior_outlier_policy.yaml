@@ -1,0 +1,9 @@
+version: 1
+policy_id: "behavior_default_v1"
+rt_min_sec: 0.15
+rt_max_sec: 3.0
+accuracy_min: 0.6
+miss_rate_max: 0.2
+notes:
+  - "Thresholds are conservative defaults; adjust per paradigm as needed."
+  - "Reaction times outside [0.15, 3.0] seconds are flagged as outliers."

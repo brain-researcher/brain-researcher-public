@@ -1,0 +1,135 @@
+# Edge Scoring and Matching Configuration for BR-KG
+# Defines matching methods, thresholds, and canonical priority per node type
+# Referenced by: schema_catalog.md, invariants.md (REL-01, REL-02)
+#
+# Schema definitions (node/edge types, properties, ID formats) are now in:
+# configs/neurokg/config.yml (schema section)
+
+# Global matching method configurations
+matching_methods:
+  exact:
+    description: "Exact string match (case-folded, punctuation-stripped)"
+    weight: 1.0
+    threshold: 1.0
+
+  fuzzy:
+    description: "Levenshtein/Dice coefficient for labels"
+    weight: 0.8
+    threshold: 0.9  # Dice >= 0.9
+    algorithm: "dice"
+
+  embedding:
+    description: "Semantic embedding similarity (SBERT/NiCLIP)"
+    weight: 0.9
+    threshold: 0.85  # Cosine >= 0.85
+    model: "auto"  # niclip > sbert
+
+  spatial:
+    description: "Euclidean distance for coordinates"
+    weight: 0.7
+    threshold: 8.0  # mm radius
+    decay: "linear"  # score = 1 - (d/8)
+
+  meta_analytic:
+    description: "Z-score/posterior from meta-analysis"
+    weight: 0.85
+    threshold_z: 5.0
+    threshold_posterior: 0.8
+
+# Per-node-type matching configuration
+node_type_configs:
+  Task:
+    methods: [exact, embedding, fuzzy]
+    primary_fields: [id, label]
+    secondary_fields: [description]
+    canonical_priority: [cogat, niclip, bids, openneuro]
+    same_as_threshold: 0.90
+
+  Concept:
+    methods: [exact, embedding]
+    primary_fields: [id, label]
+    secondary_fields: [definition]
+    canonical_priority: [mesh, cogat, wikidata, custom]
+    same_as_threshold: 0.90
+
+  Publication:
+    methods: [exact]
+    primary_fields: [doi, pmid]
+    secondary_fields: []
+    canonical_priority: [doi, pmid]
+    same_as_threshold: 1.0  # Exact only
+
+  Coordinate:
+    methods: [spatial]
+    primary_fields: [x, y, z, space]
+    secondary_fields: []
+    canonical_priority: [first_seen]  # No canonical merge for coords
+    same_as_threshold: 0.95
+
+  Region:
+    methods: [exact, fuzzy]
+    primary_fields: [id, label, atlas]
+    secondary_fields: [hemisphere]
+    canonical_priority: [schaefer400, aal, harvard-oxford, custom]
+    same_as_threshold: 0.95
+
+  Dataset:
+    methods: [exact]
+    primary_fields: [doi, id]
+    secondary_fields: [name]
+    canonical_priority: [doi, openneuro_id]
+    same_as_threshold: 1.0
+
+  Phenotype:
+    methods: [exact, fuzzy]
+    primary_fields: [mesh_id, label]
+    secondary_fields: [category]
+    canonical_priority: [mesh, hpo, custom]
+    same_as_threshold: 0.90
+
+  StatisticalMap:
+    methods: [exact]
+    primary_fields: [sha256, url]
+    secondary_fields: []
+    canonical_priority: [sha256]
+    same_as_threshold: 1.0
+
+  Contrast:
+    methods: [fuzzy]
+    primary_fields: [name, task_id]
+    secondary_fields: [description]
+    canonical_priority: [first_seen]
+    same_as_threshold: 0.85
+
+# Edge creation rules
+edge_rules:
+  SAME_AS:
+    bidirectional: true
+    requires_confidence: true
+    min_confidence: 0.90
+    provenance_required: true
+
+  MAPS_TO:
+    bidirectional: false  # Directed cross-source mapping
+    requires_confidence: true
+    min_confidence: 0.85
+    provenance_required: true
+
+  ACTIVATES:
+    bidirectional: false
+    requires_confidence: true
+    min_confidence: 0.80
+    methods: [meta_analytic, spatial]
+
+  IN_REGION:
+    bidirectional: false
+    requires_confidence: true
+    min_confidence: 0.70
+    methods: [spatial]
+
+# Confidence score calculation
+confidence_calculation:
+  method: "weighted_average"
+  normalize: true
+  apply_penalty_if_few_fields: true
+  min_fields_for_full_confidence: 3

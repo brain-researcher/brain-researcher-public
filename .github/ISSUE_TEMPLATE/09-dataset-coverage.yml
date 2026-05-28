@@ -1,0 +1,63 @@
+name: Dataset Coverage/Metadata Gap
+description: Report missing datasets, metadata quality issues, or Add to Plan failures.
+title: "[DATASET] "
+labels:
+  - area/datasets
+  - type/feature-request
+body:
+  - type: input
+    id: portal
+    attributes:
+      label: Portal or filter used
+      placeholder: OpenNeuro, HCP, UKB
+    validations:
+      required: true
+
+  - type: input
+    id: dataset_name
+    attributes:
+      label: Dataset name/card title
+    validations:
+      required: true
+
+  - type: dropdown
+    id: problem_type
+    attributes:
+      label: Problem type
+      options:
+        - Missing dataset
+        - Incomplete metadata
+        - Wrong metadata
+        - Add to Plan failure
+        - Search/filter issue
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: search_filters
+    attributes:
+      label: Search and filter combination
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix
+    validations:
+      required: true

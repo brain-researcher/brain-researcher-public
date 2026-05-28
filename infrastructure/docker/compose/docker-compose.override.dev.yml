@@ -1,0 +1,75 @@
+version: '3.8'
+
+# Development docker-compose configuration
+# Use with: docker compose -f docker-compose.yml -f docker/compose/docker-compose.override.dev.yml up
+
+services:
+  # Development container with all tools
+  dev:
+    build:
+      context: .
+      target: cli
+    container_name: brain-researcher-dev
+    volumes:
+      - .:/app
+      - ~/.cache:/root/.cache  # Cache pip/pre-commit/etc
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - JUPYTER_ENABLE_LAB=yes
+    ports:
+      - "8888:8888"  # Jupyter
+      - "5000-5010:5000-5010"  # Range for services
+      - "8000-8100:8000-8100"  # Range for APIs
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  # CLI container for running commands
+  cli:
+    build:
+      context: .
+      target: cli
+    container_name: brain-researcher-cli
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app/src
+    profiles:
+      - cli
+
+  # Minimal services for development
+  neurokg-dev:
+    extends:
+      file: ../../docker-compose.yml
+      service: neurokg
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    profiles:
+      - services
+
+  agent-dev:
+    extends:
+      file: ../../docker-compose.yml
+      service: agent
+    volumes:
+      - .:/app
+    environment:
+      - RELOAD=true
+    profiles:
+      - services
+
+  ui-dev:
+    extends:
+      file: ../../docker-compose.yml
+      service: web-ui
+    volumes:
+      - .:/app
+    environment:
+      - DASH_DEBUG=true
+    profiles:
+      - services

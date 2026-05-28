@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openneuro-sync-ds000114
+  namespace: brain-researcher-core
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: sync
+          image: rclone/rclone:1.66
+          command: ["/bin/sh", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              mkdir -p /data/openneuro_mount/ds000114
+              mkdir -p /data/OpenNeuroDerivatives/fmriprep/ds000114
+
+              echo "=== syncing raw ds000114 ==="
+              rclone sync \
+                --s3-provider AWS \
+                --s3-env-auth false \
+                --s3-region us-east-1 \
+                --s3-no-check-bucket \
+                --transfers 16 \
+                --checkers 32 \
+                :s3:openneuro.org/ds000114 \
+                /data/openneuro_mount/ds000114
+
+              echo "=== syncing derivatives fmriprep ds000114 (best-effort) ==="
+              rclone sync \
+                --s3-provider AWS \
+                --s3-env-auth false \
+                --s3-region us-west-2 \
+                --s3-no-check-bucket \
+                --transfers 8 \
+                --checkers 16 \
+                :s3:openneuro-derivatives/fmriprep/ds000114 \
+                /data/OpenNeuroDerivatives/fmriprep/ds000114 || true
+          volumeMounts:
+            - name: shared-data
+              mountPath: /data
+      volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: brain-researcher-shared-data

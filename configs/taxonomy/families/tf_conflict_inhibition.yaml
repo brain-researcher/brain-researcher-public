@@ -1,0 +1,198 @@
+# TODO CMD: flesh out paradigms (e.g., Stroop, Flanker, Go/No-Go) and confirm crosswalk entries.
+
+id: tf_conflict_inhibition
+label: Conflict & Inhibitory Control
+description: >
+  Response selection under conflict and outright response inhibition. Includes stimulus–stimulus conflict (S–S, e.g., Stroop),
+  stimulus–response/spatial compatibility (S–R, Simon), response–response competition (Flanker), and inhibitory control
+  paradigms that require withholding or cancelling an action (Go/No-go, Go NoGo, Stop-signal, Stop Signal), plus canonical "adaptation"
+  designs (negative priming, proportion congruent, sequential congruency, conflict adaptation, Gratton effect).
+
+# ────────────────────────────────────────────────────────────────────────────────
+# LEVEL 2: Subfamilies, each with LEVEL 3 paradigms
+# ────────────────────────────────────────────────────────────────────────────────
+subfamilies:
+  - id: sf_stimulus_stimulus_conflict
+    label: Stimulus–Stimulus Conflict (Stroop family)
+    description: Conflicts between task-relevant and task-irrelevant stimulus dimensions (Dimensional Overlap, S–S).
+    paradigms:
+      - name: Stroop (Color–Word)
+        aliases: [Color–Word Stroop, Color Word Stroop, Color Stroop, Stroop Effect, Stroop Interference, Stroop Task]
+        typical_DVs: [rt_ms, error_rate, interference_cost_ms]
+        common_manipulations: [congruency, stimulus_duration_ms, proportion_congruent_list, proportion_congruent_item, masking]
+        notes: Classic ink–word interference; include list-wide and item-specific PC manipulations.
+      - name: Numerical Stroop
+        aliases: [Number Stroop]
+        typical_DVs: [rt_ms, error_rate, interference_cost_ms]
+        common_manipulations: [numerical_congruency, physical_size_congruency, proportion_congruent_list]
+        notes: Number magnitude vs physical size conflict.
+      - name: Emotional Stroop
+        aliases: [Emotional Stroop Task, Affective Stroop, Threat Stroop]
+        typical_DVs: [rt_ms, interference_cost_ms]
+        common_manipulations: [emotional_valence, arousal, threat_relevance, proportion_congruent_list]
+        notes: Slower color naming for emotionally salient words/images.
+      - name: Picture–Word Interference (PWI)
+        aliases: [Object–Word Interference, Picture Word Interference, Object Word Interference, PWI Task]
+        typical_DVs: [naming_rt_ms, error_rate, interference_cost_ms]
+        common_manipulations: [semantic_relatedness, SOA_ms, masking]
+        notes: Word distractors interfere with picture naming; semantic vs phonological SOA effects.
+      - name: Reverse Stroop
+        aliases: [Reverse Stroop Effect, Word Reading Stroop]
+        typical_DVs: [rt_ms, interference_cost_ms]
+        common_manipulations: [response_mode, congruency]
+        notes: Read the word while color is irrelevant (typically smaller effects).
+      - name: Negative Priming (Stroop/PWI)
+        aliases: [SNP, Stroop Negative Priming, Negative Priming Effect]
+        typical_DVs: [negative_priming_cost_ms]
+        common_manipulations: [prime_probe_relation, distractor_becomes_target, lag]
+        notes: Prior distractor inhibits subsequent response when it becomes the target.
+
+  - id: sf_response_competition
+    label: Response–Response Competition (Flanker task family)
+    description: Irrelevant neighboring stimuli activate competing responses (often same dimension as target).
+    paradigms:
+      - name: Flanker (Arrow/Letter)
+        aliases: [Eriksen Flanker, Flanker Task, Eriksen Flanker Task, Arrow Flanker, Letter Flanker, Flanker Effect]
+        typical_DVs: [rt_ms, error_rate, congruency_cost_ms]
+        common_manipulations: [congruency, set_size, target_position, SOA_flanker_target_ms, proportion_congruent_list, sequential_congruency]
+        notes: Arrow/letter/flish variants; analyze Gratton (sequential) effects.
+      - name: Spatially Interleaved Flanker / Crowd
+        aliases: []
+        typical_DVs: [rt_ms, accuracy, congruency_cost_ms]
+        common_manipulations: [eccentricity_deg, spacing_crowding, distractor_similarity]
+        notes: Tighter spacing increases crowding and competition.
+      - name: Feature-based Flanker
+        aliases: []
+        typical_DVs: [rt_ms, error_rate, congruency_cost_ms]
+        common_manipulations: [feature_similarity, distractor_type, proportion_congruent_list]
+        notes: Competition at feature level (e.g., motion/colour).
+
+  - id: sf_spatial_compatibility
+    label: Stimulus–Response/Spatial Compatibility (Simon task family)
+    description: Irrelevant spatial location dimension conflicts with response mapping (Dimensional Overlap, S–R).
+    paradigms:
+      - name: Simon Task
+        aliases: [Spatial Compatibility, Spatial Stroop (Simon), Simon Effect, Simon Paradigm, Spatial Conflict Task]
+        typical_DVs: [rt_ms, error_rate, compatibility_cost_ms]
+        common_manipulations: [compatibility, response_mapping, eccentricity_deg, time_pressure, proportion_compatible]
+        notes: Location–response conflict; robust compatibility cost.
+      - name: SRC / Polarity Correspondence
+        aliases: [Stimulus–Response Compatibility, Stimulus Response Compatibility, SRC Task, Polarity Correspondence Effect]
+        typical_DVs: [rt_ms, compatibility_cost_ms]
+        common_manipulations: [mapping_rules, polarity_correspondence, practice_blocks]
+        notes: Generalizes beyond left/right to other polarity-coded dimensions.
+
+  - id: sf_response_inhibition
+    label: Response Inhibition (withhold vs cancel task family)
+    description: Inhibition of prepotent action—either prevent initiation (withhold) or cancel after initiation (cancel).
+    paradigms:
+      - name: Go/No-Go (withhold)
+        aliases: [GNG, Go No-Go, Go NoGo, Go/NoGo, Withhold Task, Response Inhibition Task]
+        typical_DVs: [commission_error_rate, omission_error_rate, rt_ms]
+        common_manipulations: [no_go_frequency, stimulus_degradation, deadline_ms, feedback_type]
+        notes: Manipulate prepotency via Go prevalence and speed pressure.
+      - name: Stop-Signal Task (cancel)
+        aliases: [Stop Signal, StopSignal, Stop Signal Task, SST, SSRT Task, Countermanding (manual), Response Cancellation Task]
+        typical_DVs: [ssrt_ms, go_rt_ms, p_inhibit]
+        common_manipulations: [ssd_ms, stop_probability, staircase_step_ms, deadline_ms, feedback_type]
+        notes: SSRT (stop-signal reaction time) via integration method; SSD (stop-signal delay) tracked by staircase (1-up/1-down).
+      - name: Selective Stop / Conditional Stop-Signal
+        aliases: [CSST, Selective Stopping, Conditional Stop Signal, Conditional Stop-Signal Task, Selective Stop Task]
+        typical_DVs: [ssrt_ms, p_inhibit_selective, go_rt_ms]
+        common_manipulations: [selective_stop_rule, stop_probability, SSD_condition_specific]
+        notes: Inhibit only a subset of responses (e.g., left-hand only).
+      - name: Stop-Change
+        aliases: [Stop Change Task, Response Change Task, Stop-Change Paradigm]
+        typical_DVs: [change_RT_ms, p_inhibit, ssrt_ms]
+        common_manipulations: [change_signal_delay_ms, SSD_ms, mapping_rules]
+        notes: Cancel planned response and produce alternative action.
+      - name: Saccade Countermanding (ocular)
+        aliases: [Oculomotor Stop-signal, Oculomotor Stop Signal, Eye Movement Stop Signal, Saccade Stop Signal]
+        typical_DVs: [ssrt_ms, saccade_latency_ms, p_inhibit]
+        common_manipulations: [ssd_ms, target_eccentricity_deg]
+        notes: Oculomotor variant; cross-links to oculomotor family.
+
+  - id: sf_conflict_adaptation_designs
+    label: Conflict Adaptation & Control Dynamics (designs)
+    description: Paradigms/manipulations indexing proactive vs reactive control, conflict-triggered adjustments.
+    paradigms:
+      - name: Proportion Congruent (List-wise)
+        aliases: [LWPC, List-Wise Proportion Congruent, List-Wide Proportion Congruent, Proportion Congruent Effect]
+        typical_DVs: [interference_cost_by_block, slope_pc]
+        common_manipulations: [proportion_congruent_list]
+        notes: Lower PC (proportion congruent) reduces interference via proactive control.
+      - name: Proportion Congruent (Item-specific)
+        aliases: [ISPC, Item-Specific Proportion Congruent, Item-Specific PC, Item-Level Proportion Congruent]
+        typical_DVs: [item_level_interference_cost]
+        common_manipulations: [proportion_congruent_item, item_context_binding]
+        notes: Learned context–control association at item level.
+      - name: Sequential Congruency / Gratton
+        aliases: [Conflict Adaptation, Gratton Effect, Gratton Paradigm, Sequential Congruency Effect, Conflict Monitoring]
+        typical_DVs: [conflict_adaptation_index]
+        common_manipulations: [trial_n_congruency, repetition_switch, response_relation]
+        notes: Reduced interference after incongruent trials (iI < cI).
+      - name: Negative Priming (Prime–Probe)
+        aliases: [Distractor-to-Target NP, Prime Probe Negative Priming, Negative Priming Paradigm, NP Effect]
+        typical_DVs: [negative_priming_cost_ms]
+        common_manipulations: [prime_probe_relation, lag, distractor_target_overlap]
+        notes: Repetition of prior distractor as target slows responding.
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Crosswalk (fill URIs later)
+# ────────────────────────────────────────────────────────────────────────────────
+crosswalk:
+  brainmap_paradigm_classes:
+    - Stroop Task (Color–Word)
+    - Flanker (Eriksen)
+    - Simon Task
+    - Go/No-Go
+    - Stop-Signal Task
+    - Negative Priming
+    - Proportion Congruent
+    - Sequential Congruency (Gratton)
+  cogpo_candidate_labels:
+    - Stroop
+    - Flanker
+    - Simon
+    - Go/No-Go
+    - Stop-Signal
+    - Negative Priming
+    - Proportion Congruent
+    - Conflict Adaptation
+  uri_brainmap: []
+  uri_cogpo: []
+  status: plausible
+  provenance:
+    - source: task_families_master_20.yaml + conflict/inhibition expansion
+      fields: [subfamilies, paradigms, dv_vocab, factor_vocab]
+      confidence: high
+
+# ────────────────────────────────────────────────────────────────────────────────
+# BIDS / HED guidance
+# ────────────────────────────────────────────────────────────────────────────────
+bids_hed_guidance:
+  common_events_columns: [onset, duration, trial_type, response, correct, rt]
+  per_subfamily:
+    sf_stimulus_stimulus_conflict:
+      events_columns: [onset, duration, trial_type, congruency, stimulus_duration_ms, proportion_congruent_list, proportion_congruent_item, response, correct, rt]
+      hed_examples:
+        - "Experimental-stimulus, Visual, Word, Stroop-task, Congruent/ Incongruent"
+        - "Experimental-stimulus, Visual, Picture, Picture-word-interference"
+    sf_response_competition:
+      events_columns: [onset, duration, trial_type, flanker_congruency, set_size, target_position, SOA_flanker_target_ms, response, correct, rt]
+      hed_examples:
+        - "Experimental-stimulus, Visual, Arrow, Flanker-task, Congruency"
+    sf_spatial_compatibility:
+      events_columns: [onset, duration, trial_type, compatibility, response_mapping, eccentricity_deg, response, correct, rt]
+      hed_examples:
+        - "Experimental-stimulus, Visual, Spatial-compatibility, Simon-task"
+    sf_response_inhibition:
+      events_columns: [onset, duration, trial_type, stop_trial, ssd_ms, stop_probability, selective_stop_flag, change_trial, change_signal_delay_ms, response, correct, rt]
+      hed_examples:
+        - "Inhibition-task, Stop-signal, Cancel-response"
+        - "Inhibition-task, Go-no-go, Withhold-response"
+    sf_conflict_adaptation_designs:
+      events_columns: [onset, duration, trial_type, congruency, prev_trial_congruency, proportion_congruent_list, proportion_congruent_item, response, correct, rt]
+      hed_examples:
+        - "Cognitive-control, Conflict-adaptation, Sequential-congruency"
+        - "Cognitive-control, Proportion-congruent, Context-control"

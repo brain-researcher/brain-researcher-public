@@ -1,0 +1,18 @@
+# Spatial configuration for Yeo-17 integrations
+reference:
+  neuromaps_root: data/neurokg/raw/neuromaps
+  nilearn_root: data/neurokg/raw/nilearn_atlases
+
+atlases:
+  yeo17:
+    atlas_id: "atlas:yeo2011_17"
+    template_space_id: "tpl:MNI152NLin2009cAsym_2mm"
+    annotation_id: "neuromaps:yeo2011_17"
+    label_globs:
+      - "**/yeo*17*2mm*.nii*"
+      - "**/Yeo*2011*17*2mm*.nii*"
+    template_globs:
+      - "**/tpl-MNI152NLin2009cAsym_res-02_desc-brain_T1w.nii*"
+      - "**/*MNI152NLin2009cAsym*2mm*T1w.nii*"
+    z_threshold: 2.3
+    top_k: 8

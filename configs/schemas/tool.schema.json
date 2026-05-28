@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tool",
+  "type": "object",
+  "properties": {
+    "tool_id": {"type": "string"},
+    "name": {"type": "string"},
+    "domain": {"type": ["string", "null"]},
+    "runtime_kind": {"type": ["string", "null"], "enum": ["container", "python", "api", null]},
+    "description": {"type": ["string", "null"]},
+    "homepage_url": {"type": ["string", "null"], "format": "uri"},
+    "repo_url": {"type": ["string", "null"], "format": "uri"},
+    "status": {"type": ["string", "null"], "enum": ["stable", "experimental", "deprecated", null]}
+  },
+  "required": ["tool_id", "name"],
+  "additionalProperties": true
+}

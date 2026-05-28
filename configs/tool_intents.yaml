@@ -1,0 +1,37 @@
+impl_intents:
+  - generic_container_op
+  - python_op
+  - mcp_tool
+  - wrapper_tool
+  - service_tool
+
+priority:
+  - glm_first_level_fmri
+  - glm_second_level_fmri
+  - fmri_glm_analysis
+  - registration_to_mni
+  - nonlinear_registration
+  - linear_registration
+  - registration
+  - skull_strip_mri
+  - motion_correction_fmri
+  - slice_timing
+  - spatial_smooth
+  - connectivity_analysis
+  - seed_based_connectivity
+  - diffusion_modeling
+  - dmri_tractography
+  - cortical_reconstruction
+  - ica_denoising
+  - ica_decomposition
+  - permutation_testing
+  - multiple_comparison_correction
+  - statistical_inference
+  - quality_control
+  - visualization
+  - data_access
+  - pipeline_search
+  - pipeline_run
+  - meta_analysis
+  - literature_search
+  - knowledge_graph_query

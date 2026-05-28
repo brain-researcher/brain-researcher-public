@@ -1,0 +1,81 @@
+Bootstrap: docker
+From: ghcr.io/brain-researcher/brain-researcher:hpc-latest
+
+%labels
+    Author Brain Researcher Team
+    Description Brain Researcher HPC Singularity/Apptainer Image
+    Version 0.1.0
+
+%help
+    Brain Researcher platform for neuroimaging analysis on HPC systems.
+    
+    Usage:
+        singularity run brainr.sif br [command] [options]
+        singularity exec brainr.sif br chat
+        singularity shell brainr.sif
+    
+    Available commands:
+        br chat       - Interactive chat interface
+        br ask        - Single query mode
+        br serve      - Start services
+        br config     - Manage credentials
+    
+    Mount points:
+        /data         - Input/output data
+        /scratch      - Temporary workspace
+        /cache        - Model/data caches
+
+%environment
+    export PATH=/usr/local/bin:$PATH
+    export BR_HOME=$HOME/.brainr
+    export BR_DATA=/data
+    export BR_CACHE=/cache
+    export BR_SCRATCH=/scratch
+    export PYTHONPATH=/app:$PYTHONPATH
+    
+    # Neuroimaging tools paths (if installed)
+    export FSLDIR=/opt/fsl
+    export PATH=$FSLDIR/bin:$PATH
+    
+    # Set locale
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+
+%post
+    # Create bind mount points for HPC
+    mkdir -p /data /scratch /cache /tmp/work
+    
+    # Create symlinks for common HPC paths
+    ln -s /scratch /tmp/scratch
+    
+    # Set up neuroimaging directories
+    mkdir -p /opt/data /opt/models
+    
+    # Optional: Download common models/data
+    # python -c "import nilearn; nilearn.datasets.fetch_atlas_aal()"
+    
+    echo "Brain Researcher HPC container ready"
+
+%runscript
+    exec br "$@"
+
+%test
+    # Basic functionality tests
+    br version
+    python -c "import brain_researcher; print('Core module OK')"
+    python -c "import nibabel; print('Nibabel OK')"
+    python -c "import nilearn; print('Nilearn OK')"
+    
+    # Test CLI commands
+    br --help
+    
+    echo "All tests passed!"
+
+%files
+    # Optional: Copy configuration templates
+    # configs/hpc/slurm_template.sh /opt/templates/slurm_template.sh
+    # configs/hpc/pbs_template.sh /opt/templates/pbs_template.sh
+
+%startscript
+    # Script for instance mode (singularity instance start)
+    br serve agent

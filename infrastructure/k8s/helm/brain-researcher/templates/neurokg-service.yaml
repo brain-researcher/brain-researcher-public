@@ -1,0 +1,24 @@
+{{- if .Values.neurokg.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-neurokg
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: neurokg
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: 5000
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "brain-researcher.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: neurokg
+{{- end }}

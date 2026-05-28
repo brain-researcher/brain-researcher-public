@@ -1,0 +1,45 @@
+# TODO CMD: manully maintain this superfamily index
+version: "1.0"
+updated: "2025-11-02"
+superfamilies:
+  - id: tf_attention_selective
+    path: families/tf_attention_selective.yaml
+  - id: tf_conflict_inhibition
+    path: families/tf_conflict_inhibition.yaml
+  - id: tf_task_switching
+    path: families/tf_task_switching.yaml
+  - id: tf_working_memory
+    path: families/tf_working_memory.yaml
+  - id: tf_ltm_declarative
+    path: families/tf_ltm_declarative.yaml
+  - id: tf_priming
+    path: families/tf_priming.yaml
+  - id: tf_rule_category_learning
+    path: families/tf_rule_category_learning.yaml
+  - id: tf_value_based_decision
+    path: families/tf_value_based_decision.yaml
+  - id: tf_social_cognition
+    path: families/tf_social_cognition.yaml
+  - id: tf_detection_discrimination
+    path: families/tf_detection_discrimination.yaml  
+  - id: tf_timing_order  
+    path: families/tf_timing_order.yaml
+  - id: tf_language_semantic
+    path: families/tf_language_semantic.yaml
+  - id: tf_motor_action
+    path: families/tf_motor_action.yaml
+  - id: tf_spatial_navigation
+    path: families/tf_spatial_navigation.yaml
+  - id: tf_interoception_challenge
+    path: families/tf_interoception_challenge.yaml
+  - id: tf_localizers_baseline
+    path: families/tf_localizers_baseline.yaml
+  - id: tf_preference_affective
+    path: families/tf_preference_affective.yaml
+  - id: tf_neurofeedback
+    path: families/tf_neurofeedback.yaml
+build:
+  exports:
+    - exports/task_families_master.yaml
+    - exports/task_families_master.csv
+    - exports/task_families_nav.md

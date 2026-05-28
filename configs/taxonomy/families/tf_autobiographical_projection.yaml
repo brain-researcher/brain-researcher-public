@@ -1,0 +1,8 @@
+id: tf_autobiographical_projection
+label: Autobiographical Projection & Mental Time Travel
+description: >-
+  Tasks requiring participants to project themselves into past or future contexts, imagine
+  autobiographical events, or mentally navigate personal timelines ("mental time travel").
+examples: [mental_time_travel, future_thinking, autobiographical_imagery]
+typical_DVs: [vividness_rating, temporal_distance_error, autobiographical_detail_count]
+common_manipulations: [temporal_direction (past/future), perspective (field/observer), emotional_valence]

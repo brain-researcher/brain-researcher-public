@@ -1,0 +1,1112 @@
+# Default values for brain-researcher Helm chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global configuration
+global:
+  # Domain for the platform
+  domain: brain-researcher.local
+  
+  # Image registry settings
+  imageRegistry: ""
+  imageTag: latest
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  # - name: myregistrykey
+  
+  # Storage class for persistent volumes
+  storageClass: "brain-researcher-standard"
+  
+  # Security contexts
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+    runAsUser: 1000
+  
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  # Environment (development, staging, production)
+  environment: production
+
+# Namespace configuration
+namespaces:
+  core: brain-researcher-core
+  data: brain-researcher-data
+  monitoring: brain-researcher-monitoring
+
+# Nginx reverse proxy configuration
+nginx:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: LoadBalancer
+    ports:
+      http: 80
+      https: 443
+      metrics: 9113
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9113"
+    prometheus.io/path: "/metrics"
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Orchestrator service configuration
+orchestrator:
+  enabled: true
+  replicaCount: 1
+
+  # Optional per-service image tag override (defaults to global.imageTag when empty).
+  imageTag: ""
+  
+  image:
+    repository: brain-researcher/orchestrator
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    ports:
+      http: 3001
+      websocket: 3002
+      metrics: 9090
+  
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 12
+    targetCPUUtilizationPercentage: 65
+    targetMemoryUtilizationPercentage: 70
+  
+  config:
+    maxConcurrentJobs: 5
+    defaultJobTimeout: 300
+    rateLimitPerMinute: 60
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3001"
+    prometheus.io/path: "/metrics"
+
+  # Hosted Studio can bind runtime sessions to per-user Jupyter servers by
+  # setting either:
+  # - BR_STUDIO_JUPYTER_BASE_URL: fixed base URL for a single runtime target
+  # - BR_STUDIO_JUPYTER_BASE_URL_TEMPLATE: template such as
+  #   https://hub.brain-researcher.com/user/{jupyter_user_name_url}
+  # Together with BR_STUDIO_JUPYTER_TOKEN (or BR_JUPYTER_TOKEN), the
+  # orchestrator can talk to the bound Neurodesk/Jupyter server directly.
+  marimoRuntime:
+    provisioner: "noop"
+    namespace: ""
+    imageRepository: "marimo-singleuser"
+    imageTag: ""
+    imagePullPolicy: ""
+    publicUrlTemplate: ""
+    ingressClassName: ""
+    ingressTlsSecretName: ""
+    internalUrlTemplate: "http://{service_name}:{marimo_port}"
+    podNameTemplate: ""
+    serviceNameTemplate: ""
+    serviceAccountName: ""
+    workspaceHome: "/home/br_user/work"
+    templateSource: "/app/notebooks/templates/br_quickstart.py"
+    notebookPath: "notebooks/br_quickstart.py"
+    workspacePVCNameTemplate: ""
+    rbac:
+      create: false
+  extraEnv: []
+
+# Agent service configuration
+agent:
+  enabled: true
+  replicaCount: 2
+
+  # Optional per-service image tag override (defaults to global.imageTag when empty).
+  imageTag: ""
+  
+  image:
+    repository: brain-researcher/agent
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  # Optional command/args override (use for ASGI/WS entrypoint)
+  command: []
+  args: []
+  
+  service:
+    type: ClusterIP
+    ports:
+      http: 8000
+      metrics: 9090
+    sessionAffinity: ClientIP
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 1800
+  
+  resources:
+    requests:
+      memory: "3Gi"
+      cpu: "1500m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  
+  # Agent uses StatefulSet, so no HPA
+  autoscaling:
+    enabled: false
+  
+  persistence:
+    sessions:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+    
+    logs:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+  
+  config:
+    llm:
+      defaultProvider: "openai"
+      temperature: 0.1
+      maxTokens: 4000
+      timeout: 60
+    
+    tools:
+      timeout: 300
+      maxRetries: 3
+      parallelExecution: true
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+
+  extraEnv:
+    - name: BR_TOOL_REGISTRY_BACKEND
+      value: "adapter"
+    - name: BR_TOOL_REGISTRY_MUTATION_MODE
+      value: "compat"
+    - name: BR_TOOL_REGISTRY_FAIL_OPEN
+      value: "true"
+    - name: BR_TOOL_EXECUTE_AUTO_REMAP
+      value: "true"
+    - name: BR_TOOL_REGISTRY_LIGHT_MODE
+      value: "false"
+
+  # Optional OpenNeuro hostPath mounts (k3s/GCE prod).
+  openneuroMounts:
+    enabled: false
+    root:
+      hostPath: /srv/datasets/openneuro
+      mountPath: /app/data/openneuro
+      readOnly: true
+    derivatives:
+      hostRootPath: /srv/datasets/OpenNeuroDerivatives
+      mountRootPath: /app/data/OpenNeuroDerivatives
+      buckets:
+        - fmriprep
+        - mriqc
+        - fitlins
+        - xcpd
+      readOnly: true
+
+  # Optional hostPath root for additional public S3 dataset mounts
+  # (mounted on host via scripts/mount_public_buckets.sh).
+  publicBucketMounts:
+    enabled: false
+    root:
+      hostPath: /srv/datasets/public-s3
+      mountPath: /app/data/public-s3
+      readOnly: true
+
+  # Optional FreeSurfer license secret mount for tools/workflows that need
+  # auto-discovery without relying on hostPath conventions.
+  freesurferLicense:
+    enabled: false
+    secretName: ""
+    secretKey: "license.txt"
+    mountDir: /app/data/licenses/freesurfer
+
+  # Minimal privileges needed for Apptainer mount namespace execution.
+  apptainerSecurityContext:
+    enabled: false
+    privileged: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: true
+    seccompProfileType: Unconfined
+    capabilities:
+      - SYS_ADMIN
+
+# BR-KG service configuration
+neurokg:
+  enabled: true
+  replicaCount: 1  # StatefulSet
+  # Override tag for BR-KG image; defaults to global.imageTag if unset.
+  imageTag: ""
+
+  # Optional reverse-proxy path prefix for BR-KG when mounted behind an ingress path
+  # (e.g. `/kg` -> neurokg service with no rewrite).
+  # Set to "" (or "/") to disable prefix handling.
+  urlPrefix: "/kg"
+
+  # Probe tuning (BR-KG can be slow to start due to cache warmup / Neo4j preload).
+  probes:
+    startup:
+      enabled: true
+      path: "/health"
+      periodSeconds: 5
+      failureThreshold: 60
+      timeoutSeconds: 1
+    liveness:
+      path: "/health"
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 1
+      failureThreshold: 3
+    readiness:
+      path: "/ready"
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 1
+      failureThreshold: 3
+  
+  image:
+    repository: brain-researcher/neurokg
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    ports:
+      http: 5000
+      metrics: 9090
+
+  # Optional envFrom secret refs (use to inject NEO4J_PASSWORD without plaintext)
+  extraEnvFrom: []
+  
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "3Gi"
+      cpu: "1500m"
+  
+  persistence:
+    database:
+      enabled: true
+      size: 50Gi
+      storageClass: "brain-researcher-fast-ssd"
+      accessModes:
+        - ReadWriteOnce
+    
+    vectorCache:
+      enabled: true
+      size: 20Gi
+      storageClass: "brain-researcher-fast-ssd"
+      accessModes:
+        - ReadWriteOnce
+  
+  config:
+    database:
+      poolSize: 10
+      timeout: 30
+    
+    vectorSearch:
+      enabled: true
+      embeddingModel: "sentence-transformers/all-MiniLM-L6-v2"
+      similarityThreshold: 0.7
+    
+    api:
+      rateLimit: 100
+      cacheTimeToLive: 300
+      pagination:
+        defaultPageSize: 20
+        maxPageSize: 100
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5000"
+    prometheus.io/path: "/metrics"
+
+# NICLIP service configuration
+niclip:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: brain-researcher/niclip
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    ports:
+      http: 8001
+      metrics: 9090
+  
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+      # Uncomment for GPU support:
+      # gpu: 1
+  
+  # NICLIP should not be autoscaled due to model loading overhead
+  autoscaling:
+    enabled: false
+  
+  persistence:
+    models:
+      enabled: true
+      size: 15Gi
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+    
+    dataCache:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+  
+  config:
+    model:
+      device: "cpu"  # Change to "cuda" for GPU
+      batchSize: 8
+      maxSequenceLength: 512
+    
+    processing:
+      timeout: 120
+      maxConcurrentRequests: 4
+      memoryLimit: "2Gi"
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8001"
+    prometheus.io/path: "/metrics"
+  
+  # Uncomment for GPU support:
+  # nodeSelector:
+  #   kubernetes.io/gpu: nvidia
+  
+  # tolerations:
+  #   - key: nvidia.com/gpu
+  #     operator: Exists
+  #     effect: NoSchedule
+
+# MCP service configuration
+mcp:
+  enabled: false
+  replicaCount: 1
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  # Optional per-service image tag override (defaults to global.imageTag when empty).
+  imageTag: ""
+
+  # Mount path for the HTTP MCP transport. If you route MCP behind an ingress
+  # path prefix (e.g. `/mcp`), keep this as `/mcp`. If you serve MCP on a
+  # dedicated hostname (e.g. `mcp.example.com`), set this to `/`.
+  mountPath: "/mcp"
+
+  # Optional persistent run root for MCP run records/artifacts.
+  # If empty and jobStore.enabled=true, template defaults to <jobStore.mountPath>/mcp_runs.
+  runRoot: ""
+
+  # Optional comma-separated fallback run roots for read-only lookup during
+  # path migrations (for example old run roots after changing BR_MCP_RUN_ROOT).
+  runRootAliases: ""
+
+  # Optional OpenNeuro hostPath mounts for MCP local dataset access.
+  openneuroMounts:
+    enabled: false
+    root:
+      hostPath: /srv/datasets/openneuro
+      mountPath: /app/data/openneuro
+      readOnly: true
+    derivatives:
+      hostRootPath: /srv/datasets/OpenNeuroDerivatives
+      mountRootPath: /app/data/OpenNeuroDerivatives
+      buckets:
+        - fmriprep
+        - mriqc
+        - fitlins
+        - xcpd
+      readOnly: true
+
+  # Optional FreeSurfer license secret mount for MCP-hosted workflows and
+  # recipe validation without depending on hostPath-only files.
+  freesurferLicense:
+    enabled: false
+    secretName: ""
+    secretKey: "license.txt"
+    mountDir: /app/data/licenses/freesurfer
+
+  service:
+    type: ClusterIP
+    port: 7000
+
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+  extraEnv:
+    - name: BR_TOOL_REGISTRY_BACKEND
+      value: "adapter"
+    - name: BR_TOOL_REGISTRY_MUTATION_MODE
+      value: "compat"
+    - name: BR_TOOL_REGISTRY_FAIL_OPEN
+      value: "true"
+    - name: BR_TOOL_EXECUTE_AUTO_REMAP
+      value: "true"
+    - name: BR_TOOL_REGISTRY_LIGHT_MODE
+      value: "false"
+
+# Web UI configuration
+webUi:
+  enabled: true
+  replicaCount: 2
+
+  # Optional per-service image tag override (defaults to global.imageTag when empty).
+  imageTag: ""
+  
+  image:
+    repository: brain-researcher/web-ui
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    ports:
+      http: 3000
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  config:
+    nodeEnv: "production"
+    appName: "Brain Researcher"
+    telemetryDisabled: true
+  
+  # Environment variables for API connections
+  extraEnv:
+    - name: NEXT_PUBLIC_WS_URL
+      value: "wss://{{ .Values.global.domain }}/ws"
+    - name: INTERNAL_AGENT_URL
+      value: "http://brain-researcher-agent:8000"
+    - name: API_BASE_URL
+      value: "http://brain-researcher-agent:8000"
+    # Hypothesis workflow runtime defaults (kept in values so infra rollouts preserve behavior)
+    - name: HYPOTHESIS_STORE_BACKEND
+      value: "dual"
+    - name: HYPOTHESIS_STORE_REDIS_URL
+      value: "redis://{{ include \"brain-researcher.fullname\" . }}-redis.{{ .Values.namespaces.data }}.svc.cluster.local:6379/0"
+    - name: HYPOTHESIS_STORE_POSTGRES_URL
+      valueFrom:
+        secretKeyRef:
+          name: "{{ include \"brain-researcher.fullname\" . }}-external-services"
+          key: HYPOTHESIS_STORE_POSTGRES_URL
+          optional: true
+    - name: HYPOTHESIS_SESSION_TTL_SEC
+      value: "2592000"
+    - name: HYPOTHESIS_DEEP_RESEARCH_POLL_INTERVAL_MS
+      value: "2500"
+    - name: HYPOTHESIS_DEEP_RESEARCH_MAX_POLLS
+      value: "0"
+    - name: HYPOTHESIS_DEEP_RESEARCH_START_GRACE_POLLS
+      value: "2"
+    - name: HYPOTHESIS_DEEP_RESEARCH_UI_WAIT_SEC
+      value: "300"
+    - name: HYPOTHESIS_DEEP_RESEARCH_BACKGROUND_CAP_SEC
+      value: "21600"
+    - name: HYPOTHESIS_KG_NO_SEED_SOFT_FAIL
+      value: "true"
+    - name: HYPOTHESIS_KG_MAX_SEED_RETRIES
+      value: "1"
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podAnnotations: {}
+
+# PostgreSQL configuration
+postgres:
+  enabled: true
+  replicaCount: 1  # StatefulSet
+  
+  image:
+    repository: postgres
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    ports:
+      postgres: 5432
+      metrics: 9187
+  
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClass: "brain-researcher-fast-ssd"
+    accessModes:
+      - ReadWriteOnce
+  
+  config:
+    database: "brain_researcher"
+    username: "brain_researcher"
+    # Password should be set in secrets
+  
+  exporter:
+    enabled: true
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+
+# Neo4j configuration
+neo4j:
+  imageRepository: neo4j
+  imageTag: "5.22.0"
+  auth:
+    user: "neo4j"
+    existingSecret: "br-neo4j-password-k8s"
+    passwordKey: "password"
+  persistence:
+    storageClass: "brain-researcher-standard"
+    size: 10Gi
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+# Redis configuration
+redis:
+  enabled: true
+  replicaCount: 1  # StatefulSet
+  
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    ports:
+      redis: 6379
+      metrics: 9121
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "brain-researcher-fast-ssd"
+    accessModes:
+      - ReadWriteOnce
+  
+  config:
+    maxMemory: "512mb"
+    maxMemoryPolicy: "allkeys-lru"
+    protectedMode: "no"
+  
+  exporter:
+    enabled: true
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+
+# Prometheus monitoring configuration
+prometheus:
+  enabled: true
+  
+  image:
+    repository: prom/prometheus
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    ports:
+      http: 9090
+  
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+  
+  config:
+    retention: "30d"
+    scrapeInterval: "15s"
+    evaluationInterval: "15s"
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+
+# Grafana visualization configuration
+grafana:
+  enabled: true
+  
+  image:
+    repository: grafana/grafana
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    ports:
+      http: 3000
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "400m"
+  
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+  
+  config:
+    allowSignUp: false
+    plugins: "grafana-piechart-panel"
+    rootUrl: "https://brain-researcher.local/grafana/"
+    serveFromSubPath: true
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+  
+  hosts:
+    - host: brain-researcher.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: nginx-service
+            port: 80
+    
+    - host: api.brain-researcher.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: agent-service
+            port: 8000
+  
+  tls:
+    - secretName: brain-researcher-tls
+      hosts:
+        - brain-researcher.local
+        - api.brain-researcher.local
+  
+  monitoring:
+    enabled: true
+    hosts:
+      - host: grafana.brain-researcher.local
+        service:
+          name: grafana-service
+          port: 3000
+      - host: prometheus.brain-researcher.local
+        service:
+          name: prometheus-service
+          port: 9090
+    
+    tls:
+      - secretName: monitoring-tls
+        hosts:
+          - grafana.brain-researcher.local
+          - prometheus.brain-researcher.local
+    
+    basicAuth:
+      enabled: true
+      secretName: monitoring-basic-auth
+
+# Storage configuration
+storage:
+  # Storage classes
+  classes:
+    standard:
+      name: "brain-researcher-standard"
+      provisioner: "kubernetes.io/aws-ebs"  # Change based on cloud provider
+      parameters:
+        type: "gp3"
+        encrypted: "true"
+      reclaimPolicy: "Retain"
+      allowVolumeExpansion: true
+    
+    fastSsd:
+      name: "brain-researcher-fast-ssd"
+      provisioner: "kubernetes.io/aws-ebs"  # Change based on cloud provider
+      parameters:
+        type: "gp3"
+        iops: "3000"
+        throughput: "125"
+        encrypted: "true"
+      reclaimPolicy: "Retain"
+      allowVolumeExpansion: true
+  
+  # Shared data storage
+  sharedData:
+    enabled: true
+    size: 200Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteMany  # Requires compatible storage (EFS, NFS, etc.)
+  
+  # Backup storage
+  backup:
+    enabled: true
+    size: 100Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+
+# Shared JobStore for agent + orchestrator (single-node opt-in)
+jobStore:
+  enabled: false
+  hostPath: /srv/brain-researcher/jobstore
+  mountPath: /app/jobstore
+
+# Network policies configuration
+networkPolicies:
+  enabled: true
+  
+  # Default deny-all policies
+  defaultDeny: true
+  
+  # Allow specific traffic patterns
+  allowPatterns:
+    - name: "nginx-to-services"
+      enabled: true
+    - name: "orchestrator-backend-access"
+      enabled: true
+    - name: "agent-llm-access"
+      enabled: true
+    - name: "monitoring-scraping"
+      enabled: true
+
+# Secrets configuration (values should be provided via external secret management)
+secrets:
+  llmApiKeys:
+    create: true
+    data: {}
+    # openaiApiKey: ""
+    # anthropicApiKey: ""
+    # deepseekApiKey: ""
+  
+  databaseCredentials:
+    create: true
+    data: {}
+    # postgresUser: "brain_researcher"
+    # postgresPassword: ""
+    # postgresDb: "brain_researcher"
+    # redisPassword: ""
+  
+  jwtSecrets:
+    create: true
+    data: {}
+    # jwtSecretKey: ""
+    # jwtRefreshSecret: ""
+    # sessionSecret: ""
+  
+  tlsCertificates:
+    create: false  # Managed by cert-manager
+  
+  oauthCredentials:
+    create: true
+    data: {}
+    # googleClientId: ""
+    # googleClientSecret: ""
+    # githubClientId: ""
+    # githubClientSecret: ""
+  
+  externalServices:
+    create: true
+    data: {}
+    # supabaseUrl: ""
+    # supabaseAnonKey: ""
+    # nextPublicSupabaseUrl: ""
+    # nextPublicSupabaseAnonKey: ""
+    # supabaseOauthProviders: "google,github"
+    # nextPublicSupabaseOauthProviders: "google,github"
+    # supabaseJwksUrl: ""
+    # supabaseJwtIssuer: ""
+    # supabaseJwtAudience: "authenticated"
+    # awsAccessKeyId: ""
+    # awsSecretAccessKey: ""
+
+# Cert-manager configuration
+certManager:
+  enabled: true
+  
+  clusterIssuer:
+    name: "letsencrypt-prod"
+    server: "https://acme-v02.api.letsencrypt.org/directory"
+    email: "admin@brain-researcher.local"  # Change to actual email
+    
+    # DNS challenge (preferred for wildcard certs)
+    dns01:
+      enabled: false
+      provider: "cloudflare"
+      # Configure based on DNS provider
+    
+    # HTTP challenge (simple but limited)
+    http01:
+      enabled: true
+      ingressClass: "nginx"
+
+# Feature flags and environment-specific settings
+features:
+  demoMode: true
+  advancedSearch: true
+  realTimeCollaboration: false
+  experimentalFeatures: false
+  debugMode: false
+
+# External dependencies configuration
+external:
+  # External PostgreSQL (if not using built-in)
+  postgresql:
+    enabled: false
+    host: ""
+    port: 5432
+    database: ""
+    username: ""
+    existingSecret: ""
+  
+  # External Redis (if not using built-in)
+  redis:
+    enabled: false
+    host: ""
+    port: 6379
+    database: 0
+    existingSecret: ""
+  
+  # External monitoring (if not using built-in)
+  prometheus:
+    enabled: false
+    url: ""
+  
+  grafana:
+    enabled: false
+    url: ""
+
+# Testing and development settings
+testing:
+  enabled: false
+  
+  # Test data generation
+  generateTestData: false
+  testDataSize: "small"  # small, medium, large
+  
+  # Mock external services
+  mockExternalServices: false
+
+# Backup and disaster recovery
+backup:
+  enabled: false
+  
+  # Backup schedule (cron format)
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  
+  # Retention policy
+  retention:
+    daily: 7
+    weekly: 4
+    monthly: 12
+  
+  # Backup destinations
+  destinations:
+    s3:
+      enabled: false
+      bucket: ""
+      region: ""
+      accessKeyId: ""
+      secretAccessKey: ""
+
+# Scaling and performance settings
+scaling:
+  # Cluster autoscaler integration
+  clusterAutoscaler:
+    enabled: false
+  
+  # Vertical pod autoscaler integration
+  verticalPodAutoscaler:
+    enabled: false
+  
+  # Custom metrics for HPA
+  customMetrics:
+    enabled: false

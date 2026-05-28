@@ -1,0 +1,1822 @@
+tasks:
+  task:working_memory:
+    primary: ONVOC_0000488
+    labels:
+    - Working Memory
+  task:n-back:
+    primary: ONVOC_0000488
+    labels:
+    - Working Memory Task
+  task:go-no-go:
+    primary: ONVOC_0000466
+    labels:
+    - Response Inhibition Task
+  task:flanker:
+    primary: ONVOC_0000466
+    labels:
+    - Attention Task
+    - Interference Control
+  task:gambling:
+    primary: ONVOC_0000428
+    labels:
+    - Gambling Task
+    - Decision Making
+    - Risk Taking
+  task:emotion_regulation:
+    primary: ONVOC_0000462
+    labels:
+    - Emotion Regulation
+    - Affect Regulation
+    - Emotional Control
+  task:stop_signal:
+    primary: ONVOC_0000466
+    labels:
+    - Stop Signal Task
+    - Response Inhibition Task
+  task:mid:
+    primary: ONVOC_0000463
+    labels:
+    - Monetary Incentive Delay
+    - Reward Responsiveness
+  task:reward_processing:
+    primary: ONVOC_0000463
+    labels:
+    - Reward Processing
+    - Reward Responsiveness
+  task:episodic_memory_encoding:
+    primary: ONVOC_0000493
+    labels:
+    - Episodic Memory Encoding
+    - Episodic Memory
+  task:episodic_memory_retrieval:
+    primary: ONVOC_0000493
+    labels:
+    - Episodic Memory Retrieval
+    - Episodic Memory
+  task:sternberg_memory:
+    primary: ONVOC_0000488
+    labels:
+    - Sternberg Working Memory
+    - Sternberg Task
+  task:lexical_decision:
+    primary: ONVOC_0000478
+    labels:
+    - Lexical Decision
+    - Word Recognition
+  task:word_reading:
+    primary: ONVOC_0000478
+    labels:
+    - Word Reading
+    - Visual Word Reading
+    - Reading (Words/Pseudowords)
+    - Word/Nonword Reading
+  task:word_generation:
+    primary: ONVOC_0000479
+    labels:
+    - Verbal Fluency
+    - Word Generation
+  task:face_processing:
+    primary: ONVOC_0000503
+    labels:
+    - Face Processing
+    - Social Perception
+  task:finger_tapping:
+    primary: ONVOC_0000438
+    labels:
+    - Finger Tapping
+    - Motor Control
+  task:sustained_attention:
+    primary: ONVOC_0000440
+    labels:
+    - Sustained Attention
+    - Continuous Performance
+  task:spatial_attention:
+    primary: ONVOC_0000443
+    labels:
+    - Spatial Attention
+    - Attentional Orienting
+  task:sentence_comprehension:
+    primary: ONVOC_0000478
+    labels:
+    - Sentence Comprehension
+    - Reading Comprehension
+    - Language Processing
+  task:phonological_processing:
+    primary: ONVOC_0000475
+    labels:
+    - Phonological Processing
+    - Phonological Localizer
+    - Phonological Localizers
+  task:semantic_processing:
+    primary: ONVOC_0000477
+    labels:
+    - Semantic Processing
+    - Semantic Localizer
+    - Semantic Localizers
+  task:associative_memory:
+    primary: ONVOC_0000493
+    labels:
+    - Associative Memory
+    - Paired-Associate Learning
+    - Face-Name Association
+    - Face-Name Task
+    - Face-Name fMRI Task
+    - Inclusive Face-Name fMRI Task
+  task:stroop:
+    primary: ONVOC_0000466
+    labels:
+    - Stroop Task
+    - Cognitive Inhibition
+    - Interference Control
+  task:visual_search:
+    primary: ONVOC_0000441
+    labels:
+    - Visual Search
+    - Selective Attention
+concepts:
+  construct:working-memory:
+    primary: ONVOC_0000488
+    labels:
+    - Working Memory
+  construct:response-inhibition:
+    primary: ONVOC_0000466
+    labels:
+    - Inhibitory Control
+  construct:episodic-memory:
+    primary: ONVOC_0000493
+    labels:
+    - Episodic Memory
+  construct:reward-processing:
+    primary: ONVOC_0000463
+    labels:
+    - Reward Responsiveness
+  construct:emotion-regulation:
+    primary: ONVOC_0000462
+    labels:
+    - Emotion Regulation
+  construct:decision-making:
+    primary: ONVOC_0000428
+    labels:
+    - Decision Making
+  construct:language:
+    primary: ONVOC_0000431
+    labels:
+    - Language
+    - Language Processing
+contrasts:
+  WM load (high>low):
+    primary: ONVOC_0000488
+    pattern: (?P<hi>\d)[- ]?back\s*>\s*(?P<lo>\d)[- ]?back
+    match_task:
+    - task:n-back
+    prior_boost: 0.25
+  Stroop Interference:
+    primary: ONVOC_0000466
+    pattern: (?i)incongruent\s*>\s*congruent
+    match_task:
+    - task:stroop
+    prior_boost: 0.3
+  Flanker Interference:
+    primary: ONVOC_0000466
+    pattern: (?i)incongruent\s*>\s*congruent
+    match_task:
+    - task:flanker
+    prior_boost: 0.3
+  Stop > Go:
+    primary: ONVOC_0000466
+    pattern: (?i)stop\s*>\s*go
+    match_task:
+    - task:stop_signal
+    prior_boost: 0.3
+  No-Go > Go:
+    primary: ONVOC_0000467
+    pattern: (?i)no[- ]?go\s*>\s*go
+    match_task:
+    - task:go-no-go
+    prior_boost: 0.3
+  MID Anticipation:
+    primary: ONVOC_0000463
+    pattern: (?i)anticipation\s+(win|gain)\s*>\s*neutral
+    match_task:
+    - task:mid
+    - task:reward_processing
+    prior_boost: 0.25
+  MID Outcome:
+    primary: ONVOC_0000463
+    pattern: (?i)outcome\s+(win|gain)\s*>\s*neutral
+    match_task:
+    - task:mid
+    - task:reward_processing
+    prior_boost: 0.25
+  Gambling (risky > safe):
+    primary: ONVOC_0000428
+    pattern: (?i)(risky|high[- ]?risk)\s*>\s*(safe|low[- ]?risk)
+    match_task:
+    - task:gambling
+    prior_boost: 0.25
+  Emotion Regulation (reappraise > view):
+    primary: ONVOC_0000462
+    pattern: (?i)(reappraise|regulate)\s*>\s*(view|maintain)
+    match_task:
+    - task:emotion_regulation
+    prior_boost: 0.3
+datasets:
+  ds000001:
+    primary: ONVOC_0000428
+    labels:
+    - Balloon Analog Risk Task
+    - Decision Making
+    - Risk Taking
+  ds000009:
+    primary: ONVOC_0000466
+    labels:
+    - Response Inhibition Task
+    - Stop Signal Task
+  ds000030:
+    primary: ONVOC_0000005
+    labels:
+    - UCLA Consortium for Neuropsychiatric Phenomics
+    - Comprehensive Cognitive Tasks
+  ds000054:
+    primary: ONVOC_0000428
+    labels:
+    - Mixed-gambles Task
+    - Decision Making
+    - Gambling
+  ds000105:
+    primary: ONVOC_0000434
+    labels:
+    - Visual Object Recognition
+    - Perception
+  ds000224:
+    primary: ONVOC_0000434
+    labels:
+    - Midnight Scanning Club
+    - Visual Perception
+    - Perception
+  ds003465:
+    primary: ONVOC_0000430
+    labels:
+    - Cognitive Control Study
+    - Executive Function
+  ds003858:
+    primary: ONVOC_0000463
+    labels:
+    - Reward Responsiveness
+  ds003789:
+    primary: ONVOC_0000493
+    labels:
+    - Episodic Memory
+  ds002685:
+    primary: ONVOC_0000005
+    labels:
+    - Individual Brain Charting
+    - Multiple Cognitive Tasks
+  ds000002:
+    primary: ONVOC_0000432
+    labels:
+    - Classification learning
+    - deterministic classification
+  ds000003:
+    primary: ONVOC_0000475
+    labels:
+    - Rhyme judgment
+  ds000005:
+    primary: ONVOC_0000428
+    labels:
+    - Mixed-gambles task
+  ds000006:
+    primary: ONVOC_0000428
+    labels:
+    - ds000006
+  ds000007:
+    primary: ONVOC_0000466
+    labels:
+    - Stop-signal task with spoken & manual responses
+    - Stop Manual
+  ds000008:
+    primary: ONVOC_0000466
+    labels:
+    - Stop-signal task with unconditional and conditiona...
+    - conditional stop signal
+  ds000011:
+    primary: ONVOC_0000432
+    labels:
+    - Classification learning and tone-counting
+    - Classification probe without feedback
+  ds000017:
+    primary: ONVOC_0000466
+    labels:
+    - probabilistic classification
+  ds000031:
+    primary: ONVOC_0000488
+    labels:
+    - Myconnectome
+    - Breath holding task
+  ds000051:
+    primary: ONVOC_0000431
+    labels:
+    - Cross-language repetition priming
+    - abstract-concrete judgment
+  ds000052:
+    primary: ONVOC_0000432
+    labels:
+    - Classification learning and reversal
+    - Reversal weather prediction
+  ds000101:
+    primary: ONVOC_0000466
+    labels:
+    - Simon task
+  ds000102:
+    primary: ONVOC_0000466
+    labels:
+    - Flanker task (event-related)
+  ds000108:
+    primary: ONVOC_0000462
+    labels:
+    - Prefrontal-Subcortical Pathways Mediating Successf...
+  ds000113:
+    primary: ONVOC_0000434
+    labels:
+    - Forrest Gump
+    - auditory perception
+  ds000114:
+    primary: ONVOC_0000431
+    labels:
+    - A test-retest fMRI dataset for motor, language and...
+    - covert_verb_generation
+  ds000115:
+    primary: ONVOC_0000488
+    labels:
+    - Working memory in healthy and schizophrenic indivi...
+    - letter 0-back task
+  ds000116:
+    primary: ONVOC_0000434
+    labels:
+    - Auditory and Visual Oddball EEG-fMRI
+    - auditory oddball with button response to target stimuli
+  ds000117:
+    primary: ONVOC_0000503
+    labels:
+    - Multisubject, multimodal face processing
+    - 'TODO: full task name for faceprocessing'
+  ds000119:
+    primary: ONVOC_0000466
+    labels:
+    - Maturational Changes in Anterior Cingulate and Fro...
+  ds000120:
+    primary: ONVOC_0000466
+    labels:
+    - Developmental changes in brain function underlying...
+    - antisaccade task with fixed order
+  ds000121:
+    primary: ONVOC_0000466
+    labels:
+    - Immaturities in Reward Processing and Its Influenc...
+  ds000122:
+    primary: ONVOC_0000434
+    labels:
+    - Task-related concurrent but opposite modulations o...
+    - visual attention task
+  ds000144:
+    primary: ONVOC_0000462
+    labels:
+    - Preschool Anxiety Disorders
+    - emotional faces
+  ds000149:
+    primary: ONVOC_0000488
+    labels:
+    - Scene Perception
+    - picture manual response
+  ds000164:
+    primary: ONVOC_0000466
+    labels:
+    - Stroop Task
+  ds000168:
+    primary: ONVOC_0000432
+    labels:
+    - Offline Processing in Associative Learning
+    - OP
+  ds000170:
+    primary: ONVOC_0000432
+    labels:
+    - 'Learning and memory: motor skill consolidation and...'
+    - Trained Hand, Trained Sequence
+  ds000171:
+    primary: ONVOC_0000462
+    labels:
+    - Neural Processing of Emotional Musical and Nonmusi...
+  ds000201:
+    primary: ONVOC_0000488
+    labels:
+    - 'The Stockholm Sleepy Brain Study: Effects of Sleep...'
+    - Arrows
+  ds000203:
+    primary: ONVOC_0000434
+    labels:
+    - Visual imagery and false memory for pictures
+    - Visual imagery false memory
+  ds000205:
+    primary: ONVOC_0000462
+    labels:
+    - Affective Videos
+    - Functional localizer
+  ds000217:
+    primary: ONVOC_0000432
+    labels:
+    - Route Learning
+    - localizer
+  ds000229:
+    primary: ONVOC_0000463
+    labels:
+    - Integration of sweet taste and metabolism determin...
+    - flavor
+  ds000231:
+    primary: ONVOC_0000463
+    labels:
+    - Integration of sweet taste and metabolism determin...
+    - flavor
+  ds000232:
+    primary: ONVOC_0000503
+    labels:
+    - Adjudicating between face-coding models with indiv...
+  ds000234:
+    primary: ONVOC_0000438
+    labels:
+    - Whole-brain background-suppressed pCASL MRI with 1...
+    - motorphotic
+  ds000237:
+    primary: ONVOC_0000431
+    labels:
+    - Phonological memory in sign language relies on the...
+    - MemorySpan
+  ds000244:
+    primary: ONVOC_0000428
+    labels:
+    - Individual Brain Charting
+    - HCP WM
+  ds000249:
+    primary: ONVOC_0000432
+    labels:
+    - Value generalization in human avoidance learning
+    - genInstrAv
+  ds000254:
+    primary: ONVOC_0000438
+    labels:
+    - Multiband Multi-Echo Simultaneous ASL/BOLD for tas...
+    - bilateralfingertapping
+  ds000255:
+    primary: ONVOC_0000434
+    labels:
+    - Visual image reconstruction
+    - viewFigure
+  ds001110:
+    primary: ONVOC_0000493
+    labels:
+    - Sherlock_Merlin
+    - Merlin Audio
+  ds001132:
+    primary: ONVOC_0000493
+    labels:
+    - Sherlock
+    - free recall
+  ds001161:
+    primary: ONVOC_0000428
+    labels:
+    - data4openNeuroBOOST
+    - efforttraining
+  ds001167:
+    primary: ONVOC_0000428
+    labels:
+    - Neural correlates of effort-based valuation with p...
+    - efforttraining
+  ds001229:
+    primary: ONVOC_0000488
+    labels:
+    - Neural Evidence of the Strategic Choice Between Wo...
+  ds001232:
+    primary: ONVOC_0000488
+    labels:
+    - Competition between items in working memory leads ...
+    - Phase 1
+  ds001233:
+    primary: ONVOC_0000438
+    labels:
+    - singleFingerRSA
+    - cuedSFM
+  ds001241:
+    primary: ONVOC_0000434
+    labels:
+    - OLVSL_ Object-location visual statistical learning
+  ds001246:
+    primary: ONVOC_0000434
+    labels:
+    - Generic Object Decoding (fMRI on ImageNet)
+    - imagery
+  ds001293:
+    primary: ONVOC_0000434
+    labels:
+    - Multi-resolution 7T fMRI data on the representatio...
+  ds001297:
+    primary: ONVOC_0000503
+    labels:
+    - Personally familiar faces
+    - face identity oddball
+  ds001344:
+    primary: ONVOC_0000488
+    labels:
+    - phfMRI_Control_Tasks
+    - Eye Movement Variant
+  ds001345:
+    primary: ONVOC_0000434
+    labels:
+    - Decoding of multisensory semantics and memories in...
+    - Audio-Visual Memory
+  ds001357:
+    primary: ONVOC_0000503
+    labels:
+    - NameFacePriming
+    - familiarity
+  ds001371:
+    primary: ONVOC_0000428
+    labels:
+    - Early signs of disrupted rule learning in adolesce...
+  ds001379:
+    primary: ONVOC_0000493
+    labels:
+    - Loci case study
+    - encode
+  ds001497:
+    primary: ONVOC_0000503
+    labels:
+    - Long-term Memory (LTM) for famous Faces, Places, a...
+  ds001510:
+    primary: ONVOC_0000493
+    labels:
+    - Schematic narrative perception and recall (intact)
+  ds001511:
+    primary: ONVOC_0000493
+    labels:
+    - Schematic narrative perception and recall (scrambl...
+    - CMIYC
+  ds001517:
+    primary: ONVOC_0000434
+    labels:
+    - Associative Prediction of Visual Shape in the Hipp...
+    - Prediction audio cue
+  ds001521:
+    primary: ONVOC_0000493
+    labels:
+    - Lingering representations of stimuli influence rec...
+    - Localizer
+  ds001545:
+    primary: ONVOC_0000432
+    labels:
+    - Learning Naturalistic Temporal Structure in the Po...
+    - movie watching
+  ds001547:
+    primary: ONVOC_0000434
+    labels:
+    - Layer VASO in visual system
+  ds001555:
+    primary: ONVOC_0000434
+    labels:
+    - Large Single-Subject Functional MRI Datasets at 7T
+  ds001576:
+    primary: ONVOC_0000488
+    labels:
+    - 'Refresh my memory: Episodic memory reinstatements ...'
+    - DNMS
+  ds001597:
+    primary: ONVOC_0000438
+    labels:
+    - multiFingerRSA
+    - cuedMFM
+  ds001607:
+    primary: ONVOC_0000428
+    labels:
+    - Reinstated episodic context guides sampling-based ...
+    - Funcational localizer
+  ds001618:
+    primary: ONVOC_0000488
+    labels:
+    - Shared and differential default-mode related patte...
+    - Autobiographical memory
+  ds001619:
+    primary: ONVOC_0000463
+    labels:
+    - Voluntary Task Switching Reward
+  ds001634:
+    primary: ONVOC_0000488
+    labels:
+    - 'Visual working memory: Study one Task fMRI and Beh...'
+  ds001635:
+    primary: ONVOC_0000488
+    labels:
+    - 'Visual working memory: Study two Task fMRI and Beh...'
+  ds001715:
+    primary: ONVOC_0000428
+    labels:
+    - Dissociable neural mechanisms track evidence accum...
+    - Decision-making task
+  ds001748:
+    primary: ONVOC_0000493
+    labels:
+    - Differentiation of functional networks during long...
+  ds001751:
+    primary: ONVOC_0000466
+    labels:
+    - Context-dependent cognitive control | Flanker task
+  ds001761:
+    primary: ONVOC_0000503
+    labels:
+    - Reconstructing Faces from fMRI Patterns using Deep...
+  ds001771:
+    primary: ONVOC_0000434
+    labels:
+    - InterTVA. A multimodal MRI dataset for the study o...
+  ds001775:
+    primary: ONVOC_0000493
+    labels:
+    - Neural Differentiation Tracks Improved Recall of C...
+    - retrieval-practice/restudy phase
+  ds001784:
+    primary: ONVOC_0000430
+    labels:
+    - Effects of ON/OFF deep brain stimulation on cognit...
+    - afmsit
+  ds001818:
+    primary: ONVOC_0000503
+    labels:
+    - CAT Faces MRI experiment
+    - localizer
+  ds001882:
+    primary: ONVOC_0000428
+    labels:
+    - Social Decision-Making Intertemporal Choice Task D...
+  ds001883:
+    primary: ONVOC_0000428
+    labels:
+    - Social Decision-Making Risky Choice Task Dataset
+  ds001894:
+    primary: ONVOC_0000478
+    labels:
+    - Longitudinal Brain Correlates of Multisensory Lexi...
+    - Audio-Audio Non-Word Rhyming
+  ds001921:
+    primary: ONVOC_0000428
+    labels:
+    - Anterior cingulate engagement in a foraging contex...
+    - forage-engage decision task
+  ds001923:
+    primary: ONVOC_0000428
+    labels:
+    - Anterior cingulate engagement in a foraging contex...
+    - forage-engage decision task
+  ds001981:
+    primary: ONVOC_0000463
+    labels:
+    - Temporal stability of fMRI in medetomidine-anesthe...
+  ds002006:
+    primary: ONVOC_0000428
+    labels:
+    - Memory and decision making dataset
+    - ColorDots
+  ds002014:
+    primary: ONVOC_0000431
+    labels:
+    - Language Production fMRI
+    - language production task, semantic fluency
+  ds002033:
+    primary: ONVOC_0000434
+    labels:
+    - 'Investigating the visual number form area: A repli...'
+    - ChangeDetection
+  ds002034:
+    primary: ONVOC_0000427
+    labels:
+    - Real-time EEG feedback on alpha power lateralizati...
+  ds002076:
+    primary: ONVOC_0000488
+    labels:
+    - Layer-dependent activity in human prefrontal corte...
+  ds002149:
+    primary: ONVOC_0000434
+    labels:
+    - Conditional Visual Associative Learning Task
+  ds002155:
+    primary: ONVOC_0000434
+    labels:
+    - A mesial-to-lateral dissociation for orthographic ...
+  ds002218:
+    primary: ONVOC_0000434
+    labels:
+    - Auditory and Visual Rhythm Omission EEG
+  ds002236:
+    primary: ONVOC_0000478
+    labels:
+    - Cross-Sectional Multidomain Lexical Processing
+    - Auditory Rhyming Judgment
+  ds002241:
+    primary: ONVOC_0000434
+    labels:
+    - Relating visual production and recognition of obje...
+    - drawing
+  ds002278:
+    primary: ONVOC_0000466
+    labels:
+    - Dense Investigation of Variability of Affect (DIVA...
+    - Dual Self and Other Referential Processing and Flanker Task
+  ds002295:
+    primary: ONVOC_0000503
+    labels:
+    - ODC mapper 7T surface coil
+    - Detect Fixation changes
+  ds002316:
+    primary: ONVOC_0000463
+    labels:
+    - rewardBeast
+  ds002322:
+    primary: ONVOC_0000431
+    labels:
+    - 'The Alice Dataset: fMRI Dataset to Study Natural L...'
+  ds002336:
+    primary: ONVOC_0000438
+    labels:
+    - A multi-modal human neuroimaging dataset for data ...
+    - MIpost
+  ds002338:
+    primary: ONVOC_0000438
+    labels:
+    - A multi-modal human neuroimaging dataset for data ...
+    - 1dNF
+  ds002351:
+    primary: ONVOC_0000434
+    labels:
+    - Transposition confusability during visual word rec...
+    - LDT
+  ds002358:
+    primary: ONVOC_0000438
+    labels:
+    - columnar Finger representations
+  ds002366:
+    primary: ONVOC_0000462
+    labels:
+    - Emotion regulation in the Ageing Brain, University...
+  ds002424:
+    primary: ONVOC_0000488
+    labels:
+    - Working Memory and Reward in Children with and wit...
+    - Verbal Working Memory, Large Reward, Delayed Feedback
+  ds002425:
+    primary: ONVOC_0000462
+    labels:
+    - The neural representation of visually evoked emoti...
+  ds002513:
+    primary: ONVOC_0000428
+    labels:
+    - Increased brain reactivity to gambling unavailabil...
+  ds002543:
+    primary: ONVOC_0000466
+    labels:
+    - Learning, Inhibitory Control, and Perception
+    - RLlearningphase
+  ds002550:
+    primary: ONVOC_0000488
+    labels:
+    - Differential brain mechanisms of selection and mai...
+  ds002578:
+    primary: ONVOC_0000434
+    labels:
+    - Visual Oddball Task (256 channels)
+  ds002596:
+    primary: ONVOC_0000430
+    labels:
+    - Cognitive control of sensory pain encoding in the ...
+    - d1-decoder_construction
+  ds002620:
+    primary: ONVOC_0000462
+    labels:
+    - Emotion regulation in the Ageing Brain, University...
+  ds002647:
+    primary: ONVOC_0000427
+    labels:
+    - Isometric exercise facilitates attention to salien...
+    - Auditory Oddball Task
+  ds002675:
+    primary: ONVOC_0000431
+    labels:
+    - The language network reemerges during recovery fro...
+  ds002687:
+    primary: ONVOC_0000488
+    labels:
+    - Working Memory and Reward in Adults
+    - Verbal Working Memory, Large Reward, Delayed Feedback
+  ds002691:
+    primary: ONVOC_0000427
+    labels:
+    - Internal attention study
+  ds002702:
+    primary: ONVOC_0000434
+    labels:
+    - High-field 7T Visual fMRI Datasets
+    - Ring
+  ds002718:
+    primary: ONVOC_0000503
+    labels:
+    - Face processing EEG dataset for EEGLAB
+  ds002720:
+    primary: ONVOC_0000503
+    labels:
+    - A  dataset  recorded  during  development  of a  t...
+  ds002721:
+    primary: ONVOC_0000462
+    labels:
+    - An EEG dataset recorded during affective music lis...
+  ds002722:
+    primary: ONVOC_0000462
+    labels:
+    - A dataset recorded during development of an affect...
+  ds002723:
+    primary: ONVOC_0000462
+    labels:
+    - A dataset recorded during development of an affect...
+  ds002724:
+    primary: ONVOC_0000462
+    labels:
+    - A dataset recorded during development of an affect...
+  ds002725:
+    primary: ONVOC_0000462
+    labels:
+    - A dataset recording joint EEG-fMRI during affectiv...
+  ds002734:
+    primary: ONVOC_0000428
+    labels:
+    - Evidence Accumulation in Value-Based decisions
+    - main
+  ds002738:
+    primary: ONVOC_0000463
+    labels:
+    - rewardBeast
+    - epi
+  ds002739:
+    primary: ONVOC_0000428
+    labels:
+    - Simultaneous EEG-fMRI - Confidence in perceptual d...
+    - main
+  ds002776:
+    primary: ONVOC_0000432
+    labels:
+    - Motor sequence learning
+    - motorseq
+  ds002809:
+    primary: ONVOC_0000434
+    labels:
+    - VaryingISI-TwoVisualPathways
+    - loc
+  ds002814:
+    primary: ONVOC_0000434
+    labels:
+    - A Multimodal Neuroimaging Dataset to Study Spatiot...
+    - 'TODO: full task name for categorySelectivity'
+  ds002842:
+    primary: ONVOC_0000478
+    labels:
+    - L2_SENTENCES
+    - silentreading
+  ds002843:
+    primary: ONVOC_0000428
+    labels:
+    - Cognitive Training
+    - intertemporal choice task
+  ds002879:
+    primary: ONVOC_0000478
+    labels:
+    - Brain Correlates of Multisensory Lexical Processin...
+    - Audio-Audio Non-Word Rhyming
+  ds002893:
+    primary: ONVOC_0000434
+    labels:
+    - Auditory-Visual Shift Study
+  ds002894:
+    primary: ONVOC_0000431
+    labels:
+    - simpcomp
+    - languagelocalizer
+  ds002905:
+    primary: ONVOC_0000431
+    labels:
+    - simpcomp_rawdata
+    - languagelocalizer
+  ds003004:
+    primary: ONVOC_0000462
+    labels:
+    - Imagined Emotion Study
+  ds003020:
+    primary: ONVOC_0000431
+    labels:
+    - An fMRI dataset during a passive natural language ...
+    - Audio Motor Localizer
+  ds003085:
+    primary: ONVOC_0000462
+    labels:
+    - Dynamic intersubject neural synchronization reflec...
+    - happy
+  ds003136:
+    primary: ONVOC_0000462
+    labels:
+    - Postnatal Affective MRI Dataset
+    - Neural Reactivity to Own- and Other-Infant Affect
+  ds003138:
+    primary: ONVOC_0000438
+    labels:
+    - 'Tidying Up White Matter: Neuroplastic Transformati...'
+  ds003176:
+    primary: ONVOC_0000427
+    labels:
+    - Neurophysiological indicators of internal attentio...
+    - EyeMag
+  ds003190:
+    primary: ONVOC_0000434
+    labels:
+    - Assesment of the visual stimuli properties in P300...
+  ds003242:
+    primary: ONVOC_0000463
+    labels:
+    - MRI data during a Cue Induced Craving task followi...
+    - 'TODO: full task name for CIC'
+  ds003338:
+    primary: ONVOC_0000493
+    labels:
+    - Behavioral, physiological, and neural signatures o...
+    - none
+  ds003342:
+    primary: ONVOC_0000434
+    labels:
+    - Hand-selective visual regions represent how to gra...
+  ds003374:
+    primary: ONVOC_0000434
+    labels:
+    - Dataset of neurons and intracranial EEG from human...
+  ds003404:
+    primary: ONVOC_0000434
+    labels:
+    - Brain Network Mechanisms of Visual Shape Completio...
+  ds003424:
+    primary: ONVOC_0000434
+    labels:
+    - Identification of an Amygdala-Thalamic Circuit Tha...
+    - rest
+  ds003427:
+    primary: ONVOC_0000434
+    labels:
+    - Effects of Phase Regression on High-Resolution Fun...
+    - 8Hz Contrast Reversing Checkerboard
+  ds003430:
+    primary: ONVOC_0000427
+    labels:
+    - Attentionally modulated subjective images reconstr...
+  ds003458:
+    primary: ONVOC_0000428
+    labels:
+    - 'EEG: Three armed bandit gambling task'
+  ds003466:
+    primary: ONVOC_0000503
+    labels:
+    - Haptic three-dimensional curved surface exploratio...
+    - Rest Localizer EPI
+  ds003470:
+    primary: ONVOC_0000434
+    labels:
+    - Target processing in overt serial visual search in...
+  ds003481:
+    primary: ONVOC_0000431
+    labels:
+    - Pragmatic Language
+  ds003487:
+    primary: ONVOC_0000463
+    labels:
+    - Differential contributions of ventral striatum sub...
+  ds003499:
+    primary: ONVOC_0000432
+    labels:
+    - Developmental change in prefrontal cortex recruitm...
+    - Frequency Reports Block 1
+  ds003500:
+    primary: ONVOC_0000427
+    labels:
+    - Response inhibition and selective attention in adu...
+    - Conjunction Target, 1 and 9 shapes, Feature Selection
+  ds003505:
+    primary: ONVOC_0000434
+    labels:
+    - 'VEPCON: Source imaging of high-density visual evok...'
+  ds003506:
+    primary: ONVOC_0000432
+    labels:
+    - 'EEG: Reinforcement Learning in Parkinson''s'
+  ds003507:
+    primary: ONVOC_0000434
+    labels:
+    - 'fMRI: Audiovisual Valence Congruence'
+  ds003508:
+    primary: ONVOC_0000431
+    labels:
+    - Language Learning Aptitude dataset
+  ds003509:
+    primary: ONVOC_0000466
+    labels:
+    - 'EEG: Simon Conflict in Parkinson''s'
+  ds003511:
+    primary: ONVOC_0000493
+    labels:
+    - Evidence supporting a time-limited hippocampal rol...
+    - Recall
+  ds003518:
+    primary: ONVOC_0000466
+    labels:
+    - 'EEG: Simon Conflict w/ Reinforcement + Cabergoline...'
+  ds003519:
+    primary: ONVOC_0000488
+    labels:
+    - 'EEG: Visual Working Memory + Cabergoline Challenge'
+  ds003523:
+    primary: ONVOC_0000488
+    labels:
+    - 'EEG: Visual Working Memory in Acute TBI'
+  ds003542:
+    primary: ONVOC_0000431
+    labels:
+    - Adult language learners
+  ds003545:
+    primary: ONVOC_0000431
+    labels:
+    - Adolescent language learners
+  ds003548:
+    primary: ONVOC_0000462
+    labels:
+    - Emotion Category and Face Perception Task Optimize...
+    - Emotional face perception
+  ds003553:
+    primary: ONVOC_0000503
+    labels:
+    - Visser, Scholte & Kindt (2011) Journal of Neurosci...
+    - FacesHousesTE27
+  ds003565:
+    primary: ONVOC_0000488
+    labels:
+    - 'EEG: verbal working memory'
+  ds003574:
+    primary: ONVOC_0000463
+    labels:
+    - Reward biases spontaneous neural reactivation duri...
+    - Face-Maze game
+  ds003604:
+    primary: ONVOC_0000431
+    labels:
+    - A longitudinal neuroimaging dataset on language pr...
+    - Grammaticality Task
+  ds003612:
+    primary: ONVOC_0000438
+    labels:
+    - The impact of handedness on the neural correlates ...
+    - execution
+  ds003645:
+    primary: ONVOC_0000503
+    labels:
+    - Face processing MEEG dataset with HED annotation
+  ds003661:
+    primary: ONVOC_0000434
+    labels:
+    - Sharpening of Hierarchical Visual Feature Represen...
+  ds003669:
+    primary: ONVOC_0000434
+    labels:
+    - Confidence in Detection and Discrimination
+    - visual detection and discrimination
+  ds003682:
+    primary: ONVOC_0000432
+    labels:
+    - Model-based aversive learning in humans is support...
+  ds003684:
+    primary: ONVOC_0000438
+    labels:
+    - Finger sequence planning
+    - 'TODO: full task name for dsp'
+  ds003688:
+    primary: ONVOC_0000434
+    labels:
+    - Open multimodal iEEG-fMRI dataset from naturalisti...
+  ds003703:
+    primary: ONVOC_0000478
+    labels:
+    - Frequency Tagging of Syntactic Structure or Lexica...
+  ds003715:
+    primary: ONVOC_0000462
+    labels:
+    - Visual and auditory brain areas share a representa...
+    - viewing
+  ds003717:
+    primary: ONVOC_0000434
+    labels:
+    - Visual and audiovisual speech perception associate...
+  ds003721:
+    primary: ONVOC_0000493
+    labels:
+    - A naturalistic paradigm to investigate post-encodi...
+    - BI
+  ds003722:
+    primary: ONVOC_0000438
+    labels:
+    - Motor Imagery vs Rest - Low-Cost EEG system
+  ds003745:
+    primary: ONVOC_0000428
+    labels:
+    - An fMRI Dataset on Social Reward Processing and De...
+    - sharedreward
+  ds003751:
+    primary: ONVOC_0000462
+    labels:
+    - Dataset on Emotion with Naturalistic Stimuli (DENS...
+  ds003753:
+    primary: ONVOC_0000462
+    labels:
+    - 'EEG: Probabilistic Learning with Affective Feedbac...'
+  ds003772:
+    primary: ONVOC_0000432
+    labels:
+    - Functionally dissociable influences on learning ra...
+    - change-point helicopter fmri
+  ds003782:
+    primary: ONVOC_0000428
+    labels:
+    - Neural Correlates of Effort-Based Valuation Under ...
+    - efforttraining
+  ds003798:
+    primary: ONVOC_0000428
+    labels:
+    - Caltech Conte Center - A multimodal data resource ...
+  ds003810:
+    primary: ONVOC_0000438
+    labels:
+    - Motor Imagery vs Rest - Low-Cost EEG System
+  ds003814:
+    primary: ONVOC_0000434
+    labels:
+    - Parallel systems for social and spatial reasoning
+    - dyloc
+  ds003822:
+    primary: ONVOC_0000462
+    labels:
+    - 'EEG: Probabilistic Learning with Affective Feedbac...'
+  ds003823:
+    primary: ONVOC_0000462
+    labels:
+    - Heart rate variability biofeedback training and em...
+  ds003831:
+    primary: ONVOC_0000430
+    labels:
+    - Cognitive Control Theoretic Mechanisms of Real-tim...
+    - identify
+  ds003834:
+    primary: ONVOC_0000434
+    labels:
+    - Shared neural codes for visual and semantic inform...
+  ds003836:
+    primary: ONVOC_0000432
+    labels:
+    - Learning the statistics of pain
+    - tsl
+  ds003851:
+    primary: ONVOC_0000432
+    labels:
+    - Category-biased neural representations form sponta...
+    - train
+  ds003900:
+    primary: ONVOC_0000432
+    labels:
+    - 'TractoInferno: A large-scale, open-source, multi-s...'
+  ds003950:
+    primary: ONVOC_0000434
+    labels:
+    - ScenePerceptionAndParallelism
+  ds003972:
+    primary: ONVOC_0000438
+    labels:
+    - Body Motor
+  ds003987:
+    primary: ONVOC_0000432
+    labels:
+    - 'EEG: Amphetamine trials 5CCPT and Probabilistic Le...'
+  ds004017:
+    primary: ONVOC_0000432
+    labels:
+    - Embodied Learning for Literacy EEG
+  ds004021:
+    primary: ONVOC_0000438
+    labels:
+    - Visuomotor Rotation Adaptation Experiment
+    - Resting State
+  ds004022:
+    primary: ONVOC_0000438
+    labels:
+    - Multimodal EEG and fNIRS Biosignal Acquisition dur...
+  ds004042:
+    primary: ONVOC_0000493
+    labels:
+    - FilmFestival
+    - movie
+  ds004043:
+    primary: ONVOC_0000427
+    labels:
+    - The time-course of feature-based attention effects...
+  ds004044:
+    primary: ONVOC_0000438
+    labels:
+    - An fMRI dataset for whole-body somatotopic mapping...
+  ds004056:
+    primary: ONVOC_0000438
+    labels:
+    - Goal-directed motor task
+  ds004073:
+    primary: ONVOC_0000431
+    labels:
+    - Comparing language lateralisation using fMRI and f...
+  ds004078:
+    primary: ONVOC_0000431
+    labels:
+    - A synchronized multimodal neuroimaging dataset to ...
+  ds004094:
+    primary: ONVOC_0000428
+    labels:
+    - Effects of temporal community structure learning o...
+    - Structured object sequences
+  ds004097:
+    primary: ONVOC_0000488
+    labels:
+    - An open-access accelerated adult equivalent of the...
+    - Monetary Incentive Delay
+  ds004102:
+    primary: ONVOC_0000463
+    labels:
+    - Stimulation of the dorsolateral prefrontsal cortex...
+  ds004109:
+    primary: ONVOC_0000462
+    labels:
+    - Emotional learning retroactively promotes memory i...
+  ds004117:
+    primary: ONVOC_0000488
+    labels:
+    - Sternberg Working Memory
+  ds004128:
+    primary: ONVOC_0000428
+    labels:
+    - Neural representations of others' traits predict s...
+    - DG
+  ds004141:
+    primary: ONVOC_0000434
+    labels:
+    - Targeting Dynamic Facial Processing Mechanisms in ...
+  ds004142:
+    primary: ONVOC_0000463
+    labels:
+    - Exploring the Neural Correlates of Feedback-Relate...
+  ds004144:
+    primary: ONVOC_0000462
+    labels:
+    - A behavioral, clinical and brain imaging dataset w...
+  ds004151:
+    primary: ONVOC_0000466
+    labels:
+    - Effect of obesity on inhibitory control in preadol...
+  ds004166:
+    primary: ONVOC_0000488
+    labels:
+    - Effects of Forward and Backward Span Trainings on ...
+  ds004194:
+    primary: ONVOC_0000434
+    labels:
+    - Visual ECoG dataset
+  ds004228:
+    primary: ONVOC_0000462
+    labels:
+    - Early stressful experiences are associated with re...
+    - piper
+  ds004259:
+    primary: ONVOC_0000428
+    labels:
+    - Individual risk attitudes arise from noise in neur...
+    - Numerosity comparison task
+  ds004274:
+    primary: ONVOC_0000462
+    labels:
+    - A Chemical Signal in Human Emotional Tears Blocks ...
+    - 'TODO: full task name for PSAP'
+  ds004278:
+    primary: ONVOC_0000493
+    labels:
+    - Sustained Neural Representations of Personally Fam...
+  ds004295:
+    primary: ONVOC_0000463
+    labels:
+    - Reward gain and punishment avoidance reversal lear...
+  ds004299:
+    primary: ONVOC_0000432
+    labels:
+    - Characterizing habit learning in the human brain a...
+    - extinction
+  ds004302:
+    primary: ONVOC_0000434
+    labels:
+    - Brain correlates of speech perception in schizophr...
+  ds004306:
+    primary: ONVOC_0000434
+    labels:
+    - EEG Semantic Imagination and Perception Dataset
+  ds004323:
+    primary: ONVOC_0000432
+    labels:
+    - Atari-style video game learning fMRI
+    - Gameplay
+  ds004324:
+    primary: ONVOC_0000503
+    labels:
+    - ToonFaces
+  ds004330:
+    primary: ONVOC_0000434
+    labels:
+    - The spatiotemporal neural dynamics of object recog...
+  ds004331:
+    primary: ONVOC_0000434
+    labels:
+    - The spatiotemporal neural dynamics of object recog...
+    - localizer
+  ds004347:
+    primary: ONVOC_0000462
+    labels:
+    - 'Symmetry perception and affective responses: a com...'
+  ds004350:
+    primary: ONVOC_0000430
+    labels:
+    - Executive Functionning Study for Assessing the Eff...
+  ds004362:
+    primary: ONVOC_0000438
+    labels:
+    - EEG Motor Movement/Imagery Dataset
+  ds004458:
+    primary: ONVOC_0000438
+    labels:
+    - Highresolution developement
+    - tapping
+  ds004467:
+    primary: ONVOC_0000431
+    labels:
+    - MRI data from 20 adults in response to videos of d...
+    - Auditory Language Localizer
+  ds004489:
+    primary: ONVOC_0000434
+    labels:
+    - Raw data for Engaging in word recognition elicits ...
+  ds004496:
+    primary: ONVOC_0000434
+    labels:
+    - A large-scale fMRI dataset for the visual processi...
+    - 'TODO: full task name for naturalvision'
+  ds004502:
+    primary: ONVOC_0000427
+    labels:
+    - Anticipatory differences between Attention and Exp...
+  ds004509:
+    primary: ONVOC_0000434
+    labels:
+    - Extensive topographic remapping and functional sha...
+  ds004510:
+    primary: ONVOC_0000431
+    labels:
+    - An fMRI dataset for testing semantic language deco...
+    - AttendFemaleSpeaker
+  ds004515:
+    primary: ONVOC_0000432
+    labels:
+    - 'EEG: Alcohol imagery reinforcement learning task w...'
+  ds004516:
+    primary: ONVOC_0000434
+    labels:
+    - 'AVID: Audio-Visual Individual Differences dataset'
+  ds:manual:msc:
+    primary: ONVOC_0000463
+    labels:
+    - Midnight Scan Club (MSC)
+    - rest
+  ds:manual:4rtni:
+    primary: ONVOC_0000005
+    labels:
+    - 4RTNI (4-Repeat Tauopathy Neuroimaging Initiative)
+    - clinical tasks
+  ds:manual:a4_trial:
+    primary: ONVOC_0000005
+    labels:
+    - A4 (Anti-Amyloid Treatment in Asymptomatic Alzheim...
+    - clinical cognitive battery
+  ds:manual:abcd:
+    primary: ONVOC_0000005
+    labels:
+    - ABCD Study (Adolescent Brain Cognitive Development...
+    - NIH ABCD
+    - multi-task fMRI
+  ds:manual:abide:
+    primary: ONVOC_0000005
+    labels:
+    - ABIDE (I & II)
+    - resting-state
+  ds:manual:adhd200:
+    primary: ONVOC_0000005
+    labels:
+    - ADHD-200
+    - resting-state
+  ds:manual:adni:
+    primary: ONVOC_0000493
+    labels:
+    - ADNI (Alzheimer’s Disease Neuroimaging Initiative)
+    - multiple cognitive
+  ds:manual:aibl:
+    primary: ONVOC_0000005
+    labels:
+    - AIBL (Australian Imaging, Biomarkers & Lifestyle)
+    - cognitive tests
+  ds:manual:allen_aba:
+    primary: ONVOC_0000005
+    labels:
+    - Allen Mouse Brain Atlas (ABA)
+  ds:manual:allen_brainspan:
+    primary: ONVOC_0000002
+    labels:
+    - Allen BrainSpan (Developing Human Brain)
+  ds:manual:allen_cell_types:
+    primary: ONVOC_0000002
+    labels:
+    - Allen Cell Types Database
+  ds:manual:allen_hba:
+    primary: ONVOC_0000002
+    labels:
+    - Allen Human Brain Atlas (AHBA)
+  ds:manual:allen_mouse_conn:
+    primary: ONVOC_0000005
+    labels:
+    - Allen Mouse Brain Connectivity Atlas
+  ds:manual:allofus:
+    primary: ONVOC_0000005
+    labels:
+    - All of Us (Precision Medicine Cohort)
+  ds:manual:aomic:
+    primary: ONVOC_0000462
+    labels:
+    - AOMIC (Amsterdam Open MRI Collection)
+    - multiple tasks (vision
+  ds:manual:arwibo:
+    primary: ONVOC_0000005
+    labels:
+    - ARWIBO (Italian AD repository)
+    - various clinical tasks
+  ds:manual:bbc_labuk:
+    primary: ONVOC_0000005
+    labels:
+    - BBC LabUK Cognitive Test Dataset
+  ds:manual:bcp:
+    primary: ONVOC_0000005
+    labels:
+    - BCP (Baby Connectome Project)
+    - HCP / NIH Blueprint
+    - rest
+  ds:manual:bigbrain:
+    primary: ONVOC_0000005
+    labels:
+    - BigBrain Atlas
+  ds:manual:brainmap:
+    primary: ONVOC_0000005
+    labels:
+    - BrainMap
+  ds:manual:brainminds_marmoset:
+    primary: ONVOC_0000005
+    labels:
+    - Brain/MINDS Marmoset
+  ds:manual:camcan:
+    primary: ONVOC_0000438
+    labels:
+    - CamCAN (Cambridge Centre for Ageing and Neuroscien...
+    - tasks (sensorimotor
+  ds:manual:celegans_connectome:
+    primary: ONVOC_0000005
+    labels:
+    - C. elegans Connectome
+  ds:manual:cobre:
+    primary: ONVOC_0000005
+    labels:
+    - COBRE (Center for Biomedical Research Excellence)
+    - resting-state
+  ds:manual:corr:
+    primary: ONVOC_0000005
+    labels:
+    - CoRR (Consortium for Reliability & Reproducibility...
+  ds:manual:crcns:
+    primary: ONVOC_0000005
+    labels:
+    - CRCNS (Collaborative Research in Computational Neu...
+  ds:manual:dandi:
+    primary: ONVOC_0000005
+    labels:
+    - DANDI Archive
+  ds:manual:dhcp:
+    primary: ONVOC_0000005
+    labels:
+    - dHCP (Developing Human Connectome Project)
+    - resting-state
+  ds:manual:dlbs:
+    primary: ONVOC_0000005
+    labels:
+    - DLBS (Dallas Lifespan Brain Study)
+    - multiple tasks
+  ds:manual:edsd:
+    primary: ONVOC_0000005
+    labels:
+    - EDSD (European DTI Study on Dementia)
+  ds:manual:enigma:
+    primary: ONVOC_0000005
+    labels:
+    - ENIGMA Consortium
+    - many studies
+  ds:manual:fcp_1000:
+    primary: ONVOC_0000005
+    labels:
+    - 1000 Functional Connectomes Project
+    - INDI
+    - resting-state
+  ds:manual:figshare:
+    primary: ONVOC_0000005
+    labels:
+    - Figshare (general data repository)
+  ds:manual:flyem_hemibrain:
+    primary: ONVOC_0000005
+    labels:
+    - FlyEM Drosophila Hemibrain Connectome
+  ds:manual:gallant_vim:
+    primary: ONVOC_0000005
+    labels:
+    - Gallant Lab Natural Movie / VIM
+    - movie clips
+  ds:manual:gsp:
+    primary: ONVOC_0000005
+    labels:
+    - GSP (Brain Genomics Superstruct Project)
+    - resting-state
+  ds:manual:h01:
+    primary: ONVOC_0000005
+    labels:
+    - H01 Human Cortical Connectome
+  ds:manual:haxby_raiders:
+    primary: ONVOC_0000005
+    labels:
+    - Haxby “Raiders” Dataset
+    - movie watching
+  ds:manual:hbn:
+    primary: ONVOC_0000005
+    labels:
+    - HBN (Healthy Brain Network)
+    - rest
+  ds:manual:hcp_a:
+    primary: ONVOC_0000005
+    labels:
+    - HCP Lifespan – Aging (HCP-A)
+    - tasks + resting
+  ds:manual:hcp_d:
+    primary: ONVOC_0000005
+    labels:
+    - HCP Lifespan – Development (HCP-D)
+    - tasks + resting
+  ds:manual:hcp_ya:
+    primary: ONVOC_0000431
+    labels:
+    - HCP – Young Adult (HCP-YA)
+    - 7 tasks (WM
+  ds:manual:ibc:
+    primary: ONVOC_0000005
+    labels:
+    - IBC (Individual Brain Charting)
+    - many cognitive tasks
+  ds:manual:ieeg_portal:
+    primary: ONVOC_0000005
+    labels:
+    - IEEG Portal
+  ds:manual:imagen:
+    primary: ONVOC_0000463
+    labels:
+    - IMAGEN (European Teen Cohort)
+    - emotion
+  ds:manual:ixi:
+    primary: ONVOC_0000005
+    labels:
+    - IXI Dataset
+  ds:manual:lemon:
+    primary: ONVOC_0000005
+    labels:
+    - LEMON (Leipzig Mind-Brain-Body)
+    - resting
+  ds:manual:lyrics_prescient:
+    primary: ONVOC_0000005
+    labels:
+    - LYRIKS / PRESCIENT
+  ds:manual:manylabs:
+    primary: ONVOC_0000005
+    labels:
+    - ManyLabs / ManyBabies
+  ds:manual:microns:
+    primary: ONVOC_0000005
+    labels:
+    - MICrONS (Machine Intelligence from Cortical Networ...
+  ds:manual:mimic:
+    primary: ONVOC_0000005
+    labels:
+    - MIMIC (III & IV)
+    - PhysioNet
+  ds:manual:myconnectome:
+    primary: ONVOC_0000005
+    labels:
+    - MyConnectome
+    - rest
+  ds:manual:n3c:
+    primary: ONVOC_0000005
+    labels:
+    - N3C (National COVID Cohort Collaborative)
+  ds:manual:nacc:
+    primary: ONVOC_0000005
+    labels:
+    - NACC (National Alzheimer’s Coordinating Center)
+    - clinical assessments
+  ds:manual:neuroquery:
+    primary: ONVOC_0000005
+    labels:
+    - NeuroQuery
+  ds:manual:neurosynth:
+    primary: ONVOC_0000005
+    labels:
+    - NeuroSynth
+  ds:manual:neurovault:
+    primary: ONVOC_0000005
+    labels:
+    - NeuroVault
+  ds:manual:nifd:
+    primary: ONVOC_0000005
+    labels:
+    - NIFD (Neuroimaging in Frontotemporal Dementia)
+    - NIFD / ALLFTD
+    - neuropsych batteries
+  ds:manual:nki_rs:
+    primary: ONVOC_0000005
+    labels:
+    - NKI-Rockland Sample
+    - INDI
+    - rest
+  ds:manual:nsd:
+    primary: ONVOC_0000005
+    labels:
+    - NSD (Natural Scenes Dataset)
+    - image viewing
+  ds:manual:nspn:
+    primary: ONVOC_0000005
+    labels:
+    - NSPN (NeuroScience in Psychiatry Network)
+    - rest
+  ds:manual:nwb:
+    primary: ONVOC_0000005
+    labels:
+    - Neurodata Without Borders (NWB)
+  ds:manual:oasis:
+    primary: ONVOC_0000005
+    labels:
+    - OASIS (1, 2, & 3)
+    - – (various tasks)
+  ds:manual:omega:
+    primary: ONVOC_0000005
+    labels:
+    - OMEGA (Open MEG Archive)
+  ds:manual:openpsychometrics:
+    primary: ONVOC_0000005
+    labels:
+    - OpenPsychometrics
+  ds:manual:osf:
+    primary: ONVOC_0000005
+    labels:
+    - Open Science Framework (OSF)
+  ds:manual:ping:
+    primary: ONVOC_0000005
+    labels:
+    - PING (Pediatric Imaging, Neurocognition, Genetics)
+    - rest
+  ds:manual:pnc:
+    primary: ONVOC_0000005
+    labels:
+    - PNC (Philadelphia Neurodevelopment Cohort)
+    - tasks
+  ds:manual:ppmi:
+    primary: ONVOC_0000438
+    labels:
+    - PPMI (Parkinson’s Progression Markers Initiative)
+    - motor
+  ds:manual:prevent_ad:
+    primary: ONVOC_0000493
+    labels:
+    - Prevent AD
+    - Prevent-AD
+    - memory tasks
+  ds:manual:prime_de:
+    primary: ONVOC_0000005
+    labels:
+    - PRIME-DE (PRIMate Data Exchange)
+  ds:manual:prime_re:
+    primary: ONVOC_0000005
+    labels:
+    - PRIME-RE (PRIMatE Resource Exchange)
+  ds:manual:psychencode:
+    primary: ONVOC_0000005
+    labels:
+    - PsychENCODE
+  ds:manual:qtab:
+    primary: ONVOC_0000005
+    labels:
+    - QTAB (Queensland Twin Adolescent Brain)
+    - rest
+  ds:manual:qtim:
+    primary: ONVOC_0000005
+    labels:
+    - QTIM (Queensland Twin Imaging)
+  ds:manual:ram_ecog:
+    primary: ONVOC_0000493
+    labels:
+    - RAM (Restoring Active Memory)
+    - DARPA RAM
+    - free recall
+  ds:manual:rest_meta_mdd:
+    primary: ONVOC_0000005
+    labels:
+    - REST-meta-MDD
+    - resting-state
+  ds:manual:sald:
+    primary: ONVOC_0000005
+    labels:
+    - SALD (Shanghai Adult Lifespan Dataset)
+    - resting-state
+  ds:manual:schizconnect:
+    primary: ONVOC_0000005
+    labels:
+    - SchizConnect
+    - tasks & resting (varies)
+  ds:manual:scziowa:
+    primary: ONVOC_0000005
+    labels:
+    - SCZIowa (Iowa Schizophrenia)
+  ds:manual:sherlock:
+    primary: ONVOC_0000493
+    labels:
+    - Sherlock (Movie Watching & Recall)
+  ds:manual:slim:
+    primary: ONVOC_0000005
+    labels:
+    - SLIM (SWU Longitudinal Imaging Multimodal)
+    - resting-state
+  ds:manual:studyforrest:
+    primary: ONVOC_0000005
+    labels:
+    - StudyForrest (Forrest Gump dataset)
+    - movie watching
+  ds:manual:tami:
+    primary: ONVOC_0000005
+    labels:
+    - TAMI Dataset (Taiwan Aging and Mental Illness)
+    - rest
+  ds:manual:testmybrain:
+    primary: ONVOC_0000005
+    labels:
+    - TestMyBrain.org
+  ds:manual:things_fmri:
+    primary: ONVOC_0000005
+    labels:
+    - THINGS-fMRI / THINGS-MEG
+    - object viewing
+  ds:manual:tuh_eeg:
+    primary: ONVOC_0000005
+    labels:
+    - TUH EEG Corpus
+  ds:manual:ukb_imaging:
+    primary: ONVOC_0000005
+    labels:
+    - UK Biobank (Imaging)
+    - tasks
+  ds:manual:vetsa:
+    primary: ONVOC_0000005
+    labels:
+    - VETSA (Vietnam Era Twin Study of Aging)
+  ds:manual:vita:
+    primary: ONVOC_0000005
+    labels:
+    - VITA (Vienna Transdanube Aging Study)
+statsmaps: {}

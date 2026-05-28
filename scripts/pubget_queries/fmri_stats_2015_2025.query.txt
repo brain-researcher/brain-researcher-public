@@ -1,0 +1,7 @@
+((fMRI[Title/Abstract] OR "functional MRI"[Title/Abstract] OR BOLD[Title/Abstract])
+ AND ("p value"[Title/Abstract] OR p-value[Title/Abstract] OR "statistical significance"[Title/Abstract]
+      OR threshold[Title/Abstract] OR FDR[Title/Abstract] OR "false discovery rate"[Title/Abstract]
+      OR FWE[Title/Abstract] OR "family-wise error"[Title/Abstract] OR Bonferroni[Title/Abstract]
+      OR "cluster correction"[Title/Abstract] OR "cluster-wise"[Title/Abstract] OR "voxel-wise"[Title/Abstract]
+      OR TFCE[Title/Abstract] OR permutation[Title/Abstract] OR nonparametric[Title/Abstract])
+ AND ("2015/01/01"[PDAT] : "2025/12/31"[PDAT]))

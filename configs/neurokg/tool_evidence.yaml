@@ -1,0 +1,58 @@
+tools:
+  python.fetch_atlas.run:
+    publications:
+      - doi: 10.1038/s41592-018-0235-4
+    validated_on_collections:
+      - openneuro:ds000XXX
+  python.extract_timeseries.run:
+    publications: []
+    validated_on_collections:
+      - openneuro:ds001YYY
+  python.nilearn_connectivity_matrix.run:
+    publications:
+      - doi: 10.3389/fninf.2014.00014
+    validated_on_collections: []
+  ibl_one:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_brainbox_session_ephys:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_atlas_region_mapping:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_rig_task_layer:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_sorter:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_kilosort:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_deeplabcut:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_lightning_pose:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_spike_behavior_alignment:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_decoding_dataset:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide
+  ibl_neuropixels_workflow:
+    publications: []
+    validated_on_collections:
+      - ds:manual:ibl_brainwide

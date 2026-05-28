@@ -1,0 +1,103 @@
+name: MCP Integration Report
+description: Test trigger/search/schema/execution behavior in IDE agents.
+title: "[MCP] "
+labels:
+  - area/mcp
+  - type/bug
+body:
+  - type: dropdown
+    id: ide
+    attributes:
+      label: IDE
+      options:
+        - Cursor
+        - Claude Code
+        - Codex
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: page_urls
+    attributes:
+      label: Related URL(s)
+      placeholder: Brain Researcher page URLs, docs URLs, or MCP setup references used
+    validations:
+      required: false
+
+  - type: textarea
+    id: click_path
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Configure MCP in IDE
+        2. Run prompt
+        3. Observe tool search/schema/execution behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt used
+      placeholder: Include exact prompt, redact sensitive info
+    validations:
+      required: true
+
+  - type: dropdown
+    id: failure_mode
+    attributes:
+      label: Failure mode
+      options:
+        - Tool search failed
+        - Tool schema lookup failed
+        - Execution payload/schema mismatch
+        - Boundary safety issue
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context_ids
+    attributes:
+      label: IDs and context
+      placeholder: Tool ID/name, run ID, request ID, or other relevant identifiers
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested fix
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      placeholder: Logs, stack traces, JSON payload snippets, or screenshots
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I did not include PHI, secrets, or private credentials.
+          required: true

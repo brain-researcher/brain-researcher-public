@@ -1,0 +1,2 @@
+(("Functional Neuroimaging"[MeSH Terms] OR "Brain Mapping"[MeSH Terms] OR "Magnetic Resonance Imaging"[MeSH Terms])
+ AND ("1990/01/01"[PDAT] : "2014/12/31"[PDAT]))

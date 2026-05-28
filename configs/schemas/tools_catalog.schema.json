@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tools Catalog",
+  "type": "object",
+  "required": ["version", "tools"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "domain", "modality", "consumes", "produces"],
+        "additionalProperties": true,
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "domain": {"type": "string", "minLength": 1},
+          "modality": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          },
+          "consumes": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {"type": "string", "minLength": 1}
+          },
+          "produces": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {"type": "string", "minLength": 1}
+          },
+          "constraints": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "runtime_kind": {
+            "type": "string",
+            "enum": ["container", "python"],
+            "default": "container"
+          },
+          "python_module": {
+            "type": "string",
+            "pattern": "^(?:[A-Za-z_]\\w*\\.)*[A-Za-z_]\\w*$"
+          },
+          "python_function": {
+            "type": "string",
+            "pattern": "^[A-Za-z_]\\w*$"
+          }
+        }
+      }
+    }
+  }
+}

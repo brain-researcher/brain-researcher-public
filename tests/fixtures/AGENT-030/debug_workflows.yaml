@@ -1,0 +1,378 @@
+# Test Workflows for Workflow Debugging Tools (AGENT-030)
+
+simple_linear_workflow:
+  name: "Simple Linear Pipeline"
+  description: "Basic linear workflow for debugging basics"
+  nodes:
+    - id: "start"
+      type: "input"
+      function: "load_input_data"
+      dependencies: []
+      parameters:
+        input_path: "/data/test_input.txt"
+        
+    - id: "transform"
+      type: "processing"
+      function: "transform_data"
+      dependencies: ["start"]
+      parameters:
+        transformation_type: "normalize"
+        
+    - id: "output"
+      type: "output"
+      function: "save_results"
+      dependencies: ["transform"]
+      parameters:
+        output_path: "/data/test_output.txt"
+
+parallel_branch_workflow:
+  name: "Parallel Processing Pipeline"
+  description: "Workflow with parallel branches for testing concurrent debugging"
+  nodes:
+    - id: "input"
+      type: "input"
+      function: "load_dataset"
+      dependencies: []
+      parameters:
+        dataset_id: "test_dataset_001"
+        
+    - id: "preprocess_a"
+      type: "preprocessing"
+      function: "preprocess_branch_a"
+      dependencies: ["input"]
+      parameters:
+        method: "standardize"
+        
+    - id: "preprocess_b"
+      type: "preprocessing"
+      function: "preprocess_branch_b"
+      dependencies: ["input"]
+      parameters:
+        method: "normalize"
+        
+    - id: "preprocess_c"
+      type: "preprocessing"
+      function: "preprocess_branch_c"
+      dependencies: ["input"]
+      parameters:
+        method: "scale"
+        
+    - id: "merge_ab"
+      type: "merge"
+      function: "merge_results"
+      dependencies: ["preprocess_a", "preprocess_b"]
+      parameters:
+        merge_strategy: "concatenate"
+        
+    - id: "final_analysis"
+      type: "analysis"
+      function: "analyze_combined"
+      dependencies: ["merge_ab", "preprocess_c"]
+      parameters:
+        analysis_type: "statistical"
+
+complex_neuroimaging_workflow:
+  name: "Complex Neuroimaging Analysis"
+  description: "Realistic fMRI analysis pipeline for comprehensive debugging"
+  nodes:
+    - id: "load_raw_data"
+      type: "input"
+      function: "load_nifti_data"
+      dependencies: []
+      parameters:
+        data_path: "/data/fmri/raw/"
+        subjects: ["sub-01", "sub-02", "sub-03"]
+        
+    - id: "quality_check"
+      type: "validation"
+      function: "check_data_quality"
+      dependencies: ["load_raw_data"]
+      parameters:
+        checks: ["motion", "signal_dropout", "artifacts"]
+        
+    - id: "motion_correction"
+      type: "preprocessing"
+      function: "correct_motion"
+      dependencies: ["quality_check"]
+      parameters:
+        reference_volume: 0
+        interpolation: "trilinear"
+        
+    - id: "slice_timing"
+      type: "preprocessing" 
+      function: "correct_slice_timing"
+      dependencies: ["motion_correction"]
+      parameters:
+        tr: 2.0
+        slice_order: "interleaved"
+        
+    - id: "spatial_smoothing"
+      type: "preprocessing"
+      function: "smooth_spatial"
+      dependencies: ["slice_timing"]
+      parameters:
+        fwhm: 8.0
+        
+    - id: "temporal_filtering"
+      type: "preprocessing"
+      function: "filter_temporal"
+      dependencies: ["spatial_smoothing"]
+      parameters:
+        high_pass: 0.01
+        low_pass: 0.1
+        
+    - id: "first_level_stats"
+      type: "statistics"
+      function: "run_first_level_glm"
+      dependencies: ["temporal_filtering"]
+      parameters:
+        design_matrix: "task_design.tsv"
+        contrasts: ["task > rest", "task_hard > task_easy"]
+        
+    - id: "second_level_stats"
+      type: "statistics"
+      function: "run_second_level_glm"  
+      dependencies: ["first_level_stats"]
+      parameters:
+        group_analysis: true
+        covariates: ["age", "sex"]
+        
+    - id: "cluster_correction"
+      type: "statistics"
+      function: "apply_cluster_correction"
+      dependencies: ["second_level_stats"]
+      parameters:
+        cluster_threshold: 2.3
+        cluster_size: 10
+        
+    - id: "generate_report"
+      type: "output"
+      function: "create_analysis_report"
+      dependencies: ["cluster_correction"]
+      parameters:
+        include_figures: true
+        report_format: "html"
+
+error_prone_workflow:
+  name: "Error-Prone Testing Pipeline"
+  description: "Workflow designed to test error handling and debugging"
+  nodes:
+    - id: "reliable_start"
+      type: "input"
+      function: "reliable_data_loader"
+      dependencies: []
+      parameters:
+        data_source: "stable_dataset"
+        
+    - id: "flaky_processing"
+      type: "processing"
+      function: "intermittent_processor"
+      dependencies: ["reliable_start"]
+      parameters:
+        failure_rate: 0.3
+        error_types: ["ValueError", "RuntimeError"]
+        
+    - id: "memory_intensive"
+      type: "processing"
+      function: "memory_heavy_operation"
+      dependencies: ["flaky_processing"]
+      parameters:
+        memory_requirement: "high"
+        allocation_size: "2GB"
+        
+    - id: "parameter_sensitive"
+      type: "analysis"
+      function: "parameter_dependent_analysis"
+      dependencies: ["memory_intensive"]
+      parameters:
+        critical_param: null  # Will cause error
+        optional_param: "default_value"
+        
+    - id: "timeout_prone"
+      type: "processing"
+      function: "slow_operation"
+      dependencies: ["parameter_sensitive"]
+      parameters:
+        expected_duration: 300
+        timeout: 60  # Will timeout
+        
+    - id: "recovery_attempt"
+      type: "recovery"
+      function: "attempt_recovery"
+      dependencies: ["timeout_prone"]
+      parameters:
+        recovery_strategy: "retry_with_backoff"
+
+conditional_workflow:
+  name: "Conditional Execution Pipeline"
+  description: "Workflow with conditional branches for testing conditional debugging"
+  nodes:
+    - id: "data_input"
+      type: "input"
+      function: "load_input"
+      dependencies: []
+      parameters:
+        input_type: "variable"
+        
+    - id: "check_data_type"
+      type: "validation"
+      function: "validate_data_type"
+      dependencies: ["data_input"]
+      parameters:
+        expected_types: ["numeric", "categorical", "mixed"]
+        
+    - id: "numeric_processing"
+      type: "processing"
+      function: "process_numeric_data"
+      dependencies: ["check_data_type"]
+      conditions:
+        - variable: "data_type"
+          operator: "=="
+          value: "numeric"
+          
+    - id: "categorical_processing"  
+      type: "processing"
+      function: "process_categorical_data"
+      dependencies: ["check_data_type"]
+      conditions:
+        - variable: "data_type"
+          operator: "=="
+          value: "categorical"
+          
+    - id: "mixed_processing"
+      type: "processing"
+      function: "process_mixed_data"
+      dependencies: ["check_data_type"]
+      conditions:
+        - variable: "data_type"
+          operator: "=="
+          value: "mixed"
+          
+    - id: "unified_output"
+      type: "merge"
+      function: "merge_processed_results"
+      dependencies: ["numeric_processing", "categorical_processing", "mixed_processing"]
+      parameters:
+        merge_strategy: "adaptive"
+
+loop_workflow:
+  name: "Iterative Processing Pipeline"
+  description: "Workflow with loops for testing iterative debugging"
+  nodes:
+    - id: "initialize"
+      type: "initialization"
+      function: "setup_iteration"
+      dependencies: []
+      parameters:
+        max_iterations: 10
+        convergence_threshold: 0.001
+        
+    - id: "iteration_body"
+      type: "processing"
+      function: "iterative_processing"
+      dependencies: ["initialize"]
+      loop_config:
+        type: "while"
+        condition: "not converged"
+        max_iterations: 10
+        
+    - id: "check_convergence"
+      type: "validation"
+      function: "check_convergence_criteria"
+      dependencies: ["iteration_body"]
+      parameters:
+        tolerance: 0.001
+        
+    - id: "finalize"
+      type: "output"
+      function: "finalize_results"
+      dependencies: ["check_convergence"]
+      parameters:
+        save_iterations: true
+
+# Debugging test scenarios
+debugging_scenarios:
+  basic_stepping:
+    workflow: "simple_linear_workflow"
+    breakpoints:
+      - node: "start"
+        type: "node"
+      - node: "transform"
+        type: "node"
+    step_sequence: ["step_over", "step_over", "continue"]
+    
+  conditional_debugging:
+    workflow: "parallel_branch_workflow"
+    breakpoints:
+      - node: "input"
+        type: "condition"
+        condition: "dataset_id.startswith('test')"
+      - variable: "preprocessing_results"
+        type: "data"
+        change_type: "write"
+    expected_hits: 2
+    
+  error_debugging:
+    workflow: "error_prone_workflow"
+    breakpoints:
+      - type: "exception"
+        exception_types: ["ValueError", "RuntimeError", "TimeoutError"]
+    break_on_error: true
+    expected_errors: 3
+    
+  performance_debugging:
+    workflow: "complex_neuroimaging_workflow"
+    enable_profiling: true
+    memory_tracking: true
+    breakpoints:
+      - node: "motion_correction"
+        type: "node"
+      - node: "first_level_stats"
+        type: "node"
+    performance_thresholds:
+      max_execution_time: 60
+      max_memory_usage: "1GB"
+      
+  data_flow_debugging:
+    workflow: "conditional_workflow"
+    breakpoints:
+      - variable: "data_type"
+        type: "data"
+        change_type: "change"
+      - variable: "processed_results"
+        type: "data"  
+        change_type: "write"
+    trace_data_flow: true
+    inspect_variables: ["data_type", "processing_method", "results"]
+
+# Expected debugging outcomes for test validation
+expected_outcomes:
+  simple_linear_workflow:
+    total_nodes: 3
+    execution_order: [["start"], ["transform"], ["output"]]
+    expected_variables: ["input_data", "transformed_data", "output_path"]
+    
+  parallel_branch_workflow:
+    total_nodes: 6
+    parallel_levels: 2  # preprocess_a, preprocess_b, preprocess_c run in parallel
+    merge_operations: 2  # merge_ab and final_analysis
+    
+  complex_neuroimaging_workflow:
+    total_nodes: 9
+    sequential_execution: true
+    preprocessing_steps: 4
+    analysis_steps: 3
+    
+  error_prone_workflow:
+    expected_errors: ["ValueError", "RuntimeError", "TimeoutError"]
+    recovery_attempts: 1
+    final_state: "failed"
+    
+  conditional_workflow:
+    conditional_branches: 3
+    execution_depends_on: "data_type"
+    possible_paths: [
+      ["data_input", "check_data_type", "numeric_processing", "unified_output"],
+      ["data_input", "check_data_type", "categorical_processing", "unified_output"],
+      ["data_input", "check_data_type", "mixed_processing", "unified_output"]
+    ]

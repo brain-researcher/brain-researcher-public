@@ -1,0 +1,4 @@
+[
+  {"task_id": "task:nback", "region_id": "schaefer2018_200_17n_2mm:L_DLPFC", "probability": 0.52, "method": "MKDA"},
+  {"task_id": "task:gng", "region_id": "harvard_oxford_sub25:Left Caudate", "probability": 0.41}
+]

@@ -1,0 +1,365 @@
+# Data Contracts Configuration
+# Defines idempotent, verifiable I/O contracts for loaders and linkers
+# Referenced by: docs/standards/NeuroKG_Standards.md (data_contracts section)
+# Related to: invariants.md (DATA-01, DATA-02)
+#
+# Schema definitions (node/edge types, properties, ID formats) are now in:
+# configs/neurokg/config.yml (schema section)
+
+# File Format Specification (DATA-01)
+file_format:
+  name: "NDJSON"
+  description: "Newline-Delimited JSON - one JSON object per line"
+  encoding: "UTF-8"
+  line_terminator: "\n"  # Unix-style newline
+  max_line_size_bytes: 2097152  # 2MB recommended max
+  notes:
+    - "Each line is a complete, valid JSON object"
+    - "No trailing commas"
+    - "UTF-8 encoding required"
+    - "Empty lines are ignored"
+
+# Record Types (DATA-02)
+record_types:
+  - "node"
+  - "edge"
+
+# Node Record Schema
+node_record:
+  description: "Node entity record in NDJSON format"
+  required_fields:
+    - "record_type"  # Must be "node"
+    - "entity_type"  # One of: Publication, Task, Concept, Region, Coordinate, Dataset, Subject, StatisticalMap, Contrast, SubjectGroup, etc.
+    - "curie"  # Global unique identifier (CURIE format)
+    - "properties"  # Node properties dictionary
+    - "prov"  # Provenance information (see provenance.yaml)
+    
+  optional_fields:
+    - "id_hash"  # SHA1 hash fallback: sha1(type|source|external_id)
+    - "valid_from"  # ISO-8601 timestamp (for temporal versioning)
+    - "valid_to"  # ISO-8601 timestamp (null = current)
+    
+  schema:
+    record_type:
+      type: "string"
+      enum: ["node"]
+      required: true
+      
+    entity_type:
+      type: "string"
+      enum: [
+        "Publication", "Task", "Concept", "Region", "Coordinate",
+        "Dataset", "Subject", "StatisticalMap", "Contrast", "SubjectGroup",
+        "Experiment", "Embedding", "Term", "Collection", "Atlas", "Author", "File"
+      ]
+      required: true
+      notes: "Must match schema.node types in config.yml"
+      
+    curie:
+      type: "string"
+      pattern: "^[a-z]+:.+$"  # CURIE format: namespace:identifier
+      required: true
+      examples:
+        - "pmid:12345678"
+        - "doi:10.1038/s41562-020-0890-6"
+        - "cogat:TRM_4a3fd79d0a5c8"
+        - "schaefer400-7n:L_Cont_7"
+      notes: "Global unique identifier following CURIE format"
+      
+    id_hash:
+      type: "string"
+      pattern: "^[a-f0-9]{40}$"  # SHA1 hex digest
+      required: false
+      notes: "Fallback ID when curie not available. Format: sha1(type|source|external_id)"
+      
+    properties:
+      type: "object"
+      required: true
+      notes: "Node properties dictionary. Must be flattened (no nested objects for Neo4j)"
+      validation:
+        - "All values must be primitives or arrays"
+        - "No nested objects (use _flatten_properties helpers)"
+        - "Required properties per entity_type defined in config.yml schema"
+        
+    prov:
+      type: "object"
+      required: true
+      schema_reference: "provenance.yaml"
+      required_fields:
+        - "source"
+        - "method"
+        - "timestamp"
+        - "loader_version"
+      notes: "See configs/neurokg/provenance.yaml for complete schema"
+      
+    valid_from:
+      type: "string"
+      format: "ISO-8601"
+      required: false
+      notes: "Temporal versioning - when this version became valid"
+      
+    valid_to:
+      type: "string"
+      format: "ISO-8601"
+      required: false
+      nullable: true
+      notes: "Temporal versioning - when this version expired (null = current)"
+
+# Edge Record Schema
+edge_record:
+  description: "Relationship/edge record in NDJSON format"
+  required_fields:
+    - "record_type"  # Must be "edge"
+    - "edge_type"  # One of: MEASURES, ACTIVATES, HAS_COORDINATE, IN_REGION, DERIVED_FROM, IMPLEMENTS_TASK, MAPS_TO, SAME_AS, etc.
+    - "source_curie"  # Source node CURIE
+    - "target_curie"  # Target node CURIE
+    - "properties"  # Edge properties dictionary
+    - "prov"  # Provenance information
+    
+  optional_fields:
+    - "valid_from"
+    - "valid_to"
+    
+  schema:
+    record_type:
+      type: "string"
+      enum: ["edge"]
+      required: true
+      
+    edge_type:
+      type: "string"
+      enum: [
+        "MEASURES", "ACTIVATES", "HAS_COORDINATE", "IN_REGION",
+        "DERIVED_FROM", "IMPLEMENTS_TASK", "INCLUDES", "HAS_PHENOTYPE",
+        "PART_OF", "CITES", "SAME_AS", "MAPS_TO", "REPORTS_TASK"
+      ]
+      required: true
+      notes: "Must match schema.edges types in config.yml"
+      
+    source_curie:
+      type: "string"
+      pattern: "^[a-z]+:.+$"
+      required: true
+      notes: "Source node CURIE (must exist in graph)"
+      
+    target_curie:
+      type: "string"
+      pattern: "^[a-z]+:.+$"
+      required: true
+      notes: "Target node CURIE (must exist in graph)"
+      
+    properties:
+      type: "object"
+      required: true
+      common_properties:
+        - "strength"  # 0.0-1.0 for ACTIVATES edges
+        - "confidence"  # 0.0-1.0 confidence score
+        - "evidence_components"  # Breakdown of evidence (see edge_scoring.yaml)
+      validation:
+        - "All values must be primitives or arrays"
+        - "No nested objects"
+        - "Edge-specific properties defined in config.yml schema"
+        
+    prov:
+      type: "object"
+      required: true
+      schema_reference: "provenance.yaml"
+      notes: "See configs/neurokg/provenance.yaml for complete schema"
+      
+    valid_from:
+      type: "string"
+      format: "ISO-8601"
+      required: false
+      
+    valid_to:
+      type: "string"
+      format: "ISO-8601"
+      required: false
+      nullable: true
+
+# Idempotency & Upsert Rules
+idempotency:
+  # Node upsert rules
+  nodes:
+    primary_key: ["entity_type", "curie"]
+    fallback_key: "id_hash"  # If curie not available
+    strategy: "upsert"  # Update if exists, insert if not
+    conflict_resolution: "merge"  # Merge properties on conflict
+    
+  # Edge upsert rules
+  edges:
+    primary_key: ["edge_type", "source_curie", "target_curie"]
+    property_hash: true  # Hash properties (excluding scores) for uniqueness
+    strategy: "upsert"
+    conflict_resolution: "update_scores"  # Update confidence/strength, preserve other properties
+    
+  # Temporal versioning
+  temporal:
+    enabled: true
+    never_hard_delete: true  # Use valid_from/valid_to instead
+    constraint: "valid_from < valid_to"  # Temporal consistency (TIME-02)
+
+# Validation Rules (Pre-ingestion)
+pre_ingestion_validation:
+  # Schema validation
+  schema:
+    - "Validate record_type is 'node' or 'edge'"
+    - "Validate entity_type/edge_type against schema in config.yml"
+    - "Validate curie format (CURIE pattern)"
+    - "Validate required fields present"
+    - "Validate field types match schema"
+    
+  # Required fields check
+  required_fields:
+    - "Check all required fields present per record type"
+    - "Check provenance fields complete (see provenance.yaml)"
+    - "Check properties contain required fields per entity_type"
+    
+  # Type validation
+  types:
+    - "Validate string fields are strings"
+    - "Validate numeric fields are numbers"
+    - "Validate array fields are arrays"
+    - "Validate ISO-8601 timestamps"
+    
+  # ID format validation
+  id_validation:
+    - "Validate curie follows namespace:identifier pattern"
+    - "Validate id_hash is SHA1 hex (if present)"
+    - "Validate curie matches entity_type (e.g., pmid: for Publication)"
+    
+  # Property flattening
+  flattening:
+    - "Check no nested objects in properties"
+    - "Check arrays contain only primitives"
+    - "Use _flatten_properties helpers before validation"
+
+# Post-ingestion QA
+post_ingestion_qa:
+  # Graph integrity
+  integrity:
+    - "No dangling edges (source/target CURIE must exist)"
+    - "Unique IDs (no duplicate CURIEs for same entity_type)"
+    - "Degree sanity checks (expected edge counts)"
+    
+  # Orphan detection
+  orphans:
+    - "Detect nodes with no edges"
+    - "Detect edges with invalid source/target"
+    - "Report orphan counts by entity_type"
+    
+  # Cross-source link verification
+  cross_source:
+    - "Verify SAME_AS edges connect same entity_type"
+    - "Verify MAPS_TO edges connect compatible types"
+    - "Check canonical node selection consistency"
+    
+  # SHACL validation (if RDF export enabled)
+  shacl:
+    enabled: false  # Optional - only if exporting to RDF
+    schema_path: "docs/standards/shacl/nodes_shapes.ttl"
+    notes: "Validate exported RDF view against SHACL shapes"
+
+# Error Handling
+error_handling:
+  # Failure logging
+  failure_log:
+    format: "NDJSON"
+    path_template: "data/errors/{source}.errors.ndjson"
+    fields:
+      - "line"  # Line number in source file
+      - "reason"  # Error reason
+      - "payload"  # Original record (truncated if large)
+      - "timestamp"
+      - "loader_version"
+      
+  # Retry strategy
+  retries:
+    max_retries: 3
+    backoff_strategy: "exponential"
+    initial_delay_ms: 100
+    max_delay_ms: 5000
+    
+  # Poison pill isolation
+  poison_pill:
+    enabled: true
+    max_failures: 100  # After N failures, isolate and skip
+    isolation_path: "data/errors/{source}.poison.ndjson"
+    notes: "Prevents one bad record from blocking entire ingestion"
+
+# Metrics Tracking
+metrics:
+  # Ingestion metrics
+  ingestion:
+    - "nodes_created"
+    - "nodes_updated"
+    - "edges_created"
+    - "edges_updated"
+    - "duplicates_merged"
+    - "curation_queue_size"
+    - "validation_failures"
+    - "retry_count"
+    
+  # Quality metrics
+  quality:
+    - "orphan_node_count"
+    - "dangling_edge_count"
+    - "duplicate_curie_count"
+    - "invalid_provenance_count"
+    
+  # Performance metrics
+  performance:
+    - "records_per_second"
+    - "validation_time_ms"
+    - "database_write_time_ms"
+    - "total_ingestion_time_seconds"
+
+# Example Records
+examples:
+  node_record: |
+    {
+      "record_type": "node",
+      "entity_type": "Publication",
+      "curie": "pmid:31234567",
+      "properties": {
+        "title": "Neural correlates of working memory",
+        "year": 2020,
+        "journal": "Nature Neuroscience",
+        "doi": "10.1038/s41562-020-0890-6"
+      },
+      "prov": {
+        "source": "pubmed",
+        "method": "api",
+        "timestamp": "2025-01-06T14:30:00Z",
+        "loader_version": "v1.2.3"
+      }
+    }
+    
+  edge_record: |
+    {
+      "record_type": "edge",
+      "edge_type": "MEASURES",
+      "source_curie": "task:nback",
+      "target_curie": "concept:working_memory",
+      "properties": {
+        "confidence": 0.90,
+        "strength": 0.85
+      },
+      "prov": {
+        "source": "cognitive_atlas",
+        "method": "manual",
+        "timestamp": "2025-01-06T14:30:00Z",
+        "loader_version": "v1.2.3"
+      }
+    }
+
+# Notes
+notes:
+  - "All loaders must produce NDJSON format (DATA-01)"
+  - "Record types must be 'node' or 'edge' (DATA-02)"
+  - "Idempotent operations required - use upsert, never hard delete"
+  - "Temporal versioning via valid_from/valid_to (TIME-01, TIME-02)"
+  - "Provenance required on all records (PROV-01)"
+  - "Validation happens pre-ingestion, QA happens post-ingestion"
+  - "Error handling must be robust - log failures, retry with backoff"
+

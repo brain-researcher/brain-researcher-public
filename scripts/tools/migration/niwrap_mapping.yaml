@@ -1,0 +1,48 @@
+# Mapping curated tools -> NiWrap Boutiques tools
+# status: exact | close | missing
+
+fsl:
+  - curated: fsl.bet
+    niwrap_alias: fsl.bet.run
+    status: exact
+    notes: "BET brain extraction"
+  - curated: fsl.flirt
+    niwrap_alias: fsl.flirt.run
+    status: exact
+    notes: "FLIRT linear registration"
+  - curated: fsl.fnirt
+    niwrap_alias: fsl.fnirt.run
+    status: exact
+    notes: "FNIRT nonlinear registration"
+  - curated: fsl.fix
+    niwrap_alias: fsl.fslFixText.run
+    status: exact
+    notes: "FIX artifact removal"
+  - curated: fsl.palm
+    niwrap_alias: fsl.palm.run
+    status: exact
+    notes: "PALM permutation testing"
+
+ants:
+  - curated: ants.registration
+    niwrap_alias: ants.antsRegistration.run
+    status: exact
+    notes: "antsRegistration core"
+  - curated: ants.integrate_vector_field
+    niwrap_alias: ants.ANTSIntegrateVectorField.run
+    status: exact
+    notes: "Integrate vector field"
+
+afni:
+  - curated: afni.3dBlurInMask
+    niwrap_alias: afni.3dBlurInMask.run
+    status: exact
+    notes: "Smoothing within mask"
+  - curated: afni.3dReHo
+    niwrap_alias: afni.3dReHo.run
+    status: exact
+    notes: "Regional homogeneity"
+  - curated: afni.3dClustSim
+    niwrap_alias: afni.3dClustSim.run
+    status: exact
+    notes: "Cluster-size simulation"

@@ -1,0 +1,431 @@
+---
+# Multi-cluster configuration for Brain Researcher
+# This enables the platform to run across multiple clusters for high availability
+
+# Primary cluster configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cacerts
+  namespace: istio-system
+  labels:
+    brain-researcher.io/cluster-role: primary
+type: Opaque
+data:
+  # Root certificate for cross-cluster communication
+  # These would be generated during installation
+  root-cert.pem: ""
+  cert-chain.pem: ""
+  ca-cert.pem: ""
+  ca-key.pem: ""
+
+---
+# Cluster configuration for primary cluster
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-config-primary
+  namespace: istio-system
+  labels:
+    brain-researcher.io/cluster-role: primary
+    brain-researcher.io/cluster-name: brain-researcher-primary
+data:
+  cluster.yaml: |
+    # Primary cluster configuration
+    cluster_name: "brain-researcher-primary"
+    cluster_role: "primary"
+    region: "us-west-2"
+    zone: "us-west-2a"
+    
+    # Network configuration
+    network: "brain-researcher-network-primary"
+    
+    # Service mesh configuration
+    mesh_id: "brain-researcher-mesh"
+    
+    # Endpoints for cross-cluster communication
+    endpoints:
+      istiod: "istiod.istio-system.svc.cluster.local:15012"
+      pilot: "istiod.istio-system.svc.cluster.local:15010"
+      
+    # Services exposed to remote clusters
+    exposed_services:
+      - name: neurokg-service
+        namespace: brain-researcher
+        ports:
+          - name: api
+            port: 5000
+            targetPort: 5000
+        endpoint_export_policy: "MESH_EXTERNAL"
+        
+      - name: orchestrator-service  
+        namespace: brain-researcher
+        ports:
+          - name: api
+            port: 3001
+            targetPort: 3001
+        endpoint_export_policy: "MESH_EXTERNAL"
+
+---
+# Cluster configuration for secondary cluster
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-config-secondary
+  namespace: istio-system
+  labels:
+    brain-researcher.io/cluster-role: secondary
+    brain-researcher.io/cluster-name: brain-researcher-secondary
+data:
+  cluster.yaml: |
+    # Secondary cluster configuration
+    cluster_name: "brain-researcher-secondary"
+    cluster_role: "secondary"
+    region: "us-east-1"
+    zone: "us-east-1a"
+    
+    # Network configuration
+    network: "brain-researcher-network-secondary"
+    
+    # Service mesh configuration
+    mesh_id: "brain-researcher-mesh"
+    
+    # Primary cluster endpoints for discovery
+    primary_cluster:
+      discovery_address: "istiod-primary.istio-system.svc.cluster.local:15012"
+      network: "brain-researcher-network-primary"
+      
+    # Services exposed to other clusters
+    exposed_services:
+      - name: agent-service
+        namespace: brain-researcher
+        ports:
+          - name: api
+            port: 8000
+            targetPort: 8000
+        endpoint_export_policy: "MESH_EXTERNAL"
+        
+      - name: web-ui-service
+        namespace: brain-researcher
+        ports:
+          - name: ui
+            port: 3000
+            targetPort: 3000
+        endpoint_export_policy: "MESH_EXTERNAL"
+
+---
+# Cross-cluster service discovery configuration
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: cross-cluster-gateway
+  namespace: istio-system
+  labels:
+    brain-researcher.io/cross-cluster: "true"
+spec:
+  selector:
+    istio: eastwestgateway
+  servers:
+  # mTLS for cross-cluster communication
+  - port:
+      number: 15443
+      name: tls
+      protocol: TLS
+    tls:
+      mode: ISTIO_MUTUAL
+    hosts:
+    - cross-network-service.istio-system.local
+
+---
+# East-West Gateway for cross-cluster traffic
+apiVersion: v1
+kind: Service
+metadata:
+  name: istio-eastwestgateway
+  namespace: istio-system
+  labels:
+    istio: eastwestgateway
+    brain-researcher.io/cross-cluster: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    istio: eastwestgateway
+  ports:
+  - port: 15443
+    name: tls
+    protocol: TCP
+    targetPort: 15443
+
+---
+# Service entries for cross-cluster services
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: neurokg-remote
+  namespace: brain-researcher
+  labels:
+    brain-researcher.io/cross-cluster-service: neurokg
+spec:
+  hosts:
+  - neurokg-remote.brain-researcher.remote
+  location: MESH_EXTERNAL
+  ports:
+  - number: 5000
+    name: api
+    protocol: HTTP
+  resolution: DNS
+  addresses:
+  - 240.0.0.1  # Virtual IP for load balancing
+  endpoints:
+  - address: neurokg-service.brain-researcher.svc.cluster.local
+    network: brain-researcher-network-secondary
+    ports:
+      api: 5000
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: agent-remote
+  namespace: brain-researcher
+  labels:
+    brain-researcher.io/cross-cluster-service: agent
+spec:
+  hosts:
+  - agent-remote.brain-researcher.remote
+  location: MESH_EXTERNAL
+  ports:
+  - number: 8000
+    name: api
+    protocol: HTTP
+  resolution: DNS
+  addresses:
+  - 240.0.0.2
+  endpoints:
+  - address: agent-service.brain-researcher.svc.cluster.local
+    network: brain-researcher-network-primary
+    ports:
+      api: 8000
+
+---
+# Cross-cluster destination rules
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: neurokg-cross-cluster
+  namespace: brain-researcher
+  labels:
+    brain-researcher.io/cross-cluster: "true"
+spec:
+  host: neurokg-remote.brain-researcher.remote
+  trafficPolicy:
+    # Cross-cluster load balancing
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+        distribute:
+        - from: region1/zone1
+          to:
+            "region1/zone1": 80
+            "region2/zone1": 20
+        - from: region1/zone2
+          to:
+            "region1/zone2": 80
+            "region1/zone1": 20
+        failover:
+        - from: region1
+          to: region2
+          
+    # Connection pooling for cross-cluster
+    connectionPool:
+      tcp:
+        maxConnections: 50
+        connectTimeout: 30s
+        keepalive:
+          time: 7200s
+          interval: 75s
+      http:
+        http1MaxPendingRequests: 20
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 10
+        maxRetries: 5
+        connectTimeout: 30s
+        h2UpgradePolicy: UPGRADE
+        
+    # Outlier detection for cross-cluster
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 30
+      
+    # TLS for cross-cluster communication
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# Virtual service for cross-cluster routing
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: neurokg-cross-cluster
+  namespace: brain-researcher
+  labels:
+    brain-researcher.io/cross-cluster: "true"
+spec:
+  hosts:
+  - neurokg-service.brain-researcher.svc.cluster.local
+  - neurokg-remote.brain-researcher.remote
+  http:
+  # Route high-priority queries to local cluster
+  - match:
+    - headers:
+        X-Priority:
+          exact: "high"
+    route:
+    - destination:
+        host: neurokg-service.brain-researcher.svc.cluster.local
+        port:
+          number: 5000
+      weight: 90
+    - destination:
+        host: neurokg-remote.brain-researcher.remote
+        port:
+          number: 5000
+      weight: 10
+      
+  # Load balance other queries across clusters
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: neurokg-service.brain-researcher.svc.cluster.local
+        port:
+          number: 5000
+      weight: 70
+    - destination:
+        host: neurokg-remote.brain-researcher.remote
+        port:
+          number: 5000
+      weight: 30
+    timeout: 120s
+    retries:
+      attempts: 3
+      perTryTimeout: 40s
+      retryOn: gateway-error,connect-failure,refused-stream
+
+---
+# Multi-cluster network policy
+apiVersion: networking.istio.io/v1alpha3
+kind: Sidecar
+metadata:
+  name: cross-cluster-sidecar
+  namespace: brain-researcher
+  labels:
+    brain-researcher.io/cross-cluster: "true"
+spec:
+  workloadSelector:
+    labels:
+      brain-researcher.io/cross-cluster-enabled: "true"
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"
+    - "brain-researcher-remote/*"
+  ingress:
+  - port:
+      number: 5000
+      protocol: HTTP
+      name: neurokg-api
+    defaultEndpoint: 127.0.0.1:5000
+    captureMode: IPTABLES
+
+---
+# Telemetry configuration for cross-cluster observability
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: cross-cluster-telemetry
+  namespace: brain-researcher
+  labels:
+    brain-researcher.io/cross-cluster: "true"
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    - match:
+        metric: ALL_METRICS
+        mode: CLIENT
+      tagOverrides:
+        source_cluster:
+          value: "%{SOURCE_CLUSTER}"
+        destination_cluster:
+          value: "%{DESTINATION_CLUSTER}"
+        cross_cluster_request:
+          value: "true"
+        
+  tracing:
+  - customTags:
+      cross_cluster.source:
+        header:
+          name: x-source-cluster
+      cross_cluster.destination:
+        header:
+          name: x-destination-cluster
+      cross_cluster.latency:
+        header:
+          name: x-cross-cluster-latency
+
+---
+# Disaster recovery configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: disaster-recovery-config
+  namespace: brain-researcher
+  labels:
+    brain-researcher.io/disaster-recovery: "true"
+data:
+  dr-config.yaml: |
+    # Disaster recovery configuration
+    failover_policy:
+      # Automatic failover thresholds
+      error_rate_threshold: 0.5  # 50% error rate
+      latency_threshold: "30s"   # 30 second response time
+      availability_threshold: 0.8  # 80% availability
+      
+      # Failover destinations
+      primary_cluster: "brain-researcher-primary"
+      secondary_clusters:
+        - "brain-researcher-secondary"
+        - "brain-researcher-dr"
+        
+      # Service priorities for failover
+      service_priorities:
+        neurokg-service: 1  # Highest priority
+        agent-service: 2
+        orchestrator-service: 3
+        web-ui-service: 4
+        
+    # Recovery procedures
+    recovery_procedures:
+      automatic:
+        enabled: true
+        check_interval: "60s"
+        recovery_threshold: "300s"  # 5 minutes of healthy state
+      manual:
+        enabled: true
+        notification_webhook: "https://alerts.brain-researcher.com/webhook"
+        
+    # Data synchronization
+    data_sync:
+      neo4j:
+        replication_lag_threshold: "5s"
+        consistency_check_interval: "300s"
+      redis:
+        replication_mode: "async"
+        sync_check_interval: "60s"

@@ -1,0 +1,340 @@
+{
+  "simple_dag": {
+    "description": "Simple 4-task DAG with dependencies",
+    "tasks": [
+      {
+        "task_id": "preprocess",
+        "name": "Preprocessing",
+        "tool_name": "fmriprep_tool",
+        "tool_args": {"input_dir": "/data/raw", "output_dir": "/data/preprocessed"},
+        "dependencies": [],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 4.0},
+          {"resource_type": "memory", "amount": 8.0}
+        ],
+        "estimated_duration": 1800.0,
+        "timeout": 3600.0
+      },
+      {
+        "task_id": "glm_left",
+        "name": "GLM Analysis Left Hemisphere",
+        "tool_name": "glm_analysis_tool",
+        "tool_args": {"hemisphere": "left", "input": "/data/preprocessed"},
+        "dependencies": ["preprocess"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 2.0},
+          {"resource_type": "memory", "amount": 4.0}
+        ],
+        "estimated_duration": 900.0,
+        "timeout": 1800.0
+      },
+      {
+        "task_id": "glm_right",
+        "name": "GLM Analysis Right Hemisphere",
+        "tool_name": "glm_analysis_tool",
+        "tool_args": {"hemisphere": "right", "input": "/data/preprocessed"},
+        "dependencies": ["preprocess"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 2.0},
+          {"resource_type": "memory", "amount": 4.0}
+        ],
+        "estimated_duration": 900.0,
+        "timeout": 1800.0
+      },
+      {
+        "task_id": "merge_results",
+        "name": "Merge Hemisphere Results",
+        "tool_name": "merge_results_tool",
+        "tool_args": {"left_input": "glm_left", "right_input": "glm_right"},
+        "dependencies": ["glm_left", "glm_right"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 1.0},
+          {"resource_type": "memory", "amount": 2.0}
+        ],
+        "estimated_duration": 300.0,
+        "timeout": 600.0
+      }
+    ]
+  },
+  "complex_dag": {
+    "description": "Complex neuroimaging pipeline with multiple parallel branches",
+    "tasks": [
+      {
+        "task_id": "data_validation",
+        "name": "Data Validation",
+        "tool_name": "bids_validator_tool",
+        "tool_args": {"dataset_path": "/data/bids"},
+        "dependencies": [],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 1.0},
+          {"resource_type": "memory", "amount": 2.0}
+        ],
+        "estimated_duration": 300.0
+      },
+      {
+        "task_id": "anat_preproc",
+        "name": "Anatomical Preprocessing",
+        "tool_name": "freesurfer_tool",
+        "tool_args": {"input": "/data/bids", "subject": "sub-01"},
+        "dependencies": ["data_validation"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 8.0},
+          {"resource_type": "memory", "amount": 16.0}
+        ],
+        "estimated_duration": 7200.0
+      },
+      {
+        "task_id": "func_preproc",
+        "name": "Functional Preprocessing",
+        "tool_name": "fmriprep_tool",
+        "tool_args": {"input": "/data/bids", "subject": "sub-01"},
+        "dependencies": ["data_validation"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 4.0},
+          {"resource_type": "memory", "amount": 8.0}
+        ],
+        "estimated_duration": 3600.0
+      },
+      {
+        "task_id": "glm_task1",
+        "name": "GLM Task 1",
+        "tool_name": "glm_analysis_tool",
+        "tool_args": {"task": "task1"},
+        "dependencies": ["func_preproc"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 2.0},
+          {"resource_type": "memory", "amount": 4.0}
+        ],
+        "estimated_duration": 1200.0
+      },
+      {
+        "task_id": "glm_task2",
+        "name": "GLM Task 2",
+        "tool_name": "glm_analysis_tool",
+        "tool_args": {"task": "task2"},
+        "dependencies": ["func_preproc"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 2.0},
+          {"resource_type": "memory", "amount": 4.0}
+        ],
+        "estimated_duration": 1200.0
+      },
+      {
+        "task_id": "connectivity",
+        "name": "Connectivity Analysis",
+        "tool_name": "connectivity_tool",
+        "tool_args": {"atlas": "schaefer400"},
+        "dependencies": ["func_preproc"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 4.0},
+          {"resource_type": "memory", "amount": 8.0}
+        ],
+        "estimated_duration": 2400.0
+      },
+      {
+        "task_id": "surface_analysis",
+        "name": "Surface-based Analysis",
+        "tool_name": "surface_analysis_tool",
+        "tool_args": {"surface_type": "inflated"},
+        "dependencies": ["anat_preproc"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 2.0},
+          {"resource_type": "memory", "amount": 4.0}
+        ],
+        "estimated_duration": 1800.0
+      },
+      {
+        "task_id": "group_analysis",
+        "name": "Group Analysis",
+        "tool_name": "group_glm_tool",
+        "tool_args": {"contrasts": ["task1", "task2"]},
+        "dependencies": ["glm_task1", "glm_task2"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 4.0},
+          {"resource_type": "memory", "amount": 8.0}
+        ],
+        "estimated_duration": 1800.0
+      },
+      {
+        "task_id": "final_report",
+        "name": "Generate Final Report",
+        "tool_name": "report_generator_tool",
+        "tool_args": {"include_all": true},
+        "dependencies": ["group_analysis", "connectivity", "surface_analysis"],
+        "resource_requirements": [
+          {"resource_type": "cpu", "amount": 1.0},
+          {"resource_type": "memory", "amount": 2.0}
+        ],
+        "estimated_duration": 600.0
+      }
+    ]
+  },
+  "resource_limits": {
+    "default": {
+      "cpu": 8.0,
+      "gpu": 1.0,
+      "memory": 32.0,
+      "storage": 1000.0,
+      "network": 1000.0
+    },
+    "constrained": {
+      "cpu": 8.0,
+      "gpu": 0.0,
+      "memory": 16.0,
+      "storage": 500.0,
+      "network": 100.0
+    },
+    "high_performance": {
+      "cpu": 32.0,
+      "gpu": 4.0,
+      "memory": 128.0,
+      "storage": 5000.0,
+      "network": 10000.0
+    }
+  },
+  "deadlock_scenarios": {
+    "circular_dependency": {
+      "description": "Tasks with circular dependencies",
+      "tasks": [
+        {
+          "task_id": "task_a",
+          "name": "Task A",
+          "tool_name": "mock_tool",
+          "tool_args": {},
+          "dependencies": ["task_c"],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 2.0}],
+          "estimated_duration": 600.0
+        },
+        {
+          "task_id": "task_b",
+          "name": "Task B",
+          "tool_name": "mock_tool",
+          "tool_args": {},
+          "dependencies": ["task_a"],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 2.0}],
+          "estimated_duration": 600.0
+        },
+        {
+          "task_id": "task_c",
+          "name": "Task C",
+          "tool_name": "mock_tool",
+          "tool_args": {},
+          "dependencies": ["task_b"],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 2.0}],
+          "estimated_duration": 600.0
+        }
+      ]
+    },
+    "resource_deadlock": {
+      "description": "Tasks competing for limited resources",
+      "tasks": [
+        {
+          "task_id": "memory_hog_1",
+          "name": "Memory Intensive Task 1",
+          "tool_name": "memory_intensive_tool",
+          "tool_args": {},
+          "dependencies": [],
+          "resource_requirements": [
+            {"resource_type": "memory", "amount": 20.0}
+          ],
+          "estimated_duration": 1800.0
+        },
+        {
+          "task_id": "memory_hog_2",
+          "name": "Memory Intensive Task 2",
+          "tool_name": "memory_intensive_tool",
+          "tool_args": {},
+          "dependencies": [],
+          "resource_requirements": [
+            {"resource_type": "memory", "amount": 20.0}
+          ],
+          "estimated_duration": 1800.0
+        }
+      ]
+    }
+  },
+  "performance_test_cases": {
+    "sequential_baseline": {
+      "description": "Sequential execution baseline for performance comparison",
+      "tasks": [
+        {
+          "task_id": "seq_task_1",
+          "name": "Sequential Task 1",
+          "tool_name": "cpu_intensive_tool",
+          "tool_args": {},
+          "dependencies": [],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 1.0}],
+          "estimated_duration": 600.0
+        },
+        {
+          "task_id": "seq_task_2",
+          "name": "Sequential Task 2",
+          "tool_name": "cpu_intensive_tool",
+          "tool_args": {},
+          "dependencies": ["seq_task_1"],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 1.0}],
+          "estimated_duration": 600.0
+        },
+        {
+          "task_id": "seq_task_3",
+          "name": "Sequential Task 3",
+          "tool_name": "cpu_intensive_tool",
+          "tool_args": {},
+          "dependencies": ["seq_task_2"],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 1.0}],
+          "estimated_duration": 600.0
+        },
+        {
+          "task_id": "seq_task_4",
+          "name": "Sequential Task 4",
+          "tool_name": "cpu_intensive_tool",
+          "tool_args": {},
+          "dependencies": ["seq_task_3"],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 1.0}],
+          "estimated_duration": 600.0
+        }
+      ]
+    },
+    "parallel_optimized": {
+      "description": "Parallelizable tasks for performance testing",
+      "tasks": [
+        {
+          "task_id": "par_task_1",
+          "name": "Parallel Task 1",
+          "tool_name": "cpu_intensive_tool",
+          "tool_args": {},
+          "dependencies": [],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 1.0}],
+          "estimated_duration": 600.0
+        },
+        {
+          "task_id": "par_task_2",
+          "name": "Parallel Task 2",
+          "tool_name": "cpu_intensive_tool",
+          "tool_args": {},
+          "dependencies": [],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 1.0}],
+          "estimated_duration": 600.0
+        },
+        {
+          "task_id": "par_task_3",
+          "name": "Parallel Task 3",
+          "tool_name": "cpu_intensive_tool",
+          "tool_args": {},
+          "dependencies": [],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 1.0}],
+          "estimated_duration": 600.0
+        },
+        {
+          "task_id": "par_task_4",
+          "name": "Parallel Task 4",
+          "tool_name": "cpu_intensive_tool",
+          "tool_args": {},
+          "dependencies": [],
+          "resource_requirements": [{"resource_type": "cpu", "amount": 1.0}],
+          "estimated_duration": 600.0
+        }
+      ]
+    }
+  }
+}

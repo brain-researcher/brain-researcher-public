@@ -1,0 +1,20 @@
+{
+  "name": "grounding_resolve",
+  "tier": "advanced",
+  "surface_tier": "advanced",
+  "capability_family": "grounding",
+  "description": "Resolve one evidence reference anchor to support/provenance.",
+  "input_schema": {
+    "additionalProperties": true,
+    "title": "grounding_resolveArguments",
+    "type": "object"
+  },
+  "output_schema": {
+    "additionalProperties": true,
+    "title": "grounding_resolveDictOutput",
+    "type": "object"
+  },
+  "examples": [],
+  "stability": "stable",
+  "contract_version": "2026-05-27"
+}

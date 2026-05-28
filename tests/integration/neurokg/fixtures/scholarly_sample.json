@@ -1,0 +1,64 @@
+[
+  {
+    "doi": "10.1007/s11571-023-1001-0",
+    "title": "Computational models of cognitive control",
+    "journal": "Cognitive Processing",
+    "issn": ["1612-4782"],
+    "publication_year": 2023,
+    "publication_date": "2023-11-05",
+    "openalex_id": "https://openalex.org/W123456789",
+    "keywords": ["cognitive control", "computational modeling"],
+    "authors": [
+      {
+        "name": "Alice Smith",
+        "orcid": "https://orcid.org/0000-0001-1111-2222",
+        "roles": ["first author"],
+        "institutions": [
+          {
+            "name": "Institute for Cognitive Science",
+            "ror": "https://ror.org/01bj3aw26",
+            "country": "US"
+          }
+        ]
+      },
+      {
+        "name": "Brian Johnson",
+        "orcid": null,
+        "roles": ["co-author"],
+        "institutions": [
+          {
+            "name": "Neuroscience Research Centre",
+            "ror": null,
+            "country": "GB"
+          }
+        ]
+      }
+    ],
+    "citations": ["10.1093/brain/awx123"]
+  },
+  {
+    "doi": "10.1093/brain/awx123",
+    "title": "Neural signatures of working memory",
+    "journal": "Brain",
+    "issn": ["0006-8950"],
+    "publication_year": 2017,
+    "publication_date": "2017-03-15",
+    "openalex_id": "https://openalex.org/W987654321",
+    "keywords": ["working memory", "fmri"],
+    "authors": [
+      {
+        "name": "Chen Li",
+        "orcid": "https://orcid.org/0000-0002-3333-4444",
+        "roles": ["first author"],
+        "institutions": [
+          {
+            "name": "Department of Psychology, University of Example",
+            "ror": "https://ror.org/02h7xzp07",
+            "country": "CN"
+          }
+        ]
+      }
+    ],
+    "citations": []
+  }
+]

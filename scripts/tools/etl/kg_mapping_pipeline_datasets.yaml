@@ -1,0 +1,20 @@
+# Optional: pipeline → dataset family recommendations for BR-KG
+# Example structure:
+# - pipeline_id: pipeline.fmriprep
+#   dataset_family: bids.fmri
+# - pipeline_id: pipeline.qsiprep
+#   dataset_family: bids.dmri
+# - pipeline_id: pipeline.cpac
+#   dataset_family: bids.fmri
+# - pipeline_id: pipeline.tractography
+#   dataset_family: dmri.connectivity
+
+# Placeholder entries to illustrate expected shape; update with real mappings later.
+- pipeline_id: pipeline.fmriprep
+  dataset_family: bids.fmri
+- pipeline_id: pipeline.qsiprep
+  dataset_family: bids.dmri
+- pipeline_id: pipeline.cpac
+  dataset_family: bids.fmri
+- pipeline_id: pipeline.tractography
+  dataset_family: dmri.connectivity

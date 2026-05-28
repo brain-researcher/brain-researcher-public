@@ -1,0 +1,7085 @@
+{
+  "schema_version": "2026-03-17",
+  "tools": [
+    {
+      "name": "server_info",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "server_ops",
+      "description": "Return server configuration/capabilities for clients.",
+      "input_schema": {
+        "properties": {},
+        "title": "server_infoArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "server_infoDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {},
+          "output": {
+            "ok": true,
+            "data": {
+              "name": "brain-researcher",
+              "run_root": "/path/to/artifacts/mcp_runs",
+              "allowed_roots": [
+                "/path/to/artifacts",
+                "/path/to/data",
+                "/path/to/tmp"
+              ],
+              "allow_network": false,
+              "allow_dangerous": false,
+              "enable_tool_execute": false,
+              "tool_execute_allowlist": [],
+              "max_text_bytes": 200000,
+              "max_binary_bytes": 5000000
+            }
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "loop_profile_get",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "server_ops",
+      "description": "Return a machine-readable loop profile for external agents.",
+      "input_schema": {
+        "properties": {
+          "profile_id": {
+            "default": "external_coding_v1",
+            "title": "Profile Id",
+            "type": "string"
+          }
+        },
+        "title": "loop_profile_getArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "loop_profile_getDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "system_self_test",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "server_ops",
+      "description": "Run an MCP self-test suite and return probe-level status.",
+      "input_schema": {
+        "properties": {
+          "mode": {
+            "default": "quick",
+            "title": "Mode",
+            "type": "string"
+          },
+          "include_kg": {
+            "default": true,
+            "title": "Include Kg",
+            "type": "boolean"
+          },
+          "include_container": {
+            "default": true,
+            "title": "Include Container",
+            "type": "boolean"
+          },
+          "include_script": {
+            "default": true,
+            "title": "Include Script",
+            "type": "boolean"
+          },
+          "include_inventory": {
+            "default": true,
+            "title": "Include Inventory",
+            "type": "boolean"
+          },
+          "inventory_limit": {
+            "default": 12,
+            "title": "Inventory Limit",
+            "type": "integer"
+          },
+          "kg_query": {
+            "default": "brain",
+            "title": "Kg Query",
+            "type": "string"
+          },
+          "strict": {
+            "default": false,
+            "title": "Strict",
+            "type": "boolean"
+          }
+        },
+        "title": "system_self_testArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "system_self_testDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "sherlock_guide",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "sherlock",
+      "description": "Sherlock/OAK guide and command renderer behind one MCP entrypoint.",
+      "input_schema": {
+        "properties": {
+          "action": {
+            "default": "guide",
+            "title": "Action",
+            "type": "string"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Topic"
+          },
+          "intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Intent"
+          },
+          "sunet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sunet"
+          },
+          "pi_group": {
+            "default": "your_pi_group",
+            "title": "Pi Group",
+            "type": "string"
+          },
+          "partition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Partition"
+          },
+          "qos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Qos"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Time"
+          },
+          "cpus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cpus"
+          },
+          "mem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mem"
+          },
+          "gpus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gpus"
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dataset"
+          },
+          "script_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Path"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "log_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Log Path"
+          },
+          "mount_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mount Path"
+          }
+        },
+        "title": "sherlock_guideArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "sherlock_guideDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "slurm_guide",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "slurm",
+      "description": "SLURM workflow guide and command renderer (any SLURM cluster via profile). Profile selected by pi_group (legacy) or BR_SLURM_PROFILE env var. Ships with sherlock_default profile; add your own at configs/slurm/profiles/<name>.yaml (see docs/hpc.md).",
+      "input_schema": {
+        "properties": {
+          "action": {
+            "default": "guide",
+            "title": "Action",
+            "type": "string"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Topic"
+          },
+          "intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Intent"
+          },
+          "sunet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sunet"
+          },
+          "pi_group": {
+            "default": "your_pi_group",
+            "title": "Pi Group",
+            "type": "string"
+          },
+          "partition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Partition"
+          },
+          "qos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Qos"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Time"
+          },
+          "cpus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cpus"
+          },
+          "mem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mem"
+          },
+          "gpus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gpus"
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dataset"
+          },
+          "script_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Path"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "log_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Log Path"
+          },
+          "mount_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mount Path"
+          }
+        },
+        "title": "slurm_guideArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "slurm_guideDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "sherlock_slurm",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "sherlock",
+      "description": "Render, validate, and patch Sherlock sbatch scripts; inspect jobs; read logs; and diagnose job failures.",
+      "input_schema": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "cluster_profile": {
+            "default": "sherlock_default",
+            "title": "Cluster Profile",
+            "type": "string"
+          },
+          "template_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Template Kind"
+          },
+          "job_name": {
+            "default": "brain-researcher-job",
+            "title": "Job Name",
+            "type": "string"
+          },
+          "time": {
+            "default": "24:00:00",
+            "title": "Time",
+            "type": "string"
+          },
+          "partition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Partition"
+          },
+          "qos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Qos"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account"
+          },
+          "cpus_per_task": {
+            "default": 8,
+            "title": "Cpus Per Task",
+            "type": "integer"
+          },
+          "mem": {
+            "default": "32G",
+            "title": "Mem",
+            "type": "string"
+          },
+          "nodes": {
+            "default": 1,
+            "title": "Nodes",
+            "type": "integer"
+          },
+          "ntasks_per_node": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ntasks Per Node"
+          },
+          "gpus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gpus"
+          },
+          "gpus_per_node": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gpus Per Node"
+          },
+          "array": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Array"
+          },
+          "array_concurrency": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Array Concurrency"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error"
+          },
+          "mail_user": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mail User"
+          },
+          "mail_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mail Type"
+          },
+          "workdir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Workdir"
+          },
+          "module_lines": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Module Lines"
+          },
+          "env_lines": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Env Lines"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Command"
+          },
+          "task_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Task File"
+          },
+          "launcher": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Launcher"
+          },
+          "include_export_none": {
+            "default": true,
+            "title": "Include Export None",
+            "type": "boolean"
+          },
+          "change_request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Change Request"
+          },
+          "script_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Text"
+          },
+          "script_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Path"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "include_squeue": {
+            "default": true,
+            "title": "Include Squeue",
+            "type": "boolean"
+          },
+          "include_sacct": {
+            "default": true,
+            "title": "Include Sacct",
+            "type": "boolean"
+          },
+          "include_scontrol": {
+            "default": true,
+            "title": "Include Scontrol",
+            "type": "boolean"
+          },
+          "log_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Log Path"
+          },
+          "stream": {
+            "default": "both",
+            "title": "Stream",
+            "type": "string"
+          },
+          "tail": {
+            "default": 200,
+            "title": "Tail",
+            "type": "integer"
+          },
+          "grep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Grep"
+          },
+          "stdout_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stdout Text"
+          },
+          "stderr_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stderr Text"
+          },
+          "sacct_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sacct State"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "sherlock_slurmArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "sherlock_slurmDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "slurm_submit",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "slurm",
+      "description": "Render / validate / patch sbatch scripts, inspect jobs, read logs, and diagnose failures. Despite the name, this tool does NOT submit jobs - it is read-mostly and helps you author a correct sbatch script. Run sbatch yourself after reviewing the rendered text. Profile selected via cluster_profile parameter or BR_SLURM_PROFILE env var.",
+      "input_schema": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "cluster_profile": {
+            "default": "sherlock_default",
+            "title": "Cluster Profile",
+            "type": "string"
+          },
+          "template_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Template Kind"
+          },
+          "job_name": {
+            "default": "brain-researcher-job",
+            "title": "Job Name",
+            "type": "string"
+          },
+          "time": {
+            "default": "24:00:00",
+            "title": "Time",
+            "type": "string"
+          },
+          "partition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Partition"
+          },
+          "qos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Qos"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account"
+          },
+          "cpus_per_task": {
+            "default": 8,
+            "title": "Cpus Per Task",
+            "type": "integer"
+          },
+          "mem": {
+            "default": "32G",
+            "title": "Mem",
+            "type": "string"
+          },
+          "nodes": {
+            "default": 1,
+            "title": "Nodes",
+            "type": "integer"
+          },
+          "ntasks_per_node": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ntasks Per Node"
+          },
+          "gpus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gpus"
+          },
+          "gpus_per_node": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gpus Per Node"
+          },
+          "array": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Array"
+          },
+          "array_concurrency": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Array Concurrency"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error"
+          },
+          "mail_user": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mail User"
+          },
+          "mail_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mail Type"
+          },
+          "workdir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Workdir"
+          },
+          "module_lines": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Module Lines"
+          },
+          "env_lines": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Env Lines"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Command"
+          },
+          "task_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Task File"
+          },
+          "launcher": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Launcher"
+          },
+          "include_export_none": {
+            "default": true,
+            "title": "Include Export None",
+            "type": "boolean"
+          },
+          "change_request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Change Request"
+          },
+          "script_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Text"
+          },
+          "script_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Path"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "include_squeue": {
+            "default": true,
+            "title": "Include Squeue",
+            "type": "boolean"
+          },
+          "include_sacct": {
+            "default": true,
+            "title": "Include Sacct",
+            "type": "boolean"
+          },
+          "include_scontrol": {
+            "default": true,
+            "title": "Include Scontrol",
+            "type": "boolean"
+          },
+          "log_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Log Path"
+          },
+          "stream": {
+            "default": "both",
+            "title": "Stream",
+            "type": "string"
+          },
+          "tail": {
+            "default": 200,
+            "title": "Tail",
+            "type": "integer"
+          },
+          "grep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Grep"
+          },
+          "stdout_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stdout Text"
+          },
+          "stderr_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stderr Text"
+          },
+          "sacct_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sacct State"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "slurm_submitArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "slurm_submitDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "tool_search",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "tool_discovery",
+      "description": "Search Brain Researcher tools by capability keywords.",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Modalities"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "imaging",
+                  "kg",
+                  "viz",
+                  "meta",
+                  "data",
+                  "analysis"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Kind"
+          },
+          "phases": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Phases"
+          },
+          "exposed_only": {
+            "default": true,
+            "title": "Exposed Only",
+            "type": "boolean"
+          },
+          "include_workflows": {
+            "default": true,
+            "title": "Include Workflows",
+            "type": "boolean"
+          },
+          "include_total": {
+            "default": true,
+            "title": "Include Total",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "tool_searchArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "tool_searchDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "registration",
+            "limit": 5
+          },
+          "output": {
+            "ok": true,
+            "tools": [],
+            "count": 0
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "workflow_search",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "tool_discovery",
+      "description": "Search orchestration workflows (separate from ordinary tool_search).",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "default": "",
+            "title": "Query",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "include_param_schema_summary": {
+            "default": false,
+            "title": "Include Param Schema Summary",
+            "type": "boolean"
+          }
+        },
+        "title": "workflow_searchArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "workflow_searchDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "tool_search_structured",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "tool_discovery",
+      "description": "Structured tool search (method \u2192 software \u2192 version) over KG.",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "primary_intents": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Primary Intents"
+          },
+          "softwares": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Softwares"
+          },
+          "exposed_only": {
+            "default": true,
+            "title": "Exposed Only",
+            "type": "boolean"
+          },
+          "default_only": {
+            "default": true,
+            "title": "Default Only",
+            "type": "boolean"
+          },
+          "k_methods": {
+            "default": 8,
+            "title": "K Methods",
+            "type": "integer"
+          },
+          "k_softwares": {
+            "default": 5,
+            "title": "K Softwares",
+            "type": "integer"
+          },
+          "k_candidates": {
+            "default": 50,
+            "title": "K Candidates",
+            "type": "integer"
+          },
+          "force_fallback": {
+            "default": false,
+            "title": "Force Fallback",
+            "type": "boolean"
+          }
+        },
+        "title": "tool_search_structuredArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "tool_search_structuredDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "skull strip",
+            "exposed_only": true
+          },
+          "output": {
+            "ok": true,
+            "data": {}
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "tool_resolve",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "tool_discovery",
+      "description": "Resolve a tool_id from method/software/op_key (optionally version-pinned).",
+      "input_schema": {
+        "properties": {
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Method"
+          },
+          "software": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Software"
+          },
+          "op_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Op Key"
+          },
+          "prefer_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Prefer Version"
+          },
+          "exposed_only": {
+            "default": true,
+            "title": "Exposed Only",
+            "type": "boolean"
+          },
+          "default_only": {
+            "default": true,
+            "title": "Default Only",
+            "type": "boolean"
+          },
+          "force_fallback": {
+            "default": false,
+            "title": "Force Fallback",
+            "type": "boolean"
+          }
+        },
+        "title": "tool_resolveArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "tool_resolveDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "tool_get",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "tool_discovery",
+      "description": "Get a tool spec; optionally enrich with JSON schema for parameters.",
+      "input_schema": {
+        "properties": {
+          "tool_id": {
+            "title": "Tool Id",
+            "type": "string"
+          },
+          "include_schema": {
+            "default": true,
+            "title": "Include Schema",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "tool_id"
+        ],
+        "title": "tool_getArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "tool_getDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "tool_id": "extract_timeseries"
+          },
+          "output": {
+            "ok": true,
+            "tool": {}
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "get_execution_recipe",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "execution_recipe",
+      "description": "Return a stateless execution recipe for a public MCP tool or workflow.",
+      "input_schema": {
+        "properties": {
+          "tool_id": {
+            "title": "Tool Id",
+            "type": "string"
+          },
+          "params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Params"
+          },
+          "target_runtime": {
+            "default": "python",
+            "title": "Target Runtime",
+            "type": "string"
+          },
+          "cluster_profile": {
+            "default": "generic",
+            "title": "Cluster Profile",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_id"
+        ],
+        "title": "get_execution_recipeArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "get_execution_recipeDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "plan_preflight",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "planning",
+      "description": "Read-only planning preflight for dataset facts, blockers, and candidate tools.",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "domain": {
+            "default": "neuroimaging",
+            "title": "Domain",
+            "type": "string"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Modality"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Inputs"
+          },
+          "allowlist_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Allowlist Mode"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "plan_preflightArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "plan_preflightDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "summarize ds000114",
+            "modality": [
+              "fmri"
+            ]
+          },
+          "output": {
+            "ok": true,
+            "facts": {
+              "dataset_refs": [
+                "ds000114"
+              ]
+            },
+            "tool_candidates": [],
+            "routing_diagnostics": {}
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "plan_create",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "planning",
+      "description": "Create a read-only plan contract with display and execution envelopes.",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "domain": {
+            "default": "neuroimaging",
+            "title": "Domain",
+            "type": "string"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Modality"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Inputs"
+          },
+          "allowlist_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Allowlist Mode"
+          },
+          "query_understanding": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query Understanding"
+          },
+          "include_debug": {
+            "default": false,
+            "title": "Include Debug",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "plan_createArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "plan_createDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "extract ROI timeseries for ds000114",
+            "modality": [
+              "fmri"
+            ],
+            "inputs": {
+              "dataset_ref": "ds000114",
+              "atlas": "aal"
+            }
+          },
+          "output": {
+            "ok": true,
+            "display": {
+              "markdown": "### Pipeline Plan",
+              "summary": {}
+            },
+            "execution": {
+              "schema_version": "br-plan-execution-v1",
+              "handoff": {}
+            }
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "get_latest_plan",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "plan_handoff",
+      "description": "Return the latest validated Brain Researcher handoff block.",
+      "input_schema": {
+        "properties": {
+          "thread_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Thread Id"
+          }
+        },
+        "title": "get_latest_planArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "get_latest_planDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "tool_execute",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "tool_execution_admin",
+      "description": "[DEPRECATED for Agents] Execute a single tool (manual/admin path only).",
+      "input_schema": {
+        "properties": {
+          "tool_id": {
+            "title": "Tool Id",
+            "type": "string"
+          },
+          "params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Params"
+          },
+          "work_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Work Dir"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Dir"
+          },
+          "preview": {
+            "default": false,
+            "title": "Preview",
+            "type": "boolean"
+          },
+          "allow_remap": {
+            "default": false,
+            "title": "Allow Remap",
+            "type": "boolean"
+          },
+          "allow_fallback": {
+            "default": false,
+            "title": "Allow Fallback",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "tool_id"
+        ],
+        "title": "tool_executeArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "tool_executeDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "tool_id": "extract_timeseries",
+            "params": {
+              "img": "x",
+              "atlas": "y"
+            }
+          },
+          "output": {
+            "ok": false,
+            "error": "tool_execute_disabled",
+            "message": "Set BR_MCP_ENABLE_TOOL_EXECUTE=1 to enable tool_execute."
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "pipeline_plan_validate",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "pipeline_execution",
+      "description": "Validate/normalize a pipeline plan (no execution).",
+      "input_schema": {
+        "properties": {
+          "plan": {
+            "additionalProperties": true,
+            "title": "Plan",
+            "type": "object"
+          }
+        },
+        "required": [
+          "plan"
+        ],
+        "title": "pipeline_plan_validateArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "pipeline_plan_validateDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "plan": {
+              "steps": [
+                {
+                  "tool": "extract_timeseries",
+                  "params": {
+                    "img": "x",
+                    "atlas": "y"
+                  }
+                }
+              ]
+            }
+          },
+          "output": {
+            "ok": true,
+            "run_id_hint": "br_20251220_000000_abcdef1234",
+            "normalized_plan": {
+              "steps": []
+            },
+            "issues": []
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "pipeline_execute",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "pipeline_execution",
+      "description": "[DEPRECATED for Agents] Execute a validated pipeline plan (manual/admin path only).",
+      "input_schema": {
+        "properties": {
+          "plan": {
+            "additionalProperties": true,
+            "title": "Plan",
+            "type": "object"
+          },
+          "dry_run": {
+            "default": false,
+            "title": "Dry Run",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "plan"
+        ],
+        "title": "pipeline_executeArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "pipeline_executeDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "plan": {
+              "steps": [
+                {
+                  "tool": "extract_timeseries",
+                  "params": {
+                    "img": "x",
+                    "atlas": "y"
+                  }
+                }
+              ]
+            }
+          },
+          "output": {
+            "ok": true,
+            "run_id": "br_20251220_000000_abcdef1234",
+            "status": "queued",
+            "run_dir": "/path/to/run"
+          },
+          "tested": false
+        },
+        {
+          "input": {
+            "plan": {
+              "steps": [
+                {
+                  "tool": "extract_timeseries",
+                  "params": {
+                    "img": "x"
+                  }
+                }
+              ]
+            }
+          },
+          "output": {
+            "ok": false,
+            "error": "plan_invalid",
+            "issues": [
+              {
+                "level": "error",
+                "code": "params_missing_required",
+                "message": "Missing required params for extract_timeseries: ['atlas']"
+              }
+            ],
+            "run_id": "br_20251220_000000_abcdef1234",
+            "run_dir": "/path/to/run"
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "log_research_event",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "research_logging",
+      "description": "Persist a lightweight research workflow event for later session/workflow analysis.\n\n    `session_id` should be the canonical Brain Researcher session identifier for one\n    continuous coding session. If the client only has a native thread/chat id, pass\n    it via `client_session_id`; BR will derive a namespaced canonical `session_id`\n    when `session_id` is omitted.\n    ",
+      "input_schema": {
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "source": {
+            "default": "agent",
+            "title": "Source",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tags"
+          },
+          "source_client": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Client"
+          },
+          "client_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Client Session Id"
+          }
+        },
+        "required": [
+          "kind",
+          "content"
+        ],
+        "title": "log_research_eventArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "log_research_eventDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "kind": "start",
+            "content": "Starting connectivity review",
+            "session_id": "019d04fa-a3e5-7772-9f9d-255d3eea9331",
+            "source_client": "codex",
+            "client_session_id": "019d04fa-a3e5-7772-9f9d-255d3eea9331"
+          },
+          "output": {
+            "ok": true,
+            "run_id": "br_20260320_000000_abcdef1234",
+            "run_dir": "/path/to/run"
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "write_session_snapshot",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "research_logging",
+      "description": "Persist a structured end-of-session snapshot for later resume/coaching workflows.\n\n    Use one snapshot per continuous coding session. If the client only exposes a\n    native thread/chat id, pass it via `client_session_id`; BR will derive a\n    canonical `session_id` when `session_id` is omitted.\n    ",
+      "input_schema": {
+        "properties": {
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "done": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Done",
+            "type": "array"
+          },
+          "open": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Open",
+            "type": "array"
+          },
+          "next_command": {
+            "title": "Next Command",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "source": {
+            "default": "agent",
+            "title": "Source",
+            "type": "string"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tags"
+          },
+          "source_client": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Client"
+          },
+          "client_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Client Session Id"
+          }
+        },
+        "required": [
+          "goal",
+          "done",
+          "open",
+          "next_command"
+        ],
+        "title": "write_session_snapshotArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "write_session_snapshotDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "session_id": "019d04fa-a3e5-7772-9f9d-255d3eea9331",
+            "client_session_id": "019d04fa-a3e5-7772-9f9d-255d3eea9331",
+            "source_client": "codex",
+            "goal": "Finish rollout review",
+            "done": [
+              "validated new logging tools"
+            ],
+            "open": [
+              "wire weekly digest"
+            ],
+            "next_command": "resume with digest implementation"
+          },
+          "output": {
+            "ok": true,
+            "run_id": "br_20260320_000000_abcdef1234",
+            "run_dir": "/path/to/run"
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "research_session_digest",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "research_logging",
+      "description": "Return a structured digest for one research-logging session.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          }
+        },
+        "title": "research_session_digestArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "research_session_digestDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "session_id": "019d04fa-a3e5-7772-9f9d-255d3eea9331"
+          },
+          "output": {
+            "ok": true,
+            "run_id": "br_20260320_000000_abcdef1234",
+            "session_id": "019d04fa-a3e5-7772-9f9d-255d3eea9331"
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "research_log_summary",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "research_logging",
+      "description": "Summarize persisted research-logging sessions across runs.",
+      "input_schema": {
+        "properties": {
+          "top_k": {
+            "default": 10,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "since_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Since Days"
+          }
+        },
+        "title": "research_log_summaryArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "research_log_summaryDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "top_k": 5,
+            "since_days": 14
+          },
+          "output": {
+            "ok": true,
+            "total_sessions": 0,
+            "sessions_with_snapshot": 0,
+            "closure_rate": 0.0
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "session_risk_classify",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "session_lessons",
+      "description": "Classify handoff risks and hygiene issues for one research session.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "digest": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Digest"
+          }
+        },
+        "title": "session_risk_classifyArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "session_risk_classifyDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "session_lesson_extract",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "session_lessons",
+      "description": "Extract conservative candidate lessons from one research session.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "digest": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Digest"
+          }
+        },
+        "title": "session_lesson_extractArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "session_lesson_extractDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "session_open_risks_query",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "session_lessons",
+      "description": "Query repeated open-risk labels and session hygiene issues.",
+      "input_schema": {
+        "properties": {
+          "risk_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Risk Label"
+          },
+          "risk_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Risk Code"
+          },
+          "surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Surface"
+          },
+          "since_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 60,
+            "title": "Since Days"
+          },
+          "limit": {
+            "default": 50,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "session_open_risks_queryArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "session_open_risks_queryDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "session_policy_cards_generate",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "session_lessons",
+      "description": "Generate candidate policy cards from repeated session lessons.",
+      "input_schema": {
+        "properties": {
+          "since_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 60,
+            "title": "Since Days"
+          },
+          "limit": {
+            "default": 200,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "session_policy_cards_generateArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "session_policy_cards_generateDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "session_learning_report_generate",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "session_lessons",
+      "description": "Generate a periodic agent-learning report from research sessions.",
+      "input_schema": {
+        "properties": {
+          "since_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 60,
+            "title": "Since Days"
+          },
+          "limit": {
+            "default": 500,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "top_k": {
+            "default": 10,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "min_support": {
+            "default": 2,
+            "title": "Min Support",
+            "type": "integer"
+          }
+        },
+        "title": "session_learning_report_generateArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "session_learning_report_generateDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "session_signal_report_generate",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "session_lessons",
+      "description": "Generate read-only session signals for silent-fail and loop closure mining.",
+      "input_schema": {
+        "properties": {
+          "since_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 60,
+            "title": "Since Days"
+          },
+          "limit": {
+            "default": 500,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "top_k": {
+            "default": 10,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "min_support": {
+            "default": 2,
+            "title": "Min Support",
+            "type": "integer"
+          }
+        },
+        "title": "session_signal_report_generateArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "session_signal_report_generateDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "session_backfill_to_kg",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "session_lessons",
+      "description": "Build or write KG rows for research sessions.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "since_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Since Days"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "dry_run": {
+            "default": true,
+            "title": "Dry Run",
+            "type": "boolean"
+          }
+        },
+        "title": "session_backfill_to_kgArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "session_backfill_to_kgDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "request_scientific_review",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "scientific_review",
+      "description": "Route scientific review requests to the correct existing review surface.",
+      "input_schema": {
+        "additionalProperties": true,
+        "title": "request_scientific_reviewArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "request_scientific_reviewDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "qsm_implementation_review",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "scientific_review",
+      "description": "Audit generated QSM code for direct-inversion and local-field dataflow hazards.",
+      "input_schema": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Filename"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "qsm_implementation_reviewArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "qsm_implementation_reviewDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "grounding_resolve",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "grounding",
+      "description": "Resolve one evidence reference anchor to support/provenance.",
+      "input_schema": {
+        "additionalProperties": true,
+        "title": "grounding_resolveArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "grounding_resolveDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "grounding_gate_evidence_basis",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "grounding",
+      "description": "Gate evidence_basis rows before final output; weak or unresolved anchors are downgraded.",
+      "input_schema": {
+        "additionalProperties": true,
+        "title": "grounding_gate_evidence_basisArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "grounding_gate_evidence_basisDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "run_get",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "run_observability",
+      "description": "Get run status and step records.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "run_getArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_getDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "br_20251220_000000_abcdef1234"
+          },
+          "output": {
+            "ok": true,
+            "run": {},
+            "run_dir": "/path/to/run"
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "run_bundle_get",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "run_observability",
+      "description": "Return a normalized observation bundle for a persisted run.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "run_bundle_getArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_bundle_getDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "run_scorecard",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "run_observability",
+      "description": "Return a normalized scorecard for a persisted run.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "profile_id": {
+            "default": "external_coding_v1",
+            "title": "Profile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "run_scorecardArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_scorecardDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "run_compare",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "run_observability",
+      "description": "Compare two runs using the normalized MCP scorecard profile.",
+      "input_schema": {
+        "properties": {
+          "baseline_run_id": {
+            "title": "Baseline Run Id",
+            "type": "string"
+          },
+          "candidate_run_id": {
+            "title": "Candidate Run Id",
+            "type": "string"
+          },
+          "profile_id": {
+            "default": "external_coding_v1",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "metric_keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Metric Keys"
+          }
+        },
+        "required": [
+          "baseline_run_id",
+          "candidate_run_id"
+        ],
+        "title": "run_compareArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_compareDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "generate_research_trajectory_and_insights",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "research_synthesis",
+      "description": "Summarize one run/candidate trajectory and persist the result as BR artifacts.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Candidate Id"
+          },
+          "agent_log_paths": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent Log Paths"
+          },
+          "persist": {
+            "default": true,
+            "title": "Persist",
+            "type": "boolean"
+          }
+        },
+        "title": "generate_research_trajectory_and_insightsArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "generate_research_trajectory_and_insightsDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "generate_bug_digest",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "research_synthesis",
+      "description": "Summarize the dominant bug/root-cause state for one run/candidate anchor.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Candidate Id"
+          },
+          "bug_query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Bug Query"
+          },
+          "agent_log_paths": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent Log Paths"
+          },
+          "persist": {
+            "default": true,
+            "title": "Persist",
+            "type": "boolean"
+          }
+        },
+        "title": "generate_bug_digestArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "generate_bug_digestDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "generate_repo_repair_context",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "research_synthesis",
+      "description": "Build an agent-readable repo repair context artifact from autoresearch state.",
+      "input_schema": {
+        "properties": {
+          "top_n": {
+            "default": 8,
+            "title": "Top N",
+            "type": "integer"
+          },
+          "persist": {
+            "default": true,
+            "title": "Persist",
+            "type": "boolean"
+          }
+        },
+        "title": "generate_repo_repair_contextArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "generate_repo_repair_contextDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "run_list",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "run_observability",
+      "description": "List recent runs stored under RUN_ROOT (plus read aliases).",
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 20,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor"
+          }
+        },
+        "title": "run_listArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_listDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "limit": 5
+          },
+          "output": {
+            "ok": true,
+            "runs": [],
+            "next_cursor": null
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "run_find_latest_reviewable",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "run_observability",
+      "description": "Find recent runs that look suitable for scientific review/report generation.\n\n    This helper searches recent persisted runs, skips obvious housekeeping/report\n    runs, and returns the newest candidates that expose review-oriented artifacts\n    such as ``analysis_bundle.json`` or ``source_summary.json``. The selected\n    ``run_id`` can then be passed to ``scientific_report_generate``.",
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 50,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "max_candidates": {
+            "default": 5,
+            "title": "Max Candidates",
+            "type": "integer"
+          },
+          "include_non_succeeded": {
+            "default": false,
+            "title": "Include Non Succeeded",
+            "type": "boolean"
+          }
+        },
+        "title": "run_find_latest_reviewableArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_find_latest_reviewableDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "limit": 20,
+            "max_candidates": 3
+          },
+          "output": {
+            "ok": true,
+            "selected_run_id": "br_example_run"
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "run_logs",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "run_observability",
+      "description": "List log files under a run directory.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "run_logsArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_logsDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "br_20251220_000000_abcdef1234"
+          },
+          "output": {
+            "ok": true,
+            "items": []
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "run_request_summary",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "run_observability",
+      "description": "Summarize historical MCP request types from persisted run artifacts.",
+      "input_schema": {
+        "properties": {
+          "top_k": {
+            "default": 10,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "since_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Since Days"
+          }
+        },
+        "title": "run_request_summaryArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_request_summaryDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "top_k": 5,
+            "since_days": 30
+          },
+          "output": {
+            "ok": true,
+            "top_k": 5,
+            "since_days": 30,
+            "total_runs": 0,
+            "runs_without_request_type": 0,
+            "roots_scanned": [],
+            "route_counts": [],
+            "status_counts": [],
+            "request_type_counts": []
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "run_cancel",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "run_observability",
+      "description": "Request cancellation of a run (best-effort).",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "run_cancelArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_cancelDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "doc_cancel",
+            "reason": "user_request"
+          },
+          "output": {
+            "ok": true,
+            "run_id": "doc_cancel",
+            "status": "cancelled"
+          },
+          "tested": true
+        }
+      ]
+    },
+    {
+      "name": "run_metrics",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "run_observability",
+      "description": "Return timing/cost metrics for a run and its steps.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "run_metricsArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_metricsDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "doc_metrics"
+          },
+          "output": {
+            "ok": true,
+            "metrics": {
+              "run_id": "doc_metrics",
+              "status": "succeeded",
+              "started_at": "2025-12-20T00:00:00Z",
+              "finished_at": "2025-12-20T00:00:10Z",
+              "duration_s": 10.0,
+              "totals": {
+                "steps": 1,
+                "succeeded": 1,
+                "failed": 0,
+                "skipped": 0,
+                "execution_time_s_sum": 1.5,
+                "tokens_sum": 15,
+                "cost_usd_sum": 0.02
+              },
+              "steps": [
+                {
+                  "step_id": "s1",
+                  "tool_id": "extract_timeseries",
+                  "status": "succeeded",
+                  "started_at": "2025-12-20T00:00:00Z",
+                  "finished_at": "2025-12-20T00:00:10Z",
+                  "duration_s": 10.0,
+                  "execution_time_s": 1.5,
+                  "tokens": 15,
+                  "cost_usd": 0.02,
+                  "error": null
+                }
+              ]
+            }
+          },
+          "tested": true
+        }
+      ]
+    },
+    {
+      "name": "scientific_report_generate",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "scientific_report",
+      "description": "Draft a scientific report by reviewing one run/workspace and rendering LaTeX.\n\n    When ``run_id`` or ``autoresearch_dir`` is supplied, the tool delegates\n    review to the existing scientific-review MCP functions, converts the\n    resulting verdict into conservative report sections, merges optional\n    plain-text analysis sections, then calls ``latex_report_render``. When no\n    source is supplied, it degrades to a plain ``latex_report_render`` call over\n    the provided analysis sections and skips scientific review.\n\n    On successful render, the tool also writes a Markdown draft and a\n    ``report_revision_handoff`` manifest next to the generated TeX/style/template/PDF artifacts.\n    The handoff is a source-preserving contract for a coding agent: retrieve the\n    Markdown, TeX, LaTeX style/template assets, PDF, metadata, and handoff manifest; revise the TeX without\n    deleting or summarizing BR-generated content; add requested scientific\n    details, citations, figures, script paths, and provenance; then compile and\n    validate the revised PDF. Optional ``revision_instructions``,\n    ``revision_source_artifacts``, ``local_workspace``, and\n    ``local_workspace_manifest`` are persisted into that handoff so callers can\n    explicitly name details, local files, or prior report sources the coding agent\n    must restore. ``local_workspace`` is a coding-agent handoff pointer only; the\n    deployed MCP server does not assume it can read that filesystem path.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "autoresearch_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Autoresearch Dir"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Workflow Id"
+          },
+          "logs_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Logs Dir"
+          },
+          "task_id": {
+            "default": "default",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
+          },
+          "authors": {
+            "default": "Brain Researcher",
+            "title": "Authors",
+            "type": "string"
+          },
+          "analysis_sections": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Analysis Sections"
+          },
+          "subtitle": {
+            "default": "",
+            "title": "Subtitle",
+            "type": "string"
+          },
+          "institution": {
+            "default": "",
+            "title": "Institution",
+            "type": "string"
+          },
+          "date": {
+            "default": "",
+            "title": "Date",
+            "type": "string"
+          },
+          "use_judgment_critic": {
+            "default": true,
+            "title": "Use Judgment Critic",
+            "type": "boolean"
+          },
+          "force_recompute": {
+            "default": false,
+            "title": "Force Recompute",
+            "type": "boolean"
+          },
+          "compile_pdf": {
+            "default": false,
+            "title": "Compile Pdf",
+            "type": "boolean"
+          },
+          "halt_on_review_block": {
+            "default": false,
+            "title": "Halt On Review Block",
+            "type": "boolean"
+          },
+          "revision_instructions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Revision Instructions"
+          },
+          "revision_source_artifacts": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Revision Source Artifacts"
+          },
+          "local_workspace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Local Workspace"
+          },
+          "local_workspace_manifest": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Local Workspace Manifest"
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "autoresearch_dir": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "pattern": "^\\s*$",
+                    "type": "string"
+                  }
+                ]
+              },
+              "run_id": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "pattern": "^\\s*$",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "properties": {
+              "autoresearch_dir": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "pattern": "^\\s*$",
+                    "type": "string"
+                  }
+                ]
+              },
+              "run_id": {
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              }
+            },
+            "required": [
+              "run_id"
+            ]
+          },
+          {
+            "properties": {
+              "autoresearch_dir": {
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string"
+              },
+              "run_id": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "pattern": "^\\s*$",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "autoresearch_dir"
+            ]
+          }
+        ],
+        "title": "scientific_report_generateArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "scientific_report_generateDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "br_example_run",
+            "analysis_sections": {
+              "Results Summary": "Summarize key reviewed outputs here."
+            },
+            "compile_pdf": true,
+            "revision_instructions": [
+              "Restore figure captions and experiment-log provenance."
+            ],
+            "revision_source_artifacts": [
+              {
+                "label": "curated_tex",
+                "role": "prior_report_source",
+                "path": "/path/to/curated_report.tex"
+              }
+            ],
+            "local_workspace": "/path/to/user/workspace",
+            "local_workspace_manifest": {
+              "source_files": [
+                "README.md",
+                "results/summary.json"
+              ],
+              "figures": [
+                "figures/main_result.png"
+              ],
+              "scripts": [
+                "scripts/reproduce.py"
+              ],
+              "logs": [
+                "logs/run.log"
+              ],
+              "citations": [
+                "references.bib"
+              ],
+              "required_revision": [
+                "Read local workspace files before editing TeX.",
+                "Add local figure paths, script paths, and provenance."
+              ],
+              "compile_command": "latexmk -pdf report.tex"
+            }
+          },
+          "output": {
+            "ok": true,
+            "report_run_id": "br_report_run",
+            "artifacts": {
+              "markdown": "artifacts/report/draft_report.md",
+              "tex": "artifacts/report/report.tex",
+              "pdf": "artifacts/report/report.pdf",
+              "handoff": "artifacts/report/report_revision_handoff.json"
+            },
+            "_agent_directive": {
+              "report_revision_handoff": {
+                "protocol": "br.report_revision_handoff.directive.v1",
+                "purpose": "source_preserving_scientific_report_revision",
+                "local_workspace_context": {
+                  "access_mode": "client_local_workspace",
+                  "path": "/path/to/user/workspace",
+                  "server_readable": false
+                },
+                "revision_instructions": [
+                  "Restore figure captions and experiment-log provenance."
+                ]
+              }
+            }
+          },
+          "tested": false
+        },
+        {
+          "input": {
+            "analysis_sections": {
+              "Results Summary": "Draft a plain report without scientific review."
+            },
+            "compile_pdf": true
+          },
+          "output": {
+            "ok": true,
+            "report_run_id": "br_report_run",
+            "artifacts": {
+              "markdown": "artifacts/report/draft_report.md",
+              "tex": "artifacts/report/report.tex",
+              "handoff": "artifacts/report/report_revision_handoff.json"
+            }
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "latex_report_render",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "report_generation",
+      "description": "Render structured content into the bundled Brain Researcher LaTeX report template.",
+      "input_schema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "authors": {
+            "title": "Authors",
+            "type": "string"
+          },
+          "sections": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Sections",
+            "type": "object"
+          },
+          "subtitle": {
+            "default": "",
+            "title": "Subtitle",
+            "type": "string"
+          },
+          "institution": {
+            "default": "",
+            "title": "Institution",
+            "type": "string"
+          },
+          "date": {
+            "default": "",
+            "title": "Date",
+            "type": "string"
+          },
+          "compile_pdf": {
+            "default": false,
+            "title": "Compile Pdf",
+            "type": "boolean"
+          },
+          "sections_are_latex": {
+            "default": false,
+            "description": "Interpret section values as raw LaTeX instead of escaping them as plain text.",
+            "title": "Sections Are Latex",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title",
+          "authors",
+          "sections"
+        ],
+        "title": "latex_report_renderArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "latex_report_renderDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "title": "Example Brain Researcher Report",
+            "authors": "Brain Researcher",
+            "sections": {
+              "Summary": "This section may contain normal report prose."
+            }
+          },
+          "output": {
+            "ok": true,
+            "artifacts": {
+              "tex": "artifacts/report/report.tex",
+              "style": "artifacts/report/scientific_report.sty",
+              "template": "artifacts/report/report_template.tex.j2",
+              "metadata": "artifacts/report/report_metadata.json"
+            },
+            "template_assets": {
+              "tex_template_source": "src/brain_researcher/assets/latex/report_template.tex.j2",
+              "style_source": "src/brain_researcher/assets/latex/scientific_report.sty",
+              "tex_template_artifact": "artifacts/report/report_template.tex.j2",
+              "style_artifact": "artifacts/report/scientific_report.sty"
+            }
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "artifact_list",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "artifact_inspection",
+      "description": "List files under the run's artifacts directory.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "artifact_listArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "artifact_listDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "br_20251220_000000_abcdef1234"
+          },
+          "output": {
+            "ok": true,
+            "items": []
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "artifact_read_text",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "artifact_inspection",
+      "description": "Read a small text artifact from a run (logs/json/tsv).",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "relpath": {
+            "title": "Relpath",
+            "type": "string"
+          },
+          "max_bytes": {
+            "default": 200000,
+            "title": "Max Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "relpath"
+        ],
+        "title": "artifact_read_textArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "artifact_read_textDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "br_20251220_000000_abcdef1234",
+            "relpath": "logs/step-01-s1.json"
+          },
+          "output": {
+            "ok": true,
+            "text": "{...}"
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "artifact_get_metadata",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "artifact_inspection",
+      "description": "Get metadata for an artifact/log file under a run.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "relpath": {
+            "title": "Relpath",
+            "type": "string"
+          },
+          "include_sha256": {
+            "default": false,
+            "title": "Include Sha256",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "run_id",
+          "relpath"
+        ],
+        "title": "artifact_get_metadataArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "artifact_get_metadataDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "br_20251220_000000_abcdef1234",
+            "relpath": "artifacts/out.txt",
+            "include_sha256": true
+          },
+          "output": {
+            "ok": true,
+            "metadata": {
+              "relpath": "artifacts/out.txt",
+              "size_bytes": 2,
+              "mtime": "2025-12-20T00:00:00+00:00",
+              "sha256": "..."
+            }
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "artifact_read_bytes",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "artifact_inspection",
+      "description": "Read a small binary artifact from a run (base64-encoded).",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "relpath": {
+            "title": "Relpath",
+            "type": "string"
+          },
+          "max_bytes": {
+            "default": 2000000,
+            "title": "Max Bytes",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "End"
+          }
+        },
+        "required": [
+          "run_id",
+          "relpath"
+        ],
+        "title": "artifact_read_bytesArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "artifact_read_bytesDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "run_id": "doc_range",
+            "relpath": "artifacts/blob.bin",
+            "start": 1,
+            "end": 4
+          },
+          "output": {
+            "ok": true,
+            "encoding": "base64",
+            "offset": 1,
+            "truncated": false,
+            "bytes": "YmNk",
+            "range": {
+              "start": 1,
+              "end": 4
+            }
+          },
+          "tested": true
+        }
+      ]
+    },
+    {
+      "name": "kg_search_nodes",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "kg_explore",
+      "description": "Search BR-KG nodes (direct Neo4j via query_service; read-only).",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "node_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Node Types"
+          },
+          "limit": {
+            "default": 20,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "allow_degraded": {
+            "default": false,
+            "title": "Allow Degraded",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "kg_search_nodesArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_search_nodesDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "motor cortex",
+            "limit": 5
+          },
+          "output": {
+            "ok": true,
+            "items": [
+              {
+                "kg_id": "CONCEPT_001",
+                "element_id": "4:abcd-ef01:1",
+                "label": "motor cortex",
+                "node_type": "Concept",
+                "score": 1.0
+              }
+            ]
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "kg_get_node",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "kg_explore",
+      "description": "Fetch a single KG node with trimmed properties + neighbor IDs.",
+      "input_schema": {
+        "properties": {
+          "kg_id": {
+            "title": "Kg Id",
+            "type": "string"
+          },
+          "allow_degraded": {
+            "default": false,
+            "title": "Allow Degraded",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kg_id"
+        ],
+        "title": "kg_get_nodeArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_get_nodeDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "kg_id": "node_123"
+          },
+          "output": {
+            "ok": true,
+            "node": {
+              "kg_id": "CONCEPT_001",
+              "element_id": "4:abcd-ef01:1",
+              "label": "motor cortex",
+              "node_type": "Concept",
+              "score": 1.0,
+              "properties": {
+                "id": "CONCEPT_001"
+              }
+            }
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "kg_neighbors",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "kg_explore",
+      "description": "List neighbors for a KG node with relation metadata.",
+      "input_schema": {
+        "properties": {
+          "kg_id": {
+            "title": "Kg Id",
+            "type": "string"
+          },
+          "relation_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Relation Types"
+          },
+          "direction": {
+            "default": "both",
+            "title": "Direction",
+            "type": "string"
+          },
+          "limit": {
+            "default": 25,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "allow_degraded": {
+            "default": false,
+            "title": "Allow Degraded",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kg_id"
+        ],
+        "title": "kg_neighborsArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_neighborsDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "kg_id": "node_a",
+            "relation_types": [
+              "RELATED_TO"
+            ],
+            "direction": "out",
+            "limit": 5
+          },
+          "output": {
+            "ok": true,
+            "items": [
+              {
+                "kg_id": "node_b",
+                "label": "Motor cortex",
+                "node_type": "BrainRegion",
+                "score": 1.0,
+                "relation": "RELATED_TO",
+                "direction": "out",
+                "properties": {
+                  "id": "node_b"
+                }
+              }
+            ]
+          },
+          "tested": true
+        }
+      ]
+    },
+    {
+      "name": "kg_search_datasets",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_explore",
+      "description": "Search BR-KG dataset subgraph (direct Neo4j; read-only).",
+      "input_schema": {
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Text"
+          },
+          "task_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Task Ids"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Modality"
+          },
+          "min_subjects": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Min Subjects"
+          },
+          "species": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Species"
+          },
+          "limit": {
+            "default": 20,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "allow_degraded": {
+            "default": false,
+            "title": "Allow Degraded",
+            "type": "boolean"
+          }
+        },
+        "title": "kg_search_datasetsArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_search_datasetsDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "text": "memory task",
+            "limit": 3
+          },
+          "output": {
+            "ok": true,
+            "items": []
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "dataset_get_resources",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "dataset_resolution",
+      "description": "Resolve lightweight dataset resources (local path/BIDS path, derivatives, URLs).",
+      "input_schema": {
+        "properties": {
+          "dataset_ref": {
+            "title": "Dataset Ref",
+            "type": "string"
+          },
+          "dataset_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dataset Version"
+          }
+        },
+        "required": [
+          "dataset_ref"
+        ],
+        "title": "dataset_get_resourcesArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "dataset_get_resourcesDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "dataset_ref": "ds000001"
+          },
+          "output": {
+            "ok": true,
+            "resources": {}
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "kg_related_datasets",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_explore",
+      "description": "List datasets connected to a KG node (best-effort).",
+      "input_schema": {
+        "properties": {
+          "kg_id": {
+            "title": "Kg Id",
+            "type": "string"
+          },
+          "limit": {
+            "default": 10,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "allow_degraded": {
+            "default": false,
+            "title": "Allow Degraded",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kg_id"
+        ],
+        "title": "kg_related_datasetsArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_related_datasetsDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "kg_id": "node_123",
+            "limit": 5
+          },
+          "output": {
+            "ok": true,
+            "items": []
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "kg_behavior_to_fmri_retrieval",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_explore",
+      "description": "Retrieve task-fMRI evidence for a behavior seed such as a Psych-101 task or experiment.",
+      "input_schema": {
+        "properties": {
+          "seed_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seed Id"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Label"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "limit": {
+            "default": 12,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "max_maps": {
+            "default": 20,
+            "title": "Max Maps",
+            "type": "integer"
+          },
+          "max_paths": {
+            "default": 20,
+            "title": "Max Paths",
+            "type": "integer"
+          },
+          "max_regions_per_map": {
+            "default": 8,
+            "title": "Max Regions Per Map",
+            "type": "integer"
+          },
+          "max_behavior_neighbors": {
+            "default": 4,
+            "title": "Max Behavior Neighbors",
+            "type": "integer"
+          },
+          "min_behavior_similarity": {
+            "default": 0.0,
+            "title": "Min Behavior Similarity",
+            "type": "number"
+          },
+          "allow_degraded": {
+            "default": false,
+            "title": "Allow Degraded",
+            "type": "boolean"
+          }
+        },
+        "title": "kg_behavior_to_fmri_retrievalArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_behavior_to_fmri_retrievalDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "name": "stroop task",
+            "limit": 5
+          },
+          "output": {
+            "ok": true,
+            "result": {}
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "kg_list_dataset_onvoc_links",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_explore",
+      "description": "List direct Dataset->ONVOC links in stable pages (direct Neo4j; read-only).",
+      "input_schema": {
+        "properties": {
+          "onvoc_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Onvoc Id"
+          },
+          "page": {
+            "default": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 100,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "allow_degraded": {
+            "default": false,
+            "title": "Allow Degraded",
+            "type": "boolean"
+          }
+        },
+        "title": "kg_list_dataset_onvoc_linksArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_list_dataset_onvoc_linksDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "kg_multihop_qa",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_reasoning",
+      "description": "Answer KG questions via multi-hop traversal (summary-first MCP payload).",
+      "input_schema": {
+        "properties": {
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "max_hops": {
+            "default": 3,
+            "title": "Max Hops",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "breadth_first",
+            "title": "Mode",
+            "type": "string"
+          },
+          "max_results": {
+            "default": 50,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "allowed_edge_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Allowed Edge Types"
+          },
+          "return_subgraph": {
+            "default": false,
+            "title": "Return Subgraph",
+            "type": "boolean"
+          },
+          "allow_degraded": {
+            "default": false,
+            "title": "Allow Degraded",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "kg_multihop_qaArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_multihop_qaDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "kg_verify_hypothesis",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "kg_hypothesis",
+      "description": "Verify a hypothesis with KG evidence and highlight supporting/conflicting findings.",
+      "input_schema": {
+        "properties": {
+          "hypothesis": {
+            "title": "Hypothesis",
+            "type": "string"
+          },
+          "entity_hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Entity Hints"
+          },
+          "allowed_node_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Allowed Node Types"
+          },
+          "max_evidence": {
+            "default": 60,
+            "title": "Max Evidence",
+            "type": "integer"
+          },
+          "max_paths": {
+            "default": 60,
+            "title": "Max Paths",
+            "type": "integer"
+          },
+          "strictness": {
+            "default": "high_recall",
+            "title": "Strictness",
+            "type": "string"
+          },
+          "min_evidence_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Min Evidence Score"
+          },
+          "include_subgraph": {
+            "default": true,
+            "title": "Include Subgraph",
+            "type": "boolean"
+          },
+          "include_path_details": {
+            "default": true,
+            "title": "Include Path Details",
+            "type": "boolean"
+          },
+          "confidence_scoring_version": {
+            "default": "v2",
+            "title": "Confidence Scoring Version",
+            "type": "string"
+          },
+          "candidate_lane_mode": {
+            "default": "broad",
+            "title": "Candidate Lane Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hypothesis"
+        ],
+        "title": "kg_verify_hypothesisArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_verify_hypothesisDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "hypothesis": "DLPFC is highly involved in n-back task",
+            "entity_hints": [
+              "DLPFC",
+              "n-back"
+            ],
+            "strictness": "high_recall",
+            "include_subgraph": true
+          },
+          "output": {
+            "ok": true,
+            "result": {
+              "verdict": "supported",
+              "confidence": 0.76,
+              "summary": {
+                "n_supporting": 2,
+                "n_conflicting": 0,
+                "n_neutral": 1
+              },
+              "supporting_evidence": [],
+              "conflicting_evidence": [],
+              "neutral_evidence": [],
+              "top_paths": [],
+              "subgraph": {
+                "nodes": [],
+                "edges": []
+              },
+              "warnings": []
+            }
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "kg_probe",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_probe",
+      "description": "Probe KG structure for leverage, contradictions, assumption cracks, or analogy transfers.",
+      "input_schema": {
+        "properties": {
+          "probe_type": {
+            "title": "Probe Type",
+            "type": "string"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "entity_hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Entity Hints"
+          },
+          "seed_kg_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seed Kg Ids"
+          },
+          "start_kg_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start Kg Ids"
+          },
+          "kg_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Kg Id"
+          },
+          "max_results": {
+            "default": 10,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "top_k": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Top K"
+          },
+          "max_hops": {
+            "default": 2,
+            "title": "Max Hops",
+            "type": "integer"
+          },
+          "allowed_edge_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Allowed Edge Types"
+          },
+          "hypothesis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Hypothesis"
+          },
+          "claim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Claim"
+          }
+        },
+        "required": [
+          "probe_type"
+        ],
+        "title": "kg_probeArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_probeDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "kg_hypothesis_workflow",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_hypothesis",
+      "description": "Run KG hypothesis workflows for sampling, candidate verification, or combined sample+verify flows.",
+      "input_schema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "sampled_hypotheses": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sampled Hypotheses"
+          },
+          "seed_kg_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seed Kg Ids"
+          },
+          "start_kg_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start Kg Ids"
+          },
+          "kg_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Kg Id"
+          },
+          "n_samples": {
+            "default": 5,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "verify_top_k": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Verify Top K"
+          },
+          "max_hops": {
+            "default": 2,
+            "title": "Max Hops",
+            "type": "integer"
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Strategy"
+          },
+          "strictness": {
+            "default": "high_recall",
+            "title": "Strictness",
+            "type": "string"
+          },
+          "allowed_node_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Allowed Node Types"
+          },
+          "max_evidence": {
+            "default": 60,
+            "title": "Max Evidence",
+            "type": "integer"
+          },
+          "max_paths": {
+            "default": 60,
+            "title": "Max Paths",
+            "type": "integer"
+          },
+          "min_evidence_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Min Evidence Score"
+          },
+          "include_subgraph": {
+            "default": false,
+            "title": "Include Subgraph",
+            "type": "boolean"
+          },
+          "include_path_details": {
+            "default": false,
+            "title": "Include Path Details",
+            "type": "boolean"
+          },
+          "confidence_scoring_version": {
+            "default": "v2",
+            "title": "Confidence Scoring Version",
+            "type": "string"
+          },
+          "candidate_lane_mode": {
+            "default": "broad",
+            "title": "Candidate Lane Mode",
+            "type": "string"
+          },
+          "use_external_literature": {
+            "default": false,
+            "title": "Use External Literature",
+            "type": "boolean"
+          },
+          "external_literature_top_k": {
+            "default": 5,
+            "title": "External Literature Top K",
+            "type": "integer"
+          },
+          "external_literature_recency_days": {
+            "default": 365,
+            "title": "External Literature Recency Days",
+            "type": "integer"
+          },
+          "external_literature_exclude_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "External Literature Exclude Domains"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "kg_hypothesis_workflowArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_hypothesis_workflowDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "kg_hypothesis_candidate_cards",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_hypothesis",
+      "description": "Generate hypothesis candidate cards synchronously (use kg_hypothesis_candidate_cards_start for long-running queries).",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "seed_kg_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seed Kg Ids"
+          },
+          "relation_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Relation Types"
+          },
+          "top_n": {
+            "default": 5,
+            "title": "Top N",
+            "type": "integer"
+          },
+          "top_k": {
+            "default": 20,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "taste_mode": {
+            "default": "balanced",
+            "title": "Taste Mode",
+            "type": "string"
+          },
+          "controller_mode": {
+            "default": "principle_v0",
+            "title": "Controller Mode",
+            "type": "string"
+          },
+          "candidate_lane_mode": {
+            "default": "broad",
+            "title": "Candidate Lane Mode",
+            "type": "string"
+          },
+          "frontier_mode": {
+            "default": "off",
+            "title": "Frontier Mode",
+            "type": "string"
+          },
+          "with_deep_research": {
+            "default": true,
+            "title": "With Deep Research",
+            "type": "boolean"
+          },
+          "deep_research_interaction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Deep Research Interaction Id"
+          },
+          "recency_days": {
+            "default": 365,
+            "title": "Recency Days",
+            "type": "integer"
+          },
+          "exclude_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Exclude Domains"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "kg_hypothesis_candidate_cardsArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_hypothesis_candidate_cardsDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "hypothesis_hot_load_research",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_hypothesis",
+      "description": "Run the full hot-load hypothesis research path behind one MCP tool.",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_cards": {
+            "default": 5,
+            "title": "Max Cards",
+            "type": "integer"
+          },
+          "depth": {
+            "default": "deep",
+            "title": "Depth",
+            "type": "string"
+          },
+          "candidate_lane_mode": {
+            "default": "broad",
+            "title": "Candidate Lane Mode",
+            "type": "string"
+          },
+          "frontier_mode": {
+            "default": "off",
+            "title": "Frontier Mode",
+            "type": "string"
+          },
+          "seed_kg_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seed Kg Ids"
+          },
+          "exclude_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Exclude Domains"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "hypothesis_hot_load_researchArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "hypothesis_hot_load_researchDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "hypothesis_run_start",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_hypothesis",
+      "description": "Start a background hot-load hypothesis run and return a pollable run_id.",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "max_cards": {
+            "default": 5,
+            "title": "Max Cards",
+            "type": "integer"
+          },
+          "depth": {
+            "default": "deep",
+            "title": "Depth",
+            "type": "string"
+          },
+          "candidate_lane_mode": {
+            "default": "broad",
+            "title": "Candidate Lane Mode",
+            "type": "string"
+          },
+          "frontier_mode": {
+            "default": "off",
+            "title": "Frontier Mode",
+            "type": "string"
+          },
+          "seed_kg_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seed Kg Ids"
+          },
+          "exclude_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Exclude Domains"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "hypothesis_run_startArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "hypothesis_run_startDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "kg_hypothesis_candidate_cards_start",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_hypothesis",
+      "description": "Start a background candidate cards generation run and return a pollable run_id.",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "seed_kg_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seed Kg Ids"
+          },
+          "relation_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Relation Types"
+          },
+          "top_n": {
+            "default": 5,
+            "title": "Top N",
+            "type": "integer"
+          },
+          "top_k": {
+            "default": 20,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "taste_mode": {
+            "default": "balanced",
+            "title": "Taste Mode",
+            "type": "string"
+          },
+          "controller_mode": {
+            "default": "principle_v0",
+            "title": "Controller Mode",
+            "type": "string"
+          },
+          "candidate_lane_mode": {
+            "default": "broad",
+            "title": "Candidate Lane Mode",
+            "type": "string"
+          },
+          "with_deep_research": {
+            "default": true,
+            "title": "With Deep Research",
+            "type": "boolean"
+          },
+          "deep_research_interaction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Deep Research Interaction Id"
+          },
+          "recency_days": {
+            "default": 365,
+            "title": "Recency Days",
+            "type": "integer"
+          },
+          "exclude_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Exclude Domains"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "kg_hypothesis_candidate_cards_startArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_hypothesis_candidate_cards_startDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "kg_detect_topology_shifts",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "kg_probe",
+      "description": "Detect or apply topology-shift updates across graph snapshots.",
+      "input_schema": {
+        "properties": {
+          "mode": {
+            "default": "detect",
+            "title": "Mode",
+            "type": "string"
+          },
+          "baseline_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Baseline Ref"
+          },
+          "current_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Current Ref"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Scope"
+          },
+          "approval_phrase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Approval Phrase"
+          }
+        },
+        "title": "kg_detect_topology_shiftsArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "kg_detect_topology_shiftsDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "cognitive control",
+            "mode": "proposal",
+            "limit": 30
+          },
+          "output": {
+            "status": "success",
+            "data": {
+              "result": {}
+            }
+          },
+          "tested": false
+        }
+      ]
+    },
+    {
+      "name": "google_file_search",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "google_research",
+      "description": "Google File Search (first-class MCP tool; read ops allowed by default).",
+      "input_schema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "store_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Store Name"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Display Name"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "File Path"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "File Name"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "metadata_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Metadata Filter"
+          },
+          "max_tokens_per_chunk": {
+            "default": 256,
+            "title": "Max Tokens Per Chunk",
+            "type": "integer"
+          },
+          "max_overlap_tokens": {
+            "default": 64,
+            "title": "Max Overlap Tokens",
+            "type": "integer"
+          },
+          "top_k": {
+            "default": 10,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 100,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "page_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page Token"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "google_file_searchArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "google_file_searchDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "operation": "list_stores"
+          },
+          "output": {
+            "ok": false,
+            "error": "network_blocked"
+          },
+          "tested": false,
+          "notes": "Requires BR_MCP_ALLOW_NETWORK=1 and GOOGLE_API_KEY"
+        }
+      ]
+    },
+    {
+      "name": "google_deep_research_start",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "google_research",
+      "description": "Start a Deep Research task via Gemini Interactions API (background).",
+      "input_schema": {
+        "properties": {
+          "input": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Input"
+          },
+          "agent": {
+            "default": "deep-research-pro-preview-12-2025",
+            "title": "Agent",
+            "type": "string"
+          },
+          "file_search_store_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "File Search Store Names"
+          },
+          "store_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Store Names"
+          },
+          "previous_interaction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Previous Interaction Id"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          }
+        },
+        "title": "google_deep_research_startArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "google_deep_research_startDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "input": "Summarize recent neuroimaging QA trends"
+          },
+          "output": {
+            "ok": false,
+            "error": "network_blocked"
+          },
+          "tested": false,
+          "notes": "Requires BR_MCP_ALLOW_NETWORK=1 and GOOGLE_API_KEY"
+        }
+      ]
+    },
+    {
+      "name": "google_deep_research",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "google_research",
+      "description": "Deep research via Gemini + Google Search tool (first-class MCP tool).",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "model": {
+            "default": "gemini-3-flash-preview",
+            "title": "Model",
+            "type": "string"
+          },
+          "max_output_tokens": {
+            "default": 2048,
+            "title": "Max Output Tokens",
+            "type": "integer"
+          },
+          "temperature": {
+            "default": 0.2,
+            "title": "Temperature",
+            "type": "number"
+          },
+          "recency_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recency Days"
+          },
+          "exclude_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Exclude Domains"
+          },
+          "include_raw": {
+            "default": false,
+            "title": "Include Raw",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "google_deep_researchArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "google_deep_researchDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "query": "Latest fMRI preprocessing best practices"
+          },
+          "output": {
+            "ok": false,
+            "error": "missing_api_key"
+          },
+          "tested": false,
+          "notes": "Requires BR_MCP_ALLOW_NETWORK=1 and GOOGLE_API_KEY"
+        }
+      ]
+    },
+    {
+      "name": "deepxiv",
+      "tier": "default",
+      "surface_tier": "default",
+      "capability_family": "literature_search",
+      "description": "Search and read arXiv / PMC papers via DeepXiv.\n\n    Actions: search, brief, head, section, preview, raw, trending,\n    social_impact, pmc_head, pmc_full, semantic_scholar.\n    ",
+      "input_schema": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "paper_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Paper Id"
+          },
+          "section_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Section Name"
+          },
+          "limit": {
+            "default": 10,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "search_mode": {
+            "default": "hybrid",
+            "title": "Search Mode",
+            "type": "string"
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Categories"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Date To"
+          },
+          "authors": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Authors"
+          },
+          "min_citation": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Min Citation"
+          },
+          "days": {
+            "default": 7,
+            "title": "Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "deepxivArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "deepxivDictOutput",
+        "type": "object"
+      },
+      "examples": [
+        {
+          "input": {
+            "action": "search",
+            "query": "fMRI default mode network",
+            "limit": 3
+          },
+          "output": {
+            "ok": true
+          },
+          "tested": false,
+          "notes": "Requires BR_MCP_ALLOW_NETWORK=1 and optionally DEEPXIV_TOKEN"
+        }
+      ]
+    },
+    {
+      "name": "pipeline_plan_review",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "pipeline_execution",
+      "description": "Domain-grounded review of a pipeline plan before execution.",
+      "input_schema": {
+        "properties": {
+          "plan": {
+            "additionalProperties": true,
+            "title": "Plan",
+            "type": "object"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Workflow Id"
+          },
+          "use_kg": {
+            "default": true,
+            "title": "Use Kg",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "plan"
+        ],
+        "title": "pipeline_plan_reviewArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "pipeline_plan_reviewDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "run_code_review",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "pipeline_execution",
+      "description": "Post-execution domain review of a completed run.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Workflow Id"
+          },
+          "force_recompute": {
+            "default": false,
+            "title": "Force Recompute",
+            "type": "boolean"
+          },
+          "use_kg": {
+            "default": false,
+            "title": "Use Kg",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "run_code_reviewArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_code_reviewDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "run_scientific_review",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "pipeline_execution",
+      "description": "Three-verdict scientific review: correctness, completeness, and judgment.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Workflow Id"
+          },
+          "use_judgment_critic": {
+            "default": true,
+            "title": "Use Judgment Critic",
+            "type": "boolean"
+          },
+          "force_recompute": {
+            "default": false,
+            "title": "Force Recompute",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "run_scientific_reviewArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_scientific_reviewDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "run_autoresearch_scientific_review",
+      "tier": "ops",
+      "surface_tier": "ops",
+      "capability_family": "autoresearch_review",
+      "description": "Scientific review for autoresearch loop artifacts.",
+      "input_schema": {
+        "properties": {
+          "autoresearch_dir": {
+            "title": "Autoresearch Dir",
+            "type": "string"
+          },
+          "logs_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Logs Dir"
+          },
+          "task_id": {
+            "default": "default",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "use_judgment_critic": {
+            "default": true,
+            "title": "Use Judgment Critic",
+            "type": "boolean"
+          },
+          "force_recompute": {
+            "default": false,
+            "title": "Force Recompute",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoresearch_dir"
+        ],
+        "title": "run_autoresearch_scientific_reviewArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "run_autoresearch_scientific_reviewDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "request_external_scientific_review_directive",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "scientific_review",
+      "description": "Emit a stateless scientific-review directive for a non-BR external run.",
+      "input_schema": {
+        "properties": {
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Hints"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "source_client": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Client"
+          },
+          "client_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Client Session Id"
+          }
+        },
+        "required": [
+          "goal"
+        ],
+        "title": "request_external_scientific_review_directiveArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "request_external_scientific_review_directiveDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "submit_external_scientific_review_verdict",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "scientific_review",
+      "description": "Accept a ScientificReviewVerdict produced by an external coding agent.",
+      "input_schema": {
+        "properties": {
+          "directive_id": {
+            "title": "Directive Id",
+            "type": "string"
+          },
+          "verdict": {
+            "additionalProperties": true,
+            "title": "Verdict",
+            "type": "object"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "reviewer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reviewer"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes"
+          },
+          "source_client": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Client"
+          },
+          "client_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Client Session Id"
+          }
+        },
+        "required": [
+          "directive_id",
+          "verdict"
+        ],
+        "title": "submit_external_scientific_review_verdictArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "submit_external_scientific_review_verdictDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "refuted_landscape_summary",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "scientific_review",
+      "description": "Summarize refuted, supported, and inconclusive directions from structured findings.",
+      "input_schema": {
+        "properties": {
+          "findings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "run_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Ids"
+          },
+          "top_k": {
+            "default": 8,
+            "title": "Top K",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "findings"
+        ],
+        "title": "refuted_landscape_summaryArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "refuted_landscape_summaryDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "companion_diagnostic_suggester",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "scientific_review",
+      "description": "Suggest companion diagnostics for a named metric.",
+      "input_schema": {
+        "properties": {
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "observed_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Observed Value"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context"
+          },
+          "top_k": {
+            "default": 8,
+            "title": "Top K",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "metric_name"
+        ],
+        "title": "companion_diagnostic_suggesterArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "companion_diagnostic_suggesterDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "memory_write",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "memory",
+      "description": "Validate and persist a derived memory card or relation event.",
+      "input_schema": {
+        "properties": {
+          "card_type": {
+            "title": "Card Type",
+            "type": "string"
+          },
+          "card_data": {
+            "additionalProperties": true,
+            "title": "Card Data",
+            "type": "object"
+          }
+        },
+        "required": [
+          "card_type",
+          "card_data"
+        ],
+        "title": "memory_writeArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "memory_writeDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "memory_search",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "memory",
+      "description": "Search derived memory cards using structured filters and semantic similarity.",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "default": "",
+            "title": "Query",
+            "type": "string"
+          },
+          "card_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Card Type"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Filters"
+          },
+          "limit": {
+            "default": 10,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "memory_searchArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "memory_searchDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "memory_get",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "memory",
+      "description": "Fetch one derived memory card or relation event by id.",
+      "input_schema": {
+        "properties": {
+          "card_id": {
+            "title": "Card Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "card_id"
+        ],
+        "title": "memory_getArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "memory_getDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    }
+  ]
+}

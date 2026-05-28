@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: brain-researcher-workspace-bootstrap
+  namespace: brain-researcher-workspace
+data:
+  README.txt: |
+    Brain Researcher hosted workspace bootstrap.
+
+    This ConfigMap is mounted into single-user pods to reserve the integration
+    point for:
+    - notebook assistant session binding
+    - BR MCP client bootstrap
+    - starter notebook and template seeding
+    - Neurodesk and shared dataset availability checks
+
+  start.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    workspace_root="${HOME}/work"
+    marker_dir="${HOME}/.brain-researcher"
+    marker_file="${marker_dir}/workspace-bootstrap.env"
+    welcome_file="${workspace_root}/WELCOME.md"
+
+    mkdir -p "${workspace_root}" "${marker_dir}"
+
+    cat > "${marker_file}" <<EOF
+    BR_PRODUCT_NAME=${BR_PRODUCT_NAME:-Brain Researcher}
+    BR_WORKSPACE_MODE=${BR_WORKSPACE_MODE:-hosted}
+    BR_MCP_MODE=${BR_MCP_MODE:-hosted_notebook_v1}
+    BR_MCP_HTTP_URL=${BR_MCP_HTTP_URL:-}
+    BR_NOTEBOOK_ASSISTANT_ENABLED=${BR_NOTEBOOK_ASSISTANT_ENABLED:-false}
+    BR_NEURODESK_ROOT=${BR_NEURODESK_ROOT:-}
+    EOF
+
+    if [ ! -f "${welcome_file}" ]; then
+      printf '%s\n' \
+        '# Brain Researcher Workspace' \
+        '' \
+        'This hosted workspace is a JupyterLab environment backed by Neurodesk and' \
+        'prepared for Brain Researcher MCP integration.' \
+        '' \
+        'Current skeleton behavior:' \
+        '- user home and notebook workspace are provisioned' \
+        '- BR MCP connection settings are written to `~/.brain-researcher/workspace-bootstrap.env`' \
+        '- notebook-assistant bridge hooks are reserved but not implemented yet' \
+        '' \
+        'Next expected additions:' \
+        '- starter notebooks and template picker' \
+        '- notebook assistant server extension' \
+        '- in-workspace docs for hosted, local Docker, and HPC modes' \
+        > "${welcome_file}"
+    fi

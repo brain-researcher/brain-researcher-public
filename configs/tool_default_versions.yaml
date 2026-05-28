@@ -1,0 +1,11 @@
+# Optional pins for default versions per (software, op_key)
+# Format:
+# default_versions:
+#   fsl:
+#     bet: "6.0.4"
+#     feat: "6.0.4"
+# default_tool_ids:
+#   - fsl.6.0.4.bet.run
+
+default_versions: {}
+default_tool_ids: []

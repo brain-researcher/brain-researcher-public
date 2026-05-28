@@ -1,0 +1,18 @@
+{
+  "Name": "unit-test-spec",
+  "BIDSModelVersion": "1.0.0",
+  "Input": {
+    "task": ["test"]
+  },
+  "Nodes": [
+    {
+      "Name": "run",
+      "Level": "run",
+      "Model": {"X": ["cond"]}
+    }
+  ],
+  "Contrasts": [
+    {"Name": "conA", "Weights": [1]},
+    {"Name": "conB", "Weights": [-1]}
+  ]
+}

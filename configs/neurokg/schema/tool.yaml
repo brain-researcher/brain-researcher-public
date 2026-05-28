@@ -1,0 +1,11 @@
+label: Tool
+key: tool_id
+properties:
+  tool_id: string
+  name: string
+  domain: string?
+  runtime_kind: string       # container | python | api
+  description: string?
+  homepage_url: string?
+  repo_url: string?
+  status: string?            # stable | experimental | deprecated

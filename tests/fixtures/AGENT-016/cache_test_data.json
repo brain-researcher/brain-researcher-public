@@ -1,0 +1,152 @@
+{
+  "cache_scenarios": [
+    {
+      "scenario_name": "basic_hit_miss",
+      "operations": [
+        {
+          "operation": "set",
+          "key": "brain_researcher:query_result:abc123",
+          "value": {"result": "prefrontal activation found", "stats": {"t_stat": 3.2, "p_value": 0.001}},
+          "ttl": 3600
+        },
+        {
+          "operation": "get",
+          "key": "brain_researcher:query_result:abc123",
+          "expected_result": {"result": "prefrontal activation found", "stats": {"t_stat": 3.2, "p_value": 0.001}},
+          "expected_hit": true
+        },
+        {
+          "operation": "get",
+          "key": "brain_researcher:query_result:nonexistent",
+          "expected_result": null,
+          "expected_hit": false
+        }
+      ]
+    },
+    {
+      "scenario_name": "ttl_expiration",
+      "operations": [
+        {
+          "operation": "set",
+          "key": "brain_researcher:query_result:expire_test",
+          "value": {"result": "temporary result"},
+          "ttl": 1
+        },
+        {
+          "operation": "wait",
+          "seconds": 2
+        },
+        {
+          "operation": "get",
+          "key": "brain_researcher:query_result:expire_test",
+          "expected_result": null,
+          "expected_hit": false
+        }
+      ]
+    },
+    {
+      "scenario_name": "cache_invalidation",
+      "operations": [
+        {
+          "operation": "set",
+          "key": "brain_researcher:tool_exec:glm_analysis_1",
+          "value": {"glm_results": "activation_map.nii.gz"},
+          "ttl": 3600,
+          "tags": ["glm", "dataset_001"]
+        },
+        {
+          "operation": "set", 
+          "key": "brain_researcher:tool_exec:glm_analysis_2",
+          "value": {"glm_results": "activation_map2.nii.gz"},
+          "ttl": 3600,
+          "tags": ["glm", "dataset_002"]
+        },
+        {
+          "operation": "invalidate",
+          "tags": ["glm"],
+          "expected_invalidated_count": 2
+        }
+      ]
+    }
+  ],
+  "performance_scenarios": [
+    {
+      "scenario_name": "high_frequency_access",
+      "queries": [
+        "analyze working memory activation",
+        "compare groups on task fmri", 
+        "extract roi time series",
+        "compute connectivity matrix",
+        "visualize brain activation"
+      ],
+      "access_pattern": "repeated",
+      "expected_hit_rate_after_warmup": 0.8
+    },
+    {
+      "scenario_name": "varied_queries",
+      "queries": [
+        "analyze prefrontal activation in working memory task",
+        "compare young vs old connectivity patterns", 
+        "perform meta-analysis of emotion studies",
+        "decode stimulus type from visual cortex",
+        "preprocess fmri data with motion correction"
+      ],
+      "access_pattern": "diverse",
+      "expected_hit_rate_after_warmup": 0.3
+    }
+  ],
+  "key_generation_tests": [
+    {
+      "query": "analyze working memory activation",
+      "context": {"dataset": "ds000114", "task": "workingmemory"},
+      "expected_key_pattern": "brain_researcher:query_result:[a-f0-9]{32}"
+    },
+    {
+      "query": "ANALYZE WORKING MEMORY ACTIVATION",  
+      "context": {"dataset": "ds000114", "task": "workingmemory"},
+      "expected_same_key_as_previous": true
+    },
+    {
+      "query": "analyze working memory activation",
+      "context": {"dataset": "ds000115", "task": "workingmemory"},
+      "expected_different_key_from_first": true
+    }
+  ],
+  "policy_tests": [
+    {
+      "policy": "aggressive",
+      "operations": [
+        {
+          "execution_time": 0.1,
+          "should_cache": true
+        },
+        {
+          "execution_time": 10.0,
+          "should_cache": true
+        }
+      ]
+    },
+    {
+      "policy": "conservative", 
+      "operations": [
+        {
+          "execution_time": 0.5,
+          "should_cache": false
+        },
+        {
+          "execution_time": 8.0,
+          "should_cache": true
+        }
+      ]
+    },
+    {
+      "policy": "disabled",
+      "operations": [
+        {
+          "execution_time": 30.0,
+          "should_cache": false
+        }
+      ]
+    }
+  ]
+}

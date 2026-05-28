@@ -1,0 +1,284 @@
+================================================================================
+🧠 Brain Researcher Platform - Successfully Deployed! 🎉
+================================================================================
+
+Thank you for installing {{ .Chart.Name }}.
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get values {{ .Release.Name }}
+
+================================================================================
+🌐 Access Information
+================================================================================
+
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+🌍 Web Application: https://{{ .host }}
+{{- end }}
+
+{{- if .Values.ingress.monitoring.enabled }}
+{{- range .Values.ingress.monitoring.hosts }}
+{{- if contains "grafana" .host }}
+📊 Grafana Dashboard: https://{{ .host }}
+{{- end }}
+{{- if contains "prometheus" .host }}
+📈 Prometheus: https://{{ .host }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- else }}
+⚠️  Ingress is disabled. To access the application, you can use port-forwarding:
+
+   $ kubectl port-forward -n {{ include "brain-researcher.coreNamespace" . }} service/{{ include "brain-researcher.fullname" . }}-agent 8000:8000
+   $ kubectl port-forward -n {{ include "brain-researcher.coreNamespace" . }} service/{{ include "brain-researcher.fullname" . }}-web-ui 3000:3000
+
+{{- end }}
+
+================================================================================
+🔧 Active Services
+================================================================================
+
+Core Application Services:
+{{- if .Values.agent.enabled }}
+  ✅ Agent (Unified Gateway)    - Port 8000 (HTTP API + WebSocket /ws)
+{{- end }}
+{{- if .Values.neurokg.enabled }}
+  ✅ BR-KG                     - Port 5000 (Knowledge Graph API)
+{{- end }}
+{{- if .Values.webUi.enabled }}
+  ✅ Web UI                      - Port 3000 (Next.js Frontend)
+{{- end }}
+{{- if .Values.mcp.enabled }}
+  ✅ MCP                         - Port 7000 (Model Context Protocol)
+{{- end }}
+
+Infrastructure Services:
+  ✅ Neo4j                       - Ports 7474 (HTTP), 7687 (Bolt)
+  ✅ Redis                       - Port 6379 (Cache & Sessions)
+
+Disabled Services (Consolidated):
+  ⚪ Orchestrator                - Functionality integrated into Agent
+  ⚪ API Gateway                 - Functionality integrated into Agent
+  ⚪ PostgreSQL                  - Not used (BR-KG uses Neo4j)
+
+Check service status:
+  $ kubectl get pods -n {{ include "brain-researcher.coreNamespace" . }}
+  $ kubectl get services -n {{ include "brain-researcher.coreNamespace" . }}
+
+{{- if .Values.networkPolicies.enabled }}
+
+⚠️  Network policies are enabled. This provides additional security but may
+   require configuration adjustments for your specific network setup.
+
+{{- end }}
+
+================================================================================
+🚀 Getting Started
+================================================================================
+
+1. 📋 Verify all pods are running:
+   $ kubectl get pods -n {{ include "brain-researcher.coreNamespace" . }} -w
+
+2. 🔍 Check service health:
+   {{- if .Values.agent.enabled }}
+   $ curl http://{{ include "brain-researcher.fullname" . }}-agent:8000/health
+   {{- end }}
+   {{- if .Values.neurokg.enabled }}
+   $ curl http://{{ include "brain-researcher.fullname" . }}-neurokg:5000/health
+   {{- end }}
+
+3. 📊 Access monitoring (if enabled):
+   {{- if .Values.grafana.enabled }}
+   - Grafana: https://{{ .Values.global.domain }}/grafana
+   {{- end }}
+   {{- if .Values.prometheus.enabled }}
+   - Prometheus: https://{{ .Values.global.domain }}/prometheus
+   {{- end }}
+
+4. 🧪 Test the WebSocket connection:
+   $ wscat -c ws://{{ include "brain-researcher.fullname" . }}-agent:8000/ws/dashboard
+
+================================================================================
+🔐 Security Configuration
+================================================================================
+
+{{- if .Values.secrets.create }}
+⚠️  IMPORTANT: Default secrets have been created with placeholder values.
+   You MUST update these with actual secure values:
+
+   $ kubectl get secrets -n {{ include "brain-researcher.coreNamespace" . }}
+
+   Update LLM API keys:
+   $ kubectl create secret generic {{ include "brain-researcher.llmApiKeys.secretName" . }} \
+     --from-literal=OPENAI_API_KEY='your-actual-openai-key' \
+     --from-literal=ANTHROPIC_API_KEY='your-actual-anthropic-key' \
+     --dry-run=client -o yaml | kubectl apply -f -
+
+{{- end }}
+
+{{- if .Values.ingress.annotations }}
+{{- if index .Values.ingress.annotations "networking.gke.io/managed-certificates" }}
+✅ Google-managed SSL certificates are configured
+   Check certificate provisioning status:
+   $ gcloud compute ssl-certificates list --project={{ .Values.global.project }}
+
+{{- end }}
+{{- end }}
+
+{{- if .Values.networkPolicies.enabled }}
+🔒 Network policies are active for enhanced security.
+   Monitor network connectivity:
+   $ kubectl get networkpolicies -A
+
+{{- end }}
+
+================================================================================
+📊 Monitoring & Observability
+================================================================================
+
+{{- if .Values.prometheus.enabled }}
+📈 Metrics are being collected by Prometheus
+   View metrics: https://{{ .Values.global.domain }}/prometheus
+
+{{- end }}
+
+{{- if .Values.grafana.enabled }}
+📊 Dashboards are available in Grafana
+   Access dashboards: https://{{ .Values.global.domain }}/grafana
+   {{- if .Values.ingress.monitoring.basicAuth.enabled }}
+   (Basic auth required - check {{ .Values.ingress.monitoring.basicAuth.secretName }} secret)
+   {{- end }}
+
+{{- end }}
+
+Service metrics endpoints (Prometheus format):
+{{- if .Values.agent.enabled }}
+- Agent: http://{{ include "brain-researcher.fullname" . }}-agent:8000/metrics
+{{- end }}
+{{- if .Values.neurokg.enabled }}
+- BR-KG: http://{{ include "brain-researcher.fullname" . }}-neurokg:5000/metrics
+{{- end }}
+
+Note: Metrics are exposed on the main service ports, not on separate ports.
+
+================================================================================
+💾 Data & Persistence
+================================================================================
+
+{{- if .Values.storage.sharedData.enabled }}
+📁 Shared data storage is configured:
+   PVC: {{ include "brain-researcher.sharedDataPvcName" . }}
+   Size: {{ .Values.storage.sharedData.size }}
+   Storage Class: {{ .Values.storage.sharedData.storageClass }}
+
+{{- end }}
+
+Persistent volumes:
+$ kubectl get pvc -n {{ include "brain-researcher.coreNamespace" . }}
+$ kubectl get pvc -n {{ include "brain-researcher.dataNamespace" . }}
+
+{{- if .Values.backup.enabled }}
+💾 Backups are scheduled: {{ .Values.backup.schedule }}
+   Check backup jobs: $ kubectl get jobs -n {{ include "brain-researcher.dataNamespace" . }}
+
+{{- end }}
+
+================================================================================
+🔧 Troubleshooting
+================================================================================
+
+If you encounter issues:
+
+1. 🔍 Check pod logs:
+   $ kubectl logs -n {{ include "brain-researcher.coreNamespace" . }} -l app.kubernetes.io/name={{ include "brain-researcher.name" . }}
+
+2. 📋 Describe failing pods:
+   $ kubectl describe pods -n {{ include "brain-researcher.coreNamespace" . }}
+
+3. 🔍 Check for ImagePullBackOff:
+   $ kubectl get events -n {{ include "brain-researcher.coreNamespace" . }} --sort-by='.lastTimestamp'
+
+4. 🔐 Verify secrets are mounted correctly:
+   $ kubectl get secrets,configmaps -n {{ include "brain-researcher.coreNamespace" . }}
+
+5. 🌐 Test network connectivity between services:
+   $ kubectl run -it --rm debug --image=busybox --restart=Never -n {{ include "brain-researcher.coreNamespace" . }} -- sh
+   # Then inside the pod:
+   # wget -O- http://{{ include "brain-researcher.fullname" . }}-neurokg:5000/health
+
+Common issues and solutions:
+- ImagePullBackOff: Verify image exists in registry ({{ .Values.global.imageRegistry }})
+- CrashLoopBackOff: Check logs for missing dependencies or configuration errors
+- Pending pods: Check storage class availability and node resources
+- StatefulSet not updating: Delete pod manually to force recreation with new image
+
+Force pod recreation for StatefulSets:
+$ kubectl delete pod {{ include "brain-researcher.fullname" . }}-neurokg-0 -n {{ include "brain-researcher.coreNamespace" . }}
+$ kubectl delete pod {{ include "brain-researcher.fullname" . }}-agent-0 -n {{ include "brain-researcher.coreNamespace" . }}
+
+================================================================================
+📚 Additional Resources
+================================================================================
+
+📖 Documentation: https://docs.{{ .Values.global.domain }}
+🐛 Issue tracking: https://github.com/brain-researcher/brain-researcher/issues
+💬 Community support: https://github.com/brain-researcher/brain-researcher/discussions
+🔧 API Reference: https://{{ .Values.global.domain }}/api/docs
+
+================================================================================
+🛠️  Advanced Operations
+================================================================================
+
+Build and push new images:
+export AR_REPO="{{ .Values.global.imageRegistry }}"
+export TAG="v5"  # increment version
+
+# Build specific service
+docker build --target neurokg -t $AR_REPO/neurokg:$TAG .
+docker push $AR_REPO/neurokg:$TAG
+
+# Update deployment
+helm upgrade {{ .Release.Name }} infrastructure/k8s/helm/brain-researcher \
+  -f infrastructure/deployment/gcp/values.prod.yaml \
+  --set global.imageTag=$TAG \
+  -n {{ include "brain-researcher.coreNamespace" . }}
+
+Scale deployments:
+$ kubectl scale deployment {{ include "brain-researcher.fullname" . }}-web-ui --replicas=3 -n {{ include "brain-researcher.coreNamespace" . }}
+$ kubectl scale deployment {{ include "brain-researcher.fullname" . }}-mcp --replicas=2 -n {{ include "brain-researcher.coreNamespace" . }}
+
+Backup current configuration:
+$ helm get values {{ .Release.Name }} > current-values.yaml
+$ kubectl get all -n {{ include "brain-researcher.coreNamespace" . }} -o yaml > current-state.yaml
+
+Rolling restart deployments:
+$ kubectl rollout restart deployment -n {{ include "brain-researcher.coreNamespace" . }}
+
+Restart StatefulSets (manual pod deletion required):
+$ kubectl delete pod {{ include "brain-researcher.fullname" . }}-agent-0 -n {{ include "brain-researcher.coreNamespace" . }}
+$ kubectl delete pod {{ include "brain-researcher.fullname" . }}-neurokg-0 -n {{ include "brain-researcher.coreNamespace" . }}
+
+================================================================================
+
+🎯 Architecture Notes:
+- Unified Gateway: Agent service handles both HTTP (/api) and WebSocket (/ws) on port 8000
+- Metrics: Exposed on main service ports (/metrics), no separate metrics ports
+- Sessions: Stored in Redis, with persistent StatefulSet storage for agent
+- WebSocket: Real-time updates available at /ws/dashboard, /ws/jobs/{id}, etc.
+
+🎯 Pro Tips:
+- Use `kubectl top pods -n {{ include "brain-researcher.coreNamespace" . }}` to monitor resource usage
+- StatefulSets require manual pod deletion to pick up new images
+- Check Artifact Registry for available image tags before deployment
+- Monitor SSL certificate provisioning in GCP Console (can take 10-15 minutes)
+- Review and update security policies regularly
+
+Happy researching! 🧠✨
+
+For support, visit: https://github.com/brain-researcher/brain-researcher
+
+================================================================================

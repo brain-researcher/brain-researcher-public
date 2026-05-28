@@ -1,0 +1,120 @@
+name: cognitive_encoding_model
+description: Workflow to build an encoding model from contrast-level cognitive vectors to brain activation vectors.
+
+global_inputs:
+  project_root: "/home/ubuntu/mri_assistant" # Example, should be dynamically set or relative
+  datasets:
+    - id: "ds000001"
+      url: "https://github.com/OpenNeuroDatasets/ds000001.git"
+    - id: "ds000008"
+      url: "https://github.com/OpenNeuroDatasets/ds000008.git"
+  constructs_file: "knowledge/constructs.json"
+  schaefer_atlas_n_parcels: 400
+  # Add other global paths like fmriprep_output_root, fitlins_output_root if needed
+
+steps:
+  - name: download_bids_datasets
+    description: Download specified BIDS datasets using DataLad.
+    tool: datalad_download_bids
+    params:
+      datasets_to_download: "{{ global_inputs.datasets }}"
+      download_location: "{{ global_inputs.project_root }}/data/raw_bids"
+    outputs:
+      downloaded_bids_paths: "{{ global_inputs.project_root }}/data/raw_bids/*"
+
+  - name: run_fmriprep
+    description: Run fMRIPrep on the downloaded BIDS datasets.
+    tool: run_fmriprep # Conceptual tool, actual call might use fmriprep_wrapper
+    inputs:
+      bids_datasets_paths: "{{ steps.download_bids_datasets.outputs.downloaded_bids_paths }}"
+    params:
+      output_root: "{{ global_inputs.project_root }}/data/derivatives/fmriprep"
+      # Add other fMRIPrep parameters like fs_license_file, participant_label, etc.
+    outputs:
+      fmriprep_derivatives_paths: "{{ global_inputs.project_root }}/data/derivatives/fmriprep/*"
+
+  - name: run_fitlins
+    description: Run FitLins on fMRIPrep outputs to get contrast z-maps.
+    tool: run_fitlins # Conceptual tool
+    inputs:
+      fmriprep_derivatives: "{{ steps.run_fmriprep.outputs.fmriprep_derivatives_paths }}"
+      bids_datasets_paths: "{{ steps.download_bids_datasets.outputs.downloaded_bids_paths }}" # For BIDS models
+    params:
+      output_root: "{{ global_inputs.project_root }}/data/derivatives/fitlins"
+      model_type: "l1" # Or as specified in BIDS model
+      # Add other FitLins parameters
+    outputs:
+      contrast_zmaps_paths: "{{ global_inputs.project_root }}/data/derivatives/fitlins/*/results/contrast_estimates/*_zmap.nii.gz"
+
+  - name: generate_cognitive_vectors
+    description: Use LLM to analyze contrast definitions and generate cognitive construct vectors.
+    tool: llm_annotate_contrasts
+    inputs:
+      # This step needs contrast definitions (e.g., from BIDS model files or manually provided)
+      # For ds000001, ds000008, these are within the BIDS model files.
+      # We might need a preliminary step to extract these or assume they are accessible.
+      contrast_definitions_files: "{{ steps.download_bids_datasets.outputs.downloaded_bids_paths }}/*/models/*.json" # Example path
+      constructs_ontology_file: "{{ global_inputs.constructs_file }}"
+    params:
+      llm_model: "gpt-4o" # Or other specified LLM
+    outputs:
+      cognitive_feature_matrix_X: "{{ global_inputs.project_root }}/data/processed/cognitive_vectors_X.npy"
+      contrast_to_vector_mapping: "{{ global_inputs.project_root }}/data/processed/contrast_map.json"
+
+  - name: parcellate_brain_maps
+    description: Parcellate contrast z-maps using Schaefer atlas to get brain activation vectors.
+    tool: apply_parcellation
+    inputs:
+      contrast_zmaps: "{{ steps.run_fitlins.outputs.contrast_zmaps_paths }}"
+    params:
+      atlas_name: "Schaefer2018"
+      n_parcels: "{{ global_inputs.schaefer_atlas_n_parcels }}"
+      # Path to atlas file might be needed if not auto-downloaded by nilearn
+    outputs:
+      brain_activation_matrix_Y: "{{ global_inputs.project_root }}/data/processed/brain_activation_vectors_Y.npy"
+      parcel_labels: "{{ global_inputs.project_root }}/data/processed/parcel_labels.json"
+
+  - name: train_encoding_model
+    description: Train Ridge Regression model (X: cognitive vectors, Y: brain activation vectors).
+    tool: train_ridge_model
+    inputs:
+      cognitive_vectors_X: "{{ steps.generate_cognitive_vectors.outputs.cognitive_feature_matrix_X }}"
+      brain_activation_vectors_Y: "{{ steps.parcellate_brain_maps.outputs.brain_activation_matrix_Y }}"
+    params:
+      cv_folds: 5
+      # Other RidgeCV parameters (e.g., alphas)
+    outputs:
+      trained_model_path: "{{ global_inputs.project_root }}/models/encoding_model.pkl"
+      cross_val_scores: "{{ global_inputs.project_root }}/results/model_cv_scores.json"
+
+  - name: evaluate_model_performance
+    description: Evaluate model using R2 and Pearson correlation on test set (or CV results).
+    tool: evaluate_encoding_model
+    inputs:
+      trained_model: "{{ steps.train_encoding_model.outputs.trained_model_path }}"
+      # Test data (X_test, Y_test) would be needed if not using CV scores directly
+      # For simplicity, using CV scores and potentially held-out data if workflow supports splits
+      cognitive_vectors_X: "{{ steps.generate_cognitive_vectors.outputs.cognitive_feature_matrix_X }}"
+      brain_activation_vectors_Y: "{{ steps.parcellate_brain_maps.outputs.brain_activation_matrix_Y }}"
+      cv_scores: "{{ steps.train_encoding_model.outputs.cross_val_scores }}"
+    params:
+      evaluation_metrics: ["R2_overall", "R2_per_parcel", "Pearson_correlation_overall", "Pearson_correlation_per_parcel"]
+    outputs:
+      evaluation_report: "{{ global_inputs.project_root }}/results/evaluation_report.md"
+      parcelwise_performance: "{{ global_inputs.project_root }}/results/parcel_performance.csv"
+
+  - name: predict_and_visualize_brain_maps
+    description: Use trained model to predict brain activation maps from cognitive vectors and visualize.
+    tool: predict_brain_maps_from_constructs
+    inputs:
+      trained_model: "{{ steps.train_encoding_model.outputs.trained_model_path }}"
+      # Example input: new cognitive vectors or selected constructs for visualization
+      input_cognitive_constructs: "{{ global_inputs.project_root }}/data/example_construct_vectors.npy" # Placeholder for example inputs
+      parcel_labels: "{{ steps.parcellate_brain_maps.outputs.parcel_labels }}"
+    params:
+      # Visualization parameters (e.g., surface, colormap)
+    outputs:
+      predicted_brain_maps_nifti: "{{ global_inputs.project_root }}/results/predicted_maps/"
+      visualization_images: "{{ global_inputs.project_root }}/results/visualizations/"
+
+

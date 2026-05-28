@@ -1,0 +1,123 @@
+Running example tool tests
+================================================================================
+
+==================================================
+Testing: task_to_concept_mapping
+Test case: Map n-back task
+Arguments: {
+  "task_name": "n-back"
+}
+--------------------------------------------------
+Success: True
+Result data:
+{
+  "concepts": [
+    "proactive interference",
+    "updating",
+    "working memory",
+    "maintenance"
+  ],
+  "matched_task": "adaptive n-back task",
+  "source": "cognitive_atlas_local",
+  "synonyms": [],
+  "task_name": "n-back"
+}
+
+==================================================
+Testing: find_related_concepts
+Test case: Find motor cortex relations
+Arguments: {
+  "concept": "motor cortex",
+  "depth": 2,
+  "limit": 5
+}
+--------------------------------------------------
+Success: False
+Error: Failed to query knowledge graph: 404 Client Error: NOT FOUND for url: http://localhost:5005/subgraph?label=Concept&name=motor+cortex&depth=2
+Suggestions:
+  - Check if BR-KG service is running at http://localhost:5005
+  - Verify the concept name is correct
+  - Try a simpler concept name without special characters
+
+==================================================
+Testing: glm_analysis
+Test case: Basic GLM test
+Arguments: {
+  "dataset_id": "ds000001",
+  "contrasts": {
+    "motor_vs_baseline": [
+      1,
+      -1
+    ]
+  }
+}
+--------------------------------------------------
+Success: True
+Result data:
+{
+  "contrasts": {
+    "motor_vs_baseline": {
+      "threshold": 3.1,
+      "z_map": "/data/glm/ds000001/motor_vs_baseline_zmap.nii.gz"
+    }
+  },
+  "dataset_id": "ds000001",
+  "n_contrasts": 1,
+  "peak_coordinates": [
+    [
+      -42,
+      -22,
+      54
+    ],
+    [
+      42,
+      -22,
+      54
+    ]
+  ]
+}
+
+==================================================
+Testing: coordinate_to_concept
+Test case: Map coordinates
+Arguments: {
+  "coordinates": [
+    [
+      -42,
+      -22,
+      54
+    ]
+  ],
+  "radius": 10
+}
+--------------------------------------------------
+Success: True
+Result data:
+{
+  "atlas": "DiFuMo_512",
+  "coordinate_mappings": [
+    {
+      "concepts": [
+        {
+          "concept": "response selection",
+          "process": "unmapped",
+          "score": 0.01786975764
+        },
+        {
+          "concept": "decision making",
+          "process": "unmapped",
+          "score": 0.016242971499999998
+        },
+        {
+          "concept": "visual recognition",
+          "process": "unmapped",
+          "score": 0.015466526460000001
+        },
+        {
+         ...
+
+================================================================================
+Example tests completed!
+
+To run comprehensive tests for all tools, execute:
+  python comprehensive_tool_tests.py

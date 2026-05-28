@@ -1,0 +1,465 @@
+# HorizontalPodAutoscaler configurations for Brain Researcher platform
+# Provides automatic horizontal scaling based on resource utilization and custom metrics
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx-hpa
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/component: proxy-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Min
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: orchestrator-hpa
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/component: orchestrator-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orchestrator
+  minReplicas: 3
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # Custom metric for active jobs (requires custom metrics API)
+    # - type: Object
+    #   object:
+    #     metric:
+    #       name: active_jobs_count
+    #     describedObject:
+    #       apiVersion: v1
+    #       kind: Service
+    #       name: orchestrator-service
+    #     target:
+    #       type: Value
+    #       value: "50"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 120
+        - type: Pods
+          value: 3
+          periodSeconds: 120
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 600  # 10 minutes
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 300
+        - type: Pods
+          value: 1
+          periodSeconds: 300
+      selectPolicy: Min
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-ui-hpa
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: web-ui
+    app.kubernetes.io/component: frontend-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-ui
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 120
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+      selectPolicy: Min
+
+---
+# Note: NICLIP HPA is intentionally omitted as it typically runs on GPU nodes
+# and should not be autoscaled due to model loading overhead and GPU resource constraints.
+# Instead, use vertical scaling or cluster autoscaler for GPU nodes.
+
+# Advanced HPA with custom metrics (requires Prometheus Adapter and metrics server)
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: orchestrator-custom-hpa
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/component: orchestrator-custom-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orchestrator
+  minReplicas: 3
+  maxReplicas: 15
+  metrics:
+    # CPU utilization
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    
+    # Memory utilization
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 65
+    
+    # Custom metric: HTTP requests per second
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "100"
+    
+    # Custom metric: Queue depth from Redis
+    - type: External
+      external:
+        metric:
+          name: redis_queue_depth
+          selector:
+            matchLabels:
+              queue: "orchestrator_queue"
+        target:
+          type: AverageValue
+          averageValue: "30"
+    
+    # Custom metric: Active WebSocket connections
+    - type: Object
+      object:
+        metric:
+          name: websocket_connections
+        describedObject:
+          apiVersion: v1
+          kind: Service
+          name: orchestrator-service
+        target:
+          type: Value
+          value: "500"
+    
+    # Custom metric: Response time percentile
+    - type: Pods
+      pods:
+        metric:
+          name: http_request_duration_p95
+        target:
+          type: AverageValue
+          averageValue: "2000"  # 2 seconds
+  
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 180  # 3 minutes
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 120
+        - type: Pods
+          value: 4
+          periodSeconds: 120
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 900  # 15 minutes
+      policies:
+        - type: Percent
+          value: 20
+          periodSeconds: 300
+        - type: Pods
+          value: 2
+          periodSeconds: 300
+      selectPolicy: Min
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: neurokg-custom-hpa
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/component: neurokg-custom-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neurokg
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+    
+    # Custom metric: Database query rate
+    - type: Pods
+      pods:
+        metric:
+          name: database_queries_per_second
+        target:
+          type: AverageValue
+          averageValue: "50"
+    
+    # Custom metric: Knowledge graph search latency
+    - type: Pods
+      pods:
+        metric:
+          name: kg_search_duration_p90
+        target:
+          type: AverageValue
+          averageValue: "1500"  # 1.5 seconds
+    
+    # External metric: Vector index size
+    - type: External
+      external:
+        metric:
+          name: vector_index_memory_usage
+          selector:
+            matchLabels:
+              service: "neurokg"
+        target:
+          type: AverageValue
+          averageValue: "80"  # 80% of available memory
+  
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Percent
+          value: 75
+          periodSeconds: 90
+        - type: Pods
+          value: 2
+          periodSeconds: 90
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 600  # 10 minutes
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 180
+        - type: Pods
+          value: 1
+          periodSeconds: 180
+      selectPolicy: Min
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agent-custom-hpa
+  namespace: brain-researcher-core
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/component: agent-custom-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: agent
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+    
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 85
+    
+    # Custom metric: LLM request queue depth
+    - type: External
+      external:
+        metric:
+          name: llm_request_queue_depth
+          selector:
+            matchLabels:
+              service: "agent"
+        target:
+          type: AverageValue
+          averageValue: "10"
+    
+    # Custom metric: Token processing rate
+    - type: Pods
+      pods:
+        metric:
+          name: tokens_processed_per_minute
+        target:
+          type: AverageValue
+          averageValue: "5000"
+    
+    # Custom metric: Model inference latency
+    - type: Pods
+      pods:
+        metric:
+          name: model_inference_duration_p95
+        target:
+          type: AverageValue
+          averageValue: "30000"  # 30 seconds
+  
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 300  # 5 minutes (longer for LLM services)
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 180
+        - type: Pods
+          value: 1
+          periodSeconds: 180
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 1200  # 20 minutes (very conservative for expensive services)
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 600
+        - type: Pods
+          value: 1
+          periodSeconds: 600
+      selectPolicy: Min
+
+# ---
+# VerticalPodAutoscaler for NICLIP (if VPA is installed)
+# apiVersion: autoscaling.k8s.io/v1
+# kind: VerticalPodAutoscaler
+# metadata:
+#   name: niclip-vpa
+#   namespace: brain-researcher-core
+#   labels:
+#     app.kubernetes.io/name: niclip
+#     app.kubernetes.io/component: niclip-autoscaler
+# spec:
+#   targetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: niclip
+#   updatePolicy:
+#     updateMode: "Off"  # Recommendation only, no auto-updates
+#   resourcePolicy:
+#     containerPolicies:
+#     - containerName: niclip
+#       minAllowed:
+#         memory: 2Gi
+#         cpu: 1000m
+#       maxAllowed:
+#         memory: 8Gi
+#         cpu: 4000m
+#       controlledResources: ["cpu", "memory"]
+#       controlledValues: RequestsAndLimits

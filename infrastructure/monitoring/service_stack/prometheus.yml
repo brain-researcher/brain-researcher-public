@@ -1,0 +1,69 @@
+# Prometheus Configuration for Brain Researcher Platform
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+rule_files:
+  - "alert_rules.yml"
+  - "recording_rules.yml"
+
+scrape_configs:
+  # Brain Researcher Agent Service
+  - job_name: 'brain-researcher-agent'
+    static_configs:
+      - targets: ['agent:8000']
+    metrics_path: /metrics
+    scrape_interval: 60s  # Agent may be slower
+    scrape_timeout: 10s
+
+  # BR-KG Service
+  - job_name: 'brain-researcher-neurokg'
+    static_configs:
+      - targets: ['neurokg:5000']
+    metrics_path: /metrics
+    scrape_interval: 30s
+    scrape_timeout: 5s
+
+  # Web UI Service
+  - job_name: 'brain-researcher-web-ui'
+    static_configs:
+      - targets: ['web-ui:3000']
+    metrics_path: /api/metrics
+    scrape_interval: 60s
+
+  # Redis monitoring (if redis-exporter is running)
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # System metrics via Node Exporter
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+  # cAdvisor for container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Remote write for long-term storage (optional)
+# remote_write:
+#   - url: "http://prometheus-remote-storage:9201/write"

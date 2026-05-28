@@ -1,0 +1,54 @@
+id: tf_questionnaires_health
+label: Health Questionnaires & Clinical Scales
+description: >-
+  Self-report questionnaires, structured inventories, and interviewer-administered
+  rating scales that quantify traits (e.g., impulsivity, mindfulness), psychopathology
+  symptoms, or functional health outcomes. Instruments typically yield composite scores
+  or subscale totals derived from Likert ratings, yes/no symptom endorsements, or
+  behavioral checklists completed by participants, caregivers, or clinicians.
+examples: [barratt_impulsiveness_scale, brief_psychiatric_rating_scale, child_behavior_checklist,
+  emotion_regulation_questionnaire, hypomanic_personality_scale]
+typical_DVs: [total_score, subscale_score, percentile_rank, clinical_cutoff_flag]
+common_manipulations: [reporter_type (self, parent, clinician), recall_window,
+  response_scale_range, phrasing_positive_vs_negative, administration_context]
+subfamilies:
+
+  - id: sf_impulsivity_self_report
+    label: Impulsivity & Self-Regulation Inventories
+    description: Self-report scales probing impulsivity, attentional control,
+      mindfulness, or emotion regulation strategies.
+    paradigms:
+      - name: Barratt Impulsiveness Scale (BIS-11)
+        typical_DVs: [total_score, attentional_impulsivity, motor_impulsivity, nonplanning]
+        common_manipulations: [instruction_speed_vs_accuracy, response_scale_points]
+        keywords: [barratt, impulsiveness]
+      - name: Dickman Impulsivity Inventory
+        typical_DVs: [functional_impulsivity, dysfunctional_impulsivity]
+        common_manipulations: [age_group, language]
+        keywords: [dickman, impulsivity]
+      - name: Emotion Regulation Questionnaire / Strategies Scales
+        typical_DVs: [cognitive_reappraisal, expressive_suppression]
+        common_manipulations: [instruction_context, time_frame]
+        keywords: [emotion regulation]
+      - name: Five Facet Mindfulness Questionnaire / Mindful Attention Awareness Scale
+        typical_DVs: [observe, describe, act_with_awareness, nonjudge, nonreact]
+        common_manipulations: [state_vs_trait, item_subset]
+        keywords: [mindfulness, awareness]
+
+  - id: sf_psychopathology_rating
+    label: Psychopathology & Health Symptom Ratings
+    description: Clinician- or caregiver-rated instruments summarizing psychiatric
+      symptoms, behavioral problems, or medical risk factors.
+    paradigms:
+      - name: Brief Psychiatric Rating Scale / Hamilton Depression Scale
+        typical_DVs: [positive_symptom_total, negative_symptom_total, depression_score]
+        common_manipulations: [interviewer_training, time_window, symptom_weights]
+        keywords: [psychiatric rating, depression scale]
+      - name: Child Behavior Checklist / Conners Comprehensive Behavior Rating Scales
+        typical_DVs: [internalizing, externalizing, attention_problems]
+        common_manipulations: [parent_vs_teacher_report, age_band, informant_pairs]
+        keywords: [behavior checklist, cbcl, conners]
+      - name: ASI / Anxiety-Sensitivity / Kessler Distress Scales
+        typical_DVs: [anxiety_sensitivity_total, distress_score]
+        common_manipulations: [short_vs_long_form, timeframe_days]
+        keywords: [anxiety sensitivity, kessler]

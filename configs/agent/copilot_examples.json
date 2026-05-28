@@ -1,0 +1,35 @@
+{
+  "examples": [
+    {
+      "task": "Skull-strip an anatomical T1w image",
+      "queries": [
+        "skull strip T1w",
+        "remove skull from T1 image",
+        "brain extraction T1"
+      ],
+      "tools": ["fsl-bet", "afni-3dSkullStrip"],
+      "parameters": {"f": 0.5}
+    },
+    {
+      "task": "First-level GLM analysis for motor task",
+      "queries": [
+        "run first-level GLM for motor task",
+        "compute contrasts motor>rest",
+        "single-subject glm motor"
+      ],
+      "tools": ["spm-glm", "fsl-feat"],
+      "parameters": {"smoothing_kernel": 6, "high_pass_filter": 128}
+    },
+    {
+      "task": "Functional connectivity on resting-state fMRI",
+      "queries": [
+        "compute resting-state connectivity",
+        "correlation matrix rs-fMRI",
+        "seed-based connectivity"
+      ],
+      "tools": ["nilearn-connectivity", "afni-3dNetCorr"],
+      "parameters": {"bandpass_filter": [0.01, 0.1]}
+    }
+  ]
+}
+
