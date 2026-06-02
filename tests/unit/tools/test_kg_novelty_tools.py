@@ -796,18 +796,18 @@ def test_detect_topology_shifts_rejects_invalid_mode():
 def test_factory_returns_all_novelty_tools():
     tool_names = [tool.get_tool_name() for tool in novelty.get_all_tools()]
     assert tool_names == [
-        "neurokg.find_structural_leverage",
-        "neurokg.detect_contradiction_motifs",
-        "neurokg.find_contradiction_frontiers",
-        "neurokg.mine_assumption_cracks",
-        "neurokg.find_analogy_transfers",
-        "neurokg.synthesize_wow_candidate_cards",
-        "neurokg.principle_state_init",
-        "neurokg.sample_ood_hypothesis",
-        "neurokg.verify_sampled_hypotheses",
-        "neurokg.sample_and_verify_hypotheses",
-        "neurokg.detect_topology_shifts",
-        "neurokg.principle_state_update",
+        "br_kg.find_structural_leverage",
+        "br_kg.detect_contradiction_motifs",
+        "br_kg.find_contradiction_frontiers",
+        "br_kg.mine_assumption_cracks",
+        "br_kg.find_analogy_transfers",
+        "br_kg.synthesize_wow_candidate_cards",
+        "br_kg.principle_state_init",
+        "br_kg.sample_ood_hypothesis",
+        "br_kg.verify_sampled_hypotheses",
+        "br_kg.sample_and_verify_hypotheses",
+        "br_kg.detect_topology_shifts",
+        "br_kg.principle_state_update",
     ]
 
 

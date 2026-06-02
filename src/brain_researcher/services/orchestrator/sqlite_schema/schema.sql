@@ -1,0 +1,1 @@
+../../shared/sqlite_schema/schema.sql

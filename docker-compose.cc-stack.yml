@@ -1,0 +1,126 @@
+# CC Stack overlay — extends docker-compose.yml with the two services needed
+# for the Claude Code neuroimaging trilogy (NeuroExplore → NeuroPlan → NeuroExecute).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.cc-stack.yml up -d
+#
+# Then start CC pointing at the stack:
+#   ANTHROPIC_BASE_URL=http://localhost:4001 \   ← stream-proxy (fixes Gemini SSE)
+#   ANTHROPIC_API_KEY=sk-br-local \
+#   BR_MCP_URL=http://localhost:7000/mcp \
+#   claude
+#
+# To switch model provider, set in .env (or override on the docker run line):
+#   Gemini (default): BR_PRIMARY_MODEL=gemini/gemini-3-pro-preview  BR_MODEL_API_KEY=<gemini key>
+#   Claude:           BR_PRIMARY_MODEL=anthropic/claude-sonnet-4-6  BR_MODEL_API_KEY=sk-ant-...
+#   OpenAI:           BR_PRIMARY_MODEL=openai/gpt-4o                BR_MODEL_API_KEY=sk-openai-...
+
+services:
+
+  # ── Stream-repair proxy ────────────────────────────────────────────────────
+  # Sits between CC (port 4001) and LiteLLM (port 4000).
+  # Fixes Gemini SSE streaming: tool-call requests are fetched non-streaming
+  # and re-emitted as correct Anthropic SSE events with proper input_json_delta.
+  # Pass-through for Claude/OpenAI (their streaming is correct already).
+  br-stream-proxy:
+    build:
+      context: ./br-stream-proxy
+    image: br-stream-proxy:local
+    container_name: br-stream-proxy
+    networks:
+      - brain-researcher
+    ports:
+      - "4001:4001"
+    environment:
+      - LITELLM_URL=http://br-litellm:4000
+    depends_on:
+      - litellm
+    restart: unless-stopped
+
+  # ── LiteLLM proxy ──────────────────────────────────────────────────────────
+  # Routes CC's Claude model aliases to Gemini:
+  #   claude-sonnet-4-6        → gemini-3.1-pro-preview        (NeuroPlan + main loop)
+  #   claude-haiku-4-5-20251001 → gemini-3.1-flash-lite-preview (NeuroExplore + BrainDream)
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: br-litellm
+    networks:
+      - brain-researcher
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml:ro
+    environment:
+      - LITELLM_MASTER_KEY=sk-br-local
+      # ── Model provider switch ──────────────────────────────────────────────
+      # Change these three lines to swap between Gemini / Claude / OpenAI.
+      # Gemini (default):
+      - BR_PRIMARY_MODEL=${BR_PRIMARY_MODEL:-gemini/gemini-3.1-pro-preview}
+      - BR_FAST_MODEL=${BR_FAST_MODEL:-gemini/gemini-3.1-flash-lite-preview}
+      - BR_MODEL_API_KEY=${BR_MODEL_API_KEY:-${GEMINI_API_KEY:?set GEMINI_API_KEY or BR_MODEL_API_KEY}}
+      - BR_MODEL_API_BASE=${BR_MODEL_API_BASE:-}   # empty = use provider default
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; r=urllib.request.urlopen(urllib.request.Request('http://localhost:4000/health/liveliness',headers={'Authorization':'Bearer sk-br-local'}),timeout=4); sys.exit(0 if r.status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ── BR MCP server ──────────────────────────────────────────────────────────
+  # Exposes all 58 BR tools over HTTP (streamable-http transport).
+  # CC's brainResearcherPlugin connects here via BR_MCP_URL.
+  br-mcp:
+    image: zjc062/mcp:20260401024730
+    container_name: br-mcp
+    networks:
+      - brain-researcher
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      br-kg:
+        condition: service_healthy
+    ports:
+      - "7000:7000"
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs:ro
+      - ./src:/app/src:ro
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      # Transport
+      - BR_MCP_TRANSPORT=streamable-http
+      - BR_MCP_HOST=0.0.0.0
+      - BR_MCP_PORT=7000
+      - BR_MCP_MOUNT_PATH=/mcp
+      # Auth — token mode for CC plugin
+      - BR_MCP_AUTH_MODE=${BR_MCP_AUTH_MODE:-token}
+      - BR_MCP_AUTH_TOKEN=${BR_MCP_AUTH_TOKEN:?set BR_MCP_AUTH_TOKEN}
+      # Network policy — allow container-internal service discovery
+      - BR_MCP_ALLOW_NETWORK=1
+      # Services
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
+      - BR_KG_URL=http://br-kg:5000
+      - REDIS_URL=redis://redis:6379/0
+      # Models (used by plan_create internal planner)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:?set GEMINI_API_KEY}
+      - DEFAULT_LLM_MODEL=${DEFAULT_LLM_MODEL:-gemini-3-flash-preview}
+      # Data paths
+      - NICLIP_DATA_PATH=/app/data/niclip/data
+      # Run store (BrainDream reads from here)
+      - BR_RUN_ROOT=/app/data/runs/mcp_runs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:7000/healthz || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+networks:
+  brain-researcher:
+    external: true

@@ -1,5 +1,5 @@
 ; PgBouncer user authentication file for Brain Researcher
-; Format: "username" "password_hash" 
+; Format: "username" "password_hash"
 ; Password hashes can be generated with: echo -n "passwordusername" | md5sum
 
 ; Main application user
@@ -23,7 +23,7 @@
 
 ; Application service users (if using separate database users per service)
 "orchestrator_user" "md51234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-"neurokg_user" "md5abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+"br_kg_user" "md5abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
 "agent_user" "md5567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456"
 "webui_user" "md5cdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab"
 
@@ -33,7 +33,7 @@
 ; NOTE: In production, these should be replaced with actual secure password hashes
 ; Generate proper hashes using:
 ; echo -n "your_password_here${username}" | md5sum
-; 
+;
 ; Example for postgres user with password "secure_password":
 ; echo -n "secure_passwordpostgres" | md5sum
 ;

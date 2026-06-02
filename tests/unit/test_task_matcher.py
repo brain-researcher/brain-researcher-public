@@ -5,7 +5,7 @@ import pandas as pd
 
 # import pdb; pdb.set_trace()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from brain_researcher.services.neurokg.utils.task_matcher import TaskMatcher
+from brain_researcher.services.br_kg.utils.task_matcher import TaskMatcher
 
 
 def test_benchmark_recall():

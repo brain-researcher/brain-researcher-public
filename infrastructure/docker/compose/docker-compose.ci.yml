@@ -7,8 +7,8 @@ services:
       - "3001:3001"
     volumes: !reset []
 
-  neurokg:
-    image: ${REGISTRY:?set REGISTRY}/${GITHUB_REPOSITORY:?set GITHUB_REPOSITORY}/neurokg:sha-${GITHUB_SHA:?set GITHUB_SHA}
+  br-kg:
+    image: ${REGISTRY:?set REGISTRY}/${GITHUB_REPOSITORY:?set GITHUB_REPOSITORY}/br-kg:sha-${GITHUB_SHA:?set GITHUB_SHA}
     pull_policy: always
     # CI runs a sparse checkout and must exercise the pushed image contents.
     volumes: !reset []

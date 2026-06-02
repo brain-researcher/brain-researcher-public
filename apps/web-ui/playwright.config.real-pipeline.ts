@@ -47,11 +47,11 @@ const orchestratorBaseUrl =
   'http://localhost:3001'
 const kgBaseUrl =
   process.env.BR_KG_URL ??
-  process.env.BR_NEUROKG_URL ??
+  process.env.BR_KG_BASE_URL ??
   process.env.KG_API_URL ??
-  process.env.NEUROKG_API_URL ??
+  process.env.BR_KG_API_URL ??
   process.env.KG_URL ??
-  process.env.NEUROKG_URL ??
+  process.env.BR_KG_API ??
   'http://localhost:5000'
 const wsBaseUrl =
   process.env.NEXT_PUBLIC_WS_URL ??

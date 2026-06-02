@@ -15,33 +15,33 @@ data:
         server agent-service:8000;
         keepalive 32;
     }
-    
+
     upstream web-ui {
         server web-ui-service:3000;
         keepalive 32;
     }
-    
+
     upstream orchestrator {
         server orchestrator-service:3001;
         keepalive 32;
     }
-    
+
     server {
         listen 80;
         server_name brain-researcher.local _;
-        
+
         # Security headers
         add_header X-Frame-Options DENY;
         add_header X-Content-Type-Options nosniff;
         add_header X-XSS-Protection "1; mode=block";
         add_header Referrer-Policy strict-origin-when-cross-origin;
-        
+
         # Gzip compression
         gzip on;
         gzip_vary on;
         gzip_min_length 1024;
         gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-        
+
         # Agent API routes
         location /api/ {
             proxy_pass http://agent-api/;
@@ -56,7 +56,7 @@ data:
             proxy_buffer_size 4k;
             proxy_buffers 8 4k;
         }
-        
+
         # Orchestrator routes
         location /orchestrator/ {
             proxy_pass http://orchestrator/;
@@ -68,7 +68,7 @@ data:
             proxy_send_timeout 60s;
             proxy_read_timeout 60s;
         }
-        
+
         # WebSocket support for real-time features
         location /ws {
             proxy_pass http://orchestrator;
@@ -81,7 +81,7 @@ data:
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_read_timeout 86400;
         }
-        
+
         # Web UI (default route)
         location / {
             proxy_pass http://web-ui/;
@@ -93,7 +93,7 @@ data:
             proxy_send_timeout 30s;
             proxy_read_timeout 30s;
         }
-        
+
         # Health check endpoint
         location /health {
             access_log off;
@@ -114,38 +114,38 @@ data:
   config.py: |
     # Orchestrator Service Configuration
     import os
-    
-    class Config:
+
+class Config:
         # Server configuration
         HOST = "0.0.0.0"
         PORT = 3001
         DEBUG = os.getenv("DEBUG", "false").lower() == "true"
-        
+
         # Service URLs
         AGENT_URL = os.getenv("AGENT_URL", "http://agent-service:8000")
-        NEUROKG_URL = os.getenv("NEUROKG_URL", "http://neurokg-service:5000")
+        BR_KG_URL = os.getenv("BR_KG_URL", "http://br-kg-service:5000")
         NICLIP_URL = os.getenv("NICLIP_URL", "http://niclip-service:8001")
-        
+
         # Redis configuration
         REDIS_URL = os.getenv("REDIS_URL", "redis://redis-service:6379/0")
-        
+
         # Database configuration
         POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql://brain_researcher:password@postgres-service:5432/brain_researcher")
-        
+
         # CORS configuration
         CORS_ORIGINS = [
             "http://localhost:3000",
             "https://brain-researcher.local",
             "http://web-ui-service:3000"
         ]
-        
+
         # Job management
         MAX_CONCURRENT_JOBS = int(os.getenv("MAX_CONCURRENT_JOBS", "5"))
         DEFAULT_JOB_TIMEOUT = int(os.getenv("DEFAULT_JOB_TIMEOUT", "300"))
-        
+
         # Rate limiting
         RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
-        
+
         # Logging
         LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
@@ -165,35 +165,35 @@ data:
       host: "0.0.0.0"
       port: 8000
       workers: 2
-    
+
     # LLM Configuration
     llm:
       default_provider: "openai"
       temperature: 0.1
       max_tokens: 4000
       timeout: 60
-    
+
     # Service integrations
     services:
-      neurokg:
-        base_url: "http://neurokg-service:5000"
+      br-kg:
+        base_url: "http://br-kg-service:5000"
         timeout: 30
       niclip:
         base_url: "http://niclip-service:8001"
         timeout: 60
-    
+
     # Redis configuration for state management
     redis:
       url: "redis://redis-service:6379/2"
       key_prefix: "agent:"
       ttl: 3600
-    
+
     # Tool configuration
     tools:
       timeout: 300
       max_retries: 3
       parallel_execution: true
-    
+
     # Logging
     logging:
       level: "INFO"
@@ -204,11 +204,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: neurokg-config
+  name: br-kg-config
   namespace: brain-researcher-core
   labels:
-    app.kubernetes.io/name: neurokg
-    app.kubernetes.io/component: neurokg
+    app.kubernetes.io/name: br-kg
+    app.kubernetes.io/component: br-kg
 data:
   config.yml: |
     # BR-KG Service Configuration
@@ -216,21 +216,21 @@ data:
       host: "0.0.0.0"
       port: 5000
       debug: false
-    
+
     # Database configuration
     database:
-      path: "/app/data/neurokg/db/neurokg_full.db"
-      backup_path: "/app/data/neurokg/db/backups/"
+      path: "/app/data/br-kg/db/br-kg_full.db"
+      backup_path: "/app/data/br-kg/db/backups/"
       pool_size: 10
       timeout: 30
-    
+
     # Vector search configuration
     vector_search:
       enabled: true
-      cache_dir: "/app/data/neurokg/vector_cache/"
+      cache_dir: "/app/data/br-kg/vector_cache/"
       embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
       similarity_threshold: 0.7
-    
+
     # API configuration
     api:
       rate_limit: 100  # requests per minute
@@ -238,18 +238,18 @@ data:
         default_page_size: 20
         max_page_size: 100
       cache_ttl: 300  # seconds
-    
+
     # Search configuration
     search:
       default_limit: 20
       max_limit: 100
       fuzzy_threshold: 0.8
-    
+
     # Logging
     logging:
       level: "INFO"
       format: "json"
-      file: "/app/logs/neurokg.log"
+      file: "/app/logs/br-kg.log"
 
 ---
 apiVersion: v1
@@ -267,7 +267,7 @@ data:
       host: "0.0.0.0"
       port: 8001
       workers: 1
-    
+
     # Model configuration
     model:
       device: "cpu"  # Use "cuda" for GPU
@@ -275,13 +275,13 @@ data:
       cache_dir: "/app/data/niclip/"
       batch_size: 8
       max_sequence_length: 512
-    
+
     # Processing configuration
     processing:
       timeout: 120
       max_concurrent_requests: 4
       memory_limit: "2Gi"
-    
+
     # Logging
     logging:
       level: "INFO"
@@ -303,20 +303,20 @@ data:
     const nextConfig = {
       reactStrictMode: true,
       swcMinify: true,
-      
+
       // Environment variables
       env: {
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://nginx/api',
         NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || 'Brain Researcher',
       },
-      
+
       // Image optimization
       images: {
         domains: ['localhost', 'brain-researcher.local'],
         deviceSizes: [640, 768, 1024, 1280, 1600],
         imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
       },
-      
+
       // Headers for security
       async headers() {
         return [
@@ -339,7 +339,7 @@ data:
           },
         ]
       },
-      
+
       // Redirects
       async redirects() {
         return [
@@ -351,7 +351,7 @@ data:
         ]
       },
     }
-    
+
     module.exports = nextConfig
 
 ---
@@ -366,23 +366,23 @@ metadata:
 data:
   redis.conf: |
     # Redis configuration for Brain Researcher
-    
+
     # Network
     bind 0.0.0.0
     port 6379
     timeout 300
-    
+
     # General
     daemonize no
     pidfile /var/run/redis.pid
     loglevel notice
     logfile ""
-    
+
     # Memory management
     maxmemory 512mb
     maxmemory-policy allkeys-lru
     maxmemory-samples 5
-    
+
     # Persistence
     save 900 1
     save 300 10
@@ -392,7 +392,7 @@ data:
     rdbchecksum yes
     dbfilename dump.rdb
     dir /data
-    
+
     # Append only file
     appendonly yes
     appendfilename "appendonly.aof"
@@ -400,11 +400,11 @@ data:
     no-appendfsync-on-rewrite no
     auto-aof-rewrite-percentage 100
     auto-aof-rewrite-min-size 64mb
-    
+
     # Slow log
     slowlog-log-slower-than 10000
     slowlog-max-len 128
-    
+
     # Client output buffer limits
     client-output-buffer-limit normal 0 0 0
     client-output-buffer-limit slave 256mb 64mb 60
@@ -422,12 +422,12 @@ metadata:
 data:
   postgresql.conf: |
     # PostgreSQL configuration for Brain Researcher
-    
+
     # Connection Settings
     listen_addresses = '*'
     port = 5432
     max_connections = 100
-    
+
     # Memory
     shared_buffers = 256MB
     effective_cache_size = 1GB
@@ -437,7 +437,7 @@ data:
     default_statistics_target = 100
     random_page_cost = 1.1
     effective_io_concurrency = 200
-    
+
     # Logging
     log_destination = 'stderr'
     logging_collector = on
@@ -445,30 +445,30 @@ data:
     log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
     log_statement = 'error'
     log_min_duration_statement = 1000
-    
+
     # Replication
     wal_level = replica
     max_wal_senders = 3
     max_replication_slots = 3
-    
+
   init.sql: |
     -- Initialize Brain Researcher database
-    
+
     -- Create extensions
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     CREATE EXTENSION IF NOT EXISTS "pg_trgm";
     CREATE EXTENSION IF NOT EXISTS "btree_gin";
-    
+
     -- Create schemas
     CREATE SCHEMA IF NOT EXISTS brain_researcher;
     CREATE SCHEMA IF NOT EXISTS analytics;
     CREATE SCHEMA IF NOT EXISTS monitoring;
-    
+
     -- Grant permissions
     GRANT ALL PRIVILEGES ON SCHEMA brain_researcher TO brain_researcher;
     GRANT ALL PRIVILEGES ON SCHEMA analytics TO brain_researcher;
     GRANT ALL PRIVILEGES ON SCHEMA monitoring TO brain_researcher;
-    
+
     -- Create basic tables
     CREATE TABLE IF NOT EXISTS brain_researcher.users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -480,7 +480,7 @@ data:
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-    
+
     CREATE TABLE IF NOT EXISTS brain_researcher.jobs (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES brain_researcher.users(id),
@@ -492,7 +492,7 @@ data:
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         completed_at TIMESTAMP
     );
-    
+
     CREATE INDEX IF NOT EXISTS idx_jobs_status ON brain_researcher.jobs(status);
     CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON brain_researcher.jobs(user_id);
     CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON brain_researcher.jobs(created_at);
@@ -511,20 +511,20 @@ data:
     global:
       scrape_interval: 15s
       evaluation_interval: 15s
-    
+
     rule_files:
       - "/etc/prometheus/rules/*.yml"
-    
+
     alerting:
       alertmanagers:
         - static_configs:
             - targets: []
-    
+
     scrape_configs:
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
-      
+
       - job_name: 'kubernetes-pods'
         kubernetes_sd_configs:
           - role: pod
@@ -553,23 +553,23 @@ data:
           - source_labels: [__meta_kubernetes_pod_name]
             action: replace
             target_label: kubernetes_pod_name
-      
+
       - job_name: 'brain-researcher-services'
         static_configs:
           - targets:
             - 'orchestrator-service:3001'
             - 'agent-service:8000'
-            - 'neurokg-service:5000'
+            - 'br-kg-service:5000'
             - 'niclip-service:8001'
         metrics_path: '/metrics'
         scrape_interval: 30s
-      
+
       - job_name: 'redis'
         static_configs:
           - targets: ['redis-service:6379']
         metrics_path: '/metrics'
         scrape_interval: 30s
-      
+
       - job_name: 'postgres'
         static_configs:
           - targets: ['postgres-service:5432']

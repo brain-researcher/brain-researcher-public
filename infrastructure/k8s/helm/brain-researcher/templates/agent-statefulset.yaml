@@ -67,8 +67,8 @@ spec:
               value: "/app"
             - name: PYTHONUNBUFFERED
               value: "1"
-            - name: NEUROKG_API_URL
-              value: "http://{{ include "brain-researcher.fullname" . }}-neurokg:5000"
+            - name: BR_KG_API_URL
+              value: "http://{{ include "brain-researcher.fullname" . }}-br-kg:5000"
             - name: REDIS_URL
               value: "redis://{{ include "brain-researcher.fullname" . }}-redis.{{ .Values.namespaces.data }}:6379/2"
             - name: LOG_LEVEL

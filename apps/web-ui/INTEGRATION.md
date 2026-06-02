@@ -10,7 +10,7 @@ steps.
 - Browser -> Next.js (port 3000)
 - Next `/api/chat`, `/api/files`, `/api/datasets`, `/api/threads` plus the compatibility `/api/runs*` facade -> Agent service (port 8000)
 - Next `/api/analyses/*`, `/api/share/*`, `/api/user/notifications/*`, `/api/credits/*`, `/api/dashboard/metrics` -> Orchestrator service (port 3001)
-- Next `/api/kg/*` and `/api/neurokg/*` -> BR-KG service (port 5000)
+- Next `/api/kg/*` and `/api/br-kg/*` -> BR-KG service (port 5000)
 - Internal orchestrator execution surfaces remain `/run` and `/api/jobs/*`
 
 ## Integration Status (what is wired today)
@@ -62,7 +62,7 @@ Browser
 Next.js Web UI (port 3000)
   |-- /api/chat|files|datasets|threads + compatibility /api/runs* -> Agent (port 8000)
   |-- /api/analyses|share|credits|notifications|dashboard -> Orchestrator (port 3001)
-  \-- /api/kg/* and /api/neurokg/* -> BR-KG (port 5000)
+  \-- /api/kg/* and /api/br-kg/* -> BR-KG (port 5000)
 ```
 
 ## Environment Configuration
@@ -77,13 +77,13 @@ AGENT_HOST=127.0.0.1
 AGENT_PORT=8000
 ORCHESTRATOR_HOST=127.0.0.1
 ORCHESTRATOR_PORT=3001
-NEUROKG_HOST=127.0.0.1
-NEUROKG_PORT=5000
+BR_KG_HOST=127.0.0.1
+BR_KG_PORT=5000
 
 # Optional explicit internal overrides for server-side route handlers
 # BR_AGENT_URL=http://127.0.0.1:8000
 # BR_ORCHESTRATOR_URL=http://127.0.0.1:3001
-# BR_NEUROKG_URL=http://127.0.0.1:5000
+# BR_KG_URL=http://127.0.0.1:5000
 ```
 
 Notes:
@@ -151,7 +151,7 @@ curl -s http://127.0.0.1:3000/api/kg/health
 
 This integration work addresses the following Linear issues:
 - **NEURO-6**: Landing Page Hero Section (UI-002)
-- **NEURO-28**: Chat Interface Component (UI-003) 
+- **NEURO-28**: Chat Interface Component (UI-003)
 - **NEURO-29**: Evidence Rail Component (UI-004)
 - **NEURO-30**: Execution Progress Display (UI-005)
 

@@ -21,7 +21,7 @@ spec:
     - "*"
     tls:
       httpsRedirect: true
-      
+
   # HTTPS server for web UI
   - port:
       number: 443
@@ -35,18 +35,18 @@ spec:
     - "*.brain-researcher.local"
     - "app.brain-researcher.com"
     - "*.app.brain-researcher.com"
-    
+
   # BR-KG API port
   - port:
       number: 5000
-      name: neurokg-api
+      name: br-kg-api
       protocol: HTTP
     hosts:
     - "api.brain-researcher.local"
-    - "neurokg.brain-researcher.local"
+    - "br-kg.brain-researcher.local"
     - "api.brain-researcher.com"
-    - "neurokg.brain-researcher.com"
-    
+    - "br-kg.brain-researcher.com"
+
   # Agent service port
   - port:
       number: 8000
@@ -57,7 +57,7 @@ spec:
     - "llm.brain-researcher.local"
     - "agent.brain-researcher.com"
     - "llm.brain-researcher.com"
-    
+
   # Web UI port
   - port:
       number: 3000
@@ -93,7 +93,7 @@ spec:
     - "*.openneuro.org"
     tls:
       mode: PASSTHROUGH
-      
+
   # NeuroVault access
   - port:
       number: 443
@@ -104,7 +104,7 @@ spec:
     - "*.neurovault.org"
     tls:
       mode: PASSTHROUGH
-      
+
   # PubMed/NCBI access
   - port:
       number: 443
@@ -116,7 +116,7 @@ spec:
     - "pubmed.ncbi.nlm.nih.gov"
     tls:
       mode: PASSTHROUGH
-      
+
   # Brain imaging repositories
   - port:
       number: 443
@@ -152,7 +152,7 @@ spec:
     hosts:
     - "*.brain-researcher.svc.cluster.local"
     - "internal.brain-researcher.local"
-    
+
   # Metrics and monitoring
   - port:
       number: 9090
@@ -161,7 +161,7 @@ spec:
     hosts:
     - "prometheus.brain-researcher.local"
     - "metrics.brain-researcher.local"
-    
+
   # Grafana dashboard
   - port:
       number: 3000
@@ -170,7 +170,7 @@ spec:
     hosts:
     - "grafana.brain-researcher.local"
     - "monitoring.brain-researcher.local"
-    
+
   # Kiali service mesh visualization
   - port:
       number: 20001
@@ -205,7 +205,7 @@ spec:
     - "*.dev.brain-researcher.local"
     - "localhost"
     - "127.0.0.1"
-    
+
   # Testing ports
   - port:
       number: 8090

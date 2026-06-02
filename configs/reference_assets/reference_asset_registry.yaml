@@ -1,0 +1,175 @@
+version: 0.1.0
+
+assets:
+  - id: method.deepresbat.reference
+    kind: method_bundle
+    title: DeepResBat harmonization reference
+    source_repo: ""
+    source_release: ""
+    source_project: ""
+    version: "2024"
+    license: review-upstream
+    description: Covariate-aware harmonization workflow reference for multi-site MRI.
+    modalities: [fmri, smri]
+    tags: [harmonization, combat, deepresbat, multisite, batch_effects]
+    local_search_hints:
+      - /app/data/reference_assets/materialized/method_bundles/method.deepresbat.reference
+      - /app/data/reference_assets/materialized/method_bundles/cbig.method.deepresbat
+      - /app/data/reference_assets/repos/cbig/Standalone_An2024_DeepResBat
+      - /srv/reference_assets/materialized/method_bundles/method.deepresbat.reference
+      - /srv/reference_assets/materialized/method_bundles/cbig.method.deepresbat
+      - /srv/reference_assets/repos/cbig/Standalone_An2024_DeepResBat
+
+  - id: method.gcvae.reference
+    kind: method_bundle
+    title: gcVAE harmonization reference
+    source_repo: ""
+    source_release: ""
+    source_project: ""
+    version: "2022"
+    license: review-upstream
+    description: Generative covariate-aware harmonization reference.
+    modalities: [fmri, smri]
+    tags: [harmonization, gcvae, multisite, batch_effects]
+    local_search_hints:
+      - /app/data/reference_assets/materialized/method_bundles/method.gcvae.reference
+      - /app/data/reference_assets/materialized/method_bundles/cbig.method.gcvae
+      - /app/data/reference_assets/repos/cbig/Standalone_An2022_gcVAE
+      - /srv/reference_assets/materialized/method_bundles/method.gcvae.reference
+      - /srv/reference_assets/materialized/method_bundles/cbig.method.gcvae
+      - /srv/reference_assets/repos/cbig/Standalone_An2022_gcVAE
+
+  - id: nilearn.atlas.schaefer2018.400.17networks
+    kind: atlas
+    title: Schaefer2018 400-parcel 17-network volume atlas
+    source_repo: https://www.templateflow.org/
+    source_release: TemplateFlow-backed Schaefer2018 atlas packaging
+    source_paper: Schaefer et al. 2018 Local-Global parcellation of the human cerebral cortex from intrinsic functional connectivity MRI
+    version: "2018"
+    description: Generic Schaefer2018 400-parcel atlas reference using the 17-network ordering and TemplateFlow-backed MNI template variants when available.
+    modalities: [fmri, smri]
+    spaces: [MNI152]
+    tags: [atlas, parcellation, schaefer, yeo_networks]
+    local_search_hints:
+      - data/atlases
+      - /app/data/atlases
+      - data/templateflow
+      - /app/data/templateflow
+      - /srv/templateflow
+
+  - id: nilearn.atlas.yeo2011.17networks.volume
+    kind: atlas
+    title: Yeo2011 17-network volume atlas
+    source_repo: https://nilearn.github.io/stable/modules/generated/nilearn.datasets.fetch_atlas_yeo_2011.html
+    source_release: nilearn Yeo2011 atlas packaging
+    source_paper: Yeo et al. 2011 The organization of the human cerebral cortex estimated by intrinsic functional connectivity
+    version: "2011"
+    description: Generic Yeo2011 17-network cortical atlas in MNI152 volume space.
+    modalities: [fmri, smri]
+    spaces: [MNI152]
+    tags: [atlas, parcellation, yeo2011, networks]
+    local_search_hints:
+      - data/atlases
+      - /app/data/atlases
+
+  - id: atlas.schaefer2018.localglobal_bundle
+    kind: atlas
+    title: Schaefer2018 LocalGlobal atlas bundle
+    source_repo: ""
+    source_release: ""
+    source_project: ""
+    version: "2018"
+    license: MIT
+    description: Multi-resolution Schaefer atlas release across MNI, fsaverage, and HCP spaces.
+    modalities: [fmri, smri, dmri]
+    spaces: [MNI152, fsaverage, fsLR32k]
+    tags: [atlas, parcellation, schaefer, yeo_networks]
+    local_search_hints:
+      - data/atlases
+      - /app/data/atlases
+
+  - id: atlas.yeo2011.network_bundle
+    kind: atlas
+    title: Yeo2011 7/17 network atlas bundle
+    source_repo: ""
+    source_release: ""
+    source_project: ""
+    version: "2011"
+    license: MIT
+    description: Canonical 7-network and 17-network cortical parcellation references.
+    modalities: [fmri, smri]
+    spaces: [fsaverage, MNI152]
+    tags: [atlas, parcellation, yeo2011, networks]
+    local_search_hints:
+      - data/atlases
+      - /app/data/atlases
+
+  - id: warp.mni_fsaverage.registration_fusion
+    kind: warp
+    title: MNI-fsaverage registration fusion warp bundle
+    source_repo: ""
+    source_release: ""
+    source_project: ""
+    version: "2017"
+    license: MIT
+    description: Reference MNI to fsaverage warp bundle for cross-space projection provenance.
+    modalities: [fmri, smri]
+    spaces: [MNI152, fsaverage]
+    tags: [warp, registration, surface_volume, mni, fsaverage]
+
+  - id: model.longitudinal_progression.reference
+    kind: model_bundle
+    title: Longitudinal progression modeling reference
+    source_repo: ""
+    source_release: ""
+    source_project: ""
+    version: "2020"
+    license: review-upstream
+    description: Longitudinal disease progression modeling reference for clinical workflow packaging.
+    modalities: [clinical, smri]
+    tags: [longitudinal, clinical, prediction, rnnad]
+    local_search_hints:
+      - /app/data/reference_assets/materialized/model_bundles/model.longitudinal_progression.reference
+      - /app/data/reference_assets/materialized/model_bundles/cbig.model.nguyen2020_rnnad
+      - /app/data/reference_assets/repos/cbig/Standalone_Nguyen2020_RNNAD
+      - /srv/reference_assets/materialized/model_bundles/model.longitudinal_progression.reference
+      - /srv/reference_assets/materialized/model_bundles/cbig.model.nguyen2020_rnnad
+      - /srv/reference_assets/repos/cbig/Standalone_Nguyen2020_RNNAD
+
+  - id: method.asd_factor_subtyping.reference
+    kind: method_bundle
+    title: ASD factor subtype discovery reference
+    source_repo: ""
+    source_release: ""
+    source_project: ""
+    version: "2020"
+    license: MIT
+    description: Disorder subtype discovery reference workflow for factorized clustering.
+    modalities: [fmri, clinical]
+    tags: [subtyping, clustering, asd, disorder_subtypes]
+    local_search_hints:
+      - /app/data/reference_assets/materialized/method_bundles/method.asd_factor_subtyping.reference
+      - /app/data/reference_assets/materialized/method_bundles/cbig.method.tang2020_asd_factors
+      - /app/data/reference_assets/repos/cbig/CBIG/stable_projects/disorder_subtypes/Tang2020_ASDFactors
+      - /srv/reference_assets/materialized/method_bundles/method.asd_factor_subtyping.reference
+      - /srv/reference_assets/materialized/method_bundles/cbig.method.tang2020_asd_factors
+      - /srv/reference_assets/repos/cbig/CBIG/stable_projects/disorder_subtypes/Tang2020_ASDFactors
+
+  - id: method.ad_joint_factor_subtyping.reference
+    kind: method_bundle
+    title: AD joint-factor subtype discovery reference
+    source_repo: ""
+    source_release: ""
+    source_project: ""
+    version: "2019"
+    license: MIT
+    description: Multi-factor Alzheimer subtype discovery reference workflow.
+    modalities: [fmri, clinical, smri]
+    tags: [subtyping, clustering, alzheimers, disorder_subtypes]
+    local_search_hints:
+      - /app/data/reference_assets/materialized/method_bundles/method.ad_joint_factor_subtyping.reference
+      - /app/data/reference_assets/materialized/method_bundles/cbig.method.sun2019_adjointfactors
+      - /app/data/reference_assets/repos/cbig/CBIG/stable_projects/disorder_subtypes/Sun2019_ADJointFactors
+      - /srv/reference_assets/materialized/method_bundles/method.ad_joint_factor_subtyping.reference
+      - /srv/reference_assets/materialized/method_bundles/cbig.method.sun2019_adjointfactors
+      - /srv/reference_assets/repos/cbig/CBIG/stable_projects/disorder_subtypes/Sun2019_ADJointFactors

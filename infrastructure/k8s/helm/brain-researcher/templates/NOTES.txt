@@ -1,3 +1,4 @@
+{{- $brKg := index .Values "br-kg" }}
 ================================================================================
 🧠 Brain Researcher Platform - Successfully Deployed! 🎉
 ================================================================================
@@ -46,7 +47,7 @@ Core Application Services:
 {{- if .Values.agent.enabled }}
   ✅ Agent (Unified Gateway)    - Port 8000 (HTTP API + WebSocket /ws)
 {{- end }}
-{{- if .Values.neurokg.enabled }}
+{{- if $brKg.enabled }}
   ✅ BR-KG                     - Port 5000 (Knowledge Graph API)
 {{- end }}
 {{- if .Values.webUi.enabled }}
@@ -87,8 +88,8 @@ Check service status:
    {{- if .Values.agent.enabled }}
    $ curl http://{{ include "brain-researcher.fullname" . }}-agent:8000/health
    {{- end }}
-   {{- if .Values.neurokg.enabled }}
-   $ curl http://{{ include "brain-researcher.fullname" . }}-neurokg:5000/health
+   {{- if $brKg.enabled }}
+   $ curl http://{{ include "brain-researcher.fullname" . }}-br-kg:5000/health
    {{- end }}
 
 3. 📊 Access monitoring (if enabled):
@@ -159,8 +160,8 @@ Service metrics endpoints (Prometheus format):
 {{- if .Values.agent.enabled }}
 - Agent: http://{{ include "brain-researcher.fullname" . }}-agent:8000/metrics
 {{- end }}
-{{- if .Values.neurokg.enabled }}
-- BR-KG: http://{{ include "brain-researcher.fullname" . }}-neurokg:5000/metrics
+{{- if $brKg.enabled }}
+- BR-KG: http://{{ include "brain-researcher.fullname" . }}-br-kg:5000/metrics
 {{- end }}
 
 Note: Metrics are exposed on the main service ports, not on separate ports.
@@ -208,7 +209,7 @@ If you encounter issues:
 5. 🌐 Test network connectivity between services:
    $ kubectl run -it --rm debug --image=busybox --restart=Never -n {{ include "brain-researcher.coreNamespace" . }} -- sh
    # Then inside the pod:
-   # wget -O- http://{{ include "brain-researcher.fullname" . }}-neurokg:5000/health
+   # wget -O- http://{{ include "brain-researcher.fullname" . }}-br-kg:5000/health
 
 Common issues and solutions:
 - ImagePullBackOff: Verify image exists in registry ({{ .Values.global.imageRegistry }})
@@ -217,7 +218,7 @@ Common issues and solutions:
 - StatefulSet not updating: Delete pod manually to force recreation with new image
 
 Force pod recreation for StatefulSets:
-$ kubectl delete pod {{ include "brain-researcher.fullname" . }}-neurokg-0 -n {{ include "brain-researcher.coreNamespace" . }}
+$ kubectl delete pod {{ include "brain-researcher.fullname" . }}-br-kg-0 -n {{ include "brain-researcher.coreNamespace" . }}
 $ kubectl delete pod {{ include "brain-researcher.fullname" . }}-agent-0 -n {{ include "brain-researcher.coreNamespace" . }}
 
 ================================================================================
@@ -238,8 +239,8 @@ export AR_REPO="{{ .Values.global.imageRegistry }}"
 export TAG="v5"  # increment version
 
 # Build specific service
-docker build --target neurokg -t $AR_REPO/neurokg:$TAG .
-docker push $AR_REPO/neurokg:$TAG
+docker build --target br-kg -t $AR_REPO/br-kg:$TAG .
+docker push $AR_REPO/br-kg:$TAG
 
 # Update deployment
 helm upgrade {{ .Release.Name }} infrastructure/k8s/helm/brain-researcher \
@@ -260,7 +261,7 @@ $ kubectl rollout restart deployment -n {{ include "brain-researcher.coreNamespa
 
 Restart StatefulSets (manual pod deletion required):
 $ kubectl delete pod {{ include "brain-researcher.fullname" . }}-agent-0 -n {{ include "brain-researcher.coreNamespace" . }}
-$ kubectl delete pod {{ include "brain-researcher.fullname" . }}-neurokg-0 -n {{ include "brain-researcher.coreNamespace" . }}
+$ kubectl delete pod {{ include "brain-researcher.fullname" . }}-br-kg-0 -n {{ include "brain-researcher.coreNamespace" . }}
 
 ================================================================================
 

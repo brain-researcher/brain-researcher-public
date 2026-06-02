@@ -144,17 +144,17 @@ spec:
   rules:
   - from:
     - source:
-        principals: 
+        principals:
         {{- if eq $dbName "redis" }}
           - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/web-ui-service-account"
           - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/agent-service-account"
           - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/orchestrator-service-account"
         {{- else if eq $dbName "postgres" }}
-          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/neurokg-service-account"
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/br-kg-service-account"
           - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/orchestrator-service-account"
           - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/web-ui-service-account"
         {{- else if eq $dbName "neo4j" }}
-          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/neurokg-service-account"
+          - "cluster.local/ns/{{ include "brain-researcher-istio.namespace" $ }}/sa/br-kg-service-account"
         {{- end }}
 {{- end }}
 {{- end }}

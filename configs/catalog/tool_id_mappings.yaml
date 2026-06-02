@@ -1,0 +1,136 @@
+# DEPRECATED migration scaffold for legacy planner/catalog -> runtime tool ids.
+# Migrate by: 2026-06-30.
+# Runtime canonical IDs are the only stable public tool IDs; reverse
+# compatibility aliases are derived in code only when narrowly needed.
+
+deprecation:
+  status: deprecated_migration_scaffold
+  migrate_by: "2026-06-30"
+  replacement: canonical_runtime_tool_ids
+  note: use canonical runtime IDs directly; keep legacy aliases only at ingress compatibility boundaries
+
+catalog_to_runtime:
+  # BIDS Apps (KG/catalog ids -> runtime tool names)
+  bidsapp.fmriprep.run: fmriprep_preprocessing
+  bidsapp.qsiprep.run: qsiprep_preprocessing
+  bidsapp.mriqc.run: run_mriqc
+  bidsapp.xcpd.run: xcpd_postprocessing
+
+  # ANTs / AFNI / FSL irregular names
+  ants.antsRegistration: ants_registration
+  ants.antsRegistration.run: ants_registration
+  ants.2.5.3.antsRegistration.run: ants_registration
+  ants.2.5.3.antsRegistrationSyN.sh.run: ants_registration
+  ants.2.5.3.antsRegistrationSyNQuick.sh.run: ants_registration
+  ants.2.5.3.antsApplyTransforms.run: ants_registration
+  ants.2.5.3.WarpTimeSeriesImageMultiTransform.run: ants_registration
+  ants.2.5.3.antsBrainExtraction.sh.run: fsl_bet
+  ants.2.5.3.Atropos.run: spm12_vbm
+  fsl.bet.run: fsl_bet
+  fsl.flirt.run: fsl_flirt
+  fsl.fnirt.run: fsl_fnirt
+  fsl.6.0.4.flirt.run: fsl_flirt
+  fsl.6.0.4.fnirt.run: fsl_fnirt
+  fsl.6.0.4.applywarp.run: fsl_fnirt
+  fsl.6.0.4.featregapply.run: fsl_flirt
+  fsl.6.0.4.mcflirt.run: fmriprep_preprocessing
+  fsl.6.0.4.fast.run: fsl_fast
+  fsl.6.0.4.first.run: spm12_vbm
+  fsl.6.0.4.fsl_prepare_fieldmap.run: fsl_prepare_fieldmap
+  fsl.6.0.4.topup.run: fsl_topup
+  fsl.6.0.4.epi_reg.run: fsl_epi_reg
+  fsl.6.0.4.randomise.run: fsl_palm
+  fsl.fslFixText: fsl_fix
+  fsl.fslFixText.run: fsl_fix
+  afni.3dClustSim: afni_3dClustSim
+  afni.3dClustSim.run: afni_3dClustSim
+  afni.3dBlurInMask: afni_3dBlurInMask
+  afni.3dBlurInMask.run: afni_3dBlurInMask
+  afni.3dReHo: afni_3dReHo
+  afni.3dReHo.run: afni_3dReHo
+  afni.3dDeconvolve: afni_3dDeconvolve
+  afni.3dDeconvolve.run: afni_3dDeconvolve
+  afni.volreg.run: afni_3dvolreg
+  afni.24.2.06.3dvolreg.run: fmriprep_preprocessing
+  afni.24.2.06.3dFDR.run: multiple_comparison_correction
+  afni.24.2.06.CompareSurfaces.run: surface_projection
+  afni.24.2.06.IsoSurface.run: surface_projection
+  afni.24.2.06.SurfaceMetrics.run: surface_projection
+
+  # FSL high-level catalog ids -> runtime tool names
+  fsl.feat: [fsl_feat, fsl_feat_glm]
+  fsl.melodic: [fsl_melodic, fsl_melodic_ica]
+
+  # Neurodesk-facing canonical module ids -> runtime tool names
+  cat12: spm12_vbm
+  cat12.vbm.run: spm12_vbm
+
+  # Common python catalog ids
+  bids.validate: validate_bids
+  python.fetch_atlas.run: fetch_atlas
+  python.extract_timeseries.run: extract_timeseries
+  python.nilearn_connectivity_matrix.run: [connectivity_matrix, nilearn_connectivity_matrix]
+  python.nilearn_mvpa.run: decoding_classifier
+  python.nilearn_glm.run: [glm_first_level, glm_second_level, glm_analysis]
+  python.nilearn_ica_tool.run: group_ica
+  python.hyperalignment_fmri.run: hyperalignment
+  python.validate_bids.run: validate_bids
+  python.query_bids_layout.run: query_bids_layout
+  python.dynamic_connectivity.run: dynamic_connectivity
+  python.graph_theory.run: graph_theory
+  python.gnn_connectivity.run: gnn_connectivity
+  python.dmri_parcellate_connectome.run: dmri_parcellate_connectome
+  python.diffusion_tractography.run: diffusion_tractography
+  python.ieeg_electrode_localize.run: ieeg_electrode_localize
+  python.ieeg_preprocess.run: ieeg_preprocess
+  python.literature_mining.run: literature_mining
+  python.fmriprep.run: run_fmriprep
+  python.xcpd_tool.run: xcpd_postprocessing
+  neurosynth.meta_analysis.run: meta_analysis
+  python.nilearn_viz.run: [viz_stat_maps, surface_projection]
+  python.resolve_montage.run: resolve_montage
+  python.eeg_preprocess.run: eeg_preprocess
+  python.epoch_events.run: epoch_events
+  python.timefreq_tfr.run: timefreq_tfr
+  python.seed_based_fc.run: seed_based_fc
+  python.glm_first_level.run: glm_first_level
+  python.glm_second_level.run: glm_second_level
+  python.viz_stat_maps.run: viz_stat_maps
+  python.surface_projection.run: surface_projection
+  python.data_harmonization.run: data_harmonization
+  python.brain_simulation.run: brain_simulation
+  python.realtime_fmri.run: realtime_fmri
+  python.realtime_twophoton.run: realtime_twophoton
+  python.lesion_detection.run: lesion_detection
+  python.coordinate_meta_analysis.run: coordinate_meta_analysis
+  python.cross_validation.run: cross_validation
+  python.statistical_inference.run: statistical_inference
+  python.encoding_models_fmri.run: [encoding_models, encoding_model]
+  python.resolve_bids.run: resolve_bids
+  python.meta_brainmap.run: meta_brainmap
+  python.asl_perfusion.run: asl_perfusion
+  python.fmriprep_qc.run: fmriprep_qc
+  python.smri_parcellation_stats.run: smri_parcellation_stats
+  python.test_retest_metrics.run: test_retest_metrics
+  python.unified_segmenter.run: unified_segmenter
+  python.hierarchical_clustering.run: hierarchical_clustering
+  python.rsa_analyzer.run: rsa_analyzer
+  python.gene_expression_mapping.run: gene_expression_mapping
+  python.searchlight_fmri.run: [searchlight_analysis, run_searchlight]
+  glm_multiverse.run: glm_multiverse
+
+  # Nilearn catalog ids (non-python prefix)
+  nilearn.seed_connectivity.run: seed_based_fc
+
+  # Placeholder client ids -> concrete runtime tools (routing/gating proxy)
+  br_kg.client: br_kg.search_nodes
+  datasets.client: br_kg.search_datasets
+  openneuro.client: openneuro.search
+  meta_analysis.client: meta_analysis
+  fmri.connectivity_client.light: connectivity_matrix
+  viz.client: viz_stat_maps
+  advanced_analysis.client: decoding_classifier
+
+  # Gemini placeholders -> concrete CLI tools
+  gemini.fs: gemini.read_file
+  gemini.net: gemini.web_fetch

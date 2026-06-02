@@ -13,7 +13,7 @@ sys.path.insert(
 from brain_researcher.core.ingestion.loaders.openneuro_study_links import (
     link_openneuro_dataset_studies,
 )
-from brain_researcher.services.neurokg.graph.fake_graph_database import FakeGraphDB
+from brain_researcher.services.br_kg.graph.fake_graph_database import FakeGraphDB
 
 
 class TestOpenNeuroStudyLinks(unittest.TestCase):

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Brain Researcher Session Handoff"
+  short_description: "Start BR logging, keep stable session identity, and close concise handoffs"
+  default_prompt: "Use $brain-researcher-session-handoff to log this Brain Researcher session and close it with a concise, resumable handoff."

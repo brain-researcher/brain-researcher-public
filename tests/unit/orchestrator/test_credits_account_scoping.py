@@ -6,6 +6,7 @@ from brain_researcher.services.orchestrator.endpoints.credits import (
     API_USD_CURRENCY,
     CreditsStore,
 )
+from brain_researcher.services.shared import credits as shared_credits
 
 
 def test_workflow_credits_are_scoped_by_workspace_and_user(tmp_path) -> None:
@@ -105,12 +106,8 @@ def test_workflow_credits_are_scoped_by_workspace_and_user(tmp_path) -> None:
 def test_workflow_monthly_top_up_is_idempotent_and_account_scoped(tmp_path) -> None:
     store = CreditsStore(str(tmp_path / "credits.sqlite"))
 
-    first_a = store.top_up_workflow_monthly_allowance(
-        "ws", "user-a", month="2026-05"
-    )
-    first_b = store.top_up_workflow_monthly_allowance(
-        "ws", "user-b", month="2026-05"
-    )
+    first_a = store.top_up_workflow_monthly_allowance("ws", "user-a", month="2026-05")
+    first_b = store.top_up_workflow_monthly_allowance("ws", "user-b", month="2026-05")
     repeated_a = store.top_up_workflow_monthly_allowance(
         "ws", "user-a", month="2026-05"
     )
@@ -162,9 +159,7 @@ def test_workflow_monthly_top_up_respects_existing_grant_idempotency_key(
         ttl_seconds=60,
     )
 
-    repeated = store.top_up_workflow_monthly_allowance(
-        "ws", "user-a", month="2026-05"
-    )
+    repeated = store.top_up_workflow_monthly_allowance("ws", "user-a", month="2026-05")
 
     assert repeated["idempotent"] is True
     assert repeated["balance_milli"] == 9_000
@@ -174,7 +169,7 @@ def test_initial_workflow_credit_grant_is_idempotent_and_can_be_disabled(
     tmp_path, monkeypatch
 ) -> None:
     monkeypatch.setenv("BR_CREDITS_DB", str(tmp_path / "credits.sqlite"))
-    monkeypatch.setattr(credits, "_store", None)
+    monkeypatch.setattr(shared_credits, "_store", None)
 
     first = credits.grant_initial_workflow_credits_for_account(
         "default",
@@ -199,16 +194,17 @@ def test_initial_workflow_credit_grant_is_idempotent_and_can_be_disabled(
         source="test",
     )
     assert disabled["skipped"] is True
-    assert credits._get_store().get_balance("default", "user-disabled")[
-        "balance_milli"
-    ] == 0
+    assert (
+        credits._get_store().get_balance("default", "user-disabled")["balance_milli"]
+        == 0
+    )
 
 
 def test_initial_api_usd_credit_grant_is_idempotent_and_can_be_disabled(
     tmp_path, monkeypatch
 ) -> None:
     monkeypatch.setenv("BR_CREDITS_DB", str(tmp_path / "credits.sqlite"))
-    monkeypatch.setattr(credits, "_store", None)
+    monkeypatch.setattr(shared_credits, "_store", None)
 
     first = credits.grant_initial_api_usd_credits_for_account(
         "default",
@@ -258,7 +254,7 @@ def test_initial_account_credit_grant_funds_workflow_and_api_usd_buckets(
     tmp_path, monkeypatch
 ) -> None:
     monkeypatch.setenv("BR_CREDITS_DB", str(tmp_path / "credits.sqlite"))
-    monkeypatch.setattr(credits, "_store", None)
+    monkeypatch.setattr(shared_credits, "_store", None)
 
     first = credits.grant_initial_account_credits_for_account(
         "default",
@@ -275,9 +271,9 @@ def test_initial_account_credit_grant_funds_workflow_and_api_usd_buckets(
     assert first["api_fee_usd"]["idempotent"] is False
     assert second["workflow_runtime"]["idempotent"] is True
     assert second["api_fee_usd"]["idempotent"] is True
-    assert credits._get_store().get_balance("default", "user-a")[
-        "balance_milli"
-    ] == 10_000
+    assert (
+        credits._get_store().get_balance("default", "user-a")["balance_milli"] == 10_000
+    )
     assert (
         credits._get_store().get_bucket_balance(
             "default",

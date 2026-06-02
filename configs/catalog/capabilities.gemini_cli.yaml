@@ -1,0 +1,252 @@
+tools:
+- id: gemini.list_directory
+  name: Gemini List Directory
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiListDirectory
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: false
+    tags: &id001
+    - fs
+    - coding
+    - read_only
+    cost_hint: cheap
+  risk: safe
+  tags: *id001
+- id: gemini.read_file
+  name: Gemini Read File
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiReadFile
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: false
+    tags: &id002
+    - fs
+    - coding
+    - read_only
+    cost_hint: cheap
+  risk: safe
+  tags: *id002
+- id: gemini.search_text
+  name: Gemini Search Text
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiSearchText
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: false
+    tags: &id003
+    - fs
+    - coding
+    - read_only
+    cost_hint: cheap
+  risk: safe
+  tags: *id003
+- id: gemini.write_file
+  name: Gemini Write File
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiWriteFile
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: true
+    tags: &id004
+    - fs
+    - coding
+    - write
+    cost_hint: normal
+  risk: dangerous
+  tags: *id004
+- id: gemini.replace
+  name: Gemini Replace
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiReplace
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: true
+    tags: &id005
+    - fs
+    - coding
+    - write
+    cost_hint: normal
+  risk: dangerous
+  tags: *id005
+- id: gemini.run_shell
+  name: Gemini Run Shell
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiRunShell
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: true
+    tags: &id006
+    - shell
+    - coding
+    - dangerous
+    cost_hint: expensive
+  risk: dangerous
+  tags: *id006
+- id: gemini.web_fetch
+  name: Gemini Web Fetch
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiWebFetch
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: false
+    tags: &id007
+    - net
+    - http
+    cost_hint: normal
+  risk: safe
+  tags: *id007
+- id: gemini.google_search
+  name: Gemini Google Search
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiGoogleSearch
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: false
+    tags: &id008
+    - net
+    - search
+    cost_hint: normal
+  risk: safe
+  tags: *id008
+- id: gemini.write_todos
+  name: Gemini Write Todos
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiWriteTodos
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: true
+    tags: &id009
+    - planning
+    - write
+    cost_hint: normal
+  risk: dangerous
+  tags: *id009
+- id: gemini.save_memory
+  name: Gemini Save Memory
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiSaveMemory
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: true
+    tags: &id010
+    - memory
+    - write
+    cost_hint: normal
+  risk: dangerous
+  tags: *id010
+- id: gemini.codebase_investigator
+  name: Gemini Codebase Investigator
+  package: gemini
+  runtime_kind: python
+  modality:
+  - search
+  python:
+    module: brain_researcher.services.tools.gemini_cli_tools
+    function: GeminiCodebaseInvestigator
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: true
+    tags: &id011
+    - analysis
+    - coding
+    - expensive
+    cost_hint: expensive
+  risk: dangerous
+  tags: *id011
+- id: code_agent
+  name: Coding Agent
+  package: agent
+  runtime_kind: python
+  entrypoint: brain_researcher.services.tools.llm_router_tool.CodingAgentTool
+  metadata:
+    source: catalog
+    dangerous: true
+    tags:
+      - coding
+      - write
+    cost_hint: expensive
+  risk: dangerous
+- id: google.file_search
+  name: Google File Search
+  package: google
+  runtime_kind: python
+  modality:
+  - rag
+  - search
+  python:
+    module: brain_researcher.services.tools.google_file_search_tool
+    function: GoogleFileSearchTool
+    entry_type: class
+  metadata:
+    source: catalog
+    dangerous: true
+    tags: &id012
+    - google
+    - rag
+    - search
+    - vector_store
+    cost_hint: normal
+  risk: dangerous
+  tags: *id012

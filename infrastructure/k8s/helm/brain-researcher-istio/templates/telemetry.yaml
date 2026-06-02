@@ -48,7 +48,7 @@ spec:
           value: {{ $serviceName | quote }}
         brain_researcher_service:
           value: {{ $config.name | quote }}
-        {{- if eq $serviceName "neurokg" }}
+        {{- if eq $serviceName "br-kg" }}
         query_type:
           value: "%{REQUEST_HEADER_X_QUERY_TYPE}"
         database:
@@ -174,7 +174,7 @@ spec:
     - match:
         metric: requests_duration_milliseconds
       histogram:
-        buckets: [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 60000, 300000]  # TODO: re-derive from .Values.telemetry.metrics.prometheus.customMetrics via Helm range
+        buckets: {{ .Values.telemetry.metrics.prometheus.customMetrics | selectattr "name" "equalto" "brain_researcher_request_duration" | map(attribute="buckets") | first | default "[50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 60000, 300000]" }}
   accessLogging:
   - format:
       text: |

@@ -1,0 +1,88 @@
+{
+  "schema_version": "demo-run-bundle-v2",
+  "generated_at": "2026-05-26T06:32:41+00:00",
+  "demo": {
+    "slug": "case4-ingroup-outgroup-cultural-boundaries",
+    "analysis_id": "run_case4_ingroup_outgroup_cultural_boundaries",
+    "title": "Case 4: Ingroup-Outgroup Cultural Boundaries",
+    "description": "Case report on ingroup-outgroup boundaries across cultures and a unified neural architecture.",
+    "tags": [
+      "case4",
+      "ingroup-outgroup",
+      "culture",
+      "social-neuroscience"
+    ],
+    "demo_type": "manuscript_case_report",
+    "stage_tags": [
+      "R5"
+    ],
+    "evidence_mode": "real",
+    "log_mode": "summary_only",
+    "manuscript_figure": null,
+    "canonical_name": "Case4_Ingroup_Outgroup_Cultural_Boundaries",
+    "is_template": false,
+    "template_reason": null
+  },
+  "source_run_ids": [],
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "id": "a001",
+      "path": "docs/prompts/brain_researcher_hybrid/reports/case4_report.pdf",
+      "mime_type": "application/pdf",
+      "roles": [
+        "reference_summary_source",
+        "evidence"
+      ],
+      "stage": "R5",
+      "title": "Ingroup-Outgroup Boundaries Across Cultures: A Unified Neural Architecture"
+    }
+  ],
+  "prompt_pack": {
+    "primary_prompt": "Review the curated PDF case report: Ingroup-Outgroup Boundaries Across Cultures: A Unified Neural Architecture.",
+    "source_artifact_id": null,
+    "followup_prompts": [],
+    "coding_agent_prompts": [],
+    "mcp_prompts": []
+  },
+  "reference_output": {
+    "summary": "Ingroup-Outgroup Boundaries Across Cultures: A Unified Neural Architecture",
+    "summary_kind": "answer",
+    "source_artifact_id": null,
+    "document_ids": [
+      "a001"
+    ],
+    "highlights": [
+      "Ingroup-Outgroup Boundaries Across Cultures: A Unified Neural Architecture"
+    ],
+    "generated_at": null,
+    "dataset_version": null
+  },
+  "replay": {
+    "source": "bundle_steps",
+    "steps": [
+      {
+        "step_id": "stage_R5_1",
+        "stage": "R5",
+        "title": "RunCard / Export",
+        "status": "completed",
+        "tool": null,
+        "tool_calls": [],
+        "prompt_text": "Review the curated PDF case report: Ingroup-Outgroup Boundaries Across Cultures: A Unified Neural Architecture.",
+        "response_text": "Curated PDF report available: Ingroup-Outgroup Boundaries Across Cultures: A Unified Neural Architecture",
+        "prompt_origin": "bundle",
+        "response_origin": "bundle",
+        "artifact_ref_ids": [
+          "a001"
+        ],
+        "started_at": null,
+        "finished_at": null,
+        "duration_ms": null
+      }
+    ]
+  },
+  "fallback": {
+    "level": "none",
+    "reasons": []
+  }
+}

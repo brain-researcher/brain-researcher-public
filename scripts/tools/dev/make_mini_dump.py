@@ -5,7 +5,7 @@ Create a trimmed Neo4j export suitable for local testing and CI seeding.
 The script captures a small slice of the graph (10–20 Task nodes plus their
 immediate neighbourhood) and writes it to ``graph.json`` along with the current
 constraint statements.  The output directory defaults to
-``data/neo4j/mini_dump`` and also receives a copy of ``configs/neurokg/index_plan.yaml``
+``data/neo4j/mini_dump`` and also receives a copy of ``configs/br-kg/index_plan.yaml``
 for convenience.
 """
 
@@ -55,7 +55,7 @@ def parse_args() -> ExportConfig:
     )
     parser.add_argument(
         "--index-plan",
-        default="configs/neurokg/index_plan.yaml",
+        default="configs/br-kg/index_plan.yaml",
         help="Path to index_plan.yaml to copy alongside the dump",
     )
     parser.add_argument(

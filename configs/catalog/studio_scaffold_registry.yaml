@@ -1,0 +1,59 @@
+version: 1
+
+families:
+  neurodesk:
+    tools:
+      - spm12_vbm
+      - fsl_bet
+    derivative_preferences: []
+    defaults:
+      anat_suffix: T1w
+
+  bids_app:
+    tools:
+      - run_bids_app
+    derivative_preferences: []
+    defaults:
+      app_name: fmriprep
+
+  glm_first_level:
+    tools:
+      - glm_first_level
+    derivative_preferences:
+      - fmriprep
+    defaults:
+      task: motor
+      space: MNI152NLin2009cAsym
+      t_r: 2.0
+
+  fitlins:
+    tools:
+      - glm_multiverse
+      - run_fitlins_recipe
+    derivative_preferences:
+      - fmriprep
+      - glmfitlins
+      - fitlins
+    defaults:
+      task: motor
+      space: MNI152NLin2009cAsym
+
+  connectivity:
+    tools:
+      - workflow_rest_connectome_e2e
+      - connectivity_matrix
+    derivative_preferences:
+      - fmriprep
+    defaults:
+      task: rest
+      space: MNI152NLin2009cAsym
+      atlas_path: data/atlas/atlas_labels.nii.gz
+
+  fmri_qc:
+    tools: []
+    derivative_preferences:
+      - fmriprep
+    defaults:
+      task: rest
+      space: MNI152NLin2009cAsym
+      t_r: 2.0

@@ -30,10 +30,10 @@ services:
         delay: 10s
 
   # BR-KG API Service - Replicated
-  neurokg:
+  br-kg:
     build:
       context: .
-      target: neurokg
+      target: br-kg
     networks:
       - backend
     volumes:
@@ -87,7 +87,7 @@ services:
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
-      - NEUROKG_API_URL=http://neurokg:5000
+      - BR_KG_API_URL=http://br-kg:5000
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
@@ -135,7 +135,7 @@ services:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
       - AGENT_URL=http://agent:8000
-      - NEUROKG_URL=http://neurokg:5000
+      - BR_KG_URL=http://br-kg:5000
       - NICLIP_URL=http://niclip:8001
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/brain_researcher

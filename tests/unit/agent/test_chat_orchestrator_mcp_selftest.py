@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from brain_researcher.services.agent.chat_orchestrator import ChatOrchestrator
 from brain_researcher.services.agent.memory import ConversationMemory
+from brain_researcher.services.shared import mcp_runtime_bridge
 
 
 class DummyRouter:
@@ -57,10 +58,13 @@ def test_chat_orchestrator_autoroutes_mcp_selftest_quick(monkeypatch, tmp_path):
 
     monkeypatch.setenv("BR_AGENT_MCP_SELFTEST_AUTOROUTE", "1")
     monkeypatch.setenv("BR_USE_TOOL_RETRIEVER", "0")
-    monkeypatch.setattr(
-        "brain_researcher.services.mcp.server.system_self_test",
-        _fake_selftest,
-    )
+
+    class FakeProvider:
+        def call_tool(self, tool_name, arguments=None):
+            assert tool_name == "system_self_test"
+            return _fake_selftest(**dict(arguments or {}))
+
+    monkeypatch.setattr(mcp_runtime_bridge, "_registered_provider", FakeProvider())
 
     orch = _make_orchestrator(tmp_path)
     reply = orch.handle_chat("check this MCP status for me", history=[], ctx={})
@@ -89,10 +93,13 @@ def test_chat_orchestrator_autoroutes_mcp_selftest_active(monkeypatch, tmp_path)
 
     monkeypatch.setenv("BR_AGENT_MCP_SELFTEST_AUTOROUTE", "1")
     monkeypatch.setenv("BR_USE_TOOL_RETRIEVER", "0")
-    monkeypatch.setattr(
-        "brain_researcher.services.mcp.server.system_self_test",
-        _fake_selftest,
-    )
+
+    class FakeProvider:
+        def call_tool(self, tool_name, arguments=None):
+            assert tool_name == "system_self_test"
+            return _fake_selftest(**dict(arguments or {}))
+
+    monkeypatch.setattr(mcp_runtime_bridge, "_registered_provider", FakeProvider())
 
     orch = _make_orchestrator(tmp_path)
     reply = orch.handle_chat(
@@ -118,14 +125,40 @@ def test_chat_orchestrator_does_not_trigger_mcp_selftest_for_normal_queries(
 
     monkeypatch.setenv("BR_AGENT_MCP_SELFTEST_AUTOROUTE", "1")
     monkeypatch.setenv("BR_USE_TOOL_RETRIEVER", "0")
-    monkeypatch.setattr(
-        "brain_researcher.services.mcp.server.system_self_test",
-        _fake_selftest,
-    )
+
+    class FakeProvider:
+        def call_tool(self, tool_name, arguments=None):
+            assert tool_name == "system_self_test"
+            return _fake_selftest(**dict(arguments or {}))
+
+    monkeypatch.setattr(mcp_runtime_bridge, "_registered_provider", FakeProvider())
 
     orch = _make_orchestrator(tmp_path)
     reply = orch.handle_chat("what is cognitive control?", history=[], ctx={})
 
     assert calls == []
+    metadata = reply.metadata or {}
+    assert metadata.get("type") != "mcp_selftest"
+
+
+def test_chat_orchestrator_mcp_selftest_provider_unavailable_falls_through(
+    monkeypatch, tmp_path
+):
+    class UnavailableProvider:
+        def call_tool(self, tool_name, arguments=None):
+            raise mcp_runtime_bridge.MCPRuntimeUnavailable("mcp unavailable")
+
+    monkeypatch.setenv("BR_AGENT_MCP_SELFTEST_AUTOROUTE", "1")
+    monkeypatch.setenv("BR_USE_TOOL_RETRIEVER", "0")
+    monkeypatch.setattr(
+        mcp_runtime_bridge,
+        "_registered_provider",
+        UnavailableProvider(),
+    )
+
+    orch = _make_orchestrator(tmp_path)
+    reply = orch.handle_chat("check this MCP status for me", history=[], ctx={})
+
+    assert reply.answer == "direct answer"
     metadata = reply.metadata or {}
     assert metadata.get("type") != "mcp_selftest"

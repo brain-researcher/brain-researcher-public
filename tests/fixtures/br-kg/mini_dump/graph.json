@@ -1,0 +1,137 @@
+{
+  "metadata": {
+    "constraint_cypher": [],
+    "generated_at": "2026-05-26T00:00:00+00:00",
+    "node_count": 6,
+    "relationship_count": 5,
+    "task_ids": [
+      "neurostore_task:finger_tapping",
+      "neurostore_task:n_back"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "brain_region:dlpfc",
+      "labels": [
+        "BrainRegion"
+      ],
+      "properties": {
+        "category": "cortical_region",
+        "id": "brain_region:dlpfc",
+        "label": "Dorsolateral prefrontal cortex",
+        "name": "Dorsolateral prefrontal cortex"
+      }
+    },
+    {
+      "id": "brain_region:primary_motor_cortex",
+      "labels": [
+        "BrainRegion"
+      ],
+      "properties": {
+        "category": "cortical_region",
+        "id": "brain_region:primary_motor_cortex",
+        "label": "Primary motor cortex",
+        "name": "Primary motor cortex"
+      }
+    },
+    {
+      "id": "concept:working_memory",
+      "labels": [
+        "Concept"
+      ],
+      "properties": {
+        "category": "cognitive_domain",
+        "id": "concept:working_memory",
+        "label": "Working memory",
+        "name": "Working memory"
+      }
+    },
+    {
+      "id": "dataset:ci_smoke",
+      "labels": [
+        "DataResource",
+        "Dataset"
+      ],
+      "properties": {
+        "accession": "ci_smoke",
+        "category": "fixture",
+        "dataset_id": "dataset:ci_smoke",
+        "id": "dataset:ci_smoke",
+        "label": "CI smoke BR-KG fixture",
+        "modality": "fMRI",
+        "name": "CI smoke BR-KG fixture"
+      }
+    },
+    {
+      "id": "neurostore_task:finger_tapping",
+      "labels": [
+        "Task"
+      ],
+      "properties": {
+        "category": "motor_action",
+        "id": "neurostore_task:finger_tapping",
+        "label": "Finger Tapping",
+        "name": "Finger Tapping",
+        "source": "ci_mini_dump"
+      }
+    },
+    {
+      "id": "neurostore_task:n_back",
+      "labels": [
+        "Task"
+      ],
+      "properties": {
+        "category": "working_memory",
+        "id": "neurostore_task:n_back",
+        "label": "N-back",
+        "name": "N-back",
+        "source": "ci_mini_dump"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "end": "neurostore_task:n_back",
+      "properties": {
+        "source": "ci_mini_dump"
+      },
+      "start": "dataset:ci_smoke",
+      "type": "HAS_TASK"
+    },
+    {
+      "end": "neurostore_task:finger_tapping",
+      "properties": {
+        "source": "ci_mini_dump"
+      },
+      "start": "dataset:ci_smoke",
+      "type": "HAS_TASK"
+    },
+    {
+      "end": "concept:working_memory",
+      "properties": {
+        "confidence": 0.9,
+        "source": "ci_mini_dump"
+      },
+      "start": "neurostore_task:n_back",
+      "type": "MAPS_TO"
+    },
+    {
+      "end": "brain_region:dlpfc",
+      "properties": {
+        "confidence": 0.8,
+        "source": "ci_mini_dump"
+      },
+      "start": "neurostore_task:n_back",
+      "type": "ASSOCIATED_WITH"
+    },
+    {
+      "end": "brain_region:primary_motor_cortex",
+      "properties": {
+        "confidence": 0.8,
+        "source": "ci_mini_dump"
+      },
+      "start": "neurostore_task:finger_tapping",
+      "type": "ASSOCIATED_WITH"
+    }
+  ]
+}

@@ -25,9 +25,9 @@ import hashlib
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from brain_researcher.services.neurokg.schemas.node_schemas_simple import NODE_TYPES, validate_node
+from brain_researcher.services.br_kg.schemas.node_schemas_simple import NODE_TYPES, validate_node
 # Edge schemas import temporarily disabled for testing
-# from brain_researcher.services.neurokg.schemas.edge_schemas import EDGE_TYPES, ALLOWED_EDGES, validate_edge
+# from brain_researcher.services.br_kg.schemas.edge_schemas import EDGE_TYPES, ALLOWED_EDGES, validate_edge
 EDGE_TYPES = {}
 ALLOWED_EDGES = {}
 
@@ -57,7 +57,7 @@ class StandardsValidator:
     def __init__(self, config_dir: Path = None):
         """Initialize validator with configuration."""
         self.project_root = project_root
-        self.config_dir = config_dir or project_root / "configs" / "neurokg"
+        self.config_dir = config_dir or project_root / "configs" / "br-kg"
         self.results = {
             "timestamp": datetime.now().isoformat(),
             "passed": [],

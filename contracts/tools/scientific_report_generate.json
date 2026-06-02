@@ -55,7 +55,7 @@
         "title": "Logs Dir"
       },
       "task_id": {
-        "default": "default",
+        "default": "liu_component_v1",
         "title": "Task Id",
         "type": "string"
       },

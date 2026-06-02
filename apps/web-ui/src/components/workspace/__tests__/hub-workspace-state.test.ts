@@ -123,25 +123,24 @@ describe('handoffAllowsDirectRuntimeOpen', () => {
 })
 
 describe('buildHubRuntimeTargetUrl', () => {
-  it('threads the hub session id into runtime target URLs', () => {
+  it('does NOT impose the studio session id on the runtime target URL', () => {
+    // marimo owns its own session id now; the studio id must not be threaded in.
     expect(
       buildHubRuntimeTargetUrl(
         'https://brain-researcher.com/hub/br-marimo-rt-demo/',
         'studio_demo123',
       ),
-    ).toBe(
-      'https://brain-researcher.com/hub/br-marimo-rt-demo/?session_id=studio_demo123',
-    )
+    ).toBe('https://brain-researcher.com/hub/br-marimo-rt-demo/')
   })
 
-  it('preserves existing query params while setting session_id', () => {
+  it('preserves other query params while stripping any session_id', () => {
     expect(
       buildHubRuntimeTargetUrl(
-        'https://brain-researcher.com/hub/br-marimo-rt-demo/?path=projects%2Fdemo',
+        'https://brain-researcher.com/hub/br-marimo-rt-demo/?path=projects%2Fdemo&session_id=studio_demo123',
         'studio_demo123',
       ),
     ).toBe(
-      'https://brain-researcher.com/hub/br-marimo-rt-demo/?path=projects%2Fdemo&session_id=studio_demo123',
+      'https://brain-researcher.com/hub/br-marimo-rt-demo/?path=projects%2Fdemo',
     )
   })
 

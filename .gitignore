@@ -15,7 +15,7 @@ venv/
 env/
 ENV/
 *_env/
-neurokg_env/
+br_kg_env/
 agent_langgraph/langgraph_env/
 services/agent/langgraph_env/
 langgraph_env/
@@ -204,7 +204,7 @@ Thumbs.db
 /src/brain_researcher/data/feedback/
 /src/brain_researcher/services/agent/data/
 /src/brain_researcher/services/orchestrator/data/
-/src/brain_researcher/services/neurokg/data/neo4j/
+/src/brain_researcher/services/br_kg/data/neo4j/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -291,7 +291,7 @@ metadata/
 # Local Neo4j scratch / exports
 neo4j_tmp*/
 neo4j_tmp_test/
-data/neurokg_exports/
+data/br-kg_exports/
 
 # Local uploads (agent file upload fallback)
 .uploads/
@@ -300,20 +300,20 @@ data/neurokg_exports/
 
 
 data/*
-!data/neurokg/
-data/neurokg/*
-!data/neurokg/raw/
-data/neurokg/raw/*
-!data/neurokg/raw/gabriel/
-data/neurokg/raw/gabriel/*
-!data/neurokg/raw/gabriel/eval/
-data/neurokg/raw/gabriel/eval/*
-!data/neurokg/raw/gabriel/eval/idea_mining_failure_taxonomy_20260316/
-!data/neurokg/raw/gabriel/eval/idea_mining_failure_taxonomy_20260316/**
+!data/br-kg/
+data/br-kg/*
+!data/br-kg/raw/
+data/br-kg/raw/*
+!data/br-kg/raw/gabriel/
+data/br-kg/raw/gabriel/*
+!data/br-kg/raw/gabriel/eval/
+data/br-kg/raw/gabriel/eval/*
+!data/br-kg/raw/gabriel/eval/idea_mining_failure_taxonomy_20260316/
+!data/br-kg/raw/gabriel/eval/idea_mining_failure_taxonomy_20260316/**
 *.db
 *.sqlite
 
-brain_researcher/services/neurokg/data/neo4j/
+brain_researcher/services/br_kg/data/neo4j/
 test_outputs/
 
 # Local database backups (do not commit)
@@ -358,7 +358,3 @@ skills/third_party/AI-Research-SKILLs/
 # Claude Code session-local state (not portable across machines)
 .claude/scheduled_tasks.lock
 .claude/*.lock
-
-# Runtime MCP/agent artifacts (generated at run time)
-packages/*/data/runs/
-data/runs/

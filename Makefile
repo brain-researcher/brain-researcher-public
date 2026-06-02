@@ -18,12 +18,12 @@ INGEST_DIR=data/etl_cache/glmfitlins_ingest
 
 ingest_glmfitlins:
 	mkdir -p $(INGEST_DIR)
-	PYTHONPATH=src python -m brain_researcher.services.neurokg.etl.glmfitlins_ingest.discover_specs --stats-dir $(STATS_DIR) --annot-dir $(ANNOT_DIR) --manifest $(INGEST_DIR)/dataset_manifest.csv
-	PYTHONPATH=src python -m brain_researcher.services.neurokg.etl.glmfitlins_ingest.parse_statsmodel --manifest $(INGEST_DIR)/dataset_manifest.csv --out $(INGEST_DIR)/contrasts_raw.csv
-	PYTHONPATH=src python -m brain_researcher.services.neurokg.etl.glmfitlins_ingest.annotate_constructs --manifest $(INGEST_DIR)/dataset_manifest.csv --contrasts $(INGEST_DIR)/contrasts_raw.csv --annot-dir $(ANNOT_DIR)
-	PYTHONPATH=src python -m brain_researcher.services.neurokg.etl.glmfitlins_ingest.make_edges --manifest $(INGEST_DIR)/dataset_manifest.csv --contrasts $(INGEST_DIR)/contrasts_raw.csv --out-dir $(INGEST_DIR)
-	bash scripts/neurokg/neo4j_import_glmfitlins.sh $(INGEST_DIR)
-	PYTHONPATH=src python -m brain_researcher.services.neurokg.etl.glmfitlins_ingest.qa_report --out-dir $(INGEST_DIR)
+	PYTHONPATH=src python -m brain_researcher.services.br_kg.etl.glmfitlins_ingest.discover_specs --stats-dir $(STATS_DIR) --annot-dir $(ANNOT_DIR) --manifest $(INGEST_DIR)/dataset_manifest.csv
+	PYTHONPATH=src python -m brain_researcher.services.br_kg.etl.glmfitlins_ingest.parse_statsmodel --manifest $(INGEST_DIR)/dataset_manifest.csv --out $(INGEST_DIR)/contrasts_raw.csv
+	PYTHONPATH=src python -m brain_researcher.services.br_kg.etl.glmfitlins_ingest.annotate_constructs --manifest $(INGEST_DIR)/dataset_manifest.csv --contrasts $(INGEST_DIR)/contrasts_raw.csv --annot-dir $(ANNOT_DIR)
+	PYTHONPATH=src python -m brain_researcher.services.br_kg.etl.glmfitlins_ingest.make_edges --manifest $(INGEST_DIR)/dataset_manifest.csv --contrasts $(INGEST_DIR)/contrasts_raw.csv --out-dir $(INGEST_DIR)
+	bash scripts/br-kg/neo4j_import_glmfitlins.sh $(INGEST_DIR)
+	PYTHONPATH=src python -m brain_researcher.services.br_kg.etl.glmfitlins_ingest.qa_report --out-dir $(INGEST_DIR)
 
 .PHONY: download-neurosynth
 
@@ -68,6 +68,6 @@ kg-show:
 backup-neo4j:
 	bash scripts/neo4j_backup_daily.sh
 
-# Quick smoke of running services (agent / neurokg / web-ui)
+# Quick smoke of running services (agent / br-kg / web-ui)
 health-check:
 	bash scripts/smoke/health_smoke.sh

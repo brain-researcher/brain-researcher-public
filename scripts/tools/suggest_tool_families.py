@@ -52,8 +52,8 @@ def load_covered_leaf_ids() -> set[str]:
 
 
 PREFIX_RULES = [
-    (r"^neurokg\\.", "neurokg.client"),
-    (r"^neurokg\\.dataset|^neurokg\\.search", "neurokg.datasets"),
+    (r"^br_kg\\.", "br_kg.client"),
+    (r"^br_kg\\.dataset|^br_kg\\.search", "br_kg.datasets"),
     (r"^kg_", "kg.admin"),
     (r"^(datasets\\.|openneuro\\.|dandi\\.)", "datasets.client"),
     (r"^jobs\\.", "jobs.client"),

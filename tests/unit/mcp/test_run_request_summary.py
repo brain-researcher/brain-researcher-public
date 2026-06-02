@@ -4,6 +4,8 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from brain_researcher.services.mcp import runstore
+
 UTC = timezone.utc
 
 
@@ -50,7 +52,7 @@ def test_run_request_summary_aggregates_pipeline_and_tool_requests(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.delenv("BR_MCP_RUN_ROOT_ALIASES", raising=False)
     monkeypatch.setattr(srv, "_run_roots_for_read", lambda: [tmp_path])
 
@@ -160,7 +162,7 @@ def test_run_request_summary_reads_alias_roots_and_applies_since_days_filter(
     old_created_at = (datetime.now(UTC) - timedelta(days=90)).isoformat()
     primary_root = tmp_path / "primary"
     alias_root = tmp_path / "alias"
-    monkeypatch.setattr(srv, "RUN_ROOT", primary_root)
+    monkeypatch.setattr(runstore, "RUN_ROOT", primary_root)
     monkeypatch.setattr(srv, "_run_roots_for_read", lambda: [primary_root, alias_root])
 
     _write_run(

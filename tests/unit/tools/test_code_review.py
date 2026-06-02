@@ -27,11 +27,10 @@ from brain_researcher.services.review.verdict_builder import produce_verdict
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_engine() -> ReviewRuleEngine:
     """Load the real review_rules.yaml."""
-    rules_path = (
-        Path(__file__).resolve().parents[3] / "configs" / "review_rules.yaml"
-    )
+    rules_path = Path(__file__).resolve().parents[3] / "configs" / "review_rules.yaml"
     return ReviewRuleEngine.from_yaml(rules_path)
 
 
@@ -80,6 +79,7 @@ def _run_asl_quant_review(
 # 1. Modality mismatch → block
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_eeg_volumetric_mni_is_blocked():
     engine = _make_engine()
@@ -97,6 +97,7 @@ def test_eeg_volumetric_mni_is_blocked():
 # ---------------------------------------------------------------------------
 # 2. Clean plan → approve
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_clean_plan_is_approved():
@@ -117,6 +118,7 @@ def test_clean_plan_is_approved():
 # ---------------------------------------------------------------------------
 # 3. FWHM too large → approve_with_warnings
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_large_fwhm_produces_warning():
@@ -150,6 +152,7 @@ def test_rule_tags_flow_into_reason_tags():
 # 4. Tool order violation → revise or block
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_atlas_before_registration_is_rejected():
     engine = _make_engine()
@@ -170,6 +173,7 @@ def test_atlas_before_registration_is_rejected():
 # 5. Empty plan → block
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_empty_plan_is_blocked():
     engine = _make_engine()
@@ -183,6 +187,7 @@ def test_empty_plan_is_blocked():
 # ---------------------------------------------------------------------------
 # 6. FWHM too small → block (severity=error, action=block)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_fwhm_below_minimum_is_blocked():
@@ -205,6 +210,7 @@ def test_fwhm_below_minimum_is_blocked():
 # 7. GLM without confound step → approve_with_warnings (severity=warn)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_glm_without_confounds_warns():
     engine = _make_engine()
@@ -224,6 +230,7 @@ def test_glm_without_confounds_warns():
 # 8. pipeline_plan_validate backward compat — response gains code_review key
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_pipeline_plan_validate_has_code_review_key(monkeypatch):
     from brain_researcher.services.mcp import server as srv
@@ -242,6 +249,7 @@ def test_pipeline_plan_validate_has_code_review_key(monkeypatch):
 # ---------------------------------------------------------------------------
 # 9. pipeline_plan_review MCP tool — missing registration step produces finding
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_pipeline_plan_review_detects_atlas_before_registration(monkeypatch):
@@ -269,6 +277,7 @@ def test_pipeline_plan_review_detects_atlas_before_registration(monkeypatch):
 # 10. Checklist is populated before findings
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_checklist_generated_before_findings():
     engine = _make_engine()
@@ -284,6 +293,7 @@ def test_checklist_generated_before_findings():
 # ---------------------------------------------------------------------------
 # 11. KG context extraction for B1
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_build_plan_review_bundle_extracts_kg_context():
@@ -318,6 +328,7 @@ def test_build_plan_review_bundle_extracts_kg_context():
 # 12. use_kg=True can add contextual high-pass finding
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_use_kg_adds_contextual_high_pass_finding():
     engine = _make_engine()
@@ -345,7 +356,9 @@ def test_use_kg_adds_contextual_high_pass_finding():
     finding_ids = [f.rule_id for f in verdict.findings]
     assert "REVIEW_HIGH_PASS_TOO_AGGRESSIVE" in finding_ids
     assert "REVIEW_HIGH_PASS_TOO_AGGRESSIVE" in verdict.kg_rules_consulted
-    finding = next(f for f in verdict.findings if f.rule_id == "REVIEW_HIGH_PASS_TOO_AGGRESSIVE")
+    finding = next(
+        f for f in verdict.findings if f.rule_id == "REVIEW_HIGH_PASS_TOO_AGGRESSIVE"
+    )
     assert finding.kg_evidence
     assert "contextual KG prior support" in finding.message
 
@@ -353,6 +366,7 @@ def test_use_kg_adds_contextual_high_pass_finding():
 # ---------------------------------------------------------------------------
 # 13. use_kg=True can clear a generic high-pass warning when KG supports it
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_use_kg_clears_supported_high_pass_warning():
@@ -384,6 +398,7 @@ def test_use_kg_clears_supported_high_pass_warning():
 # ---------------------------------------------------------------------------
 # 14. pipeline_plan_review threads use_kg to verdict_builder
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_pipeline_plan_review_use_kg_threads_through(monkeypatch):
@@ -421,6 +436,7 @@ def test_pipeline_plan_review_use_kg_threads_through(monkeypatch):
 # ---------------------------------------------------------------------------
 # 14b. QSM anti-pitfall review catches total-field inversion
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_pipeline_plan_review_rejects_qsm_total_field_direct_inversion():
@@ -615,6 +631,7 @@ qc = {"finite": True, "highpass": "checked"}
 # ---------------------------------------------------------------------------
 # 15. ASL quant second-pass critic
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_asl_quant_review_approves_consistent_payload():
@@ -830,6 +847,7 @@ def test_asl_quant_review_blocks_missing_m0_scaling_for_scaled_subjects():
 # 16. Method appropriateness seed — repeated-measures vs independent t-test
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_method_appropriateness_flags_repeated_measures_independent_ttest():
     engine = _make_engine()
@@ -850,7 +868,9 @@ def test_method_appropriateness_flags_repeated_measures_independent_ttest():
     rule_ids = [f.rule_id for f in verdict.findings]
     assert "REPEATED_MEASURES_BLOCKS_INDEPENDENT_T_TEST" in rule_ids
     finding = next(
-        f for f in verdict.findings if f.rule_id == "REPEATED_MEASURES_BLOCKS_INDEPENDENT_T_TEST"
+        f
+        for f in verdict.findings
+        if f.rule_id == "REPEATED_MEASURES_BLOCKS_INDEPENDENT_T_TEST"
     )
     assert finding.severity == "error"
     assert finding.action == "block"
@@ -884,7 +904,7 @@ def test_method_appropriateness_allows_paired_ttest_for_repeated_measures():
 def test_method_appropriateness_uses_graph_backed_compatibility(monkeypatch):
     import networkx as nx
 
-    from brain_researcher.services.neurokg import query_service
+    from brain_researcher.services.br_kg import query_service
 
     engine = _make_engine()
     graph = nx.MultiDiGraph()
@@ -928,15 +948,20 @@ def test_method_appropriateness_uses_graph_backed_compatibility(monkeypatch):
 
     verdict = produce_verdict(bundle, engine=engine)
     finding = next(
-        f for f in verdict.findings if f.rule_id == "REPEATED_MEASURES_BLOCKS_INDEPENDENT_T_TEST"
+        f
+        for f in verdict.findings
+        if f.rule_id == "REPEATED_MEASURES_BLOCKS_INDEPENDENT_T_TEST"
     )
-    assert any("relationship_type=INCOMPATIBLE_WITH" in item for item in finding.kg_evidence)
+    assert any(
+        "relationship_type=INCOMPATIBLE_WITH" in item for item in finding.kg_evidence
+    )
     assert any(item == "graph" for item in finding.kg_evidence)
 
 
 # ---------------------------------------------------------------------------
 # Review handoff directive
 # ---------------------------------------------------------------------------
+
 
 class TestReviewHandoffDirective:
     def test_scientific_handoff_emitted_on_diagnose(self):
@@ -947,7 +972,10 @@ class TestReviewHandoffDirective:
             "correctness": {
                 "decision": "flag",
                 "findings": [
-                    {"rule_id": "REVIEW_CONDITION_NUMBER_HIGH", "message": "condition number 5000"},
+                    {
+                        "rule_id": "REVIEW_CONDITION_NUMBER_HIGH",
+                        "message": "condition number 5000",
+                    },
                 ],
             },
             "judgment": {
@@ -961,16 +989,23 @@ class TestReviewHandoffDirective:
                 "missing_caveats": ["atlas version not specified"],
             },
         }
-        directive = _build_review_handoff_directive(verdict_dict, review_type="scientific_review")
+        directive = _build_review_handoff_directive(
+            verdict_dict, review_type="scientific_review"
+        )
         assert directive is not None
         assert directive["protocol"] == "br.review_handoff.directive.v1"
         assert directive["review_type"] == "scientific_review"
         assert directive["inner_verdict"]["overall_decision"] == "diagnose"
-        assert directive["inner_verdict"]["missing_caveats"] == ["atlas version not specified"]
+        assert directive["inner_verdict"]["missing_caveats"] == [
+            "atlas version not specified"
+        ]
         assert directive["inner_verdict"]["missing_checklist_items"] == ["atlas_pinned"]
         assert len(directive["findings_summary"]) == 2
         assert "REVIEW_CONDITION_NUMBER_HIGH" in directive["findings_summary"][0]
-        assert "COMPLETENESS: atlas version not specified" in directive["findings_summary"][1]
+        assert (
+            "COMPLETENESS: atlas version not specified"
+            in directive["findings_summary"][1]
+        )
         assert "Is the confound model sufficient?" in directive["reviewer_questions"]
         assert "method may not match design" in directive["reviewer_questions"]
         assert "scientific review flagged methodological or specification issues" in (
@@ -987,7 +1022,12 @@ class TestReviewHandoffDirective:
             "judgment": {"decision": "sound", "reviewer_questions": [], "issues": []},
             "completeness": {"decision": "complete"},
         }
-        assert _build_review_handoff_directive(verdict_dict, review_type="scientific_review") is None
+        assert (
+            _build_review_handoff_directive(
+                verdict_dict, review_type="scientific_review"
+            )
+            is None
+        )
 
     def test_scientific_handoff_findings_truncated(self):
         from brain_researcher.services.mcp.server import _build_review_handoff_directive
@@ -1001,7 +1041,9 @@ class TestReviewHandoffDirective:
             "judgment": {"decision": "sound", "reviewer_questions": [], "issues": []},
             "completeness": {"decision": "complete"},
         }
-        directive = _build_review_handoff_directive(verdict_dict, review_type="scientific_review")
+        directive = _build_review_handoff_directive(
+            verdict_dict, review_type="scientific_review"
+        )
         assert directive is not None
         assert len(directive["findings_summary"]) == 5
 
@@ -1018,9 +1060,13 @@ class TestReviewHandoffDirective:
                 "missing_caveats": ["confound model not specified"],
             },
         }
-        directive = _build_review_handoff_directive(verdict_dict, review_type="scientific_review")
+        directive = _build_review_handoff_directive(
+            verdict_dict, review_type="scientific_review"
+        )
         assert directive is not None
-        assert directive["findings_summary"] == ["COMPLETENESS: confound model not specified"]
+        assert directive["findings_summary"] == [
+            "COMPLETENESS: confound model not specified"
+        ]
         assert directive["inner_verdict"]["missing_checklist_items"] == [
             "confounds_declared",
             "atlas_pinned",
@@ -1033,10 +1079,16 @@ class TestReviewHandoffDirective:
         verdict_dict = {
             "overall_decision": "explore_more",
             "correctness": {"decision": "pass", "findings": []},
-            "judgment": {"decision": "questionable", "reviewer_questions": questions, "issues": []},
+            "judgment": {
+                "decision": "questionable",
+                "reviewer_questions": questions,
+                "issues": [],
+            },
             "completeness": {"decision": "incomplete"},
         }
-        directive = _build_review_handoff_directive(verdict_dict, review_type="scientific_review")
+        directive = _build_review_handoff_directive(
+            verdict_dict, review_type="scientific_review"
+        )
         assert directive is not None
         for q in questions:
             assert q in directive["reviewer_questions"]
@@ -1047,7 +1099,11 @@ class TestReviewHandoffDirective:
         verdict_dict = {
             "overall_decision": "explore_more",
             "correctness": {"decision": "pass", "findings": []},
-            "judgment": {"decision": "questionable", "reviewer_questions": [], "issues": []},
+            "judgment": {
+                "decision": "questionable",
+                "reviewer_questions": [],
+                "issues": [],
+            },
             "completeness": {"decision": "complete", "checklist": {}},
             "line_directive": {
                 "line_type": "validation",
@@ -1076,10 +1132,15 @@ class TestReviewHandoffDirective:
             "decision": "block",
             "risk_level": "high",
             "findings": [
-                {"rule_id": "REVIEW_SCRUBBING_RATE_HIGH", "message": ">20% volumes scrubbed"},
+                {
+                    "rule_id": "REVIEW_SCRUBBING_RATE_HIGH",
+                    "message": ">20% volumes scrubbed",
+                },
             ],
         }
-        directive = _build_review_handoff_directive(verdict_dict, review_type="code_review")
+        directive = _build_review_handoff_directive(
+            verdict_dict, review_type="code_review"
+        )
         assert directive is not None
         assert directive["inner_verdict"]["decision"] == "block"
         assert len(directive["findings_summary"]) == 1
@@ -1092,8 +1153,10 @@ class TestReviewHandoffDirective:
         from brain_researcher.services.mcp.server import _build_review_handoff_directive
 
         verdict_dict = {"decision": "approve", "risk_level": "low", "findings": []}
-        assert _build_review_handoff_directive(verdict_dict, review_type="code_review") is None
-
+        assert (
+            _build_review_handoff_directive(verdict_dict, review_type="code_review")
+            is None
+        )
 
 
 @pytest.mark.unit
@@ -1119,7 +1182,11 @@ def test_run_autoresearch_scientific_review_returns_line_directive_and_handoff(
             line_type="sensitivity",
             next_line_type="sensitivity",
             loaded_modules=["base", "robustness", "representation_scaling", "confound"],
-            forbidden_modules=["model_scaling", "generalization", "foundation_transfer"],
+            forbidden_modules=[
+                "model_scaling",
+                "generalization",
+                "foundation_transfer",
+            ],
             training_backend="cpu_local",
             success_criterion="stress_test_whether_the_claim_survives_sensitive_design_choices",
         ),
@@ -1137,7 +1204,7 @@ def test_run_autoresearch_scientific_review_returns_line_directive_and_handoff(
     result = run_autoresearch_scientific_review(
         "/tmp/fake-autoresearch",
         logs_dir="/tmp/fake-logs",
-        task_id="default",
+        task_id="liu_component_v1",
         use_judgment_critic=True,
         force_recompute=True,
     )
@@ -1145,6 +1212,9 @@ def test_run_autoresearch_scientific_review_returns_line_directive_and_handoff(
     assert result["ok"] is True
     assert result["line_directive"]["line_type"] == "sensitivity"
     assert result["line_directive"]["next_line_type"] == "sensitivity"
-    assert result["_agent_directive"]["review_handoff"]["inner_verdict"]["line_directive"][
-        "line_type"
-    ] == "sensitivity"
+    assert (
+        result["_agent_directive"]["review_handoff"]["inner_verdict"]["line_directive"][
+            "line_type"
+        ]
+        == "sensitivity"
+    )

@@ -6,10 +6,10 @@ review_cadence: "weekly"
 active_tracks:
   - track_id: graph_substrate_readiness
     title: BR-KG graph substrate readiness before graph learning
-    area: neurokg
+    area: br-kg
     priority: P0
     status: active
-    owner: neurokg-architecture
+    owner: br-kg-architecture
     target_date: "2026-04-21"
     summary: Freeze the BrainRegion-canonical substrate contract, pass the spatial backbone sub-gate, and isolate anatomy hierarchy as the remaining blocker before graph learning.
     next_milestone: Publish the revised graph contract, baseline, and typed-path probes with `A1 spatial backbone` separated from `A2 anatomy hierarchy`.
@@ -28,10 +28,10 @@ active_tracks:
 
   - track_id: claim_spine_readiness
     title: BR-KG claim-centric spine and claim-first verification readiness
-    area: neurokg
+    area: br-kg
     priority: P0
     status: active
-    owner: neurokg-quality
+    owner: br-kg-quality
     target_date: "2026-05-05"
     summary: Make claim-first evidence a real audited runtime path by operationalizing claim ingest, provenance, and bounded verification benchmarks.
     next_milestone: Get the bounded GABRIEL ingest path green for `Claim`, `EvidenceSpan`, and `MeasurementRun`, then benchmark `kg_verify_hypothesis` claim-first mode against mention fallback.
@@ -48,10 +48,10 @@ active_tracks:
 
   - track_id: evidence_coverage_expansion
     title: BR-KG evidence coverage expansion with guarded candidate lanes
-    area: neurokg
+    area: br-kg
     priority: P0
     status: active
-    owner: neurokg-quality
+    owner: br-kg-quality
     target_date: "2026-05-19"
     summary: Expand auditable evidence coverage through a guarded GABRIEL candidate lane and a KGGEN to ONVOC to task-panel normalization lane, without polluting the benchmark graph.
     next_milestone: Publish the evidence coverage expansion plan, fix registry parity, deduplicate the review queue, and run the first broader GABRIEL candidate ingest plus KGGEN evaluation slice.
@@ -71,10 +71,10 @@ active_tracks:
 
   - track_id: hypothesis_quality
     title: Hypothesis sampler quality, gating, and exact resolution
-    area: neurokg
+    area: br-kg
     priority: P0
     status: active
-    owner: neurokg-quality
+    owner: br-kg-quality
     target_date: "2026-03-17"
     summary: Keep the main line on grounded hypothesis generation by improving sampler quality, preserving meaningful rejections, and stabilizing exact entity resolution.
     next_milestone: Lock rejection diagnostics, exact-ID precedence, and one grounded non-empty hypothesis path or explicit explained rejection for the current gold queries.
@@ -109,10 +109,10 @@ active_tracks:
 
   - track_id: novelty_architecture
     title: Novelty and research-taste architecture
-    area: neurokg
+    area: br-kg
     priority: P2
     status: blocked
-    owner: neurokg-architecture
+    owner: br-kg-architecture
     target_date: "2026-03-31"
     summary: Defer new novelty/taste surface design until the hypothesis-quality baseline is validated on real probes.
     next_milestone: Re-open architecture choices only after the P0 quality exit criteria are met and documented.

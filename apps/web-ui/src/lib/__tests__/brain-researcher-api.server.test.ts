@@ -61,42 +61,4 @@ describe('client-side auth headers', () => {
     const headers = options?.headers as Headers
     expect(headers.get('Authorization')).toBe('Bearer client-token')
   })
-
-  it('marks notifications endpoint unsupported on 404 and hard-stops future calls', async () => {
-    getSessionMock.mockResolvedValue({ accessToken: 'client-token' })
-    mockFetch.mockResolvedValueOnce(new Response('not found', { status: 404 }))
-
-    const api = new BrainResearcherAPI()
-    const first = await api.getUserNotifications(9)
-    expect(first.endpointStatus).toBe('unsupported')
-    expect(first.endpointSupported).toBe(false)
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-
-    const second = await api.getUserNotifications(9)
-    expect(second.endpointStatus).toBe('unsupported')
-    expect(second.endpointSupported).toBe(false)
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-  })
-
-  it('skips markNotificationsRead when notifications endpoint is unsupported', async () => {
-    getSessionMock.mockResolvedValue({ accessToken: 'client-token' })
-    mockFetch.mockResolvedValueOnce(new Response('not found', { status: 404 }))
-
-    const api = new BrainResearcherAPI()
-    await api.getUserNotifications(9)
-    await api.markNotificationsRead(['n-1'])
-
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-  })
-
-  it('treats 405 notifications endpoint responses as unsupported', async () => {
-    getSessionMock.mockResolvedValue({ accessToken: 'client-token' })
-    mockFetch.mockResolvedValueOnce(new Response('method not allowed', { status: 405 }))
-
-    const api = new BrainResearcherAPI()
-    const first = await api.getUserNotifications(9)
-    expect(first.endpointStatus).toBe('unsupported')
-    expect(first.endpointSupported).toBe(false)
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-  })
 })

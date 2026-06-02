@@ -22,7 +22,6 @@ import { PlannerTracePanel } from '@/components/pipeline/PlannerTracePanel'
 import type { PipelineNodeData } from '@/components/workflow/PipelineNode'
 import { brainResearcherAPI } from '@/lib/brain-researcher-api'
 import { openSSE } from '@/lib/api'
-import { AdvancedViewBanner } from '@/components/advanced/advanced-view-banner'
 import type {
   ExecutePipelinePayload,
   PipelineExecutionResponse,
@@ -815,7 +814,7 @@ export default function PipelineBuilderPage() {
     setSavedSnapshot(snapshotToSave)
     console.log('Saved pipeline snapshot:', snapshotToSave)
   }, [currentSnapshot, setSavedSnapshot])
-  
+
   const handleLoadPipeline = useCallback(() => {
     const snapshotToLoad = cloneSnapshot(savedSnapshot)
     setLoadedSnapshot(snapshotToLoad)
@@ -1032,7 +1031,7 @@ export default function PipelineBuilderPage() {
     startJobStream,
     closeJobStream
   ])
-  
+
   return (
     <NavigationWrapper>
       {/* Don't render pipeline builder on server to avoid hydration mismatch */}
@@ -1062,9 +1061,6 @@ export default function PipelineBuilderPage() {
 
       {/* Tab Content */}
       <div className="mt-[4rem]">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <AdvancedViewBanner canonicalHref="/studio" />
-        </div>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsContent value="visual" className="mt-0">
             {/* Toolbar for Visual Builder */}
@@ -1097,7 +1093,7 @@ export default function PipelineBuilderPage() {
               Save as Template
             </Button>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button variant="default" size="sm" onClick={handleRunPipeline} disabled={isExecuting}>
               <Play className="h-4 w-4 mr-2" />
@@ -1137,7 +1133,7 @@ export default function PipelineBuilderPage() {
           </div>
         </div>
       </div>
-      
+
       <div className="flex h-[calc(100vh-12rem)] mt-[4rem]">
         {/* Left sidebar - Tool Palette */}
         {showToolPalette && (
@@ -1154,7 +1150,7 @@ export default function PipelineBuilderPage() {
             </div>
           </div>
         )}
-        
+
         {/* Main canvas area */}
         <div className="flex-1 relative bg-gray-50">
           <ReactFlowProvider>
@@ -1170,7 +1166,7 @@ export default function PipelineBuilderPage() {
             />
           </ReactFlowProvider>
         </div>
-        
+
         {/* Right sidebar - Properties Panel */}
         <Sheet open={showProperties && !!selectedNode} onOpenChange={setShowProperties}>
           <SheetContent side="right" className="w-96 p-0">

@@ -8,7 +8,7 @@ Canonical benchmark runners live in:
 - `scripts/neurometabench_v1/`: NeuroMetaBench runners, evaluators, and post-processors
 - `scripts/reproducibility_audit/`: reproducibility-audit runners and batch launchers
 
-Operational and development helpers should use existing subdirectories such as `scripts/dev/`, `scripts/deployment/`, `scripts/ci/`, `scripts/mcp/`, `scripts/neurokg/`, or `scripts/tools/`.
+Operational and development helpers should use existing subdirectories such as `scripts/dev/`, `scripts/deployment/`, `scripts/ci/`, `scripts/mcp/`, `scripts/br-kg/`, or `scripts/tools/`.
 
 Topical operational entrypoints include:
 

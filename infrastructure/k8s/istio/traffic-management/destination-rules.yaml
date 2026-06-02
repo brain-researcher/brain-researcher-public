@@ -3,13 +3,13 @@
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
-  name: neurokg-service-destination-rule
+  name: br-kg-service-destination-rule
   namespace: brain-researcher
   labels:
     app: brain-researcher
-    service: neurokg
+    service: br-kg
 spec:
-  host: neurokg-service.brain-researcher.svc.cluster.local
+  host: br-kg-service.brain-researcher.svc.cluster.local
   trafficPolicy:
     # Connection pooling for database-heavy operations
     connectionPool:
@@ -29,7 +29,7 @@ spec:
         baseEjectionTime: 30s
         maxEjectionPercent: 50
         h2UpgradePolicy: UPGRADE # Enable HTTP/2 for better performance
-        
+
     # Circuit breaker for resilience
     outlierDetection:
       consecutiveGatewayErrors: 5
@@ -38,17 +38,17 @@ spec:
       baseEjectionTime: 30s
       maxEjectionPercent: 50
       minHealthPercent: 30
-      
+
     # Load balancing for Neo4j queries
     loadBalancer:
       simple: LEAST_CONN # Good for database connections
       consistentHash:
         httpHeaderName: "X-Session-ID" # Session affinity for Neo4j
-        
+
     # TLS settings for internal communication
     tls:
       mode: ISTIO_MUTUAL
-      
+
   # Service subsets for different deployment strategies
   subsets:
   - name: v1
@@ -112,7 +112,7 @@ spec:
         h2UpgradePolicy: UPGRADE
         # Extended timeouts for long-running analysis
         timeout: 300s
-        
+
     # Circuit breaker tuned for AI workloads
     outlierDetection:
       consecutiveGatewayErrors: 3
@@ -121,16 +121,16 @@ spec:
       baseEjectionTime: 60s
       maxEjectionPercent: 30
       minHealthPercent: 50
-      
+
     # Load balancing for AI processing
     loadBalancer:
       simple: ROUND_ROBIN
       consistentHash:
         httpHeaderName: "X-User-ID" # User affinity for conversation continuity
-        
+
     tls:
       mode: ISTIO_MUTUAL
-      
+
   subsets:
   - name: stable
     labels:
@@ -176,7 +176,7 @@ spec:
         baseEjectionTime: 10s
         maxEjectionPercent: 20
         h2UpgradePolicy: UPGRADE
-        
+
     outlierDetection:
       consecutiveGatewayErrors: 3
       consecutive5xxErrors: 3
@@ -184,13 +184,13 @@ spec:
       baseEjectionTime: 30s
       maxEjectionPercent: 20
       minHealthPercent: 70
-      
+
     loadBalancer:
       simple: LEAST_CONN
-      
+
     tls:
       mode: ISTIO_MUTUAL
-      
+
   subsets:
   - name: production
     labels:
@@ -230,7 +230,7 @@ spec:
         maxEjectionPercent: 40
         h2UpgradePolicy: UPGRADE
         timeout: 180s
-        
+
     outlierDetection:
       consecutiveGatewayErrors: 5
       consecutive5xxErrors: 5
@@ -238,13 +238,13 @@ spec:
       baseEjectionTime: 30s
       maxEjectionPercent: 40
       minHealthPercent: 60
-      
+
     loadBalancer:
       simple: ROUND_ROBIN
-      
+
     tls:
       mode: ISTIO_MUTUAL
-      
+
   subsets:
   - name: v1
     labels:
@@ -278,7 +278,7 @@ spec:
         http2MaxRequests: 100
         maxRequestsPerConnection: 100
         maxRetries: 1
-        
+
     outlierDetection:
       consecutiveGatewayErrors: 2
       consecutive5xxErrors: 2
@@ -286,12 +286,12 @@ spec:
       baseEjectionTime: 10s
       maxEjectionPercent: 10
       minHealthPercent: 80
-      
+
     loadBalancer:
       simple: LEAST_CONN
       consistentHash:
         httpHeaderName: "X-Session-ID"
-        
+
     tls:
       mode: ISTIO_MUTUAL
 
@@ -315,7 +315,7 @@ spec:
         keepalive:
           time: 7200s
           interval: 60s
-          
+
     outlierDetection:
       consecutiveGatewayErrors: 1
       consecutive5xxErrors: 1
@@ -323,10 +323,10 @@ spec:
       baseEjectionTime: 60s
       maxEjectionPercent: 0 # Don't eject database
       minHealthPercent: 100
-      
+
     loadBalancer:
       simple: LEAST_CONN
-      
+
     tls:
       mode: ISTIO_MUTUAL
 
@@ -350,12 +350,12 @@ spec:
         maxRequestsPerConnection: 2
         maxRetries: 3
         timeout: 120s
-        
+
     outlierDetection:
       consecutiveGatewayErrors: 5
       interval: 60s
       baseEjectionTime: 60s
-      
+
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
@@ -375,7 +375,7 @@ spec:
         maxRequestsPerConnection: 2
         maxRetries: 3
         timeout: 90s
-        
+
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule

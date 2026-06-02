@@ -23,7 +23,7 @@ TAXONOMY_ROWS: list[dict[str, Any]] = [
         "code_refs": [
             "src/brain_researcher/services/tools/kg_novelty_tools.py#L138",
             "src/brain_researcher/services/tools/kg_novelty_tools.py#L226",
-            "src/brain_researcher/services/neurokg/query_service.py#L8597",
+            "src/brain_researcher/services/br_kg/query_service.py#L8597",
         ],
         "required_regression_assertion": (
             "If a query contains explicit comparator, population, or region language, "
@@ -44,8 +44,8 @@ TAXONOMY_ROWS: list[dict[str, Any]] = [
             "principle reranking reshuffles generic leverage features without restoring query fidelity",
         ],
         "code_refs": [
-            "src/brain_researcher/services/neurokg/query_service.py#L8085",
-            "src/brain_researcher/services/neurokg/query_service.py#L8320",
+            "src/brain_researcher/services/br_kg/query_service.py#L8085",
+            "src/brain_researcher/services/br_kg/query_service.py#L8320",
             "src/brain_researcher/services/agent/principle_controller.py#L413",
         ],
         "required_regression_assertion": (
@@ -68,9 +68,9 @@ TAXONOMY_ROWS: list[dict[str, Any]] = [
             "shared latent mechanism and cross-condition generalization templates repeat",
         ],
         "code_refs": [
-            "src/brain_researcher/services/neurokg/query_service.py#L7185",
-            "src/brain_researcher/services/neurokg/query_service.py#L7201",
-            "src/brain_researcher/services/neurokg/query_service.py#L7323",
+            "src/brain_researcher/services/br_kg/query_service.py#L7185",
+            "src/brain_researcher/services/br_kg/query_service.py#L7201",
+            "src/brain_researcher/services/br_kg/query_service.py#L7323",
         ],
         "required_regression_assertion": (
             "If the original query does not imply transfer or generalization, "
@@ -91,9 +91,9 @@ TAXONOMY_ROWS: list[dict[str, Any]] = [
             "external literature can improve verdicts late without fixing the mis-specified statement",
         ],
         "code_refs": [
-            "src/brain_researcher/services/neurokg/query_service.py#L4785",
-            "src/brain_researcher/services/neurokg/query_service.py#L5605",
-            "src/brain_researcher/services/neurokg/query_service.py#L9980",
+            "src/brain_researcher/services/br_kg/query_service.py#L4785",
+            "src/brain_researcher/services/br_kg/query_service.py#L5605",
+            "src/brain_researcher/services/br_kg/query_service.py#L9980",
             "docs/specs/kg_verify_hypothesis_spec.md#L61",
         ],
         "required_regression_assertion": (

@@ -54,7 +54,7 @@ async function stubCommon(page: any) {
     })
   })
 
-  await page.route('**/api/neurokg/suggestions', async (route: any) => {
+  await page.route('**/api/br-kg/suggestions', async (route: any) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

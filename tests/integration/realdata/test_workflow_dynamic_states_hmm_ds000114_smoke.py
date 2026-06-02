@@ -15,7 +15,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -48,7 +47,7 @@ def test_workflow_dynamic_states_hmm_ds000114_smoke(tmp_path: Path):
     atlas = (
         PROJECT_ROOT
         / "data"
-        / "neurokg"
+        / "br_kg"
         / "raw"
         / "nilearn_atlases"
         / "schaefer_2018"
@@ -88,4 +87,3 @@ def test_workflow_dynamic_states_hmm_ds000114_smoke(tmp_path: Path):
     assert (out_dir / "dynamic_summary.json").exists()
     assert (out_dir / "dynamic_matrices.npy").exists()
     assert (out_dir / "state_assignments.npy").exists()
-

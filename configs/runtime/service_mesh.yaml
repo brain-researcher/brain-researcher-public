@@ -37,9 +37,9 @@ traffic_routes:
         version: "blue"
         weight: 0  # Initially inactive
         health_check_path: "/health"
-      - name: "agent-green"  
+      - name: "agent-green"
         url: "http://localhost:8001"
-        version: "green" 
+        version: "green"
         weight: 0  # Initially inactive
         health_check_path: "/health"
     circuit_breaker:
@@ -48,8 +48,8 @@ traffic_routes:
       half_open_max_calls: 3
 
   # BR-KG Service Routes
-  - name: "neurokg_api_routes"
-    destination_service: "neurokg"
+  - name: "br_kg_api_routes"
+    destination_service: "br-kg"
     path_patterns:
       - "/api/kg/**"
       - "/api/v1/kg/**"
@@ -58,23 +58,23 @@ traffic_routes:
     timeout_seconds: 45.0
     retries: 2
     endpoints:
-      - name: "neurokg-primary"
+      - name: "br-kg-primary"
         url: "http://localhost:5000"
         version: "v1"
         weight: 100
         health_check_path: "/"
-      - name: "neurokg-blue"
+      - name: "br-kg-blue"
         url: "http://localhost:5000"
         version: "blue"
         weight: 0
         health_check_path: "/"
-      - name: "neurokg-green"
+      - name: "br-kg-green"
         url: "http://localhost:5002"
         version: "green"
         weight: 0
         health_check_path: "/"
 
-  # NICLIP Service Routes  
+  # NICLIP Service Routes
   - name: "niclip_api_routes"
     destination_service: "niclip"
     path_patterns:
@@ -124,7 +124,7 @@ traffic_routes:
   # Internal Service Communication Routes
   - name: "internal_agent_to_kg"
     source_service: "agent"
-    destination_service: "neurokg"
+    destination_service: "br-kg"
     path_patterns:
       - "/internal/**"
     policy: "round_robin"
@@ -148,7 +148,7 @@ security_rules:
     policy: "jwt_validation"
     destination_services:
       - "agent"
-      - "neurokg"
+      - "br-kg"
       - "niclip"
     config:
       secret: "${JWT_SECRET:-brain_researcher_secret}"
@@ -187,7 +187,7 @@ security_rules:
       - "agent"
       - "orchestrator"
     destination_services:
-      - "neurokg"
+      - "br-kg"
       - "niclip"
     config:
       secret: "${INTERNAL_JWT_SECRET:-internal_secret}"
@@ -214,7 +214,7 @@ load_balancing:
       max_connections_per_instance: 500  # Lower for compute-intensive service
       circuit_breaker_failure_threshold: 3
 
-    neurokg:
+    br-kg:
       strategy: "weighted"
       session_affinity: "client_ip"  # For consistent query results
       max_connections_per_instance: 2000
@@ -239,7 +239,7 @@ deployment:
   rollback_on_failure: true
   keep_previous_version: true
   drain_timeout_seconds: 60
-  
+
   required_readiness_checks:
     - "database_connectivity"
     - "external_services"
@@ -251,12 +251,12 @@ monitoring:
     enabled: true
     collection_interval_seconds: 30
     retention_seconds: 86400  # 24 hours
-    
+
   tracing:
     enabled: true
     sampling_rate: 0.1  # 10% sampling
     jaeger_endpoint: "http://localhost:14268/api/traces"
-    
+
   logging:
     level: "INFO"
     structured: true
@@ -273,7 +273,7 @@ circuit_breaker:
     - "ValidationError"
     - "AuthenticationError"
 
-# Retry policy defaults  
+# Retry policy defaults
 retry_policy:
   max_attempts: 3
   base_delay_seconds: 1.0
@@ -287,7 +287,7 @@ retry_policy:
     - "TimeoutError"
     - "ServiceUnavailable"
   non_retryable_exceptions:
-    - "ValidationError" 
+    - "ValidationError"
     - "AuthenticationError"
     - "AuthorizationError"
     - "NotFoundError"
@@ -305,7 +305,7 @@ transformations:
             template: "{{ request_id }}"
           - name: "add_timestamp"
             action: "add"
-            target: "X-Request-Timestamp"  
+            target: "X-Request-Timestamp"
             template: "{{ timestamp }}"
       enabled: true
 
@@ -332,12 +332,12 @@ transformations:
 events:
   dispatcher_workers: 4
   queue_backend: "redis"
-  
+
   handlers:
     - name: "deployment_events"
       event_types:
         - "deployment.started"
-        - "deployment.completed" 
+        - "deployment.completed"
         - "deployment.failed"
       async_processing: true
       max_retries: 3
@@ -360,7 +360,7 @@ environments:
       - name: "dev_bypass_auth"
         policy: "allow_all"
         enabled: true
-        
+
   staging:
     settings:
       enable_mtls: false
@@ -368,7 +368,7 @@ environments:
     monitoring:
       tracing:
         sampling_rate: 0.5  # Higher sampling in staging
-        
+
   production:
     settings:
       enable_mtls: true

@@ -38,7 +38,7 @@ Or run the full local stack wrapper:
 NEXT_PUBLIC_USE_API_PROXY=true
 BR_AGENT_URL=http://127.0.0.1:8000
 BR_ORCHESTRATOR_URL=http://127.0.0.1:3001
-BR_NEUROKG_URL=http://127.0.0.1:5000
+BR_KG_URL=http://127.0.0.1:5000
 # Optional only when you need a custom browser WebSocket route:
 # NEXT_PUBLIC_WS_URL=ws://127.0.0.1:3001/ws
 ```

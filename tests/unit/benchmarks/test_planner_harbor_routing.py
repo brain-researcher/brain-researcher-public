@@ -54,12 +54,12 @@ def test_evaluate_task_extracts_routing_and_benchmark_join():
                     "routing_diagnostics": {
                         "candidate_count": 3,
                         "planner_candidate_count": 3,
-                        "planner_candidate_source_counts": {"catalog": 2, "neurokg": 1},
+                        "planner_candidate_source_counts": {"catalog": 2, "br_kg": 1},
                         "selected_tool_rank": 2,
                         "selected_tool_in_top_5": True,
                         "selected_tool_in_top_10": True,
                         "routing_latency_ms": 42.5,
-                        "candidate_source_counts": {"catalog": 2, "neurokg": 1},
+                        "candidate_source_counts": {"catalog": 2, "br_kg": 1},
                     },
                     "tool_candidate_diagnostics": {
                         "candidate_generation_latency_ms": 9.5,
@@ -100,7 +100,7 @@ def test_evaluate_task_extracts_routing_and_benchmark_join():
     assert row["planner_candidate_count"] == 3
     assert row["preflight_candidate_count"] == 4
     assert row["candidate_generation_latency_ms"] == 9.5
-    assert row["candidate_source_counts"] == {"catalog": 2, "neurokg": 1}
+    assert row["candidate_source_counts"] == {"catalog": 2, "br_kg": 1}
     assert row["preflight_candidate_source_counts"] == {"catalog": 4}
     assert row["preflight_retrieval_path"] == "query_service"
     assert row["benchmark_final_status"] == "success"
@@ -280,15 +280,15 @@ def test_evaluate_task_uses_planner_candidates_not_preflight_candidates():
                         "planner_candidate_count": 0,
                         "planner_candidate_source_counts": {},
                         "preflight_candidate_count": 12,
-                        "preflight_candidate_source_counts": {"neurokg": 12},
+                        "preflight_candidate_source_counts": {"br_kg": 12},
                         "routing_terminal_reason": "preflight_candidates_not_promoted_to_plan",
                         "routing_latency_ms": 88.0,
                     },
                     "tool_candidate_diagnostics": {
                         "candidate_count": 12,
                         "candidate_generation_latency_ms": 15.0,
-                        "candidate_source_counts": {"neurokg": 12},
-                        "candidate_source": "neurokg",
+                        "candidate_source_counts": {"br_kg": 12},
+                        "candidate_source": "br_kg",
                         "retrieval_path": "query_service",
                     },
                 },
@@ -308,7 +308,7 @@ def test_evaluate_task_uses_planner_candidates_not_preflight_candidates():
     assert row["planner_candidate_count"] == 0
     assert row["preflight_candidate_count"] == 12
     assert row["candidate_source_counts"] == {}
-    assert row["preflight_candidate_source_counts"] == {"neurokg": 12}
+    assert row["preflight_candidate_source_counts"] == {"br_kg": 12}
     assert row["routing_terminal_reason"] == "preflight_candidates_not_promoted_to_plan"
 
 
@@ -392,7 +392,7 @@ def test_summarize_rows_and_write_csv(tmp_path):
             "env_overrides_json": '{"BR_PLANNER_USE_EVIDENCE_PRIOR":"0"}',
             "candidate_source_counts": {},
             "planner_candidate_source_counts": {},
-            "preflight_candidate_source_counts": {"catalog": 2, "neurokg": 3},
+            "preflight_candidate_source_counts": {"catalog": 2, "br_kg": 3},
         },
     ]
 
@@ -407,7 +407,7 @@ def test_summarize_rows_and_write_csv(tmp_path):
     assert summary["overall"]["candidate_source_mix"] == {"catalog": 3}
     assert summary["overall"]["preflight_candidate_source_mix"] == {
         "catalog": 6,
-        "neurokg": 3,
+        "br_kg": 3,
     }
 
     out_csv = tmp_path / "routing.csv"

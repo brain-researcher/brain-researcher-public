@@ -1,0 +1,80 @@
+# Pre-commit security hooks for Brain Researcher
+# Install with: pre-commit install
+
+repos:
+  # Security scanning tools
+  - repo: https://github.com/PyCQA/bandit
+    rev: '1.7.5'
+    hooks:
+      - id: bandit
+        args: ['-c', 'tests/security/sast/bandit.yaml', '--recursive', '--skip', 'B101,B601']
+        exclude: ^(tests/|external/|.*_env/|migrations/)
+
+  # Secret detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', 'tests/security/configs/.secrets.baseline']
+        exclude: package.lock.json
+
+  # Additional security checks
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.2
+    hooks:
+      - id: python-safety-dependencies-check
+        files: requirements.*\.txt$
+
+  # Semgrep security rules
+  - repo: https://github.com/semgrep/semgrep
+    rev: 'v1.45.0'
+    hooks:
+      - id: semgrep
+        args: ['--config=auto', '--config=tests/security/sast/semgrep.yml', '--error']
+        exclude: ^(tests/|external/)
+
+  # General security checks
+  - repo: local
+    hooks:
+      # Check for hardcoded secrets
+      - id: check-secrets
+        name: Check for hardcoded secrets
+        entry: tests/security/scripts/check_secrets.py
+        language: python
+        files: \.py$
+        exclude: ^(tests/|external/)
+
+      # Neuroimaging data security check
+      - id: check-participant-data
+        name: Check for participant data exposure
+        entry: tests/security/scripts/check_participant_data.py
+        language: python
+        files: \.py$
+        exclude: ^(tests/|external/)
+
+      # JWT security check
+      - id: check-jwt-security
+        name: Check JWT implementation security
+        entry: tests/security/scripts/check_jwt_security.py
+        language: python
+        files: \.py$
+        exclude: ^(tests/|external/)
+
+  # Docker security
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        args: ['--ignore', 'DL3008', '--ignore', 'DL3009']
+
+  # YAML security
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.32.0
+    hooks:
+      - id: yamllint
+        args: ['-d', 'relaxed']
+        files: \.(yml|yaml)$
+
+# Configuration
+default_stages: [commit]
+fail_fast: false

@@ -214,10 +214,10 @@ preferred configuration surface:
 
 - `ORCHESTRATOR_URL`
 - `ORCHESTRATOR_API_URL`
-- `BR_NEUROKG_URL`
-- `NEXT_PUBLIC_NEUROKG_API`
-- `NEUROKG_HOST`
-- `NEUROKG_PORT`
+- `BR_KG_URL`
+- `NEXT_PUBLIC_BR_KG_API`
+- `BR_KG_HOST`
+- `BR_KG_PORT`
 
 `NEXT_PUBLIC_AGENT_URL` is no longer part of the supported browser/runtime
 contract. Use `NEXT_PUBLIC_AGENT_API` instead when you intentionally disable

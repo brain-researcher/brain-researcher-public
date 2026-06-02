@@ -6,15 +6,15 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
+from brain_researcher.services.agent.knowledge.evidence_models import (
+    EvidenceBundle,
+    EvidenceSourceType,
+)
 from brain_researcher.services.agent.knowledge.niclip_scorer import (
     NiCLIPConnector,
     NiCLIPScorer,
     ScoredConcept,
     create_niclip_scorer,
-)
-from brain_researcher.services.agent.knowledge.evidence_models import (
-    EvidenceBundle,
-    EvidenceSourceType,
 )
 
 
@@ -95,7 +95,7 @@ class TestNiCLIPScorer:
         mock_service = MockEmbeddingService()
 
         with patch(
-            "brain_researcher.services.neurokg.niclip.embedding_service.NICLIPEmbeddingService",
+            "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService",
             return_value=mock_service,
         ):
             scorer = NiCLIPScorer()
@@ -119,7 +119,7 @@ class TestNiCLIPScorer:
         mock_service = MockEmbeddingService()
 
         with patch(
-            "brain_researcher.services.neurokg.niclip.embedding_service.NICLIPEmbeddingService",
+            "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService",
             return_value=mock_service,
         ):
             scorer = NiCLIPScorer()

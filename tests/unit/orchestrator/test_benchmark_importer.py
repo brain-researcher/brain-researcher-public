@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import sqlite3
 from pathlib import Path
@@ -17,6 +18,9 @@ from brain_researcher.services.orchestrator.benchmark_importer import (
     import_tasks,
     import_tasks_from_file,
     load_tasks_from_file,
+)
+from brain_researcher.services.shared import (
+    benchmark_importer as shared_benchmark_importer,
 )
 
 
@@ -38,6 +42,14 @@ def db():
     conn.executescript(schema.read_text())
     yield conn
     conn.close()
+
+
+def test_orchestrator_benchmark_importer_path_reexports_shared_module():
+    module = importlib.import_module(
+        "brain_researcher.services.orchestrator.benchmark_importer"
+    )
+    assert module is shared_benchmark_importer
+    assert module.import_tasks_from_file is import_tasks_from_file
 
 
 # ---- Mapping tests --------------------------------------------------------
@@ -104,7 +116,9 @@ class TestMapToTaskSpec:
         assert spec.metadata["target_population"] == "adult human participants"
         assert spec.metadata["sampling_frame"] == "multi-site cohort"
         assert spec.metadata["audit_group_keys"] == ["site", "sex"]
-        assert spec.metadata["fairness_audit"]["group_audit"]["resolved_group_keys"] == [
+        assert spec.metadata["fairness_audit"]["group_audit"][
+            "resolved_group_keys"
+        ] == [
             "site",
             "sex",
         ]
@@ -192,7 +206,9 @@ class TestImportTasks:
         assert len(gov) == 2
         assert gov[0]["status"] == "imported"
 
-        tags = db.execute("SELECT * FROM benchmark_task_tags WHERE task_id='t1'").fetchall()
+        tags = db.execute(
+            "SELECT * FROM benchmark_task_tags WHERE task_id='t1'"
+        ).fetchall()
         assert [r["tag"] for r in tags] == ["a"]
 
     def test_idempotent_skip(self, db):
@@ -284,7 +300,9 @@ class TestImportTasks:
 
         assert summary.added == 1
         assert summary.failed == 1
-        rows = db.execute("SELECT task_id FROM benchmark_tasks ORDER BY task_id").fetchall()
+        rows = db.execute(
+            "SELECT task_id FROM benchmark_tasks ORDER BY task_id"
+        ).fetchall()
         assert [r["task_id"] for r in rows] == ["t1"]
 
     def test_import_job_recorded(self, db):
@@ -300,7 +318,10 @@ class TestFileImports:
         [
             ([{"task_id": "list_1"}, {"task_id": "list_2"}], ["list_1", "list_2"]),
             ({"task_id": "single_1"}, ["single_1"]),
-            ({"benchmark_tasks": [{"task_id": "psy_1"}, {"task_id": "psy_2"}]}, ["psy_1", "psy_2"]),
+            (
+                {"benchmark_tasks": [{"task_id": "psy_1"}, {"task_id": "psy_2"}]},
+                ["psy_1", "psy_2"],
+            ),
             ({"tasks": [{"task_id": "tasks_1"}]}, ["tasks_1"]),
             ({"data": [{"task_id": "data_1"}]}, ["data_1"]),
             ({"items": [{"task_id": "items_1"}]}, ["items_1"]),
@@ -380,4 +401,6 @@ def test_fetch_tasks_from_url_rejects_tbench_html(monkeypatch):
     )
 
     with pytest.raises(ValueError, match="Terminal-Bench URL is an HTML page"):
-        asyncio.run(fetch_tasks_from_url("https://www.tbench.ai/registry/terminal-bench/2.0"))
+        asyncio.run(
+            fetch_tasks_from_url("https://www.tbench.ai/registry/terminal-bench/2.0")
+        )

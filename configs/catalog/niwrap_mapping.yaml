@@ -1,0 +1,86 @@
+# Simple prefix/intents mapping for NiWrap auto-generated capabilities.
+# This keeps rules editable without regenerating code.
+#
+# Matching logic (in code):
+# - package default modalities applied if provided
+# - each rule checks "match" substring (case-insensitive) in tool name; if matches,
+#   the listed intents are added.
+# - first rule that matches sticks for intents; default_intents are used when
+#   nothing matches.
+#
+# Note: keep intent ids aligned with configs/catalog/intents.yaml
+
+default:
+  modalities: ["fmri", "smri", "dmri"]
+  default_intents: ["generic_container_op"]
+
+packages:
+  fsl:
+    modalities: ["fmri", "smri", "dmri"]
+    rules:
+      - match: "bet"
+        intents: ["skull_strip_mri"]
+      - match: "melodic"
+        intents: ["fsl_melodic_ica", "fmri_ica_denoising"]
+      - match: "fix"
+        intents: ["fmri_ica_denoising"]
+      - match: "bedpostx"
+        intents: ["fsl_bedpostx", "dmri_tractography"]
+      - match: "palm"
+        intents: ["fsl_palm_permutation"]
+      - match: "flirt"
+        intents: ["registration_linear_mri"]
+      - match: "fnirt"
+        intents: ["registration_nonlinear_mri", "registration_to_mni"]
+      - match: "feat"
+        intents: ["glm_first_level_fmri"]
+      - match: "eddy"
+        intents: ["dmri_preprocessing"]
+      - match: "topup"
+        intents: ["dmri_preprocessing"]
+  afni:
+    modalities: ["fmri", "smri"]
+    rules:
+      - match: "clustsim"
+        intents: ["afni_clustsim_correction"]
+      - match: "skullstrip"
+        intents: ["skull_strip_mri"]
+      - match: "3dvolreg"
+        intents: ["motion_correction_fmri"]
+      - match: "3ddecon"
+        intents: ["glm_first_level_fmri"]
+      - match: "3dsmooth"
+        intents: ["smoothing"]
+  ants:
+    modalities: ["smri", "fmri"]
+    rules:
+      - match: "antsregistration"
+        intents: ["registration_nonlinear_mri"]
+      - match: "registration"
+        intents: ["registration_nonlinear_mri"]
+  freesurfer:
+    modalities: ["smri"]
+    rules:
+      - match: "recon-all"
+        intents: ["smri_recon_all"]
+      - match: "recon_all"
+        intents: ["smri_recon_all"]
+  mrtrix:
+    modalities: ["dmri"]
+    rules:
+      - match: "tck"
+        intents: ["dmri_tractography"]
+      - match: "dwi2"
+        intents: ["dmri_model_fit"]
+      - match: "mrregister"
+        intents: ["registration_nonlinear_mri"]
+  workbench:
+    modalities: ["fmri", "smri"]
+    rules:
+      - match: "surface-"
+        intents: ["surface_ops"]
+      - match: "metric-"
+        intents: ["surface_ops"]
+      - match: "volume-"
+        intents: ["volume_ops"]
+    default_intents: ["generic_container_op"]

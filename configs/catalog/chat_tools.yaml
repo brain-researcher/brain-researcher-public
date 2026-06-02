@@ -1,0 +1,25 @@
+chat_tools:
+  - gemini.fs
+  - gemini.net
+  - br_kg.client
+  - kg_multihop_qa
+  - hypothesis_hot_load_research
+  - meta_analysis.client
+  - datasets.client
+  - datasets.describe_resources
+  - list_dataset_assets
+  - openneuro.client
+  - coordinate_meta_analysis
+  - seed_based_fc
+  - glm_first_level
+  - viz.client
+  - advanced_analysis.client
+  - spm12_vbm
+  - multiple_comparison_correction
+  - mcp.tool_search
+  - behavior_to_fmri_retrieval
+  - realtime.pipeline_client
+  # Default chat surface is intentionally small. Keep this list at roughly
+  # 15-20 high-level entrypoints so agents face fewer choices by default.
+  # Heavy execution, low-level runtime tools, and most ops surfaces stay out of
+  # the default allowlist unless explicitly requested or exposed diagnostically.

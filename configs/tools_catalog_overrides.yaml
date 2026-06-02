@@ -379,132 +379,132 @@ tools:
     tags: [fitlins, glm, python, safe]
     description: Execute the FitLins GLM pipeline via local runtime wrappers.
 
-  - name: neurokg.find_structural_leverage
+  - name: br_kg.find_structural_leverage
     display_name: "BR-KG Structural Leverage"
     runtime_kind: python
     runtime: python
     domain: knowledge_graph
     modality: [kg]
     python_module: brain_researcher.services.tools.kg_novelty_tools.FindStructuralLeverageTool
-    capabilities: [neurokg, novelty, leverage]
+    capabilities: [br-kg, novelty, leverage]
     intents: [kg_novelty_audit]
     consumes: [query, seed_kg_ids]
     produces: [json]
     function: analysis
     risk: safe
-    tags: [neurokg, novelty, wrapper, python, safe]
+    tags: [br-kg, novelty, wrapper, python, safe]
     description: Find high-leverage KG structures that could shift construct-level interpretations.
 
-  - name: neurokg.detect_contradiction_motifs
+  - name: br_kg.detect_contradiction_motifs
     display_name: "BR-KG Contradiction Motifs"
     runtime_kind: python
     runtime: python
     domain: knowledge_graph
     modality: [kg]
     python_module: brain_researcher.services.tools.kg_novelty_tools.DetectContradictionMotifsTool
-    capabilities: [neurokg, novelty, contradiction]
+    capabilities: [br-kg, novelty, contradiction]
     intents: [kg_novelty_audit]
     consumes: [query, seed_kg_ids, evidence_items]
     produces: [json]
     function: analysis
     risk: safe
-    tags: [neurokg, novelty, wrapper, python, safe]
+    tags: [br-kg, novelty, wrapper, python, safe]
     description: Detect recurrent contradiction motifs in KG evidence and relation patterns.
 
-  - name: neurokg.find_contradiction_frontiers
+  - name: br_kg.find_contradiction_frontiers
     display_name: "BR-KG Contradiction Frontiers"
     runtime_kind: python
     runtime: python
     domain: knowledge_graph
     modality: [kg]
     python_module: brain_researcher.services.tools.kg_novelty_tools.FindContradictionFrontiersTool
-    capabilities: [neurokg, wow_ideation, contradiction]
+    capabilities: [br-kg, wow_ideation, contradiction]
     intents: [kg_novelty_audit]
     consumes: [query, seed_kg_ids]
     produces: [json]
     function: analysis
     risk: safe
-    tags: [neurokg, wow, wrapper, python, safe]
+    tags: [br-kg, wow, wrapper, python, safe]
     description: Find contradiction-heavy frontiers around a topic or seed neighborhood.
 
-  - name: neurokg.mine_assumption_cracks
+  - name: br_kg.mine_assumption_cracks
     display_name: "BR-KG Assumption Cracks"
     runtime_kind: python
     runtime: python
     domain: knowledge_graph
     modality: [kg]
     python_module: brain_researcher.services.tools.kg_novelty_tools.MineAssumptionCracksTool
-    capabilities: [neurokg, wow_ideation, assumptions]
+    capabilities: [br-kg, wow_ideation, assumptions]
     intents: [kg_novelty_audit]
     consumes: [query, seed_kg_ids, contradiction_frontiers]
     produces: [json]
     function: analysis
     risk: safe
-    tags: [neurokg, wow, wrapper, python, safe]
+    tags: [br-kg, wow, wrapper, python, safe]
     description: Mine challenged default assumptions from contradiction frontiers.
 
-  - name: neurokg.find_analogy_transfers
+  - name: br_kg.find_analogy_transfers
     display_name: "BR-KG Analogy Transfers"
     runtime_kind: python
     runtime: python
     domain: knowledge_graph
     modality: [kg]
     python_module: brain_researcher.services.tools.kg_novelty_tools.FindAnalogyTransfersTool
-    capabilities: [neurokg, wow_ideation, transfer]
+    capabilities: [br-kg, wow_ideation, transfer]
     intents: [kg_novelty_audit]
     consumes: [query, seed_kg_ids]
     produces: [json]
     function: analysis
     risk: safe
-    tags: [neurokg, wow, wrapper, python, safe]
+    tags: [br-kg, wow, wrapper, python, safe]
     description: Find method-family transfers that appear absent in the local target neighborhood.
 
-  - name: neurokg.synthesize_wow_candidate_cards
+  - name: br_kg.synthesize_wow_candidate_cards
     display_name: "BR-KG Wow Candidate Cards"
     runtime_kind: python
     runtime: python
     domain: knowledge_graph
     modality: [kg]
     python_module: brain_researcher.services.tools.kg_novelty_tools.SynthesizeWowCandidateCardsTool
-    capabilities: [neurokg, wow_ideation, candidate_cards]
+    capabilities: [br-kg, wow_ideation, candidate_cards]
     intents: [kg_novelty_audit]
     consumes: [query, contradiction_frontiers, assumption_cracks, analogy_transfers]
     produces: [candidate_cards]
     function: analysis
     risk: safe
-    tags: [neurokg, wow, wrapper, python, safe]
+    tags: [br-kg, wow, wrapper, python, safe]
     description: Synthesize wow-style candidate cards from contradiction, assumption, and transfer signals.
 
-  - name: neurokg.sample_ood_hypothesis
+  - name: br_kg.sample_ood_hypothesis
     display_name: "BR-KG OOD Hypothesis Sampler"
     runtime_kind: python
     runtime: python
     domain: knowledge_graph
     modality: [kg]
     python_module: brain_researcher.services.tools.kg_novelty_tools.SampleOODHypothesisTool
-    capabilities: [neurokg, novelty, hypothesis_generation]
+    capabilities: [br-kg, novelty, hypothesis_generation]
     intents: [kg_novelty_audit]
     consumes: [query, seed_kg_ids]
     produces: [json]
     function: analysis
     risk: safe
-    tags: [neurokg, novelty, wrapper, python, safe]
+    tags: [br-kg, novelty, wrapper, python, safe]
     description: Sample out-of-distribution hypotheses from KG structure and evidence context.
 
-  - name: neurokg.detect_topology_shifts
+  - name: br_kg.detect_topology_shifts
     display_name: "BR-KG Topology Shift Detector"
     runtime_kind: python
     runtime: python
     domain: knowledge_graph
     modality: [kg]
     python_module: brain_researcher.services.tools.kg_novelty_tools.DetectTopologyShiftsTool
-    capabilities: [neurokg, novelty, topology]
+    capabilities: [br-kg, novelty, topology]
     intents: [kg_novelty_audit]
     consumes: [query, seed_kg_ids]
     produces: [json]
     function: analysis
     risk: safe
-    tags: [neurokg, novelty, wrapper, python, safe]
+    tags: [br-kg, novelty, wrapper, python, safe]
     description: Detect graph topology shifts for a construct/task across conditions.
 
 # ---------------------------------------------------------------------------
@@ -1097,7 +1097,7 @@ tools:
 
   - name: task_to_concept_mapping
     # Avoid ambiguous module discovery that can hit legacy aliases.
-    python_module: brain_researcher.services.tools.neurokg_tools.TaskMappingTool
+    python_module: brain_researcher.services.tools.br_kg_tools.TaskMappingTool
 
   - name: openneuro_download
     execution_capabilities:
@@ -1131,3 +1131,35 @@ tools:
     execution_capabilities:
       needs_network: true
       writes_files: true
+
+  # --- Modality backfill (routing-control-plane slice 4) ---
+  # These tools shipped with EMPTY modality, so under the match-all modality filter
+  # they silently surfaced for ANY modality query (e.g. an fMRI connectivity tool
+  # matching a MEG query). Tagging them gives the modality gate truth to work with:
+  # M/EEG connectivity/source/timefreq tools are MEG/EEG-only; the nilearn/compute
+  # connectivity tools are fMRI-only. connectivity_measures is a sensor-space
+  # M/EEG tool; its canonical id is intentionally kept for compatibility.
+  - name: mne_connectivity
+    modality: [meg, eeg]
+  - name: mne_ica
+    modality: [meg, eeg]
+  - name: mne_source_localization
+    modality: [meg, eeg]
+  - name: mne_timefreq
+    modality: [meg, eeg]
+  - name: localize_source
+    modality: [meg, eeg]
+  - name: timefreq_tfr
+    modality: [meg, eeg]
+  - name: nilearn_connectivity_matrix
+    modality: [fmri]
+  - name: compute_connectivity
+    modality: [fmri]
+  - name: connectivity_measures
+    display_name: M/EEG Sensor-space Connectivity
+    domain: electrophysiology
+    description: Compute M/EEG sensor-space connectivity metrics from epochs (PLI/WPLI/PLV).
+    search_hint: meeg sensor space connectivity mne epochs meg eeg pli wpli plv
+    modality: [meg, eeg]
+    intents: [connectivity_measures]
+    tags: [meg, eeg, meeg, mne, sensor_space, connectivity, pli, wpli, plv, python, safe]

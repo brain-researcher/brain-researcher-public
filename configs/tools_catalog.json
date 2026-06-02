@@ -659,7 +659,7 @@
     },
     {
       "name": "find_related_concepts",
-      "domain": "neurokg",
+      "domain": "br_kg",
       "modality": [],
       "capabilities": [
         "kg_traverse"
@@ -677,7 +677,7 @@
     },
     {
       "name": "coordinate_to_concept",
-      "domain": "neurokg",
+      "domain": "br_kg",
       "modality": [],
       "capabilities": [
         "spatial_decode"
@@ -695,7 +695,7 @@
     },
     {
       "name": "concept_literature_search",
-      "domain": "neurokg",
+      "domain": "br_kg",
       "modality": [],
       "capabilities": [
         "lit_search"
@@ -713,7 +713,7 @@
     },
     {
       "name": "graph_query",
-      "domain": "neurokg",
+      "domain": "br_kg",
       "modality": [],
       "capabilities": [
         "kg_query"
@@ -737,7 +737,7 @@
     },
     {
       "name": "task_to_concept_mapping",
-      "domain": "neurokg",
+      "domain": "br_kg",
       "modality": [],
       "capabilities": [
         "task_map"
@@ -812,7 +812,7 @@
     },
     {
       "name": "kg_ingest",
-      "domain": "neurokg",
+      "domain": "br_kg",
       "modality": [],
       "consumes": {
         "nodes_file": "kg_nodes",
@@ -830,7 +830,7 @@
     },
     {
       "name": "kg_shacl_validate",
-      "domain": "neurokg",
+      "domain": "br_kg",
       "modality": [],
       "consumes": {
         "kg_nodes": "kg_nodes",
@@ -849,7 +849,7 @@
     },
     {
       "name": "kg_multihop_qa",
-      "domain": "neurokg",
+      "domain": "br_kg",
       "modality": [],
       "consumes": {
         "question": "subject_label",

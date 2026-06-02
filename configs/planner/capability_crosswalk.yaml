@@ -86,11 +86,11 @@ mappings:
     aliases:
       - knowledge graph
       - knowledge graphs
-      - neurokg
+      - br-kg
       - neo4j
       - graph database
     to_operators:
-      - neurokg
+      - br-kg
 
   brain_simulation_tool:
     aliases:
@@ -288,7 +288,7 @@ mappings:
       - moderator-aware evidence
       - provenance-grounded evidence
     to_operators:
-      - neurokg
+      - br-kg
       - meta_analysis
       - literature
     to_intents:

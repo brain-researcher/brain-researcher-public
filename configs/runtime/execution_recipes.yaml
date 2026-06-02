@@ -291,23 +291,23 @@ tool_declarations:
     supported_recipe_targets: [python]
     primary_target: python
     recipe_family: mvpa
-  neurokg.client:
+  br_kg.client:
     execution_story_kind: hosted_or_stateful_service
     supported_recipe_targets: []
     primary_target: ""
-  neurokg.detect_contradiction_motifs:
+  br_kg.detect_contradiction_motifs:
     execution_story_kind: hosted_or_stateful_service
     supported_recipe_targets: []
     primary_target: ""
-  neurokg.detect_topology_shifts:
+  br_kg.detect_topology_shifts:
     execution_story_kind: hosted_or_stateful_service
     supported_recipe_targets: []
     primary_target: ""
-  neurokg.find_structural_leverage:
+  br_kg.find_structural_leverage:
     execution_story_kind: hosted_or_stateful_service
     supported_recipe_targets: []
     primary_target: ""
-  neurokg.sample_ood_hypothesis:
+  br_kg.sample_ood_hypothesis:
     execution_story_kind: hosted_or_stateful_service
     supported_recipe_targets: []
     primary_target: ""
@@ -397,7 +397,7 @@ tool_declarations:
 
   # Exposed legacy aliases kept explicit so recipe-surface audit drift is visible
   # as a config change rather than an inferred CI failure.
-  neurokg.search_nodes:
+  br_kg.search_nodes:
     execution_story_kind: portable_python_compute
     supported_recipe_targets: [python]
     primary_target: python

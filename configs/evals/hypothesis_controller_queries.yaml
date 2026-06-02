@@ -1,0 +1,30 @@
+defaults:
+  top_k: 12
+  n_samples: 5
+  taste_mode: novelty_first
+  relation_types: []
+
+cases:
+  - id: fmri_image_decoding
+    query: "fmri based image decoding"
+    note: "Baseline query already used in the hypothesis-card workflow tests."
+
+  - id: resting_state_fc_reliability
+    query: "resting-state functional connectivity reliability"
+    taste_mode: balanced
+    note: "Good candidate for checking whether principle_v0 shifts toward evidence-aware cards."
+
+  - id: episodic_memory_retrieval
+    query: "episodic memory retrieval decoding"
+    taste_mode: evidence_first
+    note: "Useful for inspecting whether anomaly-triggered principles override evidence-first warm starts."
+
+  - id: visual_object_decoding
+    query: "visual object decoding in ventral temporal cortex"
+    taste_mode: novelty_first
+    note: "Tends to produce visually grounded candidate structure and is easy to sanity-check manually."
+
+  - id: conflict_monitoring_control
+    query: "conflict monitoring and cognitive control"
+    taste_mode: balanced
+    note: "Good stress test for contradiction-triggered principle switching."

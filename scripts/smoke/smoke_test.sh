@@ -6,7 +6,7 @@ set -e
 
 # Configuration
 AGENT_URL="${AGENT_URL:-http://localhost:8000}"
-NEUROKG_URL="${NEUROKG_URL:-http://localhost:5000}"
+BR_KG_URL="${BR_KG_URL:-http://localhost:5000}"
 PROMETHEUS_URL="${PROMETHEUS_URL:-http://localhost:9090}"
 TIMEOUT=5
 
@@ -14,7 +14,7 @@ echo "=========================================="
 echo "Brain Researcher Smoke Test"
 echo "=========================================="
 echo "Agent:      $AGENT_URL"
-echo "BR-KG:    $NEUROKG_URL"
+echo "BR-KG:    $BR_KG_URL"
 echo "Prometheus: $PROMETHEUS_URL"
 echo "=========================================="
 
@@ -57,8 +57,8 @@ fi
 # Test 2: BR-KG health endpoint
 echo ""
 echo "Test 2: BR-KG /health"
-NEUROKG_HEALTH=$(curl -s -w "\n%{http_code}" --max-time $TIMEOUT "$NEUROKG_URL/health" 2>/dev/null || echo "000")
-HTTP_CODE=$(echo "$NEUROKG_HEALTH" | tail -n1)
+BR_KG_HEALTH=$(curl -s -w "\n%{http_code}" --max-time $TIMEOUT "$BR_KG_URL/health" 2>/dev/null || echo "000")
+HTTP_CODE=$(echo "$BR_KG_HEALTH" | tail -n1)
 
 if [ "$HTTP_CODE" = "200" ]; then
     pass "BR-KG health endpoint returned 200"
@@ -69,7 +69,7 @@ fi
 # Test 3: BR-KG health/stats endpoint
 echo ""
 echo "Test 3: BR-KG /health/stats"
-STATS_RESPONSE=$(curl -s -w "\n%{http_code}" --max-time $TIMEOUT "$NEUROKG_URL/health/stats" 2>/dev/null || echo "000")
+STATS_RESPONSE=$(curl -s -w "\n%{http_code}" --max-time $TIMEOUT "$BR_KG_URL/health/stats" 2>/dev/null || echo "000")
 HTTP_CODE=$(echo "$STATS_RESPONSE" | tail -n1)
 BODY=$(echo "$STATS_RESPONSE" | sed '$d')
 
@@ -89,16 +89,16 @@ fi
 # Test 4: BR-KG /metrics endpoint
 echo ""
 echo "Test 4: BR-KG /metrics"
-METRICS_RESPONSE=$(curl -s -w "\n%{http_code}" --max-time $TIMEOUT "$NEUROKG_URL/metrics" 2>/dev/null || echo "000")
+METRICS_RESPONSE=$(curl -s -w "\n%{http_code}" --max-time $TIMEOUT "$BR_KG_URL/metrics" 2>/dev/null || echo "000")
 HTTP_CODE=$(echo "$METRICS_RESPONSE" | tail -n1)
 
 if [ "$HTTP_CODE" = "200" ]; then
     pass "BR-KG metrics endpoint returned 200"
     BODY=$(echo "$METRICS_RESPONSE" | sed '$d')
-    if echo "$BODY" | grep -q "neurokg_up"; then
-        pass "  - neurokg_up metric present"
+    if echo "$BODY" | grep -q "br_kg_up"; then
+        pass "  - br_kg_up metric present"
     else
-        warn "  - neurokg_up metric missing"
+        warn "  - br_kg_up metric missing"
     fi
 else
     warn "BR-KG metrics endpoint returned $HTTP_CODE"

@@ -160,3 +160,60 @@ def test_tool_executor_allows_filesystem_access_within_allowed_roots(
     assert isinstance(res.result, dict)
     assert res.result.get("status") == "success"
     assert res.result.get("data", {}).get("text") == "ok"
+
+
+def test_mcp_execution_gate_uses_tools_policy_without_mcp_import(monkeypatch, tmp_path):
+    import sys
+
+    from brain_researcher.services.tools.spec import ToolSpec
+
+    class Tool:
+        EXAMPLES = []
+
+        def get_tool_name(self) -> str:
+            return "demo.policy.dangerous"
+
+        def get_tool_description(self) -> str:
+            return "Should be rejected before tool lookup executes."
+
+        def get_args_schema(self):
+            return _Args
+
+        def _run(self):  # pragma: no cover - gate returns first
+            raise AssertionError("tool should not execute")
+
+    class FakeUnifiedToolRegistry:
+        def get_toolspec_by_name(self, name: str):
+            assert name == "demo.policy.dangerous"
+            return ToolSpec(
+                name=name,
+                description="dangerous test spec",
+                dangerous=True,
+            )
+
+    monkeypatch.setenv("BR_MCP_EXECUTION_GATE", "1")
+    monkeypatch.delenv("BR_MCP_ALLOW_DANGEROUS", raising=False)
+
+    import brain_researcher.services.tools.registry as registry_module
+
+    monkeypatch.setattr(
+        registry_module,
+        "UnifiedToolRegistry",
+        FakeUnifiedToolRegistry,
+    )
+    sys.modules.pop("brain_researcher.services.mcp.server", None)
+
+    executor = _make_executor(tool=Tool(), monkeypatch=monkeypatch, tmp_path=tmp_path)
+
+    from brain_researcher.services.agent.tool_executor import ToolExecutionRequest
+
+    req = ToolExecutionRequest(
+        tool_name="demo.policy.dangerous",
+        parameters={},
+        runtime_kind="python",
+    )
+    res = executor.execute(req)
+
+    assert res.status == "error"
+    assert res.error == "policy_rejected"
+    assert "brain_researcher.services.mcp.server" not in sys.modules

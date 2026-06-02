@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts.neurokg.build_kggen_task_mapping_salvage_pack import (
+from scripts.br_kg.build_kggen_task_mapping_salvage_pack import (
     build_task_mapping_salvage_pack,
 )
 
@@ -129,10 +129,20 @@ def test_build_task_mapping_salvage_pack_groups_candidates(tmp_path: Path) -> No
     assert summary["bucket_counts"]["non_task_modality"] == 1
 
     pack_path = Path(summary["artifacts"]["salvage_pack_jsonl"])
-    rows = [json.loads(line) for line in pack_path.read_text(encoding="utf-8").splitlines()]
+    rows = [
+        json.loads(line) for line in pack_path.read_text(encoding="utf-8").splitlines()
+    ]
 
     by_label = {row["source_label"]: row for row in rows}
-    assert by_label["phonological localizers"]["suggested_onvoc_label"] == "Phonological Processing"
+    assert (
+        by_label["phonological localizers"]["suggested_onvoc_label"]
+        == "Phonological Processing"
+    )
     assert by_label["word reading"]["salvage_bucket"] == "crosswalk_gap"
-    assert by_label["Resting-State fMRI"]["suggested_action"] == "reroute_meta_baseline_lane"
-    assert by_label["fMRI Processing"]["suggested_action"] == "blacklist_non_task_modality"
+    assert (
+        by_label["Resting-State fMRI"]["suggested_action"]
+        == "reroute_meta_baseline_lane"
+    )
+    assert (
+        by_label["fMRI Processing"]["suggested_action"] == "blacklist_non_task_modality"
+    )

@@ -19,7 +19,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -58,7 +57,7 @@ def test_workflow_normative_modeling_ds000114_smoke(tmp_path: Path):
             "BR_SCHAEFER100_ATLAS",
             PROJECT_ROOT
             / "data"
-            / "neurokg"
+            / "br_kg"
             / "raw"
             / "nilearn_atlases"
             / "schaefer_2018"
@@ -84,7 +83,12 @@ def test_workflow_normative_modeling_ds000114_smoke(tmp_path: Path):
         ts_dir.mkdir(parents=True, exist_ok=True)
         res_ts = execute_tool(
             "extract_timeseries",
-            {"img": str(img), "atlas": str(atlas_path), "tr": tr, "output_dir": str(ts_dir)},
+            {
+                "img": str(img),
+                "atlas": str(atlas_path),
+                "tr": tr,
+                "output_dir": str(ts_dir),
+            },
         )
         assert res_ts.status == "success", res_ts.error
         ts_file = Path((res_ts.data or {}).get("outputs", {}).get("timeseries", ""))
@@ -94,7 +98,11 @@ def test_workflow_normative_modeling_ds000114_smoke(tmp_path: Path):
         conn_file.parent.mkdir(parents=True, exist_ok=True)
         res_conn = execute_tool(
             "compute_connectivity",
-            {"timeseries": str(ts_file), "kind": "correlation", "output_file": str(conn_file)},
+            {
+                "timeseries": str(ts_file),
+                "kind": "correlation",
+                "output_file": str(conn_file),
+            },
         )
         assert res_conn.status == "success", res_conn.error
         mat = np.load(conn_file)
@@ -111,7 +119,11 @@ def test_workflow_normative_modeling_ds000114_smoke(tmp_path: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
     res = execute_tool(
         "workflow_normative_modeling",
-        {"features": str(features_file), "model": "leave_one_out", "output_dir": str(out_dir)},
+        {
+            "features": str(features_file),
+            "model": "leave_one_out",
+            "output_dir": str(out_dir),
+        },
     )
     assert res.status == "success", res.error
 
@@ -121,4 +133,3 @@ def test_workflow_normative_modeling_ds000114_smoke(tmp_path: Path):
     assert "participant_id" in out_df.columns
     assert "z_mean_abs" in out_df.columns
     assert "z_max_abs" in out_df.columns
-

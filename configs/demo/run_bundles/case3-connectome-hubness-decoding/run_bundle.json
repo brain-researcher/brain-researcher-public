@@ -1,0 +1,89 @@
+{
+  "schema_version": "demo-run-bundle-v2",
+  "generated_at": "2026-05-26T06:32:41+00:00",
+  "demo": {
+    "slug": "case3-connectome-hubness-decoding",
+    "analysis_id": "run_case3_connectome_hubness_decoding",
+    "title": "Case 3: Connectome Hubness and Decoding",
+    "description": "Case report on high-dimensional connectome matrices, hubness, decoding, and generative fidelity.",
+    "tags": [
+      "case3",
+      "connectome",
+      "hubness",
+      "decoding",
+      "generative-fidelity"
+    ],
+    "demo_type": "manuscript_case_report",
+    "stage_tags": [
+      "R5"
+    ],
+    "evidence_mode": "real",
+    "log_mode": "summary_only",
+    "manuscript_figure": null,
+    "canonical_name": "Case3_Connectome_Hubness_Decoding",
+    "is_template": false,
+    "template_reason": null
+  },
+  "source_run_ids": [],
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "id": "a001",
+      "path": "docs/prompts/brain_researcher_hybrid/reports/case3_report.pdf",
+      "mime_type": "application/pdf",
+      "roles": [
+        "reference_summary_source",
+        "evidence"
+      ],
+      "stage": "R5",
+      "title": "High-Dimensional Connectome Matrices: Hubness, Decoding, and Generative Fidelity"
+    }
+  ],
+  "prompt_pack": {
+    "primary_prompt": "Review the curated PDF case report: High-Dimensional Connectome Matrices: Hubness, Decoding, and Generative Fidelity.",
+    "source_artifact_id": null,
+    "followup_prompts": [],
+    "coding_agent_prompts": [],
+    "mcp_prompts": []
+  },
+  "reference_output": {
+    "summary": "High-Dimensional Connectome Matrices: Hubness, Decoding, and Generative Fidelity",
+    "summary_kind": "answer",
+    "source_artifact_id": null,
+    "document_ids": [
+      "a001"
+    ],
+    "highlights": [
+      "High-Dimensional Connectome Matrices: Hubness, Decoding, and Generative Fidelity"
+    ],
+    "generated_at": null,
+    "dataset_version": null
+  },
+  "replay": {
+    "source": "bundle_steps",
+    "steps": [
+      {
+        "step_id": "stage_R5_1",
+        "stage": "R5",
+        "title": "RunCard / Export",
+        "status": "completed",
+        "tool": null,
+        "tool_calls": [],
+        "prompt_text": "Review the curated PDF case report: High-Dimensional Connectome Matrices: Hubness, Decoding, and Generative Fidelity.",
+        "response_text": "Curated PDF report available: High-Dimensional Connectome Matrices: Hubness, Decoding, and Generative Fidelity",
+        "prompt_origin": "bundle",
+        "response_origin": "bundle",
+        "artifact_ref_ids": [
+          "a001"
+        ],
+        "started_at": null,
+        "finished_at": null,
+        "duration_ms": null
+      }
+    ]
+  },
+  "fallback": {
+    "level": "none",
+    "reasons": []
+  }
+}

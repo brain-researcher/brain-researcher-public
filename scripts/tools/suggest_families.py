@@ -86,7 +86,7 @@ def build_rules() -> List[Rule]:
     r.append(Rule("fs.gemini", "gemini.fs", lambda tid, mod: tid.startswith("gemini.") or tid.startswith("fs."), lambda tid: tid.split(".", 1)[-1]))
 
     # ---------- KG / Knowledge ----------
-    r.append(Rule("neurokg.core", "neurokg.client", lambda tid, mod: tid.startswith("neurokg.") or tid in {"graph_query", "find_related_concepts", "concept_literature_search", "coordinate_to_concept", "task_to_concept_mapping", "kg_multihop_qa"}, lambda tid: tid.split(".", 1)[-1]))
+    r.append(Rule("br_kg.core", "br_kg.client", lambda tid, mod: tid.startswith("br_kg.") or tid in {"graph_query", "find_related_concepts", "concept_literature_search", "coordinate_to_concept", "task_to_concept_mapping", "kg_multihop_qa"}, lambda tid: tid.split(".", 1)[-1]))
     r.append(Rule("kg.admin", "kg.admin", lambda tid, mod: tid in {"kg_ingest", "kg_shacl_validate"}, lambda tid: tid))
     r.append(Rule("knowledge.rag", "knowledge.client", lambda tid, mod: tid.startswith("rag."), lambda tid: tid.split(".", 1)[-1]))
 

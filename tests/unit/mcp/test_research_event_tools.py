@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
+from brain_researcher.services.mcp import runstore
+
 
 class _FakeToolContext:
     def __init__(self, client_id: str):
@@ -23,7 +25,7 @@ class _TempReviewHandoffResult(TypedDict):
 def _configure_run_root(monkeypatch, tmp_path: Path):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "_run_roots_for_read", lambda: [tmp_path])
     srv._ensure_dirs()
@@ -2024,6 +2026,7 @@ def test_call_tool_wrapper_emits_directive_and_auto_telemetry(tmp_path, monkeypa
     )
 
     run_id = start["run_id"]
+    saw_compact_repeat = False
     for _ in range(5):
         payload = srv._run_async_sync(
             srv.mcp._tool_manager.call_tool(
@@ -2035,6 +2038,10 @@ def test_call_tool_wrapper_emits_directive_and_auto_telemetry(tmp_path, monkeypa
         assert payload["ok"] is True
         directive = payload["_agent_directive"]["research_logging"]
         assert directive["state"]["session_id"] == "codex:chat-1"
+        saw_compact_repeat = saw_compact_repeat or (
+            directive.get("directive_ref", {}).get("mode") == "compact_repeat"
+        )
+    assert saw_compact_repeat is True
 
     failing = srv._run_async_sync(
         srv.mcp._tool_manager.call_tool(
@@ -2059,3 +2066,71 @@ def test_call_tool_wrapper_emits_directive_and_auto_telemetry(tmp_path, monkeypa
         row["event_type"] == "research.auto.tool_error"
         for row in digest["digest"]["auto_events"]
     )
+
+
+def test_research_event_kind_normalizer_coerces_and_never_raises():
+    from brain_researcher.services.mcp import server as srv
+
+    norm = srv._normalize_research_event_kind
+    # canonical pass-through
+    assert norm("start") == "start"
+    assert norm("note") == "note"
+    # case / separator insensitivity
+    assert norm("SESSION_START") == "start"
+    assert norm("session-start") == "start"
+    assert norm("Begin") == "start"
+    # synonyms collapse to the generic bucket
+    for syn in ("event", "milestone", "update", "finding", "progress", "log"):
+        assert norm(syn) == "note"
+    # unknown / empty degrade to "note" instead of raising
+    assert norm("totally-made-up") == "note"
+    assert norm("") == "note"
+    assert norm(None) == "note"
+
+
+def test_research_log_source_normalizer_coerces_and_never_raises():
+    from brain_researcher.services.mcp import server as srv
+
+    norm = srv._normalize_research_log_source
+    assert norm("agent") == "agent"
+    assert norm("user") == "user"
+    # agent synonyms (the exact values weak hosts guessed)
+    for syn in ("assistant", "Codex", "claude-code", "gpt", "system"):
+        assert norm(syn) == "agent"
+    # user synonyms
+    for syn in ("human", "Person", "researcher"):
+        assert norm(syn) == "user"
+    # unknown / empty fall back to the default author
+    assert norm("reviewer") == "agent"
+    assert norm("") == "agent"
+    assert norm(None) == "agent"
+
+
+def test_log_research_event_accepts_synonym_kind_and_source(tmp_path, monkeypatch):
+    srv = _configure_run_root(monkeypatch, tmp_path)
+
+    resp = srv.log_research_event(
+        session_id="codex-session-synonyms",
+        kind="milestone",  # synonym → note
+        content="Picked fMRIPrep pin from recipe summary",
+        source="codex",  # synonym → agent
+    )
+
+    assert resp["ok"] is True
+    assert resp.get("error") is None
+    run_dir = tmp_path / "runs" / resp["run_id"]
+    events = _read_jsonl(run_dir / "research_events.jsonl")
+    assert events[0]["kind"] == "note"
+    assert events[0]["source"] == "agent"
+
+
+def test_log_research_event_schema_advertises_kind_and_source_enums():
+    from brain_researcher.services.mcp import server as srv
+
+    tools = srv._run_async_sync(srv.mcp.list_tools())
+    schema = next(t.inputSchema for t in tools if t.name == "log_research_event")
+    props = schema["properties"]
+    assert props["kind"]["enum"] == ["start", "note"]
+    assert props["source"]["enum"] == ["agent", "user"]
+    # kind stays a plain string server-side (permissive) so synonyms still coerce
+    assert props["kind"]["type"] == "string"

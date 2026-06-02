@@ -8,7 +8,7 @@ describe('serviceEndpoints BR-KG proxy defaults', () => {
   })
 
   it('defaults browser BR-KG requests to same-origin proxy when no override is set', async () => {
-    vi.stubEnv('NEXT_PUBLIC_NEUROKG_API', 'http://localhost:5000')
+    vi.stubEnv('NEXT_PUBLIC_BR_KG_API', 'http://localhost:5000')
 
     const { serviceEndpoints, resolveKgLensTaskTreeUrl } = await import('@/lib/service-endpoints')
     const params = new URLSearchParams({
@@ -24,7 +24,7 @@ describe('serviceEndpoints BR-KG proxy defaults', () => {
 
   it('still respects an explicit proxy disable override', async () => {
     vi.stubEnv('NEXT_PUBLIC_USE_API_PROXY', 'false')
-    vi.stubEnv('NEXT_PUBLIC_NEUROKG_API', 'http://localhost:5000')
+    vi.stubEnv('NEXT_PUBLIC_BR_KG_API', 'http://localhost:5000')
 
     const {
       serviceEndpoints,
@@ -47,7 +47,7 @@ describe('serviceEndpoints BR-KG proxy defaults', () => {
   })
 
   it('routes browser BR-KG api and root paths through same-origin helpers', async () => {
-    vi.stubEnv('NEXT_PUBLIC_NEUROKG_API', 'http://localhost:5000')
+    vi.stubEnv('NEXT_PUBLIC_BR_KG_API', 'http://localhost:5000')
 
     const { resolveKgApiUrl, resolveKgRootUrl } = await import('@/lib/service-endpoints')
     const params = new URLSearchParams({
@@ -55,10 +55,10 @@ describe('serviceEndpoints BR-KG proxy defaults', () => {
       name: 'working memory',
     })
 
-    expect(resolveKgApiUrl('statistics')).toBe('/api/neurokg/statistics')
-    expect(resolveKgApiUrl('openneuro/datasets')).toBe('/api/neurokg/openneuro/datasets')
+    expect(resolveKgApiUrl('statistics')).toBe('/api/br-kg/statistics')
+    expect(resolveKgApiUrl('openneuro/datasets')).toBe('/api/br-kg/openneuro/datasets')
     expect(resolveKgRootUrl('subgraph', params)).toBe(
-      '/api/neurokg/subgraph?label=Concept&name=working+memory',
+      '/api/br-kg/subgraph?label=Concept&name=working+memory',
     )
   })
 

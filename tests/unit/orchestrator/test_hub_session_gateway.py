@@ -18,6 +18,8 @@ from brain_researcher.services.orchestrator.studio_session_runtime import (
     StudioRuntimeKind,
     StudioSessionRuntime,
 )
+
+
 @pytest.fixture
 def hub_session_db_path(tmp_path: Path) -> Path:
     return tmp_path / "hub_sessions.sqlite"
@@ -47,10 +49,14 @@ def hub_session_client(
 
 
 class _FakeProvisioner:
-    def __init__(self, *, ready: bool = True) -> None:
+    def __init__(self, *, ready: bool = True, token: str | None = None) -> None:
         self.ready = ready
+        self.token = token
         self.calls: list[str] = []
         self.destroy_calls: list[str] = []
+
+    def ensure_runtime_token(self, spec, target, *, existing_token=None) -> str | None:
+        return existing_token or self.token
 
     def ensure_target(self, spec) -> MarimoRuntimeTarget:
         self.calls.append(spec.runtime_session_id)
@@ -101,7 +107,10 @@ def test_create_get_and_delete_hub_session(hub_session_client: TestClient) -> No
     assert created["session"]["metadata"]["runtime_binding"]["runtime_kind"] == "marimo"
     assert created["handoff"]["runtime_kind"] == "marimo"
     assert created["handoff"]["hub_base_url"] == "https://workspace.example/hub"
-    assert created["handoff"]["runtime_session_id"] == created["session"]["runtime_session_id"]
+    assert (
+        created["handoff"]["runtime_session_id"]
+        == created["session"]["runtime_session_id"]
+    )
     launch_qs = parse_qs(urlparse(created["handoff"]["workspace_url"]).query)
     assert launch_qs["session_id"] == [created["session"]["id"]]
     assert launch_qs["path"] == ["projects/proj_marimo_demo/notebooks/demo.py"]
@@ -129,7 +138,9 @@ def test_create_get_and_delete_hub_session(hub_session_client: TestClient) -> No
     assert deleted["session"]["status"] == "stopped"
 
 
-def test_hub_session_reuses_existing_marimo_runtime(hub_session_client: TestClient) -> None:
+def test_hub_session_reuses_existing_marimo_runtime(
+    hub_session_client: TestClient,
+) -> None:
     first = hub_session_client.post(
         "/api/hub/sessions",
         json={
@@ -184,7 +195,10 @@ def test_hub_workspace_handoff_supports_clean_launch_requests(
     assert handoff["launch_mode"] == "provision_new_runtime"
     assert handoff["runtime_session_id"] is None
     parsed = urlparse(handoff["workspace_url"])
-    assert f"{parsed.scheme}://{parsed.netloc}{parsed.path}" == "https://workspace.example/hub"
+    assert (
+        f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        == "https://workspace.example/hub"
+    )
     qs = parse_qs(parsed.query)
     assert qs["session_id"] == [created["session"]["id"]]
     assert qs["path"] == ["projects/proj_clean_demo/notebooks/analysis.py"]
@@ -317,7 +331,9 @@ async def test_hub_sessions_do_not_attach_to_existing_jupyter_sessions(
             display_name="Studio Session",
         ),
     )
-    jupyter_runtime = await runtime.get_runtime_session(jupyter_session.runtime_session_id)
+    jupyter_runtime = await runtime.get_runtime_session(
+        jupyter_session.runtime_session_id
+    )
     assert jupyter_runtime is not None
     assert jupyter_runtime.kind == StudioRuntimeKind.JUPYTER
 
@@ -329,7 +345,9 @@ async def test_hub_sessions_do_not_attach_to_existing_jupyter_sessions(
             runtime_kind=StudioRuntimeKind.MARIMO,
         ),
     )
-    marimo_runtime = await runtime.get_runtime_session(marimo_session.runtime_session_id)
+    marimo_runtime = await runtime.get_runtime_session(
+        marimo_session.runtime_session_id
+    )
     assert marimo_runtime is not None
     assert marimo_runtime.kind == StudioRuntimeKind.MARIMO
     assert marimo_session.id != jupyter_session.id
@@ -359,7 +377,9 @@ async def test_marimo_runtime_uses_dedicated_workdir_root(
             runtime_kind=StudioRuntimeKind.MARIMO,
         ),
     )
-    marimo_runtime = await runtime.get_runtime_session(marimo_session.runtime_session_id)
+    marimo_runtime = await runtime.get_runtime_session(
+        marimo_session.runtime_session_id
+    )
 
     assert marimo_runtime is not None
     assert marimo_runtime.kind == StudioRuntimeKind.MARIMO
@@ -406,7 +426,9 @@ def test_hub_session_surfaces_runtime_target_and_reconciles_reuse(
         expected_runtime_url = f"https://workspace.example/hub/br-marimo-{runtime_id}"
         assert target["public_url"] == expected_runtime_url
         assert payload["handoff"]["runtime_target_url"] == expected_runtime_url
-        assert payload["handoff"]["runtime_websocket_url"] == expected_runtime_url.replace("https://", "wss://", 1)
+        assert payload["handoff"][
+            "runtime_websocket_url"
+        ] == expected_runtime_url.replace("https://", "wss://", 1)
         assert payload["handoff"]["runtime_connection_mode"] == "iframe"
         assert payload["handoff"]["runtime_target_ready"] is True
 
@@ -424,6 +446,48 @@ def test_hub_session_surfaces_runtime_target_and_reconciles_reuse(
         )
         assert deleted.status_code == 200
         assert fake.destroy_calls == [f"br-marimo-{runtime_id}"]
+
+
+def test_hub_session_handoff_appends_marimo_access_token(
+    monkeypatch: pytest.MonkeyPatch,
+    hub_session_db_path: Path,
+) -> None:
+    async def _fake_user(_request):
+        return SimpleNamespace(id="user_demo"), {}
+
+    monkeypatch.setattr(
+        "brain_researcher.services.orchestrator.endpoints.hub_sessions._resolve_request_user",
+        _fake_user,
+    )
+
+    fake = _FakeProvisioner(ready=True, token="tok_secret_123")
+    app = FastAPI()
+    app.include_router(router)
+    app.state.studio_session_runtime = StudioSessionRuntime(
+        workspace_base_url="https://workspace.example",
+        db_path=hub_session_db_path,
+        marimo_runtime_provisioner=fake,
+    )
+
+    with TestClient(app) as client:
+        created = client.post(
+            "/api/hub/sessions",
+            json={"project_id": "proj_token", "display_name": "Token"},
+            headers={"Authorization": "Bearer test"},
+        )
+        assert created.status_code == 200
+        payload = created.json()
+        runtime_id = payload["runtime"]["id"]
+        target_url = payload["handoff"]["runtime_target_url"]
+
+        base = f"https://workspace.example/hub/br-marimo-{runtime_id}"
+        assert target_url.startswith(f"{base}?")
+        query = parse_qs(urlparse(target_url).query)
+        assert query["access_token"] == ["tok_secret_123"]
+
+        # The raw token must still be scrubbed from the runtime metadata payload;
+        # it may only ride along on the handoff URL's access_token param.
+        assert "marimo_runtime_token" not in payload["runtime"]["metadata"]
 
 
 def test_hub_session_marks_pending_targets_as_provisioning(
@@ -508,3 +572,60 @@ async def test_hub_session_handoff_ignores_jupyter_base_url_template(
     assert handoff.hub_base_url == "https://workspace.example/hub"
     assert handoff.workspace_url.startswith("https://workspace.example/hub?")
     assert "hub.brain-researcher.com/user/" not in handoff.workspace_url
+
+
+@pytest.mark.asyncio
+async def test_attach_reuses_still_provisioning_marimo_runtime(
+    hub_session_db_path: Path,
+) -> None:
+    # A runtime whose pod is still Pending stays in PROVISIONING; attaching again
+    # for the same (owner, project, profile) must REUSE it, not mint a new pod.
+    fake = _FakeProvisioner(ready=False)
+    runtime = StudioSessionRuntime(
+        workspace_base_url="https://workspace.example",
+        db_path=hub_session_db_path,
+        marimo_runtime_provisioner=fake,
+    )
+
+    def _req() -> CreateStudioSessionRequest:
+        return CreateStudioSessionRequest(
+            project_id="proj_reuse_provisioning",
+            display_name="Reuse Provisioning",
+            runtime_kind=StudioRuntimeKind.MARIMO,
+            attach_if_exists=True,
+        )
+
+    first = await runtime.create_or_attach_session("user_demo", _req())
+    second = await runtime.create_or_attach_session("user_demo", _req())
+
+    assert first.runtime_session_id is not None
+    assert second.runtime_session_id == first.runtime_session_id
+
+
+@pytest.mark.asyncio
+async def test_get_marimo_runtime_target_refreshes_stale_readiness(
+    hub_session_db_path: Path,
+) -> None:
+    # Pod starts Pending (ready=False); once it is Running, get_marimo_runtime_target
+    # must re-reconcile and report ready instead of a stale not-ready target.
+    fake = _FakeProvisioner(ready=False)
+    runtime = StudioSessionRuntime(
+        workspace_base_url="https://workspace.example",
+        db_path=hub_session_db_path,
+        marimo_runtime_provisioner=fake,
+    )
+    session = await runtime.create_or_attach_session(
+        "user_demo",
+        CreateStudioSessionRequest(
+            project_id="proj_readiness_refresh",
+            display_name="Readiness Refresh",
+            runtime_kind=StudioRuntimeKind.MARIMO,
+        ),
+    )
+
+    _, target = await runtime.get_marimo_runtime_target(session.id)
+    assert target.ready is False
+
+    fake.ready = True
+    _, refreshed = await runtime.get_marimo_runtime_target(session.id)
+    assert refreshed.ready is True

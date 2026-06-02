@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from brain_researcher.services.neurokg.graph.fake_graph_database import FakeGraphDB
+from brain_researcher.services.br_kg.graph.fake_graph_database import FakeGraphDB
 from brain_researcher.services.virtual_brain.api import create_app
 
 

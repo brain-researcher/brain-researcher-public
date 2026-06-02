@@ -1,0 +1,49 @@
+version: 1
+canonical_namespace: runtime_tool_id
+
+# Single source of truth for Studio pipeline tool identifiers.
+# Keys are legacy/alias IDs that may appear in UI presets, saved plans, or API payloads.
+# Values are canonical runtime tool IDs as registered in the agent ToolRegistry.
+runtime_tool_ids:
+  - run_bids_app
+  - workflow_rest_connectome_e2e
+  - connectivity_matrix
+  - glm_first_level
+  - glm_multiverse
+  - run_fitlins_recipe
+  - spm12_vbm
+  - fsl_bet
+
+alias_to_runtime:
+  # Preprocessing presets historically used pipeline names as tool IDs.
+  fmriprep: run_bids_app
+  qsiprep: run_bids_app
+  mriqc: run_bids_app
+  cat12: spm12_vbm
+  spm12: spm12_vbm
+
+  # GLM aliases.
+  nilearn.glm.first_level.run: glm_first_level
+  run_glm_first_level: glm_first_level
+  glm_multiverse.run: glm_multiverse
+
+  # Connectivity aliases.
+  fmri.connectivity_client.light: connectivity_matrix
+  nilearn_connectivity_matrix: connectivity_matrix
+
+  # Studio connectivity workflow aliases.
+  workflow_rest_connectome: workflow_rest_connectome_e2e
+  rest_connectome_e2e: workflow_rest_connectome_e2e
+  rest_connectome: workflow_rest_connectome_e2e
+  workflow_connectivity: workflow_rest_connectome_e2e
+  connectivity: workflow_rest_connectome_e2e
+
+  # Canonical passthroughs (kept explicit for clarity and validation tooling).
+  run_bids_app: run_bids_app
+  workflow_rest_connectome_e2e: workflow_rest_connectome_e2e
+  connectivity_matrix: connectivity_matrix
+  glm_first_level: glm_first_level
+  glm_multiverse: glm_multiverse
+  run_fitlins_recipe: run_fitlins_recipe
+  spm12_vbm: spm12_vbm
+  fsl_bet: fsl_bet

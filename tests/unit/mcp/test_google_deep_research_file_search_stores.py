@@ -35,7 +35,13 @@ def test_google_deep_research_start_uses_multi_store_env(monkeypatch):
             self.api_key = api_key
             self.interactions = FakeInteractions()
 
-    fake_genai = SimpleNamespace(Client=FakeClient)
+    fake_genai = SimpleNamespace(
+        Client=FakeClient,
+        types=SimpleNamespace(
+            Tool=object,
+            FileSearch=object,
+        ),
+    )
     monkeypatch.setitem(sys.modules, "google", SimpleNamespace(genai=fake_genai))
 
     resp = srv.google_deep_research_start(input="test request")
@@ -44,12 +50,15 @@ def test_google_deep_research_start_uses_multi_store_env(monkeypatch):
     assert resp["poll_tool"] == "run_get"
     assert resp["compat_poll_tool"] == "google_deep_research_get"
     assert resp["data"]["interaction_id"] == "int-multi-store"
-    assert captured["tools"] == [
+    tools = captured["tools"]
+    assert all(isinstance(tool, dict) and tool.get("type") for tool in tools)
+    assert tools == [
+        {"type": "google_search"},
         {
             "type": "file_search",
             "file_search_store_names": [
                 "fileSearchStores/papers-fmri-oa-20152025-uni-aqus07ky5cos",
                 "fileSearchStores/brain-researcher-codebase-5i70bkfmcumj",
             ],
-        }
+        },
     ]

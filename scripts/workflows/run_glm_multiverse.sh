@@ -195,7 +195,7 @@ import sys
 task = sys.argv[1] if len(sys.argv) > 1 else None
 study = sys.argv[2] if len(sys.argv) > 2 else None
 try:
-    from brain_researcher.services.tools.neurokg_tools import GLMPriorsTool
+    from brain_researcher.services.tools.br_kg_tools import GLMPriorsTool
     tool = GLMPriorsTool()
     result = tool._run(task=task, study_id=study)
     priors = result.data.get("outputs", {}).get("priors", {})

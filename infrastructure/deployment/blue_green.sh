@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Brain Researcher Blue-Green Deployment Script
-# 
+#
 # This script implements blue-green deployment strategy for the Brain Researcher platform
 # supporting both Docker Swarm and Kubernetes environments.
 #
@@ -39,7 +39,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Supported services
-SERVICES=("orchestrator" "neurokg" "agent" "web-ui")
+SERVICES=("orchestrator" "br-kg" "agent" "web-ui")
 
 # Logging function
 log() {
@@ -75,7 +75,7 @@ save_state() {
     local color=$2
     local replicas=$3
     local timestamp=$(date -Iseconds)
-    
+
     cat > "${STATE_DIR}/${service}_state.json" << EOF
 {
     "service": "$service",
@@ -91,7 +91,7 @@ EOF
 load_state() {
     local service=$1
     local state_file="${STATE_DIR}/${service}_state.json"
-    
+
     if [[ -f "$state_file" ]]; then
         cat "$state_file"
     else
@@ -129,9 +129,9 @@ docker_deploy_service() {
     local color=$2
     local replicas=$3
     local service_color="${service_name}-${color}"
-    
+
     log_info "Deploying Docker service: $service_color with $replicas replicas"
-    
+
     # Check if service exists
     if docker_service_exists "$service_color"; then
         # Update existing service
@@ -154,16 +154,16 @@ docker_health_check() {
     local color=$2
     local timeout=$3
     local service_color="${service_name}-${color}"
-    
+
     log_info "Performing health check for $service_color"
-    
+
     local start_time=$(date +%s)
     local end_time=$((start_time + timeout))
-    
+
     while [[ $(date +%s) -lt $end_time ]]; do
         local running_replicas=$(docker service ls --filter "name=${service_color}" --format "{{.Replicas}}" | cut -d'/' -f1)
         local desired_replicas=$(docker service ls --filter "name=${service_color}" --format "{{.Replicas}}" | cut -d'/' -f2)
-        
+
         if [[ "$running_replicas" == "$desired_replicas" && "$running_replicas" -gt "0" ]]; then
             # Additional health check via HTTP if port is exposed
             if health_check_http "$service_name" "$color"; then
@@ -171,11 +171,11 @@ docker_health_check() {
                 return 0
             fi
         fi
-        
+
         log_info "Waiting for $service_color to be healthy ($running_replicas/$desired_replicas ready)..."
         sleep 10
     done
-    
+
     log_error "Health check failed for $service_color after ${timeout}s"
     return 1
 }
@@ -185,7 +185,7 @@ docker_scale_service() {
     local color=$2
     local replicas=$3
     local service_color="${service_name}-${color}"
-    
+
     log_info "Scaling $service_color to $replicas replicas"
     docker service scale "${service_color}=${replicas}"
 }
@@ -194,7 +194,7 @@ docker_remove_service() {
     local service_name=$1
     local color=$2
     local service_color="${service_name}-${color}"
-    
+
     if docker_service_exists "$service_color"; then
         log_info "Removing Docker service: $service_color"
         docker service rm "$service_color"
@@ -221,9 +221,9 @@ k8s_deploy_service() {
     local color=$2
     local replicas=$3
     local deployment_name="${service_name}-${color}"
-    
+
     log_info "Deploying Kubernetes deployment: $deployment_name with $replicas replicas"
-    
+
     # Generate deployment YAML
     generate_k8s_deployment "$service_name" "$color" "$replicas" | kubectl apply -f -
 }
@@ -233,9 +233,9 @@ k8s_health_check() {
     local color=$2
     local timeout=$3
     local deployment_name="${service_name}-${color}"
-    
+
     log_info "Performing health check for $deployment_name"
-    
+
     # Wait for rollout to complete
     if kubectl rollout status deployment/"$deployment_name" -n "$NAMESPACE" --timeout="${timeout}s"; then
         log_success "Health check passed for $deployment_name"
@@ -251,7 +251,7 @@ k8s_scale_deployment() {
     local color=$2
     local replicas=$3
     local deployment_name="${service_name}-${color}"
-    
+
     log_info "Scaling $deployment_name to $replicas replicas"
     kubectl scale deployment "$deployment_name" --replicas="$replicas" -n "$NAMESPACE"
 }
@@ -260,7 +260,7 @@ k8s_remove_deployment() {
     local service_name=$1
     local color=$2
     local deployment_name="${service_name}-${color}"
-    
+
     if k8s_deployment_exists "$deployment_name"; then
         log_info "Removing Kubernetes deployment: $deployment_name"
         kubectl delete deployment "$deployment_name" -n "$NAMESPACE"
@@ -274,7 +274,7 @@ generate_k8s_deployment() {
     local replicas=$3
     local deployment_name="${service_name}-${color}"
     local image_tag="${color}"  # Assume images are tagged with color
-    
+
     cat << EOF
 apiVersion: apps/v1
 kind: Deployment
@@ -338,7 +338,7 @@ get_service_port() {
     local service=$1
     case "$service" in
         "orchestrator") echo "3001" ;;
-        "neurokg") echo "5000" ;;
+        "br-kg") echo "5000" ;;
         "agent") echo "8000" ;;
         "web-ui") echo "3000" ;;
         *) echo "8080" ;;
@@ -349,7 +349,7 @@ get_service_cpu_limit() {
     local service=$1
     case "$service" in
         "orchestrator") echo "1.5" ;;
-        "neurokg") echo "1.0" ;;
+        "br-kg") echo "1.0" ;;
         "agent") echo "2.0" ;;
         "web-ui") echo "0.5" ;;
         *) echo "1.0" ;;
@@ -360,7 +360,7 @@ get_service_memory_limit() {
     local service=$1
     case "$service" in
         "orchestrator") echo "1.5Gi" ;;
-        "neurokg") echo "1Gi" ;;
+        "br-kg") echo "1Gi" ;;
         "agent") echo "2Gi" ;;
         "web-ui") echo "512Mi" ;;
         *) echo "1Gi" ;;
@@ -371,7 +371,7 @@ get_service_cpu_request() {
     local service=$1
     case "$service" in
         "orchestrator") echo "0.75" ;;
-        "neurokg") echo "0.5" ;;
+        "br-kg") echo "0.5" ;;
         "agent") echo "1.0" ;;
         "web-ui") echo "0.25" ;;
         *) echo "0.5" ;;
@@ -382,7 +382,7 @@ get_service_memory_request() {
     local service=$1
     case "$service" in
         "orchestrator") echo "750Mi" ;;
-        "neurokg") echo "512Mi" ;;
+        "br-kg") echo "512Mi" ;;
         "agent") echo "1Gi" ;;
         "web-ui") echo "256Mi" ;;
         *) echo "512Mi" ;;
@@ -395,19 +395,19 @@ health_check_http() {
     local color=$2
     local port=$(get_service_port "$service")
     local url="http://localhost:${port}/health"
-    
+
     # For Docker Swarm, we might need to check via the load balancer
     if [[ "$PLATFORM" == "swarm" ]]; then
         # Check through HAProxy or direct service access
         url="http://localhost/health"  # Through load balancer
     fi
-    
+
     if command -v curl >/dev/null 2>&1; then
         if curl -f -s --max-time 10 "$url" >/dev/null; then
             return 0
         fi
     fi
-    
+
     return 1
 }
 
@@ -417,9 +417,9 @@ update_haproxy_config() {
     local active_color=$2
     local inactive_color=$3
     local traffic_percentage=$4  # 0-100, percentage to inactive color
-    
+
     log_info "Updating HAProxy config for $service: ${traffic_percentage}% to $inactive_color"
-    
+
     # This would generate and apply HAProxy configuration
     # For now, we'll use HAProxy stats interface to manage weights
     update_haproxy_weights "$service" "$active_color" "$inactive_color" "$traffic_percentage"
@@ -430,18 +430,18 @@ update_haproxy_weights() {
     local active_color=$2
     local inactive_color=$3
     local traffic_percentage=$4
-    
+
     local active_weight=$((100 - traffic_percentage))
     local inactive_weight=$traffic_percentage
-    
+
     # Update HAProxy server weights using stats interface
     # This requires HAProxy stats socket to be configured
     local haproxy_socket="/var/run/haproxy.sock"
-    
+
     if [[ -S "$haproxy_socket" ]]; then
         echo "set weight ${service}_backend/${service}-${active_color}-1 ${active_weight}" | socat stdio "$haproxy_socket"
         echo "set weight ${service}_backend/${service}-${inactive_color}-1 ${inactive_weight}" | socat stdio "$haproxy_socket"
-        
+
         log_info "Updated HAProxy weights: $active_color=$active_weight%, $inactive_color=$inactive_weight%"
     else
         log_warning "HAProxy stats socket not found at $haproxy_socket"
@@ -453,7 +453,7 @@ deploy_service() {
     local service=$1
     local color=$2
     local replicas=$3
-    
+
     if [[ "$PLATFORM" == "swarm" ]]; then
         docker_deploy_service "$service" "$color" "$replicas"
     elif [[ "$PLATFORM" == "k8s" ]]; then
@@ -465,7 +465,7 @@ health_check_service() {
     local service=$1
     local color=$2
     local timeout=$3
-    
+
     if [[ "$PLATFORM" == "swarm" ]]; then
         docker_health_check "$service" "$color" "$timeout"
     elif [[ "$PLATFORM" == "k8s" ]]; then
@@ -477,7 +477,7 @@ scale_service() {
     local service=$1
     local color=$2
     local replicas=$3
-    
+
     if [[ "$PLATFORM" == "swarm" ]]; then
         docker_scale_service "$service" "$color" "$replicas"
     elif [[ "$PLATFORM" == "k8s" ]]; then
@@ -488,7 +488,7 @@ scale_service() {
 remove_service() {
     local service=$1
     local color=$2
-    
+
     if [[ "$PLATFORM" == "swarm" ]]; then
         docker_remove_service "$service" "$color"
     elif [[ "$PLATFORM" == "k8s" ]]; then
@@ -500,7 +500,7 @@ get_service_replicas() {
     local service=$1
     local color=$2
     local service_color="${service}-${color}"
-    
+
     if [[ "$PLATFORM" == "swarm" ]]; then
         docker_get_service_replicas "$service_color"
     elif [[ "$PLATFORM" == "k8s" ]]; then
@@ -511,28 +511,28 @@ get_service_replicas() {
 # Main deployment function
 deploy() {
     local service=$1
-    
+
     if [[ ! " ${SERVICES[@]} " =~ " $service " ]]; then
         log_error "Unknown service: $service. Supported services: ${SERVICES[*]}"
         return 1
     fi
-    
+
     log_info "Starting blue-green deployment for $service"
-    
+
     # Load current state
     local state=$(load_state "$service")
     local active_color=$(echo "$state" | jq -r '.active_color')
     local current_replicas=$(echo "$state" | jq -r '.replicas')
     local inactive_color=$(get_inactive_color "$active_color")
-    
+
     log_info "Current active color: $active_color, deploying to: $inactive_color"
-    
+
     # Deploy to inactive color
     if ! deploy_service "$service" "$inactive_color" "$current_replicas"; then
         log_error "Failed to deploy $service to $inactive_color"
         return 1
     fi
-    
+
     # Health check
     if ! health_check_service "$service" "$inactive_color" "$HEALTH_CHECK_TIMEOUT"; then
         log_error "Health check failed for $service-$inactive_color"
@@ -540,17 +540,17 @@ deploy() {
         remove_service "$service" "$inactive_color"
         return 1
     fi
-    
+
     # Gradual traffic switch
     log_info "Starting gradual traffic switch for $service"
     local traffic_steps=(10 25 50 75 100)
-    
+
     for percentage in "${traffic_steps[@]}"; do
         update_haproxy_config "$service" "$active_color" "$inactive_color" "$percentage"
-        
+
         log_info "Switched ${percentage}% traffic to $inactive_color, monitoring..."
         sleep "$TRAFFIC_SWITCH_DELAY"
-        
+
         # Quick health check
         if ! health_check_http "$service" "$inactive_color"; then
             log_error "Health check failed during traffic switch at ${percentage}%"
@@ -560,22 +560,22 @@ deploy() {
             return 1
         fi
     done
-    
+
     # All traffic switched successfully
     log_success "Successfully switched all traffic to $inactive_color"
-    
+
     # Scale down old version
     log_info "Scaling down old version: $service-$active_color"
     scale_service "$service" "$active_color" "0"
-    
+
     # Update state
     save_state "$service" "$inactive_color" "$current_replicas"
-    
+
     # Cleanup old version after delay
     log_info "Waiting before cleanup..."
     sleep 60
     remove_service "$service" "$active_color"
-    
+
     log_success "Blue-green deployment completed for $service"
     return 0
 }
@@ -583,49 +583,49 @@ deploy() {
 # Rollback function
 rollback() {
     local service=$1
-    
+
     log_info "Starting rollback for $service"
-    
+
     # Load current state
     local state=$(load_state "$service")
     local active_color=$(echo "$state" | jq -r '.active_color')
     local current_replicas=$(echo "$state" | jq -r '.replicas')
     local inactive_color=$(get_inactive_color "$active_color")
-    
+
     log_info "Rolling back from $active_color to $inactive_color"
-    
+
     # Check if previous version exists
     local prev_replicas=$(get_service_replicas "$service" "$inactive_color")
     if [[ "$prev_replicas" -eq "0" ]]; then
         log_error "Previous version ($inactive_color) not available for rollback"
         return 1
     fi
-    
+
     # Scale up previous version if needed
     if [[ "$prev_replicas" -lt "$current_replicas" ]]; then
         log_info "Scaling up previous version for rollback"
         scale_service "$service" "$inactive_color" "$current_replicas"
-        
+
         if ! health_check_service "$service" "$inactive_color" "$ROLLBACK_TIMEOUT"; then
             log_error "Failed to scale up previous version for rollback"
             return 1
         fi
     fi
-    
+
     # Quick traffic switch back
     update_haproxy_config "$service" "$active_color" "$inactive_color" "100"
     sleep 10
-    
+
     # Health check
     if health_check_http "$service" "$inactive_color"; then
         log_success "Rollback completed successfully"
-        
+
         # Scale down failed version
         scale_service "$service" "$active_color" "0"
-        
+
         # Update state
         save_state "$service" "$inactive_color" "$current_replicas"
-        
+
         return 0
     else
         log_error "Rollback failed - service still unhealthy"
@@ -636,28 +636,28 @@ rollback() {
 # Status function
 status() {
     local service=$1
-    
+
     log_info "Deployment status for $service:"
-    
+
     # Load state
     local state=$(load_state "$service")
     local active_color=$(echo "$state" | jq -r '.active_color')
     local current_replicas=$(echo "$state" | jq -r '.replicas')
     local inactive_color=$(get_inactive_color "$active_color")
     local timestamp=$(echo "$state" | jq -r '.timestamp')
-    
+
     echo "  Active Color: $active_color"
     echo "  Replicas: $current_replicas"
     echo "  Last Deployment: $timestamp"
-    
+
     # Check current replicas
     local active_running=$(get_service_replicas "$service" "$active_color")
     local inactive_running=$(get_service_replicas "$service" "$inactive_color")
-    
+
     echo "  Running Replicas:"
     echo "    $active_color: $active_running"
     echo "    $inactive_color: $inactive_running"
-    
+
     # Health check
     echo "  Health Status:"
     if health_check_http "$service" "$active_color"; then
@@ -665,7 +665,7 @@ status() {
     else
         echo "    $active_color: UNHEALTHY"
     fi
-    
+
     if [[ "$inactive_running" -gt "0" ]]; then
         if health_check_http "$service" "$inactive_color"; then
             echo "    $inactive_color: HEALTHY"
@@ -678,21 +678,21 @@ status() {
 # Cleanup function
 cleanup() {
     local service=$1
-    
+
     log_info "Cleaning up unused deployments for $service"
-    
+
     # Load state
     local state=$(load_state "$service")
     local active_color=$(echo "$state" | jq -r '.active_color')
     local inactive_color=$(get_inactive_color "$active_color")
-    
+
     # Remove inactive deployment if it exists and has no traffic
     local inactive_replicas=$(get_service_replicas "$service" "$inactive_color")
     if [[ "$inactive_replicas" -gt "0" ]]; then
         log_info "Removing inactive deployment: $service-$inactive_color"
         remove_service "$service" "$inactive_color"
     fi
-    
+
     log_success "Cleanup completed for $service"
 }
 
@@ -718,7 +718,7 @@ OPTIONS:
 
 EXAMPLES:
     $0 deploy orchestrator --platform=swarm
-    $0 rollback neurokg --platform=k8s
+    $0 rollback br-kg --platform=k8s
     $0 status all
     $0 cleanup orchestrator
 
@@ -729,7 +729,7 @@ EOF
 parse_args() {
     local command=""
     local service=""
-    
+
     while [[ $# -gt 0 ]]; do
         case $1 in
             deploy|rollback|status|cleanup)
@@ -763,29 +763,29 @@ parse_args() {
         esac
         shift
     done
-    
+
     if [[ -z "$command" ]]; then
         log_error "Command required"
         usage
         exit 1
     fi
-    
+
     echo "$command $service"
 }
 
 # Main function
 main() {
     init_state_dir
-    
+
     local args=$(parse_args "$@")
     local command=$(echo "$args" | cut -d' ' -f1)
     local service=$(echo "$args" | cut -d' ' -f2)
-    
+
     log_info "Brain Researcher Blue-Green Deployment"
     log_info "Platform: $PLATFORM"
     log_info "Command: $command"
     [[ -n "$service" ]] && log_info "Service: $service"
-    
+
     case "$command" in
         deploy)
             if [[ -z "$service" ]]; then
@@ -831,13 +831,13 @@ main() {
 # Check dependencies
 check_dependencies() {
     local deps=("jq")
-    
+
     if [[ "$PLATFORM" == "swarm" ]]; then
         deps+=("docker" "socat")
     elif [[ "$PLATFORM" == "k8s" ]]; then
         deps+=("kubectl")
     fi
-    
+
     for dep in "${deps[@]}"; do
         if ! command -v "$dep" >/dev/null 2>&1; then
             log_error "Required dependency not found: $dep"

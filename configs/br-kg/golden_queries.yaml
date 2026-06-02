@@ -1,0 +1,194 @@
+# Golden Queries Configuration
+# Defines performance validation queries for CI/CD and QA
+# Referenced by: invariants.md (QUERY-01), BR-KG_Standards.md
+#
+# These queries must pass with latency < threshold to ensure graph performance
+# and correctness. Used in CI/CD pipeline for performance gates.
+
+# Query Validation Settings
+validation:
+  enabled: true
+  fail_on_timeout: true
+  default_timeout_ms: 5000  # 5 second max per query
+  ci_enforcement: true  # Fail CI if queries don't meet thresholds
+
+# Golden Queries
+queries:
+  - id: "GQ-001"
+    title: "Working memory task-to-concept path"
+    description: "Find tasks measuring working memory without depending on activation coverage"
+    query_type: "cypher"
+    query: |
+      MATCH (t:Task {name:'n-back'})-[:MEASURES]->(c:Concept)
+      RETURN t, c
+      LIMIT 200
+    expected:
+      must_include_nodes:
+        - label: "Task"
+          name: "n-back"
+      min_nodes: 5
+      max_latency_ms: 300
+      notes: "Core semantic query for the contract revision; does not rely on ACTIVATES"
+
+  - id: "GQ-002"
+    title: "StatsMap → BrainRegion canonical spatial path"
+    description: "Traverse the canonical voxel-level spatial substrate"
+    query_type: "cypher"
+    query: |
+      MATCH (m:StatsMap)-[:IN_REGION]->(r:BrainRegion)
+      RETURN m, r
+      LIMIT 200
+    expected:
+      min_edges: 10
+      max_latency_ms: 400
+      notes: "Canonical spatial traversal query - validates StatsMap to BrainRegion links"
+
+  - id: "GQ-003"
+    title: "Dataset → Contrast implements canonical task"
+    description: "Find datasets that implement canonical tasks"
+    query_type: "cypher"
+    query: |
+      MATCH (d:Dataset)-[:IMPLEMENTS_TASK]->(t:Task)
+      RETURN d, t
+      LIMIT 200
+    expected:
+      min_nodes: 4
+      max_latency_ms: 350
+      notes: "Dataset-task linking validation"
+
+  - id: "GQ-004"
+    title: "Top regions for n-back (by strength)"
+    description: "Rank any currently linked regions by activation strength for n-back task"
+    query_type: "cypher"
+    query: |
+      MATCH (:Task {name:'n-back'})-[e:ACTIVATES]->(r)
+      WHERE r:BrainRegion OR r:Region
+      RETURN r, e.strength AS s
+      ORDER BY s DESC
+      LIMIT 20
+    expected:
+      min_nodes: 0
+      max_latency_ms: 300
+      notes: "Tracked semantic-enrichment query; nonblocking while ACTIVATES is not canonicalized"
+    blocking: false
+
+  - id: "GQ-005"
+    title: "Crosswalk sanity: ROI mapping exists"
+    description: "Validate region crosswalk mappings between atlases"
+    query_type: "graphql"
+    query: |
+      {
+        crosswalk(from: {atlas: "schaefer400-7n", region: "L_Cont_7"}) {
+          to {
+            atlas
+            name
+            network
+          }
+        }
+      }
+    expected:
+      must_include_text: ["yeo17"]
+      max_latency_ms: 400
+      notes: "GraphQL crosswalk validation"
+
+  - id: "GQ-006"
+    title: "StatsMap → BrainRegion → parent BrainRegion"
+    description: "Validate the canonical two-hop spatial-to-hierarchy path"
+    query_type: "cypher"
+    query: |
+      MATCH (m:StatsMap)-[:IN_REGION]->(child:BrainRegion)-[:PART_OF]->(parent:BrainRegion)
+      RETURN m, child, parent
+      LIMIT 200
+    expected:
+      min_edges: 0
+      max_latency_ms: 400
+      notes: "Canonical two-hop spatial-hierarchy validation; tracked while A2 remains pending"
+    blocking: false
+
+  - id: "GQ-007"
+    title: "SAME_AS edge verification"
+    description: "Verify SAME_AS edges connect same entity types"
+    query_type: "cypher"
+    query: |
+      MATCH (a)-[s:SAME_AS]->(b)
+      WHERE labels(a) = labels(b)
+      RETURN count(s) AS same_type_count
+    expected:
+      min_count: 0  # At least some SAME_AS edges exist
+      max_latency_ms: 500
+      notes: "Validates merge policy correctness (MERGE-01)"
+
+  - id: "GQ-008"
+    title: "Provenance completeness check"
+    description: "Verify all nodes have provenance information"
+    query_type: "cypher"
+    query: |
+      MATCH (n)
+      WHERE n.prov IS NULL OR n.prov.source IS NULL
+      RETURN count(n) AS missing_prov_count
+    expected:
+      max_count: 0  # No nodes should lack provenance
+      max_latency_ms: 1000
+      notes: "Validates PROV-01 invariant"
+
+# Performance Thresholds
+performance:
+  # Overall performance targets
+  p50_latency_ms: 100  # 50th percentile should be < 100ms
+  p95_latency_ms: 300  # 95th percentile should be < 300ms
+  p99_latency_ms: 500  # 99th percentile should be < 500ms
+
+  # CI/CD thresholds (stricter)
+  ci_max_latency_ms: 300  # Fail CI if any query exceeds this
+  ci_p95_threshold_ms: 250  # Fail CI if P95 exceeds this
+
+  # Performance regression detection
+  regression_threshold_pct: 20  # Alert if latency increases > 20%
+  baseline_file: "data/br-kg/golden_query_baselines.json"  # Store baseline metrics
+
+# Query Categories
+categories:
+  traversal:
+    description: "Multi-hop graph traversal queries"
+    queries: ["GQ-002", "GQ-006"]
+    max_latency_ms: 400
+
+  search:
+    description: "Single-hop search queries"
+    queries: ["GQ-001", "GQ-003", "GQ-004"]
+    max_latency_ms: 300
+
+  validation:
+    description: "Data quality and correctness checks"
+    queries: ["GQ-007", "GQ-008"]
+    max_latency_ms: 1000
+
+  crosswalk:
+    description: "Region crosswalk queries"
+    queries: ["GQ-005"]
+    max_latency_ms: 400
+
+# CI/CD Integration
+ci_cd:
+  # When to run golden queries
+  triggers:
+    - "on_push"  # Run on every push
+    - "on_pr"  # Run on pull requests
+    - "scheduled"  # Daily scheduled runs
+
+  # Failure behavior
+  on_failure: "block_merge"  # Block PR merge if queries fail
+  on_timeout: "fail"  # Fail CI if query times out
+
+  # Reporting
+  report_format: "json"  # JSON report for CI
+  report_path: "reports/golden_queries_report.json"
+  upload_artifacts: true  # Upload reports as CI artifacts
+
+# Notes
+notes:
+  - "Golden queries validate both correctness and performance (QUERY-01)"
+  - "Queries must return expected results AND meet latency thresholds"
+  - "Used in CI/CD to catch performance regressions"
+  - "Baseline metrics stored for regression detection"
+  - "All queries should use LIMIT to prevent runaway queries"

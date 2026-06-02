@@ -1,0 +1,5 @@
+# BR-KG overlay – pipeline source configuration (migrated)
+
+br_kg_pipeline:
+  create_links: true
+  sources: {}

@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from brain_researcher.services.mcp import runstore
+
 
 @pytest.fixture(autouse=True)
 def _stub_toolspec_registry(monkeypatch):
@@ -53,7 +55,7 @@ def _wait_for_files(paths: list[Path], *, timeout_s: float = 5.0) -> bool:
 def test_tool_execute_writes_closed_loop_bundle(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"extract_timeseries"})
@@ -96,7 +98,7 @@ def test_tool_execute_writes_closed_loop_bundle(tmp_path, monkeypatch):
 def test_tool_execute_schema_validation_blocks_missing_required(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"extract_timeseries"})
@@ -126,7 +128,7 @@ def test_tool_execute_schema_validation_blocks_missing_required(tmp_path, monkey
 def test_pipeline_execute_writes_closed_loop_bundle(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -185,7 +187,7 @@ def test_tool_execute_rm_logging_disabled_leaves_bundle_fields_unchanged(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"extract_timeseries"})
@@ -234,7 +236,7 @@ def test_tool_execute_rm_logging_enabled_writes_and_references_files(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"extract_timeseries"})
@@ -345,7 +347,7 @@ def test_tool_execute_rm_logging_enabled_real_helper_writes_redacted_and_raw(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"extract_timeseries"})
@@ -407,7 +409,7 @@ def test_tool_execute_rm_logging_enabled_real_helper_writes_redacted_and_raw(
 def test_tool_execute_rm_logging_fail_open_on_helper_error(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"extract_timeseries"})

@@ -464,9 +464,10 @@ local:
         "does not expose a BIDS root" in note for note in resources.readiness["notes"]
     )
     assert resources.required_files["skipped"] is True
-    assert "skipping BIDS-specific required-file checks" in resources.required_files[
-        "note"
-    ]
+    assert (
+        "skipping BIDS-specific required-file checks"
+        in resources.required_files["note"]
+    )
     assert resources.mount_status["mounted"] is True
     assert resources.mount_status["mount_kind"] == "public_s3"
     assert resources.mount_status["matched_alias"] == "natural-scenes-dataset"
@@ -578,7 +579,7 @@ local:
     manual_path.write_text("")
 
     monkeypatch.setattr(
-        "brain_researcher.services.agent.kg_resolution._run_bids_validator",
+        "brain_researcher.services.shared.dataset_resource_resolution._run_bids_validator",
         lambda bids_path: {
             "ran": True,
             "errors": 2,

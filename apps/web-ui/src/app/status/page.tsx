@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { NavigationWrapper } from "@/components/navigation/navigation-wrapper"
-import { AdvancedViewBanner } from "@/components/advanced/advanced-view-banner"
 
 type ServiceStatus = {
   name: string
@@ -87,7 +86,6 @@ export default function StatusPage() {
     <NavigationWrapper>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          <AdvancedViewBanner canonicalHref="/settings" />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">System Status</h1>

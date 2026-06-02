@@ -1,0 +1,257 @@
+# Ingestion Modes Configuration
+# Defines how data sources are ingested into BR-KG
+# Referenced by: docs/standards/ingestion_modes.md
+#
+# Schema definitions (node/edge types, properties, ID formats) are now in:
+# configs/br-kg/config.yml (schema section)
+
+# Ingestion Mode Definitions
+modes:
+  full:
+    description: "Canonical ontology / blueprint data, small and high-value, required for reasoning"
+    persistence: "Complete curated representation (flattened for Neo4j)"
+    use_cases:
+      - "Cognitive Atlas tasks/concepts"
+      - "Brain atlas definitions"
+      - "Ontology mappings"
+    examples:
+      - "cognitive_atlas"
+      - "nilearn_atlases"
+      - "onvoc"
+
+  spine:
+    description: "Search spine - minimal metadata and key relationships for traversal and evidence lookup"
+    persistence: "Whitelisted fields only, omit bulky/free-text payloads"
+    use_cases:
+      - "Large datasets (NeuroSynth, PubMed)"
+      - "Frequently updated sources"
+      - "Data where details fetched on-demand"
+    examples:
+      - "neurosynth"
+      - "pubmed"
+      - "neurovault"
+
+  on_demand:
+    description: "Extremely large, fast-changing, or licensed data. No primary data stored in graph"
+    persistence: "Nothing written to Neo4j during ingestion. Adapters fetch at query time"
+    use_cases:
+      - "Citation networks (Crossref)"
+      - "Large evidence databases (NeuroQuery)"
+      - "Licensed data (BrainMap)"
+    examples:
+      - "scholarly_metadata"
+      - "neuroquery"
+      - "nimare"
+
+# Field Whitelists for Spine Mode
+# Prevents accidental "full ingestion" creep - only these fields allowed
+spine_whitelists:
+  Task:
+    required: ["id", "name"]
+    optional: ["synonyms"]
+    notes: "Minimal task metadata for search and linking"
+
+  Concept:
+    required: ["id", "label"]
+    optional: ["synonyms"]
+    notes: "Minimal concept metadata for search and linking"
+
+  Publication:
+    required: ["id", "title"]
+    optional: ["pmid", "doi", "year", "journal"]
+    notes: "Minimal publication metadata. Abstracts/full-text fetched on-demand"
+
+  Coordinate:
+    required: ["id", "x", "y", "z", "space"]
+    optional: ["round_mm"]
+    notes: "Spatial coordinates only. No study metadata"
+
+  Region:
+    required: ["id", "atlas", "name"]
+    optional: ["aliases"]
+    notes: "Region definitions. Spatial data fetched on-demand"
+
+  Dataset:
+    required: ["id"]
+    optional: ["name", "license", "modalities", "tasks", "n_subjects", "TR", "TE", "url"]
+    notes: "Dataset metadata. Actual data files fetched on-demand"
+
+  StatisticalMap:
+    required: ["id", "space", "modality", "uri"]
+    optional: ["etag", "experiment_type"]
+    notes: "Map pointers. NIfTI files fetched on-demand"
+
+  Phenotype:
+    required: ["id", "name"]
+    optional: ["value_type"]
+    notes: "Phenotype definitions. Distribution tables fetched on-demand"
+
+# Allowed Edge Types in Spine Mode
+# Only these relationship types are persisted in spine mode
+spine_allowed_edges:
+  - "MEASURES"
+  - "HAS_COORDINATE"
+  - "IN_REGION"
+  - "REPORTS_TASK"
+  - "IMPLEMENTS_TASK"
+  - "DERIVED_FROM"
+  - "SAME_AS"
+  - "MAPS_TO"
+  - "HAS_PHENOTYPE"
+
+notes:
+  - "Additional information in spine mode should be JSON-stringified into 'evidence_json' field"
+  - "Or fetched through on-demand adapters"
+  - "Spine loaders must drop any field not in whitelist unless explicitly overridden"
+
+# Data Source Mode Assignments
+# Maps each data source to its ingestion mode
+# This replaces hardcoded SOURCE_DEFAULT_MODES in load_all.py
+source_modes:
+  # Full mode sources (canonical, high-value data)
+  cognitive_atlas: "full"
+  nilearn_atlases: "full"
+  neurobagel: "full"
+  onvoc: "full"
+  openneuro_glmfitlins: "full"
+
+  # Spine mode sources (minimal metadata, large datasets)
+  pubmed: "spine"
+  neurosynth: "spine"
+  neurovault: "spine"
+  openneuro: "spine"
+  wikidata: "spine"
+  niclip: "spine"
+  brainmap: "spine"
+  bids: "spine"
+  neuromaps: "spine"
+  neurostore: "spine"
+  allen_hba: "spine"
+  virtual_brain: "spine"
+
+  # On-demand sources (adapter-based, no primary storage)
+  scholarly_metadata: "on_demand"
+  nidm_results: "on_demand"
+  neuroquery: "on_demand"
+  nimare: "on_demand"
+  neuroscout: "on_demand"
+
+# Source-specific field whitelist overrides
+# Override default spine whitelist for specific sources if needed
+source_field_overrides:
+  neurosynth:
+    Publication:
+      fields_whitelist: ["id", "pmid", "doi", "title", "year", "journal"]
+  pubmed:
+    Publication:
+      fields_whitelist: ["id", "pmid", "doi", "title", "year", "journal"]
+
+# On-demand Adapter Requirements
+# Defines schemas and requirements for on-demand evidence feeds
+on_demand_adapters:
+  neuroquery:
+    description: "NeuroQuery API evidence for task-region associations"
+    data_path: "data/br-kg/raw/evidence/neuroquery_sample.json"
+    required: true  # Adapter must be registered
+    schema:
+      required_fields: ["task_id", "region_id", "score"]
+      optional_fields: ["confidence", "method", "source"]
+    generation_notes: "Run NeuroQuery API/CLI against canonical task_ids, store Top-K region scores"
+
+  nimare:
+    description: "NiMARE meta-analytic evidence (ALE/MKDA/CBMA)"
+    data_path: "data/br-kg/raw/evidence/nimare_sample.json"
+    required: true
+    schema:
+      required_fields: ["task_id", "region_id", "probability"]
+      optional_fields: ["method"]
+      default_score_key: "probability"
+    generation_notes: "Materialize NiMARE priors for curated corpus, export region-level summary"
+
+  neuroscout:
+    description: "Neuroscout feature time-series data"
+    data_path: "data/br-kg/raw/evidence/neuroscout_features.json"
+    required: true
+    schema:
+      required_fields: ["contrast_id", "feature", "value"]
+      optional_fields: ["unit", "source"]
+    generation_notes: "Populate via Neuroscout API, store down-sampled summary (means, prevalence)"
+
+  allen_hba:
+    description: "Allen Human Brain Atlas gene expression data"
+    data_path: "data/br-kg/raw/evidence/allen_hba_sample.json"
+    required: true
+    schema:
+      required_fields: ["region_id", "gene_symbol", "expression"]
+      optional_fields: ["tissue_type", "source"]
+    generation_notes: "Aggregate expression matrix, take Top-K genes per region, write flattened table"
+
+# On-demand Cache Configuration
+on_demand_cache:
+  default_ttl_seconds: 86400  # 24 hours
+  scholarly_metadata:
+    ttl_seconds: 86400
+    crossref_mailto: "research@brain-researcher.org"
+  neuroquery:
+    ttl_seconds: 43200  # 12 hours
+  nimare:
+    ttl_seconds: 43200
+  neuroscout:
+    ttl_seconds: 43200
+
+# Loader Responsibilities (for reference)
+loader_requirements:
+  full_mode:
+    - "Subclass BaseLoader"
+    - "Implement load_full() method"
+    - "Persist complete curated representation"
+    - "Flatten properties for Neo4j"
+
+  spine_mode:
+    - "Subclass BaseLoader"
+    - "Implement load_spine() method"
+    - "Drop fields not in whitelist"
+    - "Only persist allowed edge types"
+    - "Use _flatten_properties helpers"
+
+  on_demand_mode:
+    - "Subclass BaseLoader"
+    - "Implement make_adapter() method"
+    - "Register adapter with OnDemandRegistry"
+    - "No nodes/edges written during ingestion"
+    - "Return results at query time"
+    - "Optionally cache outside graph"
+
+# Validation Rules
+validation:
+  spine_mode:
+    - "Check only whitelisted fields present"
+    - "Check only allowed edge types used"
+    - "Verify no bulky payloads stored"
+
+  on_demand_mode:
+    - "Verify no nodes created during ingestion"
+    - "Verify adapter responds correctly"
+    - "Check cache hit rates"
+    - "Monitor last refresh times"
+
+# Notes
+notes:
+  - "Modes keep BR-KG lean, trustworthy, and perfect for search"
+  - "Full mode builds high-confidence backbone"
+  - "Spine mode provides search spine for navigation"
+  - "On-demand mode enriches graph at query time without bloating storage"
+  - "This config replaces hardcoded SOURCE_DEFAULT_MODES in load_all.py"
+
+# Spatial overlays (per atlas) used by sparsified IN_REGION writers
+spatial:
+  yeo17:
+    parcellation_node_id: "atlas:yeo2011_17"
+    template_space_node_id: "tpl:MNI152_2mm"
+    brainannotation_node_id: "neuromaps:yeo2011_17"
+    z_thr: 2.3
+    top_k: 8
+    label_image_path: "data/br-kg/raw/nilearn_atlases/yeo_2011/Yeo_JNeurophysiol11_MNI152/Yeo2011_17Networks_MNI152_FreeSurferConformed1mm.nii.gz"
+    parquet:
+      root: "/home/zijiaochen/projects/brain_researcher/data/yeo17_features"
+      write_maps_tall: true

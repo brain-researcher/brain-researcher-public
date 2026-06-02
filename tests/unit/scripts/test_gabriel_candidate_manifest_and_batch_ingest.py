@@ -6,7 +6,7 @@ from pathlib import Path
 from types import ModuleType
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-FIXTURE_PATH = REPO_ROOT / "tests/fixtures/neurokg/gabriel_measurements.sample.jsonl"
+FIXTURE_PATH = REPO_ROOT / "tests/fixtures/br-kg/gabriel_measurements.sample.jsonl"
 
 
 def _load_script(relative_path: str) -> ModuleType:
@@ -41,8 +41,8 @@ def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
 def test_build_deduped_gabriel_manifest_excludes_kggen_and_defers_targets(
     tmp_path: Path,
 ) -> None:
-    module = _load_script("scripts/neurokg/build_deduped_gabriel_accepted_manifest.py")
-    source_root = tmp_path / "data/neurokg/raw/gabriel"
+    module = _load_script("scripts/br-kg/build_deduped_gabriel_accepted_manifest.py")
+    source_root = tmp_path / "data/br-kg/raw/gabriel"
     input_path = source_root / "runs/gabriel-accepted/shard_0000.jsonl"
     _write_jsonl(input_path, _accepted_records())
 
@@ -100,7 +100,7 @@ def test_build_deduped_gabriel_manifest_excludes_kggen_and_defers_targets(
 
 
 def test_read_manifest_records_resolves_relative_shard_paths(tmp_path: Path) -> None:
-    module = _load_script("scripts/neurokg/batch_ingest_gabriel_manifest_to_neo4j.py")
+    module = _load_script("scripts/br-kg/batch_ingest_gabriel_manifest_to_neo4j.py")
     manifest_dir = tmp_path / "manifest"
     shard_path = manifest_dir / "shards/shard_0000.jsonl"
     _write_jsonl(shard_path, _accepted_records())
@@ -135,7 +135,7 @@ class _Session:
 
 
 def test_batch_build_rows_fast_path_keeps_targets_source_local() -> None:
-    module = _load_script("scripts/neurokg/batch_ingest_gabriel_manifest_to_neo4j.py")
+    module = _load_script("scripts/br-kg/batch_ingest_gabriel_manifest_to_neo4j.py")
     rows = module.build_rows(
         _accepted_records(),
         _Session(),

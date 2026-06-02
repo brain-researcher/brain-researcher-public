@@ -464,7 +464,7 @@ export function LinearDashboard() {
     clusterUsage !== null ? `${clusterUsage.toFixed(0)}% cpu` : 'No data'
   const dashboardRealtime = dashboardConnected
   const mcpAdoption = dashboardData?.mcpAdoption ?? null
-  const kgServiceStatus = health?.services?.find((svc) => svc.name === 'kg' || svc.name === 'neurokg')?.status
+  const kgServiceStatus = health?.services?.find((svc) => svc.name === 'kg' || svc.name === 'brKg')?.status
   const kgTone =
     kgServiceStatus === 'ok'
       ? 'bg-green-500'

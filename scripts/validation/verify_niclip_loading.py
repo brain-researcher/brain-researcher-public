@@ -76,7 +76,7 @@ def verify_niclip_data():
     # Try to load the mapper
     print("🧪 Testing NiCLIP Spatial Mapper...")
     try:
-        from brain_researcher.services.neurokg.etl.mappers.niclip_spatial_mapper_improved import (
+        from brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper_improved import (
             get_improved_mapper
         )
 

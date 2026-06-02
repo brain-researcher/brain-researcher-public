@@ -22,8 +22,8 @@ export TAG="$(git rev-parse --short HEAD)"
 All images are pushed to Docker Hub as public images under `docker.io/${DH_NS}`.
 
 ```bash
-# neurokg, agent, mcp — root Dockerfile multi-stage targets
-docker build --target neurokg -t docker.io/${DH_NS}/neurokg:${TAG} .
+# br-kg, agent, mcp — root Dockerfile multi-stage targets
+docker build --target br-kg -t docker.io/${DH_NS}/br-kg:${TAG} .
 docker build --target agent   -t docker.io/${DH_NS}/agent:${TAG}   .
 docker build --target mcp     -t docker.io/${DH_NS}/mcp:${TAG}     .
 
@@ -33,7 +33,7 @@ docker build \
   -f apps/web-ui/Dockerfile \
   --build-arg NEXT_PUBLIC_AGENT_API=https://${DOMAIN} \
   --build-arg NEXT_PUBLIC_ORCHESTRATOR_URL=https://${DOMAIN} \
-  --build-arg NEXT_PUBLIC_NEUROKG_API=https://${DOMAIN}/kg \
+  --build-arg NEXT_PUBLIC_BR_KG_API=https://${DOMAIN}/kg \
   --build-arg NEXT_PUBLIC_WS_URL=wss://${DOMAIN}/ws \
   --build-arg NEXT_PUBLIC_USE_API_PROXY=true \
   --build-arg NEXT_PUBLIC_AUTH_MODE=both \
@@ -41,8 +41,8 @@ docker build \
   --build-arg ORCHESTRATOR_PORT=3001 \
   --build-arg AGENT_HOST=brain-researcher-agent \
   --build-arg AGENT_PORT=8000 \
-  --build-arg NEUROKG_HOST=brain-researcher-neurokg \
-  --build-arg NEUROKG_PORT=5000 \
+  --build-arg BR_KG_HOST=brain-researcher-br-kg \
+  --build-arg BR_KG_PORT=5000 \
   .
 
 # orchestrator — its own Dockerfile
@@ -51,7 +51,7 @@ docker build \
   -f infrastructure/docker/Dockerfile.orchestrator .
 
 # Push all
-for img in neurokg agent mcp web-ui orchestrator; do
+for img in br-kg agent mcp web-ui orchestrator; do
   docker push docker.io/${DH_NS}/${img}:${TAG}
 done
 ```
@@ -89,7 +89,7 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: your.email@example.com
+    email: zijiaochen@stanford.edu
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-prod
@@ -200,7 +200,7 @@ curl https://brain-researcher.com/health
 | `/mcp/setup` | web-ui:3000 | Human MCP client setup page |
 | `/mcp` | mcp:7000 | MCP protocol endpoint; browser GET redirects to `/mcp/setup` |
 | `/.well-known/oauth-protected-resource` | mcp:7000 | OAuth discovery |
-| `/kg` | neurokg:5000 | Knowledge graph API |
+| `/kg` | br-kg:5000 | Knowledge graph API |
 | `/ws` | orchestrator:3001 | WebSocket connections |
 
-**Note:** `/api/*` is NOT a separate ingress rule — it falls through to `/` (web-ui). Next.js handles API routes locally and proxies to orchestrator/agent/neurokg via server-side rewrites using `ORCHESTRATOR_HOST`, `AGENT_HOST`, `NEUROKG_HOST` env vars.
+**Note:** `/api/*` is NOT a separate ingress rule — it falls through to `/` (web-ui). Next.js handles API routes locally and proxies to orchestrator/agent/br-kg via server-side rewrites using `ORCHESTRATOR_HOST`, `AGENT_HOST`, `BR_KG_HOST` env vars.

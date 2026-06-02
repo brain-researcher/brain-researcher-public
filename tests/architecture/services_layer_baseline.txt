@@ -1,0 +1,30 @@
+# services/* internal layer-order back-edge baseline.
+#
+# Target low->high layer order (min feedback arc set, computed 2026-06-01;
+# llm_gateway inserted after the router relocation):
+#   memory < shared < telemetry < llm_gateway < br_kg < review < tools < agent < mcp < orchestrator
+# Higher layers may import lower layers; a lower layer importing a higher one is
+# a back-edge that must eventually be cut (see code_graph_folder_order.md step 4).
+#
+# This baseline is the set of CURRENTLY-KNOWN back-edges. The ratchet test fails
+# if a NEW back-edge appears. As edges are cut, REMOVE the corresponding line so
+# the baseline only shrinks. Do NOT add lines without an explicit architecture
+# decision. (Lazy imports do NOT count as a cut — the static graph still sees
+# them; the dependency must be genuinely removed.)
+#
+# Round 1 (PRs #123/#124/#125): 98->83 weight, 14->11 edges; memory left the SCC.
+# Round 2 (PRs #127/#128): 83->67 weight (tools->agent 26->13, br_kg->tools 8->7,
+#   br_kg->agent 7->5); 11 edges unchanged.
+# Keystone (this change): shared->tools cut via the ToolSpecLookup DI seam ->
+#   shared (and telemetry) now OUT of the SCC. SCC is 6 nodes:
+#   agent -> br_kg -> mcp -> orchestrator -> review -> tools. Weight 67->66.
+# Router relocation follow-up: llm_gateway is covered by the ratchet, and its
+# residual llm_gateway->agent edges were cut by relocating gemini_fallback to
+# llm_gateway and the reusable metrics collector to telemetry.
+# Lazy compatibility shims cut the remaining static tools->agent edges.
+# Credits runtime extraction cut the final agent->orchestrator edge by moving
+# the credits store/API-USD debit runtime from orchestrator endpoints to shared.
+# MCP runtime bridge provider cut the remaining agent/tools -> mcp direct
+# server imports. Agent/tools now depend on the shared provider contract.
+# Dataset resource resolution moved from agent.kg_resolution to shared so BR-KG
+# can resolve dataset resources without importing the agent layer.

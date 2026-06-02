@@ -45,7 +45,7 @@ class RestRun:
 def default_schaefer_root() -> Path:
     candidates = [
         default_atlas_output_root() / "schaefer_2018",
-        repo_data_dir() / "neurokg" / "raw" / "nilearn_atlases" / "schaefer_2018",
+        repo_data_dir() / "br_kg" / "raw" / "nilearn_atlases" / "schaefer_2018",
     ]
     for candidate in candidates:
         if candidate.exists():

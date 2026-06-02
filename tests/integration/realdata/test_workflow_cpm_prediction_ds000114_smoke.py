@@ -20,16 +20,19 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("TMPDIR", str(TMP_ROOT))
 
 
-def _labels_from_participants(participants_tsv: Path, subjects: list[str]) -> np.ndarray:
+def _labels_from_participants(
+    participants_tsv: Path, subjects: list[str]
+) -> np.ndarray:
     df = pd.read_csv(participants_tsv, sep="\t")
-    mapping = dict(zip(df["participant_id"].astype(str), df["dominant_hand"].astype(str)))
+    mapping = dict(
+        zip(df["participant_id"].astype(str), df["dominant_hand"].astype(str))
+    )
     y = []
     for sub in subjects:
         hand = mapping.get(sub)
@@ -74,7 +77,7 @@ def test_workflow_cpm_prediction_ds000114_smoke(tmp_path: Path):
             "BR_SCHAEFER100_ATLAS",
             PROJECT_ROOT
             / "data"
-            / "neurokg"
+            / "br_kg"
             / "raw"
             / "nilearn_atlases"
             / "schaefer_2018"
@@ -107,7 +110,12 @@ def test_workflow_cpm_prediction_ds000114_smoke(tmp_path: Path):
         sub_dir.mkdir(parents=True, exist_ok=True)
         res_ts = execute_tool(
             "extract_timeseries",
-            {"img": str(img), "atlas": str(atlas_path), "tr": tr, "output_dir": str(sub_dir)},
+            {
+                "img": str(img),
+                "atlas": str(atlas_path),
+                "tr": tr,
+                "output_dir": str(sub_dir),
+            },
         )
         assert res_ts.status == "success", res_ts.error
         ts_file = Path((res_ts.data or {}).get("outputs", {}).get("timeseries", ""))
@@ -136,4 +144,3 @@ def test_workflow_cpm_prediction_ds000114_smoke(tmp_path: Path):
 
     assert (out_dir / "connectivity.npy").exists()
     assert (out_dir / "cv" / "cv_summary.json").exists()
-

@@ -1,0 +1,58 @@
+version: 0.1.0
+assets:
+  - id: atlas.schaefer2018.400.17networks.bundle
+    kind: atlas
+    family: atlas_parcellation_reference
+    title: Schaefer2018 400-parcel 17-network atlas bundle
+    canonical_runtime_name: Schaefer2018_400
+    aliases:
+      - Schaefer2018_400
+      - Schaefer400
+      - schaefer_400
+    source_repo: ""
+    source_release: ""
+    source_paper: ""
+    spaces: [MNI152, fsaverage, fsLR]
+    summary: Multi-space Schaefer 400-parcel parcellation bundle with 17-network ordering.
+
+  - id: atlas.yeo2011.7networks.bundle
+    kind: atlas
+    family: atlas_parcellation_reference
+    title: Yeo2011 7-network atlas bundle
+    canonical_runtime_name: yeo7
+    aliases:
+      - yeo7
+      - Yeo2011_7Networks
+      - Yeo7Networks
+    source_repo: ""
+    source_release: ""
+    source_paper: ""
+    spaces: [MNI152, fsaverage]
+    summary: Canonical 7-network cortical atlas bundle across supported spaces.
+
+  - id: atlas.yeo2011.17networks.bundle
+    kind: atlas
+    family: atlas_parcellation_reference
+    title: Yeo2011 17-network atlas bundle
+    canonical_runtime_name: yeo17
+    aliases:
+      - yeo17
+      - Yeo2011_17Networks
+      - Yeo17Networks
+    source_repo: ""
+    source_release: ""
+    source_paper: ""
+    spaces: [MNI152, fsaverage]
+    summary: Canonical 17-network cortical atlas bundle across supported spaces.
+
+  - id: warp.mni_fsaverage.registration_fusion.ants
+    kind: warp
+    family: registration_fusion_reference
+    title: MNI-fsaverage registration-fusion warp bundle
+    aliases:
+      - mni_fsaverage_rf_ants
+    source_repo: ""
+    source_release: ""
+    source_paper: ""
+    spaces: [MNI152, fsaverage]
+    summary: Registration-fusion reference warps between MNI and fsaverage spaces.

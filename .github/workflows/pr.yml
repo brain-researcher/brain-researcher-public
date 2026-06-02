@@ -1,0 +1,131 @@
+name: Brain Researcher PR Checks
+
+on:
+  pull_request:
+    branches: [ master, main, develop ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Changed Python Lint
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install lint tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install black==25.1.0 ruff==0.12.8 isort==6.0.1
+
+    - name: Determine changed Python files
+      env:
+        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        files_path="$RUNNER_TEMP/changed-python-files.txt"
+        git diff --name-only --diff-filter=ACMR "$PR_BASE_SHA" "$PR_HEAD_SHA" -- src/brain_researcher tests \
+          | awk '/\.py$/ { print }' > "$files_path"
+
+        count="$(wc -l < "$files_path" | tr -d ' ')"
+        echo "CHANGED_PYTHON_FILES=$files_path" >> "$GITHUB_ENV"
+        echo "CHANGED_PYTHON_COUNT=$count" >> "$GITHUB_ENV"
+        echo "Changed Python files: $count"
+        sed -n '1,200p' "$files_path"
+
+    - name: Run Black
+      run: |
+        mapfile -t files < "$CHANGED_PYTHON_FILES"
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "No changed Python files under src/brain_researcher or tests."
+          exit 0
+        fi
+        black --check "${files[@]}"
+
+    - name: Run Ruff
+      run: |
+        mapfile -t files < "$CHANGED_PYTHON_FILES"
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "No changed Python files under src/brain_researcher or tests."
+          exit 0
+        fi
+        if [ "${CHANGED_PYTHON_COUNT:-0}" -gt 500 ]; then
+          echo "Large bootstrap/export PR detected; running Ruff syntax-critical checks only."
+          ruff check --select E9,F63,F7 "${files[@]}"
+        else
+          ruff check "${files[@]}"
+        fi
+
+    - name: Run isort
+      run: |
+        mapfile -t files < "$CHANGED_PYTHON_FILES"
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "No changed Python files under src/brain_researcher or tests."
+          exit 0
+        fi
+        isort --check-only "${files[@]}"
+
+  test:
+    name: Architecture + Unit Smoke (3.11)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,agent]"
+
+    - name: Configure MNE/Numba environment
+      run: |
+        {
+          echo "NUMBA_DISABLE_CACHING=1"
+          echo "MNE_USE_NATIVE_CODE=0"
+          echo "NUMBA_CACHE_DIR=$RUNNER_TEMP/numba-cache"
+          echo "MNE_HOME=$RUNNER_TEMP/mne"
+        } >> "$GITHUB_ENV"
+        mkdir -p "$RUNNER_TEMP/numba-cache" "$RUNNER_TEMP/mne"
+
+    - name: Create test data directories
+      run: |
+        mkdir -p data/br-kg/db
+        mkdir -p data/test_data
+        mkdir -p logs
+
+    - name: Run architecture boundary tests
+      env:
+        PYTHONPATH: ${{ github.workspace }}/src
+        PYTHONDONTWRITEBYTECODE: "1"
+      run: |
+        pytest -q tests/architecture/test_import_boundaries.py -p no:cacheprovider
+
+    - name: Run PR unit smoke shard
+      env:
+        REDIS_URL: redis://localhost:6379/0
+        PYTHONPATH: ${{ github.workspace }}/src
+        DEFAULT_LLM_MODEL: gpt-4o
+        OPENAI_API_KEY: test-key
+        JWT_SECRET_KEY: test-secret
+      run: |
+        PYTHON_BIN=python bash tests/run_tests.sh unit-pr-smoke

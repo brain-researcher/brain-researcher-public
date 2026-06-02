@@ -34,7 +34,7 @@ GITHUB_TOKEN=YOUR_GITHUB_TOKEN
 # Service URLs for testing
 ORCHESTRATOR_URL=http://localhost:3001
 AGENT_URL=http://localhost:8000
-NEUROKG_URL=http://localhost:5000
+BR_KG_URL=http://localhost:5000
 WEB_UI_URL=http://localhost:3000
 BR_ENABLE_LEGACY_GATEWAY_TESTS=0
 # Optional legacy standalone gateway compatibility surface:
@@ -58,7 +58,7 @@ while [ $counter -lt $timeout ]; do
         echo "✅ Pact Broker is ready!"
         break
     fi
-    
+
     counter=$((counter + 5))
     echo "Waiting for Pact Broker... ($counter/$timeout seconds)"
     sleep 5
@@ -73,7 +73,7 @@ fi
 # Set up initial webhooks (if GitHub token is configured)
 if [ "$GITHUB_TOKEN" != "YOUR_GITHUB_TOKEN" ] && [ -n "$GITHUB_TOKEN" ]; then
     echo "🔗 Setting up GitHub webhooks..."
-    
+
     # Create webhook for contract changes
     curl -X POST http://localhost:9292/webhooks \
         -H 'Content-Type: application/json' \
@@ -113,12 +113,12 @@ curl -X PUT http://localhost:9292/environments/production \
         "production": true
     }' || echo "⚠️  Production environment may already exist"
 
-# Staging environment  
+# Staging environment
 curl -X PUT http://localhost:9292/environments/staging \
     -H 'Content-Type: application/json' \
     -H 'Authorization: Basic cGFjdF93b3Jrc2hvcDpwYWN0X3dvcmtzaG9w' \
     -d '{
-        "name": "staging", 
+        "name": "staging",
         "displayName": "Staging",
         "production": false
     }' || echo "⚠️  Staging environment may already exist"

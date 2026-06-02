@@ -1,5 +1,5 @@
-from brain_researcher.services.neurokg.etl import load_all as load_all_module
-from brain_researcher.services.neurokg.etl.load_all import MasterDataLoader
+from brain_researcher.services.br_kg.etl import load_all as load_all_module
+from brain_researcher.services.br_kg.etl.load_all import MasterDataLoader
 
 
 class _StubGraphDB:

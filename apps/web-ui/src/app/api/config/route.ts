@@ -48,7 +48,7 @@ export async function GET() {
   const services: Record<string, string> = {
     agent: agentBase,
     kg: '/api/kg',
-    neurokg: '/api/neurokg',
+    brKg: '/api/br-kg',
     orchestrator: orchestratorBase,
     websocket: websocketBase,
   }
@@ -60,7 +60,7 @@ export async function GET() {
   const health: Record<string, string> = {
     agent: '/api/health',
     kg: '/api/kg/health',
-    neurokg: '/api/neurokg/health',
+    brKg: '/api/br-kg/health',
     orchestrator: orchestratorBase
       ? `${orchestratorBase.replace(/\/$/, '')}/health`
       : '/health',

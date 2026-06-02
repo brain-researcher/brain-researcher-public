@@ -5,20 +5,8 @@ import { Copy, ExternalLink } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
-import { MCP_TOKEN_PLACEHOLDER } from '@/lib/mcp-config-snippets'
 
 const STARTER_REPO_URL = 'https://github.com/zjc062/brain_researcher'
-
-const TERMINAL_SETUP = [
-  'nano ~/.zshrc',
-  '',
-  '# Brain Researcher MCP',
-  `export BR_MCP_TOKEN="${MCP_TOKEN_PLACEHOLDER}"`,
-  'export BR_MCP_AUTH_HEADER="Bearer ${BR_MCP_TOKEN}"',
-  '',
-  'source ~/.zshrc',
-  'test -n "$BR_MCP_TOKEN" && echo "BR_MCP_TOKEN is set"',
-].join('\n')
 
 const SMOKE_PROMPT_CODEX =
   'show me the status of brain_researcher_mcp. Use the Brain Researcher MCP server_info and system_self_test tools. Keep the answer concise.'
@@ -61,6 +49,34 @@ const FUNCTION_GROUPS = [
   },
 ]
 
+function StepBadge({ step }: { step: number }) {
+  return (
+    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
+      {step}
+    </span>
+  )
+}
+
+function StepHeading({
+  step,
+  title,
+  subtitle,
+}: {
+  step: number
+  title: string
+  subtitle: string
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <StepBadge step={step} />
+      <div className="space-y-0.5">
+        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+    </div>
+  )
+}
+
 function CodeBlock({
   value,
   label,
@@ -98,46 +114,12 @@ function CodeBlock({
 export function McpSetupGuide() {
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-5">
-        <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-2">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Terminal setup and live checks
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">Run Brain Researcher with MCP</h2>
-            <p className="text-sm text-muted-foreground">
-              Configure the token once, connect Codex, Cursor, or Claude Code, then ask the agent
-              to run health checks before requesting workflow recipes.
-            </p>
-          </div>
-          <div className="rounded border bg-muted/20 p-3 text-xs text-muted-foreground">
-            Keep <code className="font-mono">BR_MCP_TOKEN</code> as the raw{' '}
-            <code className="font-mono">brk_...</code> token. Do not put{' '}
-            <code className="font-mono">Bearer </code> inside the token value.
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-base font-semibold text-gray-900">1. Put the token in your shell</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Use <code className="font-mono">~/.zshrc</code> on macOS/zsh, or the matching shell
-            profile for your terminal.
-          </p>
-        </div>
-        <CodeBlock value={TERMINAL_SETUP} label="Terminal" copyLabel="terminal setup" />
-      </section>
-
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-base font-semibold text-gray-900">
-            2. Check the connection in your agent
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Start the interactive client after reloading the shell, then paste one of these prompts.
-          </p>
-        </div>
+      <section className="space-y-3" data-tour="mcp-verify-guide">
+        <StepHeading
+          step={3}
+          title="Verify the connection"
+          subtitle="Start your agent after reloading the shell, then paste one of these prompts to confirm the tools are live."
+        />
         <div className="grid gap-3 md:grid-cols-2">
           <CodeBlock
             value={SMOKE_PROMPT_CODEX}
@@ -159,14 +141,12 @@ export function McpSetupGuide() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-base font-semibold text-gray-900">3. Ask for a workflow handoff</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            This example prepares a recipe. It should not be described as completed hosted
-            execution unless artifacts are actually produced and inspected.
-          </p>
-        </div>
+      <section className="space-y-3" data-tour="mcp-handoff-guide">
+        <StepHeading
+          step={4}
+          title="Run a workflow handoff"
+          subtitle="This prepares a recipe. It is not completed hosted execution unless artifacts are actually produced and inspected."
+        />
         <CodeBlock
           value={HANDOFF_PROMPT}
           label="Example MCP handoff prompt"
@@ -174,11 +154,11 @@ export function McpSetupGuide() {
         />
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-3 border-t pt-6">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Agent rules to give users</h2>
+          <h2 className="text-base font-semibold text-gray-900">Reference · agent rules</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            These are the public-facing version of the repo&apos;s Brain Researcher MCP agent rules.
+            The public-facing version of the repo&apos;s Brain Researcher MCP agent rules.
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -209,7 +189,7 @@ export function McpSetupGuide() {
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Common MCP functions</h2>
+            <h2 className="text-base font-semibold text-gray-900">Reference · common functions</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               The active client may expose only a subset. Ask it to inspect the tool list first.
             </p>

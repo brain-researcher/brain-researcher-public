@@ -1,6 +1,5 @@
 'use client'
 
-import { AdvancedViewBanner } from '@/components/advanced/advanced-view-banner'
 import { KGExplorerLayout } from '@/components/knowledge-graph/KGExplorerLayout'
 import {
   LinearKnowledgeGraph,
@@ -38,8 +37,7 @@ export default function KnowledgeGraphPage() {
     <NavigationWrapper>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          <AdvancedViewBanner canonicalHref="/studio" />
-          <div>
+          <div data-tour="kg-explorer">
             <h1 className="text-2xl font-semibold text-gray-900">Knowledge Graph</h1>
             <p className="text-sm text-muted-foreground">
               Explore graph-backed evidence across task, disease, and ONVOC views before you commit to a run.
@@ -52,7 +50,7 @@ export default function KnowledgeGraphPage() {
               onValueChange={(value) => setActiveLens(value as ExplorerLens)}
               className="space-y-4"
             >
-              <TabsList className="w-full justify-start">
+              <TabsList className="w-full justify-start" data-tour="kg-lens-tabs">
                 {lensTabs.map((tab) => (
                   <TabsTrigger key={tab.value} value={tab.value}>
                     {tab.label}

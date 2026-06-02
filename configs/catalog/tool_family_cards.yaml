@@ -1,0 +1,351 @@
+family_cards:
+  - id: knowledge_graph
+    title: Knowledge Graph
+    summary: Build, query, and traverse neuroscience knowledge graphs, ontology mappings, and multihop evidence paths.
+    when_to_use:
+      - Build or extend a neuroscience knowledge graph
+      - Find related concepts, regions, and tasks
+      - Map coordinates, atlases, or networks to ontology terms
+      - Traverse evidence paths in BR-KG
+      - Answer graph-based neuroscience questions
+    tags: [knowledge, graph, ontology, concept, region, atlas, coordinate, task, evidence, br-kg, neurosynth]
+    canonical_entrypoints: [br_kg.search_nodes, kg_multihop_qa, coordinate_to_concept, find_related_concepts, graph_query]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: hypothesis_generation
+    title: Hypothesis Generation
+    summary: Generate or score candidate hypotheses from graph and literature evidence.
+    when_to_use:
+      - Generate candidate hypotheses from evidence
+      - Run a hypothesis hot-load research pass
+      - Explore out-of-distribution or novel candidate ideas
+    tags: [hypothesis, candidate, evidence, discovery, novelty]
+    canonical_entrypoints: [hypothesis_hot_load_research]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: dataset_discovery
+    title: Dataset Discovery
+    summary: Search, inspect, and summarize neuroimaging datasets and mounted resources.
+    when_to_use:
+      - Find datasets for a task or modality
+      - Inspect mounted dataset contents and resource availability
+      - Browse OpenNeuro or local resource summaries
+    tags: [dataset, openneuro, bids, resources, search, browse]
+    canonical_entrypoints:
+      [br_kg.search_datasets, datasets.describe_resources, openneuro.search]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: data_validation
+    title: Data Validation
+    summary: Fail-fast validation of BIDS inputs, mounted resources, and derivative completeness before running downstream pipelines.
+    when_to_use:
+      - Check that required inputs are present before running a workflow
+      - Validate BIDS structure or derivative completeness
+      - Catch missing files or malformed inputs early
+    tags: [preflight, validation, fail-fast, fail fast, missing required inputs, required inputs, bids validation, derivatives sanity, missing files, input validation]
+    canonical_entrypoints: [validate_bids, derivatives_sanity_checker, datasets.describe_resources, openneuro.search]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: meta_analysis
+    title: Meta Analysis
+    summary: Run coordinate-based or literature-grounded neuroimaging meta-analysis.
+    when_to_use:
+      - Aggregate findings across studies
+      - Run coordinate-based meta-analysis
+      - Summarize a concept-level literature signal
+    tags: [meta-analysis, ale, mkda, coordinate, literature]
+    canonical_entrypoints: [meta_analysis, coordinate_meta_analysis]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: brain_extraction
+    title: Brain Extraction
+    summary: Skull stripping and non-brain tissue removal for structural MRI, including FSL BET-style brain extraction.
+    when_to_use:
+      - Remove skull from T1-weighted or other anatomical MRI images
+      - Run BET-style skull stripping before registration, segmentation, or morphometry
+      - Prepare anatomy after removing non-brain tissue
+    tags: [brain extraction, skull stripping, skull strip, skullstrip, bet, fsl bet, t1, t1w, anatomy, non-brain tissue]
+    canonical_entrypoints: [fsl_bet]
+    query_service_intents: [skull_strip_mri]
+    graph_family_ids: [fsl, afni]
+  - id: registration
+    title: Registration
+    summary: Linear or nonlinear MRI registration, including ANTs SyN template normalization and affine alignment.
+    when_to_use:
+      - Align anatomy to MNI152 or another template
+      - Register functional and structural images
+      - Run affine or nonlinear registration including ANTs SyN
+    tags: [registration, normalization, alignment, affine, nonlinear, ants, syn, template, mni152, flirt, fnirt]
+    canonical_entrypoints: [ants_registration, fsl_fnirt, fsl_flirt]
+    query_service_intents: [registration_nonlinear_mri]
+    graph_family_ids: [ants, fsl]
+  - id: motion_correction
+    title: Motion Correction
+    summary: Volume realignment and motion correction for fMRI preprocessing.
+    when_to_use:
+      - Run volume registration or rigid-body realignment on fMRI data
+      - Correct head motion before GLM or connectivity analysis
+      - Preprocess BOLD runs with motion-aware pipelines
+    tags: [motion correction, realignment, volume registration, head motion, mcflirt, fmri preprocessing, rigid body]
+    canonical_entrypoints: [fmriprep_preprocessing, motion_quantification]
+    query_service_intents: [motion_correction_fmri]
+    graph_family_ids: [fsl, bidsapps]
+  - id: preprocessing_denoising
+    title: Preprocessing Denoising
+    summary: ICA-AROMA/FIX denoising, multi-echo combination, CompCor-style nuisance regression, and denoising-oriented fMRI preprocessing.
+    when_to_use:
+      - Run ICA-AROMA, FIX, or similar artifact-denoising passes on BOLD data
+      - Combine multi-echo BOLD runs and estimate T2star-like maps
+      - Apply temporal filtering, nuisance regression, or physiological-noise removal
+      - Apply CompCor, nuisance regression, or physiological-noise removal
+      - Produce cleaned BOLD series before downstream GLM or decoding
+    tags: [ica-aroma, aroma, fsl fix, fix, melodic, multi-echo, tedana, compcor, nuisance regression, denoising, physiological noise, temporal filtering, band-pass, high-pass, low-pass, t2star, t2*, cleaned bold]
+    canonical_entrypoints: [fsl_fix, fsl_melodic, workflow_fmriprep_preprocessing]
+    query_service_intents: [motion_correction_fmri]
+    graph_family_ids: [fsl, bidsapps]
+  - id: distortion_correction
+    title: Distortion Correction
+    summary: Susceptibility distortion correction, fieldmap preparation, and EPI unwarping for fMRI and diffusion preprocessing.
+    when_to_use:
+      - Apply susceptibility distortion correction using fieldmaps or reverse-phase encoding
+      - Prepare fieldmaps for FEAT, TOPUP, or EPI registration workflows
+      - Unwarp EPI images before downstream preprocessing and analysis
+    tags: [fieldmap, susceptibility distortion correction, distortion correction, unwarping, topup, epi_reg, epi reg, fieldmap preparation, sdc]
+    canonical_entrypoints: [fsl_prepare_fieldmap, fsl_topup, fsl_epi_reg, fmriprep_preprocessing]
+    query_service_intents: []
+    graph_family_ids: [fsl, bidsapps]
+  - id: structural_segmentation
+    title: Structural Segmentation
+    summary: Structural tissue segmentation and bias-field-aware anatomical partitioning, including FSL FAST-style segmentation.
+    when_to_use:
+      - Segment T1-weighted anatomy into tissue classes
+      - Run FAST-style bias-field correction and tissue segmentation
+      - Produce GM, WM, and CSF tissue maps before morphometry or QC
+    tags: [structural segmentation, tissue segmentation, fast, fsl fast, bias field correction, bias correction, gm, wm, csf, t1w segmentation, tissue classes]
+    canonical_entrypoints: [fsl_fast, workflow_fastsurfer, spm12_vbm]
+    query_service_intents: []
+    graph_family_ids: [fsl, freesurfer]
+  - id: connectivity
+    title: Connectivity
+    summary: Functional connectivity estimation from atlas ROI matrices or seed-based resting-state analyses.
+    when_to_use:
+      - Build ROI-ROI or atlas-based connectivity matrices
+      - Run seed-based resting-state connectivity
+      - Explore connectome-style analyses
+    tags: [connectivity, resting-state, seed, connectome, correlation, network, atlas, roi, msdl, matrix]
+    canonical_entrypoints: [connectivity_matrix, seed_based_fc]
+    query_service_intents: [seed_connectivity]
+    graph_family_ids: [fsl]
+  - id: task_glm
+    title: Task GLM
+    summary: First-level or task-based general linear model analysis for fMRI.
+    when_to_use:
+      - Run first-level task GLM
+      - Estimate task activation maps
+      - Model event-related or block-design experiments
+    tags: [task glm, first level, activation, design matrix, nilearn, feat]
+    canonical_entrypoints: [glm_first_level]
+    query_service_intents: [task_glm]
+    graph_family_ids: [fsl, afni, bidsapps]
+  - id: decoding
+    title: Decoding
+    summary: MVPA, classification, and predictive modeling for whole-brain or ROI decoding, including pre-decoding feature engineering.
+    when_to_use:
+      - Run MVPA or decoding analyses
+      - Apply feature selection or confound regression before classification
+      - Train predictive models on neuroimaging features
+      - Compare classifiers or temporal decoding strategies
+    tags: [decoding, mvpa, classifier, classification, prediction, multivariate, temporal decoding, feature selection, anova, confound regression, deconfounding]
+    canonical_entrypoints: [decoding_classifier, mvpa, temporal_decoding]
+    query_service_intents: [decoding, ml_decoding]
+    graph_family_ids: [fsl, niwrap_generic]
+  - id: model_selection
+    title: Model Selection
+    summary: Nested cross-validation, reproducibility checks, hyperparameter tuning, and feature-selection workflows around neuroimaging decoding.
+    when_to_use:
+      - Run nested cross-validation or hyperparameter tuning
+      - Check reproducibility across random seeds or repeated model fits
+      - Compare decoders under grid search or model-selection settings
+      - Apply dimensionality reduction or feature selection before prediction
+    tags: [nested cross-validation, nested cv, hyperparameter tuning, grid search, model selection, pca, dimensionality reduction, feature selection, reproducibility, random seeds, validation metrics]
+    canonical_entrypoints: [ml_cross_validation, cross_validation, validation_metrics, decoding_classifier, mvpa, temporal_decoding]
+    query_service_intents: [decoding, ml_decoding]
+    graph_family_ids: [fsl, niwrap_generic]
+  - id: searchlight_decoding
+    title: Searchlight Decoding
+    summary: Local pattern decoding with spherical searchlights across the brain.
+    when_to_use:
+      - Run searchlight decoding or local pattern analysis
+      - Map spatially localized information with MVPA
+      - Evaluate voxelwise or spherical decoding performance
+    tags: [searchlight, local pattern analysis, spherical, voxelwise decoding, haxby, searchlight mvpa]
+    canonical_entrypoints: [searchlight_analysis, mvpa]
+    query_service_intents: []
+    graph_family_ids: [fsl, niwrap_generic]
+  - id: group_ica
+    title: Group ICA
+    summary: Group ICA, linked-component decomposition, and dual-regression style component analysis for fMRI datasets.
+    when_to_use:
+      - Run group ICA or MELODIC-style resting-state decomposition
+      - Perform independent vector analysis or linked-component decomposition
+      - Follow group ICA with dual regression or component-level downstream analysis
+    tags: [group ica, melodic, dual regression, independent vector analysis, iva, linked components, resting-state decomposition]
+    canonical_entrypoints: [fsl_melodic_ica, workflow_group_ica, fsl_dual_regression]
+    query_service_intents: []
+    graph_family_ids: [fsl]
+  - id: morphometry
+    title: Morphometry
+    summary: Structural morphometry and voxel-based morphometry for gray/grey and white matter volume analysis, including CAT12/SPM-style pipelines.
+    when_to_use:
+      - Run VBM or structural morphometry with CAT12 or SPM-style workflows
+      - Compare gray or white matter volume across groups
+      - Analyze tissue-volume differences or voxel-based morphometry outputs
+    tags: [vbm, voxel-based morphometry, voxel based morphometry, morphometry, structural, cat12, spm, gray matter, grey matter, white matter, gray matter volume, grey matter volume, white matter volume, tissue volume]
+    canonical_entrypoints: [spm12_vbm]
+    query_service_intents: []
+    graph_family_ids: [freesurfer, workbench]
+  - id: diffusion_reconstruction
+    title: Diffusion Reconstruction
+    summary: Diffusion MRI reconstruction, FOD estimation, spherical-harmonic modeling, and tractography-oriented preprocessing.
+    when_to_use:
+      - Estimate fibre orientation distributions or pseudo-FOD representations
+      - Run spherical deconvolution or spherical-harmonic transforms on diffusion data
+      - Prepare diffusion features before tractography or connectome analysis
+    tags: [diffusion, dti, dwi, pseudo-fod, pseudo fod, fod, fiber orientation distribution, fibre orientation distribution, spherical harmonic, spherical deconvolution, dwi2fod, mrtrix, tractography]
+    canonical_entrypoints: [mrtrix.3.0.4.dwi2fod.run, diffusion_tractography, run_tractography]
+    query_service_intents: []
+    graph_family_ids: [mrtrix]
+  - id: electrophysiology_ica
+    title: EEG ICA
+    summary: Independent component analysis for EEG/MEG artifact removal, including eye blinks and other physiological artifacts.
+    when_to_use:
+      - Run ICA decomposition on EEG or MEG data
+      - Identify eye blink, cardiac, or muscle artifacts before ERP or decoding analysis
+      - Inspect and remove noisy components from MNE pipelines
+    tags: [eeg, meg, ica, independent component analysis, eye blink, blink artifact, artifact removal, mne]
+    canonical_entrypoints: [mne_ica]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: electrophysiology_time_frequency
+    title: EEG Time Frequency
+    summary: Time-frequency representations, band-limited power, and spectral analysis for EEG and MEG.
+    when_to_use:
+      - Compute wavelet or multitaper time-frequency representations
+      - Estimate gamma-band or other band-limited power over time
+      - Run spectral analyses on EEG or MEG epochs
+    tags: [eeg, meg, time-frequency, time frequency, tfr, gamma band, wavelet, morlet, spectral power, spectrogram]
+    canonical_entrypoints: [mne_timefreq, timefreq_tfr]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: electrophysiology_source_localization
+    title: EEG Source Localization
+    summary: Source localization and inverse modeling for EEG/MEG, including MNE, dSPM, and related workflows.
+    when_to_use:
+      - Localize EEG or MEG sources from evoked responses
+      - Run inverse solutions such as MNE or dSPM
+      - Estimate cortical source activity before downstream electrophysiology analysis
+    tags: [eeg, meg, source localization, inverse solution, dspm, sloreta, mne, evoked responses, auditory evoked]
+    canonical_entrypoints: [mne_source_localization, workflow_eeg_source_estimation, localize_source]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: brain_age
+    title: Brain Age
+    summary: Brain-age prediction and age-gap estimation from neuroimaging features.
+    when_to_use:
+      - Predict chronological or biological brain age
+      - Estimate brain-age gap from structural features
+      - Run lightweight age-prediction models on imaging-derived measures
+    tags: [brain age, age prediction, age gap, morphology, structural features]
+    canonical_entrypoints: [compute_brain_age]
+    query_service_intents: [brain_age]
+    graph_family_ids: [freesurfer, workbench]
+  - id: structural_qc
+    title: Structural QC
+    summary: Quality assurance reports and QC checks for anatomical and morphometry derivatives.
+    when_to_use:
+      - Generate anatomical QC or QA reports
+      - Review structural derivative quality for VBM-style datasets
+      - Summarize MRIQC or FreeSurfer-style quality checks
+    tags: [quality assurance, qa report, qc report, structural qc, mriqc, freesurfer qc, vbm qa]
+    canonical_entrypoints: [mriqc_group_report, freesurfer_qc, spm12_vbm]
+    query_service_intents: []
+    graph_family_ids: [freesurfer]
+  - id: qc_motion_timeseries
+    title: QC Motion and Timeseries
+    summary: Quality-control checks for motion, temporal SNR, spikes, artifacts, and brain coverage in fMRI preprocessing outputs.
+    when_to_use:
+      - Detect motion outliers, spikes, or physiological/artifact-heavy runs
+      - Compute temporal SNR or other timeseries QC summaries
+      - Run MRIQC-style or preprocessing QC workflows on BOLD data
+      - Check brain coverage or gross acquisition problems before downstream analysis
+    tags: [qc, quality control, motion qc, temporal snr, tsnr, signal spikes, artifact detection, dvars, framewise displacement, fd, outlier subjects, brain coverage, coverage check, timeseries qc, mriqc, preprocessing qc]
+    canonical_entrypoints: [workflow_preprocessing_qc, workflow_mriqc, mriqc_group_report, motion_quantification]
+    query_service_intents: [motion_correction_fmri]
+    graph_family_ids: [fsl, bidsapps]
+  - id: visualization
+    title: Visualization
+    summary: Visualize statistical maps, overlays, glass-brain plots, and neuroimaging outputs.
+    when_to_use:
+      - Render statistical maps
+      - Generate glass-brain plots or activation figures
+      - Inspect brain overlays and result figures
+      - Produce quick visual summaries of outputs
+    tags: [visualization, stat map, plot, render, overlay, glass brain, activation map, figure]
+    canonical_entrypoints: [viz_stat_maps]
+    query_service_intents: []
+    graph_family_ids: [workbench, freesurfer]
+  - id: harmonization
+    title: Harmonization
+    summary: Multi-site harmonization and scanner-bias correction across datasets.
+    when_to_use:
+      - Harmonize multi-site datasets
+      - Reduce scanner effects
+      - Apply ComBat-style harmonization
+    tags: [harmonization, combat, multi-site, scanner effects]
+    canonical_entrypoints: [data_harmonization]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: lesion_detection
+    title: Lesion Detection
+    summary: Automated lesion segmentation and lesion-focused structural analysis for stroke or patient anatomy.
+    when_to_use:
+      - Detect or segment lesions from structural MRI
+      - Run lesion-focused workflows for stroke or clinical datasets
+      - Prepare lesion masks before lesion network mapping or downstream analysis
+    tags: [lesion detection, lesion segmentation, lesion mask, stroke lesion, stroke patient, automated lesion, lesion mapping]
+    canonical_entrypoints: [lesion_detection]
+    query_service_intents: []
+    graph_family_ids: [ants, freesurfer]
+  - id: realtime
+    title: Realtime
+    summary: Realtime or online fMRI pipelines for neurofeedback and streaming analysis.
+    when_to_use:
+      - Run realtime fMRI pipelines
+      - Support neurofeedback or online analysis
+      - Process incoming runs incrementally
+    tags: [realtime, neurofeedback, online, streaming, incremental, closed loop]
+    canonical_entrypoints: [realtime_fmri, realtime.pipeline_client]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: statistical_correction
+    title: Statistical Correction
+    summary: Multiple-comparison correction for voxelwise, searchlight, and statistical map results.
+    when_to_use:
+      - Apply FDR, FWE, or TFCE correction
+      - Correct searchlight or voxelwise results for multiple comparisons
+      - Run post-hoc statistical inference on map-based outputs
+    tags: [fdr, fwe, tfce, multiple comparison correction, cluster correction, statistical inference, searchlight correction]
+    canonical_entrypoints: [multiple_comparison_correction]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: statistical_inference_randomise
+    title: Randomise Inference
+    summary: Nonparametric permutation inference, cluster-extent thresholding, and TFCE-style correction with randomise/PALM workflows.
+    when_to_use:
+      - Run FSL randomise or PALM-style nonparametric inference
+      - Apply cluster-extent or cluster-mass thresholding after group analysis
+      - Perform permutation-based voxelwise or searchlight statistical correction
+    tags: [randomise, fsl randomise, palm, permutation inference, nonparametric inference, cluster extent, cluster-extent, cluster mass, tfce, permutation test]
+    canonical_entrypoints: [fsl_palm, multiple_comparison_correction]
+    query_service_intents: []
+    graph_family_ids: [fsl]

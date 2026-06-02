@@ -13,13 +13,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install orchestrator-specific dependencies first for layer caching
-COPY packages/brain-researcher/src/brain_researcher/services/orchestrator/requirements.txt /tmp/orchestrator-requirements.txt
+COPY src/brain_researcher/services/orchestrator/requirements.txt /tmp/orchestrator-requirements.txt
 RUN pip install --no-cache-dir -r /tmp/orchestrator-requirements.txt
 # Ensure sqlite async driver is present for shared SqliteJobStore runtime.
 RUN pip install --no-cache-dir "aiosqlite>=0.20.0"
 
 # Copy the full application so relative imports resolve correctly
-COPY packages/brain-researcher/src /app/src
+COPY src /app/src
 # Preflight endpoints resolve workflow/tool catalogs from /app/configs.
 # Keep these catalogs in the image so workflow_id checks work in production.
 COPY configs/grandmaster /app/configs/grandmaster

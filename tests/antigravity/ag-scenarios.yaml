@@ -1,0 +1,87 @@
+# antigravity scenarios (manual / semi-automated reliability suite)
+#
+# Purpose:
+# - Capture reliability + concurrency scenarios that are hard to cover in Playwright.
+# - Provide a consistent, repeatable runbook for pre-release verification.
+#
+# Note:
+# - This repo currently does not ship an "antigravity runner".
+# - Treat this YAML as the source-of-truth checklist; execute via the markdown runbook.
+#
+
+version: "1.0"
+name: "Brain Researcher Reliability Suite (AG-1..AG-6)"
+
+config:
+  base_url: "${BR_WEB_URL:-http://localhost:3000}"
+  auth_cookie_name: "br_access_token"
+  auth_token_env: "BR_TEST_TOKEN"
+
+scenarios:
+  - id: AG-1
+    name: "SSE reconnect after network drop"
+    priority: P0
+    goal: "While an analysis is running, go offline for ~10s then recover; UI must continue."
+    requires:
+      - "A running analysis with stream/logs updating"
+    steps:
+      - "Open Studio with a running analysis (Results visible)."
+      - "Confirm progress + console logs are updating."
+      - "Simulate offline (DevTools Network: Offline) for ~10 seconds."
+      - "Return online; verify progress continues and no crash/white-screen."
+
+  - id: AG-2
+    name: "Cancel → Retry → Attempt isolation"
+    priority: P0
+    goal: "Cancel a run, retry, and ensure attempts/logs/artifacts remain isolated."
+    requires:
+      - "A running analysis"
+    steps:
+      - "Cancel the running attempt."
+      - "Retry (creates a new attempt)."
+      - "Switch attempts; verify console/artifacts reflect the selected attempt."
+
+  - id: AG-3
+    name: "Share security boundaries"
+    priority: P1
+    goal: "Summary share must not leak logs/paths/nii; revoke must take effect immediately."
+    requires:
+      - "A succeeded analysis with artifacts"
+    steps:
+      - "Create a Summary-only share link."
+      - "Open link in incognito; verify logs are absent and no sensitive paths appear."
+      - "Attempt URL tampering (logs/artifacts endpoints); expect 403/404."
+      - "Revoke link; reload incognito; expect expired/invalid."
+
+  - id: AG-4
+    name: "Tools → Ask Agent loop"
+    priority: P1
+    goal: "Selecting a tool and asking the agent should yield an actionable plan update."
+    requires:
+      - "Tools catalog available"
+      - "Agent online"
+    steps:
+      - "Open Tools."
+      - "Pick a tool → Ask Agent to use this."
+      - "Agent responds with an action card; clicking updates Plan."
+
+  - id: AG-5
+    name: "Multi-tab concurrency isolation"
+    priority: P1
+    goal: "Two tabs on different analyses must not cross-contaminate SSE/logs/state."
+    requires:
+      - "Two analyses (A and B)"
+    steps:
+      - "Open analysis A in tab 1; analysis B in tab 2."
+      - "Run both; verify each tab shows correct analysis id + logs."
+
+  - id: AG-6
+    name: "Refresh recovery"
+    priority: P0
+    goal: "Refreshing Studio during a run should restore the same analysis and continue streaming."
+    requires:
+      - "A running analysis"
+    steps:
+      - "Open Studio with running analysis; note progress."
+      - "Refresh (Cmd/Ctrl+R)."
+      - "Verify same analysis loads and progress/logs continue."

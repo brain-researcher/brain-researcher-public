@@ -53,7 +53,7 @@ def test_resolve_module_prefers_non_alias_task_mapping_impl():
         name="task_to_concept_mapping",
         description="stub",
         backend="python",
-        python_class="brain_researcher.services.tools.neurokg_tools",
+        python_class="brain_researcher.services.tools.br_kg_tools",
     )
 
     tool = _resolve_python_tool_instance(spec)
@@ -66,7 +66,7 @@ def test_resolve_explicit_task_mapping_class_entrypoint():
         name="task_to_concept_mapping",
         description="stub",
         backend="python",
-        python_class="brain_researcher.services.tools.neurokg_tools.TaskMappingTool",
+        python_class="brain_researcher.services.tools.br_kg_tools.TaskMappingTool",
     )
 
     tool = _resolve_python_tool_instance(spec)

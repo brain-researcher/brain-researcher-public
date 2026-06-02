@@ -1141,7 +1141,7 @@ def run_audit(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         steps=[
             {
                 "step_id": "route_probe",
-                "tool": "neurokg.find_structural_leverage",
+                "tool": "br_kg.find_structural_leverage",
                 "params": {"query": "working memory", "limit": 5},
             }
         ],

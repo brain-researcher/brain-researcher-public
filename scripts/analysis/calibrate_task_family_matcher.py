@@ -16,7 +16,7 @@ from typing import Any
 
 from neo4j import GraphDatabase
 
-from brain_researcher.services.neurokg.task_family_matcher import TaskFamilyMatcher
+from brain_researcher.services.br_kg.task_family_matcher import TaskFamilyMatcher
 
 _MAPPED_METHODS = {"exact_alias", "fuzzy_alias", "aggressive_fuzzy_guarded"}
 _PROFILE_DEFAULTS: dict[str, dict[str, float]] = {

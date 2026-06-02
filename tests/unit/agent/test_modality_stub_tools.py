@@ -10,7 +10,7 @@ import yaml
 from nibabel.freesurfer import io as fsio
 
 import brain_researcher.services.tools.kg_multihop_qa_tool as kg_multihop_module
-from brain_researcher.services.neurokg import query_service
+from brain_researcher.services.br_kg import query_service
 from brain_researcher.services.tools.coreg_apply_xfm_tool import CoregApplyXfmTool
 from brain_researcher.services.tools.coreg_register_tool import CoregRegisterTool
 from brain_researcher.services.tools.dmri_fit_model_tool import DMRIFitModelTool
@@ -968,13 +968,83 @@ def test_kg_shacl_validate_stub(tmp_path):
 
 
 def _patch_kg_multihop_query_service(
-    monkeypatch, *, search_nodes, neighbors, multi_hop_traverse=None, node_details=None
+    monkeypatch,
+    *,
+    search_nodes,
+    neighbors,
+    multi_hop_traverse=None,
+    node_details=None,
+    resolve_multihop_seed_terms=None,
 ):
     """Patch likely query-service import styles used by multihop tool code."""
+    node_details_fn = node_details or (lambda *_a, **_k: None)
     monkeypatch.setattr(query_service, "search_nodes", search_nodes)
     monkeypatch.setattr(query_service, "neighbors", neighbors)
+    monkeypatch.setattr(query_service, "node_details", node_details_fn)
+
+    if resolve_multihop_seed_terms is None:
+
+        def _default_resolve_multihop_seed_terms(seed_terms, **kwargs):
+            max_seed_entities = int(kwargs.get("max_seed_entities") or 6)
+            max_seed_terms = int(kwargs.get("max_seed_terms") or len(seed_terms or []))
+            timeout_s = kwargs.get("timeout_s")
+            budget_seconds = kwargs.get("budget_seconds")
+            if budget_seconds is not None and float(budget_seconds) <= 0:
+                return {
+                    "seed_entities": [],
+                    "seed_hits_by_term": [],
+                    "resolved_terms": [],
+                    "warnings": [],
+                    "budget_exhausted": True,
+                }
+
+            seeds = []
+            seen = set()
+            hits_by_term = []
+            for term in list(seed_terms or [])[:max_seed_terms]:
+                if len(seeds) >= max_seed_entities:
+                    break
+                direct_hits = 0
+                for candidate in KGMultihopQATool._id_variants(str(term)):
+                    direct = node_details_fn(candidate, timeout_s=timeout_s)
+                    if not direct or not direct.kg_id or direct.kg_id in seen:
+                        continue
+                    seeds.append(direct)
+                    seen.add(direct.kg_id)
+                    direct_hits += 1
+                    if len(seeds) >= max_seed_entities:
+                        break
+                search_hits = 0
+                if len(seeds) < max_seed_entities:
+                    for hit in search_nodes(term, limit=6, timeout_s=timeout_s):
+                        if not hit.kg_id or hit.kg_id in seen:
+                            continue
+                        seeds.append(hit)
+                        seen.add(hit.kg_id)
+                        search_hits += 1
+                        if len(seeds) >= max_seed_entities:
+                            break
+                hits_by_term.append(
+                    {
+                        "term": term,
+                        "direct_hits": direct_hits,
+                        "search_hits": search_hits,
+                    }
+                )
+            return {
+                "seed_entities": seeds,
+                "seed_hits_by_term": hits_by_term,
+                "resolved_terms": [entry["term"] for entry in hits_by_term],
+                "warnings": [],
+                "budget_exhausted": False,
+            }
+
+        resolve_multihop_seed_terms = _default_resolve_multihop_seed_terms
+
     monkeypatch.setattr(
-        query_service, "node_details", node_details or (lambda *_a, **_k: None)
+        query_service,
+        "resolve_multihop_seed_terms",
+        resolve_multihop_seed_terms,
     )
     if multi_hop_traverse is not None:
         monkeypatch.setattr(query_service, "multi_hop_traverse", multi_hop_traverse)
@@ -1232,7 +1302,7 @@ def test_kg_multihop_qa_relation_questions_stop_seed_collection_early(monkeypatc
         multi_hop_traverse=fake_multi_hop_traverse,
         neighbors=lambda *_args, **_kwargs: [],
     )
-    monkeypatch.setenv("NEUROKG_MULTIHOP_RUNTIME_SEED_MAPPER", "off")
+    monkeypatch.setenv("BR_KG_MULTIHOP_RUNTIME_SEED_MAPPER", "off")
 
     tool = KGMultihopQATool()
     result = tool._run(

@@ -1,0 +1,1354 @@
+# Tool Name Mappings and Aliases
+# Generated from configs/tools_catalog.json
+# This file serves as the single source of truth for tool routing
+
+# Knowledge/Retrieval/BR-KG tools
+knowledge_retrieval:
+  find_related_concepts:
+    aliases:
+      - related_concepts
+      - concept_search
+      - literature_retrieval
+      - find_concepts
+      - search_concepts
+    example_queries:
+      - "Find concepts related to hippocampus"
+      - "What concepts are similar to working memory"
+    adapter_hints:
+      concept: ["concept", "query", "search_query", "term", "keyword"]
+
+  coordinate_to_concept:
+    aliases:
+      - mni_to_concept
+      - coord2concept
+      - coordinate2concept
+      - coords_to_concept
+      - brain_location
+    example_queries:
+      - "What concept is at MNI coordinates [30, -25, -20]"
+      - "Map coordinate 30, -25, -20 to concept"
+    adapter_hints:
+      coordinates: ["coordinates", "coords", "x,y,z", "coordinate"]
+
+  concept_literature_search:
+    aliases:
+      - pubmed_search
+      - literature_search
+      - find_papers
+      - search_papers
+      - paper_search
+    example_queries:
+      - "Find papers about hippocampus memory"
+      - "Search literature on working memory"
+    adapter_hints:
+      query: ["search_query", "query", "keywords", "terms"]
+
+  graph_query:
+    aliases:
+      - br_kg_query
+      - sparql
+      - knowledge_graph
+      - kg_query
+    example_queries:
+      - "Query knowledge graph for attention networks"
+    adapter_hints:
+      query: ["query", "sparql", "graph_query"]
+
+  evidence_pack:
+    aliases:
+      - provenance_pack
+      - provenance_chains
+      - evidence_bundle
+      - kg_evidence_pack
+      - evidence_graph
+    example_queries:
+      - "Get an evidence pack for emotion regulation"
+      - "Return provenance chains for a task"
+      - "Show evidence supporting a cognitive concept"
+    adapter_hints:
+      seed_id: ["seed_id", "id", "node_id"]
+      label: ["label", "type", "node_type"]
+      name: ["name", "term", "query"]
+      max_maps: ["max_maps", "maps", "top_maps"]
+      max_paths: ["max_paths", "paths", "top_paths"]
+      max_regions_per_map: ["max_regions_per_map", "regions_per_map", "top_regions"]
+      max_similar_tasks: ["max_similar_tasks", "similar_tasks", "top_similar_tasks"]
+
+# Analysis tools
+analysis:
+  glm_analysis:
+    aliases:
+      - statistical_analysis
+      - glm
+      - first_level
+      - fmri_analysis
+      - stats_analysis
+    example_queries:
+      - "Run GLM analysis on fMRI data"
+      - "Perform statistical analysis"
+    adapter_hints:
+      data_file: ["data_file", "input", "fmri_data"]
+      design_matrix: ["design_matrix", "design", "model"]
+      output_dir: ["output_dir", "output", "results_dir"]
+    requires_demo_for_missing: true
+
+  contrast_analysis:
+    aliases:
+      - cluster_analysis
+      - contrast_cluster
+      - cluster_inference
+      - peak_detection
+    example_queries:
+      - "Analyze contrast map for significant clusters"
+    adapter_hints:
+      contrast_map: ["contrast_map", "map", "stat_map", "input"]
+      threshold: ["threshold", "p_value", "significance"]
+    requires_demo_for_missing: true
+
+  encoding_model:
+    aliases:
+      - encoding
+      - predictive_model
+      - brain_encoding
+    example_queries:
+      - "Build encoding model for brain activity"
+    adapter_hints:
+      brain_data: ["brain_data", "fmri", "neural_data"]
+      features: ["features", "predictors", "stimuli"]
+    requires_demo_for_missing: true
+
+  contrast_to_activation_map:
+    aliases:
+      - contrast_to_map
+      - predict_activation_map
+      - contrast_map_prediction
+    example_queries:
+      - "Predict an activation map for 2-back versus 0-back"
+      - "Map incongruent vs congruent Stroop contrast to brain activation"
+    adapter_hints:
+      contrast_text: ["contrast_text", "contrast", "description", "query"]
+      task_name: ["task_name", "task", "paradigm"]
+
+  brain_similarity:
+    aliases:
+      - pattern_similarity
+      - similarity_analysis
+      - compare_patterns
+      - rsa
+    example_queries:
+      - "Compare brain patterns between conditions"
+    adapter_hints:
+      pattern1: ["pattern1", "first_pattern", "data1"]
+      pattern2: ["pattern2", "second_pattern", "data2"]
+
+# Task mapping
+task_mapping:
+  task_to_concept_mapping:
+    aliases:
+      - task_mapping
+      - map_task
+      - task2concept
+      - cognitive_task
+    example_queries:
+      - "Map n-back task to concepts"
+      - "What concepts for Stroop task"
+    adapter_hints:
+      task_name: ["task_name", "task", "paradigm"]
+
+# Data tools
+data_management:
+  openneuro_download:
+    aliases:
+      - download_openneuro
+      - get_dataset
+      - fetch_openneuro
+    example_queries:
+      - "Download dataset ds000001 from OpenNeuro"
+    adapter_hints:
+      dataset_id: ["dataset_id", "dataset", "ds_id"]
+
+  validate_bids:
+    aliases:
+      - bids_validator
+      - check_bids
+      - validate_dataset
+    example_queries:
+      - "Validate BIDS dataset structure"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "path"]
+
+  query_bids_layout:
+    aliases:
+      - bids_query
+      - search_bids
+      - find_files
+    example_queries:
+      - "Query BIDS dataset for T1w images"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "path"]
+      query: ["query", "filters", "criteria"]
+
+# NWB tools
+nwb_tools:
+  read_nwb:
+    aliases:
+      - load_nwb
+      - open_nwb
+    example_queries:
+      - "Read NWB file"
+    adapter_hints:
+      file_path: ["file_path", "path", "nwb_file"]
+
+  write_nwb:
+    aliases:
+      - save_nwb
+      - export_nwb
+    example_queries:
+      - "Save data as NWB"
+    adapter_hints:
+      file_path: ["file_path", "path", "output_path"]
+      data: ["data", "nwb_object"]
+
+  inspect_nwb:
+    aliases:
+      - check_nwb
+      - nwb_info
+    example_queries:
+      - "Inspect NWB file contents"
+    adapter_hints:
+      file_path: ["file_path", "path", "nwb_file"]
+
+# Archive tools
+archives:
+  dandi_search:
+    aliases:
+      - search_dandi
+      - dandi_query
+    example_queries:
+      - "Search DANDI for EEG datasets"
+    adapter_hints:
+      query: ["query", "search_term", "keywords"]
+
+  dandi_download:
+    aliases:
+      - download_dandi
+      - get_dandi
+    example_queries:
+      - "Download DANDI dataset 000001"
+    adapter_hints:
+      dataset_id: ["dataset_id", "dandiset", "id"]
+
+  neurovault_download_collection:
+    aliases:
+      - download_neurovault
+      - get_neurovault
+      - neurovault_collection
+    example_queries:
+      - "Download NeuroVault collection 1234"
+    adapter_hints:
+      collection_id: ["collection_id", "collection", "id"]
+
+  openneuro_list_files:
+    aliases:
+      - list_openneuro
+      - openneuro_files
+    example_queries:
+      - "List files in OpenNeuro dataset ds000001"
+    adapter_hints:
+      dataset_id: ["dataset_id", "dataset", "ds_id"]
+
+# Conversion tools
+conversion:
+  heudiconv_convert:
+    aliases:
+      - dicom_to_bids
+      - convert_dicom
+      - dcm2bids
+    example_queries:
+      - "Convert DICOM to BIDS format"
+    adapter_hints:
+      dicom_dir: ["dicom_dir", "input_dir", "source"]
+      output_dir: ["output_dir", "bids_dir", "target"]
+
+# MCP File System Tools
+mcp_filesystem:
+  fs.read:
+    aliases:
+      - read_file
+      - read
+      - file_read
+      - open_file
+      - load_file
+    example_queries:
+      - "Read file contents"
+      - "Open file at path"
+    adapter_hints:
+      path: ["path", "file_path", "file", "filename"]
+      encoding: ["encoding", "charset"]
+      start: ["start", "offset", "byte_start"]
+      end: ["end", "limit", "byte_end"]
+
+  fs.list_directory:
+    aliases:
+      - list_dir
+      - ls
+      - directory_list
+      - list_files
+      - dir_contents
+    example_queries:
+      - "List directory contents"
+      - "Show files in directory"
+    adapter_hints:
+      path: ["path", "directory", "dir", "folder"]
+      include_hidden: ["include_hidden", "show_hidden", "all_files"]
+
+  fs.search:
+    aliases:
+      - search_files
+      - grep
+      - find_text
+      - search_text
+      - file_search
+    example_queries:
+      - "Search for text in files"
+      - "Find files containing pattern"
+    adapter_hints:
+      pattern: ["pattern", "query", "search_term", "text"]
+      path: ["path", "directory", "dir", "search_path"]
+      case_sensitive: ["case_sensitive", "case"]
+
+  fs.apply_patch:
+    aliases:
+      - apply_patch
+      - patch_file
+      - apply_diff
+      - edit_file
+    example_queries:
+      - "Apply patch to file"
+      - "Edit file with diff"
+    adapter_hints:
+      patch: ["patch", "diff", "unified_diff"]
+      path: ["path", "file_path", "target_file"]
+
+# MCP BIDS Tools
+mcp_bids:
+  bids.validate:
+    aliases:
+      - validate_bids
+      - check_bids
+      - bids_check
+      - bids_validator
+    example_queries:
+      - "Validate BIDS dataset"
+      - "Check BIDS compliance"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "path", "bids_directory"]
+
+  bids.list_subjects:
+    aliases:
+      - list_subjects
+      - bids_subjects
+      - list_participants
+      - bids_participants
+    example_queries:
+      - "List BIDS subjects"
+      - "Show participants in dataset"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "path", "bids_directory"]
+
+# MCP Preprocessing Tools
+mcp_preprocessing:
+  bidsapp.fmriprep.run:
+    aliases:
+      - fmriprep
+      - run_fmriprep
+      - fmriprep_preprocessing
+      - fmri_preprocessing
+    example_queries:
+      - "Run fMRIPrep preprocessing"
+      - "Preprocess fMRI data with fMRIPrep"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      output_dir: ["output_dir", "derivatives_dir", "results_dir"]
+      participant_label: ["participant_label", "subject", "subjects", "participants"]
+      analysis_level: ["analysis_level", "level"]
+
+  bidsapp.qsiprep.run:
+    aliases:
+      - qsiprep
+      - run_qsiprep
+      - qsiprep_preprocessing
+      - dti_preprocessing
+      - diffusion_preprocessing
+    example_queries:
+      - "Run QSIPrep preprocessing"
+      - "Preprocess diffusion data"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      output_dir: ["output_dir", "derivatives_dir", "results_dir"]
+      participant_label: ["participant_label", "subject", "subjects"]
+
+  bidsapp.mriqc.run:
+    aliases:
+      - mriqc
+      - run_mriqc
+      - quality_control
+      - qc
+      - mri_quality_control
+    example_queries:
+      - "Run MRIQC quality control"
+      - "Check MRI data quality"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      output_dir: ["output_dir", "results_dir", "qc_dir"]
+      participant_label: ["participant_label", "subject", "subjects"]
+
+  bidsapp.xcpd.run:
+    aliases:
+      - xcpd
+      - run_xcpd
+      - xcp_d
+      - postprocessing
+      - fmri_postprocessing
+    example_queries:
+      - "Run XCP-D post-processing"
+      - "Post-process fMRIPrep outputs"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      output_dir: ["output_dir", "results_dir"]
+      participant_label: ["participant_label", "subject", "subjects"]
+
+  fitlins.recipe.run:
+    aliases:
+      - fitlins
+      - run_fitlins
+      - glm_fitlins
+      - glm_analysis
+      - statistical_analysis
+    example_queries:
+      - "Run FitLins GLM analysis"
+      - "Perform GLM on fMRI data"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      output_dir: ["output_dir", "results_dir"]
+      model: ["model", "design", "model_file", "design_matrix"]
+      participant_label: ["participant_label", "subject", "subjects"]
+
+# MCP Neuroimaging Tools
+mcp_neuroimaging:
+  neurosynth.term_search.run:
+    aliases:
+      - neurosynth_search
+      - search_neurosynth
+      - neurosynth_query
+      - term_search
+    example_queries:
+      - "Search NeuroSynth database"
+      - "Find terms in NeuroSynth"
+    adapter_hints:
+      term: ["term", "query", "search_term", "keyword"]
+
+  br_kg.task_mapping.run:
+    aliases:
+      - task_mapping
+      - br_kg_task_mapping
+      - map_task_to_concept
+    example_queries:
+      - "Map task to concepts"
+      - "Find concepts for cognitive task"
+    adapter_hints:
+      task_name: ["task_name", "task", "paradigm", "cognitive_task"]
+
+# Agent Tools (Internal Tool Wrappers)
+agent_tools:
+  # Preprocessing Tools
+  fmriprep_tool:
+    aliases:
+      - fmriprep
+      - fmri_preprocessing
+      - run_fmriprep
+    example_queries:
+      - "Run fMRIPrep preprocessing on BIDS dataset"
+      - "Preprocess fMRI data with fMRIPrep"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      output_dir: ["output_dir", "derivatives_dir", "results_dir"]
+      participant_label: ["participant_label", "subject", "subjects"]
+
+  qsiprep_tool:
+    aliases:
+      - qsiprep
+      - diffusion_preprocessing
+      - dti_preprocessing
+    example_queries:
+      - "Run QSIPrep diffusion preprocessing"
+      - "Preprocess diffusion MRI data"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      output_dir: ["output_dir", "derivatives_dir", "results_dir"]
+
+  xcpd_tool:
+    aliases:
+      - xcpd
+      - xcp_d
+      - postprocessing
+    example_queries:
+      - "Run XCP-D post-processing"
+      - "Post-process fMRIPrep outputs"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      output_dir: ["output_dir", "results_dir"]
+
+  freesurfer_tool:
+    aliases:
+      - freesurfer
+      - recon_all
+      - structural_analysis
+    example_queries:
+      - "Run FreeSurfer cortical reconstruction"
+      - "Perform structural MRI analysis"
+    adapter_hints:
+      t1_file: ["t1_file", "t1w", "structural_image"]
+      output_dir: ["output_dir", "subjects_dir", "results_dir"]
+
+  # FSL Tools
+  fsl_bet_tool:
+    aliases:
+      - bet
+      - brain_extraction
+      - skull_stripping
+    example_queries:
+      - "Extract brain using FSL BET"
+      - "Skull strip structural image"
+    adapter_hints:
+      input_file: ["input_file", "image", "t1w"]
+      output_file: ["output_file", "brain", "extracted"]
+
+  fsl_feat_tool:
+    aliases:
+      - feat
+      - fsl_glm
+      - first_level
+    example_queries:
+      - "Run FSL FEAT GLM analysis"
+      - "Perform first-level fMRI analysis"
+    adapter_hints:
+      input_file: ["input_file", "data", "fmri_data"]
+      design_file: ["design_file", "design", "fsf"]
+      output_dir: ["output_dir", "feat_dir", "results_dir"]
+
+  fsl_melodic_tool:
+    aliases:
+      - melodic
+      - ica
+      - independent_component_analysis
+    example_queries:
+      - "Run FSL MELODIC ICA"
+      - "Perform independent component analysis"
+    adapter_hints:
+      input_file: ["input_file", "data", "fmri_data"]
+      output_dir: ["output_dir", "melodic_dir", "ica_dir"]
+
+  fsl_fnirt_tool:
+    aliases:
+      - fnirt
+      - nonlinear_registration
+      - nonlinear_warp
+    example_queries:
+      - "Run FSL FNIRT nonlinear registration"
+      - "Perform nonlinear image alignment"
+    adapter_hints:
+      input_file: ["input_file", "image", "source"]
+      ref_file: ["ref_file", "reference", "target"]
+      output_file: ["output_file", "warped", "output"]
+
+  # MNE Tools (EEG/MEG)
+  mne_preprocessing_tool:
+    aliases:
+      - mne_preprocessing
+      - eeg_preprocessing
+      - meg_preprocessing
+    example_queries:
+      - "Preprocess EEG/MEG data with MNE"
+      - "Clean and filter electrophysiological data"
+    adapter_hints:
+      raw_file: ["raw_file", "data", "fif"]
+      output_file: ["output_file", "preprocessed", "clean"]
+
+  mne_ica_tool:
+    aliases:
+      - mne_ica
+      - ica_artifact_removal
+      - eeg_ica
+    example_queries:
+      - "Remove artifacts using MNE ICA"
+      - "Apply ICA to EEG/MEG data"
+    adapter_hints:
+      raw_file: ["raw_file", "data", "fif"]
+      output_file: ["output_file", "cleaned", "ica"]
+
+  mne_connectivity_tool:
+    aliases:
+      - mne_connectivity
+      - eeg_connectivity
+      - meg_connectivity
+    example_queries:
+      - "Compute connectivity with MNE"
+      - "Analyze EEG/MEG connectivity"
+    adapter_hints:
+      epochs_file: ["epochs_file", "data", "fif"]
+      method: ["method", "connectivity_metric", "measure"]
+
+  # Analysis Tools
+  fitlins_tool:
+    aliases:
+      - fitlins
+      - glm_analysis
+      - statistical_analysis
+    example_queries:
+      - "Run FitLins GLM analysis"
+      - "Perform statistical analysis on fMRI data"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "input_dir"]
+      model: ["model", "design", "model_file"]
+      output_dir: ["output_dir", "results_dir"]
+
+  nilearn_glm:
+    aliases:
+      - nilearn_glm
+      - nilearn_statistics
+      - voxelwise_glm
+    example_queries:
+      - "Run Nilearn GLM analysis"
+      - "Perform voxel-wise statistical analysis"
+    adapter_hints:
+      brain_data: ["brain_data", "fmri", "stat_map"]
+      design_matrix: ["design_matrix", "design", "predictors"]
+
+  statsmodels_glm_tool:
+    aliases:
+      - statsmodels_glm
+      - general_linear_model
+      - regression_analysis
+    example_queries:
+      - "Run Statsmodels GLM"
+      - "Perform regression analysis"
+    adapter_hints:
+      data: ["data", "y", "dependent"]
+      predictors: ["predictors", "X", "independent"]
+
+  # Advanced Analysis
+  encoding_models_tool:
+    aliases:
+      - encoding_model
+      - brain_encoding
+      - predictive_model
+    example_queries:
+      - "Build encoding model for brain activity"
+      - "Predict brain activity from features"
+    adapter_hints:
+      brain_data: ["brain_data", "fmri", "neural_data"]
+      features: ["features", "predictors", "stimuli"]
+
+  temporal_decoding_tool:
+    aliases:
+      - temporal_decoding
+      - time_decoding
+      - sequence_decoding
+    example_queries:
+      - "Perform temporal decoding analysis"
+      - "Decode time series from brain data"
+    adapter_hints:
+      brain_data: ["brain_data", "fmri", "timeseries"]
+      labels: ["labels", "conditions", "targets"]
+
+  feature_selection_tool:
+    aliases:
+      - feature_selection
+      - variable_selection
+      - feature_extraction
+    example_queries:
+      - "Select features from brain data"
+      - "Extract relevant features for analysis"
+    adapter_hints:
+      data: ["data", "features", "X"]
+      target: ["target", "y", "labels"]
+
+  # Connectivity & Network Analysis
+  gnn_connectivity_tool:
+    aliases:
+      - gnn_connectivity
+      - graph_neural_network
+      - network_connectivity
+    example_queries:
+      - "Analyze connectivity using graph neural networks"
+      - "Compute network connectivity with GNN"
+    adapter_hints:
+      connectivity_matrix: ["connectivity_matrix", "adjacency", "network"]
+      graph_type: ["graph_type", "network_type", "topology"]
+
+  graph_theory_tool:
+    aliases:
+      - graph_theory
+      - network_analysis
+      - graph_metrics
+    example_queries:
+      - "Analyze graph properties of brain networks"
+      - "Compute network metrics"
+    adapter_hints:
+      adjacency_matrix: ["adjacency_matrix", "connectivity", "graph"]
+      metrics: ["metrics", "measures", "properties"]
+
+  dynamic_connectivity_tool:
+    aliases:
+      - dynamic_connectivity
+      - time_varying_connectivity
+      - sliding_window
+    example_queries:
+      - "Analyze dynamic brain connectivity"
+      - "Compute time-varying network connectivity"
+    adapter_hints:
+      timeseries: ["timeseries", "data", "signals"]
+      window_size: ["window_size", "window", "time_window"]
+
+  # Specialized Tools
+  qsm_tool:
+    aliases:
+      - qsm
+      - quantitative_susceptibility
+      - susceptibility_mapping
+    example_queries:
+      - "Perform quantitative susceptibility mapping"
+      - "Compute QSM from phase data"
+    adapter_hints:
+      phase_data: ["phase_data", "phase", "phase_image"]
+      magnitude_data: ["magnitude_data", "magnitude", "mag_image"]
+
+  mrs_tool:
+    aliases:
+      - mrs
+      - mr_spectroscopy
+      - metabolite_quantification
+    example_queries:
+      - "Analyze MR spectroscopy data"
+      - "Quantify metabolites from MRS"
+    adapter_hints:
+      mrs_file: ["mrs_file", "spectroscopy_data", "data"]
+      metabolites: ["metabolites", "compounds", "chemicals"]
+
+  # Visualization
+  advanced_visualization_tool:
+    aliases:
+      - advanced_visualization
+      - brain_visualization
+      - neuroimaging_visualization
+    example_queries:
+      - "Create advanced brain visualizations"
+      - "Visualize neuroimaging results"
+    adapter_hints:
+      data: ["data", "image", "stat_map"]
+      output_file: ["output_file", "figure", "plot"]
+
+  # Knowledge & Retrieval Tools
+  br_kg_tools:
+    aliases:
+      - br-kg
+      - knowledge_graph
+      - br_kg_query
+    example_queries:
+      - "Query BR-KG knowledge graph"
+      - "Search brain research knowledge base"
+    adapter_hints:
+      query: ["query", "search", "question"]
+
+  neurosynth_tools:
+    aliases:
+      - neurosynth
+      - neurosynth_search
+      - meta_analysis_search
+    example_queries:
+      - "Search NeuroSynth database"
+      - "Find meta-analysis results"
+    adapter_hints:
+      term: ["term", "query", "keyword", "concept"]
+
+  rag_tools:
+    aliases:
+      - rag
+      - retrieval_augmented
+      - knowledge_retrieval
+    example_queries:
+      - "Retrieve relevant knowledge"
+      - "Search literature and knowledge base"
+    adapter_hints:
+      query: ["query", "question", "search"]
+
+  # Data Management Tools
+  bids_tools:
+    aliases:
+      - bids
+      - bids_dataset
+      - bids_utils
+    example_queries:
+      - "Work with BIDS dataset"
+      - "Query BIDS structure"
+    adapter_hints:
+      bids_dir: ["bids_dir", "dataset_path", "path"]
+      query: ["query", "filters", "criteria"]
+
+  archive_tools:
+    aliases:
+      - archive
+      - dataset_download
+      - openneuro
+    example_queries:
+      - "Download neuroimaging dataset"
+      - "Search OpenNeuro datasets"
+    adapter_hints:
+      dataset_id: ["dataset_id", "dataset", "ds_id"]
+
+  # Additional Analysis Tools
+  nilearn_connectivity:
+    aliases:
+      - nilearn_connectivity
+      - functional_connectivity
+      - brain_connectivity
+    example_queries:
+      - "Compute functional connectivity with Nilearn"
+      - "Analyze brain network connectivity"
+    adapter_hints:
+      timeseries: ["timeseries", "data", "signals"]
+      method: ["method", "metric", "connectivity_measure"]
+
+  nilearn_mvpa:
+    aliases:
+      - nilearn_mvpa
+      - mvpa
+      - multivariate_pattern
+      - decoding
+    example_queries:
+      - "Perform MVPA with Nilearn"
+      - "Decode brain patterns"
+    adapter_hints:
+      brain_data: ["brain_data", "fmri", "images"]
+      labels: ["labels", "conditions", "targets"]
+
+  cross_validation_tool:
+    aliases:
+      - cross_validation
+      - cv
+      - kfold
+    example_queries:
+      - "Perform cross-validation"
+      - "Validate model with cross-validation"
+    adapter_hints:
+      data: ["data", "X", "features"]
+      labels: ["labels", "y", "targets"]
+      cv: ["cv", "n_folds", "folds"]
+
+  meta_analysis_tool:
+    aliases:
+      - meta_analysis
+      - meta_analysis_neuroimaging
+      - coordinate_meta
+    example_queries:
+      - "Perform neuroimaging meta-analysis"
+      - "Combine multiple studies"
+    adapter_hints:
+      coordinates: ["coordinates", "peaks", "studies"]
+      method: ["method", "meta_method", "algorithm"]
+
+  # Registration & Segmentation
+  ants_tool:
+    aliases:
+      - ants
+      - ants_registration
+      - advanced_normalization
+    example_queries:
+      - "Run ANTs registration"
+      - "Perform advanced normalization"
+    adapter_hints:
+      moving_image: ["moving_image", "source", "input"]
+      fixed_image: ["fixed_image", "target", "reference"]
+      output_dir: ["output_dir", "results_dir"]
+
+  registration_tool:
+    aliases:
+      - registration
+      - image_registration
+      - alignment
+    example_queries:
+      - "Register images"
+      - "Align brain images"
+    adapter_hints:
+      source_image: ["source_image", "moving", "input"]
+      target_image: ["target_image", "fixed", "reference"]
+
+  segmentation_tool:
+    aliases:
+      - segmentation
+      - tissue_segmentation
+      - brain_segmentation
+    example_queries:
+      - "Segment brain tissue"
+      - "Perform tissue segmentation"
+    adapter_hints:
+      image: ["image", "t1w", "structural"]
+      output_dir: ["output_dir", "segmentation_dir"]
+
+  lesion_detection_tool:
+    aliases:
+      - lesion_detection
+      - lesion_identification
+      - abnormality_detection
+    example_queries:
+      - "Detect brain lesions"
+      - "Identify abnormalities"
+    adapter_hints:
+      image: ["image", "t1w", "structural"]
+      method: ["method", "algorithm", "detection_method"]
+
+# Neurocore Modules (Internal Helper Modules)
+neurocore_modules:
+  # Preprocessing Helpers
+  fmriprep:
+    aliases:
+      - fmriprep_helpers
+      - fmriprep_config
+    description: Shared helpers for fMRIPrep configuration and command building
+
+  mriqc:
+    aliases:
+      - mriqc_helpers
+      - mriqc_config
+    description: Shared helpers for MRIQC configuration and command building
+
+  qsiprep:
+    aliases:
+      - qsiprep_helpers
+      - qsiprep_config
+    description: Shared helpers for QSIPrep configuration and command building
+
+  xcpd:
+    aliases:
+      - xcpd_helpers
+      - xcpd_config
+    description: Shared helpers for XCP-D command construction
+
+  # Analysis Helpers
+  nilearn_analysis:
+    aliases:
+      - nilearn_helpers
+      - nilearn_glm_helpers
+    description: Shared helpers for Nilearn GLM and connectivity analyses
+
+  nilearn_preprocessing:
+    aliases:
+      - nilearn_preprocessing_helpers
+    description: Shared helpers for Nilearn preprocessing workflows
+
+  statsmodels_glm:
+    aliases:
+      - statsmodels_helpers
+      - glm_helpers
+    description: Shared helpers for Statsmodels GLM analysis
+
+  # MNE Helpers
+  mne_preprocessing:
+    aliases:
+      - mne_preprocessing_helpers
+    description: Shared helpers for MNE preprocessing workflows
+
+  mne_connectivity:
+    aliases:
+      - mne_connectivity_helpers
+    description: Shared helpers for MNE connectivity analysis
+
+  mne_ica:
+    aliases:
+      - mne_ica_helpers
+    description: Shared helpers for MNE ICA artifact removal
+
+  # FSL Helpers
+  fsl_bet:
+    aliases:
+      - fsl_bet_helpers
+    description: Shared helpers for FSL BET brain extraction
+
+  fsl_feat:
+    aliases:
+      - fsl_feat_helpers
+    description: Shared helpers for FSL FEAT execution
+
+  fsl_fnirt:
+    aliases:
+      - fsl_fnirt_helpers
+    description: Shared helpers for FSL FNIRT non-linear registration
+
+  fsl_melodic:
+    aliases:
+      - fsl_melodic_helpers
+    description: Shared helpers for FSL MELODIC execution
+
+  # Other Helpers
+  freesurfer:
+    aliases:
+      - freesurfer_helpers
+    description: Shared helpers for FreeSurfer recon-all execution
+
+  registration:
+    aliases:
+      - registration_helpers
+    description: General registration helpers with deterministic fallbacks
+
+  segmentation:
+    aliases:
+      - segmentation_helpers
+    description: Segmentation helpers with deterministic fallbacks
+
+# Planner DAG Tools (Agent-side pipelines)
+planner_dag_tools:
+  fetch_atlas:
+    aliases:
+      - atlas_fetch
+      - atlas_resolver
+    description: Resolve atlas definitions for connectivity workflows
+    example_queries:
+      - "Fetch the Schaefer200 atlas"
+    adapter_hints:
+      atlas_name: ["atlas", "atlas_name", "parcellation"]
+
+  extract_timeseries:
+    aliases:
+      - timeseries_extract
+    description: Extract ROI time-series from fMRI volumes
+    example_queries:
+      - "Get ROI time series from this BOLD run"
+    adapter_hints:
+      fmri_img: ["fmri_img", "bold", "nifti"]
+      atlas: ["atlas", "parcellation"]
+
+  nilearn_connectivity_matrix:
+    aliases:
+      - nilearn_connectivity
+    description: Build connectivity matrices from ROI time-series
+    example_queries:
+      - "Compute functional connectivity matrix"
+    adapter_hints:
+      timeseries: ["timeseries", "roi_ts", "signals"]
+
+  resolve_montage:
+    aliases:
+      - montage_resolver
+    description: Fetch standard EEG montage geometry
+    example_queries:
+      - "Load the standard_1020 montage"
+    adapter_hints:
+      montage_name: ["montage", "montage_name"]
+
+  eeg_preprocess:
+    aliases:
+      - eeg_clean
+    description: Preprocess raw EEG with filters and ICA
+    example_queries:
+      - "Clean this raw EEG recording"
+    adapter_hints:
+      raw_eeg: ["raw_eeg", "eeg_file"]
+
+  epoch_events:
+    aliases:
+      - eeg_epoch
+    description: Epoch EEG around task events
+    example_queries:
+      - "Epoch the EEG around stimuli"
+    adapter_hints:
+      events: ["events", "event_file"]
+
+  timefreq_tfr:
+    aliases:
+      - timefreq_analysis
+    description: Compute time-frequency representations for EEG/MEG
+    example_queries:
+      - "Run time-frequency analysis on the epochs"
+
+  connectivity_measures:
+    aliases:
+      - sensor_connectivity
+    description: Compute EEG/MEG connectivity metrics (PLV, wPLI, GC)
+    example_queries:
+      - "Compute PLV connectivity"
+
+  coreg_register:
+    aliases:
+      - coregister_volumes
+    description: Register complimentary volumes (e.g., CT→MRI)
+    example_queries:
+      - "Coregister CT to T1"
+
+  ieeg_electrode_localize:
+    aliases:
+      - electrode_localize
+    description: Localize iEEG electrodes after CT/MRI alignment
+    example_queries:
+      - "Find electrode coordinates for this subject"
+
+  ieeg_preprocess:
+    aliases:
+      - ieeg_clean
+    description: Preprocess iEEG signals (CAR/bipolar referencing)
+    example_queries:
+      - "Clean raw iEEG recording"
+
+  ieeg_epoch_features:
+    aliases:
+      - ieeg_features
+    description: Derive bandpower and HFA features from iEEG epochs
+    example_queries:
+      - "Compute HFA features"
+
+  ieeg_connectivity:
+    aliases:
+      - ieeg_connectivity_matrix
+    description: Build connectivity matrices from iEEG features
+    example_queries:
+      - "Compute connectivity across contacts"
+
+  dmri_resolve_dwi_triplet:
+    aliases:
+      - resolve_dwi_triplet
+    description: Locate DWI + bval/bvec inputs for dMRI workflows
+    example_queries:
+      - "Find dwi/bval/bvec for subject 01"
+
+  dmri_fit_model:
+    aliases:
+      - dmri_model_fit
+    description: Fit diffusion models (DTI/CSD) on resolved data
+    example_queries:
+      - "Fit a diffusion tensor model"
+
+  dmri_parcellate_connectome:
+    aliases:
+      - dmri_connectome
+    description: Generate structural connectomes via parcellation
+    example_queries:
+      - "Build the structural connectome"
+
+  parcellation_fetch:
+    aliases:
+      - fetch_parcellation
+    description: Download or resolve ROI parcellations
+    example_queries:
+      - "Get the aparc+aseg parcellation"
+
+  resolve_bids:
+    aliases:
+      - bids_resolver
+    description: Resolve file paths within a BIDS dataset
+    example_queries:
+      - "Locate subject 01 T1w in BIDS"
+
+  smri_recon:
+    aliases:
+      - smri_reconstruct
+    description: Run cortical reconstruction (FreeSurfer/FastSurfer)
+    example_queries:
+      - "Run recon-all on this T1"
+
+  smri_parcellation_stats:
+    aliases:
+      - smri_stats
+    description: Export ROI morphometry tables from recon outputs
+    example_queries:
+      - "Export cortical thickness stats"
+
+  smri_surface_export:
+    aliases:
+      - smri_surface_assets
+    description: Package surface meshes for visualization/analytics
+    example_queries:
+      - "Export left/right pial surfaces"
+
+  pet_coreg:
+    aliases:
+      - pet_coregister
+    description: Coregister PET volumes to structural T1
+    example_queries:
+      - "Align PET to anatomy"
+
+  pet_suvr:
+    aliases:
+      - pet_suvr_compute
+    description: Compute SUVR maps with reference-region normalization
+    example_queries:
+      - "Compute SUVR using cerebellum"
+
+  pet_parcellate:
+    aliases:
+      - pet_roi_stats
+    description: Extract ROI SUVR summaries
+    example_queries:
+      - "Summarize PET uptake per region"
+
+  meta_brainmap:
+    aliases:
+      - brainmap_query
+    description: Query BrainMap/Neurosynth style term maps
+    example_queries:
+      - "Get meta-analysis map for memory"
+
+  meta_align:
+    aliases:
+      - meta_align_map
+    description: Align meta-analysis maps to the requested space
+    example_queries:
+      - "Warp meta map to MNI"
+
+  meta_combine:
+    aliases:
+      - meta_combine_maps
+    description: Combine aligned maps and produce HTML summaries
+    example_queries:
+      - "Summarize combined term map"
+
+  kg_ingest:
+    aliases:
+      - kg_batch_ingest
+    description: Ingest nodes/edges into the BR-KG store
+    example_queries:
+      - "Load this CSV into BR-KG"
+
+  kg_shacl_validate:
+    aliases:
+      - kg_validate
+    description: Validate ingested graphs with SHACL rules
+    example_queries:
+      - "Run SHACL validation"
+
+# LLM Code Tools (Code Completion & Editing)
+llm_code_tools:
+  llm.code.complete:
+    aliases:
+      - code_complete
+      - code_completion
+      - autocomplete
+      - complete_code
+      - codex
+      - claude_code
+      - gemini_code
+    example_queries:
+      - "Complete this code"
+      - "Generate code completion"
+      - "Autocomplete at cursor"
+    adapter_hints:
+      path: ["path", "file", "file_path", "filename"]
+      prefix: ["prefix", "code_before", "before_cursor", "context"]
+      suffix: ["suffix", "code_after", "after_cursor"]
+      language: ["language", "lang", "programming_language"]
+      cursor: ["cursor", "position", "cursor_position"]
+
+  llm.code.diff:
+    aliases:
+      - code_diff
+      - generate_diff
+      - code_changes
+      - refactor_code
+      - modify_code
+      - code_edit
+    example_queries:
+      - "Generate code changes"
+      - "Refactor this code"
+      - "Modify code to achieve goal"
+    adapter_hints:
+      goal: ["goal", "objective", "description", "what_to_change"]
+      targets: ["targets", "files", "target_files", "file_patterns"]
+      context: ["context", "additional_files", "related_files"]
+      constraints: ["constraints", "requirements", "rules"]
+
+# Gemini CLI Tools
+gemini_cli:
+  gemini_cli.chat:
+    aliases:
+      - gemini_chat
+      - chat
+      - llm_chat
+      - gemini
+      - ask_gemini
+    example_queries:
+      - "Chat with Gemini"
+      - "Ask Gemini a question"
+      - "Use Gemini to answer"
+    adapter_hints:
+      prompt: ["prompt", "message", "query", "question", "input"]
+      model: ["model", "llm_model", "gemini_model"]
+      credential: ["credential", "api_key", "credential_name"]
+      max_output_tokens: ["max_output_tokens", "max_tokens", "token_limit"]
+      thinking_budget: ["thinking_budget", "thinking_tokens", "reasoning_budget"]
+
+# Credentials Management
+credentials:
+  credentials.list:
+    aliases:
+      - list_credentials
+      - show_credentials
+      - available_credentials
+      - credential_list
+    example_queries:
+      - "List available credentials"
+      - "Show LLM credentials"
+      - "What credentials are available"
+    adapter_hints: {}
+
+  credentials.status:
+    aliases:
+      - credential_status
+      - check_credential
+      - credential_info
+      - verify_credential
+    example_queries:
+      - "Check credential status"
+      - "Verify credential for model"
+      - "Get credential information"
+    adapter_hints:
+      model: ["model", "llm_model", "model_name"]
+
+# Code Operations
+code_operations:
+  code.apply_patch:
+    aliases:
+      - apply_patch
+      - apply_code_patch
+      - edit_file
+      - modify_file
+      - write_file
+      - update_file
+    example_queries:
+      - "Apply code patch"
+      - "Edit file with new content"
+      - "Update file contents"
+    adapter_hints:
+      file: ["file", "path", "file_path", "target_file"]
+      content: ["content", "new_content", "file_content", "code"]
+      apply: ["apply", "execute", "save", "write"]
+
+# Testing Tools
+testing:
+  tests.run:
+    aliases:
+      - run_tests
+      - pytest
+      - test
+      - run_pytest
+      - execute_tests
+      - test_suite
+    example_queries:
+      - "Run tests"
+      - "Execute pytest"
+      - "Run test suite"
+      - "Check if tests pass"
+    adapter_hints:
+      path: ["path", "test_path", "test_dir", "test_file"]
+      pattern: ["pattern", "test_pattern", "test_name", "test_filter"]
+      markers: ["markers", "pytest_markers", "test_markers"]
+      coverage: ["coverage", "generate_coverage", "coverage_report"]
+      junit_xml: ["junit_xml", "junit_output", "xml_report"]

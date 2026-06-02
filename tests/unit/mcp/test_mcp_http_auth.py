@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import importlib
+import sys
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -409,6 +410,14 @@ def test_http_auth_browser_mcp_entry_redirects_to_setup(monkeypatch):
     assert browser_resp.status_code == 302
     assert browser_resp.headers["location"] == "/mcp/setup"
 
+    generic_get_resp = client.get(
+        "/mcp",
+        headers={"Accept": "*/*"},
+        follow_redirects=False,
+    )
+    assert generic_get_resp.status_code == 302
+    assert generic_get_resp.headers["location"] == "/mcp/setup"
+
     head_resp = client.head("/mcp", follow_redirects=False)
     assert head_resp.status_code == 302
     assert head_resp.headers["location"] == "/mcp/setup"
@@ -647,8 +656,7 @@ def test_server_module_loads_auth_env_from_dotenv_for_direct_module_run(
 
     dotenv_path = tmp_path / ".env"
     dotenv_path.write_text(
-        "BR_MCP_AUTH_MODE=token_or_jwt\n"
-        "JWT_SECRET_KEY=dotenv-jwt-secret\n",
+        "BR_MCP_AUTH_MODE=token_or_jwt\n" "JWT_SECRET_KEY=dotenv-jwt-secret\n",
         encoding="utf-8",
     )
 
@@ -661,10 +669,25 @@ def test_server_module_loads_auth_env_from_dotenv_for_direct_module_run(
     monkeypatch.setattr(env_loader, "_loaded", False)
     monkeypatch.setattr(env_loader, "_loaded_path", None)
 
-    reloaded = importlib.reload(srv)
+    try:
+        reloaded = importlib.reload(srv)
 
-    assert reloaded.AUTH_MODE == "token_or_jwt"
-    assert reloaded.JWT_SECRET_KEY == "dotenv-jwt-secret"
+        assert reloaded.AUTH_MODE == "token_or_jwt"
+        assert reloaded.JWT_SECRET_KEY == "dotenv-jwt-secret"
+    finally:
+        # importlib.reload(srv) rebuilds srv.mcp as a fresh FastMCP with only
+        # server.py's own @mcp.tool()s; the router modules' tool registrations are
+        # one-time import side-effects that do NOT re-run (cached in sys.modules),
+        # so the ~20 router-hosted tools (artifacts/plan/slurm/grounding/memory/...)
+        # vanish from the shared instance and pollute later surface-introspection
+        # tests. Restore: undo env/cwd, reload srv with the real env, then re-import
+        # the router modules so their @mcp.tool()s re-register on the new srv.mcp.
+        monkeypatch.undo()
+        importlib.reload(srv)
+        for _router in sorted(set(srv._ROUTER_TOOL_EXPORTS.values())):
+            importlib.reload(
+                sys.modules[f"brain_researcher.services.mcp.routers.{_router}"]
+            )
 
 
 def test_http_auth_auto_mode_without_config_fails_closed(monkeypatch):

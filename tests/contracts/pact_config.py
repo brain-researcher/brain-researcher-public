@@ -4,25 +4,31 @@ Pact configuration for Brain Researcher contract testing.
 
 import os
 from pathlib import Path
-from typing import Dict, Any, List
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List
 
+from pydantic import BaseModel, Field
 
 LEGACY_GATEWAY_CONTRACT_ENV = "BR_ENABLE_LEGACY_GATEWAY_TESTS"
 
 
 def legacy_gateway_contracts_enabled() -> bool:
     """Return whether legacy API gateway contract coverage is explicitly enabled."""
-    return os.getenv(LEGACY_GATEWAY_CONTRACT_ENV, "0").lower() in {"1", "true", "yes", "on"}
+    return os.getenv(LEGACY_GATEWAY_CONTRACT_ENV, "0").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 class PactBrokerConfig(BaseModel):
     """Configuration for Pact Broker."""
+
     broker_base_url: str = Field(default="http://localhost:9292")
     broker_username: str = Field(default="pact_workshop")
     broker_password: str = Field(default="pact_workshop")
     publish_verification_results: bool = True
-    
+
     @classmethod
     def from_env(cls) -> "PactBrokerConfig":
         """Create config from environment variables."""
@@ -30,73 +36,82 @@ class PactBrokerConfig(BaseModel):
             broker_base_url=os.getenv("PACT_BROKER_BASE_URL", "http://localhost:9292"),
             broker_username=os.getenv("PACT_BROKER_USERNAME", "pact_workshop"),
             broker_password=os.getenv("PACT_BROKER_PASSWORD", "pact_workshop"),
-            publish_verification_results=os.getenv("PACT_PUBLISH_VERIFICATION_RESULTS", "true").lower() == "true"
+            publish_verification_results=os.getenv(
+                "PACT_PUBLISH_VERIFICATION_RESULTS", "true"
+            ).lower()
+            == "true",
         )
 
 
 class ServiceConfig(BaseModel):
     """Configuration for a service."""
+
     name: str
     version: str
     base_url: str
     health_endpoint: str = "/health"
-    
-    
+
+
 class PactConfig(BaseModel):
     """Main Pact configuration."""
+
     pact_dir: Path = Field(default=Path(__file__).parent / "pacts")
     log_level: str = "INFO"
     pact_specification_version: str = "4.0"
-    
+
     # Service configurations
-    services: Dict[str, ServiceConfig] = Field(default_factory=lambda: {
-        "orchestrator": ServiceConfig(
-            name="orchestrator",
-            version="1.0.0",
-            base_url="http://localhost:3001",
-            health_endpoint="/health"
-        ),
-        "agent": ServiceConfig(
-            name="agent-service",
-            version="1.0.0", 
-            base_url="http://localhost:8000",
-            health_endpoint="/health"
-        ),
-        "neurokg": ServiceConfig(
-            name="neurokg-service",
-            version="1.0.0",
-            base_url="http://localhost:5000",
-            health_endpoint="/health"
-        ),
-        "web_ui": ServiceConfig(
-            name="web-ui",
-            version="1.0.0",
-            base_url="http://localhost:3000",
-            health_endpoint="/api/health"
-        ),
-        "api_gateway": ServiceConfig(
-            name="api-gateway",
-            version="1.0.0",
-            base_url="http://localhost:8080",
-            health_endpoint="/health"
-        )
-    })
-    
+    services: Dict[str, ServiceConfig] = Field(
+        default_factory=lambda: {
+            "orchestrator": ServiceConfig(
+                name="orchestrator",
+                version="1.0.0",
+                base_url="http://localhost:3001",
+                health_endpoint="/health",
+            ),
+            "agent": ServiceConfig(
+                name="agent-service",
+                version="1.0.0",
+                base_url="http://localhost:8000",
+                health_endpoint="/health",
+            ),
+            "br_kg": ServiceConfig(
+                name="br_kg-service",
+                version="1.0.0",
+                base_url="http://localhost:5000",
+                health_endpoint="/health",
+            ),
+            "web_ui": ServiceConfig(
+                name="web-ui",
+                version="1.0.0",
+                base_url="http://localhost:3000",
+                health_endpoint="/api/health",
+            ),
+            "api_gateway": ServiceConfig(
+                name="api-gateway",
+                version="1.0.0",
+                base_url="http://localhost:8080",
+                health_endpoint="/health",
+            ),
+        }
+    )
+
     # Consumer-Provider relationships
-    consumer_provider_pairs: List[Dict[str, str]] = Field(default_factory=lambda: [
-        {"consumer": "web_ui", "provider": "orchestrator"},
-        {"consumer": "orchestrator", "provider": "agent"},
-        {"consumer": "orchestrator", "provider": "neurokg"},
-        {"consumer": "agent", "provider": "neurokg"},
-        # Legacy standalone gateway compatibility pairs. These are opt-in only.
-        {"consumer": "api_gateway", "provider": "orchestrator"},
-        {"consumer": "api_gateway", "provider": "agent"},
-        {"consumer": "api_gateway", "provider": "neurokg"}
-    ])
-    
+    consumer_provider_pairs: List[Dict[str, str]] = Field(
+        default_factory=lambda: [
+            {"consumer": "web_ui", "provider": "orchestrator"},
+            {"consumer": "orchestrator", "provider": "agent"},
+            {"consumer": "orchestrator", "provider": "br_kg"},
+            {"consumer": "agent", "provider": "br_kg"},
+            # Legacy standalone gateway compatibility pairs. These are opt-in only.
+            {"consumer": "api_gateway", "provider": "orchestrator"},
+            {"consumer": "api_gateway", "provider": "agent"},
+            {"consumer": "api_gateway", "provider": "br_kg"},
+        ]
+    )
+
     # Broker configuration
     broker: PactBrokerConfig = Field(default_factory=PactBrokerConfig.from_env)
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         # Ensure pact directory exists

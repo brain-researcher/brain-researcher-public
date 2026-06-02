@@ -23,7 +23,7 @@ def test_generate_tool_candidates_wraps_preflight(monkeypatch):
             "candidate_generation_latency_ms": 12.5,
             "retrieval_path": "fresh",
         }
-        return [{"tool_id": "foo.bar", "source": "neurokg"}]
+        return [{"tool_id": "foo.bar", "source": "br_kg"}]
 
     monkeypatch.setattr(
         "brain_researcher.services.agent.tool_candidate_service.preflight.ensure_tool_candidates",
@@ -37,7 +37,7 @@ def test_generate_tool_candidates_wraps_preflight(monkeypatch):
         registry=SimpleNamespace(),
     )
 
-    assert bundle.tool_candidates == [{"tool_id": "foo.bar", "source": "neurokg"}]
+    assert bundle.tool_candidates == [{"tool_id": "foo.bar", "source": "br_kg"}]
     assert bundle.tool_candidate_diagnostics["candidate_count"] == 1
     assert bundle.tool_candidate_diagnostics["retrieval_path"] == "fresh"
     assert ctx["tool_candidate_diagnostics"] == bundle.tool_candidate_diagnostics

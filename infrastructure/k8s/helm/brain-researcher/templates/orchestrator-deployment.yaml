@@ -49,8 +49,8 @@ spec:
               value: "1"
             - name: AGENT_URL
               value: "http://{{ include "brain-researcher.fullname" . }}-agent:8000"
-            - name: NEUROKG_URL
-              value: "http://{{ include "brain-researcher.fullname" . }}-neurokg:5000"
+            - name: BR_KG_URL
+              value: "http://{{ include "brain-researcher.fullname" . }}-br-kg:5000"
             - name: NICLIP_URL
               value: "http://{{ include "brain-researcher.fullname" . }}-niclip:8001"
             - name: REDIS_URL
@@ -147,18 +147,28 @@ spec:
             {{- end }}
           resources:
             {{- toYaml .Values.orchestrator.resources | nindent 12 }}
+          # Liveness uses the cheap dependency-free /livez (NOT /health, which
+          # fans out httpx to agent+br_kg and would restart this single-replica
+          # pod on a slow dependency or a momentarily busy event loop).
           livenessProbe:
             httpGet:
-              path: /health
+              path: /livez
               port: http
             initialDelaySeconds: 60
             periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 5
+          # Readiness gates on startup completion via /readyz; it deliberately
+          # does not shed on load (single replica -> NotReady would blackhole
+          # all Studio traffic). Request-level shedding is the create 429.
           readinessProbe:
             httpGet:
-              path: /health
+              path: /readyz
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
       volumes:
         - name: config
           configMap:

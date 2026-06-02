@@ -117,9 +117,9 @@ const baseMiddleware = (req: NextRequest) => {
     return NextResponse.redirect(url)
   }
 
-  if (pathname === '/neurokg' || pathname.startsWith('/neurokg/')) {
+  if (pathname === '/br-kg' || pathname.startsWith('/br-kg/')) {
     const url = req.nextUrl.clone()
-    url.pathname = pathname.replace(/^\/neurokg/, '/kg')
+    url.pathname = pathname.replace(/^\/br-kg/, '/kg')
     return NextResponse.redirect(url)
   }
 

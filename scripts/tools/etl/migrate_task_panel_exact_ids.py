@@ -27,7 +27,7 @@ from typing import Any
 
 from neo4j import GraphDatabase
 
-from brain_researcher.services.neurokg.etl.loaders.gabriel_measurements import (
+from brain_researcher.services.br_kg.etl.loaders.gabriel_measurements import (
     DEFAULT_REQUIRED_PROVENANCE_FIELDS,
     compute_gabriel_variables,
 )

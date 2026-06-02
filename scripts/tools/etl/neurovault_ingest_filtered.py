@@ -19,10 +19,10 @@ import json
 import os
 from pathlib import Path
 
-from brain_researcher.services.neurokg.etl.loaders.enhanced_neurovault_loader import (
+from brain_researcher.services.br_kg.etl.loaders.enhanced_neurovault_loader import (
     EnhancedNeuroVaultLoader,
 )
-from brain_researcher.services.neurokg.graph.neo4j_graph_database import (
+from brain_researcher.services.br_kg.graph.neo4j_graph_database import (
     Neo4jGraphDB,
 )
 

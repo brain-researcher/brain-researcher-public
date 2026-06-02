@@ -1,10 +1,10 @@
 import json
 
-from brain_researcher.services.neurokg.etl.loaders.openneuro_loader.publication_candidates import (
+from brain_researcher.services.br_kg.etl.loaders.openneuro_loader.publication_candidates import (
     DatasetPublicationSeed,
     RawPublicationCandidate,
 )
-from scripts.neurokg.build_openneuro_publication_candidate_pack import (
+from scripts.br_kg.build_openneuro_publication_candidate_pack import (
     _extract_payload_from_response,
     main,
 )
@@ -60,11 +60,11 @@ def test_main_writes_jsonl_report(tmp_path, monkeypatch, capsys) -> None:
 
     monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
     monkeypatch.setattr(
-        "scripts.neurokg.build_openneuro_publication_candidate_pack.resolve_dataset_seed_from_kg",
+        "scripts.br_kg.build_openneuro_publication_candidate_pack.resolve_dataset_seed_from_kg",
         fake_resolve_dataset_seed_from_kg,
     )
     monkeypatch.setattr(
-        "scripts.neurokg.build_openneuro_publication_candidate_pack.GoogleSearchPublicationCandidateFinder",
+        "scripts.br_kg.build_openneuro_publication_candidate_pack.GoogleSearchPublicationCandidateFinder",
         FakeFinder,
     )
 

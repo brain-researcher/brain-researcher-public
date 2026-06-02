@@ -1,0 +1,488 @@
+# Custom tool-to-Nipype interface mappings
+#
+# This file provides YAML overrides for the core Python mappings.
+# Add custom tools or override existing mappings here.
+#
+# Format:
+#   tools:
+#     <tool_id>:
+#       type: <interface_type>  # fsl, spm, freesurfer, ants, afni, mrtrix, dipy, nilearn, utility
+#       name: <interface_class>  # e.g., BET, Smooth, ReconAll
+#       io_map:
+#         consumes:
+#           <logical_name>: <nipype_input_field>
+#         produces:
+#           <logical_name>: <nipype_output_field>
+#       container_image: <optional_docker_image>  # for container runtime
+#
+# Example:
+#   tools:
+#     custom.my_tool:
+#       type: utility
+#       name: Function
+#       io_map:
+#         consumes:
+#           input: in_file
+#         produces:
+#           output: out_file
+
+tools:
+  # Container-based BIDS apps
+  container.fmriprep:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        bids_dir: bids_dir
+        output_dir: output_dir
+        participant_label: participant_label
+      produces:
+        derivatives: derivatives_dir
+    container_image: nipreps/fmriprep:latest
+
+  container.mriqc:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        bids_dir: bids_dir
+        output_dir: output_dir
+      produces:
+        reports: reports_dir
+        metrics: metrics_file
+    container_image: nipreps/mriqc:latest
+
+  container.qsiprep:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        bids_dir: bids_dir
+        output_dir: output_dir
+      produces:
+        derivatives: derivatives_dir
+    container_image: pennbbl/qsiprep:latest
+
+  container.xcpd:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        fmriprep_dir: fmriprep_dir
+        output_dir: output_dir
+      produces:
+        derivatives: derivatives_dir
+    container_image: pennlinc/xcp_d:latest
+
+  # FitLins GLM tool
+  container.fitlins.recipe.run:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        bids_dir: bids_dir
+        derivatives_dir: derivatives_dir
+        model: model_file
+      produces:
+        output: output_dir
+        stats: stat_maps
+    container_image: poldracklab/fitlins:latest
+
+  # Nilearn tools (Python runtime)
+  python.nilearn.glm:
+    type: nilearn
+    name: FirstLevelModel
+    io_map:
+      consumes:
+        bold: run_imgs
+        events: events
+        confounds: confounds
+      produces:
+        design_matrix: design_matrices_
+        contrasts: contrast_estimates
+
+  python.nilearn.ica:
+    type: nilearn
+    name: CanICA
+    io_map:
+      consumes:
+        bold: imgs
+        mask: mask_img
+      produces:
+        components: components_img_
+        maps: maps_
+
+  python.nilearn_preprocessing.run:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        bold: in_file
+      produces:
+        preproc_bold: out_file
+    params:
+      # Minimal placeholder: returns the input path (passthrough). Replace with real preprocessing logic as needed.
+      function_str: 'lambda in_file: in_file'
+      input_names: [in_file]
+      output_names: [out_file]
+
+  python.nilearn_connectivity.run:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        timeseries: in_file
+      produces:
+        conn_mat: out_file
+    params:
+      function_str: |
+        def fn(in_file, kind="correlation", vectorize=False, fisher_z=False):
+            import numpy as np, os
+            from nilearn.connectome import ConnectivityMeasure
+            ts = np.loadtxt(in_file)
+            cm = ConnectivityMeasure(kind=kind)
+            mat = cm.fit_transform([ts])[0]
+            if fisher_z:
+                mat = np.arctanh(mat)
+            out_file = os.path.join(os.getcwd(), "conn_matrix.npy")
+            np.save(out_file, mat if not vectorize else mat.ravel())
+            return out_file
+      input_names: [in_file, kind, vectorize, fisher_z]
+      output_names: [out_file]
+
+  # Agent tool: nilearn_preprocessing_tool.run
+  python.nilearn_preprocessing_tool.run:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        volume_4d: in_file
+      produces:
+        preprocessed_bold: out_file
+    params:
+      function_str: |
+        def fn(in_file, confounds_file=None, high_pass=None, low_pass=None, t_r=None,
+               smoothing_fwhm=None, standardize=True, detrend=True):
+            from nilearn.image import clean_img
+            import pandas as pd, os
+            confounds = None
+            if confounds_file and os.path.exists(confounds_file):
+                confounds = pd.read_csv(confounds_file, sep="\t").values
+            cleaned = clean_img(
+                in_file,
+                confounds=confounds,
+                high_pass=high_pass,
+                low_pass=low_pass,
+                t_r=t_r,
+                standardize=standardize,
+                detrend=detrend,
+                smoothing_fwhm=smoothing_fwhm,
+            )
+            out_file = os.path.join(os.getcwd(), "preproc_bold.nii.gz")
+            cleaned.to_filename(out_file)
+            return out_file
+      input_names: [in_file, confounds_file, high_pass, low_pass, t_r,
+          smoothing_fwhm, standardize, detrend]
+      output_names: [out_file]
+
+  # Agent tool: nilearn_preprocessing (stub)
+  nilearn_preprocessing:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        bold: in_file
+        confounds: confounds_file
+      produces:
+        preproc_bold: out_file
+    params:
+      function_str: |
+        def fn(in_file, confounds_file=None, high_pass=None, low_pass=None, t_r=None,
+               smoothing_fwhm=None, standardize=True, detrend=True):
+            from nilearn.image import clean_img
+            import pandas as pd, os
+            confounds = None
+            if confounds_file and os.path.exists(confounds_file):
+                confounds = pd.read_csv(confounds_file, sep="\t").values
+            cleaned = clean_img(
+                in_file,
+                confounds=confounds,
+                high_pass=high_pass,
+                low_pass=low_pass,
+                t_r=t_r,
+                standardize=standardize,
+                detrend=detrend,
+                smoothing_fwhm=smoothing_fwhm,
+            )
+            out_file = os.path.join(os.getcwd(), "preproc_bold.nii.gz")
+            cleaned.to_filename(out_file)
+            return out_file
+      input_names: [in_file, confounds_file, high_pass, low_pass, t_r,
+          smoothing_fwhm, standardize, detrend]
+      output_names: [out_file]
+
+  # Agent tool: nilearn_ica (stub CanICA/DictLearning)
+  nilearn_ica:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        inputs: in_files
+        mask: mask_file
+      produces:
+        components: out_file
+    params:
+      function_str: |
+        def fn(in_files, mask_file=None, n_components=20, smoothing_fwhm=None,
+               standardize=True, random_state=0):
+            from nilearn.decomposition import CanICA
+            import os
+            canica = CanICA(
+                mask=mask_file,
+                n_components=n_components,
+                smoothing_fwhm=smoothing_fwhm,
+                standardize=standardize,
+                random_state=random_state,
+            )
+            canica.fit(in_files)
+            components = canica.components_img_
+            out_file = os.path.join(os.getcwd(), "ica_components.nii.gz")
+            components.to_filename(out_file)
+            return out_file
+      input_names: [in_files, mask_file, n_components, smoothing_fwhm,
+          standardize, random_state]
+      output_names: [out_file]
+
+  # Agent tool: nilearn_connectivity_matrix (stub)
+  nilearn_connectivity_matrix:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        timeseries: in_file
+      produces:
+        connectivity_matrix: out_file
+    params:
+      function_str: |
+        def fn(in_file, method="correlation"):
+            import numpy as np, os
+            from nilearn.connectome import ConnectivityMeasure
+            ts = np.loadtxt(in_file)
+            cm = ConnectivityMeasure(kind=method)
+            mat = cm.fit_transform([ts])[0]
+            out_file = os.path.join(os.getcwd(), "connectivity_matrix.npy")
+            np.save(out_file, mat)
+            return out_file
+      input_names: [in_file, method]
+      output_names: [out_file]
+
+  # Agent tool: glm_first_level (nilearn GLM stub)
+  glm_first_level:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        bold: in_file
+        events: events
+        confounds: confounds
+      produces:
+        design_matrix: design_matrix
+        contrast_map: contrast_map
+    params:
+      function_str: 'lambda in_file, events=None, confounds=None: in_file'
+      input_names: [in_file, events, confounds]
+      output_names: [design_matrix]
+
+  # Agent tool: python.nilearn_glm.run (file-based GLM wrapper)
+  python.nilearn_glm.run:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        volume_4d: in_file
+      produces:
+        stats_map: out_file
+    params:
+      function_str: |
+        def fn(in_file, events=None, t_r=None, hrf_model='spm', noise_model='ar1',
+               smoothing_fwhm=None, high_pass=None, low_pass=None, output_dir=None,
+               contrasts=None):
+            import os, json
+            from brain_researcher.services.tools.params.nilearn_analysis import (
+                GLMFirstLevelParameters, run_glm_first_level
+            )
+            params = GLMFirstLevelParameters(
+                img=in_file,
+                events=events,
+                t_r=t_r,
+                hrf_model=hrf_model,
+                noise_model=noise_model,
+                smoothing_fwhm=smoothing_fwhm,
+                high_pass=high_pass,
+                low_pass=low_pass,
+                output_dir=output_dir or os.getcwd(),
+                contrasts=contrasts or {},
+            )
+            res = run_glm_first_level(params)
+            outputs = res.get('outputs', {})
+            if outputs.get('zmaps'):
+                return outputs['zmaps'][0]
+            if outputs.get('summary'):
+                return outputs['summary']
+            out_file = os.path.join(params.output_dir, 'stats_map.nii.gz')
+            open(out_file, 'w').write('placeholder')
+            return out_file
+      input_names:
+      - in_file
+      - events
+      - t_r
+      - hrf_model
+      - noise_model
+      - smoothing_fwhm
+      - high_pass
+      - low_pass
+      - output_dir
+      - contrasts
+      output_names: [out_file]
+
+  # Agent tool: python.nilearn_mvpa.run (decoding/MVPA stub)
+  python.nilearn_mvpa.run:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        volume_4d: in_file
+        labels: labels
+      produces:
+        classification_report: out_file
+    params:
+      function_str: "def fn(in_file, labels, mask_img=None, classifier='svc', cv_folds=5,\n\
+        \       standardize=True, smoothing_fwhm=None, feature_selection=None,\n \
+        \      n_features=None, permutations=0, n_jobs=-1, output_dir=None, seed=None):\n\
+        \    import os, json\n    from brain_researcher.services.tools.params.nilearn_mvpa import
+        (\n        MVPADecodingParameters, run_mvpa_decoding\n    )\n    params =
+        MVPADecodingParameters(\n        img=in_file,\n        labels=labels,\n  \
+        \      mask_img=mask_img,\n        classifier=classifier,\n        cv_folds=cv_folds,\n\
+        \        standardize=standardize,\n        smoothing_fwhm=smoothing_fwhm,\n\
+        \        feature_selection=feature_selection,\n        n_features=n_features,\n\
+        \        permutations=permutations,\n        n_jobs=n_jobs,\n        output_dir=output_dir
+        or os.getcwd(),\n        seed=seed,\n    )\n    res = run_mvpa_decoding(params)\n\
+        \    out_file = os.path.join(params.output_dir or os.getcwd(), 'classification_report.json')\n\
+        \    with open(out_file, 'w') as f:\n        json.dump(res.get('summary',
+        res), f, indent=2)\n    return out_file\n"
+      input_names:
+      - in_file
+      - labels
+      - mask_img
+      - classifier
+      - cv_folds
+      - standardize
+      - smoothing_fwhm
+      - feature_selection
+      - n_features
+      - permutations
+      - n_jobs
+      - output_dir
+      - seed
+      output_names: [out_file]
+
+  # Agent tool: python.nilearn_viz.run (visualization stub)
+  python.nilearn_viz.run:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        stats_map: in_file
+      produces:
+        report_html: out_file
+    params:
+      function_str: |
+        def fn(in_file):
+            import os
+            out_file = os.path.join(os.getcwd(), "report.html")
+            with open(out_file, "w") as f:
+                f.write(f"<html><body><h3>Stats map:</h3><p>{in_file}</p></body></html>")
+            return out_file
+      input_names: [in_file]
+      output_names: [out_file]
+
+  # Agent tool: nilearn_connectivity.connectivity_matrix
+  connectivity_matrix:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        timeseries: in_file
+      produces:
+        connectivity_matrix: out_file
+    params:
+      function_str: |
+        def fn(in_file, kind="correlation", vectorize=False, fisher_z=False):
+            import numpy as np, os
+            from nilearn.connectome import ConnectivityMeasure
+            ts = np.loadtxt(in_file)
+            cm = ConnectivityMeasure(kind=kind)
+            mat = cm.fit_transform([ts])[0]
+            if fisher_z:
+                mat = np.arctanh(mat)
+            out_file = os.path.join(os.getcwd(), "connectivity_matrix.npy")
+            np.save(out_file, mat if not vectorize else mat.ravel())
+            return out_file
+      input_names: [in_file, kind, vectorize, fisher_z]
+      output_names: [out_file]
+
+  # Agent tool: nilearn_connectivity.seed_based_fc
+  seed_based_fc:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        img: in_file
+        seed_coords: seed_coords
+        seed_mask: seed_mask
+      produces:
+        fc_map: out_file
+    params:
+      function_str: |
+        def fn(in_file, seed_coords=None, seed_mask=None, t_r=None, low_pass=None, high_pass=None):
+            import os, numpy as np
+            from nilearn.input_data import NiftiMasker, NiftiSpheresMasker
+            from nilearn.image import load_img
+            img = load_img(in_file)
+            if seed_coords:
+                masker = NiftiSpheresMasker(seeds=seed_coords, t_r=t_r, low_pass=low_pass, high_pass=high_pass, standardize=True)
+            elif seed_mask:
+                masker = NiftiMasker(mask_img=seed_mask, t_r=t_r, low_pass=low_pass, high_pass=high_pass, standardize=True)
+            else:
+                return in_file
+            seed_ts = masker.fit_transform(img)
+            brain_ts = masker.fit_transform(img)
+            corr = np.dot(brain_ts.T, seed_ts) / seed_ts.shape[0]
+            out_file = os.path.join(os.getcwd(), "seed_fc.npy")
+            np.save(out_file, corr)
+            return out_file
+      input_names: [in_file, seed_coords, seed_mask, t_r, low_pass, high_pass]
+      output_names: [out_file]
+
+  # Custom analysis tools
+  custom.group_analysis:
+    type: utility
+    name: Function
+    io_map:
+      consumes:
+        stat_maps: stat_maps
+        mask: mask
+        design_matrix: design_matrix
+      produces:
+        group_stats: group_stat_map
+        report: report_html
+  fsl.bet.run:
+    type: fsl
+    name: BET
+    io_map:
+      consumes:
+        in: in_file
+        mask: mask
+      produces:
+        out: out_file
+        mask_out: mask_file

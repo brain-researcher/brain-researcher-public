@@ -29,7 +29,7 @@
 #
 # ### 1. Create the Environment
 # ```bash
-# cd ${BR_REPO_ROOT}
+# cd /home/zijiaochen/projects/brain_researcher
 # conda env create -f neuroimage_env.yaml
 # ```
 #
@@ -87,7 +87,7 @@
 # Run the test suite to verify all tools work:
 # ```bash
 # conda activate neuroimaging_env
-# cd ${BR_REPO_ROOT}
+# cd /home/zijiaochen/projects/brain_researcher
 # python tests/integration/real_data/run_all_tests.py
 # ```
 #
@@ -96,7 +96,7 @@
 # - Success rate should be 100% (up from 94.1% without optional deps)
 #
 # ## Environment File Location
-# - Main file: `${BR_REPO_ROOT}/neuroimage_env.yaml`
+# - Main file: `/home/zijiaochen/projects/brain_researcher/neuroimage_env.yaml`
 # - This is the ONLY environment file needed for neuroimaging tools
 # - Previous files (minimal, essential) have been removed to avoid confusion
 #
@@ -131,36 +131,36 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  
+
   # Core scientific computing
   - numpy
   - scipy
   - pandas
   - scikit-learn
   - matplotlib
-  
+
   # Core neuroimaging packages
   - nibabel
   - nilearn
   - mne
-  
+
   # SUCCESSFULLY INSTALLED OPTIONAL DEPENDENCIES
-  
+
   # MEG/EEG spectral analysis
   - fooof  # Note: Being replaced by specparam package
-  
+
   # Automated artifact rejection
   - autoreject
-  
+
   # Bayesian statistics
   - pymc
-  
+
   # Tensor operations
   - tensorly
-  
+
   # Network analysis
   - networkx
-  
+
   - pip
   - pip:
       # Packages successfully installed via pip
@@ -168,7 +168,7 @@ dependencies:
       - bctpy       # Brain connectivity toolbox
       - antspyx     # ANTs Python interface
       - nimare      # Neuroimaging meta-analysis
-      
+
       # Note: torch-geometric excluded due to compilation issues
       # Install separately if needed with:
       # pip install torch-geometric torch-scatter torch-sparse

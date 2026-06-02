@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from brain_researcher.services.mcp import runstore
+
 
 @pytest.fixture(autouse=True)
 def _stub_toolspec_registry(monkeypatch):
@@ -29,7 +31,7 @@ def _configure_agent_delegation_env(monkeypatch, tmp_path: Path) -> None:
     from brain_researcher.services.mcp import server as srv
 
     allowed_root = tmp_path.resolve()
-    monkeypatch.setattr(srv, "RUN_ROOT", allowed_root)
+    monkeypatch.setattr(runstore, "RUN_ROOT", allowed_root)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [allowed_root])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"extract_timeseries"})
@@ -54,9 +56,11 @@ def test_behavior_generate_psyflow_task_delegates_to_agent(monkeypatch, tmp_path
             description="stub",
             backend="python",
             python_class="json:loads",
-            required=["spec", "out_dir", "review"]
-            if tool_id == "behavior.generate_psyflow_task"
-            else [],
+            required=(
+                ["spec", "out_dir", "review"]
+                if tool_id == "behavior.generate_psyflow_task"
+                else []
+            ),
         ),
     )
 

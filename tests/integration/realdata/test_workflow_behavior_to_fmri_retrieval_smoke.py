@@ -34,11 +34,11 @@ def test_workflow_behavior_to_fmri_retrieval_smoke(
             return None
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.graph.neo4j_utils.require_neo4j_db",
+        "brain_researcher.services.br_kg.graph.neo4j_utils.require_neo4j_db",
         lambda **_: StubNeo4jDB(),
     )
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.behavior_to_fmri_retrieval",
+        "brain_researcher.services.br_kg.query_service.behavior_to_fmri_retrieval",
         lambda **_: {
             "seed": {"id": "psych101:task:go-no-go"},
             "seed_tasks": [{"id": "psych101:task:go-no-go"}],

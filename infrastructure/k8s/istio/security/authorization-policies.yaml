@@ -49,19 +49,19 @@ spec:
     to:
     - operation:
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
-        
+
   # Allow other services to access web UI APIs
   - from:
     - source:
-        principals: 
-          - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+        principals:
+          - "cluster.local/ns/brain-researcher/sa/br-kg-service-account"
           - "cluster.local/ns/brain-researcher/sa/agent-service-account"
           - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
     to:
     - operation:
         methods: ["GET", "POST"]
         paths: ["/api/*", "/health"]
-        
+
   # Allow health checks from monitoring
   - from:
     - source:
@@ -76,15 +76,15 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: neurokg-authorization
+  name: br-kg-authorization
   namespace: brain-researcher
   labels:
     app: brain-researcher
-    service: neurokg
+    service: br-kg
 spec:
   selector:
     matchLabels:
-      app: neurokg
+      app: br-kg
   rules:
   # Allow ingress gateway for external API access
   - from:
@@ -93,7 +93,7 @@ spec:
     to:
     - operation:
         methods: ["GET", "POST"]
-        
+
   # Allow agent service to query BR-KG
   - from:
     - source:
@@ -102,7 +102,7 @@ spec:
     - operation:
         methods: ["GET", "POST"]
         paths: ["/search/*", "/vector/*", "/spatial/*", "/api/*"]
-        
+
   # Allow web UI to access BR-KG
   - from:
     - source:
@@ -111,7 +111,7 @@ spec:
     - operation:
         methods: ["GET", "POST"]
         paths: ["/search/*", "/export/*", "/api/*"]
-        
+
   # Allow orchestrator for workflow management
   - from:
     - source:
@@ -120,7 +120,7 @@ spec:
     - operation:
         methods: ["GET", "POST", "PUT"]
         paths: ["/api/*", "/workflow/*"]
-        
+
   # Health checks and metrics
   - from:
     - source:
@@ -129,7 +129,7 @@ spec:
     - operation:
         methods: ["GET"]
         paths: ["/health", "/metrics"]
-        
+
   # Admin operations (restricted)
   - from:
     - source:
@@ -163,7 +163,7 @@ spec:
     to:
     - operation:
         methods: ["GET", "POST"]
-        
+
   # Allow web UI to access chat APIs
   - from:
     - source:
@@ -172,7 +172,7 @@ spec:
     - operation:
         methods: ["GET", "POST"]
         paths: ["/chat/*", "/analysis/*", "/tools/*"]
-        
+
   # Allow orchestrator for workflow coordination
   - from:
     - source:
@@ -181,7 +181,7 @@ spec:
     - operation:
         methods: ["GET", "POST"]
         paths: ["/tools/*", "/analysis/*", "/workflow/*"]
-        
+
   # Health checks and metrics
   - from:
     - source:
@@ -190,11 +190,11 @@ spec:
     - operation:
         methods: ["GET"]
         paths: ["/health", "/metrics"]
-        
+
   # Streaming endpoints with special permissions
   - from:
     - source:
-        principals: 
+        principals:
           - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
           - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
     to:
@@ -223,15 +223,15 @@ spec:
   # Allow all Brain Researcher services
   - from:
     - source:
-        principals: 
+        principals:
           - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
           - "cluster.local/ns/brain-researcher/sa/agent-service-account"
-          - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+          - "cluster.local/ns/brain-researcher/sa/br-kg-service-account"
     to:
     - operation:
         methods: ["GET", "POST", "PUT"]
         paths: ["/jobs/*", "/workflow/*", "/api/*"]
-        
+
   # Health checks and metrics
   - from:
     - source:
@@ -259,7 +259,7 @@ spec:
   # Only allow Brain Researcher services to access Redis
   - from:
     - source:
-        principals: 
+        principals:
           - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
           - "cluster.local/ns/brain-researcher/sa/agent-service-account"
           - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
@@ -281,8 +281,8 @@ spec:
   # Only allow services that need database access
   - from:
     - source:
-        principals: 
-          - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+        principals:
+          - "cluster.local/ns/brain-researcher/sa/br-kg-service-account"
           - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
           - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
 
@@ -303,7 +303,7 @@ spec:
   # Only allow BR-KG service to access Neo4j
   - from:
     - source:
-        principals: ["cluster.local/ns/brain-researcher/sa/neurokg-service-account"]
+        principals: ["cluster.local/ns/brain-researcher/sa/br-kg-service-account"]
 
 ---
 # Monitoring services authorization
@@ -327,7 +327,7 @@ spec:
     to:
     - operation:
         methods: ["GET"]
-        
+
   # Allow Grafana to query Prometheus
   - from:
     - source:
@@ -335,7 +335,7 @@ spec:
     to:
     - operation:
         methods: ["GET", "POST"]
-        
+
   # Allow ingress access for Prometheus UI
   - from:
     - source:
@@ -390,7 +390,7 @@ spec:
     to:
     - operation:
         methods: ["GET", "POST"]
-        
+
   # Allow Kiali to query Prometheus and Grafana
   - from:
     - source:
@@ -416,14 +416,14 @@ spec:
   # Allow Brain Researcher services to access external APIs
   - from:
     - source:
-        principals: 
-          - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+        principals:
+          - "cluster.local/ns/brain-researcher/sa/br-kg-service-account"
           - "cluster.local/ns/brain-researcher/sa/agent-service-account"
           - "cluster.local/ns/brain-researcher/sa/orchestrator-service-account"
     to:
     - operation:
         methods: ["GET", "POST"]
-        
+
 ---
 # JWT Authentication policy for API access
 apiVersion: security.istio.io/v1beta1
@@ -446,7 +446,7 @@ spec:
     when:
     - key: request.headers[authorization]
       values: ["Bearer *"]
-      
+
   # Allow health checks without JWT
   - to:
     - operation:

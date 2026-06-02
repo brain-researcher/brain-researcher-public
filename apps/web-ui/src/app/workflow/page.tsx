@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { NavigationWrapper } from '@/components/navigation/navigation-wrapper'
-import { AdvancedViewBanner } from '@/components/advanced/advanced-view-banner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { GitBranch, Layers } from 'lucide-react'
@@ -10,7 +9,6 @@ export default function WorkflowPage() {
     <NavigationWrapper>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          <AdvancedViewBanner canonicalHref="/studio" />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">Workflow</h1>

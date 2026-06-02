@@ -18,7 +18,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -54,7 +53,7 @@ def test_workflow_data_harmonization_ds000114_smoke(tmp_path: Path):
     atlas = (
         PROJECT_ROOT
         / "data"
-        / "neurokg"
+        / "br_kg"
         / "raw"
         / "nilearn_atlases"
         / "schaefer_2018"
@@ -105,7 +104,11 @@ def test_workflow_data_harmonization_ds000114_smoke(tmp_path: Path):
         conn_file = conn_dir / "conn.npy"
         res_conn = execute_tool(
             "compute_connectivity",
-            {"timeseries": str(ts_file), "kind": "correlation", "output_file": str(conn_file)},
+            {
+                "timeseries": str(ts_file),
+                "kind": "correlation",
+                "output_file": str(conn_file),
+            },
         )
         assert res_conn.status == "success", res_conn.error
         mats = np.load(conn_file)

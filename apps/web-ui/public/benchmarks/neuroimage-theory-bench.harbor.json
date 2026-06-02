@@ -4,7 +4,7 @@
     "name": "NeuroimageTheoryBench",
     "version": "2.0",
     "description": "Pure neuroimaging knowledge QA tasks (no external dataset/tool-calling required)",
-    "source": "${BR_BENCHMARK_ROOT}/harbor_json/brainr-benchmark-v2.harbor.json",
+    "source": "/home/zijiaochen/projects/brain_researcher_benchmark/harbor_json/brainr-benchmark-v2.harbor.json",
     "format": "harbor-compatible-json"
   },
   "tasks": [

@@ -27,8 +27,8 @@ const GraphViewTabsRaw = ({
   onSettingsClick
 }: GraphViewTabsProps) => {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col items-stretch justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-center">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => onViewChange('graph')}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -62,15 +62,15 @@ const GraphViewTabsRaw = ({
         ) : null}
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative w-full sm:w-auto">
           <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search nodes..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black w-64"
+            className="w-full rounded-lg border border-gray-300 py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-black sm:w-64"
           />
         </div>
         {onFilterClick && (

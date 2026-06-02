@@ -1,0 +1,1432 @@
+version: vFinal
+
+# ---------------------------------------------------------------------------
+# Grand Master Toolset (vFinal)
+#
+# Purpose:
+# - Declare an intent-based tool surface (IDs, stages, cost tiers, impl notes)
+# - Serve as the control plane for routing/presets/benchmarks
+# - Avoid maintaining large alias/mapping tables inside the ToolSpec catalog
+#
+# Notes:
+# - This file is declarative. Runtime execution is provided by Python wrappers
+#   (e.g., brain_researcher/services/tools/grandmaster_tools.py) and/or BIDS Apps,
+#   NiWrap tools, etc.
+# ---------------------------------------------------------------------------
+
+stages:
+  - id: context
+    description: Parameter/protocol/literature/tool retrieval
+  - id: dataset
+    description: BIDS/derivatives/indexing/query
+  - id: qc
+    description: Quality control and exclusion
+  - id: preprocessing
+    description: Confounds/postprocessing/resampling/pipeline orchestration
+  - id: local_activity
+    description: ALFF/fALFF/ReHo and related metrics
+  - id: connectivity
+    description: FC/graph/network statistics
+  - id: task_glm
+    description: Task GLM / PPI
+  - id: dynamics
+    description: Dynamic connectivity / states
+  - id: prediction
+    description: ML/CPM/GNN/decoding
+  - id: clinical
+    description: Clinical/longitudinal/lesion/normative/brain-age
+  - id: interpretation
+    description: Neurosynth/KG/neuromaps/decoding interpretation
+  - id: reporting
+    description: Figures, HTML/PDF reports, archiving
+
+cost_tiers:
+  cheap: Parsing/indexing/simple stats/light viz
+  moderate: Nilearn/medium compute stats + feature extraction
+  expensive: BIDS Apps/heavy permutations/DL/foundation models/tractography
+
+# ----------------------------------------------------------------------------
+# Exposure policy (source of truth for MCP/router searchable tools)
+# ----------------------------------------------------------------------------
+exposure:
+  exposed:
+    - gemini.fs
+    - gemini.net
+    - br_kg.client
+    - br_kg.search_nodes
+    - kg_multihop_qa
+    - br_kg.find_structural_leverage
+    - br_kg.detect_contradiction_motifs
+    - br_kg.sample_ood_hypothesis
+    - br_kg.detect_topology_shifts
+    - find_related_concepts
+    - coordinate_to_concept
+    - graph_query
+    - evidence_pack
+    - task_to_concept_mapping
+    - concept_literature_search
+    - literature_mining
+    - kg_hypothesis_candidate_cards
+    - kg_hypothesis_candidate_cards_start
+    - kg_hypothesis_candidate_cards_get
+    - hypothesis_hot_load_research
+    - hypothesis_run_start
+    - hypothesis_run_get
+    - mcp.server_info
+    - mcp.tool_search
+    - mcp.system_self_test
+    - mcp.slurm_guide
+    - mcp.slurm_submit
+    # Deprecated aliases (kept for one release; prefer mcp.slurm_*)
+    - mcp.sherlock_guide
+    - mcp.sherlock_slurm
+    - taskbeacon.list_tasks
+    - taskbeacon.download_task
+    - taskbeacon.localize_task
+    - taskbeacon.run_qa_sim
+    - code_agent
+    - meta_analysis.client
+    - datasets.client
+    - datasets.list_resources
+    - datasets.describe_resources
+    - openneuro.client
+    - openneuro.search
+    - fmri.connectivity_client.light
+    - viz.client
+    - advanced_analysis.client
+    - tribe_predict
+    - data_harmonization
+    - brain_simulation
+    - realtime_fmri
+    - realtime_twophoton
+    - workflow_realtime_twophoton_closed_loop
+    - workflow_realtime_twophoton_file_replay
+    - lesion_detection
+    - coordinate_meta_analysis
+    - neurodesk_command
+    - prefetch.openneuro_cache
+    - bids.manifest
+    - validate_bids
+    - derivatives_sanity_checker
+    - cross_validation
+    - ml_cross_validation
+    - validation_metrics
+    - multiple_comparison_correction
+    - fmriprep_preprocessing
+    - motion_quantification
+    - mriqc_group_report
+    - freesurfer_qc
+    - fsl_bet
+    - fsl_flirt
+    - fsl_fnirt
+    - fsl_feat
+    - fsl_melodic
+    - fsl_melodic_ica
+    - fsl_dual_regression
+    - fsl_bedpostx
+    - fsl_fix
+    - fsl_palm
+    - fsl_fast
+    - afni_3dClustSim
+    - afni_3dDeconvolve
+    - ants_registration
+    - fsl_prepare_fieldmap
+    - fsl_topup
+    - fsl_epi_reg
+    - mrtrix.3.0.4.dwi2fod.run
+    - diffusion_tractography
+    - freesurfer_recon_all
+    - mne_ica
+    - mne_timefreq
+    - timefreq_tfr
+    - mne_source_localization
+    - localize_source
+    - mne_connectivity      # M/EEG connectivity (was omitted; siblings above are exposed)
+    - connectivity_measures # M/EEG sensor-space connectivity metrics
+    - connectivity_matrix
+    - compute_connectivity
+    - viz_stat_maps
+    - surface_projection
+    - openneuro_download
+    - fitlins.multiverse_robustness_report
+    - pipeline.search
+    - run_bids_app
+    - run_fitlins_recipe
+    - extract_timeseries
+    - seed_based_fc
+    - fetch_atlas
+    - stack_surface_hemis
+    - glm_first_level
+    - glm_second_level
+    - visualize_interactive
+    - individual_parcellation
+    - visual_feature_decoder
+    - compute_brain_age
+    - query_neuromaps
+    - list_neuroimage_assets
+    - list_dataset_assets
+    - resolve_dataset_asset
+    - resolve_neuroimage_asset
+    - resolve_reference_map
+    - resolve_transform
+    - encoding_models
+    - mvpa
+    - searchlight_analysis
+    - spm12_vbm
+    - temporal_decoding
+
+# ----------------------------------------------------------------------------
+# Orchestration policy (workflow/meta-tool control plane)
+# ----------------------------------------------------------------------------
+orchestration:
+  workflows:
+    - workflow_preprocessing_qc
+    - workflow_data_harmonization
+    - workflow_fmriprep_preprocessing
+    - workflow_mriqc
+    - workflow_qsiprep
+    - workflow_smriprep
+    - workflow_qsirecon
+    - workflow_fastsurfer
+    - workflow_multiverse_analysis
+    - workflow_rest_connectome_e2e
+    - workflow_seed_based_connectivity
+    - workflow_network_based_statistics
+    - workflow_connectivity_gradients
+    - workflow_group_ica
+    - workflow_task_glm_group
+    - workflow_ppi_analysis
+    - workflow_fitlins_direct
+    - workflow_fitlins_multiverse_yeo17
+    - workflow_naturalistic_isc
+    - workflow_ml_decoding_pipeline
+    - workflow_cpm_prediction
+    - workflow_gnn_classification
+    - workflow_model_comparison
+    - workflow_dynamic_states_hmm
+    - workflow_sc_fc_coupling
+    - workflow_test_retest_metrics
+    - workflow_brain_simulation
+    - workflow_realtime_twophoton_closed_loop
+    - workflow_realtime_twophoton_file_replay
+    - workflow_dwi_connectome
+    - workflow_spd_connectome_analysis
+    - workflow_surface_projection_analysis
+    - workflow_eeg_source_estimation
+    - workflow_vbm_analysis
+    - workflow_myelin_mapping
+    - workflow_lesion_network_mapping
+    - workflow_normative_modeling
+    - workflow_longitudinal_lme
+    - workflow_subtype_discovery
+    - workflow_neurosynth_roi_analysis
+    - workflow_rsa_model_brain
+    - workflow_gene_enrichment
+    - workflow_literature_search_synthesis
+    - workflow_psych101_ingest_eval
+    - workflow_psych101_hf_snapshot
+    - workflow_psych101_benchmark_import
+    - workflow_psych101_centaur_task_payloads
+    - workflow_psych101_centaur_behavior_embeddings
+    - workflow_behavior_to_fmri_retrieval
+    - workflow_ibl_neuropixels
+    - workflow_ibl_decoding_inputs
+    - workflow_neurometabench_official_adapter
+    - workflow_hypothesis_candidate_cards
+    - workflow_local_activity_analysis
+    - workflow_precision_parcellation
+    - workflow_visual_decoding
+    - workflow_brain_age_prediction
+    - workflow_tms_targeting
+    - workflow_asl_perfusion
+    - workflow_spatial_correlation
+    - workflow_spatial_correlation_surface
+  meta_tools:
+    - pipeline.search
+    - pipeline_plan_validate
+    - pipeline_execute
+
+stable_workflow_packs:
+  - id: workflow_data_harmonization
+    runbook: docs/runbooks/workflow_data_harmonization.md
+    example_dataset: ds000114
+  - id: workflow_precision_parcellation
+    runbook: docs/runbooks/workflow_precision_parcellation.md
+    example_dataset: ds000114
+  - id: workflow_longitudinal_lme
+    runbook: docs/runbooks/workflow_longitudinal_lme.md
+    example_dataset: ds000114
+  - id: workflow_subtype_discovery
+    runbook: docs/runbooks/workflow_subtype_discovery.md
+    example_dataset: ds000114
+
+atomic_tools:
+  # -------------------------
+  # Layer 0: Context & Discovery
+  # -------------------------
+  - id: local_file_search
+    layer: L0_context
+    stage: context
+    cost_tier: cheap
+    origin: core75
+    impl: "python: semantic doc search (scope=user protocol/paper/notes only; return snippets+citation offsets)"
+    runtime:
+      kind: alias
+      target: gemini.search_text
+
+  - id: br_kg_task_region_mapper
+    layer: L0_context
+    stage: interpretation
+    cost_tier: moderate
+    origin: core75
+    impl: "external_api/python: query BR-KG to map task/construct -> regions/coordinates/networks"
+    runtime:
+      kind: alias
+      target: br_kg.search_nodes
+
+  - id: br_kg_dataset_search
+    layer: L0_context
+    stage: dataset
+    cost_tier: moderate
+    origin: core75
+    impl: "external_api/python: KG-driven dataset search (topic/task/phenotype -> candidate datasets)"
+    runtime:
+      kind: alias
+      target: br_kg.search_datasets
+
+  - id: tool_retriever
+    layer: L0_context
+    stage: context
+    cost_tier: cheap
+    origin: core75
+    impl: "python: Tool-RAG over ToolSpec+docs (stage/capability/cost-aware top-k retrieval)"
+    runtime:
+      kind: alias
+      target: pipeline.search
+
+  - id: tool_schema_lookup
+    layer: L0_context
+    stage: context
+    cost_tier: cheap
+    origin: core75
+    impl: "python: return JSONSchema/Pydantic args + minimal examples + output contract from ToolSpec registry"
+    runtime:
+      kind: alias
+      target: niwrap_schema
+
+  - id: protocol_parameter_extractor
+    layer: L0_context
+    stage: context
+    cost_tier: moderate
+    origin: core75
+    impl: "python: extract analysis params from protocol/paper snippets -> structured config overrides (Pydantic) using citations"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:protocol_parameter_extractor_tool
+
+  # -------------------------
+  # Layer 1: Infrastructure
+  # -------------------------
+  - id: load_dataset
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: core75
+    impl: "python: BIDS ingest via pybids + repo ingestion utilities; supports derivatives preference"
+    runtime:
+      kind: alias
+      target: resolve_bids
+
+  - id: validate_bids_structure
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: core75
+    impl: "alias: validate_bids (existing repo BIDS validation logic)"
+    runtime:
+      kind: alias
+      target: validate_bids
+
+  - id: inspect_dataset_structure
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: core75
+    impl: "python: scan entities/metadata; summarize available modalities/tasks/runs/spaces"
+    runtime:
+      kind: alias
+      target: query_bids_layout
+
+  - id: dataset_indexer
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: core75
+    impl: "python: build run-level index (subject/session/task/run, paths, key metadata) -> table/json"
+    runtime:
+      kind: alias
+      target: query_bids_layout
+
+  - id: derivatives_resolver
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: core75
+    impl: "python: resolve fMRIPrep/QSIPrep/FreeSurfer derivatives by rules (space/desc/suffix priority)"
+    runtime:
+      kind: alias
+      target: resolve_space
+
+  - id: derivatives_sanity_checker
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: core75
+    impl: "python: preflight checks for required files (bold/mask/confounds/events/atlas) -> runnable manifest + missing reasons"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:derivatives_sanity_checker_tool
+
+  - id: bids_query
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: core75
+    impl: "python: entity query helper (task/run/space/desc/filter rules) over indexed dataset"
+    runtime:
+      kind: alias
+      target: query_bids_layout
+
+  - id: run_bids_app
+    layer: L1_infra
+    stage: preprocessing
+    cost_tier: expensive
+    origin: core75
+    impl: "pipeline wrapper: run containerized BIDS App (fMRIPrep/QSIPrep/MRIQC/XCP-D/ASLPrep etc.)"
+    runtime:
+      kind: alias
+      target: run_fmriprep
+
+  - id: run_xcp_d
+    layer: L1_infra
+    stage: preprocessing
+    cost_tier: expensive
+    origin: trend_addition
+    impl: "alias: run_bids_app(app='xcp_d') - standard postprocessing for fMRIPrep derivatives"
+    runtime:
+      kind: alias
+      target: xcpd_postprocessing
+
+  - id: run_aslprep
+    layer: L1_infra
+    stage: preprocessing
+    cost_tier: expensive
+    origin: trend_addition
+    impl: "alias: run_bids_app(app='aslprep') - perfusion pipeline wrapper"
+    runtime:
+      kind: alias
+      target: asl_perfusion
+
+  - id: convert_dicom_to_bids
+    layer: L1_infra
+    stage: preprocessing
+    cost_tier: expensive
+    origin: core75
+    impl: "pipeline wrapper: dcm2bids/heudiconv-style conversion (keep optional; mainly for raw clinical intake)"
+    runtime:
+      kind: alias
+      target: heudiconv_convert
+
+  - id: run_mriqc_workflow
+    layer: L1_infra
+    stage: qc
+    cost_tier: expensive
+    origin: core75
+    impl: "pipeline wrapper: run/read MRIQC outputs (prefer reuse if outputs exist)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:mriqc_command_preview
+
+  - id: get_qc_table
+    layer: L1_infra
+    stage: qc
+    cost_tier: cheap
+    origin: core75
+    impl: "python: parse MRIQC/XCP-D/confounds -> unified QC table"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:qc_table_from_tsv
+
+  - id: detect_outliers
+    layer: L1_infra
+    stage: qc
+    cost_tier: cheap
+    origin: core75
+    impl: "python: robust outlier detection over QC table (run/subject flags + reasons)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:detect_outliers_from_qc_table
+
+  - id: qc_aggregator
+    layer: L1_infra
+    stage: qc
+    cost_tier: cheap
+    origin: core75
+    impl: "python: aggregate QC across runs/subjects/sites; outputs cohort summaries"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:qc_aggregate_summary
+
+  - id: psych101_ingest
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: normalize a Psych-101 trial export and emit graph-ready scaffold artifacts"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:psych101_ingest
+
+  - id: psych101_fetch_hf_snapshot
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: fetch official Psych-101 Hugging Face metadata/parquet summaries, emit graph-ready artifacts, and optionally ingest into Neo4j"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:psych101_fetch_hf_snapshot
+
+  - id: psych101_prepare_eval_manifest
+    layer: L1_infra
+    stage: reporting
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: build a lightweight held-out eval manifest from normalized Psych-101 trials"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:psych101_prepare_eval_manifest
+
+  - id: psych101_import_eval_manifest
+    layer: L1_infra
+    stage: reporting
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: import a Psych-101 eval manifest into the benchmark board SQLite registry"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:psych101_import_eval_manifest
+
+  - id: centaur_prepare_task_payloads
+    layer: L1_infra
+    stage: dataset
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: derive Centaur/Minitaur-ready task and experiment payloads plus prompt JSONL sidecars from a Psych-101 graph plan"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:centaur_prepare_task_payloads
+
+  - id: centaur_offline_behavior_embeddings
+    layer: L1_infra
+    stage: dataset
+    cost_tier: moderate
+    origin: trend_addition
+    impl: "python: consume Centaur/Minitaur prompt JSONL sidecars, derive offline behavioral embeddings, and optionally write embedding_centaur_behavior_v1-style properties into Neo4j"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:centaur_offline_behavior_embeddings
+
+  - id: behavior_to_fmri_retrieval_export
+    layer: L1_infra
+    stage: reporting
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: run behavior-to-fMRI retrieval against BR-KG and write a workflow-friendly JSON artifact"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:behavior_to_fmri_retrieval_export
+
+  - id: dashboard_generator
+    layer: L1_infra
+    stage: reporting
+    cost_tier: moderate
+    origin: core75
+    impl: "python: generate static HTML report (QC + exclusions + key plots); no web app"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:qc_dashboard_generator
+
+  - id: standardize_confounds
+    layer: L1_infra
+    stage: preprocessing
+    cost_tier: cheap
+    origin: core75
+    impl: "python: denoise preset selector (simple/conservative/aggressive) -> confound columns + censor rules"
+    runtime:
+      kind: alias
+      target: fmriprep_qc
+
+  - id: confounds_parser
+    layer: L1_infra
+    stage: preprocessing
+    cost_tier: cheap
+    origin: core75
+    impl: "python: normalize fMRIPrep confounds into canonical fields; handles missing columns gracefully"
+    runtime:
+      kind: alias
+      target: fmriprep_qc
+
+  - id: resample_image
+    layer: L1_infra
+    stage: preprocessing
+    cost_tier: moderate
+    origin: core75
+    impl: "thin_wrapper: nilearn/nibabel resampling or NiWrap ANTs/FSL when needed"
+    runtime:
+      kind: alias
+      target: fsl_flirt
+
+  # -------------------------
+  # Layer 2: Core fMRI
+  # -------------------------
+  - id: get_atlas
+    layer: L2_core_fmri
+    stage: preprocessing
+    cost_tier: cheap
+    origin: core75
+    impl: "thin_wrapper: TemplateFlow/nilearn atlas fetch + metadata; supports custom atlas path"
+    runtime:
+      kind: alias
+      target: fetch_atlas
+
+  - id: fetch_atlas
+    layer: L2_core_fmri
+    stage: preprocessing
+    cost_tier: cheap
+    origin: core75
+    impl: "python: fetch atlas (TemplateFlow/nilearn wrapper); referenced directly by declarative workflows"
+    runtime:
+      kind: alias
+      target: fetch_atlas
+
+  - id: extract_timeseries
+    layer: L2_core_fmri
+    stage: connectivity
+    cost_tier: moderate
+    origin: core75
+    impl: "python: nilearn maskers (NiftiLabelsMasker/NiftiMapsMasker) + confound regression hooks"
+    runtime:
+      kind: alias
+      target: extract_timeseries
+
+  - id: compute_connectivity
+    layer: L2_core_fmri
+    stage: connectivity
+    cost_tier: moderate
+    origin: core75
+    impl: "alias/thin_wrapper: nilearn connectivity matrix (correlation/partial/tangent) + standard outputs"
+    runtime:
+      kind: delegate
+      target: connectivity_matrix
+      arg_map:
+        method: kind
+        correlation_type: kind
+        measure: kind
+
+  - id: seed_based_fc
+    layer: L2_core_fmri
+    stage: connectivity
+    cost_tier: moderate
+    origin: core75
+    impl: "python: seed-based functional connectivity -> NIfTI map (nilearn)"
+    runtime:
+      kind: alias
+      target: seed_based_fc
+
+  - id: fisher_z_transformer
+    layer: L2_core_fmri
+    stage: connectivity
+    cost_tier: cheap
+    origin: core75
+    impl: "python: arctanh transform with clipping/NaN guards; metadata preserved"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:fisher_z_transform
+
+  - id: analyze_graph_topology
+    layer: L2_core_fmri
+    stage: connectivity
+    cost_tier: moderate
+    origin: core75
+    impl: "alias: existing graph_theory tool (BCT/NetworkX) with metric flags"
+    runtime:
+      kind: alias
+      target: graph_theory
+
+  - id: group_ica
+    layer: L2_core_fmri
+    stage: connectivity
+    cost_tier: moderate
+    origin: core75
+    impl: "python: group ICA (nilearn CanICA) -> components + timecourses"
+    runtime:
+      kind: alias
+      target: group_ica
+
+  - id: sliding_window
+    layer: L2_core_fmri
+    stage: dynamics
+    cost_tier: moderate
+    origin: core75
+    impl: "alias/thin_wrapper: dynamic_connectivity (windowed FC; outputs FC(t), state features)"
+    runtime:
+      kind: alias
+      target: dynamic_connectivity
+
+  - id: nbs_engine
+    layer: L2_core_fmri
+    stage: connectivity
+    cost_tier: expensive
+    origin: core75
+    impl: "python: NBS workflow primitive (edge stats -> threshold -> components -> permutation inference)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:nbs_engine_tool
+
+  - id: ppi_analyzer
+    layer: L2_core_fmri
+    stage: task_glm
+    cost_tier: moderate
+    origin: core75
+    impl: "python: PPI regressor builder + first/second-level GLM orchestration (seed x psych interaction)"
+    runtime:
+      kind: alias
+      target: glm_analysis
+
+  - id: compute_alff
+    layer: L2_core_fmri
+    stage: local_activity
+    cost_tier: moderate
+    origin: trend_addition
+    impl: "python thin_wrapper: FFT/PSD -> band amplitude (default 0.01-0.08Hz); outputs ALFF map + metadata"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:compute_alff_map
+
+  - id: compute_falff
+    layer: L2_core_fmri
+    stage: local_activity
+    cost_tier: moderate
+    origin: trend_addition
+    impl: "python thin_wrapper: ALFF / full-band amplitude; outputs fALFF map + metadata"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:compute_falff_map
+
+  - id: compute_reho
+    layer: L2_core_fmri
+    stage: local_activity
+    cost_tier: moderate
+    origin: trend_addition
+    impl: "niwrap/python: prefer AFNI 3dReHo via NiWrap; fallback python Kendall's W (neighborhood configurable)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_functions:compute_reho_map
+
+  - id: filter_events
+    layer: L2_core_fmri
+    stage: task_glm
+    cost_tier: cheap
+    origin: core75
+    impl: "python: events.tsv filter/merge/recode (trial types, RT, accuracy); returns cleaned events"
+    runtime:
+      kind: alias
+      target: epoch_events
+
+  - id: run_glm_first_level
+    layer: L2_core_fmri
+    stage: task_glm
+    cost_tier: moderate
+    origin: core75
+    impl: "python: nilearn first-level GLM (design matrix, contrasts, confounds integration)"
+    runtime:
+      kind: alias
+      target: glm_first_level
+
+  - id: glm_first_level_batch
+    layer: L2_core_fmri
+    stage: task_glm
+    cost_tier: moderate
+    origin: core75
+    impl: "python: batch first-level GLM (per-subject z-maps) for group workflows"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:glm_first_level_batch_tool
+
+  - id: contrast_validator
+    layer: L2_core_fmri
+    stage: task_glm
+    cost_tier: cheap
+    origin: core75
+    impl: "python: validate contrast spec vs design matrix; standardize naming for benchmark comparability"
+    runtime:
+      kind: alias
+      target: glm_analysis
+
+  - id: run_glm_second_level
+    layer: L2_core_fmri
+    stage: task_glm
+    cost_tier: moderate
+    origin: core75
+    impl: "python: group-level GLM with covariates/site terms; returns stat maps + tables"
+    runtime:
+      kind: alias
+      target: glm_second_level
+
+  - id: multiple_comparison_correction
+    layer: L2_core_fmri
+    stage: task_glm
+    cost_tier: moderate
+    origin: core75
+    impl: "alias/thin_wrapper: FDR/FWE/cluster correction (nilearn/niwrap randomise-style), outputs corrected maps"
+    runtime:
+      kind: alias
+      target: multiple_comparison_correction
+
+  - id: extract_roi_values
+    layer: L2_core_fmri
+    stage: task_glm
+    cost_tier: cheap
+    origin: core75
+    impl: "python: ROI summarization over beta/t/z maps; outputs ROI table + provenance"
+    runtime:
+      kind: alias
+      target: smri_parcellation_stats
+
+  # -------------------------
+  # Layer 3: Advanced Modalities
+  # -------------------------
+  - id: run_tractography
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: expensive
+    origin: core75
+    impl: "bids_app/niwrap: prefer QSIPrep outputs; otherwise MRtrix/DSI tools via NiWrap"
+    runtime:
+      kind: alias
+      target: diffusion_tractography
+
+  - id: reconstruct_microstructure
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: expensive
+    origin: core75
+    impl: "bids_app/python: DTI/NODDI/other microstructure metrics (prefer QSIPrep derivatives)"
+    runtime:
+      kind: alias
+      target: dmri_fit_model
+
+  - id: build_structural_connectome
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: expensive
+    origin: core75
+    impl: "python: build SC matrices from tractography/atlas; prefer existing derivatives when available"
+    runtime:
+      kind: alias
+      target: dmri_parcellate_connectome
+
+  - id: extract_bundle_stats
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: moderate
+    origin: core75
+    impl: "python: bundle-wise summary stats from tractography outputs"
+    runtime:
+      kind: alias
+      target: dmri_parcellate_connectome
+
+  - id: map_volume_to_surface
+    layer: L3_modalities
+    stage: preprocessing
+    cost_tier: expensive
+    origin: core75
+    impl: "python: volume->surface projection (nilearn.vol_to_surf) writing GIFTI"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:map_volume_to_surface_tool
+
+  - id: process_cifti
+    layer: L3_modalities
+    stage: preprocessing
+    cost_tier: moderate
+    origin: core75
+    impl: "niwrap/python: CIFTI I/O + common transforms (workbench recommended)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:process_cifti_tool
+
+  - id: parcellate_cifti
+    layer: L3_modalities
+    stage: preprocessing
+    cost_tier: moderate
+    origin: core75
+    impl: "python: parcellate CIFTI into ROI time series / parcel maps"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:parcellate_cifti_tool
+
+  - id: identity
+    layer: L0_context
+    stage: context
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: pass-through helper for declarative workflows"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:identity_tool
+
+  - id: compare_surface_maps
+    layer: L3_modalities
+    stage: interpretation
+    cost_tier: moderate
+    origin: core75
+    impl: "python: spin test / spatial nulls for surface map correlations"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:compare_surface_maps_tool
+
+  - id: stack_surface_hemis
+    layer: L3_modalities
+    stage: interpretation
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: combine L/R surface data into a single GIFTI (2 darrays) for downstream spin tests"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:stack_surface_hemis_tool
+
+  - id: preprocess_eeg
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: moderate
+    origin: core75
+    impl: "python: MNE-based preprocessing (filter, ICA, epoching) with presets"
+    runtime:
+      kind: alias
+      target: eeg_preprocess
+
+  - id: analyze_frequency_power
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: moderate
+    origin: core75
+    impl: "python: spectral power/band features (Welch/multitaper) + QC plots"
+    runtime:
+      kind: alias
+      target: timefreq_tfr
+
+  - id: compute_erp
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: moderate
+    origin: core75
+    impl: "python: ERP computation & contrasts (MNE) + summary outputs"
+    runtime:
+      kind: alias
+      target: timefreq_tfr
+
+  - id: localize_source
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: expensive
+    origin: core75
+    impl: "python: source localization (MNE inverse) with template/headmodel presets"
+    runtime:
+      kind: alias
+      target: ieeg_electrode_localize
+
+  - id: segment_lesion
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: expensive
+    origin: core75
+    impl: "python/niwrap: lesion segmentation (model-based or toolbox wrapper) + QC"
+    runtime:
+      kind: alias
+      target: lesion_detection
+
+  - id: unified_segmenter
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: cheap
+    origin: core75
+    impl: "python: lightweight T1 segmentation placeholder (copies input); referenced directly by declarative workflows"
+    runtime:
+      kind: alias
+      target: unified_segmenter
+
+  - id: normalize_with_lesion
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: expensive
+    origin: core75
+    impl: "niwrap: lesion-aware normalization/registration (ANTs/FSL variants) + masks"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.clinical_stats_tools:normalize_with_lesion_tool
+
+  - id: compare_to_normative_model
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: moderate
+    origin: core75
+    impl: "python: compute Z/W-scores vs reference model; outputs subject-level deviation maps"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.clinical_stats_tools:compare_to_normative_model_tool
+
+  # -------------------------
+  # Layer 4: Stats & SOTA
+  # -------------------------
+  - id: harmonize_data
+    layer: L4_stats_sota
+    stage: dataset
+    cost_tier: moderate
+    origin: core75
+    impl: "python: ComBat/site harmonization (neuroCombat-like) for features/maps"
+    runtime:
+      kind: alias
+      target: data_harmonization
+
+  - id: analyze_clinical_correlation
+    layer: L4_stats_sota
+    stage: clinical
+    cost_tier: cheap
+    origin: core75
+    impl: "python: correlation/partial correlation with covariates + multiple-comparison options"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.clinical_stats_tools:analyze_clinical_correlation_tool
+
+  - id: analyze_longitudinal_lme
+    layer: L4_stats_sota
+    stage: clinical
+    cost_tier: moderate
+    origin: core75
+    impl: "python: mixed-effects models (statsmodels/lme4-like) for longitudinal trajectories"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.clinical_stats_tools:analyze_longitudinal_lme_tool
+
+  - id: compute_trajectory_similarity
+    layer: L4_stats_sota
+    stage: clinical
+    cost_tier: moderate
+    origin: core75
+    impl: "python: trajectory similarity metrics + visualization-ready outputs"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.clinical_stats_tools:compute_trajectory_similarity_tool
+
+  - id: hierarchical_clustering
+    layer: L4_stats_sota
+    stage: clinical
+    cost_tier: moderate
+    origin: core75
+    impl: "python: agglomerative clustering (subtype discovery) with sensible fallbacks"
+    runtime:
+      kind: alias
+      target: hierarchical_clustering
+
+  - id: ml_cross_validation
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: moderate
+    origin: core75
+    impl: "python: group/site-aware CV + nested CV option; includes mandatory leakage guards"
+    runtime:
+      kind: alias
+      target: cross_validation
+
+  - id: ibl_decoding_dataset
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: moderate
+    origin: core32
+    impl: "python: build analysis-ready X/y/groups arrays plus sidecar metadata from mounted IBL ALF sessions"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.ibl_tools:ibl_decoding_dataset_entrypoint
+
+  - id: ibl_neuropixels_workflow
+    layer: L4_stats_sota
+    stage: ephys
+    cost_tier: expensive
+    origin: core32
+    impl: "python: mounted IBL Neuropixels workflow covering Kilosort4, optional pose, and spike-behavior alignment"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.ibl_tools:ibl_neuropixels_workflow_entrypoint
+
+  - id: decoding_classifier
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: moderate
+    origin: core75
+    impl: "python: MVPA decoding classifier (nilearn); referenced directly by declarative workflows"
+    runtime:
+      kind: alias
+      target: decoding_classifier
+
+  - id: train_decoder
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: moderate
+    origin: core75
+    impl: "alias: mvpa tool with estimator presets (linear SVM/RF/ridge); standardized outputs"
+    runtime:
+      kind: delegate
+      target: decoding_classifier
+      arg_map:
+        data_file: img
+        labels_file: labels
+        n_splits: cv_folds
+        random_state: seed
+
+  - id: run_searchlight
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: expensive
+    origin: core75
+    impl: "alias: searchlight_analysis tool; supports mask/ROI/sphere configs + CV coupling"
+    runtime:
+      kind: alias
+      target: run_searchlight
+
+  - id: evaluate_model
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: moderate
+    origin: core75
+    impl: "python: metrics + permutation test + calibration diagnostics + model cards"
+    runtime:
+      kind: alias
+      target: decoding_classifier
+
+  - id: train_gnn_classifier
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: expensive
+    origin: core75
+    impl: "python: PyTorch/PyG wrapper; graph input from connectomes; recommend requires_user_request=true"
+    runtime:
+      kind: alias
+      target: gnn_connectivity
+
+  - id: apply_foundation_model
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: expensive
+    origin: core75
+    impl: "python: embedding extraction via foundation models (configurable backend); requires_user_request recommended"
+    runtime:
+      kind: alias
+      target: encoding_model
+
+  - id: hyperalignment
+    layer: L4_stats_sota
+    stage: dynamics
+    cost_tier: expensive
+    origin: core75
+    impl: "python: hyperalignment / ISC helpers (BrainIAK/PyMVPA optional; custom fallback implementation)"
+    runtime:
+      kind: alias
+      target: hyperalignment
+
+  - id: test_retest_metrics
+    layer: L4_stats_sota
+    stage: dynamics
+    cost_tier: moderate
+    origin: core75
+    impl: "python: test-retest reliability (ICC) + fingerprinting metrics; referenced directly by declarative workflows"
+    runtime:
+      kind: alias
+      target: test_retest_metrics
+
+  - id: brain_simulation
+    layer: L4_stats_sota
+    stage: dynamics
+    cost_tier: expensive
+    origin: core75
+    impl: "python: brain simulation (TVB-style wrapper) + synthetic timeseries/FC; referenced directly by declarative workflows"
+    runtime:
+      kind: alias
+      target: brain_simulation
+
+  - id: generate_synthetic_data
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: expensive
+    origin: core75
+    impl: "python: augmentation/simulation (tabular + time series) with provenance controls"
+    runtime:
+      kind: alias
+      target: brain_simulation
+
+  - id: compute_brain_age
+    layer: L4_stats_sota
+    stage: clinical
+    cost_tier: expensive
+    origin: trend_addition
+    impl: "python: brain-age model wrapper (pretrained or trainable); outputs age_gap + uncertainty"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:compute_brain_age_tool
+
+  - id: compute_myelin_map
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: moderate
+    origin: trend_addition
+    impl: "python: intensity-normalized T1w proxy myelin map"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:compute_myelin_map_tool
+
+  - id: tms_target_selector
+    layer: L3_modalities
+    stage: clinical
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: pick TMS target from connectivity matrix"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:tms_target_selector_tool
+
+  - id: individual_parcellation
+    layer: L4_stats_sota
+    stage: preprocessing
+    cost_tier: expensive
+    origin: trend_addition
+    impl: "python: individualized parcellation (MS-HBM/NMF-like); production wrapper with explicit runtime metadata"
+    implementation_level: production
+    requires_runtime: python
+    hard_dependencies:
+      - numpy
+      - scikit-learn
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:individual_parcellation_tool
+
+  - id: visual_feature_decoder
+    layer: L4_stats_sota
+    stage: prediction
+    cost_tier: expensive
+    origin: trend_addition
+    impl: "python: decoder (ROI/features->latent/embedding); production wrapper with explicit runtime metadata"
+    implementation_level: production
+    requires_runtime: python
+    hard_dependencies:
+      - numpy
+      - scikit-learn
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:visual_feature_decoder_tool
+
+  # -------------------------
+  # Layer 5: Knowledge Engine
+  # -------------------------
+  - id: search_tools
+    layer: L5_knowledge
+    stage: context
+    cost_tier: cheap
+    origin: core75
+    impl: "alias: tool_retriever (tool discovery endpoint for non-router contexts)"
+    runtime:
+      kind: alias
+      target: mcp.tool_search
+
+  - id: search_datasets
+    layer: L5_knowledge
+    stage: dataset
+    cost_tier: moderate
+    origin: core75
+    impl: "python/external_api: public dataset search (OpenNeuro etc.) + metadata normalization"
+    runtime:
+      kind: alias
+      target: br_kg.search_datasets
+
+  - id: search_literature
+    layer: L5_knowledge
+    stage: context
+    cost_tier: moderate
+    origin: core75
+    impl: "python/external_api: literature search + structured extraction (methods/params/claims) with citations"
+    runtime:
+      kind: alias
+      target: literature_mining
+
+  - id: perform_meta_analysis
+    layer: L5_knowledge
+    stage: interpretation
+    cost_tier: moderate
+    origin: core75
+    impl: "python: NiMARE/NeuroSynth-style meta-analysis wrapper (keywords->maps/ROIs)"
+    runtime:
+      kind: alias
+      target: meta_analysis
+
+  - id: consult_knowledge_graph
+    layer: L5_knowledge
+    stage: interpretation
+    cost_tier: moderate
+    origin: core75
+    impl: "python/external_api: query KG for entities/relations (regions, tasks, disorders, genes)"
+    runtime:
+      kind: alias
+      target: br_kg.search_nodes
+
+  - id: decode_brain_map
+    layer: L5_knowledge
+    stage: interpretation
+    cost_tier: moderate
+    origin: core75
+    impl: "python: decode map/ROI -> cognitive terms (NeuroSynth-like) + evidence snippets"
+    runtime:
+      kind: alias
+      target: meta_brainmap
+
+  - id: rsa_analyzer
+    layer: L5_knowledge
+    stage: interpretation
+    cost_tier: moderate
+    origin: core75
+    impl: "python: representational similarity analysis (brain vs model RDM); referenced directly by declarative workflows"
+    runtime:
+      kind: alias
+      target: rsa_analyzer
+
+  - id: gene_expression_mapping
+    layer: L5_knowledge
+    stage: interpretation
+    cost_tier: expensive
+    origin: core75
+    impl: "python: map->genes (Allen-style) + enrichment; referenced directly by declarative workflows"
+    runtime:
+      kind: alias
+      target: gene_expression_mapping
+
+  - id: query_neuromaps
+    layer: L5_knowledge
+    stage: interpretation
+    cost_tier: moderate
+    origin: trend_addition
+    impl: "python: neuromaps wrapper (map fetch, alignment, spatial correlation + null models)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:query_neuromaps_tool
+
+  # -------------------------
+  # Layer 6: Visualization & Ops
+  # -------------------------
+  - id: plot_brain_map
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: cheap
+    origin: core75
+    impl: "python: nilearn plotting (stat maps, glass brain, surface) + file outputs"
+    runtime:
+      kind: alias
+      target: viz_stat_maps
+
+  - id: plot_matrix
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: cheap
+    origin: core75
+    impl: "python: matrix heatmaps + annotations (connectomes/confounds/design matrices)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:plot_matrix_tool
+
+  - id: visualize_interactive
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: moderate
+    origin: core75
+    impl: "python: generate interactive HTML (reports, viewers) without server dependency"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:visualize_interactive_tool
+
+  - id: generate_study_report
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: moderate
+    origin: core75
+    impl: "python: compile QC+results+interpretation into PDF/HTML report with provenance links"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:generate_study_report_tool
+
+  - id: render_report_tex
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: cheap
+    origin: core75
+    impl: "python: render title + ordered sections into a .tex file using scientific_report style"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.report_tools:render_report_tex
+
+  - id: compile_report_pdf
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: moderate
+    origin: core75
+    impl: "python: compile a .tex file to PDF via latexmk+pdflatex; copies bundled scientific_report.sty next to the source"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.report_tools:compile_report_pdf
+
+  - id: request_user_review
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: cheap
+    origin: core75
+    impl: "ops: pause point for human-in-the-loop (enable in interactive profile; optional in benchmark)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:request_user_review_tool
+
+  - id: create_archive
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: cheap
+    origin: core75
+    impl: "python: package outputs (manifest+tables+figures+logs) into standard archive"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:create_archive_tool
+
+  - id: copy_file
+    layer: L6_vis_ops
+    stage: reporting
+    cost_tier: cheap
+    origin: trend_addition
+    impl: "python: copy a file to a stable output path (promote intermediate artifacts)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:copy_file_tool
+
+  - id: run_local_script
+    layer: L6_vis_ops
+    stage: preprocessing
+    cost_tier: moderate
+    origin: trend_addition
+    impl: "python: execute local repository script with args (auditable subprocess wrapper)"
+    runtime:
+      kind: python_function
+      entrypoint: brain_researcher.services.tools.grandmaster.runtime_tools:run_local_script_tool

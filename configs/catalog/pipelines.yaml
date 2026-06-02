@@ -1,0 +1,534 @@
+# Pipeline templates for multi-step tool chains
+# These are synced to Neo4j as (:Pipeline)-[:STEP {order}]->(:Tool) relationships
+
+pipelines:
+  # T1 Preprocessing Pipeline
+  - id: t1_preproc
+    name: T1 Preprocessing to MNI
+    description: Standard T1w preprocessing pipeline with skull stripping and MNI registration
+    modalities: [smri]
+    steps:
+      - tool: fsl_bet
+        order: 1
+        description: Brain extraction / skull stripping
+        params:
+          input_file: "{t1w_image}"
+          output_file: "{work_dir}/t1w_brain.nii.gz"
+          mask_file: "{work_dir}/t1w_brain_mask.nii.gz"
+          fractional_intensity: 0.5     # BET -f
+          vertical_gradient: 0          # BET -g
+          robust: true                  # BET -R
+          center_of_gravity: null       # e.g. "90,120,90" if known
+      - tool: fsl_fnirt
+        order: 2
+        description: Non-linear registration to MNI152 template
+        params:
+          # Use the canonical FSL MNI152 template (inside container)
+          in_file: "{work_dir}/t1w_brain.nii.gz"
+          ref_file: /opt/fsl/data/standard/MNI152_T1_2mm.nii.gz
+          affine_file: "{work_dir}/t1w_to_mni_affine.mat"
+          warp_file: "{output_dir}/fnirt/t1w_to_mni_warp.nii.gz"
+          output_file: "{output_dir}/fnirt/t1w_to_mni_nonlin.nii.gz"
+          output_dir: "{output_dir}/fnirt"
+          config_file: /opt/fsl/etc/flirtsch/T1_2_MNI152_2mm.cnf
+          jacobian_file: "{output_dir}/fnirt/t1w_jacobian.nii.gz"
+          subsampling: [4,2,1]
+          smoothing: [6,4,2]
+
+  # fMRI First-Level Analysis Pipeline
+  - id: fmri_first_level
+    name: fMRI First-Level Analysis
+    description: GLM-based first-level fMRI analysis with FEAT
+    modalities: [fmri]
+    steps:
+      - tool: fsl_feat
+        order: 1
+        description: First-level FEAT analysis with GLM
+        params:
+          fmri_file: "{func_image}"
+          tr: "{tr}"
+          output_dir: "{output_dir}/feat_firstlevel"
+          highpass_sigma: 50            # ~100s cutoff if TR=2s
+          smoothing_fwhm: 5.0           # mm
+          delete_vols: 0                # dummy scans
+          design_mat: "{design_matrix}" # optional precomputed design.mat path
+          events_file: "{events_file}"  # optional EV TSV/CSV
+
+  # Diffusion Tractography Pipeline
+  - id: dmri_tractography
+    name: Diffusion Tractography
+    description: Fiber orientation estimation for tractography
+    modalities: [dmri]
+    steps:
+      - tool: fsl_bedpostx
+        order: 1
+        description: Bayesian estimation of fiber orientations
+        params:
+          dwi_file: "{dwi_image}"
+          bvec_file: "{bvec_file}"
+          bval_file: "{bval_file}"
+          mask_file: "{brain_mask}"
+          n_fibres: 2
+          output_dir: "{output_dir}/bedpostx"  # will create bedpostx directory
+
+  # ICA-based Denoising Pipeline
+  - id: fmri_ica_denoise
+    name: fMRI ICA Denoising
+    description: ICA-based noise removal using MELODIC + FIX
+    modalities: [fmri]
+    steps:
+      - tool: fsl_melodic
+        order: 1
+        description: ICA decomposition
+        params:
+          fmri_file: "{func_image}"
+          tr: "{tr}"
+          output_dir: "{output_dir}/melodic"
+          mask: "{brain_mask}"
+          dim: "auto"
+          melodic_ICs: "{output_dir}/melodic/melodic_IC.nii.gz"
+      - tool: fsl_fix
+        order: 2
+        description: Automatic noise component classification
+        params:
+          melodic_dir: "{output_dir}/melodic"
+          training_file: "{fix_training_file}"
+          threshold: 20
+
+  # Cluster Correction Pipeline
+  - id: fmri_cluster_correction
+    name: fMRI Multiple Comparison Correction
+    description: Cluster-based multiple comparison correction
+    modalities: [fmri]
+    steps:
+      - tool: afni_3dClustSim
+        order: 1
+        description: Monte Carlo simulation for cluster thresholds
+        params:
+          mask: "{brain_mask}"
+          acf: "0.7 4.5 9"      # default ACF; replace with model residual ACF when available
+          iterations: 10000
+          voxel_pthr: 0.001
+          two_sided: false
+
+  # ICA + FIX + ClusterSim combined pipeline
+  - id: fmri_ica_fix_clustsim
+    name: fMRI ICA Denoising + FIX + Cluster Correction
+    description: ICA-based denoising with MELODIC + FIX followed by AFNI 3dClustSim for cluster correction (preview friendly).
+    modalities: [fmri]
+    steps:
+      - tool: fsl_melodic
+        order: 1
+        description: Run MELODIC ICA decomposition
+        params:
+          fmri_file: "{func_image}"
+          tr: "{tr}"
+          output_dir: "{output_dir}/melodic"
+          mask: "{brain_mask}"
+          dim: "auto"
+          melodic_ICs: "{output_dir}/melodic/melodic_IC.nii.gz"
+      - tool: fsl_fix
+        order: 2
+        description: Classify ICA components with FIX
+        params:
+          melodic_dir: "{output_dir}/melodic"
+          training_file: "{fix_training_file}"
+          threshold: 20
+      - tool: afni_3dClustSim
+        order: 3
+        description: Cluster simulation for multiple-comparison correction
+        params:
+          mask: "{brain_mask}"
+          acf: "0.7 4.5 9"
+          iterations: 5000
+          voxel_pthr: 0.001
+          two_sided: false
+
+  # Basic Registration Pipeline
+  - id: basic_registration
+    name: Linear Registration to Standard Space
+    description: Affine registration to MNI space
+    modalities: [smri, fmri, dmri]
+    steps:
+      - tool: fsl_flirt
+        order: 1
+        description: Linear (12 DOF) registration
+        params:
+          in_file: "{input_image}"
+          ref_file: /opt/fsl/data/standard/MNI152_T1_2mm.nii.gz
+          out_file: "{output_dir}/flirt_to_mni.nii.gz"
+          dof: 12
+          cost: corratio
+          interp: trilinear
+
+  # ROI Connectivity Pipeline (nilearn-based)
+  - id: roi_connectivity
+    name: ROI-based Functional Connectivity
+    description: Extract ROI time series from atlas and compute connectivity matrix
+    modalities: [fmri]
+    steps:
+      - tool: extract_timeseries
+        order: 1
+        description: Extract mean signals from atlas ROIs
+        params:
+          img: "{func_image}"
+          atlas: "{atlas_file}"
+      - tool: connectivity_matrix
+        order: 2
+        description: Compute correlation matrix between ROIs
+        params:
+          timeseries: "{work_dir}/timeseries.npy"
+          kind: "correlation"
+          fisher_z: true
+
+  # Group-Level fMRI Analysis Pipeline
+  - id: fmri_group_analysis
+    name: fMRI Group-Level Analysis
+    description: First-level GLM followed by second-level group statistics
+    modalities: [fmri]
+    steps:
+      - tool: glm_first_level
+        order: 1
+        description: First-level GLM for each subject
+        params:
+          img: "{func_image}"
+          events: "auto"
+          hrf_model: "spm"
+      - tool: glm_second_level
+        order: 2
+        description: Group-level statistical inference
+        params:
+          contrast_maps: "{first_level_contrasts}"
+          contrast: "mean"
+          smoothing_fwhm: 8.0
+
+  # Seed-Based Connectivity Pipeline
+  - id: seed_connectivity_pipeline
+    name: Seed-Based Correlation Analysis
+    description: Compute whole-brain correlations from a seed region
+    modalities: [fmri]
+    steps:
+      - tool: seed_based_fc
+        order: 1
+        description: Extract seed time series and correlate with all voxels
+        params:
+          img: "{func_image}"
+          seed_coords: "{seed_coords}"
+          radius: 6
+
+  # FreeSurfer Cortical Reconstruction
+  - id: freesurfer_pipeline
+    name: FreeSurfer Cortical Reconstruction
+    description: Full cortical surface reconstruction with FreeSurfer
+    modalities: [smri]
+    steps:
+      - tool: freesurfer_recon_all
+        order: 1
+        description: Run recon-all for cortical reconstruction
+        params:
+          t1_image: "{t1w_image}"
+          subject_id: "{subject_id}"
+          subjects_dir: "{output_dir}/freesurfer"
+
+  # VBM-style Preprocessing Pipeline
+  - id: vbm_preproc
+    name: VBM Preprocessing Pipeline
+    description: Preprocessing for voxel-based morphometry studies
+    modalities: [smri]
+    steps:
+      - tool: fsl_bet
+        order: 1
+        description: Brain extraction
+        params:
+          input_file: "{t1w_image}"
+          fractional_intensity: 0.5
+          output_file: "{work_dir}/vbm_t1w_brain.nii.gz"
+      - tool: fsl_fnirt
+        order: 2
+        description: Non-linear registration to MNI
+        params:
+          in_file: "{work_dir}/vbm_t1w_brain.nii.gz"
+          ref_file: /opt/fsl/data/standard/MNI152_T1_2mm.nii.gz
+          output_file: "{output_dir}/vbm/t1w_to_mni.nii.gz"
+          warp_file: "{output_dir}/vbm/t1w_to_mni_warp.nii.gz"
+
+  # Parcellation-Based Analysis Pipeline
+  - id: parcellation_analysis
+    name: Atlas-Based Signal Extraction
+    description: Fetch atlas and extract parcel-level statistics
+    modalities: [fmri, smri]
+    steps:
+      - tool: fetch_atlas
+        order: 1
+        description: Fetch atlas parcellation
+        params:
+          atlas_name: "schaefer_2018"
+          n_rois: 400
+      - tool: extract_timeseries
+        order: 2
+        description: Extract signals per parcel
+        params:
+          img: "{input_image}"
+          atlas: "{atlas_file}"
+
+  # ----------------------------
+  # New pipelines (expanded coverage)
+  # ----------------------------
+
+  # dMRI Connectome (structural connectivity)
+  - id: dmri_connectome
+    name: Diffusion Connectome
+    description: From DWI to ROI×ROI structural connectome (model fit + parcellation + connectome)
+    modalities: [dmri]
+    steps:
+      - tool: dmri.resolve_dwi_triplet
+        order: 1
+        description: Locate DWI, bvec, bval, and brain mask from BIDS derivatives
+        params:
+          bids_dir: "{bids_dir}"
+          subject: "{subject_id}"
+          session: "{session_id}"
+      - tool: dmri.fit_model
+        order: 2
+        description: Fit diffusion model (DTI/CSD) and generate FOD/FA maps
+        params:
+          dwi_file: "{dwi_image}"
+          bvec_file: "{bvec_file}"
+          bval_file: "{bval_file}"
+          mask_file: "{brain_mask}"
+          model: "dti"
+          output_dir: "{output_dir}/dmri_model"
+      - tool: parcellation.fetch
+        order: 3
+        description: Fetch cortical/subcortical atlas for parcellation
+        params:
+          atlas_name: "schaefer_2018"
+          n_rois: 400
+          output_dir: "{output_dir}/atlas"
+      - tool: dmri.parcellate_connectome
+        order: 4
+        description: Generate ROI×ROI structural connectome matrix
+        params:
+          fod_or_fa: "{output_dir}/dmri_model/fa.nii.gz"
+          tractogram: "{tractogram}"
+          atlas: "{output_dir}/atlas/atlas_file.nii.gz"
+          output_csv: "{output_dir}/connectome/roi_connectome.csv"
+
+  # sMRI Morphometry (cortical thickness/volume)
+  - id: smri_morphometry
+    name: sMRI Morphometry
+    description: FreeSurfer/fastsurfer morphometry with parcel-level stats and surface export
+    modalities: [smri]
+    steps:
+      - tool: freesurfer_recon_all
+        order: 1
+        description: Cortical reconstruction (recon-all)
+        params:
+          t1_image: "{t1w_image}"
+          subject_id: "{subject_id}"
+          subjects_dir: "{output_dir}/freesurfer"
+          flags: "-all"
+      - tool: smri.parcellation_stats
+        order: 2
+        description: Extract cortical thickness/volume stats per parcel
+        params:
+          subjects_dir: "{output_dir}/freesurfer"
+          subject_id: "{subject_id}"
+          atlas: "aparc"
+          output_csv: "{output_dir}/freesurfer/{subject_id}_morphometry.csv"
+      - tool: smri.surface_export
+        order: 3
+        description: Export pial/white/fsaverage surfaces for visualization
+        params:
+          subjects_dir: "{output_dir}/freesurfer"
+          subject_id: "{subject_id}"
+          output_dir: "{output_dir}/freesurfer/surf_export"
+
+  # PET SUVR Pipeline
+  - id: pet_suvr
+    name: PET SUVR Analysis
+    description: Coregister PET to T1, compute SUVR, and parcellate ROI SUVR table
+    modalities: [pet]
+    steps:
+      - tool: pet.coreg
+        order: 1
+        description: Rigid coregistration PET -> T1
+        params:
+          pet_file: "{pet_image}"
+          t1_file: "{t1w_image}"
+          output_file: "{work_dir}/pet_coreg.nii.gz"
+      - tool: pet.suvr
+        order: 2
+        description: Compute SUVR using reference region
+        params:
+          pet_file: "{work_dir}/pet_coreg.nii.gz"
+          ref_mask: "{ref_mask}"
+          output_file: "{output_dir}/pet_suvr.nii.gz"
+      - tool: pet.parcellate
+        order: 3
+        description: ROI SUVR quantification
+        params:
+          suvr_file: "{output_dir}/pet_suvr.nii.gz"
+          atlas: "{atlas_file}"
+          output_csv: "{output_dir}/pet_suvr_roi.csv"
+
+  # Meta-analysis term-to-map pipeline
+  - id: meta_termmap
+    name: Term-based Meta-analysis Map
+    description: Run coordinate-based meta-analysis from a cognitive term to a whole-brain map
+    modalities: [fmri]
+    steps:
+      - tool: meta.brainmap
+        order: 1
+        description: Query BrainMap/NiMARE for term-related coordinates and synthesize map
+        params:
+          term: "{term}"
+          output_dir: "{output_dir}/meta"
+      - tool: meta.align
+        order: 2
+        description: Align meta-analysis map to target space
+        params:
+          in_file: "{output_dir}/meta/term_map.nii.gz"
+          ref_file: /opt/fsl/data/standard/MNI152_T1_2mm.nii.gz
+          output_file: "{output_dir}/meta/term_map_mni.nii.gz"
+      - tool: meta.combine
+        order: 3
+        description: Combine maps / generate report
+        params:
+          maps: "{output_dir}/meta/term_map_mni.nii.gz"
+          output_report: "{output_dir}/meta/report.html"
+
+  # -------------------------------------------------
+  # fMRI GLM multiverse (FitLins-based) pipeline
+  # -------------------------------------------------
+  - id: fmri_glm_multiverse
+    name: fMRI GLM Multiverse (FitLins)
+    description: Generate a family of BIDS Stats Models around a seed spec, run FitLins for each variant, and summarize multiverse stability.
+    modalities: [fmri]
+    steps:
+      - tool: fitlins.create_seed_spec
+        order: 1
+        description: Produce the seed BIDS Stats Model for a given study/task (wrapper over existing spec-generation script).
+        params:
+          study_id: "{study_id}"
+          task: "{task}"
+          bids_root: "{bids_root}"
+          derivatives_root: "{derivatives_root}"
+
+      - tool: br_kg.fetch_glm_priors
+        order: 2
+        description: Fetch empirical priors for GLM design choices from BR-KG/local statsmodel_specs.
+        params:
+          task: "{task}"
+          study_id: "{study_id}"
+
+      - tool: concept_literature_search
+        order: 3
+        description: Retrieve recent literature/methods related to the task to inform interpretation and axis selection.
+        params:
+          concepts: ["{task}"]
+          keywords: ["fMRI", "GLM", "HRF"]
+          max_results: 10
+
+      - tool: fitlins.generate_multiverse_specs
+        order: 4
+        description: Expand the seed spec into a set of mvXX BIDS Stats Model variants (rule-based / agent-assisted).
+        params:
+          study_id: "{study_id}"
+          task: "{task}"
+          seed_spec: "{seed_spec}"
+          max_models: "{max_models}"
+          priors: "{priors}"
+          output_dir: "outputs/fitlins_multiverse/{study_id}/{task}/specs"
+
+      - tool: fitlins.run_multiverse
+        order: 5
+        description: Execute FitLins for each multiverse spec (mvXX) with shared BIDS and derivatives roots.
+        params:
+          study_id: "{study_id}"
+          task: "{task}"
+          bids_root: "{bids_root}"
+          derivatives_root: "{derivatives_root}"
+          multiverse_specs: "{multiverse_specs}"
+
+      - tool: fitlins.multiverse_summary
+        order: 6
+        description: Aggregate per-model outputs into a multiverse report (overlap/stability + manifest table).
+        params:
+          study_id: "{study_id}"
+          task: "{task}"
+          multiverse_results: "{multiverse_results}"
+          multiverse_specs: "{multiverse_specs}"
+
+  # -------------------------------------------------
+  # fMRI GLM multiverse via openneuro_glmfitlins scripts
+  # -------------------------------------------------
+  - id: fmri_glm_multiverse_openneuro
+    name: fMRI GLM Multiverse (openneuro_glmfitlins)
+    description: Run the canonical openneuro_glmfitlins 1→5 workflow plus multiverse spec generation and FitLins execution; includes a KG priors lookup.
+    modalities: [fmri]
+    steps:
+      - tool: br_kg.fetch_glm_priors
+        order: 1
+        description: Fetch empirical priors for GLM design choices (if available) to inform downstream multiverse generation.
+        params:
+          task: "{task}"
+          study_id: "{study_id}"
+
+      - tool: concept_literature_search
+        order: 2
+        description: Retrieve recent literature/methods related to the task to inform interpretation.
+        params:
+          concepts: ["{task}"]
+          keywords: ["fMRI", "GLM", "HRF"]
+          max_results: 10
+
+      - tool: glm_multiverse
+        order: 3
+        description: "One-shot orchestration: openneuro_glmfitlins steps 1–3, multiverse spec generation, FitLins per mvXX, and reports."
+        params:
+          dataset_id: "{study_id}"
+          task: "{task}"
+          max_models: "{max_models}"
+          dry_run: "{dry_run}"
+
+      - tool: fitlins.multiverse_convergence
+        order: 4
+        description: Compute overlap/convergence across multiverse results for paper figures.
+        params:
+          manifest_path: "{manifest_path}"
+          output_dir: "{convergence_output_dir}"
+          threshold: 3.1
+          atlas: "schaefer-200"
+
+  # Knowledge Graph ingest + validate
+  - id: kg_ingest_validate
+    name: KG Ingest + SHACL Validate
+    description: Ingest nodes/edges into Neo4j and validate with SHACL; optional QA
+    modalities: []
+    steps:
+      - tool: kg.ingest
+        order: 1
+        description: Ingest CSV/JSON nodes and edges into Neo4j
+        params:
+          nodes_file: "{nodes_file}"
+          edges_file: "{edges_file}"
+          neo4j_uri: "{neo4j_uri}"
+          neo4j_user: "{neo4j_user}"
+          neo4j_password: "{neo4j_password}"
+      - tool: kg.shacl_validate
+        order: 2
+        description: Run SHACL validation over the ingested graph
+        params:
+          neo4j_uri: "{neo4j_uri}"
+          neo4j_user: "{neo4j_user}"
+          neo4j_password: "{neo4j_password}"
+          report_file: "{output_dir}/kg_shacl_report.html"
+      - tool: kg.multihop_qa
+        order: 3
+        description: Optional QA over the graph (can be skipped in preview)
+        params:
+          question: "{question}"
+          neo4j_uri: "{neo4j_uri}"
+          neo4j_user: "{neo4j_user}"
+          neo4j_password: "{neo4j_password}"

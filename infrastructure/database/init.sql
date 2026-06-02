@@ -12,11 +12,11 @@ CREATE EXTENSION IF NOT EXISTS "btree_gist";
 SELECT 'CREATE DATABASE brain_researcher'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'brain_researcher')\gexec
 
-SELECT 'CREATE DATABASE brain_researcher_test'  
+SELECT 'CREATE DATABASE brain_researcher_test'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'brain_researcher_test')\gexec
 
-SELECT 'CREATE DATABASE neurokg'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'neurokg')\gexec
+SELECT 'CREATE DATABASE br-kg'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'br-kg')\gexec
 
 -- Connect to main database
 \c brain_researcher;
@@ -28,34 +28,34 @@ BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'readonly') THEN
         CREATE ROLE readonly WITH LOGIN PASSWORD 'readonly_pass_change_me';
     END IF;
-    
+
     -- Analytics user with more permissions
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'analytics') THEN
         CREATE ROLE analytics WITH LOGIN PASSWORD 'analytics_pass_change_me';
     END IF;
-    
+
     -- Batch processing user
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'batch_user') THEN
         CREATE ROLE batch_user WITH LOGIN PASSWORD 'batch_pass_change_me';
     END IF;
-    
+
     -- Service-specific users
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'orchestrator_user') THEN
         CREATE ROLE orchestrator_user WITH LOGIN PASSWORD 'orchestrator_pass_change_me';
     END IF;
-    
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'neurokg_user') THEN
-        CREATE ROLE neurokg_user WITH LOGIN PASSWORD 'neurokg_pass_change_me';
+
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'br_kg_user') THEN
+        CREATE ROLE br_kg_user WITH LOGIN PASSWORD 'br_kg_pass_change_me';
     END IF;
-    
+
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'agent_user') THEN
         CREATE ROLE agent_user WITH LOGIN PASSWORD 'agent_pass_change_me';
     END IF;
-    
+
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'webui_user') THEN
         CREATE ROLE webui_user WITH LOGIN PASSWORD 'webui_pass_change_me';
     END IF;
-    
+
     -- Monitoring user
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'grafana') THEN
         CREATE ROLE grafana WITH LOGIN PASSWORD 'grafana_pass_change_me';
@@ -289,9 +289,9 @@ GRANT SELECT, INSERT, UPDATE ON core.jobs, core.sessions TO agent_user;
 GRANT SELECT ON ALL TABLES IN SCHEMA core TO webui_user;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA core TO orchestrator_user, agent_user, webui_user;
 
-GRANT USAGE ON SCHEMA kg TO neurokg_user;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA kg TO neurokg_user;
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA kg TO neurokg_user;
+GRANT USAGE ON SCHEMA kg TO br_kg_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA kg TO br_kg_user;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA kg TO br_kg_user;
 
 -- Monitoring user permissions
 GRANT USAGE ON SCHEMA monitoring, analytics TO grafana;
@@ -338,13 +338,13 @@ BEGIN
     ORDER BY priority DESC, created_at ASC
     LIMIT 1
     FOR UPDATE SKIP LOCKED;
-    
+
     IF job_id IS NOT NULL THEN
         UPDATE core.jobs
         SET status = 'running', started_at = CURRENT_TIMESTAMP
         WHERE id = job_id;
     END IF;
-    
+
     RETURN job_id;
 END;
 $$ LANGUAGE plpgsql;
@@ -357,7 +357,7 @@ DECLARE
 BEGIN
     DELETE FROM core.sessions
     WHERE expires_at < CURRENT_TIMESTAMP;
-    
+
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
     RETURN deleted_count;
 END;
@@ -380,7 +380,7 @@ RETURNS TABLE(
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         um.metric_type,
         um.metric_name,
         AVG(um.value)::FLOAT as avg_value,
@@ -443,7 +443,7 @@ BEGIN
         INSERT INTO core.users (username, email, password_hash, is_active)
         VALUES ('testuser', 'test@example.com', 'test_hash', true)
         ON CONFLICT (username) DO NOTHING;
-        
+
         -- Insert sample dataset
         INSERT INTO core.datasets (name, description, type, source, is_public)
         VALUES ('Sample Dataset', 'A sample dataset for testing', 'fmri', 'test_source', true)

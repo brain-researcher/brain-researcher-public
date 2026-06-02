@@ -14,7 +14,7 @@ def test_agent_job_service_rejects_memory_store_when_sqlite_required(
     from brain_researcher.services.agent.job_service import AgentJobService
 
     with patch(
-        "brain_researcher.services.orchestrator.job_store_factory.get_initialized_job_store",
+        "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
         return_value=MemoryJobStore(),
     ):
         with pytest.raises(RuntimeError, match="MemoryJobStore"):
@@ -34,7 +34,7 @@ def test_agent_job_service_raises_when_initialize_fails_in_strict_sqlite_mode(
     from brain_researcher.services.agent.job_service import AgentJobService
 
     with patch(
-        "brain_researcher.services.orchestrator.job_store_factory.get_initialized_job_store",
+        "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
         return_value=DummyStore(),
     ):
         with pytest.raises(RuntimeError, match="JobStore.initialize failed"):
@@ -71,3 +71,21 @@ def test_agent_job_service_startup_helper_eager_inits_when_enabled(
     ) as get_job_service:
         assert job_service_module.maybe_initialize_job_service_for_startup() is True
         get_job_service.assert_called_once()
+
+
+def test_agent_job_service_registers_shared_job_store_autoinit(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("BR_QUEUE_BACKEND", "memory")
+    monkeypatch.delenv("BR_STRICT_SQLITE_BACKEND", raising=False)
+
+    from brain_researcher.services.shared import job_store_registry
+
+    monkeypatch.setattr(job_store_registry, "_job_store_instance", None)
+    monkeypatch.setattr(job_store_registry, "_autoinit", None)
+
+    from brain_researcher.services.agent.job_service import AgentJobService
+
+    service = AgentJobService()
+
+    assert type(service._store).__name__ == "MemoryJobStore"

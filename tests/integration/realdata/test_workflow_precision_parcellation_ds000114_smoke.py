@@ -8,15 +8,14 @@ Marked as `realdata` so it is skipped by default in CI.
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
-import json
 
 import numpy as np
 import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
@@ -50,7 +49,7 @@ def test_workflow_precision_parcellation_ds000114_smoke(tmp_path: Path):
     atlas = (
         PROJECT_ROOT
         / "data"
-        / "neurokg"
+        / "br_kg"
         / "raw"
         / "nilearn_atlases"
         / "schaefer_2018"

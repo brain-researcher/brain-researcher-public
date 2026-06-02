@@ -155,7 +155,7 @@ test.describe('PRD auth + routing (root/landing/studio)', () => {
     const url = new URL(page.url())
     expect(url.searchParams.get('onboarding')).toBeNull()
     await expect(page.getByTestId('landing-page')).toHaveAttribute('data-hydrated', '1')
-    await expect(page.getByRole('heading', { name: /Ask a neuro question/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Take any neuroimaging workflow/i })).toBeVisible()
   })
 
   test('auth: / ignores legacy br_studio_visited cookie and still renders Landing', async ({
@@ -178,7 +178,7 @@ test.describe('PRD auth + routing (root/landing/studio)', () => {
     const url = new URL(page.url())
     expect(url.searchParams.get('onboarding')).toBeNull()
     await expect(page.getByTestId('landing-page')).toHaveAttribute('data-hydrated', '1')
-    await expect(page.getByRole('heading', { name: /Ask a neuro question/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Take any neuroimaging workflow/i })).toBeVisible()
   })
 
   test('auth: legacy /studio onboarding query redirects into hosted Hub', async ({
@@ -213,12 +213,14 @@ test.describe('PRD auth + routing (root/landing/studio)', () => {
       await stubCommon(page)
       await page.goto('/', { waitUntil: 'domcontentloaded' })
       await expect(page.getByTestId('landing-page')).toHaveAttribute('data-hydrated', '1')
-      await expect(page.getByRole('heading', { name: /Ask a neuro question/i })).toBeVisible()
-      await expect(page.getByText(/Official workflows/i)).toBeVisible()
+      await expect(page.getByRole('heading', { name: /Take any neuroimaging workflow/i })).toBeVisible()
+      // Screen 1: MCP setup steps
+      await expect(page.getByRole('heading', { name: /Configure MCP/i })).toBeVisible()
+      // Screen 2: paper + code
       await expect(
-        page.locator('form').getByRole('button', { name: 'Plan in Studio', exact: true }),
+        page.getByRole('heading', { name: /Read the paper, run the code/i }),
       ).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Choose template' }).first()).toBeVisible()
+      await expect(page.getByText(/Open-source release coming soon/i)).toBeVisible()
 
       const keyboardHelp = page.getByTitle('Keyboard Shortcuts (⌘ ?)')
       const feedback = page.getByRole('button', { name: 'Open feedback menu' })
@@ -254,47 +256,25 @@ test.describe('PRD auth + routing (root/landing/studio)', () => {
       await expect(loginHeading).toBeVisible()
     })
 
-    test('unauth: Landing prompt → /auth/signup carries callbackUrl with prompt', async ({
+    test('unauth: Landing Studio CTA → /auth/signup carries callbackUrl=/studio', async ({
       page,
     }) => {
       await stubCommon(page)
       await page.goto('/', { waitUntil: 'domcontentloaded' })
       await expect(page.getByTestId('landing-page')).toHaveAttribute('data-hydrated', '1')
 
-      const prompt = page.getByPlaceholder('"Run resting-state connectivity on HCP data..."')
-      await prompt.click()
-      await prompt.type('analyze DMN connectivity')
+      // The in-page "Open Studio" CTA (Try-it section) gates an unauthenticated
+      // user through signup, preserving the intended Studio destination. Scope to
+      // the section since the site nav also exposes an "Open Studio" signup link.
+      const cta = page.locator('#try-it').getByRole('link', { name: 'Open Studio' })
+      await expect(cta).toHaveAttribute('href', '/auth/signup?callbackUrl=%2Fstudio')
 
-      const submit = page
-        .locator('form')
-        .getByRole('button', { name: 'Plan in Studio', exact: true })
-      await expect(submit).toBeEnabled()
-      await submit.click()
-
+      await cta.click()
       await expect(page).toHaveURL(/\/auth\/signup\?/, { timeout: 30_000 })
 
       const url = new URL(page.url())
       const callbackUrl = url.searchParams.get('callbackUrl')
-      expect(callbackUrl).toContain('/studio?')
-      expect(callbackUrl).toContain('prompt=')
-      expect(callbackUrl).not.toContain('onboarding=')
-    })
-
-    test('unauth: Landing template → /auth/signup carries callbackUrl with template id', async ({
-      page,
-    }) => {
-      await stubCommon(page)
-      await page.goto('/', { waitUntil: 'domcontentloaded' })
-      await expect(page.getByTestId('landing-page')).toHaveAttribute('data-hydrated', '1')
-
-      await page.getByRole('link', { name: 'Choose template' }).first().click()
-
-      await expect(page).toHaveURL(/\/auth\/signup\?/, { timeout: 30_000 })
-
-      const url = new URL(page.url())
-      const callbackUrl = url.searchParams.get('callbackUrl')
-      expect(callbackUrl).toContain('/studio?')
-      expect(callbackUrl).toContain('template=')
+      expect(callbackUrl).toBe('/studio')
       expect(callbackUrl).not.toContain('onboarding=')
     })
 

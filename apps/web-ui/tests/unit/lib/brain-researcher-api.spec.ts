@@ -248,7 +248,7 @@ describe('BrainResearcherAPI copilot/chat fallback behavior', () => {
 
     expect(mockFetch).toHaveBeenNthCalledWith(
       1,
-      '/api/neurokg/search?query=working+memory&limit=10&types=Concept',
+      '/api/br-kg/search?query=working+memory&limit=10&types=Concept',
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -261,7 +261,7 @@ describe('BrainResearcherAPI copilot/chat fallback behavior', () => {
     )
     expect(mockFetch).toHaveBeenNthCalledWith(
       2,
-      '/api/neurokg/subgraph?label=Concept&name=working+memory&depth=2',
+      '/api/br-kg/subgraph?label=Concept&name=working+memory&depth=2',
     )
     expect(nodes).toHaveLength(1)
     expect(expanded).toEqual({ nodes: [{ id: 'concept:wm' }], edges: [] })

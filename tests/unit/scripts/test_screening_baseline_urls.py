@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -37,8 +36,14 @@ def _load_script_module(relative_path: str, module_name: str):
 @pytest.mark.parametrize(
     ("relative_path", "module_name"),
     [
-        ("scripts/eval/semantic_screening_baseline.py", "semantic_screening_baseline_for_test"),
-        ("scripts/eval/hybrid_screening_baseline.py", "hybrid_screening_baseline_for_test"),
+        (
+            "scripts/eval/semantic_screening_baseline.py",
+            "semantic_screening_baseline_for_test",
+        ),
+        (
+            "scripts/eval/hybrid_screening_baseline.py",
+            "hybrid_screening_baseline_for_test",
+        ),
     ],
 )
 def test_resolve_graphql_url_defaults_to_localhost(
@@ -47,11 +52,11 @@ def test_resolve_graphql_url_defaults_to_localhost(
     module_name: str,
 ) -> None:
     for key in [
-        "NEUROKG_GRAPHQL_URL",
-        "BR_NEUROKG_URL",
-        "NEUROKG_BASE_URL",
-        "NEUROKG_URL",
-        "NEUROKG_API_URL",
+        "BR_KG_GRAPHQL_URL",
+        "BR_KG_URL",
+        "BR_KG_BASE_URL",
+        "BR_KG_URL",
+        "BR_KG_API_URL",
     ]:
         monkeypatch.delenv(key, raising=False)
 
@@ -63,8 +68,14 @@ def test_resolve_graphql_url_defaults_to_localhost(
 @pytest.mark.parametrize(
     ("relative_path", "module_name"),
     [
-        ("scripts/eval/semantic_screening_baseline.py", "semantic_screening_baseline_env_test"),
-        ("scripts/eval/hybrid_screening_baseline.py", "hybrid_screening_baseline_env_test"),
+        (
+            "scripts/eval/semantic_screening_baseline.py",
+            "semantic_screening_baseline_env_test",
+        ),
+        (
+            "scripts/eval/hybrid_screening_baseline.py",
+            "hybrid_screening_baseline_env_test",
+        ),
     ],
 )
 def test_resolve_graphql_url_appends_suffix_for_base_url(
@@ -72,7 +83,7 @@ def test_resolve_graphql_url_appends_suffix_for_base_url(
     relative_path: str,
     module_name: str,
 ) -> None:
-    monkeypatch.setenv("NEUROKG_URL", "http://kg.internal:5000")
+    monkeypatch.setenv("BR_KG_URL", "http://kg.internal:5000")
 
     module = _load_script_module(relative_path, module_name)
 
@@ -82,8 +93,14 @@ def test_resolve_graphql_url_appends_suffix_for_base_url(
 @pytest.mark.parametrize(
     ("relative_path", "module_name"),
     [
-        ("scripts/eval/semantic_screening_baseline.py", "semantic_screening_baseline_arg_test"),
-        ("scripts/eval/hybrid_screening_baseline.py", "hybrid_screening_baseline_arg_test"),
+        (
+            "scripts/eval/semantic_screening_baseline.py",
+            "semantic_screening_baseline_arg_test",
+        ),
+        (
+            "scripts/eval/hybrid_screening_baseline.py",
+            "hybrid_screening_baseline_arg_test",
+        ),
     ],
 )
 def test_resolve_graphql_url_preserves_explicit_graphql_endpoint(

@@ -37,8 +37,7 @@ def test_gfs_hit_emits_typed_document_and_citation_anchors() -> None:
 
 def test_reference_kind_rejects_mixed_doi_pmid_string() -> None:
     assert (
-        reference_kind("DOI:10.1016/j.tics.2005.12.004; PMID:16406760")
-        == "malformed"
+        reference_kind("DOI:10.1016/j.tics.2005.12.004; PMID:16406760") == "malformed"
     )
 
 
@@ -164,7 +163,10 @@ def test_gate_downgrades_resolved_anchor_when_claim_does_not_match_support() -> 
     assert result["evidence_basis"][0]["basis_type"] == "retrieved_document"
     assert result["evidence_basis"][1]["basis_type"] == "uncertain"
     assert result["evidence_basis"][1]["reference"] is None
-    assert result["evidence_basis"][1]["gate_note"] == "claim was not supported by anchor text"
+    assert (
+        result["evidence_basis"][1]["gate_note"]
+        == "claim was not supported by anchor text"
+    )
     assert result["alignment"]["checked"] == 2
     assert result["alignment"]["yes"] == 1
     assert result["alignment"]["no_unrelated"] == 1
@@ -240,3 +242,83 @@ def test_resolve_kg_and_session_refs_from_lookup_callbacks() -> None:
     assert session["resolved"] is True
     assert session["support_text"] == "Session support for claim-card-123"
     assert session["provenance"]["resolver"] == "session_lookup"
+
+
+# --- alignment_mode="judge": semantic gate (spam-resistant) ---
+
+# Claim heavily echoes the support tokens -> lexical judge_parity scores "yes" and KEEPS it.
+# This lets us prove the semantic judge mode OVERRIDES the lexical decision.
+_JUDGE_EB = [
+    {
+        "claim": "Double dipping uses the same data for selection and selective analysis yielding invalid inference.",
+        "basis_type": "retrieved_document",
+        "reference": "doc:fileSearchStores/papers/files/doc-dd.txt",
+        "verifiable": True,
+    }
+]
+_JUDGE_ANCHORS = [
+    {
+        "anchor_id": "doc:fileSearchStores/papers/files/doc-dd.txt",
+        "anchor_type": "retrieved_document",
+        "support_text": (
+            "Double dipping is the use of the same data for selection and selective analysis, "
+            "which yields invalid statistical inference under the null hypothesis."
+        ),
+    }
+]
+
+
+def test_gate_lexical_keeps_high_overlap_claim() -> None:
+    # baseline: lexical judge_parity keeps the high-overlap claim
+    res = gate_evidence_basis(
+        _JUDGE_EB, anchors=_JUDGE_ANCHORS, alignment_mode="judge_parity"
+    )
+    assert res["evidence_basis"][0]["basis_type"] == "retrieved_document"
+
+
+def test_gate_judge_mode_downgrades_when_judge_rejects() -> None:
+    res = gate_evidence_basis(
+        _JUDGE_EB,
+        anchors=_JUDGE_ANCHORS,
+        alignment_mode="judge",
+        alignment_judge=lambda claim, support: "no_unrelated",
+    )
+    assert res["alignment"]["mode"] == "judge"
+    assert res["evidence_basis"][0]["basis_type"] == "uncertain"
+    assert res["evidence_basis"][0]["reference"] is None
+    assert res["alignment"]["downgraded_by_alignment"] == 1
+    assert res["alignment"]["per_row"][0]["alignment_source"] == "llm_judge"
+
+
+def test_gate_judge_mode_keeps_when_judge_accepts() -> None:
+    res = gate_evidence_basis(
+        _JUDGE_EB,
+        anchors=_JUDGE_ANCHORS,
+        alignment_mode="judge",
+        alignment_judge=lambda claim, support: "yes",
+    )
+    assert res["evidence_basis"][0]["basis_type"] == "retrieved_document"
+    assert res["alignment"]["per_row"][0]["alignment_source"] == "llm_judge"
+
+
+def test_gate_judge_mode_falls_back_to_lexical_without_judge() -> None:
+    res = gate_evidence_basis(_JUDGE_EB, anchors=_JUDGE_ANCHORS, alignment_mode="judge")
+    assert res["alignment"]["mode"] == "judge_parity"  # no judge supplied -> lexical
+    assert res["evidence_basis"][0]["basis_type"] == "retrieved_document"
+
+
+def test_gate_judge_mode_never_crashes_when_judge_raises() -> None:
+    def boom(claim: str, support: str) -> str:
+        raise RuntimeError("judge down")
+
+    res = gate_evidence_basis(
+        _JUDGE_EB,
+        anchors=_JUDGE_ANCHORS,
+        alignment_mode="judge",
+        alignment_judge=boom,
+    )
+    # gate must still return; failed judge falls back to lexical for the label and records the error
+    assert "evidence_basis" in res
+    assert any(
+        "alignment_judge_failed" in str(e.get("error", "")) for e in res["errors"]
+    )

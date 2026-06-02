@@ -42,6 +42,13 @@ const SAMPLE_RUNS = [
     workflow_id: 'glm_v1',
     dataset_id: 'ds:openneuro:ds000001',
     thread_id: null,
+    intent: null,
+    title: 'Within-DMN connectivity',
+    task: 'rest',
+    dataset_label: 'OpenNeuro ds000001',
+    workflow_label: 'Nilearn first-level',
+    artifact_count: null,
+    step_count: null,
     created_at: new Date(Date.now() - 60_000).toISOString(),
     updated_at: new Date(Date.now() - 30_000).toISOString(),
     finished_at: null,
@@ -55,9 +62,36 @@ const SAMPLE_RUNS = [
     workflow_id: 'connectivity_v2',
     dataset_id: 'ds:openneuro:ds000002',
     thread_id: null,
+    intent: null,
+    title: null,
+    task: null,
+    dataset_label: null,
+    workflow_label: null,
+    artifact_count: null,
+    step_count: null,
     created_at: new Date(Date.now() - 600_000).toISOString(),
     updated_at: new Date(Date.now() - 500_000).toISOString(),
     finished_at: new Date(Date.now() - 500_000).toISOString(),
+    error_message: null,
+  },
+  {
+    run_id: 'run_unknown_1',
+    status: 'completed' as const,
+    source: 'unknown' as const,
+    project_id: 'proj_demo',
+    workflow_id: null,
+    dataset_id: null,
+    thread_id: null,
+    intent: null,
+    title: null,
+    task: null,
+    dataset_label: null,
+    workflow_label: null,
+    artifact_count: null,
+    step_count: null,
+    created_at: new Date(Date.now() - 900_000).toISOString(),
+    updated_at: new Date(Date.now() - 900_000).toISOString(),
+    finished_at: new Date(Date.now() - 900_000).toISOString(),
     error_message: null,
   },
 ]
@@ -87,6 +121,28 @@ describe('RunsSidebar', () => {
     expect(
       screen.getByTestId('runs-sidebar-source-run_done_1').textContent,
     ).toMatch(/Studio/)
+    // A run with no known source no longer shows the misleading "Unknown source"
+    // badge at all.
+    expect(
+      screen.queryByTestId('runs-sidebar-source-run_unknown_1'),
+    ).toBeNull()
+  })
+
+  it('renders a human title, task chip, and dataset label from the enriched facets', async () => {
+    render(<RunsSidebar brSessionId="studio_demo" runtimeReady={true} />)
+    fireEvent.click(screen.getByTestId('runs-sidebar-trigger'))
+    await waitFor(() => expect(mocks.fetchSidebarRuns).toHaveBeenCalled())
+    const row = await screen.findByTestId('runs-sidebar-row-run_active_1')
+    // Title prefers the human title over the raw workflow_id.
+    expect(row.textContent).toMatch(/Within-DMN connectivity/)
+    expect(row.textContent).not.toMatch(/glm_v1/)
+    // Task/paradigm chip is surfaced.
+    expect(
+      screen.getByTestId('runs-sidebar-task-run_active_1').textContent,
+    ).toMatch(/rest/)
+    // Dataset shows the human label, not the raw id.
+    expect(row.textContent).toMatch(/OpenNeuro ds000001/)
+    expect(row.textContent).not.toMatch(/ds:openneuro:ds000001/)
   })
 
   it('disables Attach in notebook when runtime is not ready', async () => {
@@ -115,10 +171,42 @@ describe('RunsSidebar', () => {
         expect.stringContaining("br.attach_run('run_active_1')"),
       )
     })
+    // Server path doesn't live-render in the connected frontend, so the toast
+    // must tell the user to reload rather than imply the cell is already visible.
     await waitFor(() => {
       expect(mocks.toast).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: expect.stringContaining('Attached run'),
+          title: expect.stringContaining('to the runtime'),
+          description: expect.stringContaining('Reload the notebook'),
+        }),
+      )
+    })
+  })
+
+  it('shows a live success toast when the client bridge injects the cell', async () => {
+    const appendCellClient = vi.fn().mockResolvedValue(undefined)
+    render(
+      <RunsSidebar
+        brSessionId="studio_demo"
+        runtimeReady={true}
+        appendCellClient={appendCellClient}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('runs-sidebar-trigger'))
+    await waitFor(() => expect(mocks.fetchSidebarRuns).toHaveBeenCalled())
+    const attach = await screen.findByTestId('runs-sidebar-attach-run_active_1')
+    fireEvent.click(attach)
+    await waitFor(() =>
+      expect(appendCellClient).toHaveBeenCalledWith(
+        expect.stringContaining("br.attach_run('run_active_1')"),
+      ),
+    )
+    // Bridge path renders live, so no server call and the toast says "to notebook".
+    expect(mocks.appendHubSessionCell).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: expect.stringContaining('to notebook'),
         }),
       )
     })

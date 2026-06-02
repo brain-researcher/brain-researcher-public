@@ -64,7 +64,7 @@ jest.mock('react-chartjs-2', () => ({
 // Mock data structures
 interface FeatureUsage {
   feature_name: string;
-  service: 'agent' | 'web_ui' | 'neurokg' | 'orchestrator';
+  service: 'agent' | 'web_ui' | 'brKg' | 'orchestrator';
   total_uses: number;
   unique_users: number;
   success_rate: number;
@@ -153,9 +153,9 @@ const FeatureAdoptionChart: React.FC<FeatureAdoptionChartProps> = ({
       .map((feature, index) => {
         // Generate synthetic time series data based on feature metrics
         const baseAdoption = feature.adoption_rate;
-        const trendFactor = feature.trend === 'increasing' ? 1.05 : 
+        const trendFactor = feature.trend === 'increasing' ? 1.05 :
                            feature.trend === 'decreasing' ? 0.95 : 1.0;
-        
+
         const data = dates.map((_, dayIndex) => {
           const trendMultiplier = Math.pow(trendFactor, dayIndex);
           const noise = 0.9 + Math.random() * 0.2; // Add some randomness
@@ -291,7 +291,7 @@ const FeatureAdoptionChart: React.FC<FeatureAdoptionChartProps> = ({
   const adoptionTrends = React.useMemo((): AdoptionTrend[] => {
     return features.map(feature => ({
       feature_name: feature.feature_name,
-      trend_direction: feature.trend === 'increasing' ? 'up' : 
+      trend_direction: feature.trend === 'increasing' ? 'up' :
                       feature.trend === 'decreasing' ? 'down' : 'stable',
       trend_strength: Math.abs(feature.period_over_period_change) / 100,
       growth_rate: feature.period_over_period_change,
@@ -579,7 +579,7 @@ describe('FeatureAdoptionChart', () => {
     },
     {
       feature_name: 'knowledge_search',
-      service: 'neurokg',
+      service: 'brKg',
       total_uses: 800,
       unique_users: 100,
       success_rate: 0.92,
@@ -829,7 +829,7 @@ describe('FeatureAdoptionChart', () => {
 
       const performers = screen.getByTestId('performers-list');
       const topPerformer = within(performers).getByTestId('performer-0');
-      
+
       // data_visualization has highest adoption rate (90%)
       expect(within(topPerformer).getByText('data_visualization')).toBeInTheDocument();
       expect(within(topPerformer).getByText('#1')).toBeInTheDocument();
@@ -840,7 +840,7 @@ describe('FeatureAdoptionChart', () => {
       render(<FeatureAdoptionChart features={mockFeatures} />);
 
       const performers = screen.getByTestId('performers-list');
-      
+
       // Check for trend icons and percentage changes
       expect(within(performers).getByText('📈')).toBeInTheDocument(); // increasing trend
       expect(within(performers).getByText('➡️')).toBeInTheDocument(); // stable trend
@@ -882,7 +882,7 @@ describe('FeatureAdoptionChart', () => {
       expect(screen.getByTestId('trend-growing')).toHaveTextContent('2');
       expect(screen.getByTestId('trend-declining')).toHaveTextContent('1');
       expect(screen.getByTestId('trend-stable')).toHaveTextContent('2');
-      
+
       // Average growth rate calculation
       const avgGrowthElement = screen.getByTestId('trend-avg-growth');
       expect(avgGrowthElement).toBeInTheDocument();
@@ -937,8 +937,8 @@ describe('FeatureAdoptionChart', () => {
     it('should call onFeatureSelect when legend is clicked', () => {
       const mockOnFeatureSelect = jest.fn();
       render(
-        <FeatureAdoptionChart 
-          features={mockFeatures} 
+        <FeatureAdoptionChart
+          features={mockFeatures}
           onFeatureSelect={mockOnFeatureSelect}
         />
       );
@@ -951,8 +951,8 @@ describe('FeatureAdoptionChart', () => {
     it('should call onDataPointClick when chart point is clicked', () => {
       const mockOnDataPointClick = jest.fn();
       render(
-        <FeatureAdoptionChart 
-          features={mockFeatures} 
+        <FeatureAdoptionChart
+          features={mockFeatures}
           onDataPointClick={mockOnDataPointClick}
         />
       );
@@ -1052,7 +1052,7 @@ describe('FeatureAdoptionChart', () => {
 
       const chart = screen.getByTestId('feature-adoption-line-chart');
       const options = JSON.parse(chart.getAttribute('data-chart-options') || '{}');
-      
+
       expect(options.maintainAspectRatio).toBe(false);
       expect(options.responsive).toBe(true);
     });

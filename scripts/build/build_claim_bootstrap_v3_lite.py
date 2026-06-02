@@ -36,7 +36,7 @@ except ImportError:
         load_source,
     )
 
-SAMPLE_OUTPUT = ROOT / "tests/fixtures/neurokg/gabriel_measurements.bootstrap_v3_lite.jsonl"
+SAMPLE_OUTPUT = ROOT / "tests/fixtures/br-kg/gabriel_measurements.bootstrap_v3_lite.jsonl"
 CALIBRATION_OUTPUT = ROOT / "docs/planning/claim_hypotheses_calibration_v3_lite.jsonl"
 HELDOUT_OUTPUT = ROOT / "docs/planning/claim_hypotheses_heldout_v3_lite.jsonl"
 
@@ -48,7 +48,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     **V2_SOURCE_SPECS,
     "amygdala_reward_support": SourceSpec(
         key="amygdala_reward_support",
-        path="data/neurokg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0000.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0000.jsonl",
         line_number=14,
         expected_paper_id="paper:10_1016_j_biopsych_2017_08_020",
         expected_target_id="concept:amygdala_reward_reactivity",
@@ -61,7 +61,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "locus_coeruleus_support": SourceSpec(
         key="locus_coeruleus_support",
-        path="data/neurokg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0000.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0000.jsonl",
         line_number=15,
         expected_paper_id="paper:10_1016_j_biopsych_2017_08_021",
         expected_target_id="region:locus_coeruleus",
@@ -74,7 +74,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "mpcc_support": SourceSpec(
         key="mpcc_support",
-        path="data/neurokg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0000.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0000.jsonl",
         line_number=17,
         expected_paper_id="paper:10_1016_j_biopsycho_2018_02_018",
         expected_target_id="region:medial_posterior_cingulate",
@@ -87,7 +87,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "tpj_support": SourceSpec(
         key="tpj_support",
-        path="data/neurokg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0004.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0004.jsonl",
         line_number=15,
         expected_paper_id="paper:10_1016_j_neuroimage_2017_09_064",
         expected_target_id="region:temporoparietal_junction",
@@ -100,7 +100,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "amygdala_support": SourceSpec(
         key="amygdala_support",
-        path="data/neurokg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0004.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0004.jsonl",
         line_number=17,
         expected_paper_id="paper:10_1016_j_neuroimage_2017_10_031",
         expected_target_id="region:amygdala",

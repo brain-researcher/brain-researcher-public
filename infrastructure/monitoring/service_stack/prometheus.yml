@@ -18,9 +18,9 @@ scrape_configs:
     scrape_timeout: 10s
 
   # BR-KG Service
-  - job_name: 'brain-researcher-neurokg'
+  - job_name: 'brain-researcher-br-kg'
     static_configs:
-      - targets: ['neurokg:5000']
+      - targets: ['br-kg:5000']
     metrics_path: /metrics
     scrape_interval: 30s
     scrape_timeout: 5s

@@ -1,0 +1,3 @@
+# Current known core -> services imports.
+# This is a ratchet baseline: removals are allowed; additions fail the boundary test.
+# No core -> services imports remain.

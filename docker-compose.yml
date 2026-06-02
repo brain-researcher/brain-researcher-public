@@ -3,9 +3,10 @@ version: '3.8'
 services:
   neo4j:
     image: neo4j:5.20
+    container_name: brain-researcher-neo4j
     ports:
-      - "${BR_NEO4J_BOLT_PORT:-7687}:7687"
-      - "${BR_NEO4J_HTTP_PORT:-7474}:7474"
+      - "7687:7687"
+      - "7474:7474"
     environment:
       - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
       - NEO4J_server_memory_pagecache_size=512M
@@ -23,28 +24,29 @@ services:
       retries: 6
 
   # BR-KG API Service
-  neurokg:
+  br-kg:
     build:
       context: .
-      target: neurokg
+      target: br-kg
+    container_name: brain-researcher-br-kg
     depends_on:
       - neo4j
     ports:
-      - "${BR_NEUROKG_PORT:-5000}:5000"
+      - "5000:5000"
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-      - ./packages/brain-researcher/src:/app/src
+      - ./src:/app/src
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
       - PORT=5000
-      - FLASK_APP=brain_researcher.services.neurokg.api.graph_api:app
+      - FLASK_APP=brain_researcher.services.br_kg.api.graph_api:app
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
       - NEO4J_PRELOAD_CACHE=0
-    command: [ "python", "-m", "brain_researcher.services.neurokg.app" ]
+    command: [ "python", "-m", "brain_researcher.services.br_kg.app" ]
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
@@ -58,20 +60,21 @@ services:
     build:
       context: .
       target: agent
+    container_name: brain-researcher-agent
     depends_on:
-      - neurokg
+      - br-kg
     ports:
       - "${AGENT_PORT:-8000}:8000"
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-      - ./packages/brain-researcher/src:/app/src:ro
+      - ./src:/app/src:ro
       - ./configs:/app/configs:ro
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
-      - NEUROKG_API_URL=http://neurokg:5000
-      - NEUROKG_URL=http://neurokg:5000
+      - BR_KG_API_URL=http://br-kg:5000
+      - BR_KG_URL=http://br-kg:5000
       - BR_ORCHESTRATOR_URL=http://orchestrator:3001
       - THREAD_STORE_REDIS_URL=redis://redis:6379/0
       - REDIS_URL=redis://redis:6379/1
@@ -96,15 +99,16 @@ services:
     build:
       context: .
       dockerfile: infrastructure/docker/Dockerfile.orchestrator
+    container_name: brain-researcher-orchestrator
     profiles: [ "worker" ] # start with `docker compose --profile worker up`
     depends_on:
       - agent
-      - neurokg
+      - br-kg
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
       - AGENT_URL=http://agent:8000
-      - NEUROKG_URL=http://neurokg:5000
+      - BR_KG_URL=http://br-kg:5000
       # Foundation model optional; provide if service is running
       # - NICLIP_URL=http://niclip:8001
       - REDIS_URL=redis://redis:6379
@@ -118,9 +122,10 @@ services:
     build:
       context: .
       dockerfile: apps/web-ui/Dockerfile
+    container_name: brain-researcher-web-ui
     depends_on:
       - agent
-      - neurokg
+      - br-kg
     ports:
       - "${WEB_UI_PORT:-3000}:3000"
     volumes:
@@ -130,9 +135,9 @@ services:
       - BR_AGENT_URL=http://agent:8000
       - BR_ORCHESTRATOR_URL=http://orchestrator:3001
       - NEXT_PUBLIC_AGENT_URL=http://agent:8000
-      - NEXT_PUBLIC_NEUROKG_URL=http://neurokg:5000
-      - NEXT_PUBLIC_NEUROKG_API=http://neurokg:5000 # legacy alias
-      - NEUROKG_URL=http://neurokg:5000
+      - NEXT_PUBLIC_BR_KG_URL=http://br-kg:5000
+      - NEXT_PUBLIC_BR_KG_API=http://br-kg:5000 # legacy alias
+      - BR_KG_URL=http://br-kg:5000
       - NEXT_PUBLIC_API_URL=http://agent:8000 # legacy alias
       - NEXT_PUBLIC_ORCHESTRATOR_URL=http://localhost:3001
       - NEXT_PUBLIC_APP_NAME=Brain Researcher Web
@@ -144,7 +149,7 @@ services:
       - DEV_CREDENTIALS_EMAIL=demo@example.com
       - DEV_CREDENTIALS_PASSWORD=DemoPass123!
       - AGENT_HOST=agent
-      - NEUROKG_HOST=neurokg
+      - BR_KG_HOST=br-kg
       - AGENT_BASE_URL=http://agent:8000
     restart: unless-stopped
     healthcheck:
@@ -156,6 +161,7 @@ services:
   # Redis for Agent State Management (optional)
   redis:
     image: redis:7-alpine
+    container_name: brain-researcher-redis
     volumes:
       - redis_data:/data
     restart: unless-stopped

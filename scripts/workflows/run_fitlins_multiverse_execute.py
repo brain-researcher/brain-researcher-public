@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from brain_researcher.core.provenance import write_provenance
-from brain_researcher.services.neurokg import query_service
+from brain_researcher.services.br_kg import query_service
 from brain_researcher.services.tools.fitlins_tool import (
     FitLinsCreateSeedSpecTool,
     FitLinsGenerateMultiverseSpecsTool,

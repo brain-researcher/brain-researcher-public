@@ -27,31 +27,31 @@ DEFAULT_INPUTS: list[tuple[str, Path]] = [
     (
         "v1",
         Path(
-            "/app/brain_researcher/data/neurokg/raw/gabriel/eval/claim_snapshot_v1/bounded_v1_20260314/claim_clustering_adjudication_pack.jsonl"
+            "/app/brain_researcher/data/br-kg/raw/gabriel/eval/claim_snapshot_v1/bounded_v1_20260314/claim_clustering_adjudication_pack.jsonl"
         ),
     ),
     (
         "v2",
         Path(
-            "/app/brain_researcher/data/neurokg/raw/gabriel/eval/claim_snapshot_v2/off400_seed_reviewed_20260314/claim_snapshot_v2_expansion_review_pack.jsonl"
+            "/app/brain_researcher/data/br-kg/raw/gabriel/eval/claim_snapshot_v2/off400_seed_reviewed_20260314/claim_snapshot_v2_expansion_review_pack.jsonl"
         ),
     ),
     (
         "v3",
         Path(
-            "/app/brain_researcher/data/neurokg/raw/gabriel/eval/claim_snapshot_v3/off400_bridge_reviewed_20260314/claim_snapshot_v3_review_pack.jsonl"
+            "/app/brain_researcher/data/br-kg/raw/gabriel/eval/claim_snapshot_v3/off400_bridge_reviewed_20260314/claim_snapshot_v3_review_pack.jsonl"
         ),
     ),
     (
         "v4",
         Path(
-            "/app/brain_researcher/data/neurokg/raw/gabriel/eval/claim_snapshot_v4/off400_terminal_reviewed_20260314/claim_snapshot_v4_review_pack.jsonl"
+            "/app/brain_researcher/data/br-kg/raw/gabriel/eval/claim_snapshot_v4/off400_terminal_reviewed_20260314/claim_snapshot_v4_review_pack.jsonl"
         ),
     ),
     (
         "v5_conflict",
         Path(
-            "/app/brain_researcher/data/neurokg/raw/gabriel/eval/claim_snapshot_v4_b2_conflict_expansion/off400_live_attention_20260314/claim_snapshot_v4_b2_conflict_expansion_pack.jsonl"
+            "/app/brain_researcher/data/br-kg/raw/gabriel/eval/claim_snapshot_v4_b2_conflict_expansion/off400_live_attention_20260314/claim_snapshot_v4_b2_conflict_expansion_pack.jsonl"
         ),
     ),
 ]

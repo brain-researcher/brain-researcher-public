@@ -31,15 +31,15 @@ class _FakeRegistry:
 
 @pytest.fixture(autouse=True)
 def clear_env(monkeypatch):
-    monkeypatch.delenv("NEUROKG_TOOL_DISCOVERY", raising=False)
+    monkeypatch.delenv("BR_KG_TOOL_DISCOVERY", raising=False)
 
 
 @pytest.mark.asyncio
 async def test_tool_catalog_connector_kg_enabled_uses_kg(monkeypatch):
     # Arrange KG responses
-    monkeypatch.setenv("NEUROKG_TOOL_DISCOVERY", "1")
+    monkeypatch.setenv("BR_KG_TOOL_DISCOVERY", "1")
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.search_tools_structured",
+        "brain_researcher.services.br_kg.query_service.search_tools_structured",
         lambda **_: {
             "candidates": [
                 {
@@ -53,7 +53,7 @@ async def test_tool_catalog_connector_kg_enabled_uses_kg(monkeypatch):
         },
     )
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.resolve_tool_structured",
+        "brain_researcher.services.br_kg.query_service.resolve_tool_structured",
         lambda **_: {
             "recommendation": {
                 "tool_id": "kg_tool_v1.run",
@@ -77,14 +77,14 @@ async def test_tool_catalog_connector_kg_enabled_uses_kg(monkeypatch):
     assert item.source_type == EvidenceSourceType.TOOL_CATALOG
     assert item.source_id == "kg_tool_v1.run"
     assert item.metadata.get("available") is False
-    assert item.metadata.get("source") == "neurokg"
+    assert item.metadata.get("source") == "br_kg"
     assert "resolved_to=kg_tool_v1.run" in item.metadata.get("reason", "")
 
 
 @pytest.mark.asyncio
 async def test_tool_catalog_connector_registry_fallback(monkeypatch):
     # Disable KG path
-    monkeypatch.delenv("NEUROKG_TOOL_DISCOVERY", raising=False)
+    monkeypatch.delenv("BR_KG_TOOL_DISCOVERY", raising=False)
     tool = _FakeTool("local_tool", "does glm")
     registry = _FakeRegistry(tools=[tool])
     connector = ToolCatalogConnector(registry=registry)

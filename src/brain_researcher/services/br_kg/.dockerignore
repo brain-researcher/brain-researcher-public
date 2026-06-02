@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+br_kg_env/
+*.egg-info/
+.pytest_cache/
+
+# Data files (use volumes instead)
+data/br-kg/db/*.db
+data/br-kg/cache/
+data/br-kg/raw/
+logs/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/
+*.md
+
+# Tests
+tests/
+test_*.py
+
+# Build artifacts
+build/
+dist/

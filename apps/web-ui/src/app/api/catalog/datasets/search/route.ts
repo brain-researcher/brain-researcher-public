@@ -80,7 +80,7 @@ function canonicalizeDatasetId(props: Record<string, unknown>, item: any): strin
   return candidates[0] ?? null
 }
 
-async function searchNeurokg(query: string | null, limit: number, offset: number) {
+async function searchBRKg(query: string | null, limit: number, offset: number) {
   if (!query) return null
   try {
     const effectiveLimit = clamp(limit + offset + 1, 1, 200)
@@ -247,11 +247,11 @@ export async function GET(request: NextRequest) {
   try {
     const result = searchCatalog(params)
     const hasNumericFilters = Object.values(numericFilters).some((value) => value != null)
-    const shouldFallbackToNeurokg = !hasNumericFilters && (result.total ?? 0) === 0
-    if (shouldFallbackToNeurokg) {
-      const neurokgResult = await searchNeurokg(query, limit, offset)
-      if (neurokgResult && neurokgResult.total > 0) {
-        return NextResponse.json(neurokgResult)
+    const shouldFallbackToBRKg = !hasNumericFilters && (result.total ?? 0) === 0
+    if (shouldFallbackToBRKg) {
+      const brKgResult = await searchBRKg(query, limit, offset)
+      if (brKgResult && brKgResult.total > 0) {
+        return NextResponse.json(brKgResult)
       }
     }
 

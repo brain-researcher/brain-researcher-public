@@ -10,18 +10,19 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
+
 import pytest
 
 import brain_researcher.services.agent.logging.run_recorder as run_recorder_module
 from brain_researcher.config.run_artifacts import get_metadata_root
 from brain_researcher.services.agent.logging.run_recorder import (
     RunRecorder,
-    get_recorder,
-    file_fingerprint,
-    redacted_path,
     compute_tool_spec_digest,
-    get_package_version,
+    file_fingerprint,
     get_git_sha,
+    get_package_version,
+    get_recorder,
+    redacted_path,
 )
 from brain_researcher.services.tools.args_resolver import ArgsResolver
 
@@ -343,7 +344,7 @@ class TestToolSelection:
             tool_candidates=candidates,
             selected_tool="connectivity_matrix",
             candidate_count=3,
-            candidate_source_counts={"catalog": 2, "neurokg": 1},
+            candidate_source_counts={"catalog": 2, "br_kg": 1},
             selected_tool_rank=1,
             selected_tool_in_top_k={"top_5": True, "top_10": True},
             family_selected=False,
@@ -355,7 +356,7 @@ class TestToolSelection:
         assert log["request"]["tool_candidates"] == candidates
         assert log["request"]["selected_tool"] == "connectivity_matrix"
         assert log["request"]["candidate_count"] == 3
-        assert log["request"]["candidate_source_counts"] == {"catalog": 2, "neurokg": 1}
+        assert log["request"]["candidate_source_counts"] == {"catalog": 2, "br_kg": 1}
         assert log["request"]["selected_tool_rank"] == 1
         assert log["request"]["selected_tool_in_top_k"] == {
             "top_5": True,

@@ -1,18 +1,17 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, HelpCircle, Book, Video, Search, Lightbulb, ChevronRight, Clock, CheckCircle } from 'lucide-react'
+import Link from 'next/link'
+import { HelpCircle, Book, Search, Lightbulb, ChevronRight, Clock, CheckCircle, ExternalLink, BookOpen } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { Badge } from '../ui/badge'
-import { Input } from '../ui/input'
 import { ScrollArea } from '../ui/scroll-area'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { useHelp } from '../../hooks/use-help'
 import { InteractiveTour } from './InteractiveTour'
 import { ContextualHelp } from './ContextualHelp'
-import { VideoGuide } from './VideoGuide'
 import { OnboardingFlow } from './OnboardingFlow'
 import { HelpSearch } from './HelpSearch'
 
@@ -31,6 +30,8 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
     onboardingProgress,
     showTooltips,
     toggleTooltips,
+    faqs,
+    guides,
   } = useHelp()
 
   const [activeTab, setActiveTab] = useState('overview')
@@ -43,15 +44,15 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
   }
 
   const handleReportBug = () => {
-    window.open('https://github.com/zjc062/brain-researcher/issues/new?template=bug_report.md', '_blank')
+    window.open('https://github.com/zjc062/brain_researcher/issues/new?template=bug_report.md', '_blank')
   }
 
   const handleRequestFeature = () => {
-    window.open('https://github.com/zjc062/brain-researcher/issues/new?template=feature_request.md', '_blank')
+    window.open('https://github.com/zjc062/brain_researcher/issues/new?template=feature_request.md', '_blank')
   }
 
   const handleContactSupport = () => {
-    window.location.href = 'mailto:support@brain-researcher.com'
+    window.location.href = 'mailto:support@brain-researcher.ai'
   }
 
   const getToursByCategory = () => {
@@ -85,7 +86,7 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
         >
           <HelpCircle className="h-4 w-4" />
           {!onboardingProgress.isCompleted && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-900 dark:bg-gray-100 rounded-full animate-pulse" />
           )}
         </Button>
       )}
@@ -95,7 +96,7 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-blue-500" />
+              <HelpCircle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
               Help & Support
             </DialogTitle>
             <DialogDescription>
@@ -114,8 +115,8 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
                 <span className="hidden sm:inline">Tours</span>
               </TabsTrigger>
               <TabsTrigger value="videos" className="flex items-center gap-1">
-                <Video className="h-4 w-4" />
-                <span className="hidden sm:inline">Videos</span>
+                <Book className="h-4 w-4" />
+                <span className="hidden sm:inline">Guides</span>
               </TabsTrigger>
               <TabsTrigger value="search" className="flex items-center gap-1">
                 <Search className="h-4 w-4" />
@@ -130,6 +131,41 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
             <TabsContent value="overview" className="flex-1 mt-4">
               <ScrollArea className="h-[500px]">
                 <div className="space-y-6">
+                  {/* Quick answers */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Quick answers</CardTitle>
+                      <CardDescription>
+                        Common questions about Studio, MCP, runs, and grounding.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {faqs.slice(0, 6).map((faq) => (
+                        <details
+                          key={faq.id}
+                          className="group rounded-lg border px-3 py-2"
+                        >
+                          <summary className="cursor-pointer list-none text-sm font-medium marker:hidden [&::-webkit-details-marker]:hidden flex items-center justify-between gap-2">
+                            <span>{faq.question}</span>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+                          </summary>
+                          <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
+                        </details>
+                      ))}
+                      <div className="pt-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => setActiveTab('search')}
+                        >
+                          <Search className="mr-2 h-4 w-4" />
+                          Search all answers
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Quick Start */}
                   <Card>
                     <CardHeader>
@@ -149,7 +185,7 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
                           </div>
                           <div className="w-full bg-muted rounded-full h-2">
                             <div
-                              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                              className="bg-gray-900 dark:bg-gray-100 h-2 rounded-full transition-all duration-300"
                               style={{ width: `${(onboardingProgress.currentStep / 5) * 100}%` }}
                             />
                           </div>
@@ -274,9 +310,38 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
               </ScrollArea>
             </TabsContent>
 
-            {/* Videos Tab */}
+            {/* Guides Tab */}
             <TabsContent value="videos" className="flex-1 mt-4">
-              <VideoGuide />
+              <ScrollArea className="h-[500px]">
+                <div className="space-y-3">
+                  {guides.map((guide) => {
+                    const isInternal = guide.href.startsWith('/')
+                    return (
+                      <Card key={guide.href}>
+                        <CardContent className="flex items-start justify-between gap-4 p-4">
+                          <div className="flex-1 space-y-1">
+                            <div className="font-medium">{guide.title}</div>
+                            <p className="text-sm text-muted-foreground">{guide.description}</p>
+                          </div>
+                          <Button asChild size="sm" variant="outline" className="shrink-0">
+                            {isInternal ? (
+                              <Link href={guide.href} onClick={toggleHelp}>
+                                <BookOpen className="mr-2 h-3.5 w-3.5" />
+                                Open
+                              </Link>
+                            ) : (
+                              <a href={guide.href} target="_blank" rel="noreferrer">
+                                <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                                Open
+                              </a>
+                            )}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              </ScrollArea>
             </TabsContent>
 
             {/* Search Tab */}

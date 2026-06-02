@@ -66,8 +66,8 @@ const ORCHESTRATOR_HOST = process.env.ORCHESTRATOR_HOST || 'localhost'
 const ORCHESTRATOR_PORT = process.env.ORCHESTRATOR_PORT || process.env.AGENT_PORT || '3001'
 const AGENT_HOST = process.env.AGENT_HOST || 'localhost'
 const AGENT_PORT = process.env.AGENT_PORT || '8000'
-const NEUROKG_HOST = process.env.NEUROKG_HOST || 'localhost'
-const NEUROKG_PORT = process.env.NEUROKG_PORT || '5000'
+const BR_KG_HOST = process.env.BR_KG_HOST || 'localhost'
+const BR_KG_PORT = process.env.BR_KG_PORT || '5000'
 const ORCHESTRATOR_BASE_URL = resolveServerBaseUrl(
   [
     process.env.BR_ORCHESTRATOR_URL,
@@ -88,15 +88,15 @@ const AGENT_BASE_URL = resolveServerBaseUrl(
   AGENT_HOST,
   AGENT_PORT
 )
-const NEUROKG_BASE_URL = resolveServerBaseUrl(
+const BR_KG_BASE_URL = resolveServerBaseUrl(
   [
-    process.env.BR_NEUROKG_URL,
-    process.env.NEUROKG_BASE_URL,
-    process.env.NEUROKG_URL,
-    process.env.NEUROKG_API,
+    process.env.BR_KG_URL,
+    process.env.BR_KG_BASE_URL,
+    process.env.BR_KG_API_URL,
+    process.env.BR_KG_API,
   ],
-  NEUROKG_HOST,
-  NEUROKG_PORT
+  BR_KG_HOST,
+  BR_KG_PORT
 )
 
 /** @type {import('next').NextConfig} */
@@ -120,20 +120,20 @@ const nextConfig = {
   async rewrites() {
     const orchestratorUrl = ORCHESTRATOR_BASE_URL
     const agentUrl = AGENT_BASE_URL
-    const kgUrl = NEUROKG_BASE_URL
+    const kgUrl = BR_KG_BASE_URL
 
     return {
       fallback: [
         // Health endpoints - must come before generic /api/* rule
         { source: '/api/agent/health', destination: `${agentUrl}/health` },
         { source: '/api/kg/health', destination: `${kgUrl}/health` },
-        { source: '/api/neurokg/health', destination: `${kgUrl}/health` },
+        { source: '/api/br-kg/health', destination: `${kgUrl}/health` },
         // Dashboard API - route to Orchestrator (must come before generic /api/* rule)
         // UI widgets expect Orchestrator's aggregated contract (queue + storage + activity),
         // not BR-KG's placeholder metrics.
         { source: '/api/dashboard/:path*', destination: `${orchestratorUrl}/dashboard/:path*` },
         // BR-KG API - preserve /api/* prefixes
-        { source: '/api/neurokg/:path*', destination: `${kgUrl}/api/:path*` },
+        { source: '/api/br-kg/:path*', destination: `${kgUrl}/api/:path*` },
         { source: '/api/kg/:path*', destination: `${kgUrl}/api/kg/:path*` },
         // Agent API
         { source: '/internal/agent/:path*', destination: `${agentUrl}/:path*` },

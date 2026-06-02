@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from brain_researcher.services.neurokg.etl import gabriel_generator as gg
-from brain_researcher.services.neurokg.etl.loaders.scholarly_metadata_loader import (
+from brain_researcher.services.br_kg.etl import gabriel_generator as gg
+from brain_researcher.services.br_kg.etl.loaders.scholarly_metadata_loader import (
     ScholarlyMetadataLoader,
 )
 from scripts.tools.etl import run_balanced_title_only_regeneration as module
@@ -71,45 +71,105 @@ def test_run_regeneration_partitions_outcomes(monkeypatch, tmp_path: Path) -> No
             return (
                 [
                     {
-                        "target": {"type": "Task", "id": "task:trust_game", "label": "Trust Game"},
+                        "target": {
+                            "type": "Task",
+                            "id": "task:trust_game",
+                            "label": "Trust Game",
+                        },
                         "mapping": {"mapping_confidence": 0.9},
-                        "claim": {"text": "Trust Game engages control", "polarity": "supports", "claim_strength": 0.8},
-                        "evidence": {"quote": "Participants performed a trust game during scanning.", "section": "abstract", "locatable": True, "direct_quote": True, "has_statistical_detail": False},
-                        "signals": {"semantic_similarity": 0.9, "context_overlap": 0.8, "statistical_density": 0.2, "assertive_verb_ratio": 0.7, "modal_density": 0.1},
+                        "claim": {
+                            "text": "Trust Game engages control",
+                            "polarity": "supports",
+                            "claim_strength": 0.8,
+                        },
+                        "evidence": {
+                            "quote": "Participants performed a trust game during scanning.",
+                            "section": "abstract",
+                            "locatable": True,
+                            "direct_quote": True,
+                            "has_statistical_detail": False,
+                        },
+                        "signals": {
+                            "semantic_similarity": 0.9,
+                            "context_overlap": 0.8,
+                            "statistical_density": 0.2,
+                            "assertive_verb_ratio": 0.7,
+                            "modal_density": 0.1,
+                        },
                         "method": {},
                     }
                 ],
-                "{\"records\": [1]}",
+                '{"records": [1]}',
                 {"model": "gemini-2.5-flash", "prompt_hash": "phash"},
             )
         if paper_id == "paper:titleonly":
             return (
                 [
                     {
-                        "target": {"type": "Task", "id": "task:response_inhibition", "label": "Response Inhibition"},
+                        "target": {
+                            "type": "Task",
+                            "id": "task:response_inhibition",
+                            "label": "Response Inhibition",
+                        },
                         "mapping": {"mapping_confidence": 0.9},
-                        "claim": {"text": "Response inhibition improved", "polarity": "supports", "claim_strength": 0.8},
-                        "evidence": {"quote": "Title-only title", "section": "title", "locatable": True, "direct_quote": True, "has_statistical_detail": False},
-                        "signals": {"semantic_similarity": 0.9, "context_overlap": 0.8, "statistical_density": 0.2, "assertive_verb_ratio": 0.7, "modal_density": 0.1},
+                        "claim": {
+                            "text": "Response inhibition improved",
+                            "polarity": "supports",
+                            "claim_strength": 0.8,
+                        },
+                        "evidence": {
+                            "quote": "Title-only title",
+                            "section": "title",
+                            "locatable": True,
+                            "direct_quote": True,
+                            "has_statistical_detail": False,
+                        },
+                        "signals": {
+                            "semantic_similarity": 0.9,
+                            "context_overlap": 0.8,
+                            "statistical_density": 0.2,
+                            "assertive_verb_ratio": 0.7,
+                            "modal_density": 0.1,
+                        },
                         "method": {},
                     }
                 ],
-                "{\"records\": [1]}",
+                '{"records": [1]}',
                 {"model": "gemini-2.5-flash", "prompt_hash": "phash"},
             )
         if paper_id == "paper:mismatch":
             return (
                 [
                     {
-                        "target": {"type": "Region", "id": "region:amygdala", "label": "Amygdala"},
+                        "target": {
+                            "type": "Region",
+                            "id": "region:amygdala",
+                            "label": "Amygdala",
+                        },
                         "mapping": {"mapping_confidence": 0.9},
-                        "claim": {"text": "Mismatch", "polarity": "supports", "claim_strength": 0.8},
-                        "evidence": {"quote": "Amygdala responded", "section": "abstract", "locatable": True, "direct_quote": True, "has_statistical_detail": False},
-                        "signals": {"semantic_similarity": 0.9, "context_overlap": 0.8, "statistical_density": 0.2, "assertive_verb_ratio": 0.7, "modal_density": 0.1},
+                        "claim": {
+                            "text": "Mismatch",
+                            "polarity": "supports",
+                            "claim_strength": 0.8,
+                        },
+                        "evidence": {
+                            "quote": "Amygdala responded",
+                            "section": "abstract",
+                            "locatable": True,
+                            "direct_quote": True,
+                            "has_statistical_detail": False,
+                        },
+                        "signals": {
+                            "semantic_similarity": 0.9,
+                            "context_overlap": 0.8,
+                            "statistical_density": 0.2,
+                            "assertive_verb_ratio": 0.7,
+                            "modal_density": 0.1,
+                        },
                         "method": {},
                     }
                 ],
-                "{\"records\": [1]}",
+                '{"records": [1]}',
                 {"model": "gemini-2.5-flash", "prompt_hash": "phash"},
             )
         raise AssertionError(f"Unexpected paper id {paper_id}")
@@ -136,14 +196,17 @@ def test_run_regeneration_partitions_outcomes(monkeypatch, tmp_path: Path) -> No
     assert summary["counts"]["unresolved_publications"] == 1
     accepted_rows = [
         json.loads(line)
-        for line in (tmp_path / "out" / "accepted_records.jsonl").read_text(
-            encoding="utf-8"
-        ).splitlines()
+        for line in (tmp_path / "out" / "accepted_records.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
         if line.strip()
     ]
     assert accepted_rows[0]["target"]["id"] == "task:trust_game"
     assert accepted_rows[0]["evidence"]["section"] == "abstract"
-    assert accepted_rows[0]["regeneration_source"]["source_review_bucket"] == "salvage_task_or_region"
+    assert (
+        accepted_rows[0]["regeneration_source"]["source_review_bucket"]
+        == "salvage_task_or_region"
+    )
 
 
 def test_concept_target_requires_exact_id_match() -> None:
@@ -153,7 +216,13 @@ def test_concept_target_requires_exact_id_match() -> None:
         "target_label": "Working Memory",
     }
     assert module._target_matches_requested(
-        {"target": {"type": "Concept", "id": "concept:working_memory", "label": "Working Memory"}},
+        {
+            "target": {
+                "type": "Concept",
+                "id": "concept:working_memory",
+                "label": "Working Memory",
+            }
+        },
         row,
     )
     assert not module._target_matches_requested(
@@ -175,7 +244,9 @@ def test_merge_requested_target_defaults_exact_mapping_confidence() -> None:
     assert merged["mapping"]["mapping_confidence"] == 1.0
 
 
-def test_run_regeneration_propagates_regeneration_bucket(monkeypatch, tmp_path: Path) -> None:
+def test_run_regeneration_propagates_regeneration_bucket(
+    monkeypatch, tmp_path: Path
+) -> None:
     row = {
         "paper_id": "paper:concept",
         "paper_title": "Concept title",
@@ -239,7 +310,7 @@ def test_run_regeneration_propagates_regeneration_bucket(monkeypatch, tmp_path: 
                     "method": {},
                 }
             ],
-            "{\"records\": [1]}",
+            '{"records": [1]}',
             {"model": "gemini-2.5-flash", "prompt_hash": "phash"},
         ),
     )
@@ -251,9 +322,18 @@ def test_run_regeneration_propagates_regeneration_bucket(monkeypatch, tmp_path: 
         model_hint="gemini-2.5-flash",
     )
     accepted = outcome.accepted_records[0]
-    assert accepted["regeneration_source"]["source_review_bucket"] == "specific_concept_regeneration"
-    assert accepted["regeneration_source"]["source_bucket_reason"] == "specific_cognitive_or_behavioral_concept"
-    assert accepted["regeneration_source"]["source_proposed_action"] == "regenerate_non_title_concept"
+    assert (
+        accepted["regeneration_source"]["source_review_bucket"]
+        == "specific_concept_regeneration"
+    )
+    assert (
+        accepted["regeneration_source"]["source_bucket_reason"]
+        == "specific_cognitive_or_behavioral_concept"
+    )
+    assert (
+        accepted["regeneration_source"]["source_proposed_action"]
+        == "regenerate_non_title_concept"
+    )
 
 
 def test_targeted_prompt_adds_title_overlap_guard() -> None:
@@ -295,7 +375,9 @@ def test_targeted_publication_query_casts_doi_to_string(monkeypatch) -> None:
         def close(self) -> None:
             captured["closed"] = True
 
-    monkeypatch.setattr(module, "require_neo4j_db", lambda preload_cache=False: FakeDB())
+    monkeypatch.setattr(
+        module, "require_neo4j_db", lambda preload_cache=False: FakeDB()
+    )
 
     rows = module._targeted_publication_query(
         paper_ids=["paper:10_1000_test"],
@@ -343,7 +425,9 @@ def test_resolve_publication_seeds_drops_nan_doi_from_targeted_query(
     )
 
     def _fail(*args, **kwargs):
-        raise AssertionError("Fallback path should not run when targeted query resolves the row")
+        raise AssertionError(
+            "Fallback path should not run when targeted query resolves the row"
+        )
 
     monkeypatch.setattr(ScholarlyMetadataLoader, "load_records", _fail)
     monkeypatch.setattr(module, "_fetch_pubmed_abstract", _fail)
@@ -383,7 +467,9 @@ def test_route_generation_retries_parse_errors(monkeypatch, tmp_path: Path) -> N
             self.calls += 1
             if self.calls == 1:
                 return FakeResult("{bad json")
-            return FakeResult('{"records":[{"target":{"type":"Region","id":"region:amygdala","label":"Amygdala"}}]}')
+            return FakeResult(
+                '{"records":[{"target":{"type":"Region","id":"region:amygdala","label":"Amygdala"}}]}'
+            )
 
     class FakeGenerator:
         def __init__(self) -> None:
@@ -405,7 +491,9 @@ def test_route_generation_retries_parse_errors(monkeypatch, tmp_path: Path) -> N
         def _is_retryable_failure(self, failure_reason: str | None) -> bool:
             return failure_reason == "parse_error"
 
-        def _build_retry_prompt(self, *, prompt: str, attempt: int, failure_reason: str) -> str:
+        def _build_retry_prompt(
+            self, *, prompt: str, attempt: int, failure_reason: str
+        ) -> str:
             return prompt + f"\nRETRY {attempt} {failure_reason}"
 
     publication = gg.PublicationSeed(
@@ -419,7 +507,9 @@ def test_route_generation_retries_parse_errors(monkeypatch, tmp_path: Path) -> N
         "target_id": "region:amygdala",
         "target_label": "Amygdala",
     }
-    records, _text, meta = module._route_generation(FakeGenerator(), publication=publication, row=row)
+    records, _text, meta = module._route_generation(
+        FakeGenerator(), publication=publication, row=row
+    )
     assert len(records) == 1
     assert meta["retry_attempt"] == 2
 
@@ -459,13 +549,29 @@ def test_run_regeneration_retries_title_overlap(monkeypatch, tmp_path: Path) -> 
                             "label": "Response Inhibition",
                         },
                         "mapping": {"mapping_confidence": 0.9},
-                        "claim": {"text": "Response inhibition improved", "polarity": "supports", "claim_strength": 0.8},
-                        "evidence": {"quote": "Title-only title", "section": "title", "locatable": True, "direct_quote": True, "has_statistical_detail": False},
-                        "signals": {"semantic_similarity": 0.9, "context_overlap": 0.8, "statistical_density": 0.2, "assertive_verb_ratio": 0.7, "modal_density": 0.1},
+                        "claim": {
+                            "text": "Response inhibition improved",
+                            "polarity": "supports",
+                            "claim_strength": 0.8,
+                        },
+                        "evidence": {
+                            "quote": "Title-only title",
+                            "section": "title",
+                            "locatable": True,
+                            "direct_quote": True,
+                            "has_statistical_detail": False,
+                        },
+                        "signals": {
+                            "semantic_similarity": 0.9,
+                            "context_overlap": 0.8,
+                            "statistical_density": 0.2,
+                            "assertive_verb_ratio": 0.7,
+                            "modal_density": 0.1,
+                        },
                         "method": {},
                     }
                 ],
-                "{\"records\": [1]}",
+                '{"records": [1]}',
                 {"model": "gemini-2.5-flash", "prompt_hash": "phash1"},
             )
         return (
@@ -477,13 +583,29 @@ def test_run_regeneration_retries_title_overlap(monkeypatch, tmp_path: Path) -> 
                         "label": "Response Inhibition",
                     },
                     "mapping": {"mapping_confidence": 0.9},
-                    "claim": {"text": "Response inhibition improved", "polarity": "supports", "claim_strength": 0.8},
-                    "evidence": {"quote": "Participants completed a response inhibition task during scanning.", "section": "abstract", "locatable": True, "direct_quote": True, "has_statistical_detail": False},
-                    "signals": {"semantic_similarity": 0.9, "context_overlap": 0.8, "statistical_density": 0.2, "assertive_verb_ratio": 0.7, "modal_density": 0.1},
+                    "claim": {
+                        "text": "Response inhibition improved",
+                        "polarity": "supports",
+                        "claim_strength": 0.8,
+                    },
+                    "evidence": {
+                        "quote": "Participants completed a response inhibition task during scanning.",
+                        "section": "abstract",
+                        "locatable": True,
+                        "direct_quote": True,
+                        "has_statistical_detail": False,
+                    },
+                    "signals": {
+                        "semantic_similarity": 0.9,
+                        "context_overlap": 0.8,
+                        "statistical_density": 0.2,
+                        "assertive_verb_ratio": 0.7,
+                        "modal_density": 0.1,
+                    },
                     "method": {},
                 }
             ],
-            "{\"records\": [1]}",
+            '{"records": [1]}',
             {"model": "gemini-2.5-flash", "prompt_hash": "phash2"},
         )
 

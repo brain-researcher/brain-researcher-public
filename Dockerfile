@@ -8,7 +8,7 @@ RUN npm install
 COPY apps/web-ui ./
 # Build Next.js app (requires some fake env vars to pass validation during build)
 ENV NEXT_PUBLIC_AGENT_URL=http://localhost:8000
-ENV NEXT_PUBLIC_NEUROKG_URL=http://localhost:5000
+ENV NEXT_PUBLIC_BR_KG_URL=http://localhost:5000
 RUN npm run build -- --no-lint
 
 # ==========================================
@@ -40,16 +40,15 @@ ENV MPLBACKEND=Agg
 
 # Copy project files
 COPY pyproject.toml README.md ./
-COPY packages/brain-researcher/src ./src
+COPY src ./src
 COPY configs ./configs
 COPY scripts ./scripts
-COPY contracts ./contracts
 
 # Install base dependencies including CLI
 RUN pip install --no-cache-dir -e .
 
 # Create necessary directories
-RUN mkdir -p data/neurokg/db data/neurokg/logs
+RUN mkdir -p data/br-kg/db data/br-kg/logs
 
 # Create non-root user
 RUN addgroup --gid 1000 appgroup && \
@@ -59,10 +58,10 @@ RUN addgroup --gid 1000 appgroup && \
 # ==========================================
 # Stage 3: BR-KG Service
 # ==========================================
-FROM base AS neurokg
+FROM base AS br-kg
 
 # Install BR-KG specific dependencies
-RUN pip install --no-cache-dir -e ".[neurokg]"
+RUN pip install --no-cache-dir -e ".[br-kg]"
 
 # Bake the default English model into the image so Finder avoids runtime fallback.
 RUN python -m spacy download en_core_web_sm

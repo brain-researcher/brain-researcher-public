@@ -27,7 +27,7 @@ REQUIRED_SUBSTRINGS = {
         "curl http://localhost:3001/api/jobs/{job_id}",
         "curl -X POST http://localhost:8000/act",
     ),
-    "src/brain_researcher/services/neurokg/RUN_INSTRUCTIONS.md": (
+    "src/brain_researcher/services/br_kg/RUN_INSTRUCTIONS.md": (
         "apps/web-ui",
         "br serve kg --port 5000",
         "br serve web",
@@ -42,10 +42,10 @@ REQUIRED_SUBSTRINGS = {
         "br serve web",
         "NEXT_PUBLIC_USE_API_PROXY=true",
         "BR_ORCHESTRATOR_URL=http://127.0.0.1:3001",
-        "BR_NEUROKG_URL=http://127.0.0.1:5000",
+        "BR_KG_URL=http://127.0.0.1:5000",
     ),
-    "src/brain_researcher/services/neurokg/README.md": (
-        "PORT=5000 python -m brain_researcher.services.neurokg.app",
+    "src/brain_researcher/services/br_kg/README.md": (
+        "PORT=5000 python -m brain_researcher.services.br_kg.app",
         "# - GraphQL: http://localhost:5000/graphql",
         "# - REST API: http://localhost:5000/api/",
         "# - Health: http://localhost:5000/health",
@@ -67,10 +67,10 @@ FORBIDDEN_SUBSTRINGS = {
         "`BR_DEV_ORCH_COMPAT=1` is only needed",
     ),
     "docs/testing/TESTING_GUIDE.md": ("# BR_DEV_ORCH_COMPAT=1 br serve agent --debug",),
-    "src/brain_researcher/services/neurokg/RUN_INSTRUCTIONS.md": (
+    "src/brain_researcher/services/br_kg/RUN_INSTRUCTIONS.md": (
         "brain_researcher/services/web_ui",
         "br serve ui",
-        "python -m brain_researcher.services.neurokg.app",
+        "python -m brain_researcher.services.br_kg.app",
         "API on a specific port (e.g., 8000)",
     ),
     "docs/OPERATIONS.md": (
@@ -80,8 +80,8 @@ FORBIDDEN_SUBSTRINGS = {
         "Expose a single public port via the canonical ASGI `gateway` service",
         "br serve gateway",
     ),
-    "src/brain_researcher/services/neurokg/README.md": (
-        "PORT=5001 python -m brain_researcher.services.neurokg.app",
+    "src/brain_researcher/services/br_kg/README.md": (
+        "PORT=5001 python -m brain_researcher.services.br_kg.app",
         "http://localhost:5001/graphql",
         "http://localhost:5001/api/",
         "http://localhost:5001/health",

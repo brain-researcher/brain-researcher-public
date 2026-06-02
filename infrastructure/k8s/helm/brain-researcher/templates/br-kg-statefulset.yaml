@@ -1,0 +1,155 @@
+{{- $brKg := index .Values "br-kg" }}
+{{- $brKgHasRedisURL := false }}
+{{- range $env := ($brKg.extraEnv | default list) }}
+{{- if eq $env.name "REDIS_URL" }}
+{{- $brKgHasRedisURL = true }}
+{{- end }}
+{{- end }}
+{{- if $brKg.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "brain-researcher.fullname" . }}-br-kg
+  namespace: {{ .Values.namespaces.core }}
+  labels:
+    {{- include "brain-researcher.labels" . | nindent 4 }}
+    app.kubernetes.io/component: br-kg
+spec:
+  serviceName: {{ include "brain-researcher.fullname" . }}-br-kg-headless
+  replicas: {{ $brKg.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "brain-researcher.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: br-kg
+  template:
+    metadata:
+      labels:
+        {{- include "brain-researcher.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: br-kg
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
+        {{- with $brKg.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "brain-researcher.serviceAccountName" . }}
+      {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: br-kg
+          image: "{{ .Values.global.imageRegistry }}/br-kg:{{ $brKg.imageTag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          env:
+            - name: PYTHONPATH
+              value: "/app"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: FLASK_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "INFO"
+            # Default to the in-cluster Neo4j instance. These can be overridden via
+            # `br-kg.extraEnv` / `br-kg.extraEnvFrom` if needed.
+            - name: NEO4J_URI
+              value: {{ printf "bolt://%s-neo4j:7687" (include "brain-researcher.fullname" .) | quote }}
+            - name: NEO4J_USER
+              value: {{ .Values.neo4j.auth.user | default "neo4j" | quote }}
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.neo4j.auth.existingSecret | default "br-neo4j-password-k8s" | quote }}
+                  key: {{ .Values.neo4j.auth.passwordKey | default "password" | quote }}
+            {{- if not $brKgHasRedisURL }}
+            - name: REDIS_URL
+              value: 'redis://{{ include "brain-researcher.fullname" . }}-redis.{{ .Values.namespaces.data }}:6379/3'
+            {{- end }}
+            - name: PORT
+              value: "5000"
+            {{- if hasKey $brKg "urlPrefix" }}
+            - name: BR_KG_URL_PREFIX
+              value: {{ $brKg.urlPrefix | quote }}
+            {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- if $brKg.extraEnv }}
+            {{- tpl (toYaml $brKg.extraEnv) $ | nindent 12 }}
+            {{- end }}
+          {{- if $brKg.extraEnvFrom }}
+          envFrom:
+            {{- tpl (toYaml $brKg.extraEnvFrom) $ | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            # db-storage moved to Neo4j pod
+            - name: vector-cache
+              mountPath: /app/data/br-kg/vector_cache
+            - name: logs
+              mountPath: /app/logs
+            - name: shared-data
+              mountPath: /app/data/shared
+              readOnly: true
+            {{- if $brKg.extraVolumeMounts }}
+            {{- toYaml $brKg.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml $brKg.resources | nindent 12 }}
+          {{- if $brKg.probes.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ $brKg.probes.startup.path | default "/health" | quote }}
+              port: http
+            periodSeconds: {{ $brKg.probes.startup.periodSeconds | default 5 }}
+            failureThreshold: {{ $brKg.probes.startup.failureThreshold | default 60 }}
+            timeoutSeconds: {{ $brKg.probes.startup.timeoutSeconds | default 1 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: {{ $brKg.probes.liveness.path | default "/health" | quote }}
+              port: http
+            initialDelaySeconds: {{ $brKg.probes.liveness.initialDelaySeconds | default 60 }}
+            periodSeconds: {{ $brKg.probes.liveness.periodSeconds | default 30 }}
+            timeoutSeconds: {{ $brKg.probes.liveness.timeoutSeconds | default 1 }}
+            failureThreshold: {{ $brKg.probes.liveness.failureThreshold | default 3 }}
+          readinessProbe:
+            httpGet:
+              path: {{ $brKg.probes.readiness.path | default "/ready" | quote }}
+              port: http
+            initialDelaySeconds: {{ $brKg.probes.readiness.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ $brKg.probes.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ $brKg.probes.readiness.timeoutSeconds | default 1 }}
+            failureThreshold: {{ $brKg.probes.readiness.failureThreshold | default 3 }}
+      volumes:
+        - name: logs
+          emptyDir: {}
+        - name: shared-data
+          {{- if .Values.storage.sharedData.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "brain-researcher.fullname" . }}-shared-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if $brKg.extraVolumes }}
+        {{- toYaml $brKg.extraVolumes | nindent 8 }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: vector-cache
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ $brKg.persistence.vectorCache.storageClass | default .Values.global.storageClass }}
+        resources:
+          requests:
+            storage: {{ $brKg.persistence.vectorCache.size }}
+{{- end }}

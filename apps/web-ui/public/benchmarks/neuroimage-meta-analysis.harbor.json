@@ -834,12 +834,12 @@
       "core_fixed_corpus": {
         "corpus_provider": "pubget",
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
-        "metadata_csv": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "text_csv": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "coordinates_csv": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "tables_csv": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "merge_info_json": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
+        "metadata_csv": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "text_csv": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "coordinates_csv": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "tables_csv": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "merge_info_json": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_field": "pmcid"
       },
       "live_retrieval": {
@@ -888,14 +888,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -1036,14 +1036,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -1184,14 +1184,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -1324,14 +1324,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -1473,14 +1473,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -1679,14 +1679,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -1828,14 +1828,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -1989,14 +1989,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -2150,14 +2150,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -2311,14 +2311,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -2460,14 +2460,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -2609,14 +2609,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -2758,14 +2758,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -2906,14 +2906,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -3054,14 +3054,14 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "corpus_level",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json"
       },
       "expected_outputs": [
         {
@@ -3202,16 +3202,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10620621",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -3406,16 +3406,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10920938",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -3612,16 +3612,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11962080",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -3741,16 +3741,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12080668",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -3942,16 +3942,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10620621",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -4153,16 +4153,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12411125",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -4362,16 +4362,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10434379",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -4571,16 +4571,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC4116759",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -4781,16 +4781,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC3794190",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -4910,16 +4910,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC8956922",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -5047,16 +5047,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11919294",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -5180,16 +5180,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10911114",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -5311,16 +5311,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10620621",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -5446,16 +5446,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12014446",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -5581,16 +5581,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10344903",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -5711,16 +5711,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12437956",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -5857,16 +5857,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC7184176",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -5981,16 +5981,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11919294",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -6105,16 +6105,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12296811",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -6244,16 +6244,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10081400",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -6436,16 +6436,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12296811",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -6584,16 +6584,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC4086366",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -6732,16 +6732,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC3315448",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -6928,16 +6928,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10248065",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -7051,16 +7051,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10344903",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -7190,16 +7190,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12334431",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -7329,16 +7329,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC5428215",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -7467,16 +7467,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC9650924",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -7605,16 +7605,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11883661",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -7743,16 +7743,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11875837",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -7949,16 +7949,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11815107",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -8157,16 +8157,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC3794190",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -8303,16 +8303,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11703183",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -8514,16 +8514,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC10346894",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -8723,16 +8723,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC7617249",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -8930,16 +8930,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11717557",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -9136,16 +9136,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC6503944",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -9290,16 +9290,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12324259",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -9436,16 +9436,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12664775",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [
@@ -9645,16 +9645,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12645737",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits",
         "pdf_requirement": "pdf_optional",
         "primary_evidence_sources": [
@@ -9806,16 +9806,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC12359562",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits",
         "pdf_requirement": "pdf_optional",
         "primary_evidence_sources": [
@@ -10033,16 +10033,16 @@
           "PICO"
         ],
         "corpus_id": "pubget_fmri_oa_1990_2025_dedup",
-        "corpus_root": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup",
+        "corpus_root": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup",
         "evaluation_unit": "single_pdf",
         "doc_id_source": "metadata.csv::pmcid",
         "doc_id": "PMC11906564",
         "corpus_provider": "pubget",
-        "pubget_metadata_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
-        "pubget_text_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
-        "pubget_coordinates_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
-        "pubget_tables_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
-        "pubget_merge_info_path": "${BR_REPO_ROOT}/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
+        "pubget_metadata_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/metadata.csv",
+        "pubget_text_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/text.csv",
+        "pubget_coordinates_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/coordinates.csv",
+        "pubget_tables_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/subset_allArticles_extractedData/tables.csv",
+        "pubget_merge_info_path": "/home/zijiaochen/projects/brain_researcher/data/pubget/fmri_oa_1990_2025_dedup/merge_info.json",
         "doc_id_format": "PMC<digits> or digits"
       },
       "expected_outputs": [

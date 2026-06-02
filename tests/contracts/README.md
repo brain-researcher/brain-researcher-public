@@ -9,7 +9,7 @@ Legacy standalone `api_gateway` contract coverage is retained here as compatibil
 Contract testing validates the integration between services by defining contracts between consumers and providers. This ensures that:
 
 - Frontend-backend integration remains stable
-- Service communication doesn't break with changes  
+- Service communication doesn't break with changes
 - API contracts are honored across service boundaries
 - Deployment safety is verified before releases
 
@@ -29,7 +29,7 @@ API Gateway (legacy) ──┘                │                  ├──► 
 ### Consumer → Provider Contracts
 
 1. **Web UI → Orchestrator**: Frontend interface contracts
-2. **Orchestrator → Agent Service**: LLM execution contracts  
+2. **Orchestrator → Agent Service**: LLM execution contracts
 3. **Orchestrator → BR-KG Service**: Knowledge graph contracts
 4. **Agent → BR-KG Service**: Analysis context contracts
 5. **API Gateway → All Services**: legacy standalone compatibility contracts
@@ -41,13 +41,13 @@ tests/contracts/
 ├── consumers/           # Consumer contract tests
 │   ├── test_webui_orchestrator_contract.py
 │   ├── test_orchestrator_agent_contract.py
-│   ├── test_orchestrator_neurokg_contract.py
-│   ├── test_agent_neurokg_contract.py
+│   ├── test_orchestrator_br_kg_contract.py
+│   ├── test_agent_br_kg_contract.py
 │   └── test_api_gateway_contracts.py
 ├── providers/           # Provider verification tests
 │   ├── test_orchestrator_provider.py
 │   ├── test_agent_provider.py
-│   └── test_neurokg_provider.py
+│   └── test_br_kg_provider.py
 ├── pact_helpers/        # Shared utilities
 │   ├── pact_client.py
 │   ├── mock_data.py
@@ -120,7 +120,7 @@ Consumer tests run from the consumer's perspective and generate pact files that 
 async def test_create_job_contract(self, pact_client):
     async with pact_client as pact:
         request_data = MockDataGenerator.run_request()
-        
+
         (pact
          .given("orchestrator can accept jobs")
          .upon_receiving("a request to create a new job")
@@ -133,7 +133,7 @@ async def test_create_job_contract(self, pact_client):
              status=200,
              body=PactMatchers.job_response()
          ))
-        
+
         response = await pact.execute_request("POST", "/run", json_data=request_data)
         assert response.status_code == 200
 ```
@@ -161,7 +161,7 @@ The framework provides matchers for flexible contract validation:
 # Pattern matching
 job_id = Term(r"job_[a-zA-Z0-9_]+", "job_abc123")
 
-# Type matching  
+# Type matching
 duration = Like(90)  # Matches any integer
 
 # Array matching
@@ -188,7 +188,7 @@ error_response = MockDataGenerator.error_response("NOT_FOUND")
 The contract tests run in GitHub Actions with the following stages:
 
 1. **Consumer Tests**: Run consumer tests and generate pact files
-2. **Provider Tests**: Start test services and verify contracts  
+2. **Provider Tests**: Start test services and verify contracts
 3. **Compatibility Check**: Detect breaking changes
 4. **Can I Deploy**: Verify deployment readiness
 
@@ -251,7 +251,7 @@ python tests/contracts/compatibility_checker.py \
 ### Breaking Change Types
 
 - **Removed endpoints**: Endpoints that consumers expect but provider no longer supports
-- **Changed response structure**: Response fields that are modified or removed  
+- **Changed response structure**: Response fields that are modified or removed
 - **Modified status codes**: HTTP status code changes
 - **Request validation changes**: Stricter request validation
 
@@ -274,7 +274,7 @@ services = {
         base_url="http://localhost:3001"
     ),
     "agent": ServiceConfig(
-        name="agent-service", 
+        name="agent-service",
         base_url="http://localhost:8000"
     )
 }
@@ -287,7 +287,7 @@ Configure broker connection:
 ```python
 broker = PactBrokerConfig(
     broker_base_url="http://localhost:9292",
-    broker_username="pact_workshop", 
+    broker_username="pact_workshop",
     broker_password="pact_workshop"
 )
 ```
@@ -322,7 +322,7 @@ Consumer tests use Pact mock servers, while provider tests use real service inst
 ## Best Practices
 
 1. **Use flexible matchers** instead of exact values where appropriate
-2. **Set up meaningful provider states** that represent real scenarios  
+2. **Set up meaningful provider states** that represent real scenarios
 3. **Test both success and error cases** in contracts
 4. **Keep contracts focused** on essential API behavior
 5. **Version contracts** and check compatibility before deployment
@@ -335,7 +335,7 @@ Consumer tests use Pact mock servers, while provider tests use real service inst
 
 1. Add service config to `pact_config.py`
 2. Create consumer contract tests
-3. Create provider verification tests  
+3. Create provider verification tests
 4. Set up provider states
 5. Update CI/CD pipeline
 6. Document new contracts

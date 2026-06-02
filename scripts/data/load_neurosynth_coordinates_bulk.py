@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from brain_researcher.services.neurokg.graph.graph_database import NeuroKGGraphDB
+from brain_researcher.services.br_kg.graph.graph_database import BRKGGraphDB
 
 # Configure logging
 logging.basicConfig(
@@ -38,7 +38,7 @@ def main():
     logger.info("=" * 80)
 
     # Connect to database
-    db = NeuroKGGraphDB(db_path="data/neurokg/db/neurokg_full.db")
+    db = BRKGGraphDB(db_path="data/br-kg/db/br_kg_full.db")
 
     # Check current state
     logger.info(f"Current database: {db.graph.number_of_nodes():,} nodes")

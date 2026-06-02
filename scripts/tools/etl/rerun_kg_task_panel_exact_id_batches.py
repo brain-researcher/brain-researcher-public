@@ -317,7 +317,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--root",
         type=Path,
-        default=Path("data/neurokg/raw/gabriel"),
+        default=Path("data/br-kg/raw/gabriel"),
         help="Root directory to scan for task panel packages.",
     )
     parser.add_argument(

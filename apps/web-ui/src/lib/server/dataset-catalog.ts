@@ -127,7 +127,7 @@ const CROSSWALK_PATH = path.resolve(
   '..',
   'brain_researcher',
   'services',
-  'neurokg',
+  'brKg',
   'mappings',
   'onvoc_crosswalk.yaml',
 )

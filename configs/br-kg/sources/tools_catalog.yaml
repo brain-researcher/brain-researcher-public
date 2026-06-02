@@ -1,0 +1,20 @@
+id: tools_catalog
+loader: brain_researcher.services.br_kg.loader.tools_catalog_loader
+version: 0.1
+description: "Ingests tool + version nodes from tools_catalog/capabilities"
+inputs:
+  - path: configs/catalog/capabilities.generated.yaml
+  - path: configs/br-kg/tool_evidence.yaml
+params:
+  catalog_path: configs/catalog/capabilities.generated.yaml
+  evidence_path: configs/br-kg/tool_evidence.yaml
+schemas:
+  tool: configs/schemas/tool.schema.json
+  tool_version: configs/schemas/tool_version.schema.json
+  tool_run: configs/schemas/tool_run.schema.json
+notes: |
+  MERGE semantics:
+    - Tools keyed by tool_id
+    - ToolVersions keyed by version_id (semver > image digest > image tag > python module:function > unknown)
+    - Resource edges originate from ToolVersion to ResourceType; modality/family edges from Tool
+    - Evidence file wires DOCUMENTED_IN and VALIDATED_ON (datasets)

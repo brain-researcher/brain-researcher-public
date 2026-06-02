@@ -112,9 +112,7 @@ _SELF_REFERENTIAL_PUB: dict[str, Any] = {
         "neural responses from adults in East Asian (Chinese) and "
         "Western (Danish) cultural contexts."
     ),
-    "title": (
-        "Distinction between Self-Referential Processing and Social Judgments"
-    ),
+    "title": ("Distinction between Self-Referential Processing and Social Judgments"),
     "abstract": (
         "We examined cultural influences on self-referential processing "
         "by comparing Chinese and Danish adults performing judgments of "
@@ -141,9 +139,7 @@ _TRUST_GAME_PUB: dict[str, Any] = {
 
 _EMPATHY_PUB: dict[str, Any] = {
     "kg_id": "pmid:25680993",
-    "label": (
-        "Neural correlates of empathy for pain in a culturally diverse sample."
-    ),
+    "label": ("Neural correlates of empathy for pain in a culturally diverse sample."),
     "title": "Empathic pain responses across cultures",
     "abstract": (
         "We examined empathy for pain responses using fMRI in Western participants."
@@ -341,9 +337,7 @@ class TestCitationPopulationMismatch:
             citation_population_mismatch_check,
         )
 
-        bundle = _bundle(
-            observed_artifacts=_cross_cultural_claim_with_pmid("26567160")
-        )
+        bundle = _bundle(observed_artifacts=_cross_cultural_claim_with_pmid("26567160"))
         finding = citation_population_mismatch_check(bundle)
 
         assert finding is not None
@@ -358,9 +352,7 @@ class TestCitationPopulationMismatch:
             citation_population_mismatch_check,
         )
 
-        bundle = _bundle(
-            observed_artifacts=_cross_cultural_claim_with_pmid("99999999")
-        )
+        bundle = _bundle(observed_artifacts=_cross_cultural_claim_with_pmid("99999999"))
         finding = citation_population_mismatch_check(bundle)
 
         assert finding is None
@@ -372,9 +364,7 @@ class TestCitationPopulationMismatch:
             citation_population_mismatch_check,
         )
 
-        bundle = _bundle(
-            observed_artifacts=_cross_cultural_claim_with_pmid("00000000")
-        )
+        bundle = _bundle(observed_artifacts=_cross_cultural_claim_with_pmid("00000000"))
         finding = citation_population_mismatch_check(bundle)
 
         assert finding is None
@@ -397,7 +387,7 @@ class TestCitationPopulationMismatch:
 
     def test_fires_danish_paper_cited_for_european_american_claim(self):
         """Chinese-vs-Danish paper cited for EA-vs-EAm claim → population mismatch."""
-        from brain_researcher.services.neurokg.query_service import KGNodeSummary
+        from brain_researcher.services.br_kg.query_service import KGNodeSummary
         from brain_researcher.services.review.checks.epistemic_integrity import (
             citation_population_mismatch_check,
         )
@@ -423,19 +413,23 @@ class TestCitationPopulationMismatch:
             },
         )
 
-        with patch(
-            "brain_researcher.services.neurokg.query_service.search_nodes",
-            return_value=[publication],
-        ) as mock_search_nodes, patch(
-            "brain_researcher.services.neurokg.query_service.neighbors",
-            return_value=[
-                {"label": "Chinese"},
-                {"label": "Danish"},
-            ],
-        ) as mock_neighbors, patch(
-            "brain_researcher.services.neurokg.query_service.node_details",
-            return_value=publication,
-        ) as mock_node_details:
+        with (
+            patch(
+                "brain_researcher.services.br_kg.query_service.search_nodes",
+                return_value=[publication],
+            ) as mock_search_nodes,
+            patch(
+                "brain_researcher.services.br_kg.query_service.neighbors",
+                return_value=[
+                    {"label": "Chinese"},
+                    {"label": "Danish"},
+                ],
+            ) as mock_neighbors,
+            patch(
+                "brain_researcher.services.br_kg.query_service.node_details",
+                return_value=publication,
+            ) as mock_node_details,
+        ):
             finding = citation_population_mismatch_check(bundle)
 
         assert finding is not None
@@ -609,7 +603,9 @@ class TestExtractConstructCategories:
             _extract_construct_categories,
         )
 
-        cats = _extract_construct_categories("Self-referential processing of attributes")
+        cats = _extract_construct_categories(
+            "Self-referential processing of attributes"
+        )
         assert "self_referential" in cats
 
     def test_returns_empty_for_generic_text(self):

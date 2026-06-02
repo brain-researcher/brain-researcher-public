@@ -38,7 +38,7 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
 
 # Run the calculation
 print("\nRunning strength calculation...")
-cmd = f'python scripts/neurokg/calculate_strength.py "working memory" "dorsolateral prefrontal cortex" --coords-file {coords_file} --studies-file {studies_file}'
+cmd = f'python scripts/br-kg/calculate_strength.py "working memory" "dorsolateral prefrontal cortex" --coords-file {coords_file} --studies-file {studies_file}'
 print(f"Command: {cmd}")
 os.system(cmd)
 

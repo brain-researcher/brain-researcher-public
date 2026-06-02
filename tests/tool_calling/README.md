@@ -64,7 +64,7 @@ The agent service must be running with environment variables exported:
 ```bash
 export GEMINI_API_KEY="your-key"
 export DEFAULT_LLM_MODEL="gemini-2.0-flash"
-export NEUROKG_API_URL="http://localhost:5000"
+export BR_KG_API_URL="http://localhost:5000"
 
 br serve agent --port 8000
 ```

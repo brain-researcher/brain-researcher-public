@@ -88,12 +88,11 @@ describe('McpConfigurationPanel', () => {
     expect(screen.queryByText(/tool_id="Connectivity · Schaefer-200"/)).not.toBeInTheDocument()
   })
 
-  it('renders the human MCP setup guide with live checks and handoff prompts', () => {
+  it('renders the MCP setup guide steps, handoff prompt, and reference', () => {
     render(<McpSetupGuide />)
 
-    expect(screen.getByText('Terminal setup and live checks')).toBeInTheDocument()
-    expect(screen.getByText(/export BR_MCP_TOKEN="brk_<kid>\.<secret>"/)).toBeInTheDocument()
-    expect(screen.getByText(/BR_MCP_TOKEN is set/)).toBeInTheDocument()
+    expect(screen.getByText('Verify the connection')).toBeInTheDocument()
+    expect(screen.getByText('Run a workflow handoff')).toBeInTheDocument()
     expect(screen.getAllByText(/server_info and system_self_test tools/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/tool_id="workflow_rest_connectome_e2e"/)).toBeInTheDocument()
     expect(screen.getByText('Required first check')).toBeInTheDocument()

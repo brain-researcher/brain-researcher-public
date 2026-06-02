@@ -122,7 +122,20 @@ describe('API Routes: demo bundles', () => {
       },
     )
     expect(res.status).toBe(200)
+    expect(res.headers.get('content-disposition')).toBe('inline; filename="trace.yaml"')
     const text = await res.text()
     expect(text).toContain('stage: R1')
+  })
+
+  it('GET /api/demo/bundles/:demoId/artifact supports attachment downloads', async () => {
+    const { GET } = await import('@/app/api/demo/bundles/[demoId]/artifact/route')
+    const res = await GET(
+      createRequest('http://test/api/demo/bundles/demo-one/artifact?path=trace.yaml&download=1'),
+      {
+        params: { demoId: 'demo-one' },
+      },
+    )
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-disposition')).toBe('attachment; filename="trace.yaml"')
   })
 })

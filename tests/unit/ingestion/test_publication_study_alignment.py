@@ -12,7 +12,7 @@ sys.path.insert(
 from brain_researcher.core.ingestion.loaders.publication_study_alignment import (
     link_publication_study_alignments,
 )
-from brain_researcher.services.neurokg.graph.fake_graph_database import FakeGraphDB
+from brain_researcher.services.br_kg.graph.fake_graph_database import FakeGraphDB
 
 
 class _Result(list):

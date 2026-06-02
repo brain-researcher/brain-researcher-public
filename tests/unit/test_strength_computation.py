@@ -28,11 +28,11 @@ import pandas as pd
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from brain_researcher.services.neurokg.etl.relationship_builder import (
+from brain_researcher.services.br_kg.etl.relationship_builder import (
     RelationshipBuilder,
 )
-from brain_researcher.services.neurokg.etl.strength_calculator import StrengthCalculator
-from brain_researcher.services.neurokg.graph.graph_database import NeuroKGGraphDB
+from brain_researcher.services.br_kg.etl.strength_calculator import StrengthCalculator
+from brain_researcher.services.br_kg.graph.graph_database import BRKGGraphDB
 
 
 class TestStrengthBounds(unittest.TestCase):
@@ -388,7 +388,7 @@ class TestRelationshipBuilderIntegration(unittest.TestCase):
         # Create temporary database
         self.temp_dir = tempfile.mkdtemp()
         self.db_path = os.path.join(self.temp_dir, "test_integration.db")
-        self.db = NeuroKGGraphDB(self.db_path)
+        self.db = BRKGGraphDB(self.db_path)
         self.builder = RelationshipBuilder(self.db, self.temp_dir)
 
     def tearDown(self):

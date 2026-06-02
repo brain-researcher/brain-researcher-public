@@ -501,7 +501,7 @@ def test_scientific_report_generate_reviews_autoresearch_and_passes_compile(
     def fake_autoresearch_review(
         autoresearch_dir,
         logs_dir=None,
-        task_id="default",
+        task_id="liu_component_v1",
         use_judgment_critic=True,
         force_recompute=False,
     ):
@@ -714,3 +714,97 @@ def test_scientific_report_generate_doc_schema_allows_no_source_fallback():
         except jsonschema.ValidationError:
             continue
         raise AssertionError(f"payload unexpectedly passed schema: {payload!r}")
+
+
+def test_scientific_report_generate_blocks_on_untraceable_claim(monkeypatch):
+    """End-to-end: a confirmatory run with an untraceable claim -> blocked draft."""
+    import brain_researcher.services.review.bundle_builder as bb
+    import brain_researcher.services.review.claim_provenance as cp
+
+    def fake_review(*args, **kwargs):
+        payload = _review_payload()
+        payload["overall_decision"] = "proceed"
+        payload["report_action"] = "continue_loop"
+        payload["claim_strength"] = "final"
+        payload["correctness"] = {"decision": "pass", "findings": []}
+        return payload
+
+    captured: dict = {}
+
+    def fake_render(**kwargs):
+        captured["sections"] = kwargs["sections"]
+        return {"ok": True, "run_id": "br_report", "artifacts": {}}
+
+    monkeypatch.setattr(srv, "run_scientific_review", fake_review)
+    monkeypatch.setattr(srv, "latex_report_render", fake_render)
+    # empty provenance index -> the claim's artifact/code never resolves
+    monkeypatch.setattr(
+        bb, "build_artifact_review_bundle", lambda run_id, workflow_id=None: object()
+    )
+    monkeypatch.setattr(
+        cp, "build_run_provenance_index", lambda bundle: cp.RunProvenanceIndex()
+    )
+
+    resp = srv.scientific_report_generate(
+        run_id="br_untraceable",
+        claims=[
+            {
+                "claim_id": "C1",
+                "statement": "Mean FC = 0.42",
+                "artifact_path": "derivatives/ghost.npy",
+                "code_ref": "tool_that_never_ran",
+            }
+        ],
+    )
+
+    assert resp["ok"] is True
+    assert resp["consolidation"]["mode"] == "review_blocked_draft"
+    assert resp["consolidation"]["claim_provenance"]["blocked"] is True
+    assert resp["consolidation"]["claim_provenance"]["unsupported_ids"] == ["C1"]
+    assert "Claims missing provenance" in captured["sections"]
+
+
+def test_scientific_report_generate_allows_traceable_claim(monkeypatch):
+    """A claim bound to a produced artifact + real code ref does not block."""
+    import brain_researcher.services.review.bundle_builder as bb
+    import brain_researcher.services.review.claim_provenance as cp
+
+    def fake_review(*args, **kwargs):
+        payload = _review_payload()
+        payload["overall_decision"] = "proceed"
+        payload["correctness"] = {"decision": "pass", "findings": []}
+        return payload
+
+    monkeypatch.setattr(srv, "run_scientific_review", fake_review)
+    monkeypatch.setattr(
+        srv,
+        "latex_report_render",
+        lambda **k: {"ok": True, "run_id": "br_report", "artifacts": {}},
+    )
+    monkeypatch.setattr(
+        bb, "build_artifact_review_bundle", lambda run_id, workflow_id=None: object()
+    )
+    monkeypatch.setattr(
+        cp,
+        "build_run_provenance_index",
+        lambda bundle: cp.RunProvenanceIndex(
+            artifacts={"derivatives/fc.npy": "abc"}, code_refs={"fc_tool"}
+        ),
+    )
+
+    resp = srv.scientific_report_generate(
+        run_id="br_ok",
+        claims=[
+            {
+                "claim_id": "C1",
+                "artifact_path": "derivatives/fc.npy",
+                "artifact_sha256": "abc",
+                "code_ref": "fc_tool",
+            }
+        ],
+    )
+
+    assert resp["ok"] is True
+    assert resp["consolidation"]["mode"] != "review_blocked_draft"
+    assert resp["consolidation"]["claim_provenance"]["blocked"] is False
+    assert resp["consolidation"]["claim_provenance"]["unsupported_ids"] == []

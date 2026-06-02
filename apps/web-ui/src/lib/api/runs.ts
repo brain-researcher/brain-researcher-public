@@ -31,10 +31,47 @@ export interface RunSidebarItem {
   workflow_id: string | null
   dataset_id: string | null
   thread_id: string | null
-  created_at: string | null
-  updated_at: string | null
-  finished_at: string | null
+  // Compact human-readable summary of what the run did (from plan.metadata.intent
+  // / plan name) plus counts derived from the plan already in the payload.
+  intent: string | null
+  // Human-readable display facets recovered from the plan payload (the parameters
+  // written by the from-dataset flow). All optional; null when the plan lacks them.
+  title: string | null
+  task: string | null
+  dataset_label: string | null
+  workflow_label: string | null
+  artifact_count: number | null
+  step_count: number | null
+  // Timestamps may arrive as ISO strings or Unix epoch (seconds/ms) integers.
+  created_at: string | number | null
+  updated_at: string | number | null
+  finished_at: string | number | null
   error_message: string | null
+}
+
+// Preserve timestamps that arrive as Unix epoch numbers (stringOrNull would drop
+// them); keep finite numbers and non-empty strings, else null.
+function timeOrNull(value: unknown): string | number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  return stringOrNull(value)
+}
+
+// Normalize an ISO string or Unix epoch (seconds/ms) value to milliseconds for
+// sorting; returns 0 when missing/unparseable.
+function sortEpochMs(value: string | number | null): number {
+  if (value === null) return 0
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return 0
+    return value < 1e12 ? value * 1000 : value
+  }
+  const trimmed = value.trim()
+  if (!trimmed) return 0
+  if (/^\d+$/.test(trimmed)) {
+    const n = Number(trimmed)
+    return n < 1e12 ? n * 1000 : n
+  }
+  const parsed = Date.parse(trimmed)
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 interface RawRunPayload {
@@ -64,9 +101,24 @@ function normalizeStatus(value: unknown): RunSidebarStatus {
   return (allowed as string[]).includes(v) ? (v as RunSidebarStatus) : 'unknown'
 }
 
+// Map the backend `source` literal (preferred) or a raw async-run `origin`
+// to a sidebar source. The backend's _to_api_format now emits 'internal' |
+// 'external' | 'unknown' directly; the origin cases are defense-in-depth for
+// payloads that surface the raw origin instead of the derived source.
+// Studio sync runs are internal; agent-submitted async runs are external.
 function normalizeSource(value: unknown): RunSidebarSource {
-  if (value === 'internal') return 'internal'
-  if (value === 'external') return 'external'
+  if (typeof value !== 'string') return 'unknown'
+  const v = value.trim().toLowerCase()
+  if (v === 'internal') return 'internal'
+  if (
+    v === 'external' ||
+    v === 'mcp_pipeline_execute' ||
+    v === 'api_tools_run' ||
+    v === 'tools_run_compat' ||
+    v === 'direct'
+  ) {
+    return 'external'
+  }
   return 'unknown'
 }
 
@@ -86,14 +138,50 @@ function normalizeRun(raw: unknown): RunSidebarItem | null {
   if (!record) return null
   const runId = stringOrNull(record.run_id) || stringOrNull(record.job_id)
   if (!runId) return null
-  const plan = pickRecord(record.plan) || {}
+  const plan = (pickRecord(record.plan) || {}) as Record<string, unknown>
+  const planMeta = (pickRecord(plan.metadata) || {}) as Record<string, unknown>
   const workflowFromPlan =
-    stringOrNull((plan as Record<string, unknown>).workflow_id) ||
-    stringOrNull((plan as Record<string, unknown>).template_id) ||
-    stringOrNull((plan as Record<string, unknown>).pipeline)
+    stringOrNull(plan.workflow_id) ||
+    stringOrNull(plan.template_id) ||
+    stringOrNull(plan.pipeline)
+  // dataset is usually under plan.metadata.dataset_id (the top-level plan.dataset_id
+  // is typically absent), which is why the drawer showed no dataset before.
   const datasetFromPlan =
-    stringOrNull((plan as Record<string, unknown>).dataset_id) ||
-    stringOrNull((plan as Record<string, unknown>).dataset)
+    stringOrNull(plan.dataset_id) ||
+    stringOrNull(plan.dataset) ||
+    stringOrNull(planMeta.dataset_id) ||
+    stringOrNull(planMeta.dataset)
+  // Human-readable summary of what the run did + counts already in the payload.
+  const intentSummary =
+    stringOrNull(planMeta.intent) ||
+    stringOrNull(plan.plan_summary) ||
+    stringOrNull(plan.name) ||
+    stringOrNull(record.intent)
+  const artifactCount = Array.isArray(plan.artifacts)
+    ? plan.artifacts.length
+    : null
+  const stepCount = Array.isArray(plan.steps) ? plan.steps.length : null
+  // Human-readable labels live under plan.parameters (written by the
+  // /api/runs/from-dataset flow): dataset_label, dataset_tasks, analysis_label,
+  // pipeline_label, task_id. Recover them so rows show meaningful names instead
+  // of raw ids. Falls back to plan.metadata / plan.pipeline when absent.
+  const params = (pickRecord(plan.parameters) || {}) as Record<string, unknown>
+  const datasetLabel =
+    stringOrNull(params.dataset_label) || stringOrNull(planMeta.dataset_label)
+  const workflowLabel =
+    stringOrNull(params.pipeline_label) ||
+    stringOrNull(params.analysis_label) ||
+    stringOrNull(plan.pipeline) ||
+    workflowFromPlan
+  const datasetTasks = params.dataset_tasks
+  const task =
+    stringOrNull(params.task_id) ||
+    stringOrNull(params.task) ||
+    stringOrNull(params.task_name) ||
+    (Array.isArray(datasetTasks) && datasetTasks.length > 0
+      ? stringOrNull(datasetTasks[0])
+      : null)
+  const title = intentSummary || workflowLabel || datasetLabel || null
   return {
     run_id: runId,
     status: normalizeStatus(record.status),
@@ -105,13 +193,20 @@ function normalizeRun(raw: unknown): RunSidebarItem | null {
       workflowFromPlan,
     dataset_id: stringOrNull(record.dataset_id) || datasetFromPlan,
     thread_id: stringOrNull(record.thread_id),
-    created_at: stringOrNull(record.created_at),
+    intent: intentSummary,
+    title,
+    task,
+    dataset_label: datasetLabel,
+    workflow_label: workflowLabel,
+    artifact_count: artifactCount,
+    step_count: stepCount,
+    created_at: timeOrNull(record.created_at),
     updated_at:
-      stringOrNull(record.updated_at) ||
-      stringOrNull(record.finished_at) ||
-      stringOrNull(record.started_at) ||
-      stringOrNull(record.created_at),
-    finished_at: stringOrNull(record.finished_at),
+      timeOrNull(record.updated_at) ??
+      timeOrNull(record.finished_at) ??
+      timeOrNull(record.started_at) ??
+      timeOrNull(record.created_at),
+    finished_at: timeOrNull(record.finished_at),
     error_message: stringOrNull(record.error_message),
   }
 }
@@ -189,11 +284,7 @@ export async function fetchSidebarRuns(
       const normalized = normalizeRun(raw)
       if (normalized) items.push(normalized)
     }
-    items.sort((a, b) => {
-      const aMs = a.updated_at ? Date.parse(a.updated_at) : 0
-      const bMs = b.updated_at ? Date.parse(b.updated_at) : 0
-      return bMs - aMs
-    })
+    items.sort((a, b) => sortEpochMs(b.updated_at) - sortEpochMs(a.updated_at))
     return items
   })()
   _inflightExpiresAt = now + DEDUP_WINDOW_MS

@@ -28,7 +28,6 @@ import { CopilotPanel } from '@/components/copilot/copilot-panel'
 import { PipelineQueueMonitor } from '@/components/pipeline/PipelineQueueMonitor'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { WorkflowTemplatesTab } from '@/components/pipeline/WorkflowTemplatesTab'
-import { AdvancedViewBanner } from '@/components/advanced/advanced-view-banner'
 import { serviceEndpoints } from '@/lib/service-endpoints'
 import type { AnalysesListResponse, AnalysisSummary } from '@/types/analysis'
 import { cn } from '@/lib/utils'
@@ -538,7 +537,6 @@ export default function PipelinePage() {
     <NavigationWrapper>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          <AdvancedViewBanner canonicalHref="/analyses" />
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">

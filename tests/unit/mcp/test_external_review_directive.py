@@ -12,12 +12,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from brain_researcher.services.mcp import runstore
+
 
 def _configure_run_root(monkeypatch, tmp_path: Path):
     from brain_researcher.services.mcp import server as srv
     from brain_researcher.services.review import kg_rule_registry
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "_run_roots_for_read", lambda: [tmp_path])
     monkeypatch.setattr(
@@ -80,8 +82,14 @@ def test_directive_shape_without_hints(tmp_path, monkeypatch):
     assert resp["goal"] == "Review my cluster fitlins run"
     assert resp["directive_id"].startswith("ext_review_dir_")
     assert resp["verdict_schema_ref"] == "br.ScientificReviewVerdict.v1"
-    assert resp["verdict_schema"]["title"] == "ScientificReviewVerdict"
-    assert "ReviewFinding" in resp["verdict_schema"]["$defs"]
+    assert resp["rubric_detail"] == "summary"
+    assert "verdict_schema" not in resp
+    assert resp["full_rubric_available"] is True
+    assert resp["full_rubric_request"] == {
+        "tool": "request_external_scientific_review_directive",
+        "argument": "include_full_rubric",
+        "value": True,
+    }
     assert resp["submission_tool"] == "submit_external_scientific_review_verdict"
     assert resp["hints_applied"] == {}
     assert resp["tailored_checks"] == []
@@ -91,9 +99,26 @@ def test_directive_shape_without_hints(tmp_path, monkeypatch):
         "judgment",
         "overall",
     }
+    assert "criteria_summary" in resp["evaluation_axes"]["correctness"]
+    assert "criteria" not in resp["evaluation_axes"]["correctness"]
     # No session_id supplied → we should not have emitted a research event.
     assert "logged_event_id" not in resp
     assert "logged_run_id" not in resp
+
+
+def test_directive_full_rubric_opt_in_preserves_json_schema(tmp_path, monkeypatch):
+    srv = _configure_run_root(monkeypatch, tmp_path)
+
+    resp = srv.request_external_scientific_review_directive(
+        goal="Review my cluster fitlins run",
+        include_full_rubric=True,
+    )
+
+    assert resp["ok"] is True
+    assert resp["rubric_detail"] == "full"
+    assert resp["verdict_schema"]["title"] == "ScientificReviewVerdict"
+    assert "ReviewFinding" in resp["verdict_schema"]["$defs"]
+    assert "criteria" in resp["evaluation_axes"]["correctness"]
 
 
 def test_directive_echoes_normalized_client_session_binding(tmp_path, monkeypatch):
@@ -126,7 +151,10 @@ def test_directive_decision_spaces_match_contract(tmp_path, monkeypatch):
         ScientificReviewVerdict,
     )
 
-    resp = srv.request_external_scientific_review_directive(goal="parity check")
+    resp = srv.request_external_scientific_review_directive(
+        goal="parity check",
+        include_full_rubric=True,
+    )
     axes = resp["evaluation_axes"]
 
     def _literal_values(model, field):
@@ -214,6 +242,7 @@ def test_directive_attaches_kg_criteria_under_existing_axes(tmp_path, monkeypatc
 
     resp = srv.request_external_scientific_review_directive(
         goal="external agent should review a paper text",
+        include_full_rubric=True,
     )
 
     assert resp["ok"] is True
@@ -224,18 +253,16 @@ def test_directive_attaches_kg_criteria_under_existing_axes(tmp_path, monkeypatc
         "judgment",
         "overall",
     }
-    correctness_criteria = resp["evaluation_axes"]["correctness"][
-        "kg_derived_criteria"
-    ]
+    correctness_criteria = resp["evaluation_axes"]["correctness"]["kg_derived_criteria"]
     assert correctness_criteria[0]["rule_id"] == "UNCORRECTED_WHOLEBRAIN"
     assert correctness_criteria[0]["br_executable"] is True
-    assert resp["evaluation_axes"]["judgment"]["kg_derived_criteria"][0][
-        "rule_id"
-    ] == "REVERSE_INFERENCE"
+    assert (
+        resp["evaluation_axes"]["judgment"]["kg_derived_criteria"][0]["rule_id"]
+        == "REVERSE_INFERENCE"
+    )
     assert resp["kg_rule_registry"]["criteria_count"] == 2
     assert any(
-        "cite matching KG rule_id values" in line
-        for line in resp["agent_instructions"]
+        "cite matching KG rule_id values" in line for line in resp["agent_instructions"]
     )
 
 
@@ -258,9 +285,7 @@ def test_directive_logs_event_when_session_id_given(tmp_path, monkeypatch):
     assert resp["ok"] is True
     assert resp.get("logged_event_id")
     run_id = resp["logged_run_id"]
-    events = _read_jsonl(
-        tmp_path / "runs" / run_id / "research_events.jsonl"
-    )
+    events = _read_jsonl(tmp_path / "runs" / run_id / "research_events.jsonl")
     assert events
     last = events[-1]
     assert "directive_issued" in last["tags"]
@@ -286,7 +311,9 @@ def test_directive_logging_failure_fails_closed(tmp_path, monkeypatch):
     assert resp["session_id"] == "ext-review-session-2"
 
 
-def test_request_scientific_review_routes_run_id_to_full_br_review(tmp_path, monkeypatch):
+def test_request_scientific_review_routes_run_id_to_full_br_review(
+    tmp_path, monkeypatch
+):
     srv = _configure_run_root(monkeypatch, tmp_path)
     calls: dict[str, dict] = {}
 
@@ -418,9 +445,7 @@ def test_submit_verdict_happy_path_clean_proceed(tmp_path, monkeypatch):
     assert "_agent_directive" not in resp
     # Event recorded.
     run_id = resp["logged_run_id"]
-    events = _read_jsonl(
-        tmp_path / "runs" / run_id / "research_events.jsonl"
-    )
+    events = _read_jsonl(tmp_path / "runs" / run_id / "research_events.jsonl")
     verdict_events = [
         e for e in events if "external_review_verdict" in e.get("tags", [])
     ]
@@ -529,9 +554,7 @@ def test_submit_verdict_logs_kg_rule_feedback(tmp_path, monkeypatch):
     assert calls["record"]["directive_id"] == directive["directive_id"]
     assert calls["record"]["session_id"] == "ext-session-kg-feedback"
     run_id = resp["logged_run_id"]
-    events = _read_jsonl(
-        tmp_path / "runs" / run_id / "research_events.jsonl"
-    )
+    events = _read_jsonl(tmp_path / "runs" / run_id / "research_events.jsonl")
     verdict_event = [
         e for e in events if "external_review_verdict" in e.get("tags", [])
     ][-1]

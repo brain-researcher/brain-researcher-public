@@ -1,0 +1,109 @@
+name: Harness Certification
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+jobs:
+  certify:
+    name: Harness Certification (Observability-First)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl gcc g++ libsqlite3-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,agent]"
+
+      - name: Create runtime directories
+        run: |
+          mkdir -p data/br-kg/db
+          mkdir -p data/test_data
+          mkdir -p logs
+
+      - name: Run certification
+        id: certify
+        continue-on-error: true
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: |
+          python scripts/ops/run_harness_certification.py \
+            --output-root "$RUNNER_TEMP/harness-certification" \
+            --skip-tool-kg-audit
+
+      - name: Locate certification report
+        id: locate
+        if: always()
+        shell: bash
+        run: |
+          root="$RUNNER_TEMP/harness-certification"
+          if [ -d "$root" ]; then
+            report_dir="$(
+              find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
+                | sort -nr \
+                | head -n 1 \
+                | cut -d' ' -f2-
+            )"
+          else
+            report_dir=""
+          fi
+          echo "report_dir=$report_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Upload certification artifacts
+        if: always() && steps.locate.outputs.report_dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-certification-${{ github.run_id }}
+          path: ${{ steps.locate.outputs.report_dir }}
+          if-no-files-found: warn
+
+      - name: Publish certification summary
+        if: always() && steps.locate.outputs.report_dir != ''
+        run: |
+          {
+            cat "${{ steps.locate.outputs.report_dir }}/summary.md"
+            echo ""
+            echo "Observability-first certification run outcome: \`${{ steps.certify.outcome }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce execution-recipe zero-drift invariant
+        if: always()
+        env:
+          REPORT_DIR: ${{ steps.locate.outputs.report_dir }}
+        run: |
+          if [ -z "$REPORT_DIR" ]; then
+            echo "Missing harness certification report directory; cannot verify invariant." >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          report_dir = Path(os.environ["REPORT_DIR"])
+          scorecard = json.loads((report_dir / "scorecard.json").read_text(encoding="utf-8"))
+          invariant = (
+              (scorecard.get("invariants") or {}).get("execution_recipe_zero_drift") or {}
+          )
+          print(json.dumps(invariant, indent=2, sort_keys=True))
+          if not invariant.get("ok"):
+              sys.exit("execution_recipe_zero_drift invariant failed")
+          PY

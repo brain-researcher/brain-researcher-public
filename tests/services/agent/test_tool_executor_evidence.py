@@ -3,22 +3,25 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.agent.evidence_collection import EvidenceCollector, EvidenceType
-from brain_researcher.services.tools.tool_base import NeuroKGToolWrapper, ToolResult
-from brain_researcher.services.tools.tool_registry import ToolRegistry
+from brain_researcher.services.agent.evidence_collection import (
+    EvidenceCollector,
+    EvidenceType,
+)
 from brain_researcher.services.agent.tool_executor import (
-    ToolExecutor,
-    ToolExecutionRequest,
     ExecutionMode,
     ToolCategory,
+    ToolExecutionRequest,
+    ToolExecutor,
 )
+from brain_researcher.services.tools.tool_base import BRKGToolWrapper, ToolResult
+from brain_researcher.services.tools.tool_registry import ToolRegistry
 
 
 class _Args(BaseModel):
     value: int = Field(..., description="a value")
 
 
-class FakeTool(NeuroKGToolWrapper):
+class FakeTool(BRKGToolWrapper):
     def get_tool_name(self) -> str:
         return "fake_tool"
 
@@ -62,7 +65,7 @@ def test_tool_executor_records_evidence(tmp_path: Path):
 
 
 def test_tool_executor_records_output_files(tmp_path: Path):
-    class OutputTool(NeuroKGToolWrapper):
+    class OutputTool(BRKGToolWrapper):
         def __init__(self, output_path: Path):
             super().__init__()
             self.output_path = output_path

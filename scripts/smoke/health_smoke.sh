@@ -18,7 +18,7 @@ check(){
 }
 
 check agent "${BASE_AGENT}/api/health"
-check neurokg "${BASE_NKG}/health"
+check br-kg "${BASE_NKG}/health"
 check web-ui "${BASE_UI}/api/health"
 
 exit $fail

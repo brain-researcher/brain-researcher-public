@@ -215,7 +215,7 @@ const UsageMetricsPanel: React.FC = () => {
   // Prepare chart data
   const prepareChartData = (metrics: UsageMetric[], type: string) => {
     const filteredMetrics = metrics.filter(m => m.metric_type === type);
-    
+
     if (filteredMetrics.length === 0) {
       return {
         labels: [],
@@ -293,7 +293,7 @@ const UsageMetricsPanel: React.FC = () => {
               </button>
             ))}
           </div>
-          
+
           <div className="auto-refresh-controls" data-testid="auto-refresh-controls">
             <label>
               <input
@@ -382,7 +382,7 @@ const UsageMetricsPanel: React.FC = () => {
           >
             <option value="agent">Agent</option>
             <option value="web_ui">Web UI</option>
-            <option value="neurokg">BR-KG</option>
+            <option value="brKg">BR-KG</option>
             <option value="orchestrator">Orchestrator</option>
           </select>
         </div>
@@ -422,7 +422,7 @@ const UsageMetricsPanel: React.FC = () => {
                 <Doughnut data={prepareChartData(typeMetrics, type)} />
               </div>
             )}
-            
+
             {/* Metrics table */}
             <div className="metrics-table" data-testid={`metrics-table-${type}`}>
               {typeMetrics.slice(0, 5).map(metric => (
@@ -441,7 +441,7 @@ const UsageMetricsPanel: React.FC = () => {
         <div className="export-modal" data-testid="export-modal">
           <div className="modal-content">
             <h3>Export Metrics</h3>
-            
+
             <div className="export-options">
               <div className="option-group">
                 <label>Format:</label>
@@ -451,14 +451,14 @@ const UsageMetricsPanel: React.FC = () => {
                   <option value="pdf">PDF</option>
                 </select>
               </div>
-              
+
               <div className="option-group">
                 <label>
                   <input type="checkbox" data-testid="include-charts-checkbox" />
                   Include Charts
                 </label>
               </div>
-              
+
               <div className="option-group">
                 <label>
                   <input type="checkbox" data-testid="include-raw-data-checkbox" />

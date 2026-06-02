@@ -316,7 +316,7 @@ test('Tier2: BR-KG → Add to Plan redirects into Hub with concept query', async
   const conceptId = 'dmn'
   const conceptLabel = 'DMN'
 
-  await page.route('**/api/neurokg/health', async (route: any) => {
+  await page.route('**/api/br-kg/health', async (route: any) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'ok' }) })
   })
 
@@ -343,7 +343,7 @@ test('Tier2: BR-KG → Add to Plan redirects into Hub with concept query', async
     })
   })
 
-  await page.route('**/api/neurokg/graph**', async (route: any) => {
+  await page.route('**/api/br-kg/graph**', async (route: any) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -379,7 +379,7 @@ test('Tier2: BR-KG → Add to Plan redirects into Hub with concept query', async
     })
   })
 
-  await page.route('**/api/neurokg/graph/query', async (route: any) => {
+  await page.route('**/api/br-kg/graph/query', async (route: any) => {
     if (route.request().method() !== 'POST') {
       await route.continue()
       return
@@ -419,7 +419,7 @@ test.skip('Tier2: KG Suggestions accept/reject wiring works (mocked)', async ({ 
     evidence: { artifacts: [{ name: 'connectivity_matrix.csv', url: '/api/share/fake/matrix.csv' }] },
   }
 
-  await page.route('**/api/neurokg/suggestions', async (route: any) => {
+  await page.route('**/api/br-kg/suggestions', async (route: any) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -427,7 +427,7 @@ test.skip('Tier2: KG Suggestions accept/reject wiring works (mocked)', async ({ 
     })
   })
 
-  await page.route('**/api/neurokg/suggestions/s1/accept', async (route: any) => {
+  await page.route('**/api/br-kg/suggestions/s1/accept', async (route: any) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
   })
 
@@ -461,7 +461,7 @@ test.skip('Tier2: KG Suggestions reject removes the suggestion (mocked)', async 
     evidence: { artifacts: [] },
   }
 
-  await page.route('**/api/neurokg/suggestions', async (route: any) => {
+  await page.route('**/api/br-kg/suggestions', async (route: any) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -469,7 +469,7 @@ test.skip('Tier2: KG Suggestions reject removes the suggestion (mocked)', async 
     })
   })
 
-  await page.route('**/api/neurokg/suggestions/s1/reject', async (route: any) => {
+  await page.route('**/api/br-kg/suggestions/s1/reject', async (route: any) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

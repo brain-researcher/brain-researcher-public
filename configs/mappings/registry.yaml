@@ -14,11 +14,11 @@ mappings:
     kind: file
     canonical: configs/legacy/mappings/onvoc_crosswalk.yaml
     aliases:
-      - brain_researcher/services/neurokg/mappings/onvoc_crosswalk.yaml
-    owner: neurokg
+      - brain_researcher/services/br_kg/mappings/onvoc_crosswalk.yaml
+    owner: br-kg
     consumers:
-      - brain_researcher.services.neurokg.utils.onvoc_linker
-      - brain_researcher.services.neurokg.etl.link_onvoc_datasets
+      - brain_researcher.services.br_kg.utils.onvoc_linker
+      - brain_researcher.services.br_kg.etl.link_onvoc_datasets
       - scripts/tools/ontologies/build_onvoc_mapping_rules.py
     version: 1
 
@@ -27,20 +27,20 @@ mappings:
     canonical: configs/onvoc_tree.yaml
     aliases:
       - brain_researcher/configs/onvoc_tree.yaml
-    owner: neurokg
+    owner: br-kg
     consumers:
-      - brain_researcher.services.neurokg.utils.onvoc_linker
-      - brain_researcher.services.neurokg.utils.matching_profile
+      - brain_researcher.services.br_kg.utils.onvoc_linker
+      - brain_researcher.services.br_kg.utils.matching_profile
     version: 1
 
   cao_to_trm:
     kind: file
     canonical: configs/legacy/mappings/cao_to_trm.yaml
     aliases:
-      - brain_researcher/services/neurokg/mappings/cao_to_trm.yaml
-    owner: neurokg
+      - brain_researcher/services/br_kg/mappings/cao_to_trm.yaml
+    owner: br-kg
     consumers:
-      - brain_researcher.services.neurokg.etl.linkers.taxonomy_linker
+      - brain_researcher.services.br_kg.etl.linkers.taxonomy_linker
     version: 1
 
   recovery_map:

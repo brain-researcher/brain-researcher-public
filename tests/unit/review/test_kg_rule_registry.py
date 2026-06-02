@@ -88,7 +88,9 @@ def test_evaluate_kg_registry_dispatches_only_mapped_implemented_rules() -> None
     ]
     assert "TEST_SET_MODEL_SELECTION->REVIEW_NEUROAI_SELECTION_ON_TEST" in consulted
     assert all("REVIEW_NOT_IN_CONFIG" not in item for item in consulted)
-    assert any("NeuroKG scientific-review registry" in item for item in findings[0].kg_evidence)
+    assert any(
+        "BRKG scientific-review registry" in item for item in findings[0].kg_evidence
+    )
 
 
 def test_kg_implementation_catalog_selects_unmapped_review_gate_rules() -> None:
@@ -110,7 +112,7 @@ def test_kg_implementation_catalog_selects_unmapped_review_gate_rules() -> None:
     assert [finding.rule_id for finding in findings] == ["REVIEW_R2_TOO_LOW"]
     assert "implementation_catalog->REVIEW_R2_TOO_LOW" in consulted
     assert any(
-        "NeuroKG review implementation catalog selected configured rule" in item
+        "BRKG review implementation catalog selected configured rule" in item
         for item in findings[0].kg_evidence
     )
 
@@ -162,7 +164,7 @@ def test_merge_kg_registry_findings_preserves_single_finding_with_kg_evidence() 
     kg = existing.model_copy(
         update={
             "kg_evidence": [
-                "NeuroKG scientific-review registry selected implemented rule."
+                "BRKG scientific-review registry selected implemented rule."
             ],
             "reason_tags": ["leakage", "generalization"],
         }
@@ -172,7 +174,7 @@ def test_merge_kg_registry_findings_preserves_single_finding_with_kg_evidence() 
 
     assert len(merged) == 1
     assert merged[0].kg_evidence == [
-        "NeuroKG scientific-review registry selected implemented rule."
+        "BRKG scientific-review registry selected implemented rule."
     ]
     assert merged[0].reason_tags == ["leakage", "generalization"]
 

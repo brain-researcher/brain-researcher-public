@@ -32,13 +32,13 @@ scrape_configs:
           format: RFC3339Nano
 
   # BR-KG service logs
-  - job_name: neurokg
+  - job_name: br-kg
     static_configs:
       - targets:
           - localhost
         labels:
-          job: neurokg
-          __path__: /var/log/brain-researcher/neurokg/*.log
+          job: br-kg
+          __path__: /var/log/brain-researcher/br-kg/*.log
     pipeline_stages:
       - json:
           expressions:

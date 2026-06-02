@@ -18,7 +18,6 @@ import requests
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -42,7 +41,9 @@ def test_workflow_literature_search_synthesis_smoke(
         def json(self) -> dict:
             return self._payload
 
-    def _mock_neurokg_get(url: str, params: dict | None = None, **_: object) -> _MockResponse:
+    def _mock_br_kg_get(
+        url: str, params: dict | None = None, **_: object
+    ) -> _MockResponse:
         if url.endswith("/subgraph"):
             concept = str((params or {}).get("name", "concept")).strip() or "concept"
             concept_slug = concept.lower().replace(" ", "_")
@@ -66,7 +67,7 @@ def test_workflow_literature_search_synthesis_smoke(
         return _MockResponse({"error": "Not Found"}, status_code=404)
 
     monkeypatch.setattr(
-        "brain_researcher.services.tools.neurokg_tools.requests.get", _mock_neurokg_get
+        "brain_researcher.services.tools.br_kg_tools.requests.get", _mock_br_kg_get
     )
 
     out_dir = tmp_path / "literature"

@@ -1,0 +1,148 @@
+# OWASP ZAP Automation Framework Configuration
+env:
+  contexts:
+    - name: "brain_researcher_context"
+      urls:
+        - "http://localhost:8000"
+        - "http://localhost:3001"
+        - "http://localhost:5000"
+        - "http://localhost:3000"
+      includePaths:
+        - "http://localhost:8000/api/.*"
+        - "http://localhost:3001/api/.*"
+        - "http://localhost:5000/api/.*"
+        - "http://localhost:3000/.*"
+      excludePaths:
+        - ".*\\.js$"
+        - ".*\\.css$"
+        - ".*\\.png$"
+        - ".*\\.jpg$"
+        - ".*\\.ico$"
+        - ".*/logout.*"
+        - ".*/data/download.*"
+
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+      scanOnlyInScope: true
+
+  - type: spider
+    parameters:
+      context: "brain_researcher_context"
+      maxDuration: 10
+      maxDepth: 5
+      maxChildren: 50
+      acceptCookies: true
+      handleODataParametersVisited: false
+      handleParameters: "USE_ALL"
+      maxParseSizeBytes: 2097152
+      parseComments: true
+      parseGit: false
+      parseRobotsTxt: true
+      parseSVNEntries: false
+      parseSitemapXml: true
+      postForm: true
+      processForm: true
+      requestWaitTime: 200
+      sendRefererHeader: true
+      threadCount: 2
+      userAgent: "ZAP Brain Researcher Security Test"
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  - type: activeScan
+    parameters:
+      context: "brain_researcher_context"
+      policy: "API-scan-minimal"
+      maxRuleDurationInMins: 5
+      maxScanDurationInMins: 30
+      addQueryParam: false
+      defaultPolicy: "Medium"
+      delayInMs: 0
+      handleAntiCSRFTokens: true
+      injectPluginIdInHeader: false
+      scanHeadersAllRequests: false
+      threadPerHost: 2
+
+  - type: activeScan-wait
+    parameters:
+      maxDuration: 30
+
+  # Custom neuroimaging security checks
+  - type: script
+    parameters:
+      action: "add"
+      type: "httpsender"
+      engine: "Python"
+      name: "neuroimaging_data_check"
+      file: "tests/security/owasp_zap/scripts/neuroimaging_data_check.py"
+
+  - type: report
+    parameters:
+      template: "traditional-html-plus"
+      dir: "tests/security/owasp_zap/reports"
+      reportFile: "brain_researcher_security_report"
+      reportTitle: "Brain Researcher Security Assessment"
+      reportDescription: "Automated security testing for Brain Researcher neuroimaging platform"
+
+  - type: report
+    parameters:
+      template: "traditional-json-plus"
+      dir: "tests/security/owasp_zap/reports"
+      reportFile: "brain_researcher_security_report"
+
+# Define custom scan policies for neuroimaging applications
+policies:
+  - name: "neuroimaging-security-policy"
+    defaultStrength: "Medium"
+    defaultThreshold: "Medium"
+    rules:
+      # Reduce false positives for scientific computing patterns
+      - id: 40012  # Cross Site Scripting (Reflected)
+        strength: "Medium"
+        threshold: "Medium"
+      - id: 40014  # Cross Site Scripting (Persistent)
+        strength: "Medium"
+        threshold: "Medium"
+      - id: 40016  # Cross Site Scripting (Persistent) - Prime
+        strength: "Medium"
+        threshold: "Medium"
+      - id: 40017  # Cross Site Scripting (Persistent) - Spider
+        strength: "Medium"
+        threshold: "Medium"
+      # SQL Injection checks
+      - id: 40018  # SQL Injection
+        strength: "High"
+        threshold: "Medium"
+      - id: 40019  # SQL Injection - MySQL
+        strength: "High"
+        threshold: "Medium"
+      - id: 40020  # SQL Injection - Hypersonic SQL
+        strength: "High"
+        threshold: "Medium"
+      - id: 40021  # SQL Injection - Oracle
+        strength: "High"
+        threshold: "Medium"
+      - id: 40022  # SQL Injection - PostgreSQL
+        strength: "High"
+        threshold: "Medium"
+      # Path traversal
+      - id: 6  # Path Traversal
+        strength: "High"
+        threshold: "Medium"
+      # Command injection
+      - id: 90020  # Remote OS Command Injection
+        strength: "High"
+        threshold: "Medium"
+      # XXE
+      - id: 90019  # XML External Entity Attack
+        strength: "High"
+        threshold: "Medium"

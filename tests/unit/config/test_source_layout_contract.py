@@ -17,7 +17,7 @@ REQUIRED_SUBSTRINGS = {
         # Keep the source-layout contract anchored at the canonical location.
         "br serve web",
         "BR_AGENT_URL=http://127.0.0.1:8000",
-        "BR_NEUROKG_URL=http://127.0.0.1:5000",
+        "BR_KG_URL=http://127.0.0.1:5000",
     ),
     # CLAUDE.md is intentionally a redirect to AGENTS.md ("Rule:
     # write repository instructions into AGENTS.md instead") — its
@@ -41,7 +41,7 @@ FORBIDDEN_SUBSTRINGS = {
     "AGENTS.md": (
         "`brain_researcher/`: main package",
         "new modules live under `brain_researcher/`",
-        "`agent/`, `neurokg/`, `web_ui/`",
+        "`agent/`, `br_kg/`, `web_ui/`",
         "`br serve agent|kg|ui [-p PORT]`",
         "`br serve agent|kg|web|orchestrator|gateway [-p PORT]`",
     ),
@@ -59,7 +59,7 @@ FORBIDDEN_SUBSTRINGS = {
         "`brain_researcher/cli/`",
         "`brain_researcher/services/`",
         "`brain_researcher/services/agent/`",
-        "`brain_researcher/services/neurokg/`",
+        "`brain_researcher/services/br_kg/`",
         "`brain_researcher/core/analysis/`",
         "br serve ui         # Dashboard on port 8050",
         "`gateway/`: legacy single-port compatibility gateway",
@@ -70,7 +70,7 @@ FORBIDDEN_SUBSTRINGS = {
         "semgrep --config=tests/security/sast/semgrep.yml brain_researcher/",
     ),
     "scripts/services/start_services.sh": (
-        "python brain_researcher/services/neurokg/app.py",
+        "python brain_researcher/services/br_kg/app.py",
         "npm run start",
         "Agent-API",
         'start_service "Gateway" 8000 "http://127.0.0.1:8000/health" 45 \\',
@@ -86,7 +86,6 @@ def test_active_guidance_files_use_canonical_source_tree_paths() -> None:
             assert needle in text, f"Missing expected text in {relpath}: {needle}"
 
 
-
 def test_active_guidance_files_do_not_reintroduce_stale_source_tree_paths() -> None:
     for relpath, forbidden_substrings in FORBIDDEN_SUBSTRINGS.items():
         text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
@@ -94,17 +93,14 @@ def test_active_guidance_files_do_not_reintroduce_stale_source_tree_paths() -> N
             assert needle not in text, f"Found stale guidance in {relpath}: {needle}"
 
 
-
 def test_top_level_legacy_brain_researcher_tree_has_no_python_sources() -> None:
     legacy_root = REPO_ROOT / "brain_researcher"
     legacy_py_files = sorted(
-        str(path.relative_to(REPO_ROOT))
-        for path in legacy_root.rglob("*.py")
+        str(path.relative_to(REPO_ROOT)) for path in legacy_root.rglob("*.py")
     )
     assert legacy_py_files == []
 
     legacy_pkg_markers = sorted(
-        str(path.relative_to(REPO_ROOT))
-        for path in legacy_root.rglob("__init__.py")
+        str(path.relative_to(REPO_ROOT)) for path in legacy_root.rglob("__init__.py")
     )
     assert legacy_pkg_markers == []

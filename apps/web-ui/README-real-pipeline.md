@@ -19,7 +19,7 @@ cd apps/web-ui
 
 cp .env.test.template .env.test
 # edit .env.test to set BR_TEST_TOKEN (and optionally dataset/template)
-# set BR_AGENT_URL / BR_ORCHESTRATOR_URL / BR_NEUROKG_URL if you are not using
+# set BR_AGENT_URL / BR_ORCHESTRATOR_URL / BR_KG_URL if you are not using
 # the local defaults (8000 / 3001 / 5000)
 source .env.test
 ```
@@ -34,7 +34,7 @@ npm run e2e:real
 
 - The local harness starts `npm run dev:3002` and uses the same-origin proxy path by default.
 - For local runs, prefer server-side overrides (`BR_AGENT_URL`, `BR_ORCHESTRATOR_URL`,
-  `BR_NEUROKG_URL`) instead of browser-facing `NEXT_PUBLIC_*` service URLs.
+  `BR_KG_URL`) instead of browser-facing `NEXT_PUBLIC_*` service URLs.
 - Default dataset/template:
   - `BR_TEST_DATASET_ID=ds:openneuro:ds000001`
   - `BR_TEST_TEMPLATE_ID=connectivity/nilearn_connectivity`

@@ -8,7 +8,7 @@ import yaml
 
 import brain_researcher.services.tools.neuroimage_asset_registry as registry_module
 from brain_researcher.core.ingestion import neuromaps_paths
-from brain_researcher.services.neurokg.spatial import neuromaps_assets
+from brain_researcher.services.br_kg.spatial import neuromaps_assets
 from brain_researcher.services.tools.neuroimage_asset_registry import (
     atlas_cache_roots,
     clear_neuroimage_asset_registry_cache,

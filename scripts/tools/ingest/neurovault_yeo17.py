@@ -14,11 +14,11 @@ from typing import Dict, Iterable, List, Optional
 import nibabel as nib
 import requests
 
-from brain_researcher.services.neurokg.etl.yeo17_features import (
+from brain_researcher.services.br_kg.etl.yeo17_features import (
     compute_features,
     resolve_label_and_template,
 )
-from brain_researcher.services.neurokg.etl.yeo17_writer import (
+from brain_researcher.services.br_kg.etl.yeo17_writer import (
     WriterConfig,
     write_sparse_edges,
 )
@@ -126,7 +126,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--neuromaps-root",
         type=Path,
-        default=Path("data/neurokg/raw/nilearn_atlases"),
+        default=Path("data/br-kg/raw/nilearn_atlases"),
         help="Directory holding Yeo/Nilearn assets (falls back to nilearn download)",
     )
     parser.add_argument("--neo4j-uri", default="bolt://localhost:7687")

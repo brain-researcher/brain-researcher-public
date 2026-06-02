@@ -25,8 +25,8 @@ route:
         job: brain-researcher-agent
       receiver: 'agent-team'
     - match:
-        job: brain-researcher-neurokg
-      receiver: 'neurokg-team'
+        job: brain-researcher-br-kg
+      receiver: 'br-kg-team'
     - match:
         job: brain-researcher-web-ui
       receiver: 'ui-team'
@@ -62,7 +62,7 @@ receivers:
         subject: '[CRITICAL] Brain Researcher Alert: {{ .GroupLabels.alertname }}'
         body: |
           CRITICAL ALERT FIRED
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -89,7 +89,7 @@ receivers:
         subject: '[Agent Service] {{ .GroupLabels.alertname }}'
         body: |
           Agent Service Alert
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -99,13 +99,13 @@ receivers:
       - api_url: '${SLACK_API_URL}'
         channel: '#agent-alerts'
 
-  - name: 'neurokg-team'
+  - name: 'br-kg-team'
     email_configs:
-      - to: 'neurokg-team@brain-researcher.io'
+      - to: 'br-kg-team@brain-researcher.io'
         subject: '[BR-KG Service] {{ .GroupLabels.alertname }}'
         body: |
           BR-KG Service Alert
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -113,7 +113,7 @@ receivers:
           {{ end }}
     slack_configs:
       - api_url: '${SLACK_API_URL}'
-        channel: '#neurokg-alerts'
+        channel: '#br-kg-alerts'
 
   - name: 'ui-team'
     email_configs:
@@ -121,7 +121,7 @@ receivers:
         subject: '[Web UI Service] {{ .GroupLabels.alertname }}'
         body: |
           Web UI Service Alert
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -134,7 +134,7 @@ receivers:
         subject: '[Infrastructure] {{ .GroupLabels.alertname }}'
         body: |
           Infrastructure Alert
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}

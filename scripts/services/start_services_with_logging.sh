@@ -19,7 +19,7 @@ if [[ -f .env ]]; then
   set +a
 fi
 
-LOG_PATH="logs/neurokg.debug.log"
+LOG_PATH="logs/br-kg.debug.log"
 
 echo "Stopping existing BR-KG process on port 5000, if any..."
 lsof -ti:5000 | xargs kill 2>/dev/null || true

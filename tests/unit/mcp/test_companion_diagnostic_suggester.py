@@ -16,11 +16,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from brain_researcher.services.mcp import runstore
+
 
 def _configure_run_root(monkeypatch, tmp_path: Path):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "_run_roots_for_read", lambda: [tmp_path])
     srv._ensure_dirs()
@@ -87,9 +89,7 @@ def test_context_matching_surfaces_but_flags_when_mismatched(tmp_path, monkeypat
     assert resp["ok"] is True
     assert resp["matched_known_metric"] is True
 
-    hubness_entries = [
-        c for c in resp["companions"] if c["name"] == "hubness_skewness"
-    ]
+    hubness_entries = [c for c in resp["companions"] if c["name"] == "hubness_skewness"]
     assert hubness_entries, "expected hubness_skewness to be surfaced"
     assert hubness_entries[0]["applies_if_context_matches"] is False
 
@@ -98,9 +98,7 @@ def test_context_matching_surfaces_but_flags_when_mismatched(tmp_path, monkeypat
         metric_name="balanced_accuracy",
         context={"classifier_family": "kNN"},
     )
-    hubness_knn = [
-        c for c in resp_knn["companions"] if c["name"] == "hubness_skewness"
-    ]
+    hubness_knn = [c for c in resp_knn["companions"] if c["name"] == "hubness_skewness"]
     assert hubness_knn[0]["applies_if_context_matches"] is True
 
 

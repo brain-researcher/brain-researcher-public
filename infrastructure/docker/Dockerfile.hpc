@@ -44,7 +44,7 @@ COPY scripts ./scripts
 COPY configs ./configs
 
 # Install Brain Researcher with all extras for HPC
-RUN pip install --no-cache-dir -e ".[neurokg,agent,niclip]" && \
+RUN pip install --no-cache-dir -e ".[br-kg,agent,niclip]" && \
     pip install --no-cache-dir \
     torch torchvision --index-url https://download.pytorch.org/whl/cpu
 

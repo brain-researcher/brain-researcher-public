@@ -1,8 +1,9 @@
 """Tests for dataset evidence source adapter."""
 
-import pytest
-from unittest.mock import MagicMock, patch
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from brain_researcher.services.knowledge.evidence.base import (
     EvidenceQuery,
@@ -205,7 +206,7 @@ class TestDatasetEvidenceSource:
 
         assert results == []
 
-    @patch("brain_researcher.services.neurokg.query_service.search_datasets")
+    @patch("brain_researcher.services.br_kg.query_service.search_datasets")
     @patch("brain_researcher.core.datasets.catalog.load_catalog")
     def test_query_sync_with_kg_search(self, mock_load_catalog, mock_kg_search):
         """Test query combines catalog and KG results."""
@@ -236,7 +237,7 @@ class TestDatasetEvidenceSource:
         # KG results default to a slightly higher relevance score
         assert results[0].relevance_score == 0.7
 
-    @patch("brain_researcher.services.neurokg.query_service.search_datasets")
+    @patch("brain_researcher.services.br_kg.query_service.search_datasets")
     @patch("brain_researcher.core.datasets.catalog.load_catalog")
     def test_query_sync_deduplicates_results(self, mock_load_catalog, mock_kg_search):
         """Test that duplicate results are deduplicated."""
@@ -306,7 +307,9 @@ class TestDatasetEvidenceSource:
 class TestSearchDatasetsFunction:
     """Test search_datasets convenience function."""
 
-    @patch("brain_researcher.services.knowledge.evidence.dataset_source.DatasetEvidenceSource")
+    @patch(
+        "brain_researcher.services.knowledge.evidence.dataset_source.DatasetEvidenceSource"
+    )
     def test_search_datasets_basic(self, mock_source_class):
         """Test basic search_datasets call."""
         mock_source = MagicMock()
@@ -320,7 +323,9 @@ class TestSearchDatasetsFunction:
         assert query.text == "motor fmri"
         assert query.limit == 5
 
-    @patch("brain_researcher.services.knowledge.evidence.dataset_source.DatasetEvidenceSource")
+    @patch(
+        "brain_researcher.services.knowledge.evidence.dataset_source.DatasetEvidenceSource"
+    )
     def test_search_datasets_with_filters(self, mock_source_class):
         """Test search_datasets with filters."""
         mock_source = MagicMock()

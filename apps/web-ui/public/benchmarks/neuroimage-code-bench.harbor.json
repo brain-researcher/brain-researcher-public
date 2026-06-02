@@ -4,7 +4,7 @@
     "name": "NeuroimageCodeBench v3.1",
     "version": "3.1",
     "description": "Neuroimaging tool-calling and dataset-grounded coding tasks (OpenNeuro/Nilearn/Provided). Updated with strict real-compute/fail-fast alignment, semantic-contract consistency, and multiagent regression-verified task instructions/solutions.",
-    "source": "${BR_BENCHMARK_ROOT}/harbor_json/brainr-benchmark-v2.harbor.json",
+    "source": "/home/zijiaochen/projects/brain_researcher_benchmark/harbor_json/brainr-benchmark-v2.harbor.json",
     "format": "harbor-compatible-json"
   },
   "tasks": [

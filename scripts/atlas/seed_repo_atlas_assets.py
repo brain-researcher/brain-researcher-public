@@ -259,7 +259,7 @@ def _ensure_neuromaps_inventory(
     if not download_missing:
         return summary
 
-    from brain_researcher.services.neurokg.spatial.fetch_all_neuromaps import (
+    from brain_researcher.services.br_kg.spatial.fetch_all_neuromaps import (
         _fetch_annotations,
         _fetch_atlases,
     )
@@ -557,13 +557,13 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--nilearn-source-root",
         type=Path,
-        default=Path("data/neurokg/raw/nilearn_atlases"),
+        default=Path("data/br-kg/raw/nilearn_atlases"),
         help="Existing Nilearn atlas tree to reuse when present.",
     )
     parser.add_argument(
         "--neuromaps-source-root",
         type=Path,
-        default=Path("data/neurokg/raw/neuromaps"),
+        default=Path("data/br-kg/raw/neuromaps"),
         help="Existing Neuromaps tree to reuse when present.",
     )
     parser.add_argument(

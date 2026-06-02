@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class TestContrastConceptLinkerCLI(unittest.TestCase):
     def test_sample_run(self):
-        from brain_researcher.services.neurokg.etl.mappers import (
+        from brain_researcher.services.br_kg.etl.mappers import (
             contrast_concept_linker,
         )
 

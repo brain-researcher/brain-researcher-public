@@ -1,0 +1,50 @@
+Create a polished Nature Neuroscience / Cell-style conceptual schematic panel for a scientific paper.
+
+Purpose:
+Show the structure of a self-driven hypothesis discovery loop using TRIBE, a multimodal brain encoding model.
+
+Important rendering instruction:
+Make this a mostly text-free schematic. Do not render paragraphs or small labels. Do not render branch condition sentences. Use clean visual placeholder label areas and simple large section headers only. Avoid any pseudo-text, gibberish text, misspelled words, fake numbers, fake p-values, or fake charts.
+
+Allowed large text only:
+1. "Stimuli"
+2. "TRIBE"
+3. "Representations"
+4. "Predicted response"
+5. "Score"
+6. "Branch decision"
+7. "Discovery loop"
+8. "Hypothesis classes"
+
+Scientific content to communicate visually:
+TRIBE is a multimodal brain encoding model. It receives stimulus information such as audio, text, video, motion, and task-condition cues. It computes model representations across modules/layers and predicts fMRI-like cortical response patterns. An autonomous controller proposes stimulus contrasts, materializes manifests, runs TRIBE, scores separability in representation or predicted-response space, and then freezes, continues, kills, or redesigns a branch.
+
+Visual layout:
+Use a wide 16:9 landscape graphical abstract layout.
+Left side: a compact stimulus bank with icons for audio waveform, text lines, video frame, motion trajectory, and task tag.
+Center: a stylized TRIBE model block with layered modules flowing into an abstract cortical-response glyph. This should not be a real brain heatmap.
+Around the center: a circular discovery loop with five icon-only steps: propose, materialize, run/extract, score, decide. Use arrows and pictograms rather than detailed text.
+Right side: three clean hypothesis-class outcome cards using icons and color:
+green card = robust positive / freeze
+amber card = candidate or noisy / continue
+slate blue card = packaging-sensitive failure / redesign
+Bottom: a subtle gray boundary strip indicating limitation / downstream validation, but without long text.
+
+Example branch families to imply with small chips or icons, not long labels:
+language, social, auditory, math, theory-of-mind, RSVP timing, biological motion.
+
+Design style:
+Publication-quality graphical abstract.
+Elegant neuroscience-specific schematic, not generic AI pipeline.
+White or very light warm background.
+Muted scientific palette: deep green, amber, slate blue, soft gray, black ink.
+Thin arrows, strong alignment, balanced whitespace.
+Flat vector-like style.
+No 3D rendering.
+No cartoon people.
+No robot imagery.
+No dark mode.
+No purple tech aesthetic.
+No fake data.
+No fake charts.
+No observed brain activation map.

@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 
-import { AdvancedViewBanner } from '@/components/advanced/advanced-view-banner'
 import { LinearKnowledgeGraph } from '@/components/knowledge-graph/LinearKnowledgeGraph'
 import { NavigationWrapper } from '@/components/navigation/navigation-wrapper'
 import { Button } from '@/components/ui/button'
@@ -14,7 +13,6 @@ export default function KnowledgeGraphExplorePage() {
     <NavigationWrapper>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          <AdvancedViewBanner canonicalHref="/en/studio" />
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -42,4 +40,3 @@ export default function KnowledgeGraphExplorePage() {
     </NavigationWrapper>
   )
 }
-

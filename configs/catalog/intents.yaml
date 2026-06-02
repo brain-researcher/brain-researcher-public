@@ -1,0 +1,993 @@
+- id: fmri_preprocessing
+  name: "fMRI preprocessing"
+  description: "Standard preprocessing for fMRI, including motion correction, normalization, and smoothing."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["raw_bold"]
+  outputs: ["preprocessed_bold"]
+  parents: []
+
+- id: glm_first_level_fmri
+  name: "First-level GLM (task fMRI)"
+  description: "Single-subject GLM for task-based fMRI."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["preprocessed_bold", "design_matrix"]
+  outputs: ["stats_map"]
+  parents: ["glm_analysis"]
+
+- id: glm_group_level_fmri
+  name: "Group-level GLM (task fMRI)"
+  description: "Group-level GLM across multiple subjects for task-based fMRI."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "group"
+  inputs: ["subject_contrast_maps"]
+  outputs: ["group_stats_map"]
+  parents: ["glm_analysis"]
+
+- id: meta_analysis_cbma
+  name: "Coordinate-based meta-analysis"
+  description: "CBMA / ALE-style meta analysis on peak coordinates."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "meta"
+  inputs: ["coordinate_table"]
+  outputs: ["meta_z_map"]
+  parents: ["meta_analysis"]
+
+- id: nwb_io
+  name: "NWB I/O"
+  description: "Read and inspect NWB (Neurodata Without Borders) files."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "ieeg", "meg"]
+  analysis_level: "dataset"
+  inputs: ["nwb_file"]
+  outputs: ["nwb_summary"]
+  parents: []
+
+- id: skull_strip_mri
+  name: "Skull strip MRI"
+  description: "Brain extraction / skull stripping for structural or functional MRI."
+  domains: ["neuroimaging"]
+  modalities: ["smri", "fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_3d", "volume_4d"]
+  outputs: ["mask_path", "volume_3d"]
+  parents: ["preprocessing"]
+
+- id: registration_linear_mri
+  name: "Linear registration (MRI)"
+  description: "Affine/rigid registration of MRI volumes."
+  domains: ["neuroimaging"]
+  modalities: ["smri", "fmri", "pet"]
+  analysis_level: "subject"
+  inputs: ["volume_3d", "volume_4d"]
+  outputs: ["volume_3d", "volume_4d"]
+  parents: ["registration"]
+
+- id: registration_nonlinear_mri
+  name: "Nonlinear registration (MRI)"
+  description: "Nonlinear / diffeomorphic registration of MRI volumes."
+  domains: ["neuroimaging"]
+  modalities: ["smri", "fmri", "pet"]
+  analysis_level: "subject"
+  inputs: ["volume_3d"]
+  outputs: ["volume_3d"]
+  parents: ["registration"]
+
+- id: roi_timeseries_fmri
+  name: "ROI timeseries extraction (fMRI)"
+  description: "Extract ROI mean timeseries from 4D fMRI using an atlas/parcellation."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d", "parcellation_labels"]
+  outputs: ["timeseries"]
+  parents: ["fmri_preprocessing"]
+
+- id: connectivity_matrix_fmri
+  name: "Functional connectivity matrix (fMRI)"
+  description: "Compute functional connectivity matrix from ROI timeseries."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["timeseries"]
+  outputs: ["connectivity_matrix"]
+  parents: ["connectivity_analysis"]
+
+- id: fetch_atlas_parcellation
+  name: "Fetch atlas / parcellation"
+  description: "Download or load atlas definitions and parcellation labels."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "dataset"
+  inputs: ["bids_root"]
+  outputs: ["parcellation_labels"]
+  parents: ["preprocessing"]
+
+- id: pet_preprocessing
+  name: "PET preprocessing / SUVR"
+  description: "Preprocess PET volumes and compute SUVR/metrics."
+  domains: ["neuroimaging"]
+  modalities: ["pet"]
+  analysis_level: "subject"
+  inputs: ["volume_3d"]
+  outputs: ["pet_metrics"]
+  parents: ["preprocessing"]
+
+- id: dmri_conversion
+  name: "dMRI conversion / formatting"
+  description: "Convert diffusion MRI images between common formats for downstream processing."
+  domains: ["neuroimaging"]
+  modalities: ["dmri", "smri", "fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_3d", "volume_4d"]
+  outputs: ["volume_3d", "volume_4d"]
+  parents: ["preprocessing"]
+
+- id: bias_field_correction
+  name: "Bias field correction (MRI)"
+  description: "Bias/inhomogeneity field correction for MRI volumes."
+  domains: ["neuroimaging"]
+  modalities: ["smri", "fmri", "dmri"]
+  analysis_level: "subject"
+  inputs: ["volume_3d"]
+  outputs: ["volume_3d"]
+  parents: ["preprocessing"]
+
+- id: fmri_motion_correction
+  name: "fMRI motion correction / realignment"
+  description: "Volumetric motion correction and realignment for fMRI time series."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["volume_4d"]
+  parents: ["fmri_preprocessing"]
+
+- id: fmri_temporal_smoothing
+  name: "fMRI spatial/temporal smoothing"
+  description: "Apply spatial/temporal smoothing to fMRI data (e.g., blur in mask)."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["volume_4d"]
+  parents: ["fmri_preprocessing"]
+
+- id: fmri_ica_denoising
+  name: "fMRI ICA denoising"
+  description: "Independent component analysis for fMRI denoising or decomposition."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["timeseries", "stats_map"]
+  parents: ["fmri_preprocessing"]
+
+- id: image_format_conversion
+  name: "Image format conversion"
+  description: "Convert neuroimaging volumes between common formats."
+  domains: ["neuroimaging"]
+  modalities: ["smri", "fmri", "dmri", "pet"]
+  analysis_level: "dataset"
+  inputs: ["volume_3d", "volume_4d"]
+  outputs: ["volume_3d", "volume_4d"]
+  parents: ["preprocessing"]
+
+- id: fmri_visualization
+  name: "fMRI visualization/reporting"
+  description: "Visualize statistical maps and generate simple reports."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["stats_map"]
+  outputs: ["report_html"]
+  parents: ["reporting"]
+
+- id: mvpa_decoding_fmri
+  name: "MVPA / decoding (fMRI)"
+  description: "Multivariate pattern analysis / decoding for fMRI."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d", "labels"]
+  outputs: ["features_table", "metrics"]
+  parents: ["analysis"]
+
+- id: rag_retrieval
+  name: "RAG retrieval"
+  description: "Retrieve and ground responses from provided context."
+  domains: ["llm_service"]
+  modalities: ["general"]
+  analysis_level: "service"
+  inputs: ["text_prompt", "text_context"]
+  outputs: ["text_completion"]
+  parents: []
+
+- id: llm_chat
+  name: "LLM chat"
+  description: "General chat completion via LLM router/backends."
+  domains: ["llm_service"]
+  modalities: ["general"]
+  analysis_level: "service"
+  inputs: ["text_prompt"]
+  outputs: ["text_completion"]
+  parents: []
+
+- id: code_assistant
+  name: "Coding assistant"
+  description: "Code-focused LLM for refactor/debug/write tests."
+  domains: ["llm_service"]
+  modalities: ["general"]
+  analysis_level: "service"
+  inputs: ["code_context", "text_prompt"]
+  outputs: ["code_diff", "text_completion"]
+  parents: []
+
+- id: genetics_analysis
+  name: "Genetics / genomics analysis"
+  description: "Lightweight genetics/genomics utility operations."
+  domains: ["genetics"]
+  modalities: ["genetics"]
+  analysis_level: "dataset"
+  inputs: ["genetics_data"]
+  outputs: ["features_table"]
+  parents: []
+
+- id: multimodal_fusion
+  name: "Multimodal fusion"
+  description: "Fuse structural/functional/modal data into combined representations."
+  domains: ["neuroimaging"]
+  modalities: ["multimodal"]
+  analysis_level: "subject"
+  inputs: ["features_table"]
+  outputs: ["fused_representation"]
+  parents: []
+
+- id: optical_imaging
+  name: "Optical imaging processing"
+  description: "Process optical imaging time series and metrics."
+  domains: ["neuroimaging"]
+  modalities: ["optical"]
+  analysis_level: "subject"
+  inputs: ["optical_timeseries"]
+  outputs: ["optical_metrics"]
+  parents: []
+
+- id: clinical_decision_support
+  name: "Clinical decision support"
+  description: "Risk scoring / decision support for clinical data."
+  domains: ["clinical"]
+  modalities: ["clinical"]
+  analysis_level: "subject"
+  inputs: ["clinical_data"]
+  outputs: ["risk_scores"]
+  parents: []
+
+- id: causal_inference_timeseries
+  name: "Causal inference on timeseries"
+  description: "Granger/causal discovery on timeseries data."
+  domains: ["neuroimaging", "general"]
+  modalities: ["fmri", "general"]
+  analysis_level: "subject"
+  inputs: ["timeseries"]
+  outputs: ["causal_graph"]
+  parents: []
+
+- id: bids_validation
+  name: "BIDS validation"
+  description: "Validate a BIDS dataset structure."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "dmri", "smri", "meg", "eeg"]
+  analysis_level: "dataset"
+  inputs: ["bids_root"]
+  outputs: ["report_html"]
+  parents: []
+
+- id: bids_query
+  name: "BIDS query"
+  description: "Query BIDS layout for files/metadata."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "dmri", "smri", "meg", "eeg"]
+  analysis_level: "dataset"
+  inputs: ["bids_root"]
+  outputs: ["metadata"]
+  parents: []
+
+- id: fmriprep_preprocessing
+  name: "fMRIPrep preprocessing"
+  description: "Run fMRIPrep on BIDS data to produce preprocessed derivatives."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["bids_root"]
+  outputs: ["preprocessed_bold", "report_html"]
+  parents: ["fmri_preprocessing"]
+
+- id: mriqc_single
+  name: "MRIQC single-subject QC"
+  description: "Run MRIQC on BIDS data to generate subject-level QC."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "subject"
+  inputs: ["bids_root"]
+  outputs: ["qc_report", "metrics"]
+  parents: ["preprocessing"]
+
+- id: mriqc_group
+  name: "MRIQC group report"
+  description: "Aggregate MRIQC outputs into group HTML report."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "group"
+  inputs: ["qc_reports"]
+  outputs: ["report_html"]
+  parents: ["preprocessing"]
+
+- id: fitlins_glm
+  name: "FitLins GLM"
+  description: "Run FitLins BIDS GLM workflow."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "group"
+  inputs: ["bids_root"]
+  outputs: ["stats_map", "report_html"]
+  parents: ["glm_analysis"]
+
+- id: qsiprep_preprocessing
+  name: "QSIPrep preprocessing"
+  description: "Run QSIPrep on diffusion MRI data."
+  domains: ["neuroimaging"]
+  modalities: ["dmri"]
+  analysis_level: "subject"
+  inputs: ["bids_root"]
+  outputs: ["dmri_preprocessed", "report_html"]
+  parents: ["preprocessing"]
+
+- id: qsiprep_reconstruction
+  name: "QSIPrep reconstruction"
+  description: "Run QSIPrep reconstruction workflows."
+  domains: ["neuroimaging"]
+  modalities: ["dmri"]
+  analysis_level: "subject"
+  inputs: ["dmri_preprocessed"]
+  outputs: ["tractography", "dmri_metrics"]
+  parents: ["analysis"]
+
+- id: qsiprep_qc
+  name: "QSIPrep QC"
+  description: "QC utilities for QSIPrep outputs."
+  domains: ["neuroimaging"]
+  modalities: ["dmri"]
+  analysis_level: "subject"
+  inputs: ["dmri_preprocessed"]
+  outputs: ["qc_report"]
+  parents: ["preprocessing"]
+
+- id: dmri_tractography
+  name: "Diffusion tractography"
+  description: "Generate tractography/streamlines from diffusion MRI."
+  domains: ["neuroimaging"]
+  modalities: ["dmri"]
+  analysis_level: "subject"
+  inputs: ["dmri_preprocessed"]
+  outputs: ["tractography"]
+  parents: ["analysis"]
+
+- id: ieeg_preprocessing
+  name: "iEEG preprocessing"
+  description: "Preprocess intracranial EEG data."
+  domains: ["neurophysiology"]
+  modalities: ["ieeg"]
+  analysis_level: "subject"
+  inputs: ["raw_ieeg"]
+  outputs: ["clean_ieeg"]
+  parents: ["preprocessing"]
+
+- id: spike_sorting
+  name: "Spike sorting"
+  description: "Run spike sorting workflows."
+  domains: ["neurophysiology"]
+  modalities: ["ieeg", "eeg", "meg"]
+  analysis_level: "subject"
+  inputs: ["raw_ieeg"]
+  outputs: ["spike_times"]
+  parents: ["analysis"]
+
+- id: pose_tracking
+  name: "Pose tracking"
+  description: "Estimate behavior-video keypoints and pose trajectories."
+  domains: ["neurophysiology"]
+  modalities: ["optical", "multimodal"]
+  analysis_level: "subject"
+  inputs: ["file_path"]
+  outputs: ["coord_table", "optical_metrics"]
+  parents: ["analysis"]
+
+- id: behavior_alignment
+  name: "Behavior alignment"
+  description: "Align spikes, task events, and optional pose traces in time."
+  domains: ["neurophysiology"]
+  modalities: ["multimodal"]
+  analysis_level: "subject"
+  inputs: ["spike_times", "events_tsv", "coord_table"]
+  outputs: ["aligned_timeseries", "features_table"]
+  parents: ["analysis"]
+
+- id: pipeline_run
+  name: "Pipeline run"
+  description: "Run or stage a multi-step analysis workflow."
+  domains: ["neurophysiology", "neuroimaging"]
+  modalities: ["multimodal", "general"]
+  analysis_level: "workflow"
+  inputs: ["file_path", "path_list"]
+  outputs: ["metadata"]
+  parents: ["analysis"]
+
+- id: calcium_suite2p
+  name: "Suite2p calcium imaging"
+  description: "Process calcium imaging with Suite2p."
+  domains: ["neurophysiology"]
+  modalities: ["optical"]
+  analysis_level: "subject"
+  inputs: ["optical_timeseries"]
+  outputs: ["optical_metrics"]
+  parents: ["preprocessing"]
+
+# EEG/iEEG intents
+- id: eeg_preprocessing
+  name: "EEG/MEG preprocessing"
+  description: "Preprocess EEG/MEG data (filtering, referencing, epoching)."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "meg"]
+  analysis_level: "subject"
+  inputs: ["raw_eeg"]
+  outputs: ["clean_eeg"]
+  parents: ["preprocessing"]
+
+- id: eeg_autoreject
+  name: "EEG autoreject"
+  description: "Automated rejection/repair of bad EEG/MEG segments."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "meg"]
+  analysis_level: "subject"
+  inputs: ["clean_eeg"]
+  outputs: ["clean_eeg"]
+  parents: ["preprocessing"]
+
+- id: eeg_ica
+  name: "EEG ICA"
+  description: "Run ICA for artifact removal in EEG/MEG."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "meg"]
+  analysis_level: "subject"
+  inputs: ["clean_eeg"]
+  outputs: ["clean_eeg"]
+  parents: ["preprocessing"]
+
+- id: eeg_timefreq
+  name: "EEG/MEG time-frequency"
+  description: "Compute time-frequency decompositions for EEG/MEG."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "meg"]
+  analysis_level: "subject"
+  inputs: ["clean_eeg"]
+  outputs: ["power_spectra"]
+  parents: ["analysis"]
+
+- id: eeg_connectivity
+  name: "EEG/MEG connectivity"
+  description: "Compute connectivity metrics from EEG/MEG data."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "meg"]
+  analysis_level: "subject"
+  inputs: ["clean_eeg"]
+  outputs: ["connectivity_matrix"]
+  parents: ["analysis"]
+
+- id: eeg_source_localization
+  name: "EEG/MEG source localization"
+  description: "Source localization / inverse modeling for EEG/MEG."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "meg"]
+  analysis_level: "subject"
+  inputs: ["clean_eeg"]
+  outputs: ["source_estimate"]
+  parents: ["analysis"]
+
+- id: eeg_fooof
+  name: "EEG power spectrum parameterization (FOOOF)"
+  description: "Parameterize EEG/MEG power spectra into periodic/aperiodic components."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "meg"]
+  analysis_level: "subject"
+  inputs: ["psd_file"]
+  outputs: ["features_table"]
+  parents: ["analysis"]
+
+# dMRI model & connectome utilities
+- id: dmri_model_fit
+  name: "Diffusion model fit"
+  description: "Fit diffusion models (DTI/CSD/NODDI) to dMRI."
+  domains: ["neuroimaging"]
+  modalities: ["dmri"]
+  analysis_level: "subject"
+  inputs: ["dmri_dwi", "dmri_bvals", "dmri_bvecs"]
+  outputs: ["dmri_maps", "dmri_model"]
+  parents: ["preprocessing"]
+
+- id: dmri_parcellate_connectome
+  name: "dMRI parcellated connectome"
+  description: "Build structural connectome from dMRI using parcellations."
+  domains: ["neuroimaging"]
+  modalities: ["dmri"]
+  analysis_level: "subject"
+  inputs: ["tractography", "parcellation"]
+  outputs: ["connectivity_matrix"]
+  parents: ["analysis"]
+
+- id: dmri_resolve_triplet
+  name: "Resolve DWI triplet"
+  description: "Resolve DWI images/bvals/bvecs triplet for downstream processing."
+  domains: ["neuroimaging"]
+  modalities: ["dmri"]
+  analysis_level: "subject"
+  inputs: ["dmri_dwi"]
+  outputs: ["dmri_dwi", "dmri_bvals", "dmri_bvecs"]
+  parents: ["preprocessing"]
+
+- id: dynamic_connectivity
+  name: "Dynamic connectivity"
+  description: "Sliding-window / time-varying connectivity analysis."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "meg", "eeg"]
+  analysis_level: "subject"
+  inputs: ["timeseries"]
+  outputs: ["connectivity_matrix", "metrics"]
+  parents: ["analysis"]
+
+- id: connectivity_measures
+  name: "Connectivity measures"
+  description: "Compute static connectivity measures (corr/PLV/PLI/MI)."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "dmri", "meg", "eeg"]
+  analysis_level: "subject"
+  inputs: ["timeseries"]
+  outputs: ["connectivity_matrix", "metrics"]
+  parents: ["analysis"]
+
+- id: graph_theory_metrics
+  name: "Graph-theory metrics"
+  description: "Compute graph measures (degree, clustering, efficiency, modularity)."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "dmri", "meg", "eeg"]
+  analysis_level: "subject"
+  inputs: ["connectivity_matrix"]
+  outputs: ["graph_metrics"]
+  parents: ["analysis"]
+
+# QC / preprocessing apps
+- id: cpac_preprocessing
+  name: "CPAC preprocessing"
+  description: "Run Configurable Pipeline for the Analysis of Connectomes."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "subject"
+  inputs: ["bids_root"]
+  outputs: ["preprocessed_bold", "report_html"]
+  parents: ["preprocessing"]
+
+- id: fsl_bedpostx
+  name: "FSL BedpostX"
+  description: "Estimate diffusion parameters and crossing fibers."
+  domains: ["neuroimaging"]
+  modalities: ["dmri"]
+  analysis_level: "subject"
+  inputs: ["dmri_preprocessed"]
+  outputs: ["dmri_model"]
+  parents: ["preprocessing"]
+
+- id: fsl_palm_permutation
+  name: "FSL PALM permutation"
+  description: "Permutation-based GLM for imaging data."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "group"
+  inputs: ["stats_map"]
+  outputs: ["p_value_map"]
+  parents: ["inference"]
+
+- id: fsl_fix_denoising
+  name: "FSL FIX ICA denoising"
+  description: "Automated ICA-based denoising for fMRI."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["clean_bold"]
+  parents: ["preprocessing"]
+
+- id: afni_clustsim_correction
+  name: "AFNI ClustSim cluster correction"
+  description: "Cluster-size multiple-comparison correction (AFNI ClustSim)."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "group"
+  inputs: ["stats_map"]
+  outputs: ["corrected_map"]
+  parents: ["inference"]
+
+- id: qsm_reconstruction
+  name: "Quantitative susceptibility mapping"
+  description: "Reconstruct QSM maps from MRI phase/magnitude."
+  domains: ["neuroimaging"]
+  modalities: ["smri"]
+  analysis_level: "subject"
+  inputs: ["mri_phase", "mri_magnitude"]
+  outputs: ["qsm_map"]
+  parents: ["analysis"]
+
+# PET
+- id: pet_coregistration
+  name: "PET coregistration"
+  description: "Coregister PET to anatomical MRI."
+  domains: ["neuroimaging"]
+  modalities: ["pet", "smri"]
+  analysis_level: "subject"
+  inputs: ["pet_image", "t1w"]
+  outputs: ["pet_coreg"]
+  parents: ["preprocessing"]
+
+- id: pet_parcellation
+  name: "PET parcellation"
+  description: "Parcellate PET image into ROI values."
+  domains: ["neuroimaging"]
+  modalities: ["pet"]
+  analysis_level: "subject"
+  inputs: ["pet_coreg", "parcellation"]
+  outputs: ["roi_metrics"]
+  parents: ["analysis"]
+
+- id: pet_suvr
+  name: "PET SUVR computation"
+  description: "Compute SUVR values with reference region."
+  domains: ["neuroimaging"]
+  modalities: ["pet"]
+  analysis_level: "subject"
+  inputs: ["pet_coreg", "reference_region"]
+  outputs: ["suvr_map", "roi_metrics"]
+  parents: ["analysis"]
+
+# EEG/iEEG extras
+- id: ieeg_connectivity
+  name: "iEEG connectivity"
+  description: "Compute connectivity metrics from intracranial EEG."
+  domains: ["neurophysiology"]
+  modalities: ["ieeg"]
+  analysis_level: "subject"
+  inputs: ["clean_ieeg"]
+  outputs: ["connectivity_matrix"]
+  parents: ["analysis"]
+
+- id: ieeg_epoch_features
+  name: "iEEG epoch features"
+  description: "Extract epoch-wise features from iEEG."
+  domains: ["neurophysiology"]
+  modalities: ["ieeg"]
+  analysis_level: "subject"
+  inputs: ["clean_ieeg"]
+  outputs: ["features_table"]
+  parents: ["analysis"]
+
+- id: ieeg_electrode_localization
+  name: "iEEG electrode localization"
+  description: "Localize intracranial electrodes in anatomy."
+  domains: ["neurophysiology"]
+  modalities: ["ieeg", "smri"]
+  analysis_level: "subject"
+  inputs: ["t1w", "electrode_coordinates"]
+  outputs: ["electrode_montage"]
+  parents: ["preprocessing"]
+
+- id: timefreq_tfr
+  name: "Time-frequency TFR"
+  description: "Compute time-frequency representations (generic)."
+  domains: ["neurophysiology"]
+  modalities: ["eeg", "meg", "ieeg"]
+  analysis_level: "subject"
+  inputs: ["clean_eeg"]
+  outputs: ["power_spectra"]
+  parents: ["analysis"]
+
+# MVPA / encoding / hyperalignment
+- id: encoding_models_fmri
+  name: "Encoding models (fMRI)"
+  description: "Train/test encoding models for fMRI responses."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d", "stimulus_features"]
+  outputs: ["model", "metrics"]
+  parents: ["analysis"]
+
+- id: hyperalignment_fmri
+  name: "Hyperalignment (fMRI)"
+  description: "Functional hyperalignment across subjects."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "group"
+  inputs: ["volume_4d"]
+  outputs: ["aligned_timeseries"]
+  parents: ["analysis"]
+
+- id: temporal_decoding_fmri
+  name: "Temporal decoding (fMRI)"
+  description: "Temporal decoding / sequence classification in fMRI."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d", "labels"]
+  outputs: ["metrics"]
+  parents: ["analysis"]
+
+- id: searchlight_fmri
+  name: "Searchlight MVPA (fMRI)"
+  description: "Whole-brain searchlight decoding."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d", "labels"]
+  outputs: ["stats_map", "metrics"]
+  parents: ["analysis"]
+
+- id: rsa_fmri
+  name: "Representational similarity (fMRI)"
+  description: "RSA for fMRI patterns."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d", "labels"]
+  outputs: ["rsa_matrix", "metrics"]
+  parents: ["analysis"]
+
+# Utilities
+- id: parcellation_fetch
+  name: "Fetch parcellation"
+  description: "Download/fetch parcellations."
+  domains: ["neuroimaging"]
+  modalities: ["smri", "fmri", "dmri", "pet"]
+  analysis_level: "dataset"
+  inputs: []
+  outputs: ["parcellation"]
+  parents: ["data_management"]
+
+- id: permutation_testing
+  name: "Permutation testing"
+  description: "Generic permutation testing for neuroimaging."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "group"
+  inputs: ["stats_map"]
+  outputs: ["p_value_map"]
+  parents: ["inference"]
+
+- id: multiple_comparison_correction
+  name: "Multiple comparison correction"
+  description: "Generic multiple-comparison correction utilities."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "group"
+  inputs: ["stats_map"]
+  outputs: ["corrected_map"]
+  parents: ["inference"]
+
+- id: feature_selection_ml
+  name: "Feature selection"
+  description: "Feature selection utilities for neuroimaging ML."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri", "dmri"]
+  analysis_level: "subject"
+  inputs: ["features_table"]
+  outputs: ["features_table"]
+  parents: ["analysis"]
+
+# Freesurfer reconstruction
+- id: smri_recon_all
+  name: "Freesurfer recon-all"
+  description: "Cortical surface reconstruction and segmentation with freesurfer recon-all."
+  domains: ["neuroimaging"]
+  modalities: ["smri"]
+  analysis_level: "subject"
+  inputs: ["t1w"]
+  outputs: ["surfaces", "aseg", "recon_report"]
+  parents: ["reconstruction"]
+
+- id: generic_container_op
+  name: "Generic container operation"
+  description: "Fallback intent for NiWrap container tools without a specialized mapping."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri", "dmri"]
+  analysis_level: "subject"
+  inputs: []
+  outputs: []
+  parents: ["analysis"]
+
+- id: surface_ops
+  name: "Surface operations"
+  description: "Generic surface operations (wb_command surface-*, metric-*)."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "subject"
+  inputs: ["surface_file"]
+  outputs: ["surface_file"]
+  parents: ["analysis"]
+
+- id: volume_ops
+  name: "Volume operations"
+  description: "Generic volume operations (wb_command volume-*)."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri", "dmri"]
+  analysis_level: "subject"
+  inputs: ["volume_3d", "volume_4d"]
+  outputs: ["volume_3d", "volume_4d"]
+  parents: ["analysis"]
+
+# Advanced Analysis Operations
+- id: multimodal_integration
+  name: "Multimodal data integration"
+  description: "Fuse and integrate data from multiple neuroimaging modalities (fMRI, sMRI, DTI, EEG/MEG, PET)."
+  domains: ["neuroimaging"]
+  modalities: ["multimodal"]
+  analysis_level: "subject"
+  inputs: ["volume_3d", "volume_4d", "timeseries"]
+  outputs: ["fused_representation"]
+  parents: ["analysis"]
+
+- id: fsl_melodic_ica
+  name: "FSL MELODIC ICA"
+  description: "Independent component analysis for fMRI using FSL MELODIC."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["timeseries", "stats_map"]
+  parents: ["analysis"]
+
+- id: fsl_dual_regression
+  name: "FSL Dual Regression"
+  description: "Dual regression analysis for group ICA spatial maps."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "group"
+  inputs: ["volume_4d", "timeseries"]
+  outputs: ["stats_map"]
+  parents: ["analysis"]
+
+- id: fsl_fix_multirun
+  name: "FSL FIX multi-run denoising"
+  description: "ICA-based denoising across multiple fMRI runs using FSL FIX."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["clean_bold"]
+  parents: ["fsl_fix_denoising"]
+
+- id: nilearn_ica
+  name: "Nilearn ICA decomposition"
+  description: "Independent component analysis using Nilearn."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["timeseries"]
+  parents: ["analysis"]
+
+- id: conn_preprocessing
+  name: "CONN toolbox preprocessing"
+  description: "Preprocessing pipeline compatible with CONN toolbox for connectivity analysis."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["preprocessed_bold"]
+  parents: ["preprocessing"]
+
+- id: xcpd_postprocessing
+  name: "XCP-D postprocessing"
+  description: "Post-fMRIPrep processing with XCP-D for functional connectivity."
+  domains: ["neuroimaging"]
+  modalities: ["fmri"]
+  analysis_level: "subject"
+  inputs: ["preprocessed_bold"]
+  outputs: ["clean_bold", "connectivity_matrix"]
+  parents: ["preprocessing"]
+
+- id: dl_pytorch
+  name: "PyTorch deep learning"
+  description: "Deep learning model training/inference using PyTorch for neuroimaging."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "subject"
+  inputs: ["volume_3d", "volume_4d", "labels"]
+  outputs: ["model_artifact"]
+  parents: ["analysis"]
+
+- id: monai_deep_learning
+  name: "MONAI deep learning"
+  description: "Medical imaging deep learning using MONAI framework."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "smri"]
+  analysis_level: "subject"
+  inputs: ["volume_3d", "volume_4d"]
+  outputs: ["model_artifact", "mask_path"]
+  parents: ["analysis"]
+
+- id: gnn_connectivity_analysis
+  name: "Graph neural network connectivity"
+  description: "Graph neural network analysis for brain connectivity data."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "dmri"]
+  analysis_level: "subject"
+  inputs: ["connectivity_matrix", "timeseries"]
+  outputs: ["graph_metrics"]
+  parents: ["connectivity_analysis"]
+
+- id: brain_similarity_analysis
+  name: "Brain similarity analysis"
+  description: "Compute similarity metrics between brain representations or subjects."
+  domains: ["neuroimaging"]
+  modalities: ["fmri", "multimodal"]
+  analysis_level: "group"
+  inputs: ["volume_4d", "features_table"]
+  outputs: ["connectivity_matrix", "metrics"]
+  parents: ["analysis"]
+
+- id: asl_perfusion
+  name: "ASL perfusion imaging"
+  description: "Arterial spin labeling perfusion analysis and CBF quantification."
+  domains: ["neuroimaging"]
+  modalities: ["asl"]
+  analysis_level: "subject"
+  inputs: ["volume_4d"]
+  outputs: ["stats_map", "metrics"]
+  parents: ["preprocessing"]
+
+- id: brain_simulation
+  name: "Brain network simulation"
+  description: "Neural mass models and whole-brain network simulations."
+  domains: ["neuroimaging", "computational"]
+  modalities: ["fmri", "meg"]
+  analysis_level: "subject"
+  inputs: ["connectivity_matrix"]
+  outputs: ["timeseries", "metrics"]
+  parents: ["analysis"]
+
+- id: lesion_detection
+  name: "Lesion detection"
+  description: "Automated detection and segmentation of brain lesions."
+  domains: ["clinical", "neuroimaging"]
+  modalities: ["smri", "fmri"]
+  analysis_level: "subject"
+  inputs: ["volume_3d"]
+  outputs: ["mask_path", "metrics"]
+  parents: ["segmentation"]
+
+- id: google_file_search
+  name: "Google File Search RAG"
+  description: "Semantic search over uploaded documents using Google File Search API. Supports creating vector stores, uploading files with configurable chunking, and performing semantic queries."
+  domains: ["rag", "search", "llm"]
+  modalities: ["text", "document"]
+  analysis_level: "corpus"
+  inputs: ["file_path", "search_query"]
+  outputs: ["search_results", "file_chunks"]
+  parents: ["retrieval"]
+  examples:
+    - "Search my uploaded documents for information about brain connectivity"
+    - "Upload this PDF to a file search store"
+    - "Query the research papers store for fMRI preprocessing methods"
+    - "Create a new document store for neuroimaging literature"

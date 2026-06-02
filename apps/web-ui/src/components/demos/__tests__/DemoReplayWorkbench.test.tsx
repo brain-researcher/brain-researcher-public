@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -62,9 +62,18 @@ const replayPayload = {
   },
   bundle: {
     available: true,
-    artifact_count: 1,
+    artifact_count: 2,
     source_run_ids: ['run-1'],
     items: [
+      {
+        id: 'report-pdf',
+        name: 'report.pdf',
+        path: 'reports/report.pdf',
+        title: 'Case report PDF',
+        mime_type: 'application/pdf',
+        roles: ['reference_summary_source', 'evidence'],
+        download_url: '/api/demo/bundles/demo-one/artifact?path=report-pdf',
+      },
       {
         id: 'artifact-1',
         name: 'evidence.json',
@@ -76,7 +85,7 @@ const replayPayload = {
   notes: [],
 }
 
-describe('DemoReplayWorkbench evidence routing', () => {
+describe('DemoReplayWorkbench PDF-only rendering', () => {
   beforeEach(() => {
     window.history.pushState({}, '', '/demos/demo-one?view=evidence')
     vi.stubGlobal(
@@ -85,18 +94,82 @@ describe('DemoReplayWorkbench evidence routing', () => {
     )
   })
 
-  it('opens the in-app evidence tab when the URL asks for evidence', async () => {
+  it('renders only the report PDF and omits replay metadata', async () => {
     render(<DemoReplayWorkbench demoId="demo-one" />)
 
-    await screen.findByText('Demo one analysis')
+    await screen.findByText('Case report PDF')
 
-    await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'Evidence' })).toHaveAttribute(
-        'data-state',
-        'active',
-      )
-    })
-    expect(screen.getByText('Source runs')).toBeInTheDocument()
-    expect(screen.getByText('run-1')).toBeInTheDocument()
+    expect(screen.getByTitle('Demo report PDF')).toHaveAttribute(
+      'src',
+      '/api/demo/bundles/demo-one/artifact?path=report-pdf',
+    )
+    expect(screen.getByRole('link', { name: 'Open PDF' })).toHaveAttribute(
+      'href',
+      '/api/demo/bundles/demo-one/artifact?path=report-pdf',
+    )
+    expect(screen.queryByText('What Happens')).not.toBeInTheDocument()
+    expect(screen.queryByText('Prompt + Response')).not.toBeInTheDocument()
+    expect(screen.queryByText('Evidence')).not.toBeInTheDocument()
+    expect(screen.queryByText('Artifacts')).not.toBeInTheDocument()
+    expect(screen.queryByText('Reference Output')).not.toBeInTheDocument()
+    expect(screen.queryByText('Reproduce This')).not.toBeInTheDocument()
+    expect(screen.queryByText('evidence.json')).not.toBeInTheDocument()
+  })
+
+  it('uses the reference summary PDF when multiple PDFs are present', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              ...replayPayload,
+              bundle: {
+                ...replayPayload.bundle,
+                artifact_count: 2,
+                items: [
+                  {
+                    id: 'secondary-pdf',
+                    name: 'appendix.pdf',
+                    path: 'reports/appendix.pdf',
+                    title: 'Appendix PDF',
+                    mime_type: 'application/pdf',
+                    download_url: '/api/demo/bundles/demo-one/artifact?path=secondary-pdf',
+                  },
+                  {
+                    id: 'report-pdf',
+                    name: 'report.pdf',
+                    path: 'reports/report.pdf',
+                    title: 'Case report PDF',
+                    mime_type: 'application/pdf',
+                    roles: ['reference_summary_source', 'evidence'],
+                    download_url: '/api/demo/bundles/demo-one/artifact?path=report-pdf',
+                  },
+                  ...replayPayload.bundle.items,
+                ],
+              },
+            }),
+            { status: 200 },
+          ),
+      ),
+    )
+
+    render(<DemoReplayWorkbench demoId="demo-one" />)
+
+    await screen.findByText('Case report PDF')
+
+    expect(screen.getByText('Case report PDF')).toBeInTheDocument()
+    expect(screen.getByTitle('Demo report PDF')).toHaveAttribute(
+      'src',
+      '/api/demo/bundles/demo-one/artifact?path=report-pdf',
+    )
+    expect(screen.getByRole('link', { name: 'Open PDF' })).toHaveAttribute(
+      'href',
+      '/api/demo/bundles/demo-one/artifact?path=report-pdf',
+    )
+    expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute(
+      'href',
+      '/api/demo/bundles/demo-one/artifact?path=report-pdf&download=1',
+    )
   })
 })

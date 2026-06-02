@@ -811,7 +811,7 @@ export function ChatWorkspace({
     let cancelled = false
     const loadSuggestions = async () => {
       try {
-        const res = await fetch('/api/neurokg/suggestions', { cache: 'no-store' })
+        const res = await fetch('/api/br-kg/suggestions', { cache: 'no-store' })
         if (!res.ok) {
           if (!cancelled) setKgSuggestionsCount(0)
           return
@@ -2895,7 +2895,7 @@ export function ChatWorkspace({
               </Button>
             </div>
           )}
-          
+
           {threadLoading ? (
             <div className="px-4 py-2 border-b text-xs text-muted-foreground flex items-center gap-2">
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -2991,7 +2991,7 @@ export function ChatWorkspace({
                 </Button>
               </div>
             )}
-            <ChatComposer 
+            <ChatComposer
               initialValue={draftPrompt}
               injectedText={copilotInjectedText}
               onConsumeInjectedText={() => setCopilotInjectedText(null)}

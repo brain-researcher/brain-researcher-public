@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import { NavigationWrapper } from '@/components/navigation/navigation-wrapper'
-import { AdvancedViewBanner } from '@/components/advanced/advanced-view-banner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -235,7 +234,7 @@ export default function ToolCatalogPage() {
                       Cost Tier
                     </div>
                     <div>
-                      <Badge 
+                      <Badge
                         className={
                           selectedTool.cost_tier === 'cheap' ? 'bg-green-100 text-green-800' :
                           selectedTool.cost_tier === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
@@ -286,7 +285,7 @@ export default function ToolCatalogPage() {
                       Risk
                     </div>
                     <div>
-                      <Badge 
+                      <Badge
                         variant="outline"
                         className={
                           selectedTool.risk === 'safe' ? 'border-green-500 text-green-700' :
@@ -391,7 +390,6 @@ export default function ToolCatalogPage() {
         </Dialog>
 
         <main className="mx-auto max-w-6xl px-4 py-12 space-y-8">
-          <AdvancedViewBanner canonicalHref="/studio" />
 
           <header className="space-y-2">
             <h1 className="text-3xl font-bold">Tool Catalog</h1>
@@ -500,7 +498,7 @@ export default function ToolCatalogPage() {
                         </td>
                         <td className="px-4 py-3">
                           {row.cost_tier && (
-                            <Badge 
+                            <Badge
                               className={`text-xs ${
                                 row.cost_tier === 'cheap' ? 'bg-green-100 text-green-800' :
                                 row.cost_tier === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
@@ -519,8 +517,8 @@ export default function ToolCatalogPage() {
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge 
-                            variant={row.source === 'grandmaster' ? 'default' : 'secondary'} 
+                          <Badge
+                            variant={row.source === 'grandmaster' ? 'default' : 'secondary'}
                             className="text-xs"
                           >
                             {row.source}

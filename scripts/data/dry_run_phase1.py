@@ -295,7 +295,7 @@ def test_gzip_pickle_fix():
 def main():
     """Run all dry-run tests."""
     print("\n" + "="*80)
-    print("  NEUROKG PHASE 1 DRY-RUN")
+    print("  BR_KG PHASE 1 DRY-RUN")
     print("  Testing all data loaders WITHOUT database writes")
     print("="*80)
     print(f"\nStarted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")

@@ -16,7 +16,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -37,7 +36,9 @@ def _resolve_repo_path(path: Path) -> Path:
 @pytest.mark.slow
 @pytest.mark.timeout(900)
 def test_workflow_brain_age_prediction_ds000117_smoke(tmp_path: Path):
-    bids_root = Path(os.environ.get("BR_DS000117_BIDS_ROOT", "/app/data/openneuro/ds000117"))
+    bids_root = Path(
+        os.environ.get("BR_DS000117_BIDS_ROOT", "/app/data/openneuro/ds000117")
+    )
     if not bids_root.exists():
         pytest.skip(f"ds000117 not found at {bids_root}")
 
@@ -47,7 +48,7 @@ def test_workflow_brain_age_prediction_ds000117_smoke(tmp_path: Path):
             _resolve_repo_path(
                 PROJECT_ROOT
                 / "data"
-                / "neurokg"
+                / "br_kg"
                 / "raw"
                 / "nilearn_atlases"
                 / "schaefer_2018"
@@ -83,7 +84,10 @@ def test_workflow_brain_age_prediction_ds000117_smoke(tmp_path: Path):
     subjects: list[str] = []
     ages: list[float] = []
     for pid, age in sorted(age_map.items()):
-        bold = bids_root / f"{pid}/ses-mri/func/{pid}_ses-mri_task-facerecognition_run-01_bold.nii.gz"
+        bold = (
+            bids_root
+            / f"{pid}/ses-mri/func/{pid}_ses-mri_task-facerecognition_run-01_bold.nii.gz"
+        )
         if not bold.exists():
             continue
         subjects.append(pid)
@@ -95,7 +99,10 @@ def test_workflow_brain_age_prediction_ds000117_smoke(tmp_path: Path):
 
     ts_list = []
     for sub, age in zip(subjects, ages, strict=True):
-        bold = bids_root / f"{sub}/ses-mri/func/{sub}_ses-mri_task-facerecognition_run-01_bold.nii.gz"
+        bold = (
+            bids_root
+            / f"{sub}/ses-mri/func/{sub}_ses-mri_task-facerecognition_run-01_bold.nii.gz"
+        )
 
         ts_dir = tmp_path / f"ts_{sub}"
         ts_dir.mkdir(parents=True, exist_ok=True)

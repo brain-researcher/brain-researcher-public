@@ -16,7 +16,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -37,7 +36,9 @@ def _resolve_repo_path(path: Path) -> Path:
 @pytest.mark.slow
 @pytest.mark.timeout(1200)
 def test_workflow_sc_fc_coupling_smoke(tmp_path: Path):
-    ds117 = Path(os.environ.get("BR_DS000117_BIDS_ROOT", "/app/data/openneuro/ds000117"))
+    ds117 = Path(
+        os.environ.get("BR_DS000117_BIDS_ROOT", "/app/data/openneuro/ds000117")
+    )
     if not ds117.exists():
         pytest.skip(f"ds000117 not found at {ds117}")
 
@@ -68,7 +69,7 @@ def test_workflow_sc_fc_coupling_smoke(tmp_path: Path):
             _resolve_repo_path(
                 PROJECT_ROOT
                 / "data"
-                / "neurokg"
+                / "br_kg"
                 / "raw"
                 / "nilearn_atlases"
                 / "schaefer_2018"
@@ -107,7 +108,12 @@ def test_workflow_sc_fc_coupling_smoke(tmp_path: Path):
     tracts_dir.mkdir(parents=True, exist_ok=True)
     res_tracts = execute_tool(
         "run_tractography",
-        {"dwi": str(dwi), "bvals": str(bval), "bvecs": str(bvec), "output_dir": str(tracts_dir)},
+        {
+            "dwi": str(dwi),
+            "bvals": str(bval),
+            "bvecs": str(bvec),
+            "output_dir": str(tracts_dir),
+        },
     )
     assert res_tracts.status == "success", res_tracts.error
     tractogram = res_tracts.data["outputs"]["streamlines"]
@@ -126,5 +132,7 @@ def test_workflow_sc_fc_coupling_smoke(tmp_path: Path):
     )
     assert res.status == "success", res.error
 
-    assert (out_dir / "sc.npy").exists() or (out_dir / "sc" / "connectivity_matrix.csv").exists()
+    assert (out_dir / "sc.npy").exists() or (
+        out_dir / "sc" / "connectivity_matrix.csv"
+    ).exists()
     assert (out_dir / "fc.npy").exists()

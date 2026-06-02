@@ -678,12 +678,12 @@ class TestIntegration(unittest.TestCase):
         assert len(names) == len(set(names))
 
     def test_all_tools_inherit_base(self):
-        """Test all tools inherit from NeuroKGToolWrapper."""
-        from brain_researcher.services.tools.tool_base import NeuroKGToolWrapper
+        """Test all tools inherit from BRKGToolWrapper."""
+        from brain_researcher.services.tools.tool_base import BRKGToolWrapper
 
         tools = CONNTools.get_all_tools()
         for tool in tools:
-            assert isinstance(tool, NeuroKGToolWrapper)
+            assert isinstance(tool, BRKGToolWrapper)
 
 
 if __name__ == "__main__":

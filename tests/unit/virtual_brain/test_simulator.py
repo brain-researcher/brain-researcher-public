@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from brain_researcher.services.neurokg.graph.fake_graph_database import FakeGraphDB
+from brain_researcher.services.br_kg.graph.fake_graph_database import FakeGraphDB
 from brain_researcher.services.virtual_brain.config import VirtualBrainConfig
 from brain_researcher.services.virtual_brain.models import (
     SimulateRequest,

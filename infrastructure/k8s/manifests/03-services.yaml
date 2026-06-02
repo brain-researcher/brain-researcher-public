@@ -144,11 +144,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: neurokg-service
+  name: br-kg-service
   namespace: brain-researcher-core
   labels:
-    app.kubernetes.io/name: neurokg
-    app.kubernetes.io/component: neurokg
+    app.kubernetes.io/name: br-kg
+    app.kubernetes.io/component: br-kg
     app.kubernetes.io/part-of: brain-researcher-platform
   annotations:
     prometheus.io/scrape: "true"
@@ -162,8 +162,8 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    app.kubernetes.io/name: neurokg
-    app.kubernetes.io/component: neurokg
+    app.kubernetes.io/name: br-kg
+    app.kubernetes.io/component: br-kg
   sessionAffinity: None
 
 ---
@@ -171,11 +171,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: neurokg-headless-service
+  name: br-kg-headless-service
   namespace: brain-researcher-core
   labels:
-    app.kubernetes.io/name: neurokg
-    app.kubernetes.io/component: neurokg-headless
+    app.kubernetes.io/name: br-kg
+    app.kubernetes.io/component: br-kg-headless
     app.kubernetes.io/part-of: brain-researcher-platform
 spec:
   clusterIP: None
@@ -185,8 +185,8 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    app.kubernetes.io/name: neurokg
-    app.kubernetes.io/component: neurokg
+    app.kubernetes.io/name: br-kg
+    app.kubernetes.io/component: br-kg
 
 ---
 apiVersion: v1

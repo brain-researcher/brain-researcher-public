@@ -58,11 +58,13 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.skip(reason="selenium not installed"))
 
         # Torch / GNN / heavy graph ML deps
-        if ("gnn" in nid or "torch" in nid or "/ml/" in nid or "graph_" in nid) and not _has("torch"):
+        if (
+            "gnn" in nid or "torch" in nid or "/ml/" in nid or "graph_" in nid
+        ) and not _has("torch"):
             item.add_marker(pytest.mark.skip(reason="torch not installed"))
 
         # Neo4j / BR-KG drivers
-        if ("neurokg" in nid or "neo4j" in nid) and not _has("neo4j"):
+        if ("br_kg" in nid or "neo4j" in nid) and not _has("neo4j"):
             item.add_marker(pytest.mark.skip(reason="neo4j driver not installed"))
 
         # Legacy ETL modules that live outside the repo
@@ -78,8 +80,14 @@ def pytest_collection_modifyitems(config, items):
 
         # Legacy ontologies builders
         if "/ontologies/" in nid:
-            item.add_marker(pytest.mark.skip(reason="ontologies builder deps not available"))
+            item.add_marker(
+                pytest.mark.skip(reason="ontologies builder deps not available")
+            )
 
         # Optional/legacy components: mark as skipped but visible
         if any(key in nid for key in OPTIONAL_KEYS):
-            item.add_marker(pytest.mark.skip(reason="optional/legacy component not available in this env"))
+            item.add_marker(
+                pytest.mark.skip(
+                    reason="optional/legacy component not available in this env"
+                )
+            )

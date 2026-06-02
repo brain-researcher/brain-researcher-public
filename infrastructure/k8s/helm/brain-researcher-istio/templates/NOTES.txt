@@ -87,14 +87,14 @@ istioctl analyze
 ### 3. Access Services
 {{- if .Values.gateways.main.enabled }}
 
-Web UI: 
+Web UI:
 {{- range .Values.gateways.main.hosts }}
 - https://{{ . }}
 {{- end }}
 
 BR-KG API:
 {{- range .Values.gateways.main.hosts }}
-- https://{{ . }}:{{ .Values.gateways.main.ports.neurokg }}
+- https://{{ . }}:{{ .Values.gateways.main.ports.br-kg }}
 {{- end }}
 
 Agent Service:

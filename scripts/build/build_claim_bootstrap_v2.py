@@ -9,10 +9,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from brain_researcher.services.neurokg.etl.loaders.gabriel_loader import (
+from brain_researcher.services.br_kg.etl.loaders.gabriel_loader import (
     GabrielMeasurementLoader,
 )
-from brain_researcher.services.neurokg.etl.loaders.gabriel_measurements import (
+from brain_researcher.services.br_kg.etl.loaders.gabriel_measurements import (
     DEFAULT_REQUIRED_PROVENANCE_FIELDS,
     GabrielVariables,
     compute_gabriel_variables,
@@ -21,7 +21,7 @@ from brain_researcher.services.neurokg.etl.loaders.gabriel_measurements import (
 
 ROOT = Path(__file__).resolve().parents[2]
 
-SAMPLE_OUTPUT = ROOT / "tests/fixtures/neurokg/gabriel_measurements.bootstrap_v2.jsonl"
+SAMPLE_OUTPUT = ROOT / "tests/fixtures/br-kg/gabriel_measurements.bootstrap_v2.jsonl"
 CALIBRATION_OUTPUT = (
     ROOT / "docs/planning/claim_hypotheses_calibration_v2.jsonl"
 )
@@ -97,7 +97,7 @@ class LoadedSource:
 SOURCE_SPECS: dict[str, SourceSpec] = {
     "wm_seed": SourceSpec(
         key="wm_seed",
-        path="data/neurokg/raw/gabriel/measurements.jsonl",
+        path="data/br-kg/raw/gabriel/measurements.jsonl",
         line_number=1,
         expected_paper_id="pmid:40000001",
         expected_target_id="concept:working_memory",
@@ -110,7 +110,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "lcont7_seed": SourceSpec(
         key="lcont7_seed",
-        path="data/neurokg/raw/gabriel/measurements.jsonl",
+        path="data/br-kg/raw/gabriel/measurements.jsonl",
         line_number=2,
         expected_paper_id="pmid:40000002",
         expected_target_id="schaefer400-7n:L_Cont_7",
@@ -123,7 +123,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "rejected_exec_control": SourceSpec(
         key="rejected_exec_control",
-        path="data/neurokg/raw/gabriel/measurements.jsonl",
+        path="data/br-kg/raw/gabriel/measurements.jsonl",
         line_number=3,
         expected_paper_id="pmid:40000003",
         expected_target_id=None,
@@ -136,7 +136,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "attention_refute": SourceSpec(
         key="attention_refute",
-        path="data/neurokg/raw/gabriel/runs/gabriel-pubget-smoke-20260225/shards/shard_0000.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-pubget-smoke-20260225/shards/shard_0000.jsonl",
         line_number=1,
         expected_paper_id="pmid:41446878",
         expected_target_id="concept:attention",
@@ -149,7 +149,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "insula_support": SourceSpec(
         key="insula_support",
-        path="data/neurokg/raw/gabriel/runs/gabriel-pubget-smoke-20260225/shards/shard_0000.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-pubget-smoke-20260225/shards/shard_0000.jsonl",
         line_number=2,
         expected_paper_id="pmid:41446119",
         expected_target_id="region:insula",
@@ -162,7 +162,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "default_mode_refute": SourceSpec(
         key="default_mode_refute",
-        path="data/neurokg/raw/gabriel/runs/gabriel-pubget-smoke-20260225/shards/shard_0000.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-pubget-smoke-20260225/shards/shard_0000.jsonl",
         line_number=3,
         expected_paper_id="pmid:41442573",
         expected_target_id="concept:default_mode_network",
@@ -175,7 +175,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "attention_support": SourceSpec(
         key="attention_support",
-        path="data/neurokg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0000.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0000.jsonl",
         line_number=9,
         expected_paper_id="paper:10_1016_j_bbr_2018_02_031",
         expected_target_id="concept:attention",
@@ -188,7 +188,7 @@ SOURCE_SPECS: dict[str, SourceSpec] = {
     ),
     "response_inhibition_support": SourceSpec(
         key="response_inhibition_support",
-        path="data/neurokg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0004.jsonl",
+        path="data/br-kg/raw/gabriel/runs/gabriel-gemini-sdk-batch100-off100-20260225_013625/shards/shard_0004.jsonl",
         line_number=8,
         expected_paper_id="paper:10_1016_j_neurobiolaging_2018_02_003",
         expected_target_id="task:response_inhibition",

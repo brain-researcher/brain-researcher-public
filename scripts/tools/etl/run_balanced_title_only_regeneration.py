@@ -16,12 +16,12 @@ from typing import Any
 
 import requests
 
-from brain_researcher.services.neurokg.etl import gabriel_generator as gg
-from brain_researcher.services.neurokg.etl.loaders.scholarly_metadata_loader import (
+from brain_researcher.services.br_kg.etl import gabriel_generator as gg
+from brain_researcher.services.br_kg.etl.loaders.scholarly_metadata_loader import (
     DEFAULT_CACHE_DIR,
     ScholarlyMetadataLoader,
 )
-from brain_researcher.services.neurokg.graph.neo4j_utils import require_neo4j_db
+from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
 
 logger = logging.getLogger(__name__)
 PUBMED_ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"

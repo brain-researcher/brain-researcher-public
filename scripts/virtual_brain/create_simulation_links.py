@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Iterable
 
-from brain_researcher.services.neurokg.graph.graph_factory import create_graph_client
+from brain_researcher.services.br_kg.graph.graph_factory import create_graph_client
 from brain_researcher.core.ingestion.loaders.virtual_brain_loader import VirtualBrainLoader
 
 logger = logging.getLogger(__name__)

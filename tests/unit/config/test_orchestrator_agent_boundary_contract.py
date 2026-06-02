@@ -144,7 +144,7 @@ REQUIRED_SUBSTRINGS = {
         "NEXT_PUBLIC_USE_API_PROXY=true",
         "ORCHESTRATOR_PORT=3001",
         "BR_ORCHESTRATOR_URL=http://localhost:3001",
-        "BR_NEUROKG_URL=http://localhost:5000",
+        "BR_KG_URL=http://localhost:5000",
         "**Orchestrator**: `/run`, `/api/jobs/*`, `/api/analyses/*`, share, dashboard, credits",
     ),
     "apps/web-ui/INTEGRATION.md": (
@@ -283,7 +283,7 @@ FORBIDDEN_SUBSTRINGS = {
     ),
     "apps/web-ui/README.md": (
         "API proxied to Agent on 8000",
-        "NEXT_PUBLIC_NEUROKG_API=http://localhost:5001",
+        "NEXT_PUBLIC_BR_KG_API=http://localhost:5001",
     ),
     "apps/web-ui/INTEGRATION.md": (
         "The Orchestrator is no longer on the UI hot path",
@@ -300,8 +300,8 @@ FORBIDDEN_SUBSTRINGS = {
         "gateway front door (default 8000)",
         "Orchestrator ports (3001/8010) stay behind the gateway and are not used on the UI hot path.",
         "ORCHESTRATOR_PORT=8000",
-        "NEXT_PUBLIC_NEUROKG_API=http://localhost:5001",
-        "NEUROKG_PORT=5001",
+        "NEXT_PUBLIC_BR_KG_API=http://localhost:5001",
+        "BR_KG_PORT=5001",
         "Set `NEXT_PUBLIC_WS_URL` only if you have a WS endpoint enabled on the Agent",
     ),
     "docs/UI_WIRING_CHECKLIST.md": (

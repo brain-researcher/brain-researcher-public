@@ -57,6 +57,7 @@ const ConceptSearchPanelRaw = ({
         <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
         <input
           type="text"
+          data-tour="kg-search"
           placeholder={searchPlaceholder}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}

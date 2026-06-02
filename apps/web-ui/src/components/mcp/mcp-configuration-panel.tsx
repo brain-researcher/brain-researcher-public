@@ -54,6 +54,8 @@ type TokenVerifyResponse = {
 export type McpConfigurationPanelProps = {
   showManageInSettings?: boolean
   onManageInSettings?: () => void
+  /** When true (setup page), label the token + config sections as numbered steps. */
+  numbered?: boolean
   planId?: string | null
   threadId?: string | null
   workflowId?: string | null
@@ -63,9 +65,36 @@ export type McpConfigurationPanelProps = {
   continuationPrompt?: string | null
 }
 
+function StepHeader({
+  step,
+  numbered,
+  title,
+  subtitle,
+}: {
+  step: number
+  numbered: boolean
+  title: string
+  subtitle?: string
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      {numbered ? (
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
+          {step}
+        </span>
+      ) : null}
+      <div className="space-y-0.5">
+        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+        {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
+      </div>
+    </div>
+  )
+}
+
 export function McpConfigurationPanel({
   showManageInSettings = false,
   onManageInSettings,
+  numbered = false,
   planId,
   threadId,
   workflowId,
@@ -344,85 +373,15 @@ export function McpConfigurationPanel({
         </TabsList>
 
         <TabsContent value="cloud" className="mt-4 space-y-4">
-          <div className="text-sm text-muted-foreground">
-            Paste this into your IDE&apos;s MCP configuration:
-          </div>
-
-          <div className="rounded-lg border bg-muted/20 p-4">
-            <div className="mb-3 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant={cloudConfigTab === 'cursor' ? 'default' : 'secondary'}
-                aria-pressed={cloudConfigTab === 'cursor'}
-                onClick={() => setCloudConfigTab('cursor')}
-              >
-                Cursor
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={cloudConfigTab === 'codex' ? 'default' : 'secondary'}
-                aria-pressed={cloudConfigTab === 'codex'}
-                onClick={() => setCloudConfigTab('codex')}
-              >
-                Codex
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={cloudConfigTab === 'claude' ? 'default' : 'secondary'}
-                aria-pressed={cloudConfigTab === 'claude'}
-                onClick={() => setCloudConfigTab('claude')}
-              >
-                Claude Code
-              </Button>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-xs text-muted-foreground">{cloudSnippet.fileName}</div>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="shrink-0"
-                onClick={() => void copyToClipboard(cloudSnippet.copyLabel, cloudSnippet.snippet)}
-              >
-                <Copy className="mr-2 h-3 w-3" />
-                {cloudSnippet.copyButtonLabel}
-              </Button>
-            </div>
-            <pre className="mt-3 text-xs overflow-x-auto whitespace-pre-wrap">{cloudSnippet.snippet}</pre>
-          </div>
-
-          <div className="text-xs text-muted-foreground">
-            Works with: Cursor · Windsurf · Codex · Claude Code
-          </div>
-
-          <div className="rounded-lg border p-3 text-xs text-muted-foreground space-y-1">
-            <div>
-              Cursor and Windsurf work best with the full token pasted directly into the JSON
-              config.
-            </div>
-            <div>
-              Codex uses <code className="font-mono">~/.codex/config.toml</code> with{' '}
-              <code className="font-mono">BR_MCP_TOKEN</code> in the shell and the{' '}
-              <code className="font-mono">Accept</code> header under{' '}
-              <code className="font-mono">[http_headers]</code>.
-            </div>
-            <div>
-              Claude Code keeps <code className="font-mono">Authorization: Bearer ${'{'}BR_MCP_TOKEN{'}'}</code>{' '}
-              in the hosted HTTP JSON config.
-            </div>
-          </div>
-
-          <div className="rounded-lg border p-3 space-y-3">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-muted-foreground">Personal MCP token</div>
-                <div className="text-xs text-muted-foreground">
-                  One active token per user. Generating a new token rotates the previous one immediately.
-                </div>
-              </div>
+          {/* Step 1 — generate the token (must come before the config that uses it) */}
+          <div className="space-y-3">
+            <StepHeader
+              step={1}
+              numbered={numbered}
+              title="Generate your personal token"
+              subtitle="One active token per user. Generating a new one rotates the previous immediately — the full secret is shown only once, so copy it now."
+            />
+            <div className="rounded-lg border p-3 space-y-3" data-tour="mcp-token-panel">
               <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-start">
                 <Button
                   type="button"
@@ -451,85 +410,166 @@ export function McpConfigurationPanel({
                   Revoke
                 </Button>
               </div>
+
+              {newToken ? (
+                <div className="rounded border bg-muted/20 p-3 space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    New token (shown once)
+                  </div>
+                  <div className="font-mono text-xs break-all">{newToken}</div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => void copyToClipboard('MCP token', newToken)}
+                    >
+                      <Copy className="mr-2 h-3 w-3" />
+                      Copy token
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              {!newToken ? (
+                <div className="rounded border bg-muted/20 p-2 text-xs text-muted-foreground">
+                  {authLoading
+                    ? 'Checking sign-in status for MCP token management…'
+                    : tokenManagementEnabled
+                      ? 'Click Generate to mint a token — it is filled into the config and shell export in step 2. The full secret is only shown once.'
+                      : 'Sign in to manage personal MCP tokens. The step 2 instructions still work with an existing token.'}
+                </div>
+              ) : null}
+
+              {activeToken ? (
+                <div className="grid gap-2 text-xs md:grid-cols-2">
+                  <div>
+                    <span className="text-muted-foreground">Active key id:</span>{' '}
+                    <code className="font-mono">{activeToken.kid}</code>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Created:</span>{' '}
+                    <span>{formatTimestamp(activeToken.created_at)}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Last used:</span>{' '}
+                    <span>{formatTimestamp(activeToken.last_used_at)}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Expires:</span>{' '}
+                    <span>{formatTimestamp(activeToken.expires_at)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">
+                  {tokenManagementEnabled
+                    ? 'No active token yet. Generate one to connect IDE MCP clients.'
+                    : 'Sign in to view or manage MCP tokens.'}
+                </div>
+              )}
+
+              {verifyStatus ? (
+                <div className="rounded border bg-muted/20 p-2 text-xs text-muted-foreground">
+                  Backend: {verifyStatus.backend || 'unknown'} · Redis:{' '}
+                  {verifyStatus.redis_available ? 'connected' : 'unavailable'} · Pepper:{' '}
+                  {verifyStatus.pepper_configured ? 'configured' : 'missing'}
+                </div>
+              ) : null}
             </div>
-
-            {newToken ? (
-              <div className="rounded border bg-muted/20 p-3 space-y-2">
-                <div className="text-xs font-medium text-muted-foreground">
-                  New token (shown once)
-                </div>
-                <div className="font-mono text-xs break-all">{newToken}</div>
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => void copyToClipboard('MCP token', newToken)}
-                  >
-                    <Copy className="mr-2 h-3 w-3" />
-                    Copy token
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-
-            {!newToken ? (
-              <div className="rounded border bg-muted/20 p-2 text-xs text-muted-foreground">
-                {authLoading
-                  ? 'Checking sign-in status for MCP token management…'
-                  : tokenManagementEnabled
-                    ? 'If you need a copy-paste-ready Cursor config or shell export, rotate the token first. The full secret is only shown once.'
-                    : 'Sign in to manage personal MCP tokens. IDE setup instructions still work with an existing token.'}
-              </div>
-            ) : null}
-
-            {activeToken ? (
-              <div className="grid gap-2 text-xs md:grid-cols-2">
-                <div>
-                  <span className="text-muted-foreground">Active key id:</span>{' '}
-                  <code className="font-mono">{activeToken.kid}</code>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Created:</span>{' '}
-                  <span>{formatTimestamp(activeToken.created_at)}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Last used:</span>{' '}
-                  <span>{formatTimestamp(activeToken.last_used_at)}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Expires:</span>{' '}
-                  <span>{formatTimestamp(activeToken.expires_at)}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-xs text-muted-foreground">
-                {tokenManagementEnabled
-                  ? 'No active token yet. Generate one to connect IDE MCP clients.'
-                  : 'Sign in to view or manage MCP tokens.'}
-              </div>
-            )}
-
-            {verifyStatus ? (
-              <div className="rounded border bg-muted/20 p-2 text-xs text-muted-foreground">
-                Backend: {verifyStatus.backend || 'unknown'} · Redis:{' '}
-                {verifyStatus.redis_available ? 'connected' : 'unavailable'} · Pepper:{' '}
-                {verifyStatus.pepper_configured ? 'configured' : 'missing'}
-              </div>
-            ) : null}
           </div>
 
-          <div className="rounded-lg border p-3 text-sm space-y-2">
-            <div className="text-xs font-medium text-muted-foreground">Shell environment</div>
-            <div className="rounded border bg-muted/20 p-2 font-mono text-xs break-all">
-              {exportTokenCommand}
+          {/* Step 2 — drop the config (with the step-1 token) into your agent */}
+          <div className="space-y-3">
+            <StepHeader
+              step={2}
+              numbered={numbered}
+              title="Add Brain Researcher to your coding agent"
+              subtitle="Pick your client, then paste this into its MCP configuration. Your step-1 token is already filled in."
+            />
+
+            <div className="rounded-lg border bg-muted/20 p-4" data-tour="mcp-config-snippet">
+              <div className="mb-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={cloudConfigTab === 'cursor' ? 'default' : 'secondary'}
+                  aria-pressed={cloudConfigTab === 'cursor'}
+                  onClick={() => setCloudConfigTab('cursor')}
+                >
+                  Cursor
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={cloudConfigTab === 'codex' ? 'default' : 'secondary'}
+                  aria-pressed={cloudConfigTab === 'codex'}
+                  onClick={() => setCloudConfigTab('codex')}
+                >
+                  Codex
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={cloudConfigTab === 'claude' ? 'default' : 'secondary'}
+                  aria-pressed={cloudConfigTab === 'claude'}
+                  onClick={() => setCloudConfigTab('claude')}
+                >
+                  Claude Code
+                </Button>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">{cloudSnippet.fileName}</div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0"
+                  onClick={() => void copyToClipboard(cloudSnippet.copyLabel, cloudSnippet.snippet)}
+                >
+                  <Copy className="mr-2 h-3 w-3" />
+                  {cloudSnippet.copyButtonLabel}
+                </Button>
+              </div>
+              <pre className="mt-3 text-xs overflow-x-auto whitespace-pre-wrap">{cloudSnippet.snippet}</pre>
             </div>
-            <div className="text-xs text-muted-foreground">
-              Use your personal token value (format: <code className="font-mono">brk_&lt;kid&gt;.&lt;secret&gt;</code>).
-              Do not include the <code className="font-mono">Bearer </code> prefix in{' '}
-              <code className="font-mono">BR_MCP_TOKEN</code>. This shell export is for Codex and
-              Claude Code. Cursor and Windsurf paste the full token directly into JSON.
+
+            <div className="rounded-lg border p-3 text-sm space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">
+                Shell environment (Codex &amp; Claude Code)
+              </div>
+              <div className="rounded border bg-muted/20 p-2 font-mono text-xs break-all">
+                {exportTokenCommand}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Keep <code className="font-mono">BR_MCP_TOKEN</code> as the raw{' '}
+                <code className="font-mono">brk_&lt;kid&gt;.&lt;secret&gt;</code> token — no{' '}
+                <code className="font-mono">Bearer </code> prefix. Cursor and Windsurf paste the
+                full token directly into the JSON instead.
+              </div>
             </div>
+
+            <details className="rounded-lg border p-3 text-xs text-muted-foreground">
+              <summary className="cursor-pointer font-medium text-gray-900">
+                Client-specific notes
+              </summary>
+              <div className="mt-2 space-y-1">
+                <div>
+                  Cursor and Windsurf work best with the full token pasted directly into the JSON
+                  config.
+                </div>
+                <div>
+                  Codex uses <code className="font-mono">~/.codex/config.toml</code> with{' '}
+                  <code className="font-mono">BR_MCP_TOKEN</code> in the shell and the{' '}
+                  <code className="font-mono">Accept</code> header under{' '}
+                  <code className="font-mono">[http_headers]</code>.
+                </div>
+                <div>
+                  Claude Code keeps{' '}
+                  <code className="font-mono">Authorization: Bearer ${'{'}BR_MCP_TOKEN{'}'}</code> in
+                  the hosted HTTP JSON config.
+                </div>
+              </div>
+            </details>
           </div>
 
           {showManageInSettings && onManageInSettings ? (

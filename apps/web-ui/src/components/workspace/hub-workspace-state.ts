@@ -110,19 +110,22 @@ export function handoffAllowsDirectRuntimeOpen(
 
 export function buildHubRuntimeTargetUrl(
   targetUrl: string | null | undefined,
-  sessionId: string | null | undefined,
+  // Retained for call-site compatibility but intentionally unused: marimo now
+  // OWNS its session id (it mints its own s_xxxxxx). We must NOT impose the
+  // studio session_id on the iframe URL — doing so forced marimo's frontend
+  // through a brittle patched code path that could render 0 cells (the "blank
+  // notebook" bug). The orchestrator discovers marimo's real id server-side
+  // (GET /api/sessions) when it needs to target the live kernel.
+  _sessionId?: string | null | undefined,
 ): string | null {
   const normalizedTargetUrl = clean(targetUrl ?? null)
   if (!normalizedTargetUrl) {
     return null
   }
-  const normalizedSessionId = clean(sessionId ?? null)
-  if (!normalizedSessionId) {
-    return normalizedTargetUrl
-  }
   try {
     const url = new URL(normalizedTargetUrl)
-    url.searchParams.set('session_id', normalizedSessionId)
+    // Defensively strip any session_id the upstream may have appended.
+    url.searchParams.delete('session_id')
     return url.toString()
   } catch {
     return normalizedTargetUrl

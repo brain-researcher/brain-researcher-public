@@ -14,7 +14,7 @@ from brain_researcher.core.ingestion.loaders.openneuro_onvoc_annotations import 
     canonical_openneuro_dataset_node_id,
     legacy_onvoc_node_id,
 )
-from brain_researcher.services.neurokg.graph.fake_graph_database import FakeGraphDB
+from brain_researcher.services.br_kg.graph.fake_graph_database import FakeGraphDB
 
 
 def _write_annotation_fixture(tmp_path: Path) -> Path:

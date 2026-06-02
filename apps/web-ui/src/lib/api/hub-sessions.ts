@@ -96,20 +96,56 @@ const buildHeaders = (accessToken?: string | null) => {
   return headers
 }
 
+/**
+ * Error thrown by requestJson() for hub-session gateway failures. Carries the
+ * HTTP status so callers can distinguish retryable failures (network = 0, or
+ * HTTP 5xx) from terminal ones (4xx). Mirrors AppendHubSessionCellError below.
+ *
+ * The message prefix `Hub session gateway request failed:` is load-bearing:
+ * isMissingHubSessionError() substring-matches the backend 'Hub session not
+ * found' detail that follows it, so keep the template intact.
+ */
+export class HubSessionGatewayError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'HubSessionGatewayError'
+    this.status = status
+  }
+}
+
+/**
+ * Classify a hub-session gateway error as retryable. Only network failures
+ * (status 0, fetch rejected => orchestrator unreachable) and HTTP 5xx are
+ * transient; 4xx (auth/validation/missing) and any non-gateway error are
+ * terminal.
+ */
+export function isRetryableHubGatewayError(err: unknown): boolean {
+  return err instanceof HubSessionGatewayError && (err.status === 0 || err.status >= 500)
+}
+
 async function requestJson<T>(
   path: string,
   init: RequestInit,
   options?: RequestOptions,
 ): Promise<T> {
-  const response = await fetch(serviceEndpoints.orchestrator(path), {
-    ...init,
-    credentials: 'include',
-    signal: options?.signal,
-    headers: {
-      ...buildHeaders(options?.accessToken),
-      ...(init.headers ?? {}),
-    },
-  })
+  let response: Response
+  try {
+    response = await fetch(serviceEndpoints.orchestrator(path), {
+      ...init,
+      credentials: 'include',
+      signal: options?.signal,
+      headers: {
+        ...buildHeaders(options?.accessToken),
+        ...(init.headers ?? {}),
+      },
+    })
+  } catch (err) {
+    // Network rejection (e.g. orchestrator unreachable during a Recreate-strategy
+    // redeploy). Surface as status 0 so callers treat it as retryable.
+    const msg = err instanceof Error ? err.message : String(err)
+    throw new HubSessionGatewayError(`Hub session gateway request failed: ${msg}`, 0)
+  }
 
   if (!response.ok) {
     let detail = `${response.status} ${response.statusText}`
@@ -121,7 +157,10 @@ async function requestJson<T>(
     } catch {
       // Ignore non-JSON failures and surface the HTTP status text instead.
     }
-    throw new Error(`Hub session gateway request failed: ${detail}`)
+    throw new HubSessionGatewayError(
+      `Hub session gateway request failed: ${detail}`,
+      response.status,
+    )
   }
 
   return (await response.json()) as T

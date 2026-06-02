@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.tool_base import NeuroKGToolWrapper, ToolResult
+from brain_researcher.services.tools.tool_base import BRKGToolWrapper, ToolResult
 from brain_researcher.services.tools.tool_registry import (
     DynamicToolLoader,
     ToolRegistry,
@@ -22,7 +22,7 @@ class MockToolArgs(BaseModel):
     param: str = Field(description="Test parameter")
 
 
-class MockTool1(NeuroKGToolWrapper):
+class MockTool1(BRKGToolWrapper):
     def get_tool_name(self) -> str:
         return "mock_tool_1"
 
@@ -36,7 +36,7 @@ class MockTool1(NeuroKGToolWrapper):
         return ToolResult(status="success", data={"result": param})
 
 
-class MockTool2(NeuroKGToolWrapper):
+class MockTool2(BRKGToolWrapper):
     def get_tool_name(self) -> str:
         return "mock_tool_2"
 
@@ -67,25 +67,27 @@ class TestToolRegistry:
 
         # Should discover all real tools from various tool modules
         # We expect at least 25 tools from the current implementation
-        assert len(registry.tools) >= 25, f"Expected at least 25 tools, got {len(registry.tools)}"
-        
+        assert (
+            len(registry.tools) >= 25
+        ), f"Expected at least 25 tools, got {len(registry.tools)}"
+
         # Verify some key real tools are present
         expected_tools = [
-            'glm_analysis',           # From FMRITools
-            'validate_bids',          # From BIDSTools  
-            'graph_query',            # From NeuroKGTools
-            'openneuro_download',     # From ArchiveTools
-            'run_fmriprep',          # From PipelineTools
-            'mriqc_group_report',    # From QCTools
-            'coreg_qc_gallery',      # From QCTools
+            "glm_analysis",  # From FMRITools
+            "validate_bids",  # From BIDSTools
+            "graph_query",  # From BRKGTools
+            "openneuro_download",  # From ArchiveTools
+            "run_fmriprep",  # From PipelineTools
+            "mriqc_group_report",  # From QCTools
+            "coreg_qc_gallery",  # From QCTools
         ]
-        
+
         for tool_name in expected_tools:
             assert tool_name in registry.tools, f"Expected tool '{tool_name}' not found"
-        
+
         # Verify tool descriptions are populated
         assert len(registry.tool_descriptions) == len(registry.tools)
-        
+
         # Verify the search index was built
         assert len(registry.tool_documents) == len(registry.tools)
 
@@ -109,7 +111,9 @@ class TestToolRegistry:
         registry.register_tool(tool1)
 
         # Should log warning but still register
-        with patch("brain_researcher.services.tools.tool_registry.logger") as mock_logger:
+        with patch(
+            "brain_researcher.services.tools.tool_registry.logger"
+        ) as mock_logger:
             registry.register_tool(tool2)
             mock_logger.warning.assert_called_once()
 
@@ -177,7 +181,7 @@ class TestToolRegistry:
         registry = ToolRegistry(auto_discover=False)
         registry.register_tool(MockTool1())  # Has "GLM analysis" in description
         registry.register_tool(MockTool2())  # Has "coordinate mapping" in description
-        
+
         # Build the search index after registering tools
         registry._build_tool_index()
 
@@ -202,7 +206,7 @@ class TestToolRegistry:
         registry = ToolRegistry(auto_discover=False)
 
         # Create tools with different relevance levels
-        class HighlyRelevantTool(NeuroKGToolWrapper):
+        class HighlyRelevantTool(BRKGToolWrapper):
             def get_tool_name(self) -> str:
                 return "highly_relevant"
 
@@ -215,7 +219,7 @@ class TestToolRegistry:
             def _run(self, **kwargs) -> ToolResult:
                 return ToolResult(status="success")
 
-        class SomewhatRelevantTool(NeuroKGToolWrapper):
+        class SomewhatRelevantTool(BRKGToolWrapper):
             def get_tool_name(self) -> str:
                 return "somewhat_relevant"
 
@@ -230,7 +234,7 @@ class TestToolRegistry:
 
         registry.register_tool(SomewhatRelevantTool())
         registry.register_tool(HighlyRelevantTool())
-        
+
         # Build the search index after registering tools
         registry._build_tool_index()
 
@@ -327,10 +331,10 @@ class TestDynamicToolLoader(unittest.TestCase):
             with open(tool_file, "w") as f:
                 f.write(
                     """
-from brain_researcher.services.tools.tool_base import NeuroKGToolWrapper, ToolResult
+from brain_researcher.services.tools.tool_base import BRKGToolWrapper, ToolResult
 from pydantic import BaseModel
 
-class CustomTool(NeuroKGToolWrapper):
+class CustomTool(BRKGToolWrapper):
     def get_tool_name(self):
         return "custom_tool"
     def get_tool_description(self):
@@ -345,7 +349,7 @@ class CustomTool(NeuroKGToolWrapper):
             # Mock the import to avoid actual module loading issues
             mock_module = MagicMock()
 
-            class CustomTool(NeuroKGToolWrapper):
+            class CustomTool(BRKGToolWrapper):
                 def get_tool_name(self):
                     return "custom_tool"
 
@@ -375,7 +379,7 @@ class CustomTool(NeuroKGToolWrapper):
         """Test handling tool instantiation errors."""
 
         # Create a tool that fails to instantiate
-        class FailingTool(NeuroKGToolWrapper):
+        class FailingTool(BRKGToolWrapper):
             def __init__(self):
                 raise ValueError("Initialization failed")
 
@@ -397,11 +401,16 @@ class CustomTool(NeuroKGToolWrapper):
 
         with patch("importlib.import_module", return_value=mock_module):
             # Capture log output to verify error was logged
-            with self.assertLogs('brain_researcher.services.tools.tool_registry', level='ERROR') as log_context:
+            with self.assertLogs(
+                "brain_researcher.services.tools.tool_registry", level="ERROR"
+            ) as log_context:
                 tools = DynamicToolLoader.load_tools_from_module("mock.module")
 
                 # Should have logged an error for the failing tool
-                assert any("Failed to instantiate FailingTool" in msg for msg in log_context.output)
+                assert any(
+                    "Failed to instantiate FailingTool" in msg
+                    for msg in log_context.output
+                )
 
                 # Should still load the good tool
                 assert len(tools) == 1
@@ -417,52 +426,65 @@ class TestRegistryIntegration:
         registry = ToolRegistry(auto_discover=True)
 
         # Test 1: Verify registry has real tools
-        assert len(registry.tools) >= 25, f"Expected at least 25 tools, got {len(registry.tools)}"
-        
+        assert (
+            len(registry.tools) >= 25
+        ), f"Expected at least 25 tools, got {len(registry.tools)}"
+
         # Test 2: Tool selection for GLM analysis task
         task = "I need to run GLM analysis on fMRI data"
         selected_tools = registry.get_tools_for_task(task, k=3)
-        
+
         # Should find relevant tools based on keyword matching
-        assert len(selected_tools) >= 1, "Should find at least one tool for GLM analysis"
+        assert (
+            len(selected_tools) >= 1
+        ), "Should find at least one tool for GLM analysis"
         tool_names = [t.get_tool_name() for t in selected_tools]
-        
+
         # GLM analysis tool should be in the results
         assert "glm_analysis" in tool_names, f"Expected 'glm_analysis' in {tool_names}"
-        
+
         # Test 3: Tool selection for knowledge graph task
         kg_task = "Find related concepts in the knowledge graph"
         kg_tools = registry.get_tools_for_task(kg_task, k=3)
-        
+
         assert len(kg_tools) >= 1, "Should find at least one knowledge graph tool"
         kg_tool_names = [t.get_tool_name() for t in kg_tools]
-        
+
         # Should find concept-related tools
-        expected_kg_tools = ['find_related_concepts', 'coordinate_to_concept', 'graph_query']
-        assert any(tool in kg_tool_names for tool in expected_kg_tools),\
-            f"Expected at least one of {expected_kg_tools} in {kg_tool_names}"
-        
+        expected_kg_tools = [
+            "find_related_concepts",
+            "coordinate_to_concept",
+            "graph_query",
+        ]
+        assert any(
+            tool in kg_tool_names for tool in expected_kg_tools
+        ), f"Expected at least one of {expected_kg_tools} in {kg_tool_names}"
+
         # Test 4: Complex workflow with multiple steps
         complex_task = "Run GLM analysis, then find concepts related to the activation, and search literature"
         workflow_tools = registry.get_tools_for_task(complex_task, k=5)
-        
-        assert len(workflow_tools) >= 3, "Should find multiple tools for complex workflow"
+
+        assert (
+            len(workflow_tools) >= 3
+        ), "Should find multiple tools for complex workflow"
         workflow_names = [t.get_tool_name() for t in workflow_tools]
-        
+
         # Test 5: Workflow suggestion
         sequences = registry.suggest_tools_sequence(complex_task)
         assert len(sequences) >= 1, "Should suggest at least one tool sequence"
-        
+
         # Test 6: Get all tools as LangChain tools
         lc_tools = registry.get_langchain_tools()
-        assert len(lc_tools) == len(registry.tools), "Should convert all tools to LangChain format"
-        
+        assert len(lc_tools) == len(
+            registry.tools
+        ), "Should convert all tools to LangChain format"
+
         # Test 7: Tool info retrieval
         info = registry.get_tool_info()
         assert info is not None, "Should get tool registry info"
         assert "n_tools" in info
         assert info["n_tools"] == len(registry.tools)
-        
+
         # Test 8: Get specific tool
         glm_tool = registry.get_tool("glm_analysis")
         assert glm_tool is not None, "Should get GLM analysis tool"

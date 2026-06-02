@@ -17,9 +17,9 @@ import pytest
 # Add brain_researcher to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from brain_researcher.services.neurokg.etl.loaders.niclip_loader import NiCLIPLoader
-from brain_researcher.services.neurokg.graph.neo4j_utils import require_neo4j_db
-from brain_researcher.services.neurokg.spatial.create_in_region_edges import (
+from brain_researcher.services.br_kg.etl.loaders.niclip_loader import NiCLIPLoader
+from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
+from brain_researcher.services.br_kg.spatial.create_in_region_edges import (
     CoordinateRegionMapper,
 )
 
@@ -124,7 +124,7 @@ def test_strength_calculator():
     logger.info("=" * 60)
 
     # Import strength calculator
-    from brain_researcher.services.neurokg.etl.strength_calculator import (
+    from brain_researcher.services.br_kg.etl.strength_calculator import (
         StrengthCalculator,
     )
 

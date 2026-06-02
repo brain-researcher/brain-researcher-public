@@ -30,8 +30,8 @@ else
 fi
 
 # Export critical environment variables
-export NEUROKG_API_URL="http://localhost:5000"
-export NEUROKG_URL="http://localhost:5000"
+export BR_KG_API_URL="http://localhost:5000"
+export BR_KG_URL="http://localhost:5000"
 export NICLIP_DATA_PATH="${NICLIP_DATA_PATH:-$PROJECT_ROOT/data/niclip/data}"
 export GEMINI_API_KEY="${GEMINI_API_KEY:-}"
 export DEFAULT_LLM_MODEL="${DEFAULT_LLM_MODEL:-gemini-2.0-flash}"
@@ -41,7 +41,7 @@ export NEO4J_USER="${NEO4J_USER:-neo4j}"
 export NEO4J_PASSWORD="${NEO4J_PASSWORD:-password}"
 
 echo "✅ Environment variables set:"
-echo "   NEUROKG_API_URL=$NEUROKG_API_URL"
+echo "   BR_KG_API_URL=$BR_KG_API_URL"
 echo "   NICLIP_DATA_PATH=$NICLIP_DATA_PATH"
 echo "   DEFAULT_LLM_MODEL=$DEFAULT_LLM_MODEL"
 echo ""
@@ -59,7 +59,7 @@ kill_service() {
 echo "🛑 Stopping existing services..."
 kill_service "Agent" "brain_researcher.services.agent"
 kill_service "Orchestrator" "brain_researcher.services.orchestrator"
-kill_service "BR-KG" "brain_researcher.services.neurokg"
+kill_service "BR-KG" "brain_researcher.services.br_kg"
 kill_service "Web UI" "brain_researcher.cli.main.*serve web"
 kill_service "Web UI (Next.js)" "next dev"
 
@@ -93,7 +93,7 @@ ensure_neo4j() {
             echo "   ⚠️  Compose file not found at $PROJECT_ROOT/$COMPOSE_FILE"
             return
         fi
-        $compose_cmd -f "$PROJECT_ROOT/$COMPOSE_FILE" up -d neo4j >> "$PROJECT_ROOT/logs/neurokg.log" 2>&1
+        $compose_cmd -f "$PROJECT_ROOT/$COMPOSE_FILE" up -d neo4j >> "$PROJECT_ROOT/logs/br-kg.log" 2>&1
         if docker ps --format '{{.Names}}' | grep -q '^brain-researcher-neo4j$'; then
             echo "   ✓ Neo4j container started"
         else
@@ -109,10 +109,10 @@ echo ""
 
 # Start BR-KG service
 echo "1️⃣  Starting BR-KG service on port 5000..."
-nohup br serve kg --host 0.0.0.0 --port 5000 > logs/neurokg.log 2>&1 &
-NEUROKG_PID=$!
-echo "   ✓ BR-KG started (PID: $NEUROKG_PID)"
-echo "   📄 Logs: logs/neurokg.log"
+nohup br serve kg --host 0.0.0.0 --port 5000 > logs/br-kg.log 2>&1 &
+BR_KG_PID=$!
+echo "   ✓ BR-KG started (PID: $BR_KG_PID)"
+echo "   📄 Logs: logs/br-kg.log"
 
 # Wait for BR-KG to be ready
 sleep 3
@@ -199,7 +199,7 @@ echo "   • Orchestrator: http://localhost:3001"
 echo "   • Web UI:       http://localhost:3000"
 echo ""
 echo "💡 To view logs:"
-echo "   tail -f logs/neurokg.log"
+echo "   tail -f logs/br-kg.log"
 echo "   tail -f logs/agent.log"
 echo "   tail -f logs/orchestrator.log"
 echo "   tail -f logs/web_ui.log"

@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from brain_researcher.core.ingestion.loaders.neurosynth_unified import NeuroSynthUnifiedLoader
-from brain_researcher.services.neurokg.graph.neo4j_graph_database import Neo4jGraphDB
+from brain_researcher.services.br_kg.graph.neo4j_graph_database import Neo4jGraphDB
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

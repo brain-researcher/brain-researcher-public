@@ -47,12 +47,12 @@ class TestNeuroAgentState:
 
         # Update state
         state["current_phase"] = "execution"
-        state["selected_tools"].append("neurokg_query")
-        state["tool_args"] = {"neurokg_query": {"concept": "motor cortex"}}
+        state["selected_tools"].append("br_kg_query")
+        state["tool_args"] = {"br_kg_query": {"concept": "motor cortex"}}
 
         assert state["current_phase"] == "execution"
         assert len(state["selected_tools"]) == 1
-        assert state["tool_args"]["neurokg_query"]["concept"] == "motor cortex"
+        assert state["tool_args"]["br_kg_query"]["concept"] == "motor cortex"
 
     def test_message_list_behavior(self):
         """Test message list maintains conversation history."""

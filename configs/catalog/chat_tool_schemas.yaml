@@ -1,0 +1,367 @@
+schemas:
+  gemini.fs:
+    summary: "File ops via Gemini CLI (list/read/search)"
+    examples:
+      - op: list_dir
+        path: "."
+        max_entries: 200
+      - op: read
+        path: "brain_researcher/cli/main.py"
+        start_line: 1
+        end_line: 120
+      - op: search
+        query: "ChatOrchestrator"
+        path_glob: "brain_researcher/**/*.py"
+        max_results: 40
+  gemini.net:
+    summary: "Web fetch / Google search via Gemini"
+    examples:
+      - op: fetch
+        url: "https://example.com"
+      - op: google
+        query: "fMRI connectivity nilearn"
+        num_results: 5
+  code_agent:
+    summary: "Iterative code agent (generate/run/fix)"
+    examples:
+      - task: "fix failing test in parser"
+        paths: ["parser.py", "tests/test_parser.py"]
+        tests: ["pytest -q tests/test_parser.py::test_parse"]
+        auto_fs_context: true
+        max_iters: 3
+  mcp.system_self_test:
+    summary: "Run MCP diagnostics probes (quick or active)."
+    examples:
+      - mode: "quick"
+        include_inventory: true
+        inventory_limit: 10
+      - mode: "active"
+        include_kg: true
+        include_script: true
+        include_container: true
+        strict: false
+  mcp.tool_search:
+    summary: "Search MCP tools before execution. Use this before tool_get or heavy calls."
+    examples:
+      - query: "extract timeseries atlas nifti"
+        limit: 10
+        include_workflows: false
+      - query: "sbatch script patch log diagnose"
+        limit: 5
+  mcp.slurm_guide:
+    summary: "SLURM workflow guidance and command rendering (any cluster via profile)"
+    examples:
+      - action: "guide"
+        topic: "batch"
+        pi_group: "russpold"
+      - action: "command"
+        intent: "interactive_cpu"
+        pi_group: "russpold"
+        time: "24:00:00"
+        cpus: 8
+        mem: "32G"
+  mcp.sherlock_guide:
+    summary: "[DEPRECATED — use mcp.slurm_guide] Sherlock-specific alias"
+    examples:
+      - action: "guide"
+        topic: "batch"
+        pi_group: "russpold"
+  mcp.slurm_submit:
+    summary: "SLURM sbatch script generation, validation, logs, and diagnosis"
+    examples:
+      - action: "render_script"
+        template_kind: "cpu_single"
+        job_name: "analysis"
+        time: "12:00:00"
+        cpus_per_task: 8
+        mem: "32G"
+        command: "python run_analysis.py"
+      - action: "patch_script"
+        change_request: "increase memory to 64G"
+        script_text: "#!/bin/bash\n#SBATCH --mem=32G\npython run.py\n"
+      - action: "inspect_job"
+        job_id: "12345678"
+      - action: "diagnose_failure"
+        sacct_state: "OUT_OF_MEMORY"
+        stderr_text: "slurmstepd: error: Detected 1 oom-kill event(s)"
+  mcp.sherlock_slurm:
+    summary: "[DEPRECATED — use mcp.slurm_submit] Sherlock-specific alias"
+    examples:
+      - action: "render_script"
+        template_kind: "cpu_single"
+        job_name: "analysis"
+        cpus_per_task: 8
+        mem: "32G"
+  br_kg.client:
+    summary: "KG search/lookup"
+    examples:
+      - op: search_concepts
+        query: "default mode network"
+      - op: coordinate_lookup
+        x: -42.0
+        y: -22.0
+        z: 58.0
+        space: "MNI152"
+        top_k: 5
+      - op: graph_query
+        cypher: "MATCH (c:Concept)-[:RELATED_TO]->(m:Measure) RETURN c,m LIMIT 25"
+  find_related_concepts:
+    summary: "Find related concepts"
+    examples:
+      - query: "hippocampus"
+        top_k: 10
+  coordinate_to_concept:
+    summary: "Map coordinate to concept"
+    examples:
+      - x: -42.0
+        y: -22.0
+        z: 58.0
+        space: "MNI152"
+        top_k: 5
+  graph_query:
+    summary: "Run Cypher query over KG"
+    examples:
+      - cypher: "MATCH (c:Concept)-[:RELATED_TO]->(m:Measure) RETURN c,m LIMIT 25"
+  kg_search_nodes:
+    summary: "Search KG nodes. Fails fast on timeout unless allow_degraded=true."
+    examples:
+      - query: "working memory"
+        node_types: ["Task", "Construct"]
+        limit: 5
+      - query: "emotion regulation"
+        limit: 5
+        allow_degraded: true
+  kg_get_node:
+    summary: "Fetch one KG node by kg_id or element_id. Fails fast on timeout by default."
+    examples:
+      - kg_id: "task:working_memory"
+      - kg_id: "4:3f7f34f8-36c9-4f08-bf6b-a7d92c2b3d15:127"
+        allow_degraded: true
+  kg_neighbors:
+    summary: "Expand one KG node to neighbors. Fails fast on timeout unless allow_degraded=true."
+    examples:
+      - kg_id: "task:working_memory"
+        relation_types: ["INVOLVES", "MEASURES"]
+        direction: "out"
+        limit: 10
+      - kg_id: "task:emotion_regulation"
+        limit: 25
+        allow_degraded: true
+  kg_search_datasets:
+    summary: "Search KG-linked datasets. Fails fast on timeout unless allow_degraded=true."
+    examples:
+      - text: "n-back"
+        modality: "fmri"
+        limit: 10
+      - text: "emotion regulation"
+        modality: "fmri"
+        allow_degraded: true
+  kg_related_datasets:
+    summary: "List datasets connected to a KG node. Fails fast on timeout unless allow_degraded=true."
+    examples:
+      - kg_id: "task:working_memory"
+        limit: 10
+      - kg_id: "construct:cognitive_control"
+        limit: 10
+        allow_degraded: true
+  kg_multihop_qa:
+    summary: "Run summary-first KG traversal. Fails fast by default; degraded traversal is opt-in with allow_degraded=true."
+    examples:
+      - question: "How is working memory linked to dorsolateral prefrontal cortex?"
+        max_hops: 2
+        return_subgraph: true
+      - question: "How is emotion regulation linked to prefrontal control?"
+        max_hops: 2
+        return_subgraph: true
+        allow_degraded: true
+  kg_hypothesis_candidate_cards:
+    summary: "Generate KG-backed hypothesis candidate cards from a query, with optional deep research and frontier mode."
+    examples:
+      - query: "visual image reconstruction using fMRI"
+        with_deep_research: true
+        candidate_lane_mode: "broad"
+        top_n: 5
+      - query: "episodic memory retrieval in fMRI"
+        with_deep_research: true
+        frontier_mode: "frontier"
+        top_n: 3
+  kg_hypothesis_candidate_cards_start:
+    summary: "Start a background KG-backed candidate-card job for long-running hypothesis mining."
+    examples:
+      - query: "fmri-based image decoding"
+        with_deep_research: true
+        depth: "balanced"
+        top_n: 5
+  kg_hypothesis_candidate_cards_get:
+    summary: "Poll a background KG-backed candidate-card job by run_id."
+    examples:
+      - run_id: "br_20260319_072108_c4fcb1412d"
+  hypothesis_hot_load_research:
+    summary: "High-level hot-load research facade: query to anchor bundle, KG mining, verify, and rewritten candidate cards."
+    examples:
+      - query: "visual image reconstruction using fMRI"
+        depth: "balanced"
+        with_deep_research: true
+        max_cards: 5
+      - query: "reward learning in fMRI"
+        depth: "shallow"
+        frontier_mode: "frontier"
+  hypothesis_run_start:
+    summary: "Start a background hot-load hypothesis research run and return a pollable run_id."
+    examples:
+      - query: "response inhibition in fMRI"
+        depth: "balanced"
+        max_cards: 5
+  hypothesis_run_get:
+    summary: "Poll a background hot-load hypothesis research run by run_id."
+    examples:
+      - run_id: "br_20260319_070623_c9f90e13da"
+  evidence_pack:
+    summary: "Evidence pack with provenance chains"
+    examples:
+      - seed_id: "task:emotion_regulation"
+        max_maps: 5
+        max_paths: 5
+        max_regions_per_map: 5
+  task_to_concept_mapping:
+    summary: "Map task name to concepts"
+    examples:
+      - task: "Stroop"
+        top_k: 10
+  concept_literature_search:
+    summary: "Find literature for concept"
+    examples:
+      - concept: "default mode network"
+        top_k: 10
+  datasets.client:
+    summary: "Dataset listing/search"
+    examples:
+      - op: list_resources
+        provider: "openneuro"
+        limit: 25
+      - op: search
+        query: "resting state"
+        provider: "openneuro"
+        limit: 20
+  datasets.list_resources:
+    summary: "Resolve dataset resources (mount/readiness/derivatives)"
+    examples:
+      - dataset_ref: "ds000114"
+        analysis_goal: "fmri-glm"
+        run_bids_validation: false
+      - dataset_ref: "hcp_ya"
+        analysis_goal: "generic"
+  datasets.describe_resources:
+    summary: "Describe dataset contents and access summary for chat answers"
+    examples:
+      - dataset_ref: "ds000114"
+        analysis_goal: "fmri-glm"
+        include_files: true
+        include_sensitive_paths: false
+      - dataset_ref: "hcp_ya"
+        include_files: false
+  list_dataset_assets:
+    summary: "Browse dataset assets before strict resolution"
+    examples:
+      - dataset_ref: "ds000114"
+        kind: "all"
+      - dataset_ref: "ds000114"
+        subject_id: "01"
+        task: "emotion"
+        kind: "events"
+      - dataset_ref: "ds000114"
+        kind: "stat_map"
+        contrast: "taskvbaseline"
+        statistic: "z"
+  jobs.client:
+    summary: "Jobs list/status/logs"
+    examples:
+      - op: list
+        user: "me"
+      - op: status
+        job_id: "job-42"
+      - op: logs
+        job_id: "job-42"
+        tail_lines: 200
+  fmri.connectivity_client.light:
+    summary: "Light fMRI connectivity"
+    examples:
+      - op: fetch_atlas
+        atlas: "harvard_oxford"
+      - op: extract_timeseries
+        fmri_path: "sub-01_bold.nii.gz"
+        atlas: "harvard_oxford"
+        strategy: "mean"
+      - op: connectivity_matrix
+        timeseries_path: "timeseries.npy"
+        kind: "correlation"
+  viz.client:
+    summary: "Visualization"
+    examples:
+      - op: surface_viz
+        surf_file: "lh.pial"
+        overlay_file: "statmap.mgh"
+        threshold: 3.1
+      - op: generic_viz
+        stat_map: "results/zmap.nii.gz"
+        bg_img: "mni152.nii.gz"
+        display_mode: "ortho"
+  literature_mining:
+    summary: "Search literature for a concept or term"
+    examples:
+      - query: "default mode network"
+        top_k: 20
+  meta_analysis.client:
+    summary: "Meta-analysis helpers"
+    examples:
+      - op: "meta_general"
+        query: "pain"
+      - op: "coordinate_meta"
+        coordinates: [[-30,-20,50], [32,-18,44]]
+        model: "mkda"
+        top_k: 10
+  openneuro.client:
+    summary: "OpenNeuro search and dataset inspection"
+    examples:
+      - op: "search"
+        query: "rest"
+        limit: 20
+      - op: "get"
+        dataset_id: "ds000001"
+      - op: "summary"
+        dataset_id: "ds000001"
+  advanced_analysis.client:
+    summary: "Advanced neuroimaging analysis (hyperalignment, ICA, deep learning, multimodal)"
+    examples:
+      - op: hyperalignment
+        data_files: ["/path/to/sub-01.nii.gz", "/path/to/sub-02.nii.gz"]
+        method: "procrustes"
+        n_components: 50
+      - op: multimodal_integration
+        modality_files:
+          fmri: "/path/to/bold.nii.gz"
+          smri: "/path/to/t1w.nii.gz"
+        method: "cca"
+      - op: melodic_ica
+        input_file: "/path/to/bold.nii.gz"
+        n_components: 25
+        output_dir: "/path/to/output"
+      - op: fsl_fix
+        feat_dir: "/path/to/feat.feat"
+        training_file: "Standard"
+        threshold: 20
+      - op: dl_pytorch
+        data_file: "/path/to/data.npz"
+        model_type: "3dcnn"
+        task: "classification"
+        epochs: 10
+      - op: gnn_connectivity
+        connectivity_matrix: "/path/to/conn.npy"
+        method: "gcn"
+      - op: brain_simulation
+        connectivity_matrix: "/path/to/sc.npy"
+        model: "wilson_cowan"
+        duration_ms: 1000
+      - op: lesion_detection
+        input_volume: "/path/to/t1w.nii.gz"
+        method: "threshold"

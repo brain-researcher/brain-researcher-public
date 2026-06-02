@@ -13,7 +13,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_REGISTRY = ROOT / "configs" / "neurokg" / "neuroimage_assets_backlog.yaml"
+DEFAULT_REGISTRY = ROOT / "configs" / "br-kg" / "neuroimage_assets_backlog.yaml"
 
 REQUIRED_FAMILY_STATES = {
     "already_usable",

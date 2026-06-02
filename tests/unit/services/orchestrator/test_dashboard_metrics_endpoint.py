@@ -9,8 +9,12 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from brain_researcher.services.orchestrator import dashboard_endpoints as dashboard_module
-from brain_researcher.services.orchestrator import websocket_endpoints
+from brain_researcher.services.orchestrator import (
+    dashboard_endpoints as dashboard_module,
+)
+from brain_researcher.services.orchestrator import (
+    websocket_endpoints,
+)
 from brain_researcher.services.orchestrator.dashboard_endpoints import (
     DashboardMetricsResponse,
     QueueStatusModel,
@@ -19,8 +23,8 @@ from brain_researcher.services.orchestrator.dashboard_endpoints import (
     _collect_storage_metrics,
     router,
 )
-from brain_researcher.services.orchestrator.job_store import JobState
 from brain_researcher.services.orchestrator.job_state import jobs_db
+from brain_researcher.services.orchestrator.job_store import JobState
 from brain_researcher.services.orchestrator.models import (
     ArtifactType,
     Job,
@@ -30,7 +34,9 @@ from brain_researcher.services.orchestrator.models import (
     User,
     UserRole,
 )
-from brain_researcher.services.orchestrator.websocket_endpoints import router as ws_router
+from brain_researcher.services.orchestrator.websocket_endpoints import (
+    router as ws_router,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -117,7 +123,13 @@ def test_dashboard_metrics_merges_orchestrator_state(client: TestClient):
     remote_payload = {
         "timestamp": datetime.utcnow().isoformat(),
         "gpuUtilization": [
-            {"timestamp": datetime.utcnow().isoformat(), "gpu1": 10, "gpu2": 20, "gpu3": 30, "gpu4": 40},
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "gpu1": 10,
+                "gpu2": 20,
+                "gpu3": 30,
+                "gpu4": 40,
+            },
         ],
         "queueStatus": {"running": 0, "queued": 99, "completed": 0, "failed": 0},
         "projects": [
@@ -164,7 +176,7 @@ def test_dashboard_metrics_merges_orchestrator_state(client: TestClient):
     assert "upstream" not in output_ids
 
     # Metadata tracks provenance.
-    assert body["metadata"]["source"] == "neurokg"
+    assert body["metadata"]["source"] == "br_kg"
     status = body["metadata"].get("status")
     if body["metadata"].get("errors"):
         assert status == "degraded"
@@ -176,14 +188,17 @@ def test_dashboard_metrics_fallback_when_upstream_unavailable(client: TestClient
     """If upstream services fail, fallback metrics are still returned."""
     jobs_db["job_pending"] = _make_job("job_pending", JobStatus.QUEUED)
 
-    request = httpx.Request("GET", "http://neurokg.local/api/dashboard/metrics")
+    request = httpx.Request("GET", "http://br_kg.local/api/dashboard/metrics")
 
-    with patch.object(
-        dashboard_module, "service_coordinator", autospec=True
-    ) as mock_coordinator, patch.object(
-        dashboard_module,
-        "_fetch_metrics_direct",
-        new=AsyncMock(side_effect=httpx.RequestError("boom", request=request)),
+    with (
+        patch.object(
+            dashboard_module, "service_coordinator", autospec=True
+        ) as mock_coordinator,
+        patch.object(
+            dashboard_module,
+            "_fetch_metrics_direct",
+            new=AsyncMock(side_effect=httpx.RequestError("boom", request=request)),
+        ),
     ):
         mock_coordinator.make_request = AsyncMock(
             side_effect=dashboard_module.ServiceUnavailableError("offline")
@@ -260,7 +275,10 @@ def test_dashboard_websocket_emits_snapshot(ws_client: TestClient):
                 payload = None
                 for _ in range(4):
                     message = websocket.receive_json()
-                    if message["type"] == "data" and message.get("channel") == "dashboard":
+                    if (
+                        message["type"] == "data"
+                        and message.get("channel") == "dashboard"
+                    ):
                         assert message["data"]["type"] == "snapshot"
                         payload = message["data"]["data"]
                         break
@@ -283,22 +301,24 @@ def test_collect_gpu_metrics_when_nvidia_smi_available():
     mock_result.returncode = 0
     mock_result.stdout = mock_nvidia_output
 
-    with patch('shutil.which', return_value='/usr/bin/nvidia-smi'), \
-         patch('subprocess.run', return_value=mock_result):
+    with (
+        patch("shutil.which", return_value="/usr/bin/nvidia-smi"),
+        patch("subprocess.run", return_value=mock_result),
+    ):
 
         metrics = _collect_gpu_metrics()
 
         assert len(metrics) == 1
-        assert 'timestamp' in metrics[0]
-        assert metrics[0]['gpu1'] == 65.5
-        assert metrics[0]['gpu2'] == 45.2
-        assert metrics[0]['gpu3'] == 80.0
-        assert metrics[0]['gpu4'] == 30.5
+        assert "timestamp" in metrics[0]
+        assert metrics[0]["gpu1"] == 65.5
+        assert metrics[0]["gpu2"] == 45.2
+        assert metrics[0]["gpu3"] == 80.0
+        assert metrics[0]["gpu4"] == 30.5
 
 
 def test_collect_gpu_metrics_when_nvidia_smi_unavailable():
     """Test GPU metrics collection when nvidia-smi is not available."""
-    with patch('shutil.which', return_value=None):
+    with patch("shutil.which", return_value=None):
         metrics = _collect_gpu_metrics()
 
         assert metrics == []
@@ -310,8 +330,10 @@ def test_collect_gpu_metrics_when_nvidia_smi_fails():
     mock_result.returncode = 1
     mock_result.stdout = ""
 
-    with patch('shutil.which', return_value='/usr/bin/nvidia-smi'), \
-         patch('subprocess.run', return_value=mock_result):
+    with (
+        patch("shutil.which", return_value="/usr/bin/nvidia-smi"),
+        patch("subprocess.run", return_value=mock_result),
+    ):
 
         metrics = _collect_gpu_metrics()
 
@@ -322,8 +344,12 @@ def test_collect_gpu_metrics_timeout():
     """Test GPU metrics collection handles subprocess timeout."""
     import subprocess
 
-    with patch('shutil.which', return_value='/usr/bin/nvidia-smi'), \
-         patch('subprocess.run', side_effect=subprocess.TimeoutExpired('nvidia-smi', 2.0)):
+    with (
+        patch("shutil.which", return_value="/usr/bin/nvidia-smi"),
+        patch(
+            "subprocess.run", side_effect=subprocess.TimeoutExpired("nvidia-smi", 2.0)
+        ),
+    ):
 
         metrics = _collect_gpu_metrics()
 
@@ -339,23 +365,28 @@ def test_collect_storage_metrics_success():
     mock_usage.used = 100 * 1024**3  # 100 GB
     mock_usage.total = 500 * 1024**3  # 500 GB
 
-    with patch('shutil.disk_usage', return_value=mock_usage), \
-         patch.dict(os.environ, {
-             'PRIMARY_STORAGE_PATH': '/tmp/test/primary',
-             'ARCHIVE_STORAGE_PATH': '/tmp/test/archive',
-             'SCRATCH_STORAGE_PATH': '/tmp/test/scratch'
-         }):
+    with (
+        patch("shutil.disk_usage", return_value=mock_usage),
+        patch.dict(
+            os.environ,
+            {
+                "PRIMARY_STORAGE_PATH": "/tmp/test/primary",
+                "ARCHIVE_STORAGE_PATH": "/tmp/test/archive",
+                "SCRATCH_STORAGE_PATH": "/tmp/test/scratch",
+            },
+        ),
+    ):
 
         metrics = _collect_storage_metrics()
 
-        assert 'primary' in metrics
-        assert 'archive' in metrics
-        assert 'scratch' in metrics
+        assert "primary" in metrics
+        assert "archive" in metrics
+        assert "scratch" in metrics
 
-        assert metrics['primary']['used'] == 100.0
-        assert metrics['primary']['total'] == 500.0
-        assert metrics['archive']['used'] == 100.0
-        assert metrics['scratch']['total'] == 500.0
+        assert metrics["primary"]["used"] == 100.0
+        assert metrics["primary"]["total"] == 500.0
+        assert metrics["archive"]["used"] == 100.0
+        assert metrics["scratch"]["total"] == 500.0
 
 
 def test_collect_storage_metrics_with_defaults():
@@ -367,14 +398,16 @@ def test_collect_storage_metrics_with_defaults():
     mock_usage.used = 50 * 1024**3
     mock_usage.total = 1000 * 1024**3
 
-    with patch('shutil.disk_usage', return_value=mock_usage), \
-         patch.dict(os.environ, {}, clear=True):
+    with (
+        patch("shutil.disk_usage", return_value=mock_usage),
+        patch.dict(os.environ, {}, clear=True),
+    ):
 
         metrics = _collect_storage_metrics()
 
-        assert 'primary' in metrics
-        assert 'archive' in metrics
-        assert 'scratch' in metrics
+        assert "primary" in metrics
+        assert "archive" in metrics
+        assert "scratch" in metrics
 
 
 def test_collect_storage_metrics_handles_errors():
@@ -382,49 +415,62 @@ def test_collect_storage_metrics_handles_errors():
     import os
 
     def mock_disk_usage(path):
-        if 'primary' in path:
+        if "primary" in path:
             raise PermissionError("Access denied")
-        return MagicMock(used=10*1024**3, total=100*1024**3)
+        return MagicMock(used=10 * 1024**3, total=100 * 1024**3)
 
-    with patch('shutil.disk_usage', side_effect=mock_disk_usage), \
-         patch.dict(os.environ, {
-             'PRIMARY_STORAGE_PATH': '/tmp/test/primary',
-             'ARCHIVE_STORAGE_PATH': '/tmp/test/archive',
-             'SCRATCH_STORAGE_PATH': '/tmp/test/scratch'
-         }):
+    with (
+        patch("shutil.disk_usage", side_effect=mock_disk_usage),
+        patch.dict(
+            os.environ,
+            {
+                "PRIMARY_STORAGE_PATH": "/tmp/test/primary",
+                "ARCHIVE_STORAGE_PATH": "/tmp/test/archive",
+                "SCRATCH_STORAGE_PATH": "/tmp/test/scratch",
+            },
+        ),
+    ):
 
         metrics = _collect_storage_metrics()
 
         # Primary should use default values due to error
-        assert metrics['primary']['used'] == 0.0
-        assert metrics['primary']['total'] == 0.0
+        assert metrics["primary"]["used"] == 0.0
+        assert metrics["primary"]["total"] == 0.0
 
         # Archive and scratch should work
-        assert metrics['archive']['used'] == 10.0
-        assert metrics['scratch']['total'] == 100.0
+        assert metrics["archive"]["used"] == 10.0
+        assert metrics["scratch"]["total"] == 100.0
 
 
 def test_dashboard_metrics_includes_gpu_and_storage(client: TestClient):
     """Test that dashboard metrics response includes GPU and storage data."""
     jobs_db["job_test"] = _make_job("job_test", JobStatus.RUNNING)
 
-    mock_gpu_data = [{
-        'timestamp': datetime.utcnow(),
-        'gpu1': 75.0,
-        'gpu2': 60.0,
-        'gpu3': 85.0,
-        'gpu4': 50.0
-    }]
+    mock_gpu_data = [
+        {
+            "timestamp": datetime.utcnow(),
+            "gpu1": 75.0,
+            "gpu2": 60.0,
+            "gpu3": 85.0,
+            "gpu4": 50.0,
+        }
+    ]
 
     mock_storage_data = {
-        'primary': {'used': 150.0, 'total': 500.0},
-        'archive': {'used': 300.0, 'total': 1000.0},
-        'scratch': {'used': 20.0, 'total': 100.0}
+        "primary": {"used": 150.0, "total": 500.0},
+        "archive": {"used": 300.0, "total": 1000.0},
+        "scratch": {"used": 20.0, "total": 100.0},
     }
 
-    with patch.object(dashboard_module, '_collect_gpu_metrics', return_value=mock_gpu_data), \
-         patch.object(dashboard_module, '_collect_storage_metrics', return_value=mock_storage_data), \
-         patch.object(dashboard_module, 'service_coordinator', None):
+    with (
+        patch.object(
+            dashboard_module, "_collect_gpu_metrics", return_value=mock_gpu_data
+        ),
+        patch.object(
+            dashboard_module, "_collect_storage_metrics", return_value=mock_storage_data
+        ),
+        patch.object(dashboard_module, "service_coordinator", None),
+    ):
 
         response = client.get("/api/dashboard/metrics")
 
@@ -432,91 +478,96 @@ def test_dashboard_metrics_includes_gpu_and_storage(client: TestClient):
     body = response.json()
 
     # Verify GPU metrics are included
-    assert 'resourceMetrics' in body
-    assert 'gpuSamples' in body['resourceMetrics']
-    assert len(body['resourceMetrics']['gpuSamples']) == 1
-    assert body['resourceMetrics']['gpuSamples'][0]['gpu1'] == 75.0
-    assert body['resourceMetrics']['gpuSamples'][0]['gpu4'] == 50.0
+    assert "resourceMetrics" in body
+    assert "gpuSamples" in body["resourceMetrics"]
+    assert len(body["resourceMetrics"]["gpuSamples"]) == 1
+    assert body["resourceMetrics"]["gpuSamples"][0]["gpu1"] == 75.0
+    assert body["resourceMetrics"]["gpuSamples"][0]["gpu4"] == 50.0
 
     # Verify storage metrics are included
-    assert 'storageMetrics' in body
-    assert body['storageMetrics']['primary']['used'] == 150.0
-    assert body['storageMetrics']['archive']['total'] == 1000.0
-    assert body['storageMetrics']['scratch']['used'] == 20.0
+    assert "storageMetrics" in body
+    assert body["storageMetrics"]["primary"]["used"] == 150.0
+    assert body["storageMetrics"]["archive"]["total"] == 1000.0
+    assert body["storageMetrics"]["scratch"]["used"] == 20.0
+
 
 @pytest.mark.asyncio
 async def test_dashboard_metrics_prefers_job_store_queue(monkeypatch):
     """Ensure queue stats originate from the job store when available."""
 
     queue_stats = {
-        'by_state': {
+        "by_state": {
             JobState.RUNNING: 3,
             JobState.QUEUED: 4,
             JobState.SUCCEEDED: 7,
             JobState.FAILED: 1,
         },
-        'oldest_pending_age_sec': 42,
+        "oldest_pending_age_sec": 42,
     }
     job_store = SimpleNamespace(get_queue_stats=AsyncMock(return_value=queue_stats))
 
-    payload = {'projects': [], 'metadata': {}}
+    payload = {"projects": [], "metadata": {}}
     gpu_samples: list[dict[str, float]] = []
     storage_snapshot = {
-        'primary': {'used': 10.0, 'total': 100.0},
-        'archive': {'used': 5.0, 'total': 50.0},
-        'scratch': {'used': 1.0, 'total': 10.0},
+        "primary": {"used": 10.0, "total": 100.0},
+        "archive": {"used": 5.0, "total": 50.0},
+        "scratch": {"used": 1.0, "total": 10.0},
     }
 
-    monkeypatch.setattr(dashboard_module, '_get_job_store', lambda: job_store)
+    monkeypatch.setattr(dashboard_module, "_get_job_store", lambda: job_store)
     monkeypatch.setattr(
         dashboard_module,
-        '_load_dashboard_metrics',
-        AsyncMock(return_value=(payload, 'neurokg', [])),
+        "_load_dashboard_metrics",
+        AsyncMock(return_value=(payload, "br_kg", [])),
     )
-    monkeypatch.setattr(dashboard_module, '_collect_gpu_metrics', lambda: gpu_samples)
-    monkeypatch.setattr(dashboard_module, '_collect_storage_metrics', lambda: storage_snapshot)
-    monkeypatch.setattr(dashboard_module, '_build_team_activity_snapshot', lambda: [])
-    monkeypatch.setattr(dashboard_module, '_collect_recent_outputs', lambda: [])
+    monkeypatch.setattr(dashboard_module, "_collect_gpu_metrics", lambda: gpu_samples)
+    monkeypatch.setattr(
+        dashboard_module, "_collect_storage_metrics", lambda: storage_snapshot
+    )
+    monkeypatch.setattr(dashboard_module, "_build_team_activity_snapshot", lambda: [])
+    monkeypatch.setattr(dashboard_module, "_collect_recent_outputs", lambda: [])
 
     response = await dashboard_module.build_dashboard_metrics_response()
 
-    assert response.jobMetrics.queueSource == 'job_store'
+    assert response.jobMetrics.queueSource == "job_store"
     assert response.jobMetrics.queue.running == 3
     assert response.jobMetrics.queue.queued == 4
     assert response.jobMetrics.queue.completed == 7
     assert response.jobMetrics.queue.failed == 1
     assert response.jobMetrics.oldestPendingSeconds == 42
-    assert response.metadata.get('errors') is None
+    assert response.metadata.get("errors") is None
 
 
 @pytest.mark.asyncio
 async def test_dashboard_metrics_marks_job_store_unavailable(monkeypatch):
     """Metadata should reflect degraded mode when the job store is missing."""
 
-    payload = {'projects': [], 'metadata': {}}
+    payload = {"projects": [], "metadata": {}}
     gpu_samples: list[dict[str, float]] = []
     storage_snapshot = {
-        'primary': {'used': 5.0, 'total': 50.0},
-        'archive': {'used': 3.0, 'total': 30.0},
-        'scratch': {'used': 1.0, 'total': 10.0},
+        "primary": {"used": 5.0, "total": 50.0},
+        "archive": {"used": 3.0, "total": 30.0},
+        "scratch": {"used": 1.0, "total": 10.0},
     }
 
-    monkeypatch.setattr(dashboard_module, '_get_job_store', lambda: None)
+    monkeypatch.setattr(dashboard_module, "_get_job_store", lambda: None)
     monkeypatch.setattr(
         dashboard_module,
-        '_load_dashboard_metrics',
-        AsyncMock(return_value=(payload, 'fallback', [])),
+        "_load_dashboard_metrics",
+        AsyncMock(return_value=(payload, "fallback", [])),
     )
-    monkeypatch.setattr(dashboard_module, '_collect_gpu_metrics', lambda: gpu_samples)
-    monkeypatch.setattr(dashboard_module, '_collect_storage_metrics', lambda: storage_snapshot)
-    monkeypatch.setattr(dashboard_module, '_build_team_activity_snapshot', lambda: [])
-    monkeypatch.setattr(dashboard_module, '_collect_recent_outputs', lambda: [])
+    monkeypatch.setattr(dashboard_module, "_collect_gpu_metrics", lambda: gpu_samples)
+    monkeypatch.setattr(
+        dashboard_module, "_collect_storage_metrics", lambda: storage_snapshot
+    )
+    monkeypatch.setattr(dashboard_module, "_build_team_activity_snapshot", lambda: [])
+    monkeypatch.setattr(dashboard_module, "_collect_recent_outputs", lambda: [])
 
     response = await dashboard_module.build_dashboard_metrics_response()
 
-    assert response.jobMetrics.queueSource == 'in_memory'
-    assert response.metadata['status'] == 'degraded'
-    assert 'job_store_unavailable' in response.metadata['errors']
+    assert response.jobMetrics.queueSource == "in_memory"
+    assert response.metadata["status"] == "degraded"
+    assert "job_store_unavailable" in response.metadata["errors"]
 
 
 @pytest.mark.asyncio
@@ -526,25 +577,25 @@ async def test_build_mcp_adoption_metrics_summarizes_user_statuses(monkeypatch):
     class FakeRedis:
         def __init__(self):
             self.token_records = {
-                'mcp_token:kid:kid_used': {
-                    'user_id': 'user_used',
-                    'last_used_at': '2026-03-23T12:00:00Z',
+                "mcp_token:kid:kid_used": {
+                    "user_id": "user_used",
+                    "last_used_at": "2026-03-23T12:00:00Z",
                 },
-                'mcp_token:kid:kid_unused': {
-                    'user_id': 'user_tokenneverused',
-                    'last_used_at': '',
+                "mcp_token:kid:kid_unused": {
+                    "user_id": "user_tokenneverused",
+                    "last_used_at": "",
                 },
             }
             self.active_user_keys = [
-                'mcp_token:user:user_used',
-                'mcp_token:user:user_tokenneverused',
+                "mcp_token:user:user_used",
+                "mcp_token:user:user_tokenneverused",
             ]
 
         async def scan_iter(self, match: str):
-            if match == 'mcp_token:kid:*':
+            if match == "mcp_token:kid:*":
                 for key in self.token_records:
                     yield key
-            elif match == 'mcp_token:user:*':
+            elif match == "mcp_token:user:*":
                 for key in self.active_user_keys:
                     yield key
 
@@ -553,42 +604,44 @@ async def test_build_mcp_adoption_metrics_summarizes_user_statuses(monkeypatch):
 
     users = [
         User(
-            id='user_used',
-            username='used_user',
-            email='used@example.com',
-            full_name='Used User',
+            id="user_used",
+            username="used_user",
+            email="used@example.com",
+            full_name="Used User",
             role=UserRole.RESEARCHER,
             created_at=datetime.utcnow() - timedelta(days=3),
         ),
         User(
-            id='user_tokenneverused',
-            username='token_only_user',
-            email='token@example.com',
-            full_name='Token Only',
+            id="user_tokenneverused",
+            username="token_only_user",
+            email="token@example.com",
+            full_name="Token Only",
             role=UserRole.RESEARCHER,
             created_at=datetime.utcnow() - timedelta(days=2),
         ),
         User(
-            id='user_notoken',
-            username='no_token_user',
-            email='notoken@example.com',
-            full_name='No Token',
+            id="user_notoken",
+            username="no_token_user",
+            email="notoken@example.com",
+            full_name="No Token",
             role=UserRole.RESEARCHER,
             created_at=datetime.utcnow() - timedelta(days=1),
         ),
         User(
-            id='user_demo',
-            username='demo',
-            email='demo@brain-researcher.ai',
-            full_name='Demo User',
+            id="user_demo",
+            username="demo",
+            email="demo@brain-researcher.ai",
+            full_name="Demo User",
             role=UserRole.RESEARCHER,
         ),
     ]
 
-    monkeypatch.setattr(dashboard_module.UserStore, 'list_all', AsyncMock(return_value=users))
+    monkeypatch.setattr(
+        dashboard_module.UserStore, "list_all", AsyncMock(return_value=users)
+    )
     monkeypatch.setattr(
         dashboard_module,
-        '_get_userstore_redis',
+        "_get_userstore_redis",
         AsyncMock(return_value=FakeRedis()),
     )
 
@@ -601,22 +654,22 @@ async def test_build_mcp_adoption_metrics_summarizes_user_statuses(monkeypatch):
     assert metrics.summary.noTokenUsers == 1
 
     by_user = {entry.userId: entry for entry in metrics.users}
-    assert by_user['user_used'].mcpStatus == 'used'
-    assert by_user['user_used'].usedMcp is True
-    assert by_user['user_used'].hasActiveToken is True
-    assert by_user['user_tokenneverused'].mcpStatus == 'token_never_used'
-    assert by_user['user_notoken'].mcpStatus == 'no_token'
+    assert by_user["user_used"].mcpStatus == "used"
+    assert by_user["user_used"].usedMcp is True
+    assert by_user["user_used"].hasActiveToken is True
+    assert by_user["user_tokenneverused"].mcpStatus == "token_never_used"
+    assert by_user["user_notoken"].mcpStatus == "no_token"
 
 
 @pytest.mark.asyncio
 async def test_dashboard_metrics_includes_mcp_adoption_for_admin_request(monkeypatch):
     """Admin requests should receive MCP adoption metrics in the dashboard payload."""
 
-    payload = {'projects': [], 'metadata': {}}
+    payload = {"projects": [], "metadata": {}}
     storage_snapshot = {
-        'primary': {'used': 5.0, 'total': 50.0},
-        'archive': {'used': 3.0, 'total': 30.0},
-        'scratch': {'used': 1.0, 'total': 10.0},
+        "primary": {"used": 5.0, "total": 50.0},
+        "archive": {"used": 3.0, "total": 30.0},
+        "scratch": {"used": 1.0, "total": 10.0},
     }
     adoption = dashboard_module.McpAdoptionMetricsModel(
         summary=dashboard_module.McpAdoptionSummaryModel(
@@ -632,29 +685,33 @@ async def test_dashboard_metrics_includes_mcp_adoption_for_admin_request(monkeyp
 
     monkeypatch.setattr(
         dashboard_module,
-        '_load_dashboard_metrics',
-        AsyncMock(return_value=(payload, 'fallback', [])),
+        "_load_dashboard_metrics",
+        AsyncMock(return_value=(payload, "fallback", [])),
     )
-    monkeypatch.setattr(dashboard_module, '_collect_gpu_metrics', lambda: [])
-    monkeypatch.setattr(dashboard_module, '_collect_storage_metrics', lambda: storage_snapshot)
-    monkeypatch.setattr(dashboard_module, '_build_team_activity_snapshot', lambda: [])
-    monkeypatch.setattr(dashboard_module, '_collect_recent_outputs', lambda: [])
+    monkeypatch.setattr(dashboard_module, "_collect_gpu_metrics", lambda: [])
+    monkeypatch.setattr(
+        dashboard_module, "_collect_storage_metrics", lambda: storage_snapshot
+    )
+    monkeypatch.setattr(dashboard_module, "_build_team_activity_snapshot", lambda: [])
+    monkeypatch.setattr(dashboard_module, "_collect_recent_outputs", lambda: [])
     monkeypatch.setattr(
         dashboard_module,
-        '_should_include_mcp_adoption',
+        "_should_include_mcp_adoption",
         AsyncMock(return_value=True),
     )
     monkeypatch.setattr(
         dashboard_module,
-        '_build_mcp_adoption_metrics',
+        "_build_mcp_adoption_metrics",
         AsyncMock(return_value=adoption),
     )
 
-    response = await dashboard_module.build_dashboard_metrics_response(request=MagicMock())
+    response = await dashboard_module.build_dashboard_metrics_response(
+        request=MagicMock()
+    )
 
     assert response.mcpAdoption is not None
     assert response.mcpAdoption.summary.totalUsers == 10
-    assert response.metadata['status'] == 'degraded'
+    assert response.metadata["status"] == "degraded"
 
 
 @pytest.mark.asyncio
@@ -662,19 +719,25 @@ async def test_should_include_mcp_adoption_for_allowlisted_email(monkeypatch):
     """Allowlisted internal emails should be able to view MCP adoption analytics."""
 
     monkeypatch.setenv(
-        'BR_MCP_ADOPTION_DASHBOARD_ALLOWLIST',
-        'ops@brain-researcher.com, founder@brain-researcher.com',
+        "BR_MCP_ADOPTION_DASHBOARD_ALLOWLIST",
+        "ops@brain-researcher.com, founder@brain-researcher.com",
     )
-    monkeypatch.setattr(dashboard_module, '_extract_bearer_token', lambda request: 'jwt-token')
     monkeypatch.setattr(
-        dashboard_module,
-        '_decode_auth_token',
-        lambda token: {'email': 'ops@brain-researcher.com', 'role': 'researcher'},
+        dashboard_module, "_extract_bearer_token", lambda request: "jwt-token"
     )
     monkeypatch.setattr(
         dashboard_module,
-        '_resolve_authenticated_user',
-        AsyncMock(side_effect=AssertionError('should not need user lookup when JWT email is allowlisted')),
+        "_decode_auth_token",
+        lambda token: {"email": "ops@brain-researcher.com", "role": "researcher"},
+    )
+    monkeypatch.setattr(
+        dashboard_module,
+        "_resolve_authenticated_user",
+        AsyncMock(
+            side_effect=AssertionError(
+                "should not need user lookup when JWT email is allowlisted"
+            )
+        ),
     )
 
     allowed = await dashboard_module._should_include_mcp_adoption(MagicMock())

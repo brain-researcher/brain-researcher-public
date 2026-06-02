@@ -14,7 +14,7 @@ import logging
 import re
 from typing import Any
 
-from brain_researcher.services.neurokg.graph.neo4j_graph_database import Neo4jGraphDB
+from brain_researcher.services.br_kg.graph.neo4j_graph_database import Neo4jGraphDB
 
 logger = logging.getLogger(__name__)
 

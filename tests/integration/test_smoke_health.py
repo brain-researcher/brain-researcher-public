@@ -5,7 +5,7 @@ Run with: pytest tests/integration/test_smoke_health.py -v
 
 Environment variables:
     AGENT_URL: Agent service URL (default: http://localhost:8000)
-    NEUROKG_URL: BR-KG service URL (default: http://localhost:5000)
+    BR_KG_URL: BR-KG service URL (default: http://localhost:5000)
 """
 
 import os
@@ -18,7 +18,7 @@ except ImportError:
     httpx = None
 
 AGENT_URL = os.getenv("AGENT_URL", "http://localhost:8000")
-NEUROKG_URL = os.getenv("NEUROKG_URL", "http://localhost:5000")
+BR_KG_URL = os.getenv("BR_KG_URL", "http://localhost:5000")
 
 
 @pytest.fixture
@@ -109,13 +109,13 @@ class TestAgentHealthSmoke:
             pytest.skip("Agent service not running")
 
 
-class TestNeuroKGHealthSmoke:
+class TestBRKGHealthSmoke:
     """Smoke tests for BR-KG health endpoints."""
 
-    def test_neurokg_health_returns_200(self, http_client):
+    def test_br_kg_health_returns_200(self, http_client):
         """BR-KG /health should return 200."""
         try:
-            response = http_client.get(f"{NEUROKG_URL}/health")
+            response = http_client.get(f"{BR_KG_URL}/health")
             assert response.status_code == 200
 
             data = response.json()
@@ -125,10 +125,10 @@ class TestNeuroKGHealthSmoke:
         except httpx.ConnectError:
             pytest.skip("BR-KG service not running")
 
-    def test_neurokg_health_stats_endpoint(self, http_client):
+    def test_br_kg_health_stats_endpoint(self, http_client):
         """BR-KG /health/stats should return node/relationship counts."""
         try:
-            response = http_client.get(f"{NEUROKG_URL}/health/stats")
+            response = http_client.get(f"{BR_KG_URL}/health/stats")
 
             # 200 = Neo4j connected, 503 = SQLite mock mode
             assert response.status_code in (200, 503)
@@ -146,14 +146,14 @@ class TestNeuroKGHealthSmoke:
         except httpx.ConnectError:
             pytest.skip("BR-KG service not running")
 
-    def test_neurokg_metrics_endpoint(self, http_client):
+    def test_br_kg_metrics_endpoint(self, http_client):
         """BR-KG /metrics should return Prometheus-format metrics."""
         try:
-            response = http_client.get(f"{NEUROKG_URL}/metrics")
+            response = http_client.get(f"{BR_KG_URL}/metrics")
             assert response.status_code == 200
 
             content = response.text
-            assert "neurokg_up" in content
+            assert "br_kg_up" in content
 
         except httpx.ConnectError:
             pytest.skip("BR-KG service not running")

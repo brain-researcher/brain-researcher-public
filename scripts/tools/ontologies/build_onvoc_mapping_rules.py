@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Sequence, Set
 import yaml
 
 from brain_researcher.config.mapping_resolver import resolve_mapping_path
-from brain_researcher.services.neurokg.utils.onvoc_tree import OnvocTree
+from brain_researcher.services.br_kg.utils.onvoc_tree import OnvocTree
 
 
 DEFAULT_TREE_PATH = Path("configs/onvoc_tree.yaml")

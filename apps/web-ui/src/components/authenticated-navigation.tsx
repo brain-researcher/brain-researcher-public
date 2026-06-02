@@ -24,7 +24,6 @@ export function AuthenticatedNavigation() {
     <NavigationHeader
       user={formattedUser}
       onLogout={handleLogout}
-      showSearch={true}
     />
   )
 }

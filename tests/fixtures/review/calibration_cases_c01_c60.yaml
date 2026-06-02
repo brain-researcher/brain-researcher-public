@@ -1,0 +1,319 @@
+# Calibration case library C01-C60 for the scientific review layer.
+#
+# Source: docs/overleaf/BrainResearcher/old_doc/Brain Researcher Manuscript (11).docx
+#   Section 6 "Case Library C01-C60" (Table 24: Case / Scenario / Severity / Novelty / Rule(s)).
+# That S4 manuscript is SUPERSEDED by configs/br-kg/scientific_review_failure_mode_registry.yaml,
+# but the C01-C60 cases remain the canonical annotator-training / regression calibration set.
+#
+# Field semantics:
+#   id                - case identifier C01..C60 (unique)
+#   scenario          - short prose description of the analysis situation
+#   expected_severity - recommended default verdict: allow | warn | block
+#   expected_rule     - the failure-mode rule the case should trigger (null when none / allow)
+#   novelty           - novelty/prior-conflict audit tag, or null
+#
+# NOTE: severities here are the manuscript's recommended defaults; all thresholds are
+# profile-configurable. This file asserts STRUCTURAL integrity only; running the live rule
+# engine against each scenario is tracked as a separate followup.
+
+cases:
+  - id: C01
+    scenario: "Repeated-measures → independent t-test"
+    expected_severity: block
+    expected_rule: "STAT_REPEATED_MEASURES"
+    novelty: null
+  - id: C02
+    scenario: "Repeated-measures → paired t-test"
+    expected_severity: allow
+    expected_rule: null
+    novelty: null
+  - id: C03
+    scenario: "2×2 factorial → single t-test (no interaction)"
+    expected_severity: warn
+    expected_rule: "STAT_MIXED_DESIGN"
+    novelty: null
+  - id: C04
+    scenario: "Mixed design (group×time) → one-way ANOVA"
+    expected_severity: block
+    expected_rule: "STAT_MIXED_DESIGN"
+    novelty: null
+  - id: C05
+    scenario: "Longitudinal (3 timepoints) → OLS, no subject effect"
+    expected_severity: block
+    expected_rule: "STAT_LONGITUDINAL"
+    novelty: null
+  - id: C06
+    scenario: "Surface/CIFTI data → volume cluster correction"
+    expected_severity: block
+    expected_rule: "STAT_SPATIAL_DOMAIN"
+    novelty: null
+  - id: C07
+    scenario: "ADHD vs control rsFC: DMN d = 2.5"
+    expected_severity: warn
+    expected_rule: "NOVELTY_EXTREME"
+    novelty: prior_conflict
+  - id: C08
+    scenario: "Case-control morphometry: hippocampus d = 0.45"
+    expected_severity: allow
+    expected_rule: null
+    novelty: null
+  - id: C09
+    scenario: "Single ROI d > 3.0, overall effect modest"
+    expected_severity: warn
+    expected_rule: "NOVELTY_SINGLE_ROI"
+    novelty: prior_conflict
+  - id: C10
+    scenario: "Small-sample rsFC d = 1.9, motion confound"
+    expected_severity: warn
+    expected_rule: "MEAS_MOTION"
+    novelty: null
+  - id: C11
+    scenario: "Working memory map dominated by V1"
+    expected_severity: warn
+    expected_rule: "NOVELTY_ACTIVATION"
+    novelty: prior_conflict
+  - id: C12
+    scenario: "Motor task → sensorimotor activation"
+    expected_severity: allow
+    expected_rule: null
+    novelty: null
+  - id: C13
+    scenario: "Whole-brain voxel p<0.05 uncorrected"
+    expected_severity: block
+    expected_rule: "STAT_UNCORRECTED"
+    novelty: null
+  - id: C14
+    scenario: "Cluster correction, primary threshold p<0.01"
+    expected_severity: warn
+    expected_rule: "STAT_CLUSTER_LENIENT"
+    novelty: null
+  - id: C15
+    scenario: "Cluster significant → voxel localization claim"
+    expected_severity: warn
+    expected_rule: "STAT_CLUSTER_OVERCLAIM"
+    novelty: null
+  - id: C16
+    scenario: "Same-data ROI definition + effect test"
+    expected_severity: block
+    expected_rule: "STAT_DOUBLE_DIPPING"
+    novelty: null
+  - id: C17
+    scenario: "Independent localizer → ROI → test"
+    expected_severity: allow
+    expected_rule: null
+    novelty: null
+  - id: C18
+    scenario: "Multiple ROIs tested, no correction"
+    expected_severity: warn
+    expected_rule: "STAT_ROI_MC"
+    novelty: null
+  - id: C19
+    scenario: "Multiple pipelines, best result only"
+    expected_severity: warn
+    expected_rule: "STAT_ANALYTIC_FLEX"
+    novelty: null
+  - id: C20
+    scenario: "Runs as independent samples at group level"
+    expected_severity: block
+    expected_rule: "STAT_PSEUDOREPLICATION"
+    novelty: null
+  - id: C21
+    scenario: "Fixed-effects + population claim"
+    expected_severity: block
+    expected_rule: "STAT_FIXED_EFFECTS"
+    novelty: null
+  - id: C22
+    scenario: "Permutation ignores exchangeability"
+    expected_severity: block
+    expected_rule: "STAT_PERMUTATION"
+    novelty: null
+  - id: C23
+    scenario: "Brain map correlation, Pearson p only"
+    expected_severity: block
+    expected_rule: "STAT_SPATIAL_NULL"
+    novelty: null
+  - id: C24
+    scenario: "Gene/histology × fMRI, no spatial null"
+    expected_severity: warn
+    expected_rule: "STAT_GENE_MAP"
+    novelty: null
+  - id: C25
+    scenario: "rsFC without motion reporting"
+    expected_severity: warn
+    expected_rule: "MEAS_MOTION_GAP"
+    novelty: null
+  - id: C26
+    scenario: "Group motion imbalance, not controlled"
+    expected_severity: block
+    expected_rule: "MEAS_MOTION_BLOCK"
+    novelty: null
+  - id: C27
+    scenario: "GSR without on/off sensitivity"
+    expected_severity: warn
+    expected_rule: "CONTRO_GSR"
+    novelty: null
+  - id: C28
+    scenario: "Dynamic FC without null/window sensitivity"
+    expected_severity: warn
+    expected_rule: "CONTRO_DFC"
+    novelty: null
+  - id: C29
+    scenario: "Proportional thresholding, no sensitivity"
+    expected_severity: warn
+    expected_rule: "CONTRO_GRAPH"
+    novelty: null
+  - id: C30
+    scenario: "Task FC/PPI without task-evoked removal"
+    expected_severity: warn
+    expected_rule: "CONTRO_TASK_FC"
+    novelty: null
+  - id: C31
+    scenario: "PPI specification issues"
+    expected_severity: warn
+    expected_rule: "CONTRO_PPI"
+    novelty: null
+  - id: C32
+    scenario: "EPI distortion/dropout unaddressed"
+    expected_severity: warn
+    expected_rule: "MEAS_DISTORTION"
+    novelty: null
+  - id: C33
+    scenario: "No MRIQC/QA report"
+    expected_severity: warn
+    expected_rule: "MEAS_QC"
+    novelty: null
+  - id: C34
+    scenario: "N<30 BWAS with strong claim"
+    expected_severity: warn
+    expected_rule: "GEN_SMALL_SAMPLE"
+    novelty: null
+  - id: C35
+    scenario: "\"Replicable BWAS\" without external validation"
+    expected_severity: warn
+    expected_rule: "GEN_NO_EXTERNAL"
+    novelty: null
+  - id: C36
+    scenario: "Multiband without noise/QC assessment"
+    expected_severity: warn
+    expected_rule: "MEAS_QC"
+    novelty: null
+  - id: C37
+    scenario: "Reverse inference (activation → process)"
+    expected_severity: warn
+    expected_rule: "CLAIM_REVERSE"
+    novelty: null
+  - id: C38
+    scenario: "Stimulus as fixed effect + generalization claim"
+    expected_severity: warn
+    expected_rule: "CLAIM_STIMULUS"
+    novelty: null
+  - id: C39
+    scenario: "Cognitive interpretation without behavioral covariates"
+    expected_severity: warn
+    expected_rule: "CLAIM_BEHAVIOR"
+    novelty: null
+  - id: C40
+    scenario: "VBM without ICV control"
+    expected_severity: warn
+    expected_rule: "MEAS_ICV"
+    novelty: null
+  - id: C41
+    scenario: "Multi-site, diagnosis×site confound unmodeled"
+    expected_severity: warn
+    expected_rule: "MEAS_MULTISITE"
+    novelty: null
+  - id: C42
+    scenario: "ComBat/harmonization outside CV"
+    expected_severity: block
+    expected_rule: "NEUROAI_HARMONIZATION"
+    novelty: null
+  - id: C43
+    scenario: "Feature selection outside CV"
+    expected_severity: block
+    expected_rule: "NEUROAI_FEATURE_SEL"
+    novelty: null
+  - id: C44
+    scenario: "Standardization/PCA outside CV"
+    expected_severity: block
+    expected_rule: "NEUROAI_STANDARDIZE"
+    novelty: null
+  - id: C45
+    scenario: "Test set used for model selection"
+    expected_severity: block
+    expected_rule: "NEUROAI_TEST_SET"
+    novelty: null
+  - id: C46
+    scenario: "CV not grouped by subject"
+    expected_severity: block
+    expected_rule: "SPLIT_GROUPING"
+    novelty: null
+  - id: C47
+    scenario: "CV ignores family/repeated-scan dependence"
+    expected_severity: warn
+    expected_rule: "(soft C46)"
+    novelty: null
+  - id: C48
+    scenario: "Above-chance without permutation test"
+    expected_severity: warn
+    expected_rule: "NEUROAI_PERM"
+    novelty: null
+  - id: C49
+    scenario: "Fold-wise SE treated as independent"
+    expected_severity: warn
+    expected_rule: "NEUROAI_FOLD_SE"
+    novelty: null
+  - id: C50
+    scenario: "\"Predictive biomarker\" without OOS"
+    expected_severity: warn
+    expected_rule: "CLAIM_PREDICTION"
+    novelty: null
+  - id: C51
+    scenario: "Encoding model split by TR, not run/stimulus"
+    expected_severity: warn
+    expected_rule: "NEUROAI_TEMPORAL"
+    novelty: null
+  - id: C52
+    scenario: "Best layer selected post-hoc"
+    expected_severity: warn
+    expected_rule: "NEUROAI_LAYER_SEL"
+    novelty: null
+  - id: C53
+    scenario: "RSA many-model comparison, no correction"
+    expected_severity: warn
+    expected_rule: "NEUROAI_RSA_MC"
+    novelty: null
+  - id: C54
+    scenario: "RSA without hierarchical uncertainty"
+    expected_severity: warn
+    expected_rule: "NEUROAI_RSA_HIER"
+    novelty: null
+  - id: C55
+    scenario: "Individual-difference FC claim, no ICC"
+    expected_severity: warn
+    expected_rule: "GEN_ICC"
+    novelty: null
+  - id: C56
+    scenario: "Extreme effect (d>2), no robustness"
+    expected_severity: warn
+    expected_rule: "NOVELTY_EXTREME"
+    novelty: prior_conflict
+  - id: C57
+    scenario: "Significant under one pipeline only"
+    expected_severity: warn
+    expected_rule: "STAT_ANALYTIC_FLEX"
+    novelty: null
+  - id: C58
+    scenario: "Missing COBIDAS mandatory fields"
+    expected_severity: warn
+    expected_rule: "REPORT_COBIDAS"
+    novelty: null
+  - id: C59
+    scenario: "BIDS Validator fails"
+    expected_severity: warn
+    expected_rule: "REPORT_BIDS"
+    novelty: null
+  - id: C60
+    scenario: "BIDS Stats Models provided"
+    expected_severity: allow
+    expected_rule: "REPORT_STATS_MODELS"
+    novelty: null

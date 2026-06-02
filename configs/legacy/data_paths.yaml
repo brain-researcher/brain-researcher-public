@@ -3,39 +3,39 @@
 
 # Local data sources (always available)
 local:
-  niclip: ${BR_REPO_ROOT}/data/niclip
-  brainmap: ${BR_REPO_ROOT}/data/brainmap
-  openneuro_local: ${HOME}/projects/dataset/openneuro
-  neurokg: ${BR_REPO_ROOT}/data/neurokg
-  cache: ${BR_REPO_ROOT}/data/cache
-  processed: ${BR_REPO_ROOT}/data/processed
-  bids: ${BR_REPO_ROOT}/data/bids
+  niclip: /home/zijiaochen/projects/brain_researcher/data/niclip
+  brainmap: /home/zijiaochen/projects/brain_researcher/data/brainmap
+  openneuro_local: /home/zijiaochen/projects/dataset/openneuro
+  br-kg: /home/zijiaochen/projects/brain_researcher/data/br-kg
+  cache: /home/zijiaochen/projects/brain_researcher/data/cache
+  processed: /home/zijiaochen/projects/brain_researcher/data/processed
+  bids: /home/zijiaochen/projects/brain_researcher/data/bids
 
 # OAK mount paths (requires SSHFS mount to be active)
 oak_mount:
-  base: ${HOME}/projects/oak_mount
+  base: /home/zijiaochen/projects/oak_mount
   enabled: true  # Set to false to disable OAK mount access
 
   # Large-scale datasets
   datasets:
-    hcp_young_adult: ${HOME}/projects/oak_mount/data/HCP_YA
-    hcp_youth: ${HOME}/projects/oak_mount/data/hcp_youth
-    openneuro_full: ${HOME}/projects/oak_mount/data
-    cnp: ${HOME}/projects/oak_mount/data/CNP
-    ibc: ${HOME}/projects/oak_mount/data/IBC
-    msc: ${HOME}/projects/oak_mount/data/MSC
-    myconnectome: ${HOME}/projects/oak_mount/data/myconnectome
-    narps: ${HOME}/projects/oak_mount/data/NARPS
-    mls: ${HOME}/projects/oak_mount/data/MLS
+    hcp_young_adult: /home/zijiaochen/projects/oak_mount/data/HCP_YA
+    hcp_youth: /home/zijiaochen/projects/oak_mount/data/hcp_youth
+    openneuro_full: /home/zijiaochen/projects/oak_mount/data
+    cnp: /home/zijiaochen/projects/oak_mount/data/CNP
+    ibc: /home/zijiaochen/projects/oak_mount/data/IBC
+    msc: /home/zijiaochen/projects/oak_mount/data/MSC
+    myconnectome: /home/zijiaochen/projects/oak_mount/data/myconnectome
+    narps: /home/zijiaochen/projects/oak_mount/data/NARPS
+    mls: /home/zijiaochen/projects/oak_mount/data/MLS
 
   # Resources
-  templateflow: ${HOME}/projects/oak_mount/templateflow
-  shared_containers: ${HOME}/projects/oak_mount/shared/containers
+  templateflow: /home/zijiaochen/projects/oak_mount/templateflow
+  shared_containers: /home/zijiaochen/projects/oak_mount/shared/containers
 
   # User directories
-  user_dir: ${HOME}/projects/oak_mount/users/zijiao/brain_researcher
-  user_outputs: ${HOME}/projects/oak_mount/users/zijiao/brain_researcher/outputs
-  user_cache: ${HOME}/projects/oak_mount/users/zijiao/brain_researcher/cache
+  user_dir: /home/zijiaochen/projects/oak_mount/users/zijiao/brain_researcher
+  user_outputs: /home/zijiaochen/projects/oak_mount/users/zijiao/brain_researcher/outputs
+  user_cache: /home/zijiaochen/projects/oak_mount/users/zijiao/brain_researcher/cache
 
 # API-based data sources (no local storage required)
 api_sources:
@@ -90,7 +90,7 @@ loader_defaults:
   batch_size: 100
 
 # BR-KG database paths
-neurokg:
-  db_path: ${BR_REPO_ROOT}/data/neurokg/db/neurokg_full.db
-  vector_cache: ${BR_REPO_ROOT}/data/neurokg/vector_cache
-  logs: ${BR_REPO_ROOT}/data/neurokg/logs
+br-kg:
+  db_path: /home/zijiaochen/projects/brain_researcher/data/br-kg/db/br-kg_full.db
+  vector_cache: /home/zijiaochen/projects/brain_researcher/data/br-kg/vector_cache
+  logs: /home/zijiaochen/projects/brain_researcher/data/br-kg/logs

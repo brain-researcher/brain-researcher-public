@@ -53,12 +53,12 @@ Detailed test results and analysis from running the test suite on ds000114.
    ```bash
    aws s3 sync --no-sign-request \
      s3://openneuro.org/ds000114 \
-     ${HOME}/projects/dataset/openneuro/ds000114
+     /home/zijiaochen/projects/dataset/openneuro/ds000114
    ```
 
 3. **Run Tests:**
    ```bash
-   cd ${BR_REPO_ROOT}
+   cd /home/zijiaochen/projects/brain_researcher
    python tests/unit/agent/tools/examples/test_real_data_ds000114.py
    ```
 

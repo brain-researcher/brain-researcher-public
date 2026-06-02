@@ -2,15 +2,18 @@ import os
 
 import pytest
 
+from brain_researcher.services.agent.planner.catalog_loader import load_intents
 from brain_researcher.services.agent.planner.kg_bridge import (
     get_family_stats_for_operation,
 )
-from brain_researcher.services.agent.planner.catalog_loader import load_intents
 
 
 def _neo4j_available():
     pwd_present = bool(os.environ.get("NEO4J_PASSWORD"))
-    return pwd_present and get_family_stats_for_operation("__connectivity_test__") is not None
+    return (
+        pwd_present
+        and get_family_stats_for_operation("__connectivity_test__") is not None
+    )
 
 
 @pytest.mark.skipif(
@@ -37,7 +40,7 @@ def test_every_operation_has_family_implements():
     reason="NEO4J_PASSWORD not set; skipping KG connected coverage check",
 )
 def test_connected_coverage_metric():
-    from brain_researcher.services.neurokg.graph.neo4j_utils import require_neo4j_db
+    from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
 
     try:
         db = require_neo4j_db(preload_cache=False)

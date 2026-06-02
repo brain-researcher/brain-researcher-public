@@ -45,5 +45,5 @@
 *.jar filter=lfs diff=lfs merge=lfs -text
 
 # Large JSON files (over 10MB)
-data/neurokg/raw/pubmed_publications.json filter=lfs diff=lfs merge=lfs -text
-data/neurokg/raw/neurovault_maps_*.json filter=lfs diff=lfs merge=lfs -text
+data/br-kg/raw/pubmed_publications.json filter=lfs diff=lfs merge=lfs -text
+data/br-kg/raw/neurovault_maps_*.json filter=lfs diff=lfs merge=lfs -text

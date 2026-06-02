@@ -1,0 +1,89 @@
+{
+  "schema_version": "demo-run-bundle-v2",
+  "generated_at": "2026-05-26T06:32:41+00:00",
+  "demo": {
+    "slug": "case2-cocaine-network-segregation",
+    "analysis_id": "run_case2_cocaine_network_segregation",
+    "title": "Case 2: Cocaine Network Segregation Robustness",
+    "description": "Case report on multiverse robustness of resting-state network segregation in cocaine use disorder.",
+    "tags": [
+      "case2",
+      "cocaine",
+      "resting-state",
+      "network-segregation",
+      "multiverse"
+    ],
+    "demo_type": "manuscript_case_report",
+    "stage_tags": [
+      "R5"
+    ],
+    "evidence_mode": "real",
+    "log_mode": "summary_only",
+    "manuscript_figure": null,
+    "canonical_name": "Case2_Cocaine_Network_Segregation",
+    "is_template": false,
+    "template_reason": null
+  },
+  "source_run_ids": [],
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "id": "a001",
+      "path": "docs/prompts/brain_researcher_hybrid/reports/case2_report.pdf",
+      "mime_type": "application/pdf",
+      "roles": [
+        "reference_summary_source",
+        "evidence"
+      ],
+      "stage": "R5",
+      "title": "Multiverse Robustness of Resting-State Network Segregation in Cocaine Use Disorder"
+    }
+  ],
+  "prompt_pack": {
+    "primary_prompt": "Review the curated PDF case report: Multiverse Robustness of Resting-State Network Segregation in Cocaine Use Disorder.",
+    "source_artifact_id": null,
+    "followup_prompts": [],
+    "coding_agent_prompts": [],
+    "mcp_prompts": []
+  },
+  "reference_output": {
+    "summary": "Multiverse Robustness of Resting-State Network Segregation in Cocaine Use Disorder",
+    "summary_kind": "answer",
+    "source_artifact_id": null,
+    "document_ids": [
+      "a001"
+    ],
+    "highlights": [
+      "Multiverse Robustness of Resting-State Network Segregation in Cocaine Use Disorder"
+    ],
+    "generated_at": null,
+    "dataset_version": null
+  },
+  "replay": {
+    "source": "bundle_steps",
+    "steps": [
+      {
+        "step_id": "stage_R5_1",
+        "stage": "R5",
+        "title": "RunCard / Export",
+        "status": "completed",
+        "tool": null,
+        "tool_calls": [],
+        "prompt_text": "Review the curated PDF case report: Multiverse Robustness of Resting-State Network Segregation in Cocaine Use Disorder.",
+        "response_text": "Curated PDF report available: Multiverse Robustness of Resting-State Network Segregation in Cocaine Use Disorder",
+        "prompt_origin": "bundle",
+        "response_origin": "bundle",
+        "artifact_ref_ids": [
+          "a001"
+        ],
+        "started_at": null,
+        "finished_at": null,
+        "duration_ms": null
+      }
+    ]
+  },
+  "fallback": {
+    "level": "none",
+    "reasons": []
+  }
+}

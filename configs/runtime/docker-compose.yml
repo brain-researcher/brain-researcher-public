@@ -1,8 +1,8 @@
 services:
-  neurokg:
+  br-kg:
     build:
       context: ../..
-      target: neurokg
+      target: br-kg
     ports:
       - "5000:5000"
     restart: unless-stopped
@@ -15,11 +15,11 @@ services:
       context: ../..
       target: agent
     depends_on:
-      - neurokg
+      - br-kg
     ports:
       - "8000:8000"
     restart: unless-stopped
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
-      - NEUROKG_API_URL=http://neurokg:5000
+      - BR_KG_API_URL=http://br-kg:5000

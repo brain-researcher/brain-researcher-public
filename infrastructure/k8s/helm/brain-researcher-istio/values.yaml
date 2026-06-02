@@ -8,7 +8,7 @@ global:
     meshId: brain-researcher-mesh
     clusterName: brain-researcher-primary
     version: "1.0.0"
-  
+
   # Istio global settings
   istioNamespace: istio-system
   meshConfig:
@@ -45,12 +45,12 @@ istio:
   installBase: true
   installIstiod: true
   installGateway: true
-  
+
   # Istio base configuration
   base:
     global:
       istioNamespace: istio-system
-      
+
   # Istiod configuration
   pilot:
     # High availability configuration
@@ -71,7 +71,7 @@ istio:
       PILOT_ENABLE_ALPHA_GATEWAY_API: true
       PILOT_ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION: true
       EXTERNAL_ISTIOD: false
-      
+
   # Gateway configuration
   gateway:
     replicaCount: 2
@@ -93,7 +93,7 @@ istio:
           name: https
         - port: 5000
           targetPort: 5000
-          name: neurokg
+          name: br-kg
         - port: 8000
           targetPort: 8000
           name: agent
@@ -110,8 +110,8 @@ istio:
 # Brain Researcher service configurations
 services:
   # BR-KG service configuration
-  neurokg:
-    name: neurokg-service
+  br-kg:
+    name: br-kg-service
     enabled: true
     trafficPolicy:
       loadBalancer: LEAST_CONN
@@ -223,7 +223,7 @@ services:
           - source:
               principals:
                 - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
-                - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+                - "cluster.local/ns/brain-researcher/sa/br-kg-service-account"
                 - "cluster.local/ns/brain-researcher/sa/agent-service-account"
           to:
           - operation:
@@ -264,7 +264,7 @@ services:
               principals:
                 - "cluster.local/ns/brain-researcher/sa/web-ui-service-account"
                 - "cluster.local/ns/brain-researcher/sa/agent-service-account"
-                - "cluster.local/ns/brain-researcher/sa/neurokg-service-account"
+                - "cluster.local/ns/brain-researcher/sa/br-kg-service-account"
           to:
           - operation:
               methods: ["GET", "POST", "PUT"]
@@ -338,7 +338,7 @@ gateways:
     name: brain-researcher-gateway
     hosts:
       - "brain-researcher.local"
-      - "*.brain-researcher.local" 
+      - "*.brain-researcher.local"
       - "app.brain-researcher.com"
       - "*.app.brain-researcher.com"
     tls:
@@ -347,7 +347,7 @@ gateways:
     ports:
       http: 80
       https: 443
-      neurokg: 5000
+      br-kg: 5000
       agent: 8000
       webui: 3000
       metrics: 9090
@@ -399,18 +399,18 @@ virtualServices:
           attempts: 3
           perTryTimeout: 10s
 
-  neurokg:
+  br-kg:
     enabled: true
     hosts:
       - "api.brain-researcher.local"
-      - "neurokg.brain-researcher.local"
+      - "br-kg.brain-researcher.local"
     routes:
       - match:
           - uri:
               prefix: "/search/"
         route:
           - destination:
-              host: neurokg-service.brain-researcher.svc.cluster.local
+              host: br-kg-service.brain-researcher.svc.cluster.local
               port:
                 number: 5000
         timeout: 120s
@@ -422,7 +422,7 @@ virtualServices:
               prefix: "/vector/"
         route:
           - destination:
-              host: neurokg-service.brain-researcher.svc.cluster.local
+              host: br-kg-service.brain-researcher.svc.cluster.local
               port:
                 number: 5000
         timeout: 300s
@@ -556,7 +556,7 @@ observability:
         - name: "Request Rate"
           metric: "request_total"
           type: "rate"
-        - name: "Success Rate"  
+        - name: "Success Rate"
           metric: "request_total"
           type: "success_rate"
         - name: "Response Time"
@@ -575,7 +575,7 @@ multiCluster:
     region: us-east-1
     network: brain-researcher-network-secondary
   crossClusterServices:
-    - neurokg-service
+    - br-kg-service
     - agent-service
     - orchestrator-service
 
@@ -587,7 +587,7 @@ migration:
     - redis-service
     - postgres-service
     - neo4j-service
-    - neurokg-service
+    - br-kg-service
     - orchestrator-service
     - agent-service
     - web-ui-service

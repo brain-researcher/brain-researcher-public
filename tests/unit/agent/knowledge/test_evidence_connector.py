@@ -23,7 +23,9 @@ from brain_researcher.services.agent.knowledge.evidence_models import (
 class MockKGNodeSummary:
     """Mock for KGNodeSummary from query_service."""
 
-    def __init__(self, kg_id: str, label: str, node_type: str = "Publication", score: float = 1.0):
+    def __init__(
+        self, kg_id: str, label: str, node_type: str = "Publication", score: float = 1.0
+    ):
         self.kg_id = kg_id
         self.label = label
         self.node_type = node_type
@@ -57,12 +59,16 @@ class TestLiteratureConnector:
     async def test_search_neo4j_success(self):
         """Test successful Neo4j search."""
         mock_nodes = [
-            MockKGNodeSummary("pmid:12345", "Motor cortex activation study", "Publication", 0.9),
-            MockKGNodeSummary("pmid:67890", "fMRI motor task analysis", "Publication", 0.8),
+            MockKGNodeSummary(
+                "pmid:12345", "Motor cortex activation study", "Publication", 0.9
+            ),
+            MockKGNodeSummary(
+                "pmid:67890", "fMRI motor task analysis", "Publication", 0.8
+            ),
         ]
 
         with patch(
-            "brain_researcher.services.neurokg.query_service.search_nodes",
+            "brain_researcher.services.br_kg.query_service.search_nodes",
             return_value=mock_nodes,
         ):
             connector = LiteratureConnector(use_edirect_fallback=False)
@@ -78,7 +84,7 @@ class TestLiteratureConnector:
     async def test_search_neo4j_failure_returns_empty(self):
         """Test that Neo4j failure returns empty list."""
         with patch(
-            "brain_researcher.services.neurokg.query_service.search_nodes",
+            "brain_researcher.services.br_kg.query_service.search_nodes",
             side_effect=Exception("DB connection failed"),
         ):
             connector = LiteratureConnector(use_edirect_fallback=False)
@@ -95,7 +101,10 @@ class TestLiteratureConnector:
     def test_build_pubmed_url(self):
         """Test PubMed URL building."""
         connector = LiteratureConnector()
-        assert connector._build_pubmed_url("pmid:12345") == "https://pubmed.ncbi.nlm.nih.gov/12345"
+        assert (
+            connector._build_pubmed_url("pmid:12345")
+            == "https://pubmed.ncbi.nlm.nih.gov/12345"
+        )
         assert connector._build_pubmed_url("other:id") is None
 
 
@@ -106,11 +115,13 @@ class TestNeuroStoreConnector:
     async def test_search_success(self):
         """Test successful NeuroStore search."""
         mock_nodes = [
-            MockKGNodeSummary("neurostore:abc123", "Motor meta-analysis", "Study", 0.85),
+            MockKGNodeSummary(
+                "neurostore:abc123", "Motor meta-analysis", "Study", 0.85
+            ),
         ]
 
         with patch(
-            "brain_researcher.services.neurokg.query_service.search_nodes",
+            "brain_researcher.services.br_kg.query_service.search_nodes",
             return_value=mock_nodes,
         ):
             connector = NeuroStoreConnector()
@@ -134,12 +145,14 @@ class TestDatasetCatalogConnector:
     async def test_search_success(self):
         """Test successful dataset search."""
         mock_datasets = [
-            MockDatasetSummary("ds001234", "Motor Task fMRI Dataset", ["motor"], ["fMRI"]),
+            MockDatasetSummary(
+                "ds001234", "Motor Task fMRI Dataset", ["motor"], ["fMRI"]
+            ),
             MockDatasetSummary("ds005678", "Visual Task Dataset", ["visual"], ["fMRI"]),
         ]
 
         with patch(
-            "brain_researcher.services.neurokg.query_service.search_datasets",
+            "brain_researcher.services.br_kg.query_service.search_datasets",
             return_value=mock_datasets,
         ):
             connector = DatasetCatalogConnector()
@@ -155,7 +168,7 @@ class TestDatasetCatalogConnector:
     async def test_search_failure_returns_empty(self):
         """Test that search failure returns empty list."""
         with patch(
-            "brain_researcher.services.neurokg.query_service.search_datasets",
+            "brain_researcher.services.br_kg.query_service.search_datasets",
             side_effect=Exception("Search failed"),
         ):
             connector = DatasetCatalogConnector()
@@ -177,11 +190,13 @@ class TestKGNodeConnector:
     async def test_search_success(self):
         """Test successful KG node search."""
         mock_nodes = [
-            MockKGNodeSummary("concept:motor_cortex", "Motor Cortex", "CognitiveConcept", 0.95),
+            MockKGNodeSummary(
+                "concept:motor_cortex", "Motor Cortex", "CognitiveConcept", 0.95
+            ),
         ]
 
         with patch(
-            "brain_researcher.services.neurokg.query_service.search_nodes",
+            "brain_researcher.services.br_kg.query_service.search_nodes",
             return_value=mock_nodes,
         ):
             connector = KGNodeConnector()
@@ -199,7 +214,7 @@ class TestKGNodeConnector:
         ]
 
         with patch(
-            "brain_researcher.services.neurokg.query_service.search_nodes",
+            "brain_researcher.services.br_kg.query_service.search_nodes",
             return_value=mock_nodes,
         ) as mock_search:
             connector = KGNodeConnector(node_types=["BrainRegion"])
@@ -344,7 +359,9 @@ class TestEvidenceAggregator:
         mock_failing_connector = MagicMock()
         mock_failing_connector.source_type = EvidenceSourceType.PUBMED
         mock_failing_connector.source_name = "failing"
-        mock_failing_connector.search = AsyncMock(side_effect=Exception("Connection failed"))
+        mock_failing_connector.search = AsyncMock(
+            side_effect=Exception("Connection failed")
+        )
 
         mock_success_connector = MagicMock()
         mock_success_connector.source_type = EvidenceSourceType.DATASET_CATALOG

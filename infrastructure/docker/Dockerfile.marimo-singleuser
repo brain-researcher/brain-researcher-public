@@ -70,8 +70,9 @@ COPY scripts/runtime/psyflow_sitecustomize.py /app/runtime_sitecustomize/sitecus
 
 RUN pip install --upgrade pip && pip install \
       -e ".[behavior-task]" \
-      "marimo==0.23.0" \
-      "pydantic-ai-slim[google,mcp,openai]>=1.80.0" && \
+      "marimo==0.23.8" \
+      "pydantic-ai-slim[google,mcp,openai]>=1.80.0" \
+      "neuprint-python" && \
     python -m brain_researcher.services.orchestrator.marimo_frontend_patch && \
     python -m brain_researcher.services.orchestrator.marimo_server_patch && \
     chmod +x /app/scripts/runtime/start_marimo_singleuser.sh \

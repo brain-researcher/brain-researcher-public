@@ -29,10 +29,14 @@ def _write_logging_fake_python(bin_dir: Path, log_path: Path) -> None:
     python_path.chmod(0o755)
 
 
-def test_start_marimo_singleuser_materializes_templates_into_workspace(tmp_path: Path) -> None:
+def test_start_marimo_singleuser_materializes_templates_into_workspace(
+    tmp_path: Path,
+) -> None:
     template_root = tmp_path / "templates"
     template_root.mkdir()
-    (template_root / "br_quickstart.py").write_text("print('quickstart')\n", encoding="utf-8")
+    (template_root / "br_quickstart.py").write_text(
+        "print('quickstart')\n", encoding="utf-8"
+    )
     (template_root / "behavior_task_builder.py").write_text(
         "print('behavior')\n", encoding="utf-8"
     )
@@ -136,12 +140,95 @@ def test_start_marimo_singleuser_starts_xvfb_when_enabled(tmp_path: Path) -> Non
     env.pop("DISPLAY", None)
 
     subprocess.run(
-        ["bash", str(SCRIPT_PATH), "bash", "-lc", "test \"$DISPLAY\" = :88"],
+        ["bash", str(SCRIPT_PATH), "bash", "-lc", 'test "$DISPLAY" = :88'],
         check=True,
         cwd=workspace_root,
         env=env,
     )
 
-    assert "-screen 0 1280x720x24 -nolisten tcp" in xvfb_log.read_text(
-        encoding="utf-8"
+    assert "-screen 0 1280x720x24 -nolisten tcp" in xvfb_log.read_text(encoding="utf-8")
+
+
+def _write_fake_curl(bin_dir: Path, log_path: Path, exit_code: int) -> None:
+    curl_path = bin_dir / "curl"
+    curl_path.write_text(
+        "#!/usr/bin/env bash\n"
+        f"printf 'curl %s\\n' \"$*\" >> {str(log_path)!r}\n"
+        f"exit {exit_code}\n",
+        encoding="utf-8",
     )
+    curl_path.chmod(0o755)
+
+
+def _gate_env(tmp_path: Path, bin_dir: Path) -> dict:
+    env = os.environ.copy()
+    env["PATH"] = f"{bin_dir}:{env['PATH']}"
+    env["BR_MARIMO_ENABLE_XVFB"] = "false"
+    env["HOME"] = str(tmp_path / "home")
+    env["BR_TEMPLATE_ROOT"] = str(tmp_path / "no_templates")  # absent -> skip copy
+    env["BR_MCP_HTTP_URL"] = "http://brain-researcher-mcp:7000/mcp"
+    return env
+
+
+def test_start_marimo_waits_for_mcp_then_still_launches_when_unreachable(
+    tmp_path: Path,
+) -> None:
+    """An unreachable MCP must NOT block boot: gate waits up to the timeout then execs."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    _write_fake_python(bin_dir)
+    curl_log = tmp_path / "curl.log"
+    _write_fake_curl(bin_dir, curl_log, 7)  # connection failure every time
+    marker = tmp_path / "launched"
+    env = _gate_env(tmp_path, bin_dir)
+    env["BR_MARIMO_MCP_WAIT_TIMEOUT_S"] = "1"  # keep the test fast
+
+    subprocess.run(
+        ["bash", str(SCRIPT_PATH), "bash", "-lc", f"touch {str(marker)!r}"],
+        check=True,
+        cwd=tmp_path,
+        env=env,
+    )
+    assert marker.exists()  # boot proceeded despite MCP never coming up
+    assert curl_log.exists() and "/mcp" in curl_log.read_text()  # gate polled MCP
+
+
+def test_start_marimo_proceeds_immediately_when_mcp_reachable(tmp_path: Path) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    _write_fake_python(bin_dir)
+    curl_log = tmp_path / "curl.log"
+    _write_fake_curl(bin_dir, curl_log, 0)  # reachable on first probe
+    marker = tmp_path / "launched"
+    env = _gate_env(tmp_path, bin_dir)
+
+    subprocess.run(
+        ["bash", str(SCRIPT_PATH), "bash", "-lc", f"touch {str(marker)!r}"],
+        check=True,
+        cwd=tmp_path,
+        env=env,
+    )
+    assert marker.exists()
+    assert (
+        curl_log.read_text().count("curl") == 1
+    )  # single successful probe, no waiting
+
+
+def test_start_marimo_skips_gate_when_mcp_url_unset(tmp_path: Path) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    _write_fake_python(bin_dir)
+    curl_log = tmp_path / "curl.log"
+    _write_fake_curl(bin_dir, curl_log, 7)
+    marker = tmp_path / "launched"
+    env = _gate_env(tmp_path, bin_dir)
+    del env["BR_MCP_HTTP_URL"]  # no MCP configured -> gate skipped entirely
+
+    subprocess.run(
+        ["bash", str(SCRIPT_PATH), "bash", "-lc", f"touch {str(marker)!r}"],
+        check=True,
+        cwd=tmp_path,
+        env=env,
+    )
+    assert marker.exists()
+    assert not curl_log.exists()  # curl never invoked

@@ -1,0 +1,129 @@
+# Recovery map overrides for failure taxonomy -> recovery decisions.
+# This file is optional; the agent will fall back to built-in defaults
+# if the file is missing or malformed.
+version: 1
+rules:
+  # --------------------------------------------
+  # Cross-stage specific rules (place first)
+  # --------------------------------------------
+  - category: infra
+    tool_family: container
+    action: retry_backoff
+    allow_retry: true
+    allow_param_adjustment: false
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  - category: stats
+    step_role: sensitivity_analysis
+    action: relax_constraint
+    allow_retry: false
+    allow_param_adjustment: true
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  - category: stats
+    step_role: design_constraint
+    action: relax_constraint
+    allow_retry: false
+    allow_param_adjustment: true
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  - category: data
+    tool_family: ingestion
+    action: ask_user
+    allow_retry: false
+    allow_tool_substitute: false
+    allow_router_suggestions: false
+
+  - category: data
+    step_role: condition_matrix
+    action: ask_user
+    allow_retry: false
+    allow_param_adjustment: false
+    allow_tool_substitute: false
+    allow_router_suggestions: false
+
+  - category: data
+    step_role: condition_tag
+    action: ask_user
+    allow_retry: false
+    allow_param_adjustment: false
+    allow_tool_substitute: false
+    allow_router_suggestions: false
+
+  - category: concept
+    step_role: sensitivity_analysis
+    action: relax_constraint
+    allow_retry: false
+    allow_param_adjustment: true
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  - category: stats
+    step_role: sensitivity_finding
+    action: relax_constraint
+    allow_retry: false
+    allow_param_adjustment: true
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  - category: concept
+    step_role: hypothesis_delta
+    action: ask_user
+    allow_retry: false
+    allow_param_adjustment: false
+    allow_tool_substitute: false
+    allow_router_suggestions: false
+
+  - category: tool
+    step_role: permutation
+    action: tool_substitute
+    allow_retry: false
+    allow_param_adjustment: true
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  - category: infra
+    tool_family: cloud_native_processing
+    action: retry_backoff
+    allow_retry: true
+    allow_param_adjustment: true
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  # -------------------
+  # Generic fallbacks
+  # -------------------
+  - category: infra
+    allow_retry: true
+    allow_param_adjustment: true
+    allow_tool_substitute: false
+    allow_router_suggestions: true
+
+  - category: tool
+    allow_retry: false
+    allow_param_adjustment: true
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  - category: stats
+    action: relax_constraint
+    allow_retry: false
+    allow_param_adjustment: true
+    allow_tool_substitute: true
+    allow_router_suggestions: true
+
+  - category: data
+    action: ask_user
+    allow_retry: false
+    allow_param_adjustment: false
+    allow_tool_substitute: false
+    allow_router_suggestions: false
+
+  - category: concept
+    action: ask_user
+
+  - category: user_input
+    action: ask_user

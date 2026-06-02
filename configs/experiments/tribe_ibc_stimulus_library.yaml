@@ -96,7 +96,7 @@ tasks:
   - left_inferior_frontal_gyrus
   - left_posterior_superior_temporal_sulcus
   - left_middle_temporal_gyrus
-  neurokg_tags:
+  br_kg_tags:
   - language_localizer
   - syntax
   - sentence_processing
@@ -145,7 +145,7 @@ tasks:
   - bilateral_intraparietal_sulcus
   - dorsal_prefrontal_cortex
   - left_perisylvian_language_regions_as_partial_control
-  neurokg_tags:
+  br_kg_tags:
   - math_localizer
   - numerical_cognition
   - language_comparison
@@ -188,7 +188,7 @@ tasks:
   - bilateral_temporoparietal_junction
   - medial_prefrontal_cortex
   - precuneus_posterior_cingulate
-  neurokg_tags:
+  br_kg_tags:
   - theory_of_mind
   - mentalizing
   - default_mode_network
@@ -237,7 +237,7 @@ tasks:
   - primary_auditory_cortex
   - superior_temporal_gyrus
   - superior_temporal_sulcus_voice_selective_regions
-  neurokg_tags:
+  br_kg_tags:
   - auditory_localizer
   - speech
   - voice
@@ -278,7 +278,7 @@ tasks:
   - hMT_plus_V5
   - posterior_superior_temporal_sulcus
   - extrastriate_body_area
-  neurokg_tags:
+  br_kg_tags:
   - biological_motion
   - motion_localizer
   - social_perception
@@ -306,7 +306,7 @@ tasks:
     source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/FaceBody/stimuli/*/*.jpg
     manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_face_body_manifest.json
     materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_face_body
-    derived_video_root: ${BR_REPO_ROOT}/data/stimuli/tribe_ibc/derived_media/ibc_face_body
+    derived_video_root: /home/zijiaochen/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_face_body
   contrasts:
   - contrast_id: face_vs_scrambled
     positive_conditions:
@@ -331,7 +331,7 @@ tasks:
   - occipital_face_area
   - extrastriate_body_area
   - parahippocampal_place_area
-  neurokg_tags:
+  br_kg_tags:
   - face_localizer
   - body_localizer
   - scene_localizer
@@ -356,7 +356,7 @@ tasks:
     source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/Scene/Stimuli/Scanner/*.png
     manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_scene_perception_manifest.json
     materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_scene_perception
-    derived_video_root: ${BR_REPO_ROOT}/data/stimuli/tribe_ibc/derived_media/ibc_scene_perception
+    derived_video_root: /home/zijiaochen/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_scene_perception
     note: preserve a/b and w/x labels when building pairwise scene plausibility clips
   contrasts:
   - contrast_id: coherent_scene_vs_perturbed_scene
@@ -375,7 +375,7 @@ tasks:
   - parahippocampal_place_area
   - occipital_place_area
   - retrosplenial_complex
-  neurokg_tags:
+  br_kg_tags:
   - scene_localizer
   - place_processing
   - visual_semantics
@@ -416,7 +416,7 @@ tasks:
   - left_inferior_frontal_gyrus
   - left_superior_temporal_gyrus
   - left_middle_temporal_gyrus
-  neurokg_tags:
+  br_kg_tags:
   - hcp_language
   - language_localizer
   - story_comprehension
@@ -445,7 +445,7 @@ tasks:
       Stimuli/*
     manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_hcp_emotion_manifest.json
     materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_hcp_emotion
-    derived_video_root: ${BR_REPO_ROOT}/data/stimuli/tribe_ibc/derived_media/ibc_hcp_emotion
+    derived_video_root: /home/zijiaochen/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_hcp_emotion
     note: stay cortical in interpretation; TRIBE outputs are fsaverage5 surface predictions
       and will not report amygdala directly
   contrasts:
@@ -463,7 +463,7 @@ tasks:
   - fusiform_face_area
   - occipital_face_area
   - ventral_temporal_face_selective_cortex
-  neurokg_tags:
+  br_kg_tags:
   - hcp_emotion
   - face_localizer
   - affective_faces
@@ -513,7 +513,7 @@ tasks:
   - posterior_superior_temporal_sulcus
   - temporoparietal_junction
   - medial_prefrontal_cortex
-  neurokg_tags:
+  br_kg_tags:
   - hcp_social
   - theory_of_mind
   - social_animation

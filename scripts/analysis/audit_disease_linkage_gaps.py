@@ -754,8 +754,8 @@ def _write_markdown(path: Path, report: dict[str, Any], top_rows: list[dict[str,
 def parse_args() -> argparse.Namespace:
     repo_root = _find_repo_root(Path(__file__).resolve().parent)
     default_base_url = (
-        _env(repo_root, "NEUROKG_API_URL")
-        or _env(repo_root, "PUBLIC_NEUROKG_URL")
+        _env(repo_root, "BR_KG_API_URL")
+        or _env(repo_root, "PUBLIC_BR_KG_URL")
         or "https://brain-researcher.com/kg"
     )
     parser = argparse.ArgumentParser(description=__doc__)

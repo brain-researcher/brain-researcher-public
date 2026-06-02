@@ -3,8 +3,6 @@ name: Brain Researcher CI/CD Pipeline
 on:
   push:
     branches: [ master, main, develop ]
-  pull_request:
-    branches: [ master, main, develop ]
   release:
     types: [ published ]
 
@@ -53,7 +51,7 @@ jobs:
       with:
         python-version: '3.12'
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -102,7 +100,7 @@ jobs:
         echo "count=$count" >> "$GITHUB_OUTPUT"
         echo "Changed Python files: $count"
         sed -n '1,200p' "$files_path"
-    
+
     - name: Run Black (code formatting)
       run: |
         mapfile -t files < "$CHANGED_PYTHON_FILES"
@@ -111,7 +109,7 @@ jobs:
           exit 0
         fi
         black --check "${files[@]}"
-    
+
     - name: Run Ruff (linting)
       run: |
         mapfile -t files < "$CHANGED_PYTHON_FILES"
@@ -120,7 +118,7 @@ jobs:
           exit 0
         fi
         ruff check "${files[@]}"
-    
+
     - name: Run isort (import sorting)
       run: |
         mapfile -t files < "$CHANGED_PYTHON_FILES"
@@ -129,7 +127,7 @@ jobs:
           exit 0
         fi
         isort --check-only "${files[@]}"
-    
+
     - name: Run MyPy (type checking)
       continue-on-error: true
       run: |
@@ -188,7 +186,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-    
+
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
@@ -196,7 +194,7 @@ jobs:
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
-    
+
     - name: Upload Trivy scan results to GitHub Security
       uses: github/codeql-action/upload-sarif@v4
       if: ${{ always() && vars.ENABLE_CODE_SCANNING == 'true' }}
@@ -211,7 +209,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12']
-    
+
     services:
       redis:
         image: redis:7-alpine
@@ -238,13 +236,13 @@ jobs:
       uses: actions/checkout@v6
       with:
         lfs: true
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
-    
+
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
@@ -259,10 +257,10 @@ jobs:
           echo "MNE_HOME=$RUNNER_TEMP/mne"
         } >> "$GITHUB_ENV"
         mkdir -p "$RUNNER_TEMP/numba-cache" "$RUNNER_TEMP/mne"
-    
+
     - name: Create test data directories
       run: |
-        mkdir -p data/neurokg/db
+        mkdir -p data/br-kg/db
         mkdir -p data/test_data
         mkdir -p logs
 
@@ -293,7 +291,7 @@ jobs:
         PYTHONDONTWRITEBYTECODE: "1"
       run: |
         pytest -q tests/architecture/test_import_boundaries.py -p no:cacheprovider
-    
+
     - name: Run PR unit smoke shard
       if: matrix.python-version == '3.11'
       env:
@@ -320,17 +318,17 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: [lint, test]
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-    
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
         python-version: '3.11'
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -384,11 +382,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test, helm-chart]
     if: github.event_name == 'push' || github.event_name == 'release'
-    
+
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
       image-metadata: ${{ steps.build.outputs.metadata }}
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -399,29 +397,29 @@ jobs:
           - service: agent
             dockerfile: infrastructure/docker/Dockerfile.agent
             target: agent
-          - service: neurokg
+          - service: br-kg
             dockerfile: Dockerfile
-            target: neurokg
+            target: br-kg
           - service: web-ui
             dockerfile: apps/web-ui/Dockerfile
             target: runner
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
       with:
         lfs: true
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
+
     - name: Log in to Container Registry
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
@@ -434,7 +432,7 @@ jobs:
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
           type=raw,value=latest,enable={{is_default_branch}}
-    
+
     - name: Build and push Docker image
       id: build
       uses: docker/build-push-action@v5
@@ -456,12 +454,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: github.event_name == 'push' || github.event_name == 'release'
-    
+
     strategy:
       fail-fast: false
       matrix:
-        service: [orchestrator, agent, neurokg, web-ui]
-    
+        service: [orchestrator, agent, br-kg, web-ui]
+
     steps:
     - name: Log in to Container Registry
       uses: docker/login-action@v3
@@ -476,7 +474,7 @@ jobs:
         image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:sha-${{ github.sha }}
         format: 'sarif'
         output: 'trivy-${{ matrix.service }}.sarif'
-    
+
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v4
       if: ${{ vars.ENABLE_CODE_SCANNING == 'true' }}
@@ -500,7 +498,7 @@ jobs:
           infrastructure/docker/compose/docker-compose.ci.yml
           scripts/ci/generate_e2e_auth_token.py
           scripts/tools/dev/seed_from_dump.sh
-          tests/fixtures/neurokg/mini_dump/**
+          tests/fixtures/br-kg/mini_dump/**
           apps/web-ui/.npmrc
           apps/web-ui/package.json
           apps/web-ui/package-lock.json
@@ -558,7 +556,7 @@ jobs:
 
     - name: Set up Docker Compose
       run: |
-        mkdir -p data/neurokg/db
+        mkdir -p data/br-kg/db
         mkdir -p logs
         {
           echo "OPENAI_API_KEY=test-key"
@@ -606,7 +604,7 @@ jobs:
     - name: Seed Neo4j mini dump
       run: |
         chmod +x scripts/tools/dev/seed_from_dump.sh
-        NEO4J_USER=neo4j NEO4J_PASSWORD=password scripts/tools/dev/seed_from_dump.sh tests/fixtures/neurokg/mini_dump
+        NEO4J_USER=neo4j NEO4J_PASSWORD=password scripts/tools/dev/seed_from_dump.sh tests/fixtures/br-kg/mini_dump
 
     - name: Start application services
       run: |
@@ -618,7 +616,7 @@ jobs:
 
         for image in \
           "${REGISTRY}/${GITHUB_REPOSITORY}/orchestrator:sha-${GITHUB_SHA}" \
-          "${REGISTRY}/${GITHUB_REPOSITORY}/neurokg:sha-${GITHUB_SHA}" \
+          "${REGISTRY}/${GITHUB_REPOSITORY}/br-kg:sha-${GITHUB_SHA}" \
           "${REGISTRY}/${GITHUB_REPOSITORY}/agent:sha-${GITHUB_SHA}" \
           "${REGISTRY}/${GITHUB_REPOSITORY}/web-ui:sha-${GITHUB_SHA}" \
           "redis:7-alpine"; do
@@ -626,7 +624,7 @@ jobs:
           docker image inspect "$image" >/dev/null
         done
 
-        docker compose -f docker-compose.yml -f infrastructure/docker/compose/docker-compose.ci.yml up -d --no-build --pull never redis neurokg agent orchestrator web-ui
+        docker compose -f docker-compose.yml -f infrastructure/docker/compose/docker-compose.ci.yml up -d --no-build --pull never redis br-kg agent orchestrator web-ui
         docker compose -f docker-compose.yml -f infrastructure/docker/compose/docker-compose.ci.yml ps
         sleep 60  # Wait for services to start
 
@@ -643,7 +641,7 @@ jobs:
           echo "Waiting for services to start... ($i/45)"
           sleep 10
         done
-    
+
     - name: Run smoke tests
       run: |
         curl -f http://localhost:8000/health
@@ -670,7 +668,7 @@ jobs:
           tests/e2e/kg.lens.smoke.spec.ts \
           tests/e2e/steps.failed.spec.ts \
           --reporter=line
-    
+
     - name: Collect logs
       if: failure()
       run: |
@@ -687,7 +685,7 @@ jobs:
           artifacts/playwright-report
           apps/web-ui/test-results
           docker-logs.txt
-    
+
     - name: Stop services
       if: always()
       run: docker compose -f docker-compose.yml -f infrastructure/docker/compose/docker-compose.ci.yml down -v
@@ -699,11 +697,11 @@ jobs:
     needs: [build, integration-tests]
     if: github.ref == 'refs/heads/develop'
     environment: staging
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-    
+
     - name: Deploy to staging
       run: |
         echo "Deploying to staging environment..."
@@ -717,16 +715,16 @@ jobs:
     needs: [build, e2e-tests]
     if: github.event_name == 'release'
     environment: production
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-    
+
     - name: Deploy to production
       run: |
         echo "Deploying to production environment..."
         # Add your production deployment commands here
-        
+
     - name: Run post-deployment tests
       run: |
         echo "Running post-deployment validation..."
@@ -738,7 +736,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-production, deploy-staging]
     if: always()
-    
+
     steps:
     - name: Send notification
       uses: 8398a7/action-slack@v3

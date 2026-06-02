@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.tool_base import (
     BatchToolWrapper,
+    BRKGToolWrapper,
     CachedToolWrapper,
-    NeuroKGToolWrapper,
     ToolResult,
 )
 
@@ -26,7 +26,7 @@ class TestToolArgs(BaseModel):
     param2: int = Field(default=42, description="Second parameter")
 
 
-class MockTool(NeuroKGToolWrapper):
+class MockTool(BRKGToolWrapper):
     """Mock implementation for testing."""
 
     def get_tool_name(self) -> str:
@@ -130,7 +130,7 @@ class TestToolResult:
         assert result_dict["data"]["test"] is True
 
 
-class TestNeuroKGToolWrapper:
+class TestBRKGToolWrapper:
     """Test base tool wrapper functionality."""
 
     def test_tool_initialization(self):
@@ -320,8 +320,12 @@ class TestCachedToolWrapper:
             tool,
             "_run",
             side_effect=[
-                ToolResult(status="success", data={"calls": 1}, metadata={"cacheable": False}),
-                ToolResult(status="success", data={"calls": 2}, metadata={"cacheable": False}),
+                ToolResult(
+                    status="success", data={"calls": 1}, metadata={"cacheable": False}
+                ),
+                ToolResult(
+                    status="success", data={"calls": 2}, metadata={"cacheable": False}
+                ),
             ],
         ) as mock_run:
             result1 = tool.run(param1="no_cache")
@@ -356,7 +360,7 @@ class TestIntegrationScenarios:
             options: dict[str, Any]
             threshold: float = 0.5
 
-        class ComplexTool(NeuroKGToolWrapper):
+        class ComplexTool(BRKGToolWrapper):
             def get_tool_name(self) -> str:
                 return "complex_tool"
 

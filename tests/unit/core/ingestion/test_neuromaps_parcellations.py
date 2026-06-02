@@ -11,7 +11,7 @@ from brain_researcher.core.ingestion.loaders.neuromaps_parcellations import (
     insert_part_of_relationships,
     read_table,
 )
-from brain_researcher.services.neurokg.graph.fake_graph_database import FakeGraphDB
+from brain_researcher.services.br_kg.graph.fake_graph_database import FakeGraphDB
 
 
 def test_discover_and_read_tabular_atlas(tmp_path: Path) -> None:

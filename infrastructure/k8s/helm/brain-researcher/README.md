@@ -59,7 +59,7 @@ The following table lists the configurable parameters and their default values.
 | orchestrator | `orchestrator.replicaCount` | Number of orchestrator replicas | `3` |
 | agent | `agent.enabled` | Enable agent service | `true` |
 | agent | `agent.replicaCount` | Number of agent replicas | `2` |
-| neurokg | `neurokg.enabled` | Enable BR-KG service | `true` |
+| br-kg | `br-kg.enabled` | Enable BR-KG service | `true` |
 | niclip | `niclip.enabled` | Enable NICLIP service | `true` |
 | web-ui | `webUi.enabled` | Enable web UI | `true` |
 | web-ui | `webUi.replicaCount` | Number of web UI replicas | `2` |

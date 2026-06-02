@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Update neurokg imports to services.neurokg."""
+"""Update br_kg imports to services.br_kg."""
 
 import argparse
 from pathlib import Path
 
 REPLACEMENTS = {
-    "from neurokg": "from brain_researcher.services.neurokg",
-    "import neurokg.": "import brain_researcher.services.neurokg.",
+    "from br_kg": "from brain_researcher.services.br_kg",
+    "import br_kg.": "import brain_researcher.services.br_kg.",
 }
 
 
 def update_imports(repo_path: Path) -> None:
-    """Replace neurokg import strings in all Python files."""
+    """Replace br_kg import strings in all Python files."""
     for py_file in repo_path.rglob("*.py"):
         if py_file == Path(__file__):
             continue
@@ -31,7 +31,7 @@ def update_imports(repo_path: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Update imports to services.neurokg")
+    parser = argparse.ArgumentParser(description="Update imports to services.br_kg")
     parser.add_argument("path", nargs="?", default=".", help="Repository root")
     args = parser.parse_args()
 

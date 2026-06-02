@@ -45,10 +45,10 @@ allowVolumeExpansion: true
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: neurokg-db-storage
+  name: br-kg-db-storage
   namespace: brain-researcher-core
   labels:
-    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/name: br-kg
     app.kubernetes.io/component: database-storage
     app.kubernetes.io/part-of: brain-researcher-platform
   annotations:
@@ -63,17 +63,17 @@ spec:
   # Optional: Selector for specific PV (if using static provisioning)
   # selector:
   #   matchLabels:
-  #     app: neurokg-db
+  #     app: br-kg-db
 
 ---
 # BR-KG vector cache storage - Fast access for embeddings
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: neurokg-vector-cache
+  name: br-kg-vector-cache
   namespace: brain-researcher-core
   labels:
-    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/name: br-kg
     app.kubernetes.io/component: vector-storage
     app.kubernetes.io/part-of: brain-researcher-platform
   annotations:

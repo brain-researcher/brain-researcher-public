@@ -15,7 +15,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -29,16 +28,28 @@ def test_workflow_spatial_correlation_surface_smoke(tmp_path: Path):
     base = (
         PROJECT_ROOT
         / "data"
-        / "neurokg"
+        / "br_kg"
         / "raw"
         / "neuromaps"
         / "annotations"
         / "margulies2016"
     )
-    map_left = base / "fcgradient03/fsLR/source-margulies2016_desc-fcgradient03_space-fsLR_den-32k_hemi-L_feature.func.gii"
-    map_right = base / "fcgradient03/fsLR/source-margulies2016_desc-fcgradient03_space-fsLR_den-32k_hemi-R_feature.func.gii"
-    ref_left = base / "fcgradient05/fsLR/source-margulies2016_desc-fcgradient05_space-fsLR_den-32k_hemi-L_feature.func.gii"
-    ref_right = base / "fcgradient05/fsLR/source-margulies2016_desc-fcgradient05_space-fsLR_den-32k_hemi-R_feature.func.gii"
+    map_left = (
+        base
+        / "fcgradient03/fsLR/source-margulies2016_desc-fcgradient03_space-fsLR_den-32k_hemi-L_feature.func.gii"
+    )
+    map_right = (
+        base
+        / "fcgradient03/fsLR/source-margulies2016_desc-fcgradient03_space-fsLR_den-32k_hemi-R_feature.func.gii"
+    )
+    ref_left = (
+        base
+        / "fcgradient05/fsLR/source-margulies2016_desc-fcgradient05_space-fsLR_den-32k_hemi-L_feature.func.gii"
+    )
+    ref_right = (
+        base
+        / "fcgradient05/fsLR/source-margulies2016_desc-fcgradient05_space-fsLR_den-32k_hemi-R_feature.func.gii"
+    )
 
     for p in (map_left, map_right, ref_left, ref_right):
         if not p.exists():
@@ -66,5 +77,6 @@ def test_workflow_spatial_correlation_surface_smoke(tmp_path: Path):
     corr = payload.get("outputs", {}).get("correlation")
     pval = payload.get("outputs", {}).get("pvalue")
     assert isinstance(corr, (int, float))
-    assert pval is None or (isinstance(pval, (int, float)) and 0.0 <= float(pval) <= 1.0)
-
+    assert pval is None or (
+        isinstance(pval, (int, float)) and 0.0 <= float(pval) <= 1.0
+    )

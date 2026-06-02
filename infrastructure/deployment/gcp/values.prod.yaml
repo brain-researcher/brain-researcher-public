@@ -1,0 +1,478 @@
+# Production overrides for Brain Researcher GKE deployment (Autopilot Optimized)
+# Usage: helm upgrade --install brain-researcher infrastructure/k8s/helm/brain-researcher -f infrastructure/deployment/gcp/values.prod.yaml
+
+global:
+  domain: brain-researcher.com
+  # [CRITICAL] Use Artifact Registry (AR) paths.
+  # NOTE: The PROJECT_ID placeholder must be replaced by env var or manually if not using helm --set
+  # We use --set global.imageRegistry in the command, so this is a fallback/reference.
+  imageRegistry: us-central1-docker.pkg.dev/hai-gcp-dialogue-brain/brain-researcher
+  imagePullPolicy: Always
+  environment: production
+  # GKE Autopilot handles storage classes automatically, but 'standard-rwo' is a safe default mapping
+  storageClass: "standard-rwo"
+
+# [SECURITY] Use Google-managed Certificates
+ingress:
+  className: "gce"
+  annotations:
+    networking.gke.io/managed-certificates: "brain-researcher-cert-v2"
+    kubernetes.io/ingress.global-static-ip-name: "brain-researcher-ip"
+  tls: []
+  hosts:
+    - host: brain-researcher.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /mcp/setup
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        # Public MCP endpoint (Streamable HTTP: GET+POST) served at /mcp.
+        - path: /mcp
+          pathType: Prefix
+          service:
+            name: mcp
+            port: 7000
+        # OAuth Protected Resource metadata (client discovery).
+        - path: /.well-known/oauth-protected-resource
+          pathType: Prefix
+          service:
+            name: mcp
+            port: 7000
+        - path: /api/auth
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /api/catalog
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /api/demo
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /api
+          pathType: Prefix
+          service:
+            name: agent
+            port: 8000
+        - path: /kg
+          pathType: Prefix
+          service:
+            name: br-kg
+            port: 5000
+        - path: /ws
+          pathType: Prefix
+          service:
+            name: agent
+            port: 8000
+    - host: www.brain-researcher.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /mcp/setup
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /mcp
+          pathType: Prefix
+          service:
+            name: mcp
+            port: 7000
+        - path: /.well-known/oauth-protected-resource
+          pathType: Prefix
+          service:
+            name: mcp
+            port: 7000
+        - path: /api/auth
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /api/catalog
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /api/demo
+          pathType: Prefix
+          service:
+            name: web-ui
+            port: 3000
+        - path: /api
+          pathType: Prefix
+          service:
+            name: agent
+            port: 8000
+        - path: /kg
+          pathType: Prefix
+          service:
+            name: br-kg
+            port: 5000
+        - path: /ws
+          pathType: Prefix
+          service:
+            name: agent
+            port: 8000
+
+# [SECURITY] Workload Identity + Secret Manager
+serviceAccount:
+  create: true
+  annotations:
+    iam.gke.io/gcp-service-account: "brain-researcher-gsa@hai-gcp-dialogue-brain.iam.gserviceaccount.com"
+
+# External Secret Loading (Standard K8s Secrets)
+secrets:
+  csi:
+    enabled: false
+    provider: "gcp"
+    secretProviderClass: "brain-researcher-secrets"
+
+# [MCP] Internal-Only Configuration
+mcp:
+  enabled: true
+  replicaCount: 1  # Reduce to 1 replica to save resources
+  imageTag: "v17"
+  mountPath: "/mcp"
+  service:
+    type: ClusterIP
+    port: 7000
+  networkPolicy:
+    enabled: true
+    allowNamespace: "brain-researcher-core"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "2Gi"  # Increased
+    limits:
+      cpu: "1000m"
+      memory: "4Gi"  # Increased to prevent OOMKilled
+  extraVolumes:
+    - name: mcp-atlases
+      persistentVolumeClaim:
+        claimName: brain-researcher-shared-data
+  extraVolumeMounts:
+    - name: mcp-atlases
+      mountPath: /app/data/atlases
+      subPath: atlases
+      readOnly: false
+  extraEnv:
+    # Require JWT auth for public MCP. JWT secret is provided via
+    # `JWT_SECRET_KEY` (see Helm mcp-deployment.yaml template).
+    - name: BR_MCP_AUTH_MODE
+      value: "token_or_jwt"
+    - name: BR_MCP_STATELESS_HTTP
+      value: "true"
+    - name: BR_MCP_AGENT_FALLBACK_ENABLED
+      value: "0"
+    - name: BR_ENABLE_CODE_AGENT_TOOL
+      value: "0"
+    - name: BR_FETCH_ATLAS_ALLOW_NETWORK
+      value: "0"
+    - name: BR_ATLAS_OUTPUT_ROOT
+      value: "/app/data/atlases"
+    - name: BR_ATLAS_SEARCH_ROOTS
+      value: "/app/data/atlases,/app/data,/data,/srv/datasets/atlases,/srv/datasets"
+    - name: WORKSPACE_ROOT
+      value: "/app"
+    - name: BRAIN_RESEARCHER_DATASET_CATALOG
+      value: "/app/configs/datasets/catalog.v1.jsonl"
+    # Browser-only hardening (non-browser MCP clients typically omit Origin).
+    - name: BR_MCP_ALLOWED_ORIGINS
+      value: "https://brain-researcher.com,https://www.brain-researcher.com"
+    - name: BR_MCP_ALLOWED_HOSTS
+      value: "brain-researcher.com,www.brain-researcher.com"
+
+# [SCALING] Autopilot Sizing (100-1k users)
+
+webUi:
+  enabled: true
+  replicaCount: 2
+  extraEnv:
+    - name: BR_AGENT_URL
+      value: "http://brain-researcher-agent:8000"
+    - name: BR_ORCHESTRATOR_URL
+      value: "http://brain-researcher-orchestrator:3001"
+    - name: NEXT_PUBLIC_BR_KG_API
+      value: "https://brain-researcher.com/kg"
+    - name: BR_KG_API
+      value: "http://brain-researcher-br-kg:5000"
+    - name: NEXT_PUBLIC_AGENT_URL
+      value: "https://brain-researcher.com"
+    - name: NEXT_PUBLIC_USE_API_PROXY
+      value: "true"
+    - name: NEXT_PUBLIC_WS_URL
+      value: "wss://brain-researcher.com/ws"
+    - name: AGENT_URL
+      value: "http://brain-researcher-agent:8000"
+    - name: DEMO_ROOT_DIR
+      value: "/configs/demo"
+    - name: GLM_DEMO_DIR
+      value: "/configs/demo/glm_motor"
+    - name: HYPOTHESIS_STORE_BACKEND
+      value: "dual"
+    - name: HYPOTHESIS_STORE_REDIS_URL
+      value: "redis://{{ include \"brain-researcher.fullname\" . }}-redis.{{ .Values.namespaces.data }}.svc.cluster.local:6379/0"
+    - name: HYPOTHESIS_STORE_POSTGRES_URL
+      valueFrom:
+        secretKeyRef:
+          name: "{{ include \"brain-researcher.fullname\" . }}-external-services"
+          key: HYPOTHESIS_STORE_POSTGRES_URL
+          optional: true
+    - name: HYPOTHESIS_SESSION_TTL_SEC
+      value: "2592000"
+    - name: HYPOTHESIS_CLAIM_EVIDENCE_OVERLAP_THRESHOLD
+      value: "0.15"
+    - name: HYPOTHESIS_TEMPLATE_DIVERSITY_ENABLED
+      value: "1"
+    - name: HYPOTHESIS_TEMPLATE_MAX_PATTERN_REUSE
+      value: "1"
+    - name: HYPOTHESIS_TEMPLATE_SIMILARITY_THRESHOLD
+      value: "0.75"
+    - name: HYPOTHESIS_TEMPLATE_MAX_RESAMPLE_PER_SLOT
+      value: "3"
+    - name: HYPOTHESIS_DEEP_RESEARCH_POLL_INTERVAL_MS
+      value: "2500"
+    - name: HYPOTHESIS_DEEP_RESEARCH_MAX_POLLS
+      value: "0"
+    - name: HYPOTHESIS_DEEP_RESEARCH_START_GRACE_POLLS
+      value: "2"
+    - name: HYPOTHESIS_DEEP_RESEARCH_UI_WAIT_SEC
+      value: "300"
+    - name: HYPOTHESIS_DEEP_RESEARCH_BACKGROUND_CAP_SEC
+      value: "21600"
+    - name: HYPOTHESIS_KG_NO_SEED_SOFT_FAIL
+      value: "true"
+    - name: HYPOTHESIS_KG_MAX_SEED_RETRIES
+      value: "1"
+    - name: HYPOTHESIS_EVIDENCE_ABSTRACT_ENRICH
+      value: "1"
+    - name: HYPOTHESIS_EVIDENCE_ABSTRACT_TIMEOUT_MS
+      value: "3000"
+    - name: HYPOTHESIS_EVIDENCE_ABSTRACT_MAX_DOCS
+      value: "8"
+    - name: HYPOTHESIS_EVIDENCE_ABSTRACT_CONCURRENCY
+      value: "5"
+    - name: HYPOTHESIS_EVIDENCE_ABSTRACT_MAX_CHARS
+      value: "480"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+apiGateway:
+  enabled: false
+
+agent:
+  enabled: true
+  replicaCount: 2
+  command:
+    - python
+    - -m
+    - uvicorn
+    - brain_researcher.services.agent.asgi:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - "8000"
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  persistence:
+    sessions:
+      storageClass: "standard-rwo"
+    logs:
+      storageClass: "standard-rwo"
+  # Mount shared Filestore to the CVMFS-like paths expected by Neurodesk tools
+  extraVolumeMounts:
+    - name: shared-data
+      mountPath: /cvmfs/neurodesk.ardc.edu.au/containers
+      subPath: neurodesk/containers
+    - name: shared-data
+      mountPath: /cvmfs/neurodesk.ardc.edu.au/neurodesk-modules
+      subPath: neurodesk/neurodesk-modules
+    - name: shared-data
+      mountPath: /home/zijiaochen/projects/dataset/openneuro_mount
+      subPath: openneuro_mount
+    - name: shared-data
+      mountPath: /home/zijiaochen/projects/dataset/OpenNeuroDerivatives
+      subPath: OpenNeuroDerivatives
+  extraEnv:
+    - name: WORKSPACE_ROOT
+      value: "/app"
+    - name: BRAIN_RESEARCHER_DATASET_CATALOG
+      value: "/app/configs/datasets/catalog.v1.jsonl"
+    - name: BR_ORCHESTRATOR_URL
+      value: "http://brain-researcher-orchestrator:3001"
+    - name: AGENT_TOOL_ALLOWLIST
+      value: "gemini.fs,gemini.net,br-kg.client,find_related_concepts,coordinate_to_concept,graph_query,evidence_pack,task_to_concept_mapping,concept_literature_search,literature_mining,coordinate_meta_analysis,meta_analysis.client,datasets.client,datasets.list_resources,openneuro.client,fmri.connectivity_client.light,viz.client,advanced_analysis.client,neurodesk_command,fsl_command,mrtrix3_command,niwrap_search,niwrap_schema,niwrap_execute,dandi_download,openneuro_download,prefetch.openneuro_cache,bids.manifest,multiple_comparison_correction,mcp.server_info,mcp.tool_search,fsl.melodic,fsl.fslFixText,afni.3dClustSim,viz_stat_maps,surface_projection,data_harmonization,brain_simulation,realtime_fmri,lesion_detection,harmonization.client,simulation.stub_client,realtime.pipeline_client,workflow_preprocessing_qc,workflow_rest_connectome_e2e,validate_bids_structure,run_mriqc_workflow,get_qc_table,detect_outliers,qc_aggregator,dashboard_generator,run_bids_app,run_fitlins_recipe,glm_first_level,fetch_atlas,extract_timeseries,compute_connectivity,connectivity_matrix,glm_multiverse,kg_multihop_qa,deep_research,google_deep_research_start,google_deep_research_get"
+    - name: AGENT_TOOL_ALLOWLIST_STRICT
+      value: "1"
+    - name: BR_ENABLE_CODE_AGENT_TOOL
+      value: "0"
+    - name: NEO4J_URI
+      value: "bolt://brain-researcher-neo4j:7687"
+    - name: NEO4J_USER
+      value: "neo4j"
+    - name: NEO4J_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: brain-researcher-database-credentials
+          key: NEO4J_PASSWORD
+          optional: true
+
+
+orchestrator:
+  enabled: true
+  replicaCount: 1
+  extraEnv:
+    - name: BR_PUBLIC_WORKSPACE_URL
+      value: "https://hub.brain-researcher.com"
+    - name: BR_STUDIO_JUPYTER_BASE_URL_TEMPLATE
+      value: "https://hub.brain-researcher.com/user/{jupyter_user_name_url}"
+    - name: BR_STUDIO_JUPYTER_WORKDIR_ROOT
+      value: "/home/jovyan/work/projects"
+    - name: BR_STUDIO_MARIMO_WORKDIR_ROOT
+      value: "/home/br_user/work/projects"
+    - name: BR_STUDIO_JUPYTER_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: "{{ include \"brain-researcher.fullname\" . }}-external-services"
+          key: BR_STUDIO_JUPYTER_TOKEN
+          optional: true
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+br-kg:
+  enabled: true
+  replicaCount: 1
+  imageTag: "v14"
+  # Ingress mounts BR-KG at `/kg` without rewrite.
+  urlPrefix: "/kg"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  probes:
+    startup:
+      enabled: true
+      path: "/health"
+      periodSeconds: 5
+      failureThreshold: 60
+      timeoutSeconds: 1
+  persistence:
+    database:
+      storageClass: "standard-rwo"
+    vectorCache:
+      storageClass: "standard-rwo"
+  # Read-only mounts to the shared Filestore for Neurodesk containers/modules
+  extraVolumeMounts:
+    - name: shared-data
+      mountPath: /cvmfs/neurodesk.ardc.edu.au/containers
+      subPath: neurodesk/containers
+      readOnly: true
+    - name: shared-data
+      mountPath: /cvmfs/neurodesk.ardc.edu.au/neurodesk-modules
+      subPath: neurodesk/neurodesk-modules
+      readOnly: true
+    - name: shared-data
+      mountPath: /home/zijiaochen/projects/dataset/openneuro_mount
+      subPath: openneuro_mount
+      readOnly: true
+    - name: shared-data
+      mountPath: /home/zijiaochen/projects/dataset/OpenNeuroDerivatives
+      subPath: OpenNeuroDerivatives
+      readOnly: true
+    - name: neo4j-secret
+      mountPath: /var/run/secrets/neo4j
+      readOnly: true
+  extraEnvFrom:
+    - secretRef:
+        name: brain-researcher-database-credentials
+  extraEnv:
+    - name: NEO4J_URI
+      value: "bolt://brain-researcher-neo4j:7687"
+    - name: NEO4J_USER
+      value: "neo4j"
+    - name: NEO4J_PRELOAD_CACHE
+      value: "false"
+    - name: BR_KG_ENABLE_FINDER
+      value: "false"
+  extraVolumes:
+    - name: neo4j-secret
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: br-neo4j-spc
+
+# [STORAGE] Shared Data (Must be RWX for multi-pod access)
+storage:
+  sharedData:
+    enabled: true
+    size: "1Ti"  # Minimum for Filestore Basic
+    storageClass: "premium-rwx"
+    accessModes:
+      - ReadWriteMany
+
+# Persistence Services
+postgres:
+  enabled: false  # Not used in production (BR-KG uses Neo4j)
+  persistence:
+    storageClass: "standard-rwo"
+    size: "10Gi"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+
+redis:
+  persistence:
+    storageClass: "standard-rwo"
+    size: "5Gi"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+
+neo4j:
+  imageRepository: "neo4j"
+  imageTag: "2025.10.1"
+  auth:
+    user: "neo4j"
+    existingSecret: "brain-researcher-database-credentials"
+    passwordKey: "NEO4J_PASSWORD"
+  persistence:
+    storageClass: "standard-rwo"
+    size: "50Gi"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"

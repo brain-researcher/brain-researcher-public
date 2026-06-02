@@ -1,7 +1,8 @@
 """Tests for literature evidence source adapter."""
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 
 from brain_researcher.services.knowledge.evidence.base import (
     EvidenceQuery,
@@ -38,7 +39,7 @@ class TestLiteratureEvidenceSource:
         source = LiteratureEvidenceSource()
         assert source._api_key == "env-api-key"
 
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     def test_lazy_connector_creation(self, mock_connector_class):
         """Test connector is lazily created on first use."""
         mock_connector = MagicMock()
@@ -50,7 +51,7 @@ class TestLiteratureEvidenceSource:
         mock_connector_class.assert_called_once_with(api_key="test-key")
         assert connector is mock_connector
 
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     def test_connector_reused(self, mock_connector_class):
         """Test connector is reused on subsequent calls."""
         mock_connector = MagicMock()
@@ -65,7 +66,7 @@ class TestLiteratureEvidenceSource:
         assert connector1 is connector2
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     async def test_query_basic(self, mock_connector_class):
         """Test basic async query returns results."""
         # Setup mock
@@ -102,7 +103,7 @@ class TestLiteratureEvidenceSource:
         assert results[0].url == "https://pubmed.ncbi.nlm.nih.gov/12345/"
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     async def test_query_with_year_filters(self, mock_connector_class):
         """Test query with year filters."""
         mock_connector = MagicMock()
@@ -125,7 +126,7 @@ class TestLiteratureEvidenceSource:
         assert call_kwargs["limit"] == 20
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     async def test_query_no_results(self, mock_connector_class):
         """Test query with no matching publications."""
         mock_connector = MagicMock()
@@ -139,11 +140,13 @@ class TestLiteratureEvidenceSource:
         assert results == []
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     async def test_query_handles_connector_error(self, mock_connector_class):
         """Test query handles connector errors gracefully."""
         mock_connector = MagicMock()
-        mock_connector.search = AsyncMock(side_effect=Exception("API rate limit exceeded"))
+        mock_connector.search = AsyncMock(
+            side_effect=Exception("API rate limit exceeded")
+        )
         mock_connector_class.return_value = mock_connector
 
         source = LiteratureEvidenceSource(api_key="test-key")
@@ -164,7 +167,7 @@ class TestLiteratureEvidenceSource:
             assert results == []
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     async def test_query_multiple_results(self, mock_connector_class):
         """Test query returning multiple publications."""
         mock_items = []
@@ -173,7 +176,11 @@ class TestLiteratureEvidenceSource:
             item.id = f"pmid:1000{i}"
             item.title = f"Paper {i}: Brain Research"
             item.score = 0.9 - i * 0.1
-            item.metadata = {"authors": [f"Author {i}"], "journal": "Brain", "year": 2023}
+            item.metadata = {
+                "authors": [f"Author {i}"],
+                "journal": "Brain",
+                "year": 2023,
+            }
             item.doi = f"10.1000/brain.{i}"
             item.item_type = MagicMock(value="publication")
             item.url = f"https://pubmed.ncbi.nlm.nih.gov/1000{i}/"
@@ -194,7 +201,7 @@ class TestLiteratureEvidenceSource:
         assert results[4].relevance_score == 0.5
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     async def test_query_handles_missing_score(self, mock_connector_class):
         """Test query handles items without score."""
         mock_item = MagicMock()
@@ -219,7 +226,7 @@ class TestLiteratureEvidenceSource:
         assert results[0].relevance_score == 0.8  # Default score
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     async def test_health_check_available(self, mock_connector_class):
         """Test health check when connector is available."""
         mock_connector = MagicMock()
@@ -232,7 +239,7 @@ class TestLiteratureEvidenceSource:
         assert result is True
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.neurokg.evidence.connectors.pubmed.PubMedConnector")
+    @patch("brain_researcher.services.br_kg.evidence.connectors.pubmed.PubMedConnector")
     async def test_health_check_unavailable(self, mock_connector_class):
         """Test health check when connector is unavailable."""
         mock_connector = MagicMock()
@@ -249,7 +256,9 @@ class TestLiteratureEvidenceSource:
         """Test health check when connector creation fails."""
         source = LiteratureEvidenceSource(api_key="test-key")
 
-        with patch.object(source, "_get_connector", side_effect=Exception("Import failed")):
+        with patch.object(
+            source, "_get_connector", side_effect=Exception("Import failed")
+        ):
             result = await source.health_check()
             assert result is False
 
@@ -258,7 +267,9 @@ class TestSearchLiteratureFunction:
     """Test search_literature async convenience function."""
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.knowledge.evidence.literature_source.LiteratureEvidenceSource")
+    @patch(
+        "brain_researcher.services.knowledge.evidence.literature_source.LiteratureEvidenceSource"
+    )
     async def test_search_literature_basic(self, mock_source_class):
         """Test basic search_literature call."""
         mock_source = MagicMock()
@@ -273,7 +284,9 @@ class TestSearchLiteratureFunction:
         assert query.limit == 5
 
     @pytest.mark.asyncio
-    @patch("brain_researcher.services.knowledge.evidence.literature_source.LiteratureEvidenceSource")
+    @patch(
+        "brain_researcher.services.knowledge.evidence.literature_source.LiteratureEvidenceSource"
+    )
     async def test_search_literature_with_years(self, mock_source_class):
         """Test search_literature with year filters."""
         mock_source = MagicMock()
@@ -295,7 +308,9 @@ class TestSearchLiteratureFunction:
 class TestSearchLiteratureSyncFunction:
     """Test search_literature_sync synchronous convenience function."""
 
-    @patch("brain_researcher.services.knowledge.evidence.literature_source.LiteratureEvidenceSource")
+    @patch(
+        "brain_researcher.services.knowledge.evidence.literature_source.LiteratureEvidenceSource"
+    )
     def test_search_literature_sync_basic(self, mock_source_class):
         """Test basic search_literature_sync call."""
         mock_result = MagicMock()
@@ -310,7 +325,9 @@ class TestSearchLiteratureSyncFunction:
         assert len(results) == 1
         assert results[0].id == "pmid:12345"
 
-    @patch("brain_researcher.services.knowledge.evidence.literature_source.LiteratureEvidenceSource")
+    @patch(
+        "brain_researcher.services.knowledge.evidence.literature_source.LiteratureEvidenceSource"
+    )
     def test_search_literature_sync_with_filters(self, mock_source_class):
         """Test search_literature_sync with all filters."""
         mock_source = MagicMock()

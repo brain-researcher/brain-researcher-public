@@ -111,7 +111,7 @@ echo ""
 echo "8. Testing Database"
 echo "-------------------"
 run_test "Neo4j credentials set" "[[ -n \"\$NEO4J_URI\" && -n \"\$NEO4J_PASSWORD\" ]]"
-check_file "GLM database" "data/neurokg/db/neurokg_glmfitlins.db"
+check_file "GLM database" "data/br-kg/db/br-kg_glmfitlins.db"
 echo ""
 
 echo "9. Testing Scripts"

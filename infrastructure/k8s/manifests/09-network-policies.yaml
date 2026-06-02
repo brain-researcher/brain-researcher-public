@@ -128,7 +128,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/component: neurokg
+              app.kubernetes.io/component: br-kg
       ports:
         - protocol: TCP
           port: 5000
@@ -211,7 +211,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/component: neurokg
+              app.kubernetes.io/component: br-kg
       ports:
         - protocol: TCP
           port: 5000
@@ -258,16 +258,16 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-neurokg
+  name: allow-br-kg
   namespace: brain-researcher-core
   labels:
-    app.kubernetes.io/name: neurokg
+    app.kubernetes.io/name: br-kg
     app.kubernetes.io/component: network-policy
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: neurokg
-      app.kubernetes.io/component: neurokg
+      app.kubernetes.io/name: br-kg
+      app.kubernetes.io/component: br-kg
   policyTypes:
     - Ingress
     - Egress

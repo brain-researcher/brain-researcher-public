@@ -2,10 +2,11 @@
 
 import json
 import os
-import pytest
 import uuid
-from unittest.mock import patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture(autouse=True)
@@ -46,6 +47,7 @@ def reset_singletons():
 def app():
     """Create a Flask app with the ui_api blueprint."""
     from flask import Flask
+
     from brain_researcher.services.agent.ui_api import ui_api
 
     app = Flask(__name__)
@@ -95,6 +97,36 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.get_json()
         assert data["status"] == "ok"
+
+    def test_health_full_includes_planner_catalog_status(self, monkeypatch, client):
+        """GET /api/health/full exposes planner catalog mode/status."""
+        import brain_researcher.services.agent.ui_api as ui_api
+
+        monkeypatch.setattr(
+            ui_api,
+            "_planner_catalog_health",
+            lambda: {
+                "status": "degraded",
+                "planner_mode": "legacy",
+                "loaded": False,
+                "tool_count": 0,
+                "bad_rows": 0,
+                "source": "BR_PLANNER_SOURCE",
+                "reason": "BR_PLANNER_SOURCE=legacy",
+            },
+        )
+
+        response = client.get("/api/health/full")
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["planner_catalog"]["planner_mode"] == "legacy"
+        assert data["planner_catalog"]["reason"] == "BR_PLANNER_SOURCE=legacy"
+        planner_components = [
+            item for item in data["services"] if item["name"] == "planner_catalog"
+        ]
+        assert planner_components
+        assert planner_components[0]["status"] == "degraded"
 
 
 class TestConfigEndpoint:

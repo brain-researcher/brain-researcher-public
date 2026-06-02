@@ -12,13 +12,13 @@ def noop_indices(monkeypatch):
     """Prevent embedding indices from building during tests."""
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.utils.task_matcher.TaskMatcher._build_indices",
+        "brain_researcher.services.br_kg.utils.task_matcher.TaskMatcher._build_indices",
         lambda self: None,
     )
 
 
 @pytest.fixture
-def empty_neurokg(monkeypatch):
+def empty_br_kg(monkeypatch):
     """Provide a dummy BR-KG DB that returns no tasks."""
 
     class _EmptyDB:
@@ -33,15 +33,15 @@ def empty_neurokg(monkeypatch):
             return None
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.graph.graph_database.NeuroKGGraphDB",
+        "brain_researcher.services.br_kg.graph.graph_database.BRKGGraphDB",
         _EmptyDB,
     )
 
 
-def test_taxonomy_aliases_available(noop_indices, empty_neurokg):
+def test_taxonomy_aliases_available(noop_indices, empty_br_kg):
     """TaskMatcher should populate taxonomy aliases when DB/fallback are empty."""
 
-    from brain_researcher.services.neurokg.utils.task_matcher import TaskMatcher
+    from brain_researcher.services.br_kg.utils.task_matcher import TaskMatcher
 
     matcher = TaskMatcher()
 
@@ -54,18 +54,18 @@ def test_taxonomy_aliases_available(noop_indices, empty_neurokg):
 
 
 def test_task_matcher_fuzzy_fallback_skips_semantic_model_when_disabled(
-    monkeypatch, empty_neurokg
+    monkeypatch, empty_br_kg
 ):
     """Lightweight mode should not try to initialize SentenceTransformer."""
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.utils.task_matcher.get_cached_sentence_transformer",
+        "brain_researcher.services.br_kg.utils.task_matcher.get_cached_sentence_transformer",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             AssertionError("semantic model should not load in lightweight mode")
         ),
     )
 
-    from brain_researcher.services.neurokg.utils.task_matcher import TaskMatcher
+    from brain_researcher.services.br_kg.utils.task_matcher import TaskMatcher
 
     matcher = TaskMatcher(enable_semantic=False, fuzzy_threshold=60)
     matches = matcher.match_candidates("go no go", top_k=1)

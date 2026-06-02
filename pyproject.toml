@@ -76,7 +76,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-neurokg = [
+br-kg = [
     # Neuroimaging
     "nibabel>=5.3.0",
     "nilearn>=0.11.0",
@@ -153,7 +153,7 @@ neurokg = [
     # Additional utilities
     "supervisor>=4.2.1",
     "cadwyn>=5.4.0",
-    
+
     # Fix: BR-KG CLI imports agent code which requires these LLM packages
     "langchain>=0.1.0",
     "langchain-core>=0.1.0",
@@ -235,10 +235,10 @@ agent = [
     "google-generativeai>=0.8.0",
     "google-genai>=1.55.0",
     "openneuro-py>=2026.3.0",
-    
+
     # JWT handling
     "python-jose[cryptography]>=3.3.0",
-    
+
     # MCP (Model Context Protocol)
     "sequential-thinking-mcp>=0.1.0",
 
@@ -329,7 +329,7 @@ dev = [
 ]
 
 all = [
-    "brain_researcher[neurokg,agent,ui,notebook,dev]"
+    "brain_researcher[br-kg,agent,ui,notebook,dev]"
 ]
 docs = [
     "mkdocs>=1.5.0",
@@ -353,12 +353,7 @@ br = "brain_researcher.cli.main:app"  # Short alias
 brain-researcher-mcp = "brain_researcher.services.mcp.server:main"
 
 [tool.setuptools.packages.find]
-# Carved layout: the Python package lives at packages/brain-researcher/src/
-# (alongside packages/cli/). The per-package pyproject at
-# packages/brain-researcher/pyproject.toml is a thinner wrapper for users
-# who want to install just the package without root-level extras; this root
-# pyproject is the canonical install with all optional-dependency groups.
-where = ["packages/brain-researcher/src"]
+where = ["src"]
 include = ["brain_researcher*"]
 namespaces = false
 exclude = ["tests*", "htmlcov*", "*_env*", "migration*"]
@@ -426,7 +421,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = ["packages/brain-researcher/src/brain_researcher"]
+source = ["src/brain_researcher"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",

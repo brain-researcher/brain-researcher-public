@@ -18,15 +18,15 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
-  name: neurokg-peer-authentication
+  name: br-kg-peer-authentication
   namespace: brain-researcher
   labels:
     app: brain-researcher
-    service: neurokg
+    service: br-kg
 spec:
   selector:
     matchLabels:
-      app: neurokg
+      app: br-kg
   mtls:
     mode: STRICT
   # Port-specific mTLS settings

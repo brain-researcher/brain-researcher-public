@@ -19,7 +19,7 @@ from scripts.tools.etl import build_claim_snapshot_v4_b2_task_manifest as task_b
 from scripts.tools.etl import run_claim_snapshot_v4_b2_baseline_eval as baseline
 
 DEFAULT_EXCLUDE_PACK_JSONL = Path(
-    "/app/brain_researcher/data/neurokg/raw/gabriel/eval/"
+    "/app/brain_researcher/data/br-kg/raw/gabriel/eval/"
     "claim_snapshot_v4_b2_task_manifest/off400_reviewed_seed_conflict_expanded_20260314/"
     "claim_snapshot_v4_b2_examples.jsonl"
 )
@@ -45,7 +45,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--eval-root",
         type=Path,
-        default=Path("data/neurokg/raw/gabriel/eval"),
+        default=Path("data/br-kg/raw/gabriel/eval"),
         help="Root eval directory under which hot-load artifacts should be written.",
     )
     parser.add_argument(

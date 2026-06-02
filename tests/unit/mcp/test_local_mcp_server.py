@@ -17,6 +17,8 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
+from brain_researcher.services.mcp import runstore
+
 
 @pytest.fixture(autouse=True)
 def _stub_toolspec_registry(monkeypatch):
@@ -363,7 +365,7 @@ def _configure_tool_execute_test_env(
 
     monkeypatch.setenv("BR_ALLOWED_ROOTS", str(allowed_root))
     monkeypatch.setenv("BR_MCP_ALLOWED_ROOTS", str(allowed_root))
-    monkeypatch.setattr(srv, "RUN_ROOT", run_root_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", run_root_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [allowed_root])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", set(allowlist))
@@ -442,7 +444,8 @@ def test_load_workflow_catalog_infers_params_from_runtime_placeholders(
     from brain_researcher.services.mcp import server as srv
 
     catalog_path = tmp_path / "workflow_catalog.yaml"
-    catalog_path.write_text("""
+    catalog_path.write_text(
+        """
 workflows:
   - id: workflow_inferred_params
     stage: interpretation
@@ -458,7 +461,8 @@ workflows:
             null_permutations: "${inputs.n_permutations:-250}"
             output_file: "${inputs.output_dir}/spatial_correlation.json"
             dry_run: "${inputs.dry_run:-false}"
-""")
+"""
+    )
     monkeypatch.setattr(srv, "resolve_from_config", lambda *_args: catalog_path)
 
     srv._load_workflow_catalog.cache_clear()
@@ -486,7 +490,8 @@ def test_load_workflow_catalog_keeps_explicit_params_untouched(tmp_path, monkeyp
     from brain_researcher.services.mcp import server as srv
 
     catalog_path = tmp_path / "workflow_catalog.yaml"
-    catalog_path.write_text("""
+    catalog_path.write_text(
+        """
 workflows:
   - id: workflow_explicit_params
     stage: interpretation
@@ -508,7 +513,8 @@ workflows:
           params:
             term: "${inputs.reference_term}"
             output_file: "${inputs.output_dir}/query.json"
-""")
+"""
+    )
     monkeypatch.setattr(srv, "resolve_from_config", lambda *_args: catalog_path)
 
     srv._load_workflow_catalog.cache_clear()
@@ -533,7 +539,8 @@ def test_load_workflow_catalog_preserves_recipe_metadata(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
     catalog_path = tmp_path / "workflow_catalog.yaml"
-    catalog_path.write_text("""
+    catalog_path.write_text(
+        """
 workflows:
   - id: workflow_declared_recipe_metadata
     stage: interpretation
@@ -566,7 +573,8 @@ workflows:
           params:
             img: "${inputs.img}"
             atlas: "${inputs.atlas}"
-""")
+"""
+    )
     monkeypatch.setattr(srv, "resolve_from_config", lambda *_args: catalog_path)
 
     srv._load_workflow_catalog.cache_clear()
@@ -736,7 +744,7 @@ def test_pipeline_plan_validate_rejects_duplicate_step_ids(monkeypatch):
 def test_pipeline_plan_validate_supports_project_root_workspace(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path / "run_root")
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path / "run_root")
     monkeypatch.setattr(
         srv,
         "ALLOWED_ROOTS",
@@ -893,7 +901,7 @@ def test_server_info_exposes_tool_registry_mode_env_snapshot(monkeypatch):
 def test_server_info_exposes_compat_alias_usage_snapshot(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -946,7 +954,7 @@ def test_server_info_exposes_compat_alias_usage_snapshot(tmp_path, monkeypatch):
 def test_run_request_summary_includes_compat_alias_usage(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -1056,36 +1064,74 @@ def test_startup_hard_health_checks_non_strict_allows_unreachable_dependency(
     assert status["neo4j"]["active_check"]["reachable"] is False
 
 
+def _fake_selftest_tool_search(**kwargs):
+    query = kwargs.get("query", "")
+    modalities = kwargs.get("modalities")
+    if query == "workflow":
+        return {"ok": True, "count": 3, "tools": []}
+    if query == "M/EEG sensor-space PLI WPLI PLV connectivity epochs":
+        if modalities == ["meg"]:
+            return {
+                "ok": True,
+                "count": 1,
+                "tools": [
+                    {
+                        "name": "connectivity_measures",
+                        "modalities": ["meg", "eeg"],
+                    }
+                ],
+            }
+        if modalities == ["fmri"]:
+            return {
+                "ok": True,
+                "count": 1,
+                "tools": [
+                    {
+                        "name": "connectivity_matrix",
+                        "modalities": ["fmri"],
+                    }
+                ],
+            }
+    return {
+        "ok": True,
+        "count": 2,
+        "tools": [
+            {
+                "name": "extract_timeseries",
+                "backend": "python",
+                "kind": "atomic",
+                "implementation_level": "production",
+            },
+            {
+                "name": "workflow_rest_connectome_e2e",
+                "backend": "python",
+                "kind": "workflow",
+                "implementation_level": "production",
+            },
+        ],
+    }
+
+
+def _fake_selftest_plan_preflight(*args, **kwargs):
+    return {
+        "ok": True,
+        "recommended_next_calls": [
+            {
+                "tool_name": "get_execution_recipe",
+                "arguments": {"tool_id": "mne_connectivity"},
+            }
+        ],
+    }
+
+
 def test_system_self_test_quick_mode_passes_with_inventory(monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
     monkeypatch.setattr(srv, "MCP_SELFTEST_ENABLED", True)
     monkeypatch.setattr(srv, "server_info", lambda: {"ok": True, "data": {}})
 
-    def _fake_tool_search(**kwargs):
-        query = kwargs.get("query", "")
-        if query == "workflow":
-            return {"ok": True, "count": 3, "tools": []}
-        return {
-            "ok": True,
-            "count": 2,
-            "tools": [
-                {
-                    "name": "extract_timeseries",
-                    "backend": "python",
-                    "kind": "atomic",
-                    "implementation_level": "production",
-                },
-                {
-                    "name": "workflow_rest_connectome_e2e",
-                    "backend": "python",
-                    "kind": "workflow",
-                    "implementation_level": "production",
-                },
-            ],
-        }
-
-    monkeypatch.setattr(srv, "tool_search", _fake_tool_search)
+    monkeypatch.setattr(srv, "tool_search", _fake_selftest_tool_search)
+    monkeypatch.setattr(srv, "plan_preflight", _fake_selftest_plan_preflight)
 
     resp = srv.system_self_test(mode="quick", inventory_limit=2)
 
@@ -1094,6 +1140,93 @@ def test_system_self_test_quick_mode_passes_with_inventory(monkeypatch):
     assert resp["counts"]["fail"] == 0
     assert resp["counts"]["warn"] == 0
     assert len(resp["inventory"]) == 2
+    probes = {probe["id"]: probe for probe in resp["probes"]}
+    assert probes["routing_invariant_meeg_sensor_connectivity"]["status"] == "pass"
+    assert probes["routing_invariant_meeg_plan_preflight"]["status"] == "pass"
+
+
+def test_system_self_test_fails_when_meeg_connectivity_invariant_breaks(monkeypatch):
+    from brain_researcher.services.mcp import server as srv
+
+    monkeypatch.setattr(srv, "MCP_SELFTEST_ENABLED", True)
+    monkeypatch.setattr(srv, "server_info", lambda: {"ok": True, "data": {}})
+
+    def _fake_tool_search(**kwargs):
+        query = kwargs.get("query", "")
+        modalities = kwargs.get("modalities")
+        if query == "workflow":
+            return {"ok": True, "count": 3, "tools": []}
+        if query == "M/EEG sensor-space PLI WPLI PLV connectivity epochs":
+            if modalities == ["meg"]:
+                return {
+                    "ok": True,
+                    "count": 1,
+                    "tools": [{"name": "connectivity_matrix", "modalities": ["fmri"]}],
+                }
+            if modalities == ["fmri"]:
+                return {
+                    "ok": True,
+                    "count": 1,
+                    "tools": [
+                        {
+                            "name": "connectivity_measures",
+                            "modalities": ["meg", "eeg"],
+                        }
+                    ],
+                }
+        return {"ok": True, "count": 0, "tools": []}
+
+    monkeypatch.setattr(srv, "tool_search", _fake_tool_search)
+    monkeypatch.setattr(srv, "plan_preflight", _fake_selftest_plan_preflight)
+
+    resp = srv.system_self_test(mode="quick", include_inventory=False)
+
+    assert resp["ok"] is False
+    assert resp["overall"] == "fail"
+    probe = next(
+        p
+        for p in resp["probes"]
+        if p.get("id") == "routing_invariant_meeg_sensor_connectivity"
+    )
+    assert probe["status"] == "fail"
+    assert "meg_top_not_connectivity_measures" in probe["error"]
+    assert "connectivity_measures_leaked_into_fmri_results" in probe["error"]
+
+
+def test_system_self_test_fails_when_meeg_plan_preflight_invariant_breaks(
+    monkeypatch,
+):
+    from brain_researcher.services.mcp import server as srv
+
+    monkeypatch.setattr(srv, "MCP_SELFTEST_ENABLED", True)
+    monkeypatch.setattr(srv, "server_info", lambda: {"ok": True, "data": {}})
+    monkeypatch.setattr(srv, "tool_search", _fake_selftest_tool_search)
+    monkeypatch.setattr(
+        srv,
+        "plan_preflight",
+        lambda *args, **kwargs: {
+            "ok": True,
+            "recommended_next_calls": [
+                {
+                    "tool_name": "get_execution_recipe",
+                    "arguments": {"tool_id": "nilearn_connectivity_matrix"},
+                }
+            ],
+        },
+    )
+
+    resp = srv.system_self_test(mode="quick", include_inventory=False)
+
+    assert resp["ok"] is False
+    assert resp["overall"] == "fail"
+    probe = next(
+        p
+        for p in resp["probes"]
+        if p.get("id") == "routing_invariant_meeg_plan_preflight"
+    )
+    assert probe["status"] == "fail"
+    assert "plan_preflight_top_not_mne_connectivity" in probe["error"]
+    assert "plan_preflight_selected_fmri_only_tool" in probe["error"]
 
 
 def test_system_self_test_active_mode_degraded_on_kg_or_container_warn(monkeypatch):
@@ -1101,11 +1234,8 @@ def test_system_self_test_active_mode_degraded_on_kg_or_container_warn(monkeypat
 
     monkeypatch.setattr(srv, "MCP_SELFTEST_ENABLED", True)
     monkeypatch.setattr(srv, "server_info", lambda: {"ok": True, "data": {}})
-    monkeypatch.setattr(
-        srv,
-        "tool_search",
-        lambda **_kwargs: {"ok": True, "count": 1, "tools": []},
-    )
+    monkeypatch.setattr(srv, "tool_search", _fake_selftest_tool_search)
+    monkeypatch.setattr(srv, "plan_preflight", _fake_selftest_plan_preflight)
     monkeypatch.setattr(
         srv, "kg_search_nodes", lambda **_kwargs: {"ok": False, "error": "neo4j_down"}
     )
@@ -1140,11 +1270,8 @@ def test_system_self_test_propagates_script_policy_issues(monkeypatch):
 
     monkeypatch.setattr(srv, "MCP_SELFTEST_ENABLED", True)
     monkeypatch.setattr(srv, "server_info", lambda: {"ok": True, "data": {}})
-    monkeypatch.setattr(
-        srv,
-        "tool_search",
-        lambda **_kwargs: {"ok": True, "count": 1, "tools": []},
-    )
+    monkeypatch.setattr(srv, "tool_search", _fake_selftest_tool_search)
+    monkeypatch.setattr(srv, "plan_preflight", _fake_selftest_plan_preflight)
     monkeypatch.setattr(
         srv,
         "_selftest_run_local_probe",
@@ -1175,11 +1302,8 @@ def test_system_self_test_strict_promotes_warn_to_fail(monkeypatch):
 
     monkeypatch.setattr(srv, "MCP_SELFTEST_ENABLED", True)
     monkeypatch.setattr(srv, "server_info", lambda: {"ok": True, "data": {}})
-    monkeypatch.setattr(
-        srv,
-        "tool_search",
-        lambda **_kwargs: {"ok": True, "count": 1, "tools": []},
-    )
+    monkeypatch.setattr(srv, "tool_search", _fake_selftest_tool_search)
+    monkeypatch.setattr(srv, "plan_preflight", _fake_selftest_plan_preflight)
     monkeypatch.setattr(
         srv, "kg_search_nodes", lambda **_kwargs: {"ok": False, "error": "neo4j_down"}
     )
@@ -1228,8 +1352,8 @@ def test_tool_requires_network_blocks_non_local_openneuro_tools():
 
 
 def test_tool_search_structured_marks_toolspec_availability(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as qs
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as qs
 
     class StubRegistry:
         def get_tool(self, tool_id):
@@ -1270,8 +1394,8 @@ def test_tool_search_structured_marks_toolspec_availability(monkeypatch):
 
 
 def test_tool_search_structured_canonicalizes_legacy_tool_ids(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as qs
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as qs
 
     class StubRegistry:
         def get_tool(self, tool_id):
@@ -1292,7 +1416,7 @@ def test_tool_search_structured_canonicalizes_legacy_tool_ids(monkeypatch):
         lambda **_kwargs: {
             "candidates": [{"tool_id": "bidsapp.mriqc.run"}],
             "recommendation": {"tool_id": "bidsapp.mriqc.run"},
-            "source": "neurokg",
+            "source": "br_kg",
             "confidence": "high",
         },
     )
@@ -1315,8 +1439,8 @@ def test_tool_search_structured_canonicalizes_legacy_tool_ids(monkeypatch):
 
 
 def test_tool_search_structured_folds_versioned_candidates_to_public_ids(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as qs
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as qs
 
     class StubRegistry:
         def get_tool(self, tool_id):
@@ -1346,7 +1470,7 @@ def test_tool_search_structured_folds_versioned_candidates_to_public_ids(monkeyp
                 "tool_id": "ants.2.5.3.antsRegistration.run",
                 "score": 12,
             },
-            "source": "neurokg",
+            "source": "br_kg",
             "confidence": "high",
         },
     )
@@ -1384,8 +1508,8 @@ def test_tool_search_structured_folds_versioned_candidates_to_public_ids(monkeyp
 
 
 def test_tool_resolve_marks_toolspec_availability(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as qs
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as qs
 
     class StubRegistry:
         def get_tool(self, tool_id):
@@ -1420,8 +1544,8 @@ def test_tool_resolve_marks_toolspec_availability(monkeypatch):
 
 
 def test_tool_resolve_canonicalizes_legacy_tool_ids(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as qs
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as qs
 
     class StubRegistry:
         def get_tool(self, tool_id):
@@ -1439,7 +1563,7 @@ def test_tool_resolve_canonicalizes_legacy_tool_ids(monkeypatch):
         "resolve_tool_structured",
         lambda **_kwargs: {
             "recommendation": {"tool_id": "bidsapp.mriqc.run"},
-            "source": "neurokg",
+            "source": "br_kg",
             "confidence": "high",
         },
     )
@@ -1492,7 +1616,7 @@ def test_pipeline_execute_redacts_sensitive_fields_in_logging_outputs(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -1565,7 +1689,7 @@ def test_pipeline_execute_creates_run_and_logs(tmp_path, monkeypatch):
     # Route all run artifacts into a temp directory so tests are isolated.
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -1658,7 +1782,7 @@ def test_pipeline_execute_interpolates_prior_step_outputs(tmp_path, monkeypatch)
     from brain_researcher.services.tools.result import ToolResult
     from brain_researcher.services.tools.spec import ToolSpec
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -1747,7 +1871,7 @@ def test_pipeline_execute_interpolates_prior_step_outputs(tmp_path, monkeypatch)
 def test_pipeline_execute_workspace_layout_under_project_root(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path / "run_root")
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path / "run_root")
     monkeypatch.setattr(
         srv,
         "ALLOWED_ROOTS",
@@ -1816,7 +1940,7 @@ def test_pipeline_execute_workspace_layout_under_project_root(tmp_path, monkeypa
 def test_pipeline_execute_dry_run_skips_execution(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -1882,7 +2006,7 @@ def test_pipeline_execute_requires_confirmation_phrase_for_confirm_contract(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -1914,7 +2038,7 @@ def test_pipeline_execute_requires_execution_contract_for_non_dry_run(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -1955,7 +2079,7 @@ def test_pipeline_execute_recipe_required_contract_rejects_direct_execution(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -1995,7 +2119,7 @@ def test_pipeline_execute_plan_invalid_surfaces_policy_issues_with_step_binding(
     from brain_researcher.services.mcp import server as srv
 
     run_root = tmp_path / "run_root"
-    monkeypatch.setattr(srv, "RUN_ROOT", run_root)
+    monkeypatch.setattr(runstore, "RUN_ROOT", run_root)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [run_root.resolve()])
     srv._ensure_dirs()
 
@@ -2150,7 +2274,7 @@ def test_tool_execute_coordinate_to_concept_accepts_hosted_execution_context(
     }
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.etl.mappers.niclip_spatial_mapper_improved.get_improved_mapper",
+        "brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper_improved.get_improved_mapper",
         lambda: mock_mapper,
     )
 
@@ -4332,7 +4456,7 @@ def test_get_execution_recipe_for_workflow_rest_connectome_e2e():
         "conda environment or Python venv"
         in resp["run_pack"]["prerequisites"]["setup_once"][0]
     )
-    assert resp["local_run"]["required_env_vars"] == ["BRAIN_RESEARCHER_REPO"]
+    assert resp["run_pack"]["required_env_vars"] == ["BRAIN_RESEARCHER_REPO"]
 
 
 def test_get_execution_recipe_for_workflow_seed_based_connectivity_python():
@@ -4518,7 +4642,7 @@ def test_get_execution_recipe_for_workflow_preprocessing_qc():
     assert run_pack["runtime"]["target"] == "neurodesk"
     assert run_pack["environment"]["required"][0]["name"] == "FS_LICENSE"
     assert "Open a Neurodesk shell" in run_pack["prerequisites"]["setup_once"][0]
-    local_run = resp["local_run"]
+    local_run = resp["run_pack"]
     assert local_run["workspace"].endswith("workflow_preprocessing_qc_neurodesk_recipe")
     assert "run_workflow_preprocessing_qc.sh" in local_run["write_files"]
     assert "run_fmriprep.sh" in local_run["write_files"]
@@ -4600,7 +4724,7 @@ def test_get_execution_recipe_for_workflow_fmriprep_preprocessing_container():
         "--fs-no-reconall" in recipe["files"]["run_workflow_fmriprep_preprocessing.sh"]
     )
     assert "FS_LICENSE" in recipe["required_env_vars"]
-    local_run = resp["local_run"]
+    local_run = resp["run_pack"]
     assert local_run["workspace"].endswith(
         "workflow_fmriprep_preprocessing_container_recipe"
     )
@@ -4640,7 +4764,7 @@ def test_get_execution_recipe_for_workflow_mriqc_neurodesk():
     assert "--no-sub" in recipe["files"]["run_workflow_mriqc.sh"]
     assert "--mem_gb" not in recipe["files"]["run_workflow_mriqc.sh"]
     assert "single-subject MRIQC example" in recipe["files"]["README.md"]
-    local_run = resp["local_run"]
+    local_run = resp["run_pack"]
     assert local_run["workspace"].endswith("workflow_mriqc_neurodesk_recipe")
     assert local_run["required_env_vars"] == []
     assert local_run["env_exports"] == []
@@ -5389,7 +5513,7 @@ def test_get_execution_recipe_for_workflow_realtime_twophoton_file_replay_python
     assert '"input_file": "/data/replay_bundle.npz"' in recipe["files"]["params.json"]
     assert resp["run_pack"]["runtime"]["target"] == "python"
     assert resp["run_pack"]["entrypoint"] == "run_pack.py"
-    assert resp["local_run"]["commands"][-1] == "python run_pack.py"
+    assert resp["run_pack"]["commands"][-1] == "python run_pack.py"
 
 
 def test_workflow_search_surfaces_realtime_twophoton_file_replay_recipe_metadata(
@@ -5485,11 +5609,11 @@ def test_tool_get_surfaces_hosted_service_contract_for_datasets_list_resources()
 
 
 def test_dataset_get_resources_preserves_non_bids_notes(monkeypatch):
+    from brain_researcher.services.br_kg.query_service import DatasetResourceSummary
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg.query_service import DatasetResourceSummary
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.dataset_resources",
+        "brain_researcher.services.br_kg.query_service.dataset_resources",
         lambda *args, **kwargs: DatasetResourceSummary(
             dataset_id="ibl",
             resolved_dataset_id="ds:manual:ibl_brainwide",
@@ -6626,6 +6750,96 @@ def test_tool_search_family_router_backfills_and_reranks_cards(monkeypatch):
     assert names[0] == "seed_based_fc"
 
 
+def test_tool_search_family_router_respects_explicit_modalities(monkeypatch):
+    from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.tools.spec import ToolSpec
+
+    class StubRegistry:
+        def search_toolspecs(
+            self,
+            goal,
+            modalities=None,
+            kind=None,
+            limit=20,
+            offset=0,
+            exposed_only=True,
+            include_workflows=False,
+        ):
+            del goal, modalities, kind, limit, offset, exposed_only, include_workflows
+            return (
+                [
+                    ToolSpec(
+                        name="mne_connectivity",
+                        description="MNE connectivity for EEG and MEG",
+                        backend="python",
+                        category="connectivity",
+                        modalities=["meg", "eeg"],
+                    )
+                ],
+                1,
+            )
+
+        def get_toolspec_by_name(self, name: str):
+            del name
+            return None
+
+    exposed_specs = [
+        ToolSpec(
+            name="seed_based_fc",
+            description="Seed-based fMRI connectivity analysis",
+            backend="python",
+            category="connectivity",
+            modalities=["fmri"],
+        ),
+        ToolSpec(
+            name="mne_connectivity",
+            description="MNE connectivity for EEG and MEG",
+            backend="python",
+            category="connectivity",
+            modalities=["meg", "eeg"],
+        ),
+    ]
+
+    monkeypatch.setattr(srv, "_get_registry", lambda: StubRegistry())
+    monkeypatch.setattr(srv, "_load_grandmaster_atomic_tool_metadata", lambda: {})
+    monkeypatch.setattr(srv, "load_orchestration_workflows", lambda: [])
+    monkeypatch.setattr(srv, "_load_workflow_catalog", lambda: [])
+    monkeypatch.setattr(
+        "brain_researcher.services.tools.catalog_loader.load_tool_specs",
+        lambda **kwargs: exposed_specs,
+    )
+    monkeypatch.setattr(
+        srv,
+        "_tool_search_family_ranked_ids",
+        lambda query, limit: ["seed_based_fc", "mne_connectivity"],
+    )
+
+    meg_resp = srv.tool_search(
+        "source-space connectivity from MEG",
+        modalities=["meg"],
+        limit=5,
+        exposed_only=True,
+        include_workflows=False,
+    )
+    meg_names = [tool.get("name") for tool in meg_resp.get("tools", [])]
+
+    assert meg_resp["ok"] is True
+    assert "mne_connectivity" in meg_names
+    assert "seed_based_fc" not in meg_names
+
+    fmri_resp = srv.tool_search(
+        "resting-state connectivity",
+        modalities=["fmri"],
+        limit=5,
+        exposed_only=True,
+        include_workflows=False,
+    )
+    fmri_names = [tool.get("name") for tool in fmri_resp.get("tools", [])]
+
+    assert fmri_resp["ok"] is True
+    assert "seed_based_fc" in fmri_names
+
+
 def test_plan_preflight_returns_facts_and_phase_filtered_candidates(monkeypatch):
     from brain_researcher.services.agent.tool_candidate_service import (
         ToolCandidateBundle,
@@ -6762,8 +6976,323 @@ def test_plan_preflight_selection_mode_injects_query_derived_next_calls(monkeypa
     assert next_calls[1]["arguments"]["target_runtime"] == "neurodesk"
 
 
+def _patch_plan_create_routing_fallback(monkeypatch, srv, plan_router, *, tools):
+    from brain_researcher.services.agent.tool_candidate_service import (
+        ToolCandidateBundle,
+    )
+
+    monkeypatch.setattr(
+        "brain_researcher.services.agent.tool_candidate_service.generate_tool_candidates",
+        lambda query, **kwargs: ToolCandidateBundle(
+            ctx=kwargs.get("ctx") or {},
+            query_understanding={},
+            tool_candidates=[],
+            tool_candidate_diagnostics={
+                "candidate_count": 0,
+                "candidate_source_counts": {},
+            },
+            resolution_state={"pending_decisions": []},
+        ),
+    )
+    monkeypatch.setattr(srv, "default_recipe_target", lambda *args, **kwargs: "python")
+    specs = {
+        "mne_connectivity": SimpleNamespace(
+            modalities=["meg", "eeg"],
+            backend="python",
+        ),
+        "nilearn_connectivity_matrix": SimpleNamespace(
+            modalities=["fmri"],
+            backend="python",
+        ),
+    }
+    monkeypatch.setattr(
+        srv,
+        "_get_registry",
+        lambda: SimpleNamespace(
+            get_toolspec_by_name=lambda name: specs.get(
+                name,
+                SimpleNamespace(modalities=[], backend="python"),
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        srv,
+        "tool_search",
+        lambda *args, **kwargs: {
+            "ok": True,
+            "tools": tools,
+        },
+    )
+    monkeypatch.setattr(
+        plan_router,
+        "_call_agent_plan_contract",
+        lambda payload: (
+            200,
+            {
+                "plan_id": "plan-empty",
+                "pipeline": payload["pipeline"],
+                "resolvable": False,
+                "warnings": [
+                    f"No suitable tools found for query: {payload['pipeline']}"
+                ],
+                "dag": {"steps": [], "artifacts": []},
+                "context": {
+                    "pipeline": payload["pipeline"],
+                    "inputs": payload.get("inputs") or {},
+                },
+                "routing_diagnostics": {"routing_terminal_reason": "no_candidates"},
+                "candidates": [],
+            },
+        ),
+    )
+
+
+def test_plan_preflight_meg_connectivity_uses_execute_supplement_when_plan_candidates_miss(
+    monkeypatch,
+):
+    from brain_researcher.services.agent.tool_candidate_service import (
+        ToolCandidateBundle,
+    )
+    from brain_researcher.services.mcp import server as srv
+
+    monkeypatch.setattr(
+        "brain_researcher.services.agent.tool_candidate_service.generate_tool_candidates",
+        lambda query, **kwargs: ToolCandidateBundle(
+            ctx=kwargs.get("ctx") or {},
+            query_understanding={},
+            tool_candidates=[],
+            tool_candidate_diagnostics={"candidate_count": 0},
+            resolution_state={"pending_decisions": []},
+        ),
+    )
+    monkeypatch.setattr(srv, "default_recipe_target", lambda *args, **kwargs: "python")
+
+    def fake_tool_search(*args, **kwargs):
+        phases = kwargs.get("phases") or []
+        if phases == ["execute"]:
+            return {
+                "ok": True,
+                "tools": [
+                    {
+                        "name": "mne_connectivity",
+                        "description": "MNE connectivity analysis for EEG/MEG data",
+                        "allowed_phases": ["execute"],
+                        "approval_level": "confirm",
+                    }
+                ],
+            }
+        return {
+            "ok": True,
+            "tools": [
+                {
+                    "name": "workflow_rest_connectome_e2e",
+                    "description": "Resting-state fMRI connectome workflow",
+                    "allowed_phases": ["explore", "plan"],
+                    "approval_level": "none",
+                }
+            ],
+        }
+
+    monkeypatch.setattr(srv, "tool_search", fake_tool_search)
+
+    route_bundle = srv._plan_preflight_route_bundle(
+        query="source-space connectivity from MEG",
+        domain="neuroimaging",
+        modality=["meg"],
+        inputs=None,
+        allowlist_mode=None,
+        selection_mode=True,
+        runtime_surface="mcp",
+    )
+
+    assert "mne_connectivity" not in {
+        tool.get("name") for tool in route_bundle["tool_candidates"]
+    }
+    assert route_bundle["recommended_next_calls"][0]["arguments"]["tool_id"] == (
+        "mne_connectivity"
+    )
+    assert srv._select_preflight_plan_tool_id(route_bundle) == "mne_connectivity"
+
+
+def test_plan_create_meeg_connectivity_guard_prefers_matching_candidate(monkeypatch):
+    from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.mcp.routers import plan as plan_router
+
+    _patch_plan_create_routing_fallback(
+        monkeypatch,
+        srv,
+        plan_router,
+        tools=[
+            {
+                "name": "mne_connectivity",
+                "description": "MNE connectivity analysis for EEG/MEG data",
+                "modalities": ["meg", "eeg"],
+                "allowed_phases": ["explore", "plan"],
+                "approval_level": "none",
+            }
+        ],
+    )
+
+    query = "MEG connectivity analysis for sensor time series"
+    preflight = srv.plan_preflight(query, modality=["meg"], selection_mode=True)
+    assert preflight["recommended_next_calls"][0]["arguments"]["tool_id"] == (
+        "mne_connectivity"
+    )
+
+    plan = srv.plan_create(query, modality=["meg"])
+
+    assert plan["ok"] is True
+    steps = plan["display"]["summary"]["steps"]
+    assert steps[0]["tool"] == "mne_connectivity"
+    assert plan["execution"]["allowed_tools"] == ["mne_connectivity"]
+
+
+def test_plan_create_fmri_connectivity_guard_keeps_matching_hardcoded_route(
+    monkeypatch,
+):
+    from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.mcp.routers import plan as plan_router
+
+    _patch_plan_create_routing_fallback(
+        monkeypatch,
+        srv,
+        plan_router,
+        tools=[
+            {
+                "name": "mne_connectivity",
+                "description": "MNE connectivity analysis for EEG/MEG data",
+                "modalities": ["meg", "eeg"],
+                "allowed_phases": ["explore", "plan"],
+                "approval_level": "none",
+            }
+        ],
+    )
+
+    plan = srv.plan_create(
+        "fMRI resting-state connectivity analysis",
+        modality=["fmri"],
+    )
+
+    assert plan["ok"] is True
+    steps = plan["display"]["summary"]["steps"]
+    assert steps[0]["tool"] == "nilearn_connectivity_matrix"
+    assert plan["execution"]["allowed_tools"] == ["nilearn_connectivity_matrix"]
+
+
+def test_plan_create_no_modality_connectivity_keeps_hardcoded_route(monkeypatch):
+    from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.mcp.routers import plan as plan_router
+
+    _patch_plan_create_routing_fallback(
+        monkeypatch,
+        srv,
+        plan_router,
+        tools=[
+            {
+                "name": "mne_connectivity",
+                "description": "MNE connectivity analysis for EEG/MEG data",
+                "modalities": ["meg", "eeg"],
+                "allowed_phases": ["explore", "plan"],
+                "approval_level": "none",
+            }
+        ],
+    )
+
+    plan = srv.plan_create("resting-state connectivity analysis")
+
+    assert plan["ok"] is True
+    steps = plan["display"]["summary"]["steps"]
+    assert steps[0]["tool"] == "nilearn_connectivity_matrix"
+    assert plan["execution"]["allowed_tools"] == ["nilearn_connectivity_matrix"]
+
+
+def test_plan_create_falls_back_to_plan_preflight_routes_for_connectivity(
+    monkeypatch,
+):
+    from brain_researcher.services.agent.tool_candidate_service import (
+        ToolCandidateBundle,
+    )
+    from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.mcp.routers import plan as plan_router
+
+    monkeypatch.setattr(
+        "brain_researcher.services.agent.tool_candidate_service.generate_tool_candidates",
+        lambda query, **kwargs: ToolCandidateBundle(
+            ctx=kwargs.get("ctx") or {},
+            query_understanding={},
+            tool_candidates=[],
+            tool_candidate_diagnostics={
+                "candidate_count": 0,
+                "candidate_source_counts": {},
+            },
+            resolution_state={"pending_decisions": []},
+        ),
+    )
+    monkeypatch.setattr(srv, "default_recipe_target", lambda *args, **kwargs: "python")
+    monkeypatch.setattr(
+        srv,
+        "tool_search",
+        lambda *args, **kwargs: {
+            "ok": True,
+            "tools": [
+                {
+                    "name": "workflow_rest_connectome_e2e",
+                    "description": "Resting-state connectome workflow",
+                    "allowed_phases": ["explore", "plan"],
+                    "approval_level": "none",
+                }
+            ],
+        },
+    )
+    # Patch on the router module: plan_create lives in routers/plan.py, which
+    # binds _call_agent_plan_contract in its own namespace, so patching srv is a
+    # no-op for plan_create (the real contract would run + vary with catalog mode).
+    monkeypatch.setattr(
+        plan_router,
+        "_call_agent_plan_contract",
+        lambda payload: (
+            200,
+            {
+                "plan_id": "plan-empty",
+                "pipeline": payload["pipeline"],
+                "resolvable": False,
+                "warnings": [
+                    f"No suitable tools found for query: {payload['pipeline']}"
+                ],
+                "dag": {"steps": [], "artifacts": []},
+                "context": {
+                    "pipeline": payload["pipeline"],
+                    "inputs": payload.get("inputs") or {},
+                },
+                "routing_diagnostics": {"routing_terminal_reason": "no_candidates"},
+                "candidates": [],
+            },
+        ),
+    )
+
+    query = "resting state functional connectivity on ds000030"
+    preflight = srv.plan_preflight(query, modality=["fmri"], selection_mode=True)
+    assert preflight["tool_candidates"]
+    assert preflight["recommended_next_calls"][0]["arguments"]["tool_id"] == (
+        "nilearn_connectivity_matrix"
+    )
+
+    plan = srv.plan_create(query, modality=["fmri"])
+
+    assert plan["ok"] is True
+    steps = plan["display"]["summary"]["steps"]
+    assert steps
+    assert steps[0]["tool"] == "nilearn_connectivity_matrix"
+    assert plan["execution"]["allowed_tools"] == ["nilearn_connectivity_matrix"]
+    assert not any(
+        "No suitable tools found" in risk
+        for risk in plan["display"]["summary"]["risks"]
+    )
+
+
 def test_plan_create_returns_display_and_execution_envelopes(monkeypatch):
     from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.mcp.routers import plan as plan_router
     from brain_researcher.services.tools.spec import ToolSpec
 
     class StubRegistry:
@@ -6777,9 +7306,21 @@ def test_plan_create_returns_display_and_execution_envelopes(monkeypatch):
                 )
             return None
 
+        def search_toolspecs(self, **_kwargs):
+            # Plan preflight fallback (_apply_plan_preflight_fallback) calls this;
+            # the real UnifiedToolRegistry implements it. No preflight candidates
+            # needed for this test -> (specs, total_matches).
+            return ([], 0)
+
     monkeypatch.setattr(srv, "_get_registry", lambda: StubRegistry())
+    # plan_create lives in routers/plan.py, which did
+    # `from ...server import _call_agent_plan_contract` — so it calls the name
+    # bound in the ROUTER module. Patch it there, not on `srv` (patching srv is a
+    # no-op for the router's already-bound reference). (_get_registry above is
+    # still patched on srv because it is called from inside a server-resident
+    # helper, _apply_plan_preflight_fallback.)
     monkeypatch.setattr(
-        srv,
+        plan_router,
         "_call_agent_plan_contract",
         lambda payload: (
             200,
@@ -7391,7 +7932,7 @@ def test_tool_get_returns_registry_mismatch_for_non_registry_workflow(monkeypatc
 def test_run_cancel_marks_run_cancelled(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
     run_id = "cancel_test"
@@ -7422,7 +7963,7 @@ def test_run_cancel_marks_run_cancelled(tmp_path, monkeypatch):
 def test_run_get_reports_stalled_progress(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
     run_id = "stalled_test"
@@ -7463,7 +8004,7 @@ def test_run_get_reports_stalled_progress(tmp_path, monkeypatch):
 def test_run_heartbeat_preserves_latest_progress_stage(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -7543,7 +8084,7 @@ def test_run_get_falls_back_to_alias_root(tmp_path, monkeypatch):
 
     primary_root = tmp_path / "primary"
     alias_root = tmp_path / "alias"
-    monkeypatch.setattr(srv, "RUN_ROOT", primary_root)
+    monkeypatch.setattr(runstore, "RUN_ROOT", primary_root)
     monkeypatch.setenv("BR_MCP_RUN_ROOT_ALIASES", str(alias_root))
 
     run_id = "legacy_run_001"
@@ -7569,7 +8110,7 @@ def test_run_list_includes_alias_roots(tmp_path, monkeypatch):
 
     primary_root = tmp_path / "primary"
     alias_root = tmp_path / "alias"
-    monkeypatch.setattr(srv, "RUN_ROOT", primary_root)
+    monkeypatch.setattr(runstore, "RUN_ROOT", primary_root)
     monkeypatch.setenv("BR_MCP_RUN_ROOT_ALIASES", str(alias_root))
 
     run_primary = primary_root / "runs" / "br_20260101_010101_primary"
@@ -7612,7 +8153,7 @@ def test_run_list_includes_alias_roots(tmp_path, monkeypatch):
 def test_run_bundle_get_returns_normalized_bundle(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
 
     run_dir = _write_run_fixture(
         tmp_path,
@@ -7648,7 +8189,7 @@ def test_run_bundle_get_returns_normalized_bundle(tmp_path, monkeypatch):
 def test_run_bundle_get_accepts_multiline_trace_jsonl(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
 
     _write_run_fixture(
         tmp_path,
@@ -7682,7 +8223,7 @@ def test_run_bundle_get_accepts_multiline_trace_jsonl(tmp_path, monkeypatch):
 def test_run_scorecard_reports_policy_and_artifact_completeness(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
 
     steps = [
         {
@@ -7722,7 +8263,7 @@ def test_generate_research_trajectory_and_insights_persists_run_artifacts(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setenv("BR_MCP_SUMMARY_LLM_ENABLED", "false")
 
     _write_run_fixture(
@@ -7935,7 +8476,7 @@ def test_generate_repo_repair_context_delegates_and_returns_payload(monkeypatch)
 def test_run_compare_prefers_better_candidate(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
 
     _write_run_fixture(
         tmp_path,
@@ -7987,7 +8528,7 @@ def test_run_compare_prefers_better_candidate(tmp_path, monkeypatch):
 def test_run_compare_reports_unsupported_metric_key(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
 
     for run_id in ("br_20260309_000005_a", "br_20260309_000006_b"):
         _write_run_fixture(
@@ -8381,7 +8922,7 @@ def test_google_deep_research_start_returns_structured_error(monkeypatch):
 def test_google_deep_research_start_creates_local_run_and_syncs(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
     monkeypatch.setattr(srv, "ALLOW_NETWORK", True)
@@ -8467,7 +9008,7 @@ def test_google_deep_research_start_scientific_mode_persists_to_run_and_get(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
     monkeypatch.setattr(srv, "ALLOW_NETWORK", True)
@@ -8963,11 +9504,11 @@ def test_google_deep_research_auto_detects_scientific_queries(monkeypatch):
 
 
 def test_deepxiv_resolve_pmc_identifier_from_pii(monkeypatch):
-    from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.mcp.routers import deepxiv as dx
 
-    monkeypatch.setattr(srv, "_deepxiv_pubmed_esearch_pmid", lambda term: "40147442")
+    monkeypatch.setattr(dx, "_deepxiv_pubmed_esearch_pmid", lambda term: "40147442")
     monkeypatch.setattr(
-        srv,
+        dx,
         "_deepxiv_pmc_idconv",
         lambda identifier: {
             "pmcid": "PMC1234567",
@@ -8976,7 +9517,7 @@ def test_deepxiv_resolve_pmc_identifier_from_pii(monkeypatch):
         },
     )
 
-    resolved = srv._deepxiv_resolve_pmc_identifier("S0092-8674(25)00213-2")
+    resolved = dx._deepxiv_resolve_pmc_identifier("S0092-8674(25)00213-2")
 
     assert resolved["ok"] is True
     assert resolved["paper_id"] == "PMC1234567"
@@ -8989,9 +9530,9 @@ def test_deepxiv_resolve_pmc_identifier_from_pii(monkeypatch):
 
 
 def test_deepxiv_pmc_head_uses_resolved_pmcid(monkeypatch):
-    from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.mcp.routers import deepxiv as dx
 
-    monkeypatch.setattr(srv, "ALLOW_NETWORK", True)
+    monkeypatch.setattr(dx, "ALLOW_NETWORK", True)
     called: dict[str, str] = {}
 
     class FakeReader:
@@ -8999,9 +9540,9 @@ def test_deepxiv_pmc_head_uses_resolved_pmcid(monkeypatch):
             called["paper_id"] = paper_id
             return {"paper_id": paper_id}
 
-    monkeypatch.setattr(srv, "_get_deepxiv_reader", lambda: FakeReader())
+    monkeypatch.setattr(dx, "_get_deepxiv_reader", lambda: FakeReader())
     monkeypatch.setattr(
-        srv,
+        dx,
         "_deepxiv_resolve_pmc_identifier",
         lambda paper_id: {
             "ok": True,
@@ -9010,7 +9551,7 @@ def test_deepxiv_pmc_head_uses_resolved_pmcid(monkeypatch):
         },
     )
 
-    resp = srv.deepxiv(action="pmc_head", paper_id="10.1234/example")
+    resp = dx.deepxiv(action="pmc_head", paper_id="10.1234/example")
 
     assert resp["ok"] is True
     assert called["paper_id"] == "PMC7654321"
@@ -9018,17 +9559,17 @@ def test_deepxiv_pmc_head_uses_resolved_pmcid(monkeypatch):
 
 
 def test_deepxiv_pmc_full_returns_structured_unavailable_error(monkeypatch):
-    from brain_researcher.services.mcp import server as srv
+    from brain_researcher.services.mcp.routers import deepxiv as dx
 
-    monkeypatch.setattr(srv, "ALLOW_NETWORK", True)
+    monkeypatch.setattr(dx, "ALLOW_NETWORK", True)
 
     class FakeReader:
         def pmc_json(self, paper_id):
             raise AssertionError(f"pmc_json should not be called: {paper_id}")
 
-    monkeypatch.setattr(srv, "_get_deepxiv_reader", lambda: FakeReader())
+    monkeypatch.setattr(dx, "_get_deepxiv_reader", lambda: FakeReader())
     monkeypatch.setattr(
-        srv,
+        dx,
         "_deepxiv_resolve_pmc_identifier",
         lambda paper_id: {
             "ok": False,
@@ -9044,7 +9585,7 @@ def test_deepxiv_pmc_full_returns_structured_unavailable_error(monkeypatch):
         },
     )
 
-    resp = srv.deepxiv(action="pmc_full", paper_id="S0092-8674(25)00213-2")
+    resp = dx.deepxiv(action="pmc_full", paper_id="S0092-8674(25)00213-2")
 
     assert resp["ok"] is False
     assert resp["error"] == "deepxiv_pmc_unavailable"
@@ -9312,8 +9853,8 @@ def test_kg_multihop_qa_mcp_allows_degraded_summary_when_requested(monkeypatch):
 
 
 def test_kg_verify_hypothesis_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -9373,8 +9914,8 @@ def test_kg_verify_hypothesis_mcp_success(monkeypatch):
 
 
 def test_kg_verify_hypothesis_honors_explicit_semantic_override(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
     from brain_researcher.services.shared.runtime_semantic import (
         semantic_matching_enabled,
     )
@@ -9413,8 +9954,8 @@ def test_kg_verify_hypothesis_mcp_requires_hypothesis():
 
 
 def test_kg_verify_hypothesis_mcp_error_path(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     def fail_verify_hypothesis(**kwargs):
         raise RuntimeError("kg backend unavailable")
@@ -9467,9 +10008,9 @@ def test_verify_hypothesis_with_kg_alias(monkeypatch):
 
 
 def test_kg_get_node_resolves_identifier_variants(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
+    from brain_researcher.services.br_kg.query_service import KGNodeSummary
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
-    from brain_researcher.services.neurokg.query_service import KGNodeSummary
 
     def fake_node_details(kg_id):
         if kg_id == "pmid:19778619":
@@ -9512,8 +10053,8 @@ def test_direct_kg_tools_timeout_fail_fast_by_default(
     call_kwargs,
     patch_name,
 ):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     monkeypatch.setenv("BR_MCP_KG_READ_TIMEOUT_S", "1")
 
@@ -9586,8 +10127,8 @@ def test_direct_kg_tools_timeout_return_degraded_when_allowed(
     payload_key,
     payload_value,
 ):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     monkeypatch.setenv("BR_MCP_KG_READ_TIMEOUT_S", "1")
 
@@ -9608,8 +10149,8 @@ def test_direct_kg_tools_timeout_return_degraded_when_allowed(
 
 
 def test_kg_behavior_to_fmri_retrieval_returns_payload(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     monkeypatch.setattr(
         _query_service,
@@ -9630,9 +10171,9 @@ def test_kg_behavior_to_fmri_retrieval_returns_payload(monkeypatch):
 
 
 def test_kg_list_dataset_onvoc_links_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
+    from brain_researcher.services.br_kg.query_service import DatasetOnvocLinkSummary
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
-    from brain_researcher.services.neurokg.query_service import DatasetOnvocLinkSummary
 
     captured: dict[str, object] = {}
 
@@ -9682,8 +10223,8 @@ def test_kg_list_dataset_onvoc_links_success(monkeypatch):
 
 
 def test_kg_list_dataset_onvoc_links_timeout_fails_fast_by_default(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     monkeypatch.setenv("BR_MCP_KG_READ_TIMEOUT_S", "1")
 
@@ -9705,8 +10246,8 @@ def test_kg_list_dataset_onvoc_links_timeout_fails_fast_by_default(monkeypatch):
 
 
 def test_kg_list_dataset_onvoc_links_timeout_returns_degraded_when_allowed(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     monkeypatch.setenv("BR_MCP_KG_READ_TIMEOUT_S", "1")
 
@@ -9738,8 +10279,8 @@ def test_kg_list_dataset_onvoc_links_timeout_returns_degraded_when_allowed(monke
 
 
 def test_kg_probe_structural_leverage_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -9790,8 +10331,8 @@ def test_kg_probe_structural_leverage_success(monkeypatch):
 
 
 def test_kg_probe_contradiction_frontiers_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -9858,8 +10399,8 @@ def test_kg_probe_requires_query_or_entity_hints():
 
 
 def test_kg_find_structural_leverage_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -9916,8 +10457,8 @@ def test_kg_find_structural_leverage_mcp_validation_error():
 
 
 def test_kg_detect_contradiction_motifs_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -9971,8 +10512,8 @@ def test_kg_detect_contradiction_motifs_mcp_validation_error():
 
 
 def test_kg_find_contradiction_frontiers_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -10021,8 +10562,8 @@ def test_kg_find_contradiction_frontiers_mcp_success(monkeypatch):
 
 
 def test_kg_mine_assumption_cracks_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -10065,8 +10606,8 @@ def test_kg_mine_assumption_cracks_mcp_success(monkeypatch):
 
 
 def test_kg_find_analogy_transfers_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -10112,8 +10653,8 @@ def test_kg_find_analogy_transfers_mcp_success(monkeypatch):
 
 
 def test_kg_hypothesis_workflow_sample_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -10162,8 +10703,8 @@ def test_kg_hypothesis_workflow_sample_success(monkeypatch):
 
 
 def test_kg_hypothesis_workflow_verify_candidates_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -10261,8 +10802,8 @@ def test_kg_hypothesis_workflow_verify_candidates_success(monkeypatch):
 
 
 def test_kg_hypothesis_workflow_sample_and_verify_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -10381,8 +10922,8 @@ def test_kg_hypothesis_workflow_validation_errors():
 
 
 def test_kg_sample_ood_hypothesis_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -11141,7 +11682,7 @@ def test_kg_hypothesis_candidate_cards_start_and_get_success(tmp_path, monkeypat
     from brain_researcher.services.mcp import server as srv
     from brain_researcher.services.tools.result import ToolResult
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -11159,7 +11700,7 @@ def test_kg_hypothesis_candidate_cards_start_and_get_success(tmp_path, monkeypat
                 {
                     "workflow_id": "workflow_hypothesis_candidate_cards",
                     "step_id": "verify_sampled_hypotheses",
-                    "tool_name": "neurokg.verify_sampled_hypotheses",
+                    "tool_name": "br_kg.verify_sampled_hypotheses",
                     "step_index": 2,
                     "total_steps": 5,
                     "status": "running",
@@ -11170,7 +11711,7 @@ def test_kg_hypothesis_candidate_cards_start_and_get_success(tmp_path, monkeypat
                 {
                     "workflow_id": "workflow_hypothesis_candidate_cards",
                     "step_id": "verify_sampled_hypotheses",
-                    "tool_name": "neurokg.verify_sampled_hypotheses",
+                    "tool_name": "br_kg.verify_sampled_hypotheses",
                     "step_index": 2,
                     "total_steps": 5,
                     "status": "completed",
@@ -11316,7 +11857,7 @@ def test_kg_hypothesis_candidate_cards_start_and_get_success(tmp_path, monkeypat
 def test_kg_hypothesis_candidate_cards_start_background_failure(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -11388,7 +11929,7 @@ def test_kg_hypothesis_candidate_cards_get_compat_alias_matches_run_get(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
     run_id = "candidate_cards_alias_run"
@@ -11615,7 +12156,7 @@ def test_hypothesis_hot_load_research_mcp_validation_error():
 def test_hypothesis_run_start_and_get_success(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -11747,7 +12288,7 @@ def test_hypothesis_run_start_preserves_frontier_mode_when_requested(
 ):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -11819,7 +12360,7 @@ def test_hypothesis_run_start_preserves_frontier_mode_when_requested(
 def test_hypothesis_run_start_background_failure(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
@@ -11879,7 +12420,7 @@ def test_hypothesis_run_start_validation_error(monkeypatch):
 def test_hypothesis_run_get_compat_alias_matches_run_get(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
     run_id = "hypothesis_alias_run"
@@ -11927,8 +12468,8 @@ def test_hypothesis_run_get_compat_alias_matches_run_get(tmp_path, monkeypatch):
 
 
 def test_kg_sample_and_verify_hypotheses_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -12063,8 +12604,8 @@ def test_kg_sample_and_verify_hypotheses_mcp_validation_error():
 
 
 def test_kg_verify_sampled_hypotheses_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -12176,8 +12717,8 @@ def test_kg_verify_sampled_hypotheses_mcp_validation_error():
 
 
 def test_kg_detect_topology_shifts_mcp_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -12230,8 +12771,8 @@ def test_kg_detect_topology_shifts_mcp_success(monkeypatch):
 
 
 def test_kg_detect_topology_shifts_mcp_apply_success(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     captured: dict[str, object] = {}
 
@@ -12269,8 +12810,8 @@ def test_kg_detect_topology_shifts_mcp_apply_success(monkeypatch):
 def test_kg_detect_topology_shifts_mcp_policy_rejected_apply(
     monkeypatch, topology_write, allow_dangerous, approval_phrase
 ):
+    from brain_researcher.services.br_kg import query_service as _query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as _query_service
 
     called = {"count": 0}
 
@@ -12300,19 +12841,25 @@ def test_kg_detect_topology_shifts_mcp_validation_error():
     from brain_researcher.services.mcp import server as srv
 
     resp = srv.kg_detect_topology_shifts(mode="invalid")
-    assert resp == {"ok": False, "error": "mode must be one of: detect, apply"}
+    # Invalid mode is still rejected (apply is destructive), now via the uniform
+    # structured invalid-enum error that also lists the allowed values + received.
+    assert resp["ok"] is False
+    assert resp["error"] == "mode must be one of: detect, apply"
+    assert resp["field"] == "mode"
+    assert sorted(resp["allowed"]) == ["apply", "detect"]
+    assert resp["received"] == "invalid"
 
 
 def test_doc_examples_are_valid(tmp_path, monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     srv._ensure_dirs()
 
     # Stub KG search/get to validate ID round-trip fields.
     def fake_search_nodes(query, node_types=None, limit=20):
-        from brain_researcher.services.neurokg.query_service import KGNodeSummary
+        from brain_researcher.services.br_kg.query_service import KGNodeSummary
 
         return [
             KGNodeSummary(
@@ -12326,7 +12873,7 @@ def test_doc_examples_are_valid(tmp_path, monkeypatch):
         ]
 
     def fake_node_details(kg_id):
-        from brain_researcher.services.neurokg.query_service import KGNodeSummary
+        from brain_researcher.services.br_kg.query_service import KGNodeSummary
 
         if kg_id in {"CONCEPT_001", "4:abcd-ef01:1"}:
             return KGNodeSummary(
@@ -12339,7 +12886,7 @@ def test_doc_examples_are_valid(tmp_path, monkeypatch):
             )
         return None
 
-    from brain_researcher.services.neurokg import query_service as _query_service
+    from brain_researcher.services.br_kg import query_service as _query_service
 
     monkeypatch.setattr(_query_service, "search_nodes", fake_search_nodes)
     monkeypatch.setattr(_query_service, "node_details", fake_node_details)
@@ -12438,7 +12985,7 @@ def test_doc_examples_are_valid(tmp_path, monkeypatch):
         ):
             return _items
 
-        from brain_researcher.services.neurokg import query_service as _query_service
+        from brain_researcher.services.br_kg import query_service as _query_service
 
         monkeypatch.setattr(_query_service, "neighbors", fake_neighbors)
         neighbors = srv.kg_neighbors(**example["input"])

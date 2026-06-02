@@ -1,0 +1,184 @@
+# Semgrep rules for Brain Researcher security scanning
+rules:
+  # Neuroimaging data security rules
+  - id: neuroimaging-data-exposure
+    pattern-either:
+      - pattern: logging.$METHOD(..., $PARTICIPANT_ID, ...)
+      - pattern: print(..., $PARTICIPANT_ID, ...)
+      - pattern: logger.$METHOD(..., $PARTICIPANT_ID, ...)
+    pattern-where:
+      - variable: PARTICIPANT_ID
+        regex: '.*(participant|subject|patient).*id.*'
+    message: "Potential exposure of participant/subject identifiers in logs"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [neuroimaging]
+
+  - id: medical-data-in-exception
+    pattern: |
+      raise Exception(..., $DATA, ...)
+    pattern-where:
+      - variable: DATA
+        regex: '.*(medical|patient|participant|subject).*'
+    message: "Medical/participant data potentially exposed in exception messages"
+    languages: [python]
+    severity: WARNING
+
+  # API security rules
+  - id: missing-authentication-check
+    pattern-either:
+      - pattern: |
+          @app.route($PATH, ...)
+          def $FUNC(...):
+            ...
+      - pattern: |
+          @router.$METHOD($PATH, ...)
+          def $FUNC(...):
+            ...
+    pattern-not-inside: |
+      @requires_auth
+      def $FUNC(...):
+        ...
+    pattern-not-inside: |
+      @jwt_required
+      def $FUNC(...):
+        ...
+    pattern-not-inside: |
+      @login_required
+      def $FUNC(...):
+        ...
+    pattern-where:
+      - variable: PATH
+        regex: '".*/api/.*"'
+    message: "API endpoint missing authentication check"
+    languages: [python]
+    severity: ERROR
+
+  - id: sql-injection-risk
+    pattern-either:
+      - pattern: |
+          $CURSOR.execute($QUERY + $USER_INPUT)
+      - pattern: |
+          $CURSOR.execute($QUERY % $USER_INPUT)
+      - pattern: |
+          $CURSOR.execute(f"SELECT * FROM {$TABLE} WHERE {$USER_INPUT}")
+    message: "Potential SQL injection vulnerability"
+    languages: [python]
+    severity: ERROR
+
+  # Flask/FastAPI security
+  - id: debug-mode-enabled
+    pattern: |
+      app.run(debug=True)
+    message: "Debug mode should not be enabled in production"
+    languages: [python]
+    severity: WARNING
+
+  - id: missing-cors-configuration
+    pattern: |
+      CORS($APP, ...)
+    pattern-not: |
+      CORS($APP, ..., origins=$ORIGINS, ...)
+    message: "CORS configuration should specify allowed origins"
+    languages: [python]
+    severity: INFO
+
+  # Secrets and credentials
+  - id: hardcoded-api-keys
+    pattern-either:
+      - pattern: '$VAR = "sk-..."'
+      - pattern: '$VAR = "pk_..."'
+      - pattern: '$VAR = "Bearer ..."'
+    message: "Potential hardcoded API key detected"
+    languages: [python]
+    severity: ERROR
+
+  - id: hardcoded-database-credentials
+    pattern-either:
+      - pattern: |
+          neo4j.GraphDatabase.driver($URI, auth=("$USER", "$PASS"))
+      - pattern: |
+          psycopg2.connect(..., password="$PASS", ...)
+    pattern-where:
+      - variable: PASS
+        regex: '[a-zA-Z0-9]{8,}'
+    message: "Hardcoded database credentials detected"
+    languages: [python]
+    severity: ERROR
+
+  # JWT security
+  - id: weak-jwt-secret
+    pattern: |
+      jwt.encode($PAYLOAD, "$SECRET", ...)
+    pattern-where:
+      - variable: SECRET
+        regex: '.{1,16}'
+    message: "JWT secret appears to be weak (too short)"
+    languages: [python]
+    severity: WARNING
+
+  - id: jwt-without-expiration
+    pattern: |
+      jwt.encode($PAYLOAD, $SECRET, ...)
+    pattern-not: |
+      jwt.encode({..., "exp": $EXP}, $SECRET, ...)
+    message: "JWT tokens should have expiration times"
+    languages: [python]
+    severity: WARNING
+
+  # File system security
+  - id: path-traversal-risk
+    pattern-either:
+      - pattern: |
+          open($USER_INPUT, ...)
+      - pattern: |
+          Path($USER_INPUT)
+      - pattern: |
+          os.path.join($BASE, $USER_INPUT)
+    message: "Potential path traversal vulnerability with user input"
+    languages: [python]
+    severity: ERROR
+
+  # Network security
+  - id: unverified-ssl-context
+    pattern-either:
+      - pattern: |
+          ssl.create_default_context(check_hostname=False)
+      - pattern: |
+          ssl._create_unverified_context()
+      - pattern: |
+          requests.get($URL, verify=False)
+    message: "SSL certificate verification disabled"
+    languages: [python]
+    severity: WARNING
+
+  # Neuroimaging-specific rules
+  - id: unencrypted-medical-data-storage
+    pattern-either:
+      - pattern: |
+          pickle.dump($DATA, $FILE)
+      - pattern: |
+          json.dump($DATA, $FILE)
+    pattern-where:
+      - variable: DATA
+        regex: '.*(participant|subject|patient|medical).*'
+    message: "Potentially sensitive medical data stored without encryption"
+    languages: [python]
+    severity: WARNING
+
+  - id: data-anonymization-check
+    pattern: |
+      def $FUNC(..., participant_id, ...):
+        ...
+        return $DATA
+    pattern-not-inside: |
+      def $FUNC(...):
+        ...
+        $DATA = anonymize($DATA)
+        ...
+        return $DATA
+    message: "Function handling participant data should include anonymization"
+    languages: [python]
+    severity: INFO

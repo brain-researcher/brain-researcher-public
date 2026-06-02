@@ -65,8 +65,8 @@ modules:
       headers:
         Accept: application/json
       body_size_limit: 1MB
-      
-  neurokg_health:
+
+  br_kg_health:
     prober: http
     timeout: 15s
     http:
@@ -74,7 +74,7 @@ modules:
       method: GET
       headers:
         Accept: application/json
-      
+
   agent_health:
     prober: http
     timeout: 20s

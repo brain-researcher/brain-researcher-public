@@ -17,16 +17,16 @@ maintainers:
   - name: Brain Researcher Team
     email: team@brain-researcher.com
 dependencies:
-  - name: base
-    version: "1.27.2"
+  - name: istio-base
+    version: "1.19.0"
     repository: "https://istio-release.storage.googleapis.com/charts"
     condition: istio.installBase
   - name: istiod
-    version: "1.27.2" 
+    version: "1.19.0"
     repository: "https://istio-release.storage.googleapis.com/charts"
     condition: istio.installIstiod
-  - name: gateway
-    version: "1.27.2"
+  - name: istio-gateway
+    version: "1.19.0"
     repository: "https://istio-release.storage.googleapis.com/charts"
     condition: istio.installGateway
 annotations:

@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any
 
 from brain_researcher.config.mapping_resolver import resolve_mapping_path
-from brain_researcher.services.neurokg.graph.neo4j_graph_database import Neo4jGraphDB
-from brain_researcher.services.neurokg.utils.onvoc_linker import OnvocLinker
+from brain_researcher.services.br_kg.graph.neo4j_graph_database import Neo4jGraphDB
+from brain_researcher.services.br_kg.utils.onvoc_linker import OnvocLinker
 
 logger = logging.getLogger(__name__)
 

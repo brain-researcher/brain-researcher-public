@@ -25,7 +25,7 @@ from typing import Any
 
 import yaml
 
-from brain_researcher.services.neurokg.task_family_matcher import TaskFamilyMatcher
+from brain_researcher.services.br_kg.task_family_matcher import TaskFamilyMatcher
 
 DEFAULT_TASK_TAXONOMY_PATH = Path("configs/taxonomy/exports/task_families_master.yaml")
 DEFAULT_TASK_ALIAS_EXTENSIONS_PATH = Path(

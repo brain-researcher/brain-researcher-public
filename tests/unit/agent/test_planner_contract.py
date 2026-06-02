@@ -2,13 +2,13 @@
 
 import importlib
 import re
-from typing import Any, Iterable, List, Optional
+from collections.abc import Iterable
+from typing import Any
 
 import pytest
 
 from brain_researcher.services.agent.web_service import app
 from tests.unit.agent.job_store_test_utils import patched_job_store
-
 
 _CANONICAL_RUNTIME_TOOL_ID_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
 
@@ -72,14 +72,35 @@ def test_agent_plan_stub_response_eeg():
     assert any(step["tool"] == "connectivity_measures" for step in steps)
 
 
+def test_agent_plan_stub_response_meg_uses_meeg_tools_not_fmri():
+    client = app.test_client()
+    payload = {
+        "pipeline": "connectivity",
+        "query": "MEG connectivity analysis for sensor time series",
+        "domain": "neuroimaging",
+        "modality": ["meg"],
+        "inputs": {"raw_meg": "sub-01_task-rest_meg.fif"},
+    }
+
+    response = client.post("/agent/plan", json=payload)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    steps = [step["tool"] for step in data["dag"]["steps"]]
+    assert "connectivity_measures" in steps
+    assert "nilearn_connectivity_matrix" not in steps
+    assert "extract_timeseries" not in steps
+    assert "fetch_atlas" not in steps
+
+
 class _StubToolRetriever:
     def retrieve_tools(self, query, family_ids=None, top_k=10, filters=None):
         return [
-            {"id": "python.fetch_atlas.run", "score": 0.91, "source": "neurokg"},
+            {"id": "python.fetch_atlas.run", "score": 0.91, "source": "br_kg"},
             {
                 "id": "python.nilearn_connectivity_matrix.run",
                 "score": 0.83,
-                "source": "neurokg",
+                "source": "br_kg",
             },
         ]
 
@@ -140,7 +161,7 @@ _GOLDEN_PREPLIGHT_CASES = [
     {
         "pipeline": "kg_ingest_validate",
         "query": "Validate KG ingest for OpenNeuro dataset",
-        "domain": "neurokg",
+        "domain": "br_kg",
         "modality": ["fmri"],
         "inputs": {"dataset_id": "ds000030"},
     },
@@ -207,10 +228,12 @@ def test_agent_plan_preflight_includes_tool_candidates(monkeypatch, payload):
     assert routing_diagnostics.get("preflight_candidate_source_counts") == (
         tool_candidate_diagnostics.get("candidate_source_counts")
     )
-    assert routing_diagnostics.get("candidate_count") == len(data.get("candidates") or [])
-    assert routing_diagnostics.get("planner_candidate_count") == routing_diagnostics.get(
-        "candidate_count"
+    assert routing_diagnostics.get("candidate_count") == len(
+        data.get("candidates") or []
     )
+    assert routing_diagnostics.get(
+        "planner_candidate_count"
+    ) == routing_diagnostics.get("candidate_count")
 
 
 @pytest.mark.parametrize("payload", _GOLDEN_PREPLIGHT_CASES)
@@ -231,7 +254,7 @@ def test_agent_plan_contract_emits_canonical_runtime_tool_ids(monkeypatch, paylo
     for step in data.get("dag", {}).get("steps") or []:
         _assert_canonical_runtime_tool_id(step["tool"])
 
-    for candidate in (data.get("context", {}).get("tool_candidates") or []):
+    for candidate in data.get("context", {}).get("tool_candidates") or []:
         _assert_canonical_runtime_tool_id(candidate["tool_id"])
         raw_tool_id = str(candidate.get("tool_id_raw") or "").strip()
         if raw_tool_id.endswith(".run"):
@@ -326,8 +349,9 @@ def test_agent_plan_reports_plan_step_allowlist_denial_metadata(monkeypatch):
 
 
 def test_agent_plan_diagnostic_allowlist_mode_bypasses_chat_surface(monkeypatch):
-    import brain_researcher.services.agent.web_service as ws
     from types import SimpleNamespace
+
+    import brain_researcher.services.agent.web_service as ws
 
     class _FakePlanner:
         def plan(self, **kwargs):
@@ -358,7 +382,9 @@ def test_agent_plan_diagnostic_allowlist_mode_bypasses_chat_surface(monkeypatch)
     monkeypatch.setattr(
         ws,
         "_plan_surface_tool_allowlist",
-        lambda mode: ["tool.safe"] if mode == "curated" else ["blocked.tool", "tool.safe"],
+        lambda mode: (
+            ["tool.safe"] if mode == "curated" else ["blocked.tool", "tool.safe"]
+        ),
     )
     monkeypatch.setattr(
         ws,
@@ -391,7 +417,9 @@ def test_agent_plan_diagnostic_allowlist_mode_bypasses_chat_surface(monkeypatch)
 
 def test_agent_plan_contract_skips_agent_runtime_init_in_soft_mode(monkeypatch):
     import brain_researcher.services.agent.web_service as ws
-    from brain_researcher.services.agent.tool_candidate_service import ToolCandidateBundle
+    from brain_researcher.services.agent.tool_candidate_service import (
+        ToolCandidateBundle,
+    )
     from brain_researcher.services.shared.planner.models import Plan, PlanDAG, StepSpec
 
     monkeypatch.delenv("BR_STRICT_PLAN_TOOL_VALIDATION", raising=False)
@@ -467,12 +495,12 @@ def test_tool_candidates_canonicalize_to_registry_ids():
     class StubRetriever:
         def retrieve_tools(self, query, family_ids=None, top_k=10, filters=None):
             return [
-                {"id": "python.fetch_atlas.run", "score": 0.9, "source": "neurokg"},
-                {"id": "fsl.bet.run", "score": 0.8, "source": "neurokg"},
-                {"id": "fsl.fslFixText", "score": 0.79, "source": "neurokg"},
-                {"id": "ants.antsRegistration.run", "score": 0.78, "source": "neurokg"},
-                {"id": "bidsapp.fmriprep.run", "score": 0.7, "source": "neurokg"},
-                {"id": "fmriprep", "score": 0.69, "source": "neurokg"},
+                {"id": "python.fetch_atlas.run", "score": 0.9, "source": "br_kg"},
+                {"id": "fsl.bet.run", "score": 0.8, "source": "br_kg"},
+                {"id": "fsl.fslFixText", "score": 0.79, "source": "br_kg"},
+                {"id": "ants.antsRegistration.run", "score": 0.78, "source": "br_kg"},
+                {"id": "bidsapp.fmriprep.run", "score": 0.7, "source": "br_kg"},
+                {"id": "fmriprep", "score": 0.69, "source": "br_kg"},
             ]
 
     registry = StubRegistry(
@@ -500,7 +528,7 @@ def test_tool_candidates_canonicalize_to_registry_ids():
     assert "fmriprep_preprocessing" in tool_ids
     diagnostics = ctx.get("tool_candidate_diagnostics") or {}
     assert diagnostics.get("candidate_count") == len(candidates)
-    assert diagnostics.get("candidate_source_counts", {}).get("neurokg") == len(
+    assert diagnostics.get("candidate_source_counts", {}).get("br_kg") == len(
         candidates
     )
     assert "surface" in diagnostics
@@ -589,14 +617,14 @@ def _flatten(obj: Any) -> Iterable[Any]:
         yield obj
 
 
-def _extract_step_names(plan_json: dict) -> List[str]:
+def _extract_step_names(plan_json: dict) -> list[str]:
     """
     Collect likely step tool names from a variety of common schema shapes:
     - plan['steps'][i]['tool'] or ['tool_id'] or ['name']
     - plan['dag']['nodes'][i]['tool'] ...
     Fallback: scan all dicts for keys that look like identifiers.
     """
-    names: List[str] = []
+    names: list[str] = []
 
     # Obvious places first
     candidates = []
@@ -611,7 +639,7 @@ def _extract_step_names(plan_json: dict) -> List[str]:
     ):
         candidates.extend(plan_json["dag"]["nodes"])
 
-    def pick(d: dict) -> Optional[str]:
+    def pick(d: dict) -> str | None:
         for k in ("tool", "tool_id", "name", "id"):
             v = d.get(k)
             if isinstance(v, str) and "_" in v:
@@ -635,7 +663,7 @@ def _extract_step_names(plan_json: dict) -> List[str]:
     return names
 
 
-def _assert_subsequence_in_order(haystack: List[str], subseq: List[str]) -> None:
+def _assert_subsequence_in_order(haystack: list[str], subseq: list[str]) -> None:
     """Assert that subseq appears in haystack in the given order (not necessarily consecutive)."""
     it = iter(haystack)
     for target in subseq:
@@ -754,9 +782,9 @@ def test_registry_has_new_modalities():
         "smri_parcellation_stats_tool",
         "smri_surface_export_tool",
     ):
-        assert key in getattr(auto, "_MODULE_PATHS", {}), (
-            f"{key} missing from tools.auto._MODULE_PATHS"
-        )
+        assert key in getattr(
+            auto, "_MODULE_PATHS", {}
+        ), f"{key} missing from tools.auto._MODULE_PATHS"
 
 
 def test_plan_ieeg_includes_coregistration():
@@ -825,9 +853,9 @@ def test_resolve_bids_tool_in_registry():
         "smri_parcellation_stats_tool",
         "smri_surface_export_tool",
     ):
-        assert key in getattr(auto, "_MODULE_PATHS", {}), (
-            f"{key} missing from tools.auto._MODULE_PATHS"
-        )
+        assert key in getattr(
+            auto, "_MODULE_PATHS", {}
+        ), f"{key} missing from tools.auto._MODULE_PATHS"
 
 
 def test_plan_smri_morphometry_contains_expected_steps():
@@ -919,9 +947,9 @@ def test_registry_has_pet_tools():
     """Verify PET tools are registered in tools.auto._MODULE_PATHS."""
     auto = importlib.import_module("brain_researcher.services.tools.auto")
     for key in ("pet_coreg_tool", "pet_suvr_tool", "pet_parcellate_tool"):
-        assert key in getattr(auto, "_MODULE_PATHS", {}), (
-            f"{key} missing from tools.auto._MODULE_PATHS"
-        )
+        assert key in getattr(
+            auto, "_MODULE_PATHS", {}
+        ), f"{key} missing from tools.auto._MODULE_PATHS"
 
 
 def test_plan_meta_termmap_contains_expected_steps():
@@ -946,7 +974,7 @@ def test_plan_kg_ingest_validate_contains_expected_steps():
     client = app.test_client()
     payload = {
         "pipeline": "kg_ingest_validate",
-        "domain": "neurokg",
+        "domain": "br_kg",
         "modality": [],
         "inputs": {"nodes_file": "nodes.csv", "edges_file": "edges.csv"},
     }
@@ -967,9 +995,9 @@ def test_registry_has_meta_kg_tools():
         "kg_shacl_validate_tool",
         "kg_multihop_qa_tool",
     ):
-        assert key in getattr(auto, "_MODULE_PATHS", {}), (
-            f"{key} missing from tools.auto._MODULE_PATHS"
-        )
+        assert key in getattr(
+            auto, "_MODULE_PATHS", {}
+        ), f"{key} missing from tools.auto._MODULE_PATHS"
 
 
 # ============================================================================
@@ -1002,10 +1030,10 @@ def test_agent_plan_includes_selection_reasoning():
 
     # P0-1: Check selection reasoning fields exist (may be empty if no tools found)
     assert "intent" in plan, "Plan should include intent field"
-    assert isinstance(plan.get("intent"), (list, type(None)))
+    assert isinstance(plan.get("intent"), list | type(None))
 
     assert "candidates" in plan, "Plan should include candidates field"
-    assert isinstance(plan.get("candidates"), (list, type(None)))
+    assert isinstance(plan.get("candidates"), list | type(None))
 
     # Timestamp may be None if fallback to template planner
     assert "timestamp" in plan, "Plan should include timestamp field"
@@ -1027,14 +1055,14 @@ def test_agent_plan_includes_selection_reasoning():
         assert "resource_fit_score" in candidate
 
         assert "chosen_tool" in plan, "Resolvable plan should include chosen tool"
-        assert plan["chosen_tool"] == candidate["tool_id"], (
-            "Top candidate should be chosen"
-        )
+        assert (
+            plan["chosen_tool"] == candidate["tool_id"]
+        ), "Top candidate should be chosen"
 
         assert "selection_reason" in plan, "Resolvable plan should explain selection"
-        assert len(plan["selection_reason"]) > 10, (
-            "Selection reason should be non-trivial"
-        )
+        assert (
+            len(plan["selection_reason"]) > 10
+        ), "Selection reason should be non-trivial"
 
 
 def test_agent_plan_unresolvable_returns_empty_candidates():
@@ -1096,8 +1124,8 @@ def test_build_plan_routing_diagnostics_splits_preflight_from_planner():
         chosen_tool=None,
         preflight_tool_candidate_diagnostics={
             "candidate_count": 12,
-            "candidate_source_counts": {"neurokg": 12},
-            "candidate_source": "neurokg",
+            "candidate_source_counts": {"br_kg": 12},
+            "candidate_source": "br_kg",
         },
         routing_latency_ms=33.0,
     )
@@ -1106,5 +1134,8 @@ def test_build_plan_routing_diagnostics_splits_preflight_from_planner():
     assert diagnostics["planner_candidate_count"] == 0
     assert diagnostics["candidate_source_counts"] == {}
     assert diagnostics["preflight_candidate_count"] == 12
-    assert diagnostics["preflight_candidate_source_counts"] == {"neurokg": 12}
-    assert diagnostics["routing_terminal_reason"] == "preflight_candidates_not_promoted_to_plan"
+    assert diagnostics["preflight_candidate_source_counts"] == {"br_kg": 12}
+    assert (
+        diagnostics["routing_terminal_reason"]
+        == "preflight_candidates_not_promoted_to_plan"
+    )

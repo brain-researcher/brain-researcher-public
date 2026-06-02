@@ -10,8 +10,6 @@ import {
   PipelineExecutionResponse
 } from '@/types/pipeline'
 import type {
-  NotificationItem,
-  NotificationListResponse,
   UserProfile
 } from '@/types/user'
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase/client'
@@ -45,10 +43,6 @@ const NICLIP_API = process.env.NEXT_PUBLIC_NICLIP_API || ''
 const ORCHESTRATOR_API = serviceEndpoints.orchestratorBase
 const USE_API_PROXY = serviceEndpoints.useProxy
 
-const NOTIFICATIONS_ENDPOINT_STATE_KEY = 'br_notifications_endpoint_state_v1'
-const NOTIFICATIONS_ENDPOINT_STATE_TS_KEY = 'br_notifications_endpoint_state_ts_v1'
-const NOTIFICATIONS_ENDPOINT_STATE_TTL_MS = 1000 * 60 * 60 * 12
-type NotificationsEndpointStatus = 'unknown' | 'supported' | 'unsupported'
 type ChatOptions = {
   copilot?: boolean
 }
@@ -88,60 +82,6 @@ export async function getAccessTokenAnyContext(): Promise<string | null> {
 }
 
 export class BrainResearcherAPI {
-  private notificationsEndpointStatus: NotificationsEndpointStatus = 'unknown'
-  private notificationsUnsupportedWarningShown = false
-
-  constructor() {
-    this.notificationsEndpointStatus = this.readNotificationsEndpointStatus()
-  }
-
-  private readNotificationsEndpointStatus(): NotificationsEndpointStatus {
-    if (typeof window === 'undefined') return 'unknown'
-    try {
-      const value = window.sessionStorage.getItem(NOTIFICATIONS_ENDPOINT_STATE_KEY)
-      if (value === 'supported' || value === 'unsupported') return value
-    } catch {
-      // Ignore storage read failures.
-    }
-    try {
-      const value = window.localStorage.getItem(NOTIFICATIONS_ENDPOINT_STATE_KEY)
-      const tsRaw = window.localStorage.getItem(NOTIFICATIONS_ENDPOINT_STATE_TS_KEY)
-      const ts = Number(tsRaw)
-      const isFresh =
-        Number.isFinite(ts) && Date.now() - ts <= NOTIFICATIONS_ENDPOINT_STATE_TTL_MS
-      if ((value === 'supported' || value === 'unsupported') && isFresh) {
-        return value
-      }
-      if (value || tsRaw) {
-        window.localStorage.removeItem(NOTIFICATIONS_ENDPOINT_STATE_KEY)
-        window.localStorage.removeItem(NOTIFICATIONS_ENDPOINT_STATE_TS_KEY)
-      }
-    } catch {
-      // Ignore storage read failures.
-    }
-    return 'unknown'
-  }
-
-  private persistNotificationsEndpointStatus(state: NotificationsEndpointStatus): void {
-    this.notificationsEndpointStatus = state
-    if (typeof window === 'undefined') return
-    try {
-      if (state === 'unknown') {
-        window.sessionStorage.removeItem(NOTIFICATIONS_ENDPOINT_STATE_KEY)
-        window.localStorage.removeItem(NOTIFICATIONS_ENDPOINT_STATE_KEY)
-        window.localStorage.removeItem(NOTIFICATIONS_ENDPOINT_STATE_TS_KEY)
-      } else {
-        window.sessionStorage.setItem(NOTIFICATIONS_ENDPOINT_STATE_KEY, state)
-        window.localStorage.setItem(NOTIFICATIONS_ENDPOINT_STATE_KEY, state)
-        window.localStorage.setItem(
-          NOTIFICATIONS_ENDPOINT_STATE_TS_KEY,
-          String(Date.now()),
-        )
-      }
-    } catch {
-      // Ignore storage write failures.
-    }
-  }
 
   private async safePostJson(url: string, payload: Record<string, unknown>): Promise<Response> {
     return fetch(url, {
@@ -208,42 +148,6 @@ export class BrainResearcherAPI {
     }
   }
 
-  private markNotificationsEndpointUnsupported(statusCode?: number): void {
-    if (this.notificationsEndpointStatus !== 'unsupported') {
-      this.persistNotificationsEndpointStatus('unsupported')
-    }
-    if (!this.notificationsUnsupportedWarningShown) {
-      const statusSuffix = typeof statusCode === 'number' ? ` (HTTP ${statusCode})` : ''
-      console.warn(
-        `[notifications] Endpoint unavailable${statusSuffix}; disabling notification fetches for this browser session.`,
-      )
-      this.notificationsUnsupportedWarningShown = true
-    }
-  }
-
-  private markNotificationsEndpointSupported(): void {
-    this.notificationsUnsupportedWarningShown = false
-    this.persistNotificationsEndpointStatus('supported')
-  }
-
-  private buildEmptyNotifications(
-    endpointStatus: NotificationsEndpointStatus = this.notificationsEndpointStatus,
-  ): NotificationListResponse {
-    return {
-      notifications: [],
-      unreadCount: 0,
-      totalCount: 0,
-      hasMore: false,
-      cursor: null,
-      endpointSupported: endpointStatus !== 'unsupported',
-      endpointStatus,
-    }
-  }
-
-  getNotificationsEndpointStatus(): NotificationsEndpointStatus {
-    return this.notificationsEndpointStatus
-  }
-
   // Enhanced request helper with automatic auth headers
   private async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
     // Get current token for authorization
@@ -287,91 +191,6 @@ export class BrainResearcherAPI {
       role: null,
       unreadNotifications: 0,
       lastActivity: null
-    }
-  }
-
-  async getUserNotifications(limit: number = 5): Promise<NotificationListResponse> {
-    if (this.notificationsEndpointStatus === 'unsupported') {
-      return this.buildEmptyNotifications('unsupported')
-    }
-
-    try {
-      const response = await this.authenticatedFetch(
-        `${ORCHESTRATOR_API}/api/user/notifications?limit=${encodeURIComponent(limit)}`
-      )
-      if (response.ok) {
-        this.markNotificationsEndpointSupported()
-        const data = await response.json()
-        const notifications: NotificationItem[] = (data.notifications ?? []).map(
-          (notification: any) => ({
-            id: notification.id,
-            type: notification.type,
-            priority: notification.priority ?? 'normal',
-            title: notification.title,
-            message: notification.message,
-            read: Boolean(notification.read),
-            createdAt: notification.created_at ?? notification.createdAt ?? new Date().toISOString(),
-            readAt: notification.read_at ?? notification.readAt ?? null,
-            expiresAt: notification.expires_at ?? notification.expiresAt ?? null,
-            actionUrl: notification.action_url ?? notification.actionUrl ?? null,
-            actionText: notification.action_text ?? notification.actionText ?? null,
-            data: notification.data ?? {}
-          })
-        )
-
-        return {
-          notifications,
-          unreadCount: data.unread_count ?? data.unreadCount ?? 0,
-          totalCount: data.total_count ?? data.totalCount ?? notifications.length,
-          hasMore: data.has_more ?? data.hasMore ?? false,
-          cursor: data.cursor ?? null,
-          endpointSupported: true,
-          endpointStatus: 'supported',
-        }
-      }
-
-      if (
-        response.status === 404 ||
-        response.status === 405 ||
-        response.status === 410 ||
-        response.status === 501
-      ) {
-        this.markNotificationsEndpointUnsupported(response.status)
-        return this.buildEmptyNotifications('unsupported')
-      }
-    } catch (err) {
-      console.warn('Failed to load notifications:', err)
-    }
-
-    return this.buildEmptyNotifications()
-  }
-
-  async markNotificationsRead(notificationIds: string[]): Promise<void> {
-    if (!notificationIds || notificationIds.length === 0) return
-    if (this.notificationsEndpointStatus === 'unsupported') return
-    try {
-      const response = await this.authenticatedFetch(
-        `${ORCHESTRATOR_API}/api/user/notifications/mark-read`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notification_ids: notificationIds })
-        }
-      )
-      if (
-        response.status === 404 ||
-        response.status === 405 ||
-        response.status === 410 ||
-        response.status === 501
-      ) {
-        this.markNotificationsEndpointUnsupported(response.status)
-        return
-      }
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-    } catch (err) {
-      console.warn('Failed to mark notifications read:', err)
     }
   }
 
@@ -478,7 +297,7 @@ export class BrainResearcherAPI {
       depth: String(options?.depth || 2),
       limit: String(options?.limit || 100)
     })
-    
+
     const response = await fetch(resolveKgApiUrl('search_and_expand', params))
     if (!response.ok) throw new Error('Failed to search knowledge graph')
     return response.json()
@@ -496,7 +315,7 @@ export class BrainResearcherAPI {
       name: nodeId,
       depth: String(depth)
     })
-    
+
     const response = await fetch(resolveKgRootUrl('subgraph', params))
     if (!response.ok) throw new Error('Failed to expand node')
     return response.json()
@@ -511,16 +330,16 @@ export class BrainResearcherAPI {
       query,
       limit: String(options?.limit || 50)
     })
-    
+
     if (options?.nodeTypes?.length) {
       searchParams.append('types', options.nodeTypes.join(','))
     }
-    
+
     const response = await fetch(resolveKgApiUrl('search', searchParams), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: options?.signal,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         query,
         types: options?.nodeTypes || [],
         limit: options?.limit || 50
@@ -670,14 +489,14 @@ export class BrainResearcherAPI {
     if (onChunk && response.body) {
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
-      
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        
+
         const chunk = decoder.decode(value)
         const lines = chunk.split('\\n')
-        
+
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
@@ -712,12 +531,12 @@ export class BrainResearcherAPI {
       offset: String(options?.offset || 0),
       ...(options?.search && { search: options.search })
     })
-    
+
     const response = await fetch(resolveKgApiUrl('openneuro/datasets', params))
     if (!response.ok) throw new Error('Failed to fetch datasets')
-    
+
     const data = await response.json()
-    
+
     // Transform to match Dataset type
     return (data.datasets || []).map((ds: any) => ({
       id: ds.id,
@@ -775,7 +594,7 @@ export class BrainResearcherAPI {
       const response = await fetch(`${ORCHESTRATOR_API}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           prompt: `Run ${tool} analysis`,
           parameters,
           pipeline: tool
@@ -787,7 +606,7 @@ export class BrainResearcherAPI {
     } catch (e) {
       console.warn('Orchestrator unavailable, using direct agent API')
     }
-    
+
     const response = await fetch(`${AGENT_API}/api/tools/${tool}/execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -830,7 +649,7 @@ export class BrainResearcherAPI {
       ...(options?.yearFrom && { year_from: String(options.yearFrom) }),
       ...(options?.yearTo && { year_to: String(options.yearTo) })
     })
-    
+
     const response = await fetch(resolveKgApiUrl('literature/search', params))
     if (!response.ok) throw new Error('Failed to search literature')
     return response.json()
@@ -934,11 +753,11 @@ export class BrainResearcherAPI {
   async uploadFile(file: File, onProgress?: (progress: number) => void): Promise<any> {
     const formData = new FormData()
     formData.append('file', file)
-    
+
     const xhr = new XMLHttpRequest()
     // Ensure cookies (if any) are sent along with uploads
     xhr.withCredentials = true
-    
+
     return new Promise((resolve, reject) => {
       xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable && onProgress) {
@@ -946,7 +765,7 @@ export class BrainResearcherAPI {
           onProgress(progress)
         }
       })
-      
+
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
@@ -963,11 +782,11 @@ export class BrainResearcherAPI {
           }
         }
       })
-      
+
       xhr.addEventListener('error', () => {
         reject(new Error('Upload failed'))
       })
-      
+
       xhr.open('POST', `${ORCHESTRATOR_API}/upload`)
 
       // Add auth headers from NextAuth session if available
@@ -988,7 +807,7 @@ export class BrainResearcherAPI {
       }
     })
   }
-  
+
   async deleteFile(fileId: string) {
     const response = await this.authenticatedFetch(`${ORCHESTRATOR_API}/uploads/${fileId}`, {
       method: 'DELETE'
@@ -996,13 +815,13 @@ export class BrainResearcherAPI {
     if (!response.ok) throw new Error('Failed to delete file')
     return response.json()
   }
-  
+
   async getFileInfo(fileId: string) {
     const response = await this.authenticatedFetch(`${ORCHESTRATOR_API}/uploads/info/${fileId}`)
     if (!response.ok) throw new Error('Failed to get file info')
     return response.json()
   }
-  
+
   getFileUrl(fileId: string, filename: string) {
     return `${ORCHESTRATOR_API}/uploads/${fileId}/${filename}`
   }

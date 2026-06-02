@@ -14,7 +14,7 @@ from typing import Any
 
 import numpy as np
 
-from brain_researcher.services.neurokg.etl.loaders.gabriel_measurements import (
+from brain_researcher.services.br_kg.etl.loaders.gabriel_measurements import (
     DEFAULT_REQUIRED_PROVENANCE_FIELDS,
     compute_gabriel_variables,
 )
@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 CALIBRATION_PATH = ROOT / "docs/planning/claim_hypotheses_calibration_v3_lite.jsonl"
 HELDOUT_PATH = ROOT / "docs/planning/claim_hypotheses_heldout_v3_lite.jsonl"
-REVIEW_QUEUE_PATH = ROOT / "data/neurokg/raw/gabriel/review_queue.jsonl"
+REVIEW_QUEUE_PATH = ROOT / "data/br-kg/raw/gabriel/review_queue.jsonl"
 
 PACK_JSONL_PATH = ROOT / "docs/planning/pre_gate_b_claim_adjudication_pack_v1.jsonl"
 PACK_MD_PATH = ROOT / "docs/planning/pre_gate_b_claim_adjudication_pack_v1.md"

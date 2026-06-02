@@ -2,7 +2,7 @@ from brain_researcher.services.agent.tool_retriever import FileSearchHit, ToolRe
 
 
 def test_tool_retriever_uses_query_service(monkeypatch):
-    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "neurokg")
+    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "br_kg")
 
     seen_kwargs = {}
 
@@ -22,23 +22,25 @@ def test_tool_retriever_uses_query_service(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.search_tools_structured",
+        "brain_researcher.services.br_kg.query_service.search_tools_structured",
         _fake_search_tools_structured,
     )
 
-    retriever = ToolRetriever(neo4j_uri="bolt://localhost:7687")  # driver won't be used in this path
+    retriever = ToolRetriever(
+        neo4j_uri="bolt://localhost:7687"
+    )  # driver won't be used in this path
     results = retriever.retrieve_tools("glm analysis", top_k=3)
 
     assert results
     first = results[0]
     assert first.id == "kg_tool.run"
-    assert first.source == "neurokg"
+    assert first.source == "br_kg"
     assert seen_kwargs.get("exposed_only") is True
     retriever.close()
 
 
 def test_tool_retriever_allows_explicit_unexposed_tool_reference(monkeypatch):
-    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "neurokg")
+    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "br_kg")
 
     def _fake_search_tools_structured(**kwargs):
         # Explicit tool reference should bypass exposure gating.
@@ -56,18 +58,20 @@ def test_tool_retriever_allows_explicit_unexposed_tool_reference(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.search_tools_structured",
+        "brain_researcher.services.br_kg.query_service.search_tools_structured",
         _fake_search_tools_structured,
     )
 
-    retriever = ToolRetriever(neo4j_uri="bolt://localhost:7687")  # driver won't be used in this path
+    retriever = ToolRetriever(
+        neo4j_uri="bolt://localhost:7687"
+    )  # driver won't be used in this path
     results = retriever.retrieve_tools("fsl.6.0.4.film_gls.run", top_k=3)
     assert results and results[0].id == "fsl.6.0.4.film_gls.run"
     retriever.close()
 
 
 def test_tool_retriever_preflight_gfs_enriches_query_service_path(monkeypatch):
-    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "neurokg")
+    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "br_kg")
     seen_queries = []
 
     def _fake_search_tools_structured(**kwargs):
@@ -86,7 +90,7 @@ def test_tool_retriever_preflight_gfs_enriches_query_service_path(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.search_tools_structured",
+        "brain_researcher.services.br_kg.query_service.search_tools_structured",
         _fake_search_tools_structured,
     )
 
@@ -109,7 +113,7 @@ def test_tool_retriever_preflight_gfs_enriches_query_service_path(monkeypatch):
 
 
 def test_tool_retriever_weak_fallback_reruns_query_service_with_gfs(monkeypatch):
-    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "neurokg")
+    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "br_kg")
     seen_queries = []
 
     def _fake_search_tools_structured(**kwargs):
@@ -128,7 +132,7 @@ def test_tool_retriever_weak_fallback_reruns_query_service_with_gfs(monkeypatch)
         }
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.search_tools_structured",
+        "brain_researcher.services.br_kg.query_service.search_tools_structured",
         _fake_search_tools_structured,
     )
 

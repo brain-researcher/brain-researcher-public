@@ -27,7 +27,7 @@ def test_search_pipelines_uses_env_connection_when_not_overridden(monkeypatch):
 
     driver = _mock_driver_with_records([])
     with patch(
-        "brain_researcher.services.agent.pipeline_catalog.GraphDatabase.driver",
+        "brain_researcher.services.shared.toolsagent_pipeline_catalog.GraphDatabase.driver",
         return_value=driver,
     ) as mock_driver:
         search_pipelines(task="test query", limit=1)
@@ -44,7 +44,7 @@ def test_search_pipelines_explicit_connection_overrides_env(monkeypatch):
 
     driver = _mock_driver_with_records([])
     with patch(
-        "brain_researcher.services.agent.pipeline_catalog.GraphDatabase.driver",
+        "brain_researcher.services.shared.toolsagent_pipeline_catalog.GraphDatabase.driver",
         return_value=driver,
     ) as mock_driver:
         search_pipelines(
@@ -67,7 +67,7 @@ def test_search_pipelines_localhost_fallback_when_env_missing(monkeypatch):
 
     driver = _mock_driver_with_records([])
     with patch(
-        "brain_researcher.services.agent.pipeline_catalog.GraphDatabase.driver",
+        "brain_researcher.services.shared.toolsagent_pipeline_catalog.GraphDatabase.driver",
         return_value=driver,
     ) as mock_driver:
         search_pipelines(task="test query", limit=1)

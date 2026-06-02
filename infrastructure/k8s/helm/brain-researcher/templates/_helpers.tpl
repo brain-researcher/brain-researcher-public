@@ -93,13 +93,14 @@ Create the name of the service account to use for agent
 {{- end }}
 
 {{/*
-Create the name of the service account to use for neurokg
+Create the name of the service account to use for br-kg
 */}}
-{{- define "brain-researcher.neurokg.serviceAccountName" -}}
-{{- if .Values.neurokg.serviceAccount.create }}
-{{- default (printf "%s-neurokg" (include "brain-researcher.fullname" .)) .Values.neurokg.serviceAccount.name }}
+{{- define "brain-researcher.br-kg.serviceAccountName" -}}
+{{- $brKg := index .Values "br-kg" }}
+{{- if $brKg.serviceAccount.create }}
+{{- default (printf "%s-br-kg" (include "brain-researcher.fullname" .)) $brKg.serviceAccount.name }}
 {{- else }}
-{{- default "default" .Values.neurokg.serviceAccount.name }}
+{{- default "default" $brKg.serviceAccount.name }}
 {{- end }}
 {{- end }}
 
@@ -140,8 +141,8 @@ Generate fully qualified names for each service
 {{- printf "%s-agent" (include "brain-researcher.fullname" .) }}
 {{- end }}
 
-{{- define "brain-researcher.neurokg.fullname" -}}
-{{- printf "%s-neurokg" (include "brain-researcher.fullname" .) }}
+{{- define "brain-researcher.br-kg.fullname" -}}
+{{- printf "%s-br-kg" (include "brain-researcher.fullname" .) }}
 {{- end }}
 
 {{- define "brain-researcher.niclip.fullname" -}}
@@ -183,8 +184,8 @@ Generate service names
 {{- printf "%s-service" (include "brain-researcher.agent.fullname" .) }}
 {{- end }}
 
-{{- define "brain-researcher.neurokg.serviceName" -}}
-{{- printf "%s-service" (include "brain-researcher.neurokg.fullname" .) }}
+{{- define "brain-researcher.br-kg.serviceName" -}}
+{{- printf "%s-service" (include "brain-researcher.br-kg.fullname" .) }}
 {{- end }}
 
 {{- define "brain-researcher.niclip.serviceName" -}}
@@ -241,8 +242,8 @@ Generate ConfigMap names
 {{- printf "%s-config" (include "brain-researcher.agent.fullname" .) }}
 {{- end }}
 
-{{- define "brain-researcher.neurokg.configMapName" -}}
-{{- printf "%s-config" (include "brain-researcher.neurokg.fullname" .) }}
+{{- define "brain-researcher.br-kg.configMapName" -}}
+{{- printf "%s-config" (include "brain-researcher.br-kg.fullname" .) }}
 {{- end }}
 
 {{- define "brain-researcher.niclip.configMapName" -}}
@@ -287,8 +288,8 @@ Generate Secret names
 {{/*
 Generate PVC names
 */}}
-{{- define "brain-researcher.neurokg.vectorCachePvcName" -}}
-{{- printf "%s-vector-cache" (include "brain-researcher.neurokg.fullname" .) }}
+{{- define "brain-researcher.br-kg.vectorCachePvcName" -}}
+{{- printf "%s-vector-cache" (include "brain-researcher.br-kg.fullname" .) }}
 {{- end }}
 
 {{- define "brain-researcher.agent.sessionPvcName" -}}

@@ -1,0 +1,156 @@
+# Legacy fallback whitelist of tools exposed to agent/router.
+# Primary source-of-truth now lives in:
+#   configs/grandmaster/toolset_vfinal.yaml -> exposure.exposed
+
+exposed:
+  # Knowledge Graph & Search
+  - gemini.fs
+  - gemini.net
+  - br_kg.client
+  - br_kg.search_nodes
+  - kg_multihop_qa
+  - find_related_concepts
+  - coordinate_to_concept
+  - graph_query
+  - evidence_pack
+  - task_to_concept_mapping
+  - concept_literature_search
+  - literature_mining
+  - kg_hypothesis_candidate_cards
+  - kg_hypothesis_candidate_cards_start
+  - kg_hypothesis_candidate_cards_get
+  - hypothesis_hot_load_research
+  - hypothesis_run_start
+  - hypothesis_run_get
+  # MCP utilities
+  - mcp.server_info
+  - mcp.tool_search
+  - mcp.system_self_test
+  - mcp.slurm_guide
+  - mcp.slurm_submit
+  # Deprecated aliases (kept for one release; prefer mcp.slurm_*)
+  - mcp.sherlock_guide
+  - mcp.sherlock_slurm
+
+  # Coding agent (discoverable but runtime-gated by BR_ENABLE_CODE_AGENT_TOOL)
+  - code_agent
+
+  # Analysis Clients
+  - meta_analysis.client
+  - datasets.client
+  - datasets.list_resources
+  - datasets.describe_resources
+  - openneuro.client
+  - openneuro.search
+  - fmri.connectivity_client.light
+  - viz.client
+  - advanced_analysis.client
+  - tribe_predict
+  # Planner python tools (catalog IDs)
+  - data_harmonization
+  - brain_simulation
+  - realtime_fmri
+  - realtime_twophoton
+  - workflow_realtime_twophoton_closed_loop
+  - workflow_realtime_twophoton_file_replay
+  - lesion_detection
+  - coordinate_meta_analysis
+  - neurodesk_command
+  - openneuro_download
+  - prefetch.openneuro_cache
+  - bids.manifest
+  - validate_bids
+  - derivatives_sanity_checker
+  - cross_validation
+  - ml_cross_validation
+  - validation_metrics
+  - multiple_comparison_correction
+  - fmriprep_preprocessing   # exposed for discovery/routing; default chat surface still controlled separately
+  - motion_quantification    # motion/outlier quantification for QC routing
+  - mriqc_group_report       # MRIQC-style QC summaries
+  - freesurfer_qc            # structural QC surface for discovery
+
+  # NiWrap-backed imaging tools
+  # Note: IDs must match NiWrap descriptors (without .run suffix)
+
+  # FSL Suite
+  - fsl_bet               # Skull stripping / brain extraction
+  - fsl_flirt             # Linear registration (6/12 DOF)
+  - fsl_fnirt             # Non-linear registration
+  - fsl_feat              # fMRI first-level analysis
+  - fsl_melodic           # ICA-based analysis
+  - fsl_melodic_ica       # Group/single-subject ICA via MELODIC-style workflows
+  - fsl_dual_regression   # Post-group-ICA dual regression analysis
+  - fsl_bedpostx          # Diffusion fiber estimation
+  - fsl_fix               # ICA-based denoising (FIX)
+  - fsl_palm              # Permutation Analysis of Linear Models
+  - fsl_fast              # FAST tissue segmentation with bias correction
+
+  # AFNI Suite
+  - afni_3dClustSim       # Multiple comparison correction
+  - afni_3dDeconvolve     # GLM / deconvolution analysis
+
+  # ANTs Suite
+  - ants_registration     # ANTs registration (SyN)
+
+  # FSL fieldmap / distortion-correction tools
+  - fsl_prepare_fieldmap
+  - fsl_topup
+  - fsl_epi_reg
+
+  # FreeSurfer (Python-based, not NiWrap)
+  - freesurfer_recon_all  # Cortical reconstruction
+
+  # Diffusion / MRtrix discovery surface
+  - mrtrix.3.0.4.dwi2fod.run
+  - diffusion_tractography
+
+  # Electrophysiology tools
+  - mne_ica
+  - mne_timefreq
+  - timefreq_tfr
+  - mne_source_localization
+  - localize_source
+  - mne_connectivity        # M/EEG connectivity (was omitted; siblings above are exposed)
+  - connectivity_measures   # M/EEG sensor-space connectivity metrics
+
+  # Nilearn Analysis Tools (Python-based)
+  - extract_timeseries     # ROI time series extraction
+  - connectivity_matrix    # Functional connectivity computation
+  - seed_based_fc          # Seed-based functional connectivity
+  - glm_first_level        # First-level GLM analysis
+  - glm_second_level       # Group-level GLM analysis
+  - fetch_atlas            # Atlas fetching utility
+  - viz_stat_maps          # Statistical map visualization (nilearn)
+  - surface_projection     # Volume to surface projection (nilearn)
+  - encoding_models        # fMRI encoding model fitting
+  - mvpa                   # multivariate pattern analysis
+  - searchlight_analysis   # searchlight decoding analysis
+  - spm12_vbm              # structural VBM / CAT12-style morphometry analysis
+  - temporal_decoding      # time-resolved decoding analysis
+
+  # Multiverse robustness reporting
+  - fitlins.multiverse_robustness_report
+
+  # Pipeline search helper
+  - pipeline.search
+  - run_fitlins_recipe
+
+  # Grandmaster workflow IDs are controlled by
+  # configs/grandmaster/toolset_vfinal.yaml -> orchestration.workflows
+  - identity
+  - compute_brain_age
+  - individual_parcellation
+  - visual_feature_decoder
+  - query_neuromaps
+  - list_neuroimage_assets
+  - list_dataset_assets
+  - resolve_dataset_asset
+  - resolve_neuroimage_asset
+  - resolve_reference_map
+  - resolve_transform
+  - stack_surface_hemis
+  - visualize_interactive
+
+# Utility helper (developer use)
+  - execute_tool

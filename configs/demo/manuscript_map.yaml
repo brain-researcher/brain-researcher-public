@@ -1,0 +1,31 @@
+version: 2
+updated_at: "2026-05-26"
+
+figures:
+  Reports:
+    title: "Curated PDF Report Demos"
+    demos:
+      - slug: "case1-neuromark-schizophrenia-multiverse"
+        panels: []
+        primary_artifacts:
+          - "docs/prompts/brain_researcher_hybrid/reports/case1_leading_case_report.pdf"
+      - slug: "case2-cocaine-network-segregation"
+        panels: []
+        primary_artifacts:
+          - "docs/prompts/brain_researcher_hybrid/reports/case2_report.pdf"
+      - slug: "case3-connectome-hubness-decoding"
+        panels: []
+        primary_artifacts:
+          - "docs/prompts/brain_researcher_hybrid/reports/case3_report.pdf"
+      - slug: "case4-ingroup-outgroup-cultural-boundaries"
+        panels: []
+        primary_artifacts:
+          - "docs/prompts/brain_researcher_hybrid/reports/case4_report.pdf"
+      - slug: "bounded-self-evolving-discovery"
+        panels: []
+        primary_artifacts:
+          - "docs/prompts/brain_researcher_hybrid/reports/bounded_self_evolving_research_discovery_case_report.pdf"
+      - slug: "bounded-self-evolving-predictive"
+        panels: []
+        primary_artifacts:
+          - "docs/prompts/brain_researcher_hybrid/reports/bounded_self_evolving_research_predictive_case_report.pdf"

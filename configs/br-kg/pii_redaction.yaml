@@ -1,0 +1,284 @@
+# PII Redaction and Export Security Configuration
+# Defines export profiles and field filtering for different audiences
+# Referenced by: invariants.md (PII-01, PII-02)
+#
+# Schema definitions (node/edge types, properties, ID formats) are now in:
+# configs/br-kg/config.yml (schema section)
+
+# Default export profile
+default_profile: "public"
+
+# Export profiles
+profiles:
+  # Public profile - Maximum privacy, minimum data
+  public:
+    description: "Public export with maximum privacy protection"
+    inherit: null  # Base profile
+
+    nodes:
+      Publication:
+        keep: ["id", "title", "year", "journal", "doi"]
+        drop: ["abstract", "authors", "keywords", "affiliations"]
+        transforms: {}
+
+      Task:
+        keep: ["id", "name", "synonyms"]
+        drop: []
+        transforms: {}
+
+      Concept:
+        keep: ["id", "label", "synonyms"]
+        drop: []
+        transforms: {}
+
+      Region:
+        keep: ["id", "atlas", "name"]
+        drop: ["aliases", "centroid", "volume"]
+        transforms: {}
+
+      Coordinate:
+        keep: ["id", "space", "x", "y", "z"]
+        drop: ["publication_id", "study_id", "subject_id"]
+        transforms:
+          round_coordinates_mm: 1  # Round to 1mm (PII-02)
+
+      Dataset:
+        keep: ["id", "name", "source"]
+        drop: ["s3_path", "local_path", "access_credentials"]
+        transforms: {}
+
+      Subject:
+        keep: ["id"]  # Only hashed ID
+        drop: ["age", "sex", "site", "participant_label", "handedness", "group"]
+        transforms:
+          hash_id: true  # Hash subject IDs
+
+      SubjectGroup:
+        keep: ["id", "n"]  # Only group size
+        drop: ["site", "demographics", "inclusion_criteria"]
+        transforms: {}
+
+      StatisticalMap:
+        keep: ["id", "url", "kind", "format"]
+        drop: ["sha256", "local_path", "collection_id"]
+        transforms: {}
+
+      Contrast:
+        keep: ["id", "name"]
+        drop: ["description", "conditions", "dataset_id"]
+        transforms: {}
+
+    edges:
+      ACTIVATES:
+        keep: ["strength", "confidence"]
+        drop: ["evidence_components", "meta_analytic_details"]
+
+      MEASURES:
+        keep: ["confidence"]
+        drop: ["evidence_components"]
+
+      HAS_COORDINATE:
+        keep: []
+        drop: []
+
+      IN_REGION:
+        keep: ["method"]
+        drop: ["overlap_fraction", "distance_mm"]
+
+      SAME_AS:
+        keep: ["confidence"]
+        drop: ["evidence_components", "merge_history"]
+
+      MAPS_TO:
+        keep: ["confidence"]
+        drop: ["evidence_components"]
+
+  # Collaborator profile - More data for trusted collaborators
+  collaborator:
+    description: "Export for trusted research collaborators"
+    inherit: "public"  # Inherit public restrictions, then add more
+
+    nodes:
+      Publication:
+        keep: ["id", "title", "year", "journal", "doi", "abstract", "keywords"]
+        drop: ["authors", "affiliations"]  # Still drop author details
+
+      Dataset:
+        keep: ["id", "name", "source", "license", "description"]
+        drop: ["s3_path", "local_path"]  # Still drop paths
+
+      Subject:
+        keep: ["id", "group"]  # Can include group membership
+        drop: ["age", "sex", "site", "participant_label"]  # Still drop PII
+
+      StatisticalMap:
+        keep: ["id", "url", "kind", "format", "sha256"]
+        drop: ["local_path"]  # Still drop local paths
+
+  # Internal profile - Full data access
+  internal:
+    description: "Internal use only - full data access"
+    inherit: null
+
+    nodes:
+      all:  # All node types
+        keep: ["*"]  # Keep all fields
+        drop: []
+        transforms: {}
+
+    edges:
+      all:  # All edge types
+        keep: ["*"]  # Keep all properties
+        drop: []
+
+# Transform functions
+transforms:
+  # ID hashing (for Subject nodes)
+  hash_id:
+    method: "sha256"
+    salt_env: "BR_KG_EXPORT_SALT"  # Environment variable for salt
+    notes: "Deterministic hashing with salt for Subject IDs"
+
+  # Coordinate rounding (PII-02)
+  round_coordinates_mm:
+    precision: 1  # Decimal places (1 = round to 1mm)
+    method: "round"  # or "floor", "ceiling"
+    notes: "Rounds coordinates to reduce re-identification risk"
+
+  # Email masking
+  mask_email:
+    pattern: "(^[^@])[^@]*(@.*$)"
+    replace: "$1***$2"
+    example: "john.doe@example.com becomes j***@example.com"
+
+  # Text truncation
+  truncate_text:
+    max_len: 1000
+    suffix: "..."
+    notes: "Truncate long text fields to prevent information leakage"
+
+  # Date generalization
+  generalize_date:
+    method: "year_only"  # or "year_month", "quarter"
+    notes: "Generalize dates to reduce temporal re-identification"
+
+# Field-level security rules
+field_security:
+  # High-risk fields (always redacted in public)
+  high_risk:
+    - "participant_label"
+    - "subject_id"
+    - "age"
+    - "sex"
+    - "site"
+    - "affiliation"
+    - "email"
+    - "phone"
+    - "address"
+    - "local_path"
+    - "s3_path"
+    - "access_credentials"
+
+  # Medium-risk fields (redacted in public, allowed in collaborator)
+  medium_risk:
+    - "authors"
+    - "abstract"
+    - "demographics"
+    - "inclusion_criteria"
+    - "exclusion_criteria"
+
+  # Low-risk fields (generally safe)
+  low_risk:
+    - "id"
+    - "name"
+    - "label"
+    - "title"
+    - "year"
+    - "journal"
+    - "doi"
+
+# Coordinate-specific rules (PII-02)
+coordinate_security:
+  # Public export rounding
+  public_rounding_mm: 1  # Round to 1mm
+
+  # Internal precision
+  internal_precision_mm: 0.1  # Keep 0.1mm precision internally
+
+  # Coordinate aggregation
+  aggregation:
+    enabled: false  # Not currently used
+    method: "k_anonymity"
+    k: 5  # Minimum k for k-anonymity
+    notes: "Future: Aggregate coordinates to prevent re-identification"
+
+# Subject data rules (PII-01)
+subject_security:
+  # Always hash subject IDs in public exports
+  hash_subject_ids: true
+
+  # Drop all demographic fields
+  drop_demographics: true
+
+  # Drop all identifying information
+  drop_identifiers: true
+
+  # Allowed fields in public export
+  public_allowed_fields:
+    - "id"  # Hashed only
+    - "group"  # Group membership only (no individual data)
+
+# Validation rules
+validation:
+  # Pre-export validation
+  pre_export:
+    - "Check profile exists"
+    - "Validate field whitelists/blacklists"
+    - "Check transform functions available"
+    - "Verify no high-risk fields in public export"
+
+  # Post-export validation
+  post_export:
+    - "Sample check for PII leakage"
+    - "Verify coordinate rounding applied"
+    - "Verify subject ID hashing applied"
+    - "Check no local paths exposed"
+
+# Error handling
+error_handling:
+  # Missing transform function
+  missing_transform:
+    action: "fail"  # Fail export if transform not available
+    log_to: "logs/export_errors.ndjson"
+
+  # High-risk field detected
+  high_risk_field_detected:
+    action: "fail"  # Fail export if high-risk field in public profile
+    log_to: "logs/security_violations.ndjson"
+
+# Audit logging
+audit:
+  # Log all exports
+  log_exports: true
+  log_file: "logs/export_audit.log"
+
+  # Log fields
+  log_fields:
+    - "profile"
+    - "timestamp"
+    - "user"
+    - "node_count"
+    - "edge_count"
+    - "transforms_applied"
+
+  # Retention
+  retention_days: 365
+
+# Notes
+notes:
+  - "Public profile enforces maximum privacy (PII-01, PII-02)"
+  - "Coordinates rounded to 1mm in public exports (PII-02)"
+  - "Subject IDs always hashed in public exports (PII-01)"
+  - "High-risk fields never exported in public profile"
+  - "All exports logged for audit purposes"
+  - "Export profiles are enforced at API level"

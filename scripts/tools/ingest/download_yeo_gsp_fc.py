@@ -69,7 +69,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("data/neurokg/raw/nilearn_atlases"),
+        default=Path("data/br-kg/raw/nilearn_atlases"),
         help="Destination directory for extracted fc_seed_*.nii.gz files",
     )
     parser.add_argument(

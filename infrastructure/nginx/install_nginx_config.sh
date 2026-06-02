@@ -11,7 +11,7 @@ echo "===================================="
 echo ""
 
 # Check if running with sudo
-if [ "$EUID" -ne 0 ]; then 
+if [ "$EUID" -ne 0 ]; then
     echo "❌ Please run this script with sudo:"
     echo "   sudo ./install_nginx_config.sh"
     exit 1
@@ -26,7 +26,7 @@ fi
 
 # Copy the configuration file
 echo "📝 Installing Brain Researcher nginx configuration..."
-cp ${BR_REPO_ROOT}/infrastructure/nginx/brain-researcher.conf /etc/nginx/sites-available/brain-researcher
+cp /home/zijiaochen/projects/brain_researcher/infrastructure/nginx/brain-researcher.conf /etc/nginx/sites-available/brain-researcher
 
 # Enable the site
 echo "🔗 Enabling Brain Researcher site..."
@@ -44,15 +44,15 @@ nginx -t
 
 if [ $? -eq 0 ]; then
     echo "✅ Configuration test passed!"
-    
+
     # Reload nginx
     echo "🔄 Reloading nginx..."
     systemctl reload nginx
-    
+
     # Check nginx status
     echo "📊 Checking nginx status..."
     systemctl status nginx --no-pager | head -10
-    
+
     echo ""
     echo "===================================="
     echo "✅ Nginx Configuration Complete!"
@@ -66,7 +66,7 @@ if [ $? -eq 0 ]; then
     echo "  🤖 https://agent.brain-researcher.com - Agent Service"
     echo ""
     echo "Make sure your services are running:"
-    echo "  cd ${BR_REPO_ROOT}"
+    echo "  cd /home/zijiaochen/projects/brain_researcher"
     echo "  ./start_services.sh"
     echo ""
 else

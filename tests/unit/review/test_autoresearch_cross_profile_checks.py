@@ -15,7 +15,7 @@ from brain_researcher.services.review.autoresearch_scientific_review import (
 
 def _bundle(review_context: dict | None = None) -> AutoresearchReviewBundle:
     return AutoresearchReviewBundle(
-        task_id="default",
+        task_id="liu_component_v1",
         autoresearch_dir="/tmp/x",
         fingerprint="abc",
         ledger_row_count=1,

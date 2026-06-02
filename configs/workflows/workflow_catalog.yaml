@@ -2394,14 +2394,14 @@ workflows:
           tool: map_volume_to_surface
           params:
             volume: "${inputs.volume}"
-            surface: "data/neurokg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-L_midthickness.surf.gii"
+            surface: "data/br-kg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-L_midthickness.surf.gii"
             hemi: "left"
             output_file: "${inputs.output_dir}/surface_L.func.gii"
         - id: project_right
           tool: map_volume_to_surface
           params:
             volume: "${inputs.volume}"
-            surface: "data/neurokg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-R_midthickness.surf.gii"
+            surface: "data/br-kg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-R_midthickness.surf.gii"
             hemi: "right"
             output_file: "${inputs.output_dir}/surface_R.func.gii"
         - id: surface_bilateral
@@ -2414,13 +2414,13 @@ workflows:
           tool: parcellate_cifti
           params:
             cifti_file: "${steps.project_left.data.outputs.surfaces.left}"
-            atlas: "data/neurokg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-L_desc-nomedialwall_dparc.label.gii"
+            atlas: "data/br-kg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-L_desc-nomedialwall_dparc.label.gii"
             output_file: "${inputs.output_dir}/parcellation_L.func.gii"
         - id: parcellate_right
           tool: parcellate_cifti
           params:
             cifti_file: "${steps.project_right.data.outputs.surfaces.right}"
-            atlas: "data/neurokg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-R_desc-nomedialwall_dparc.label.gii"
+            atlas: "data/br-kg/raw/neuromaps/atlases/fsLR/tpl-fsLR_den-32k_hemi-R_desc-nomedialwall_dparc.label.gii"
             output_file: "${inputs.output_dir}/parcellation_R.func.gii"
         - id: parcellation_bilateral
           tool: stack_surface_hemis
@@ -3181,7 +3181,7 @@ workflows:
     runbook: docs/runbooks/workflow_behavior_to_fmri_retrieval.md
     example_dataset:
       dataset_id: psych101
-      source: neurokg
+      source: br-kg
       smoke_test: tests/integration/realdata/test_workflow_behavior_to_fmri_retrieval_smoke.py
     description: >
       Behavior fMRI retrieval workflow: retrieve task-fMRI evidence for a
@@ -3552,7 +3552,7 @@ workflows:
     primary_target: python
     recipe_family: hypothesis_candidate_cards
     origin: novelty_agent_path
-    impl: "workflow: neurokg.find_structural_leverage -> neurokg.sample_ood_hypothesis -> neurokg.verify_sampled_hypotheses -> neurokg.detect_contradiction_motifs -> neurokg.detect_topology_shifts -> neurokg.synthesize_hypothesis_candidate_cards"
+    impl: "workflow: br_kg.find_structural_leverage -> br_kg.sample_ood_hypothesis -> br_kg.verify_sampled_hypotheses -> br_kg.detect_contradiction_motifs -> br_kg.detect_topology_shifts -> br_kg.synthesize_hypothesis_candidate_cards"
     params:
       schema:
         type: object
@@ -3650,9 +3650,11 @@ workflows:
         controller_mode: legacy
     runtime:
       kind: declarative_workflow
+      # Runtime registry IDs use the Python-safe br_kg prefix; br-kg remains the
+      # public service/catalog label outside executable workflow step lookup.
       steps:
         - id: leverage
-          tool: neurokg.find_structural_leverage
+          tool: br_kg.find_structural_leverage
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${inputs.seed_kg_ids}"
@@ -3660,7 +3662,7 @@ workflows:
             limit: "${inputs.top_k}"
             taste_mode: "${inputs.taste_mode}"
         - id: principle_state_init
-          tool: neurokg.principle_state_init
+          tool: br_kg.principle_state_init
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
@@ -3669,7 +3671,7 @@ workflows:
             controller_mode: "${inputs.controller_mode:-legacy}"
             leverage_items: "${steps.leverage.data.result.items}"
         - id: ood_sampling
-          tool: neurokg.sample_ood_hypothesis
+          tool: br_kg.sample_ood_hypothesis
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
@@ -3681,7 +3683,7 @@ workflows:
             leverage_context: "${steps.leverage.data.result}"
             principle_state: "${steps.principle_state_init.data.result}"
         - id: verify_sampled_hypotheses
-          tool: neurokg.verify_sampled_hypotheses
+          tool: br_kg.verify_sampled_hypotheses
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
@@ -3693,14 +3695,14 @@ workflows:
             external_literature_recency_days: "${inputs.external_literature_recency_days:-365}"
             external_literature_exclude_domains: "${inputs.external_literature_exclude_domains:-[]}"
         - id: contradiction_scan
-          tool: neurokg.detect_contradiction_motifs
+          tool: br_kg.detect_contradiction_motifs
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
             evidence_items: "${steps.verify_sampled_hypotheses.data.result.evidence_items:-[]}"
             max_evidence: "${inputs.top_k}"
         - id: topology_shift_scan
-          tool: neurokg.detect_topology_shifts
+          tool: br_kg.detect_topology_shifts
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
@@ -3708,7 +3710,7 @@ workflows:
             limit: "${inputs.top_k}"
             taste_mode: "${inputs.taste_mode}"
         - id: contradiction_frontiers
-          tool: neurokg.find_contradiction_frontiers
+          tool: br_kg.find_contradiction_frontiers
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
@@ -3716,21 +3718,21 @@ workflows:
             limit: "${inputs.top_k}"
             max_evidence: "${inputs.top_k}"
         - id: assumption_cracks
-          tool: neurokg.mine_assumption_cracks
+          tool: br_kg.mine_assumption_cracks
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.contradiction_frontiers.data.result.seed_kg_ids}"
             contradiction_frontiers: "${steps.contradiction_frontiers.data.result}"
             limit: "${inputs.top_k}"
         - id: analogy_transfers
-          tool: neurokg.find_analogy_transfers
+          tool: br_kg.find_analogy_transfers
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.contradiction_frontiers.data.result.seed_kg_ids}"
             relation_types: "${inputs.relation_types}"
             limit: "${inputs.top_k}"
         - id: principle_state_update
-          tool: neurokg.principle_state_update
+          tool: br_kg.principle_state_update
           params:
             query: "${inputs.query}"
             seed_kg_ids: "${steps.leverage.data.result.seed_kg_ids}"
@@ -3742,7 +3744,7 @@ workflows:
             contradiction_result: "${steps.contradiction_scan.data.result}"
             topology_result: "${steps.topology_shift_scan.data.result}"
         - id: candidate_card_rewrite
-          tool: neurokg.synthesize_hypothesis_candidate_cards
+          tool: br_kg.synthesize_hypothesis_candidate_cards
           params:
             query: "${inputs.query}"
             frontier_mode: "${inputs.frontier_mode:-\"off\"}"

@@ -1,0 +1,173 @@
+# String Normalization Configuration
+# Deterministic text normalization pipeline applied before entity resolution/matching
+# Used by: UnifiedNodeMatcher, CrossSourceLinker, all text-based matching
+#
+# Schema definitions (node/edge types, properties, ID formats) are now in:
+# configs/br-kg/config.yml (schema section)
+
+# Normalization pipeline (applied in order)
+pipeline:
+  # Unicode normalization
+  unicode: "NFC"  # NFC for stability; consider NFKC if width/compatibility issues dominate
+
+  # Case handling
+  case_fold: true  # lower-case everything unless field override says otherwise
+
+  # Whitespace handling
+  trim_whitespace: true
+  collapse_internal_space: true  # "multiple   spaces" -> "multiple spaces"
+  normalize_line_breaks: true    # \r\n, \r -> \n
+
+  # Character folding
+  ascii_folding: true  # é→e, α→a (best-effort; do not fold Greek letters in math fields)
+
+  # Punctuation canonicalization
+  punctuation_map:
+    "–": "-"  # en-dash
+    "—": "-"  # em-dash
+    "‐": "-"  # non-breaking hyphen
+    "'": "'"  # right single quotation mark
+    "'": "'"  # apostrophe
+    '"': '"'  # left double quotation mark
+    '"': '"'  # right double quotation mark
+    "…": "..."  # ellipsis
+    "•": "*"   # bullet
+    "→": "->"  # right arrow
+    "←": "<-"  # left arrow
+
+  # Content removal
+  remove_brackets_content: false  # Keep content in brackets for now
+  remove_parentheses_content: false  # Keep content in parentheses
+
+  # Special character handling
+  preserve_greek_letters: true  # Don't fold Greek in scientific terms
+  preserve_numbers: true
+  preserve_math_symbols: false  # Fold math symbols to ASCII equivalents
+
+# Stopwords (removed after normalization, before matching)
+stopwords:
+  generic:
+    - "task"
+    - "test"
+    - "study"
+    - "experiment"
+    - "paradigm"
+    - "fMRI"
+    - "fMRI task"
+    - "neuroimaging"
+
+  # Task-specific stopwords
+  task_names:
+    - "task"
+    - "test"
+    - "paradigm"
+    - "experiment"
+
+  # Publication-specific stopwords
+  publication_titles:
+    - "a"
+    - "an"
+    - "the"
+    - "of"
+    - "in"
+    - "on"
+    - "at"
+    - "for"
+    - "with"
+    - "by"
+
+# Field-specific overrides
+overrides:
+  # Title fields
+  title:
+    stopwords: []  # Don't remove stopwords from titles
+    ascii_folding: true
+    case_fold: true
+    preserve_numbers: true
+
+  # Author names
+  author:
+    case_fold: false  # Keep original case for display
+    ascii_folding: true  # But normalize accents
+    preserve_numbers: false
+    notes: "Store original in 'author' field, normalized in 'author_normalized' shadow field"
+
+  # ROI/Region names
+  roi_name:
+    ascii_folding: false  # Keep Greek letters; handled by roi_synonyms
+    case_fold: true
+    preserve_greek_letters: true
+    notes: "Greek letters preserved for anatomical accuracy (e.g., α, β, γ)"
+
+  # DOI fields
+  doi:
+    punctuation_map: {}  # No punctuation mapping for DOIs
+    ascii_folding: false
+    case_fold: false
+    notes: "DOIs must remain exactly as provided"
+
+  # PMID fields
+  pmid:
+    punctuation_map: {}
+    ascii_folding: false
+    case_fold: false
+    preserve_numbers: true
+    notes: "PMID must remain numeric, no transformations"
+
+  # Task names
+  task_name:
+    stopwords: ["task", "test", "paradigm", "experiment"]
+    case_fold: true
+    ascii_folding: true
+    collapse_internal_space: true
+
+  # Concept labels
+  concept_label:
+    stopwords: []
+    case_fold: true
+    ascii_folding: true
+
+# Test cases (for validation)
+tests:
+  - name: "n-back normalization"
+    input: "N–Back Task"
+    expect: "n-back task"
+    field: "task_name"
+
+  - name: "multiple spaces"
+    input: "Eriksen  Flanker  Test"
+    expect: "eriksen flanker test"
+    field: "task_name"
+
+  - name: "punctuation variants"
+    input: "Go/No-Go"
+    expect: "go/no-go"
+    field: "task_name"
+
+  - name: "author name preservation"
+    input: "Smith, J. A."
+    expect: "Smith, J. A."  # Case preserved
+    field: "author"
+
+  - name: "DOI preservation"
+    input: "10.1038/s41562-020-0890-6"
+    expect: "10.1038/s41562-020-0890-6"  # Exact match
+    field: "doi"
+
+  - name: "Greek letter preservation"
+    input: "α-β band"
+    expect: "α-β band"  # Greek preserved
+    field: "roi_name"
+
+# Performance settings
+performance:
+  cache_normalized: true
+  cache_ttl_seconds: 3600
+  batch_size: 1000
+
+# Notes
+notes:
+  - "Normalization is deterministic - same input always produces same output"
+  - "Field-specific overrides take precedence over global pipeline settings"
+  - "Normalized values stored in shadow fields (e.g., 'name_normalized')"
+  - "Original values always preserved in primary fields"

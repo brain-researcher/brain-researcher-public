@@ -36,29 +36,29 @@ data:
     cluster_role: "primary"
     region: "us-west-2"
     zone: "us-west-2a"
-    
+
     # Network configuration
     network: "brain-researcher-network-primary"
-    
+
     # Service mesh configuration
     mesh_id: "brain-researcher-mesh"
-    
+
     # Endpoints for cross-cluster communication
     endpoints:
       istiod: "istiod.istio-system.svc.cluster.local:15012"
       pilot: "istiod.istio-system.svc.cluster.local:15010"
-      
+
     # Services exposed to remote clusters
     exposed_services:
-      - name: neurokg-service
+      - name: br-kg-service
         namespace: brain-researcher
         ports:
           - name: api
             port: 5000
             targetPort: 5000
         endpoint_export_policy: "MESH_EXTERNAL"
-        
-      - name: orchestrator-service  
+
+      - name: orchestrator-service
         namespace: brain-researcher
         ports:
           - name: api
@@ -83,18 +83,18 @@ data:
     cluster_role: "secondary"
     region: "us-east-1"
     zone: "us-east-1a"
-    
+
     # Network configuration
     network: "brain-researcher-network-secondary"
-    
+
     # Service mesh configuration
     mesh_id: "brain-researcher-mesh"
-    
+
     # Primary cluster endpoints for discovery
     primary_cluster:
       discovery_address: "istiod-primary.istio-system.svc.cluster.local:15012"
       network: "brain-researcher-network-primary"
-      
+
     # Services exposed to other clusters
     exposed_services:
       - name: agent-service
@@ -104,7 +104,7 @@ data:
             port: 8000
             targetPort: 8000
         endpoint_export_policy: "MESH_EXTERNAL"
-        
+
       - name: web-ui-service
         namespace: brain-researcher
         ports:
@@ -161,13 +161,13 @@ spec:
 apiVersion: networking.istio.io/v1beta1
 kind: ServiceEntry
 metadata:
-  name: neurokg-remote
+  name: br-kg-remote
   namespace: brain-researcher
   labels:
-    brain-researcher.io/cross-cluster-service: neurokg
+    brain-researcher.io/cross-cluster-service: br-kg
 spec:
   hosts:
-  - neurokg-remote.brain-researcher.remote
+  - br-kg-remote.brain-researcher.remote
   location: MESH_EXTERNAL
   ports:
   - number: 5000
@@ -177,7 +177,7 @@ spec:
   addresses:
   - 240.0.0.1  # Virtual IP for load balancing
   endpoints:
-  - address: neurokg-service.brain-researcher.svc.cluster.local
+  - address: br-kg-service.brain-researcher.svc.cluster.local
     network: brain-researcher-network-secondary
     ports:
       api: 5000
@@ -212,12 +212,12 @@ spec:
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
-  name: neurokg-cross-cluster
+  name: br-kg-cross-cluster
   namespace: brain-researcher
   labels:
     brain-researcher.io/cross-cluster: "true"
 spec:
-  host: neurokg-remote.brain-researcher.remote
+  host: br-kg-remote.brain-researcher.remote
   trafficPolicy:
     # Cross-cluster load balancing
     loadBalancer:
@@ -235,7 +235,7 @@ spec:
         failover:
         - from: region1
           to: region2
-          
+
     # Connection pooling for cross-cluster
     connectionPool:
       tcp:
@@ -251,7 +251,7 @@ spec:
         maxRetries: 5
         connectTimeout: 30s
         h2UpgradePolicy: UPGRADE
-        
+
     # Outlier detection for cross-cluster
     outlierDetection:
       consecutiveGatewayErrors: 5
@@ -260,7 +260,7 @@ spec:
       baseEjectionTime: 30s
       maxEjectionPercent: 50
       minHealthPercent: 30
-      
+
     # TLS for cross-cluster communication
     tls:
       mode: ISTIO_MUTUAL
@@ -270,14 +270,14 @@ spec:
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: neurokg-cross-cluster
+  name: br-kg-cross-cluster
   namespace: brain-researcher
   labels:
     brain-researcher.io/cross-cluster: "true"
 spec:
   hosts:
-  - neurokg-service.brain-researcher.svc.cluster.local
-  - neurokg-remote.brain-researcher.remote
+  - br-kg-service.brain-researcher.svc.cluster.local
+  - br-kg-remote.brain-researcher.remote
   http:
   # Route high-priority queries to local cluster
   - match:
@@ -286,28 +286,28 @@ spec:
           exact: "high"
     route:
     - destination:
-        host: neurokg-service.brain-researcher.svc.cluster.local
+        host: br-kg-service.brain-researcher.svc.cluster.local
         port:
           number: 5000
       weight: 90
     - destination:
-        host: neurokg-remote.brain-researcher.remote
+        host: br-kg-remote.brain-researcher.remote
         port:
           number: 5000
       weight: 10
-      
+
   # Load balance other queries across clusters
   - match:
     - uri:
         prefix: /
     route:
     - destination:
-        host: neurokg-service.brain-researcher.svc.cluster.local
+        host: br-kg-service.brain-researcher.svc.cluster.local
         port:
           number: 5000
       weight: 70
     - destination:
-        host: neurokg-remote.brain-researcher.remote
+        host: br-kg-remote.brain-researcher.remote
         port:
           number: 5000
       weight: 30
@@ -339,7 +339,7 @@ spec:
   - port:
       number: 5000
       protocol: HTTP
-      name: neurokg-api
+      name: br-kg-api
     defaultEndpoint: 127.0.0.1:5000
     captureMode: IPTABLES
 
@@ -367,7 +367,7 @@ spec:
           value: "%{DESTINATION_CLUSTER}"
         cross_cluster_request:
           value: "true"
-        
+
   tracing:
   - customTags:
       cross_cluster.source:
@@ -397,20 +397,20 @@ data:
       error_rate_threshold: 0.5  # 50% error rate
       latency_threshold: "30s"   # 30 second response time
       availability_threshold: 0.8  # 80% availability
-      
+
       # Failover destinations
       primary_cluster: "brain-researcher-primary"
       secondary_clusters:
         - "brain-researcher-secondary"
         - "brain-researcher-dr"
-        
+
       # Service priorities for failover
       service_priorities:
-        neurokg-service: 1  # Highest priority
+        br-kg-service: 1  # Highest priority
         agent-service: 2
         orchestrator-service: 3
         web-ui-service: 4
-        
+
     # Recovery procedures
     recovery_procedures:
       automatic:
@@ -420,7 +420,7 @@ data:
       manual:
         enabled: true
         notification_webhook: "https://alerts.brain-researcher.com/webhook"
-        
+
     # Data synchronization
     data_sync:
       neo4j:

@@ -17,7 +17,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -26,15 +25,19 @@ os.environ.setdefault("TMPDIR", str(TMP_ROOT))
 
 @pytest.mark.realdata
 @pytest.mark.timeout(900)
-def test_workflow_neurosynth_roi_analysis_smoke(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    dataset_path = PROJECT_ROOT / "data" / "neurosynth_nimare" / "neurosynth_dataset_v7.pkl.gz"
+def test_workflow_neurosynth_roi_analysis_smoke(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    dataset_path = (
+        PROJECT_ROOT / "data" / "neurosynth_nimare" / "neurosynth_dataset_v7.pkl.gz"
+    )
     if not dataset_path.exists():
         pytest.skip(f"Neurosynth dataset not found: {dataset_path}")
 
     atlas_path = (
         PROJECT_ROOT
         / "data"
-        / "neurokg"
+        / "br_kg"
         / "raw"
         / "nilearn_atlases"
         / "schaefer_2018"
@@ -52,7 +55,9 @@ def test_workflow_neurosynth_roi_analysis_smoke(tmp_path: Path, monkeypatch: pyt
     atlas_data = np.asanyarray(atlas_img.dataobj)
     roi_mask = (atlas_data == 1).astype(np.uint8)
     roi_path = tmp_path / "roi_mask.nii.gz"
-    nib.Nifti1Image(roi_mask, atlas_img.affine, atlas_img.header).to_filename(str(roi_path))
+    nib.Nifti1Image(roi_mask, atlas_img.affine, atlas_img.header).to_filename(
+        str(roi_path)
+    )
 
     out_dir = tmp_path / "neurosynth_roi_analysis"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -72,8 +77,16 @@ def test_workflow_neurosynth_roi_analysis_smoke(tmp_path: Path, monkeypatch: pyt
     meta = steps.get("meta", {}).get("data", {})
     stat_map = meta.get("outputs", {}).get("stat_map")
     meta_json = meta.get("outputs", {}).get("meta_json")
-    assert isinstance(stat_map, str) and Path(stat_map).exists() and Path(stat_map).stat().st_size > 0
-    assert isinstance(meta_json, str) and Path(meta_json).exists() and Path(meta_json).stat().st_size > 0
+    assert (
+        isinstance(stat_map, str)
+        and Path(stat_map).exists()
+        and Path(stat_map).stat().st_size > 0
+    )
+    assert (
+        isinstance(meta_json, str)
+        and Path(meta_json).exists()
+        and Path(meta_json).stat().st_size > 0
+    )
 
     roi_tsv = out_dir / "roi" / "roi_values.tsv"
     assert roi_tsv.exists() and roi_tsv.stat().st_size > 0

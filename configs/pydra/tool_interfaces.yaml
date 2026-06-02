@@ -1,0 +1,590 @@
+# Pydra tool-to-task interface mappings
+#
+# This file defines how brain_researcher tools map to Pydra tasks.
+# Pydra supports two main task types:
+#   1. ShellCommandTask - for CLI tools (FSL, ANTs, etc.)
+#   2. FunctionTask - for Python functions (nilearn, etc.)
+#
+# Format:
+#   tools:
+#     <tool_id>:
+#       type: shell | function | pydra_package
+#       # For pydra_package (official pydra-* packages):
+#       package: pydra.tasks.fsl  # Python module path
+#       task_class: BET  # Class name in package
+#       # For shell (ShellCommandTask):
+#       executable: bet  # CLI command
+#       input_spec:  # Input field definitions
+#         - name: in_file
+#           argstr: "{in_file}"  # How to pass to CLI
+#           position: 0  # Positional arg order (optional)
+#       output_spec:  # Output field definitions
+#         - name: out_file
+#           output_file_template: "{in_file}_brain.nii.gz"
+#       # For function (FunctionTask):
+#       function: module.path.function_name
+#       input_names: [arg1, arg2]
+#       output_names: [result]
+#       # Container support (optional):
+#       container_image: brainlife/fsl:6.0.4
+
+tools:
+  # ============================================
+  # FSL Tools (using pydra-fsl when available)
+  # ============================================
+  fsl.bet:
+    type: pydra_package
+    package: pydra.tasks.fsl
+    task_class: BET
+    container_image: brainlife/fsl:6.0.4
+    io_map:
+      consumes:
+        in: in_file
+        mask: mask_file
+      produces:
+        out: out_file
+        mask_out: mask_file
+
+  # Agent wrapper fsl.bet.run
+  fsl.bet.run:
+    type: pydra_package
+    package: pydra.tasks.fsl
+    task_class: BET
+    container_image: brainlife/fsl:6.0.4
+    io_map:
+      consumes:
+        in: in_file
+        mask: mask_file
+      produces:
+        out: out_file
+        mask_out: mask_file
+
+  fsl.flirt:
+    type: pydra_package
+    package: pydra.tasks.fsl
+    task_class: FLIRT
+    container_image: brainlife/fsl:6.0.4
+    io_map:
+      consumes:
+        in: in_file
+        ref: reference
+      produces:
+        out: out_file
+        mat: out_matrix_file
+
+  fsl.fnirt:
+    type: pydra_package
+    package: pydra.tasks.fsl
+    task_class: FNIRT
+    container_image: brainlife/fsl:6.0.4
+    io_map:
+      consumes:
+        in: in_file
+        ref: ref_file
+      produces:
+        out: warped_file
+        field: fieldcoeff_file
+
+  fsl.smooth:
+    type: shell
+    executable: fslmaths
+    container_image: brainlife/fsl:6.0.4
+    input_spec:
+      - name: in_file
+        argstr: "{in_file}"
+        position: 0
+      - name: fwhm
+        argstr: "-s {fwhm}"
+        position: 1
+    output_spec:
+      - name: out_file
+        argstr: "{out_file}"
+        position: 2
+        output_file_template: "{in_file}_smooth.nii.gz"
+    io_map:
+      consumes:
+        in: in_file
+      produces:
+        out: out_file
+
+  fsl.fast:
+    type: pydra_package
+    package: pydra.tasks.fsl
+    task_class: FAST
+    container_image: brainlife/fsl:6.0.4
+    io_map:
+      consumes:
+        in: in_files
+      produces:
+        tissue: tissue_class_files
+        pve: partial_volume_files
+
+  fsl.feat:
+    type: shell
+    executable: feat
+    container_image: brainlife/fsl:6.0.4
+    input_spec:
+      - name: fsf_file
+        argstr: "{fsf_file}"
+        position: 0
+    output_spec:
+      - name: feat_dir
+        output_file_template: "{fsf_file}.feat"
+    io_map:
+      consumes:
+        design: fsf_file
+      produces:
+        out: feat_dir
+
+  fsl.melodic:
+    type: pydra_package
+    package: pydra.tasks.fsl
+    task_class: MELODIC
+    container_image: brainlife/fsl:6.0.4
+    io_map:
+      consumes:
+        in: in_files
+        mask: mask
+      produces:
+        out: out_dir
+        mixing: mix
+
+  fsl.eddy:
+    type: shell
+    executable: eddy
+    container_image: brainlife/fsl:6.0.4
+    input_spec:
+      - name: in_file
+        argstr: "--imain={in_file}"
+      - name: mask
+        argstr: "--mask={mask}"
+      - name: bvecs
+        argstr: "--bvecs={bvecs}"
+      - name: bvals
+        argstr: "--bvals={bvals}"
+      - name: out_base
+        argstr: "--out={out_base}"
+    output_spec:
+      - name: out_corrected
+        output_file_template: "{out_base}.nii.gz"
+    io_map:
+      consumes:
+        dwi: in_file
+        mask: mask
+        bvecs: bvecs
+        bvals: bvals
+      produces:
+        out: out_corrected
+
+  # ============================================
+  # ANTs Tools (using pydra-ants when available)
+  # ============================================
+  ants.registration:
+    type: pydra_package
+    package: pydra.tasks.ants
+    task_class: Registration
+    container_image: antsx/ants:latest
+    io_map:
+      consumes:
+        moving: moving_image
+        fixed: fixed_image
+      produces:
+        warped: warped_image
+        transforms: forward_transforms
+
+  ants.apply_transforms:
+    type: pydra_package
+    package: pydra.tasks.ants
+    task_class: ApplyTransforms
+    container_image: antsx/ants:latest
+    io_map:
+      consumes:
+        in: input_image
+        ref: reference_image
+        transforms: transforms
+      produces:
+        out: output_image
+
+  ants.n4_bias_correction:
+    type: pydra_package
+    package: pydra.tasks.ants
+    task_class: N4BiasFieldCorrection
+    container_image: antsx/ants:latest
+    io_map:
+      consumes:
+        in: input_image
+        mask: mask_image
+      produces:
+        out: output_image
+        bias: bias_image
+
+  ants.brain_extraction:
+    type: shell
+    executable: antsBrainExtraction.sh
+    container_image: antsx/ants:latest
+    input_spec:
+      - name: anatomical
+        argstr: "-a {anatomical}"
+      - name: template
+        argstr: "-e {template}"
+      - name: output_prefix
+        argstr: "-o {output_prefix}"
+    output_spec:
+      - name: brain
+        output_file_template: "{output_prefix}BrainExtractionBrain.nii.gz"
+      - name: mask
+        output_file_template: "{output_prefix}BrainExtractionMask.nii.gz"
+    io_map:
+      consumes:
+        t1: anatomical
+        template: template
+      produces:
+        brain: brain
+        mask: mask
+
+  # ============================================
+  # FreeSurfer Tools
+  # ============================================
+  freesurfer.recon_all:
+    type: pydra_package
+    package: pydra.tasks.freesurfer
+    task_class: ReconAll
+    container_image: freesurfer/freesurfer:7.4.1
+    io_map:
+      consumes:
+        t1: T1_files
+      produces:
+        subjects_dir: subjects_dir
+
+  freesurfer.mri_convert:
+    type: shell
+    executable: mri_convert
+    container_image: freesurfer/freesurfer:7.4.1
+    input_spec:
+      - name: in_file
+        argstr: "{in_file}"
+        position: 0
+      - name: out_file
+        argstr: "{out_file}"
+        position: 1
+    output_spec:
+      - name: converted
+        output_file_template: "{out_file}"
+    io_map:
+      consumes:
+        in: in_file
+      produces:
+        out: converted
+
+  # ============================================
+  # AFNI Tools
+  # ============================================
+  afni.3dresample:
+    type: shell
+    executable: 3dresample
+    container_image: afni/afni:latest
+    input_spec:
+      - name: in_file
+        argstr: "-input {in_file}"
+      - name: master
+        argstr: "-master {master}"
+      - name: prefix
+        argstr: "-prefix {prefix}"
+    output_spec:
+      - name: out_file
+        output_file_template: "{prefix}+orig.HEAD"
+    io_map:
+      consumes:
+        in: in_file
+        ref: master
+      produces:
+        out: out_file
+
+  afni.3dvolreg:
+    type: shell
+    executable: 3dvolreg
+    container_image: afni/afni:latest
+    input_spec:
+      - name: in_file
+        argstr: "{in_file}"
+        position: -1
+      - name: base
+        argstr: "-base {base}"
+      - name: prefix
+        argstr: "-prefix {prefix}"
+    output_spec:
+      - name: out_file
+        output_file_template: "{prefix}+orig.HEAD"
+      - name: md1d_file
+        output_file_template: "{prefix}.1D"
+    io_map:
+      consumes:
+        in: in_file
+      produces:
+        out: out_file
+        motion: md1d_file
+
+  afni.3ddeconvolve:
+    type: shell
+    executable: 3dDeconvolve
+    container_image: afni/afni:latest
+    input_spec:
+      - name: in_files
+        argstr: "-input {in_files}"
+      - name: mask
+        argstr: "-mask {mask}"
+      - name: bucket
+        argstr: "-bucket {bucket}"
+    output_spec:
+      - name: out_file
+        output_file_template: "{bucket}+orig.HEAD"
+    io_map:
+      consumes:
+        bold: in_files
+        mask: mask
+      produces:
+        stats: out_file
+
+  # ============================================
+  # MRtrix3 Tools
+  # ============================================
+  mrtrix3.dwi2tensor:
+    type: shell
+    executable: dwi2tensor
+    container_image: mrtrix3/mrtrix3:latest
+    input_spec:
+      - name: in_file
+        argstr: "{in_file}"
+        position: 0
+      - name: out_file
+        argstr: "{out_file}"
+        position: 1
+    output_spec:
+      - name: tensor
+        output_file_template: "{out_file}"
+    io_map:
+      consumes:
+        dwi: in_file
+      produces:
+        tensor: tensor
+
+  mrtrix3.tensor2metric:
+    type: shell
+    executable: tensor2metric
+    container_image: mrtrix3/mrtrix3:latest
+    input_spec:
+      - name: in_file
+        argstr: "{in_file}"
+        position: 0
+      - name: fa
+        argstr: "-fa {fa}"
+      - name: md
+        argstr: "-adc {md}"
+    output_spec:
+      - name: fa_file
+        output_file_template: "{fa}"
+      - name: md_file
+        output_file_template: "{md}"
+    io_map:
+      consumes:
+        tensor: in_file
+      produces:
+        fa: fa_file
+        md: md_file
+
+  mrtrix3.tckgen:
+    type: shell
+    executable: tckgen
+    container_image: mrtrix3/mrtrix3:latest
+    input_spec:
+      - name: source
+        argstr: "{source}"
+        position: 0
+      - name: tracks
+        argstr: "{tracks}"
+        position: 1
+      - name: seed_image
+        argstr: "-seed_image {seed_image}"
+      - name: select
+        argstr: "-select {select}"
+    output_spec:
+      - name: tck_file
+        output_file_template: "{tracks}"
+    io_map:
+      consumes:
+        fod: source
+        seed: seed_image
+      produces:
+        tracks: tck_file
+
+  # ============================================
+  # Container-based BIDS Apps
+  # ============================================
+  container.fmriprep:
+    type: shell
+    executable: fmriprep
+    container_image: nipreps/fmriprep:latest
+    input_spec:
+      - name: bids_dir
+        argstr: "{bids_dir}"
+        position: 0
+      - name: output_dir
+        argstr: "{output_dir}"
+        position: 1
+      - name: analysis_level
+        argstr: "participant"
+        position: 2
+      - name: participant_label
+        argstr: "--participant-label {participant_label}"
+    output_spec:
+      - name: derivatives
+        output_file_template: "{output_dir}/fmriprep"
+    io_map:
+      consumes:
+        bids_dir: bids_dir
+        output_dir: output_dir
+      produces:
+        derivatives: derivatives
+
+  container.mriqc:
+    type: shell
+    executable: mriqc
+    container_image: nipreps/mriqc:latest
+    input_spec:
+      - name: bids_dir
+        argstr: "{bids_dir}"
+        position: 0
+      - name: output_dir
+        argstr: "{output_dir}"
+        position: 1
+      - name: analysis_level
+        argstr: "participant"
+        position: 2
+    output_spec:
+      - name: reports
+        output_file_template: "{output_dir}"
+    io_map:
+      consumes:
+        bids_dir: bids_dir
+      produces:
+        reports: reports
+
+  container.qsiprep:
+    type: shell
+    executable: qsiprep
+    container_image: pennbbl/qsiprep:latest
+    input_spec:
+      - name: bids_dir
+        argstr: "{bids_dir}"
+        position: 0
+      - name: output_dir
+        argstr: "{output_dir}"
+        position: 1
+      - name: analysis_level
+        argstr: "participant"
+        position: 2
+    output_spec:
+      - name: derivatives
+        output_file_template: "{output_dir}/qsiprep"
+    io_map:
+      consumes:
+        bids_dir: bids_dir
+      produces:
+        derivatives: derivatives
+
+  container.fitlins:
+    type: shell
+    executable: fitlins
+    container_image: poldracklab/fitlins:latest
+    input_spec:
+      - name: bids_dir
+        argstr: "{bids_dir}"
+        position: 0
+      - name: output_dir
+        argstr: "{output_dir}"
+        position: 1
+      - name: analysis_level
+        argstr: "run"
+        position: 2
+      - name: model
+        argstr: "-m {model}"
+      - name: derivatives
+        argstr: "-d {derivatives}"
+    output_spec:
+      - name: stats
+        output_file_template: "{output_dir}"
+    io_map:
+      consumes:
+        bids_dir: bids_dir
+        model: model
+        derivatives: derivatives
+      produces:
+        stats: stats
+
+  # ============================================
+  # Nilearn / Python-based Tools (FunctionTask)
+  # ============================================
+  python.nilearn.glm:
+    type: function
+    function: nilearn.glm.first_level.FirstLevelModel.fit
+    input_names: [run_imgs, events, confounds]
+    output_names: [fitted_model]
+    io_map:
+      consumes:
+        bold: run_imgs
+        events: events
+        confounds: confounds
+      produces:
+        model: fitted_model
+
+  python.nilearn.ica:
+    type: function
+    function: nilearn.decomposition.CanICA.fit_transform
+    input_names: [imgs]
+    output_names: [components]
+    io_map:
+      consumes:
+        bold: imgs
+      produces:
+        components: components
+
+  python.nilearn_preprocessing.run:
+    type: function
+    function: brain_researcher.core.analysis.preprocessing.preprocess_fmri
+    input_names: [in_file, confounds_file]
+    output_names: [out_file]
+    io_map:
+      consumes:
+        bold: in_file
+        confounds: confounds_file
+      produces:
+        preproc_bold: out_file
+
+  python.nilearn_connectivity.run:
+    type: function
+    function: brain_researcher.core.analysis.connectivity.compute_connectivity
+    input_names: [timeseries, atlas]
+    output_names: [connectivity_matrix]
+    io_map:
+      consumes:
+        timeseries: timeseries
+        atlas: atlas
+      produces:
+        conn_mat: connectivity_matrix
+
+  # ============================================
+  # Custom Analysis Tools
+  # ============================================
+  custom.group_analysis:
+    type: function
+    function: brain_researcher.core.analysis.group.run_group_analysis
+    input_names: [stat_maps, mask, design_matrix]
+    output_names: [group_stat_map, report_html]
+    io_map:
+      consumes:
+        stat_maps: stat_maps
+        mask: mask
+        design_matrix: design_matrix
+      produces:
+        group_stats: group_stat_map
+        report: report_html

@@ -8,6 +8,8 @@ from brain_researcher.services.tools.execution_policy import (
     enforce_allowed_paths,
     filesystem_guard,
     network_guard,
+    policy_check_tool,
+    prepare_spec_for_network_policy,
 )
 from brain_researcher.services.tools.spec import ToolExecutionCapabilities, ToolSpec
 
@@ -208,3 +210,60 @@ def test_filesystem_guard_blocks_paths_outside_allowed_roots(tmp_path):
         with pytest.raises(ExecutionPolicyError):
             with open("/etc/should_not_write.txt", "w", encoding="utf-8") as fh:
                 fh.write("nope")
+
+
+def test_policy_check_tool_allows_loopback_when_network_disabled():
+    spec = ToolSpec(
+        name="local.loopback.tool",
+        description="loopback only",
+        backend="python",
+        execution_capabilities=ToolExecutionCapabilities(
+            needs_network=True,
+            allowed_domains=["localhost", "127.0.0.1", "::1"],
+        ),
+    )
+
+    issues = policy_check_tool(
+        spec,
+        allow_network=False,
+        allow_dangerous=False,
+    )
+
+    assert not any(i.get("code") == "network_blocked" for i in issues)
+
+
+def test_policy_check_tool_blocks_external_domain_when_network_disabled():
+    spec = ToolSpec(
+        name="external.net.tool",
+        description="external domain",
+        backend="python",
+        execution_capabilities=ToolExecutionCapabilities(
+            needs_network=True,
+            allowed_domains=["api.openai.com"],
+        ),
+    )
+
+    issues = policy_check_tool(
+        spec,
+        allow_network=False,
+        allow_dangerous=False,
+    )
+
+    assert any(i.get("code") == "network_blocked" for i in issues)
+
+
+def test_prepare_spec_for_network_policy_marks_local_runtime_loopback():
+    spec = ToolSpec(
+        name="neo4j.local_runtime.lookup",
+        description="local runtime marker",
+        backend="python",
+        tags=["local_runtime"],
+        side_effects=["network"],
+    )
+
+    prepared = prepare_spec_for_network_policy(spec, patch_catalog=False)
+
+    caps = prepared.execution_capabilities
+    assert caps is not None
+    assert caps.needs_network is True
+    assert {"localhost", "127.0.0.1", "::1"}.issubset(set(caps.allowed_domains))

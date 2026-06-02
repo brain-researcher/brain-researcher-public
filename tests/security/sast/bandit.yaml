@@ -1,0 +1,61 @@
+# Bandit security testing configuration for Brain Researcher
+# https://bandit.readthedocs.io/en/latest/config.html
+
+# Tests to skip (override only if necessary)
+skips: []
+
+# Tests to run (leave empty to run all)
+tests: []
+
+# Directories to exclude from scanning
+exclude_dirs:
+  - /tests
+  - /external
+  - /.git
+  - /__pycache__
+  - /apps/web-ui/node_modules
+  - /artifacts
+  - /data
+  - /cvmfs_cache
+  - /cvmfs_config
+
+# Severity level filter
+assert_used:
+  skips: ['*_test.py', '*test_*.py']
+
+# Custom rules for neuroimaging/scientific computing
+brain_researcher_rules:
+  # Allow subprocess usage for neuroimaging tools (FSL, AFNI, etc.)
+  B602:  # subprocess with shell=True
+    - '/src/brain_researcher/core/analysis/'
+    - '/src/brain_researcher/services/agent/tools/'
+
+  # Allow eval/exec for scientific computing (with proper context)
+  B102:  # exec_used
+    - '/src/brain_researcher/core/analysis/dynamic_analysis.py'
+
+  # Allow hardcoded passwords in test/development configs only
+  B106:  # hardcoded_password_funcarg
+    - '/tests/'
+    - '/configs/development/'
+
+# Confidence levels to report (HIGH, MEDIUM, LOW)
+confidence: ["HIGH", "MEDIUM", "LOW"]
+
+# Severity levels to report (HIGH, MEDIUM, LOW)
+severity: ["HIGH", "MEDIUM", "LOW"]
+
+# Format for output
+format: json
+
+# Report format for different outputs
+plugins:
+  # Custom plugin for neuroimaging security checks
+  neuroimaging_security:
+    enabled: true
+    # Check for common neuroimaging data leakage patterns
+    patterns:
+      - "participant.*id"
+      - "subject.*id"
+      - "patient.*data"
+      - "medical.*record"

@@ -40,10 +40,10 @@ services:
       - cli
 
   # Minimal services for development
-  neurokg-dev:
+  br-kg-dev:
     extends:
       file: ../../docker-compose.yml
-      service: neurokg
+      service: br-kg
     volumes:
       - .:/app
     environment:

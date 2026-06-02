@@ -98,12 +98,28 @@ test.describe('Route smoke', () => {
     }
   })
 
-  test('knowledge graph and pipeline pages render headings', async ({ page }) => {
+  test('knowledge graph renders publicly and pipeline renders or auth-gates', async ({ page }) => {
     await page.goto(`${BASE}/kg`, { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: /Knowledge Graph/i }).first()).toBeVisible()
 
     await page.goto(`${BASE}/pipeline`, { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: /Pipeline Management/i }).first()).toBeVisible()
+    const loginHeading = page.getByRole('heading', { name: /Sign in to your account/i })
+    const pipelineHeading = page.getByRole('heading', { name: /Pipeline Management/i }).first()
+
+    const outcome = await Promise.race([
+      loginHeading.waitFor({ state: 'visible', timeout: 7000 }).then(() => 'login' as const),
+      pipelineHeading.waitFor({ state: 'visible', timeout: 7000 }).then(() => 'pipeline' as const),
+    ]).catch(() => 'unknown' as const)
+
+    if (outcome === 'login') {
+      await expect(page).toHaveURL(/\/auth\/login\?callbackUrl=%2Fpipeline(?:$|&)/, {
+        timeout: 30_000,
+      })
+      return
+    }
+
+    await expect(page).toHaveURL(/\/pipeline(?:\?|$)/, { timeout: 30_000 })
+    await expect(pipelineHeading).toBeVisible()
   })
 
   test('datasets page renders heading', async ({ page }) => {

@@ -14,7 +14,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -50,7 +49,7 @@ def test_workflow_rest_connectome_e2e_ds000114_smoke(tmp_path: Path):
             "BR_SCHAEFER100_ATLAS",
             PROJECT_ROOT
             / "data"
-            / "neurokg"
+            / "br_kg"
             / "raw"
             / "nilearn_atlases"
             / "schaefer_2018"

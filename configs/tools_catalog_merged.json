@@ -588,7 +588,7 @@
         "safe",
         "search"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_tools"
+      "python_module": "brain_researcher.services.tools.br_kg_tools"
     },
     {
       "name": "coordinate_to_concept",
@@ -605,7 +605,7 @@
         "python",
         "safe"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_tools"
+      "python_module": "brain_researcher.services.tools.br_kg_tools"
     },
     {
       "name": "concept_literature_search",
@@ -622,7 +622,7 @@
         "safe",
         "search"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_tools"
+      "python_module": "brain_researcher.services.tools.br_kg_tools"
     },
     {
       "name": "graph_query",
@@ -639,7 +639,7 @@
         "safe",
         "search"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_tools"
+      "python_module": "brain_researcher.services.tools.br_kg_tools"
     },
     {
       "name": "task_to_concept_mapping",
@@ -656,10 +656,10 @@
         "python",
         "safe"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_tools"
+      "python_module": "brain_researcher.services.tools.br_kg_tools"
     },
     {
-      "name": "neurokg.search_nodes",
+      "name": "br-kg.search_nodes",
       "description": "Search BR-KG for nodes (concepts, regions, datasets) by label/name.",
       "runtime_kind": "python",
       "domain": "kg",
@@ -673,10 +673,10 @@
         "safe",
         "search"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_query_tool"
+      "python_module": "brain_researcher.services.tools.br_kg_query_tool"
     },
     {
-      "name": "neurokg.search_datasets",
+      "name": "br-kg.search_datasets",
       "description": "Search BR-KG dataset subgraph by text/task/modality/species/sample size.",
       "runtime_kind": "python",
       "domain": "kg",
@@ -690,10 +690,10 @@
         "safe",
         "search"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_query_tool"
+      "python_module": "brain_researcher.services.tools.br_kg_query_tool"
     },
     {
-      "name": "neurokg.dataset_resources",
+      "name": "br-kg.dataset_resources",
       "description": "List available resources for a dataset (BIDS path, derivatives, remote URLs).",
       "runtime_kind": "python",
       "domain": "kg",
@@ -707,10 +707,10 @@
         "python",
         "safe"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_query_tool"
+      "python_module": "brain_researcher.services.tools.br_kg_query_tool"
     },
     {
-      "name": "neurokg.node_details",
+      "name": "br-kg.node_details",
       "description": "Fetch a single KG node and a trimmed set of properties/neighbor ids.",
       "runtime_kind": "python",
       "domain": "kg",
@@ -724,10 +724,10 @@
         "python",
         "safe"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_query_tool"
+      "python_module": "brain_researcher.services.tools.br_kg_query_tool"
     },
     {
-      "name": "neurokg.related_datasets",
+      "name": "br-kg.related_datasets",
       "description": "Return datasets linked to a KG node (concept/region/dataset).",
       "runtime_kind": "python",
       "domain": "kg",
@@ -741,7 +741,7 @@
         "python",
         "safe"
       ],
-      "python_module": "brain_researcher.services.tools.neurokg_query_tool"
+      "python_module": "brain_researcher.services.tools.br_kg_query_tool"
     },
     {
       "name": "datasets.list_resources",
@@ -3957,7 +3957,7 @@
       "python_module": "brain_researcher.services.tools.grandmaster.loader"
     },
     {
-      "name": "neurokg_task_region_mapper",
+      "name": "br_kg_task_region_mapper",
       "description": "external_api/python: query BR-KG to map task/construct -> regions/coordinates/networks",
       "runtime_kind": "python",
       "domain": "kg",
@@ -3974,7 +3974,7 @@
       "python_module": "brain_researcher.services.tools.grandmaster.loader"
     },
     {
-      "name": "neurokg_dataset_search",
+      "name": "br_kg_dataset_search",
       "description": "external_api/python: KG-driven dataset search (topic/task/phenotype -> candidate datasets)",
       "runtime_kind": "python",
       "domain": "kg",

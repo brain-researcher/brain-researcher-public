@@ -47,6 +47,8 @@ def test_marimo_settings_from_env_builds_managed_ai_and_mcp_config(monkeypatch) 
 
     assert settings.chat_model == "brain-researcher/gemini-3-flash-preview"
     assert settings.ai_rules == _default_ai_rules()
+    # Hosted quickstart auto-runs cells on open (marimo ships this False).
+    assert payload["runtime"]["auto_instantiate"] is True
     assert payload["ai"]["mode"] == "agent"
     assert payload["ai"]["rules"] == _default_ai_rules()
     assert payload["ai"]["models"]["chat_model"] == (

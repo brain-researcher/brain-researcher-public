@@ -10,6 +10,7 @@ from brain_researcher.services.orchestrator.endpoints.credits import (
     API_USD_CURRENCY,
     CreditsStore,
 )
+from brain_researcher.services.shared import credits as shared_credits
 
 
 def _store(tmp_path) -> CreditsStore:
@@ -18,7 +19,7 @@ def _store(tmp_path) -> CreditsStore:
 
 def _api_client(tmp_path, monkeypatch) -> TestClient:
     monkeypatch.setenv("BR_CREDITS_DB", str(tmp_path / "api-credits.sqlite"))
-    monkeypatch.setattr(credits, "_store", None)
+    monkeypatch.setattr(shared_credits, "_store", None)
     app = FastAPI()
     app.include_router(credits.router)
     return TestClient(app)

@@ -106,10 +106,10 @@ groups:
           description: "Tool failure rate is {{ $value }}"
           runbook: "Check tool integrations and dependencies"
 
-  - name: neurokg_alerts
+  - name: br_kg_alerts
     rules:
       - alert: Neo4jConnectionPoolExhausted
-        expr: neurokg:database_connection_pool_usage > 90
+        expr: br-kg:database_connection_pool_usage > 90
         for: 2m
         labels:
           severity: critical
@@ -119,7 +119,7 @@ groups:
           runbook: "Scale database connections or check for connection leaks"
 
       - alert: SlowSemanticSearch
-        expr: neurokg:semantic_search_latency_p95_5m > 5.0
+        expr: br-kg:semantic_search_latency_p95_5m > 5.0
         for: 5m
         labels:
           severity: warning
@@ -129,7 +129,7 @@ groups:
           runbook: "Check vector index performance and database optimization"
 
       - alert: HighKnowledgeGraphQueryRate
-        expr: neurokg:query_rate_5m > 100
+        expr: br-kg:query_rate_5m > 100
         for: 10m
         labels:
           severity: warning

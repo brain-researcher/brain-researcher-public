@@ -1,0 +1,49 @@
+# Production overlay – defaults mirror dev; override in ops as needed
+
+api_sources:
+  pubmed:
+    enabled: true
+    base_url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/
+    cache_days: 30
+  neurovault:
+    enabled: true
+    base_url: https://neurovault.org/api
+    cache_days: 7
+  neurosynth:
+    enabled: true
+    base_url: https://neurosynth.org
+    cache_days: 90
+  wikidata:
+    enabled: true
+    sparql_endpoint: https://query.wikidata.org/sparql
+    cache_days: 30
+  allen_brain:
+    enabled: true
+    base_url: http://api.brain-map.org/api/v2
+    cache_days: 90
+  openneuro_api:
+    enabled: true
+    graphql_endpoint: https://openneuro.org/crn/graphql
+    s3_bucket: s3://openneuro.org
+
+cache:
+  default_ttl_days: 7
+  max_size_gb: 50
+  compression: true
+
+loader_defaults:
+  max_workers: 4
+  retry_attempts: 3
+  retry_delay: 1.0
+  use_cache: true
+  batch_size: 100
+
+dataset_priority:
+  - oak_mount
+  - local
+  - api
+
+br-kg:
+  db_path: /home/zijiaochen/projects/brain_researcher/data/br-kg/db/br-kg_full.db
+  vector_cache: /home/zijiaochen/projects/brain_researcher/data/br-kg/vector_cache
+  logs: /home/zijiaochen/projects/brain_researcher/data/br-kg/logs

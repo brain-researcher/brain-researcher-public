@@ -284,8 +284,8 @@ spec:
               value: "1"
             - name: AGENT_URL
               value: "http://agent-service:8000"
-            - name: NEUROKG_URL
-              value: "http://neurokg-service:5000"
+            - name: BR_KG_URL
+              value: "http://br-kg-service:5000"
             - name: NICLIP_URL
               value: "http://niclip-service:8001"
             - name: REDIS_URL

@@ -8,13 +8,13 @@ import pandas as pd
 import pytest
 
 import brain_researcher.services.tools.atlas_utils as atlas_utils
+import brain_researcher.services.tools.params.nilearn_preprocessing as nilearn_preprocessing
 from brain_researcher.services.tools.params import (
     NiftiMaskerParameters,
     ROIExtractionParameters,
     run_nifti_masker,
     run_roi_extraction,
 )
-import brain_researcher.services.tools.params.nilearn_preprocessing as nilearn_preprocessing
 from brain_researcher.services.tools.params.nilearn_preprocessing import _resolve_atlas
 
 
@@ -117,7 +117,7 @@ def test_resolve_atlas_schaefer_symbolic_name_prefers_local_cache(
     tmp_path, monkeypatch
 ):
     atlas_root = tmp_path / "atlas_root"
-    schaefer_dir = atlas_root / "neurokg" / "raw" / "nilearn_atlases" / "schaefer_2018"
+    schaefer_dir = atlas_root / "br_kg" / "raw" / "nilearn_atlases" / "schaefer_2018"
     schaefer_dir.mkdir(parents=True)
     schaefer_100 = (
         schaefer_dir / "Schaefer2018_100Parcels_7Networks_order_FSLMNI152_2mm.nii.gz"

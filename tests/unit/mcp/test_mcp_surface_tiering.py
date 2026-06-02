@@ -16,7 +16,7 @@ def test_mcp_surface_metadata_normalizes_runtime_aliases():
         "surface_tier": "advanced",
         "capability_family": "google_research",
     }
-    assert srv._mcp_surface_metadata("neurokg.find_structural_leverage") == {
+    assert srv._mcp_surface_metadata("br_kg.find_structural_leverage") == {
         "surface_tier": "advanced",
         "capability_family": "kg_probe",
     }
@@ -85,7 +85,7 @@ def test_docs_schema_matches_public_runtime_tool_surface():
     }
 
     assert doc_names == runtime_names
-    assert not any(name.startswith("neurokg.") for name in doc_names)
+    assert not any(name.startswith("br_kg.") for name in doc_names)
 
 
 def test_compatibility_aliases_are_hidden_from_public_tool_list():

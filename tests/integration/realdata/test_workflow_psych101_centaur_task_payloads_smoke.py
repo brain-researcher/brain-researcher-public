@@ -7,13 +7,13 @@ from pathlib import Path
 
 import pytest
 
-from brain_researcher.services.mcp import server as mcp_server
-from brain_researcher.services.neurokg.etl.loaders.psych101_hf_loader import (
+from brain_researcher.services.br_kg.etl.loaders.psych101_hf_loader import (
     Psych101DatasetMetadata,
     Psych101ExperimentSummary,
     Psych101ParquetFile,
     Psych101SplitInfo,
 )
+from brain_researcher.services.mcp import server as mcp_server
 from brain_researcher.services.tools.runner import execute_tool
 
 
@@ -63,11 +63,11 @@ def test_workflow_psych101_centaur_task_payloads_smoke(tmp_path: Path, monkeypat
     ]
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.etl.loaders.psych101_hf_loader.fetch_psych101_dataset_metadata",
+        "brain_researcher.services.br_kg.etl.loaders.psych101_hf_loader.fetch_psych101_dataset_metadata",
         lambda dataset_id="marcelbinz/Psych-101", **_: metadata,
     )
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.etl.loaders.psych101_hf_loader.summarize_psych101_from_metadata",
+        "brain_researcher.services.br_kg.etl.loaders.psych101_hf_loader.summarize_psych101_from_metadata",
         lambda metadata, **_: experiments,
     )
 

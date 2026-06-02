@@ -2,8 +2,8 @@ from __future__ import annotations
 
 
 def test_kg_verify_hypothesis_forwards_candidate_lane_mode(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as query_service
 
     captured: dict[str, object] = {}
 
@@ -28,12 +28,16 @@ def test_kg_verify_hypothesis_forwards_candidate_lane_mode(monkeypatch):
         entity_hints=["DLPFC", "n-back"],
         strictness="high_recall",
         candidate_lane_mode="strict",
+        rerank_candidate_cap=37,
+        hypothesis_budget_seconds=12.5,
         include_subgraph=True,
         include_path_details=False,
     )
 
     assert resp["ok"] is True
     assert captured["kwargs"]["candidate_lane_mode"] == "strict"
+    assert captured["kwargs"]["rerank_candidate_cap"] == 37
+    assert captured["kwargs"]["hypothesis_budget_seconds"] == 12.5
     assert captured["kwargs"]["include_subgraph"] is True
     assert captured["kwargs"]["include_path_details"] is False
 
@@ -54,15 +58,19 @@ def test_verify_hypothesis_alias_forwards_candidate_lane_mode(monkeypatch):
         entity_hints=["DLPFC", "n-back"],
         strictness="high_recall",
         candidate_lane_mode="broad",
+        rerank_candidate_cap=42,
+        hypothesis_budget_seconds=9.5,
     )
 
     assert resp["ok"] is True
     assert captured["kwargs"]["candidate_lane_mode"] == "broad"
+    assert captured["kwargs"]["rerank_candidate_cap"] == 42
+    assert captured["kwargs"]["hypothesis_budget_seconds"] == 9.5
 
 
 def test_kg_sample_and_verify_hypotheses_forwards_candidate_lane_mode(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as query_service
 
     captured: dict[str, object] = {}
 
@@ -143,8 +151,8 @@ def test_kg_sample_and_verify_hypotheses_forwards_candidate_lane_mode(monkeypatc
 
 
 def test_kg_verify_sampled_hypotheses_forwards_candidate_lane_mode(monkeypatch):
+    from brain_researcher.services.br_kg import query_service as query_service
     from brain_researcher.services.mcp import server as srv
-    from brain_researcher.services.neurokg import query_service as query_service
 
     captured: dict[str, object] = {}
 

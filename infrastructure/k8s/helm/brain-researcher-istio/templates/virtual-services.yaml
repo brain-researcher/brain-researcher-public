@@ -16,19 +16,19 @@ spec:
   {{- include "brain-researcher-istio.virtualServiceSpec" .Values.virtualServices.webui | nindent 2 }}
 {{- end }}
 
-{{- if .Values.virtualServices.neurokg.enabled }}
+{{- if .Values.virtualServices.br-kg.enabled }}
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: neurokg-api-virtual-service
+  name: br-kg-api-virtual-service
   namespace: {{ include "brain-researcher-istio.namespace" . }}
   labels:
     {{- include "brain-researcher-istio.labels" . | nindent 4 }}
     app: brain-researcher
-    service: neurokg
+    service: br-kg
 spec:
-  {{- include "brain-researcher-istio.virtualServiceSpec" .Values.virtualServices.neurokg | nindent 2 }}
+  {{- include "brain-researcher-istio.virtualServiceSpec" .Values.virtualServices.br-kg | nindent 2 }}
 {{- end }}
 
 {{- if .Values.virtualServices.agent.enabled }}

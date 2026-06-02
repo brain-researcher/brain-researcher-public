@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start Brain Researcher services for local development.
-# Usage: ./scripts/dev/dev-services.sh [--no-neurokg] [--no-agent] [--no-orchestrator] [--no-ui]
+# Usage: ./scripts/dev/dev-services.sh [--no-br-kg] [--no-agent] [--no-orchestrator] [--no-ui]
 
 set -euo pipefail
 
@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
-START_NEUROKG=true
+START_BR_KG=true
 START_AGENT=true
 START_ORCHESTRATOR=true
 START_UI=true
@@ -17,13 +17,13 @@ PIDS=()
 
 for arg in "$@"; do
   case $arg in
-    --no-neurokg) START_NEUROKG=false ;;
+    --no-br-kg) START_BR_KG=false ;;
     --no-agent) START_AGENT=false ;;
     --no-orchestrator) START_ORCHESTRATOR=false ;;
     --no-ui) START_UI=false ;;
     --disable-agent-auth) DISABLE_AGENT_AUTH=true ;;
     --help)
-      echo "Usage: $0 [--no-neurokg] [--no-agent] [--no-orchestrator] [--no-ui]"
+      echo "Usage: $0 [--no-br-kg] [--no-agent] [--no-orchestrator] [--no-ui]"
       echo "       $0 [--disable-agent-auth]"
       exit 0
       ;;
@@ -52,8 +52,8 @@ elif [[ -z "${JWT_SECRET_KEY:-}" && -n "${NEXTAUTH_SECRET:-}" ]]; then
   export JWT_SECRET_KEY="${NEXTAUTH_SECRET}"
 fi
 
-export NEUROKG_API_URL="${NEUROKG_API_URL:-http://localhost:5000}"
-export NEUROKG_URL="${NEUROKG_URL:-http://localhost:5000}"
+export BR_KG_API_URL="${BR_KG_API_URL:-http://localhost:5000}"
+export BR_KG_URL="${BR_KG_URL:-http://localhost:5000}"
 export AGENT_URL="${AGENT_URL:-http://localhost:8000}"
 export BR_ORCHESTRATOR_URL="${BR_ORCHESTRATOR_URL:-http://localhost:3001}"
 
@@ -83,9 +83,9 @@ wait_for_http() {
   return 1
 }
 
-if $START_NEUROKG; then
+if $START_BR_KG; then
   echo "Starting BR-KG on port 5000..."
-  nohup br serve kg --host 0.0.0.0 --port 5000 > logs/neurokg.log 2>&1 &
+  nohup br serve kg --host 0.0.0.0 --port 5000 > logs/br-kg.log 2>&1 &
   PIDS+=("$!")
   wait_for_http "http://127.0.0.1:5000/health" "BR-KG"
 fi
@@ -118,7 +118,7 @@ fi
 
 echo
 echo "Services started:"
-$START_NEUROKG && echo "  BR-KG:      http://127.0.0.1:5000"
+$START_BR_KG && echo "  BR-KG:      http://127.0.0.1:5000"
 $START_AGENT && echo "  Agent:        http://127.0.0.1:8000"
 $START_ORCHESTRATOR && echo "  Orchestrator: http://127.0.0.1:3001"
 $START_UI && echo "  Web UI:       http://127.0.0.1:3000"

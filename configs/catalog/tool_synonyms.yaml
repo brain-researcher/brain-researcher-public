@@ -1,0 +1,346 @@
+# Tool Synonyms for Intent-to-Tool Mapping
+#
+# This file provides synonym expansion for common neuroimaging terms
+# to improve tool discovery. Synonyms are used to expand both tool
+# descriptions (at index build time) and user queries (at search time).
+#
+# Format:
+#   term: [synonym1, synonym2, ...]
+#
+# Terms and synonyms are normalized to lowercase during processing.
+
+# Brain Extraction / Skull Stripping
+skull strip:
+  - brain extraction
+  - BET
+  - skull stripping
+  - brain mask
+  - 3dSkullStrip
+  - remove skull
+  - strip skull
+
+brain extraction:
+  - skull strip
+  - BET
+  - skull stripping
+  - brain mask
+  - isolate brain
+
+# Preprocessing
+preprocess:
+  - preprocessing
+  - prepare data
+  - clean data
+  - fMRIPrep
+  - data preparation
+
+motion correction:
+  - realignment
+  - motion realignment
+  - mcflirt
+  - 3dvolreg
+  - correct motion
+  - movement correction
+
+spatial normalization:
+  - registration
+  - normalize
+  - warp
+  - align
+  - FNIRT
+  - ANTs
+  - spatial alignment
+
+smoothing:
+  - smooth
+  - blur
+  - gaussian filter
+  - 3dBlurInMask
+  - fslmaths smooth
+
+# Statistical Analysis
+glm:
+  - general linear model
+  - statistical analysis
+  - first level
+  - FEAT
+  - FitLins
+  - stats
+  - regression
+
+contrast:
+  - t-test
+  - comparison
+  - statistical test
+  - t-statistic
+  - group comparison
+
+cluster:
+  - cluster analysis
+  - peak detection
+  - cluster inference
+  - significant clusters
+  - activation clusters
+
+# Connectivity & Networks
+connectivity:
+  - functional connectivity
+  - brain networks
+  - network analysis
+  - graph theory
+  - correlation
+
+ica:
+  - independent component analysis
+  - MELODIC
+  - component analysis
+  - decomposition
+
+# Segmentation
+segmentation:
+  - tissue segmentation
+  - segment
+  - parcellation
+  - tissue classification
+  - FAST
+
+parcellation:
+  - segmentation
+  - atlas
+  - ROI definition
+  - region definition
+
+# Registration & Alignment
+registration:
+  - alignment
+  - normalize
+  - warp
+  - coregister
+  - FLIRT
+  - FNIRT
+  - ANTs
+
+coregister:
+  - registration
+  - align
+  - match
+  - overlay
+
+# Quality Control
+quality control:
+  - QC
+  - MRIQC
+  - check quality
+  - quality assessment
+  - data quality
+
+# Visualization
+visualization:
+  - visualize
+  - plot
+  - display
+  - render
+  - view brain
+
+# Surface Analysis
+surface:
+  - FreeSurfer
+  - cortical surface
+  - recon-all
+  - surface reconstruction
+  - pial surface
+
+cortical:
+  - surface
+  - cortex
+  - gray matter surface
+  - pial
+
+# Diffusion Imaging
+diffusion:
+  - DTI
+  - DWI
+  - diffusion tensor
+  - QSIPrep
+  - tractography
+
+tractography:
+  - fiber tracking
+  - white matter tracing
+  - diffusion tracking
+  - tract
+
+# Specific Tools (for better matching)
+bet:
+  - brain extraction
+  - skull strip
+  - FSL BET
+
+3dSkullStrip:
+  - skull strip
+  - brain extraction
+  - AFNI skull strip
+
+fmriprep:
+  - preprocessing
+  - preprocess
+  - fMRI preprocessing
+  - prepare fMRI
+
+mriqc:
+  - quality control
+  - QC
+  - quality assessment
+
+freesurfer:
+  - surface analysis
+  - cortical reconstruction
+  - recon-all
+  - structural analysis
+
+ants:
+  - registration
+  - normalization
+  - advanced normalization
+  - ANTs registration
+
+fsl:
+  - FEAT
+  - BET
+  - MELODIC
+  - FLIRT
+  - FNIRT
+
+afni:
+  - 3dvolreg
+  - 3dSkullStrip
+  - 3dBlurInMask
+  - AFNI tools
+
+# Analysis Types
+encoding model:
+  - predictive model
+  - brain encoding
+  - prediction
+  - encoding analysis
+
+decoding:
+  - classification
+  - MVPA
+  - multivariate pattern
+  - decode brain patterns
+
+mvpa:
+  - multivariate pattern analysis
+  - decoding
+  - classification
+  - pattern analysis
+
+rsa:
+  - representational similarity
+  - pattern similarity
+  - similarity analysis
+
+# Data Formats
+bids:
+  - brain imaging data structure
+  - BIDS dataset
+  - BIDS format
+  - standardized data
+
+nifti:
+  - NIfTI
+  - .nii
+  - .nii.gz
+  - neuroimaging format
+
+dicom:
+  - DICOM
+  - raw data
+  - scanner data
+
+# Task/Cognitive Terms
+working memory:
+  - n-back
+  - memory task
+  - WM
+  - short-term memory
+
+attention:
+  - attentional control
+  - focus
+  - selective attention
+  - sustained attention
+
+language:
+  - linguistic
+  - speech
+  - verbal
+  - language processing
+
+motor:
+  - movement
+  - motor control
+  - motor execution
+  - action
+
+visual:
+  - vision
+  - visual processing
+  - visual cortex
+  - seeing
+# =====================================================================
+# LLM Router & Coding Agent Tool Synonyms
+# =====================================================================
+ai.llm.router.chat:
+  - "大模型聊天"
+  - "通用LLM对话"
+  - "总结这段文字"
+  - "总结文档"
+  - "帮我润色一下"
+  - "general LLM chat"
+  - "summarize document"
+  - "rewrite this"
+
+ai.llm.gemini.chat:
+  - "Gemini聊天"
+  - "用Gemini回答"
+  - "使用Gemini"
+  - "Gemini CLI"
+  - "Google Gemini"
+  - "use gemini"
+
+code_agent:
+  - "coding agent"
+  - "写代码"
+  - "帮我改代码"
+  - "修bug"
+  - "修复这个错误"
+  - "写单元测试"
+  - "写pytest"
+  - "refactor code"
+  - "debug this"
+  - "write tests"
+
+# =====================================================================
+# Neuroimaging Python trio (atlas → timeseries → connectivity)
+# =====================================================================
+python.fetch_atlas.run:
+  - "fetch atlas"
+  - "download atlas"
+  - "get brain atlas"
+  - "atlas download"
+  - "parcellation atlas"
+
+python.extract_timeseries.run:
+  - "extract timeseries"
+  - "roi timeseries"
+  - "time series extraction"
+  - "mean roi signal"
+  - "timeseries from atlas"
+
+python.nilearn_connectivity_matrix.run:
+  - "connectivity matrix"
+  - "correlation matrix"
+  - "functional connectivity"
+  - "fc matrix"

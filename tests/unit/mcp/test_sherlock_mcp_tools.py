@@ -5,7 +5,7 @@ from brain_researcher.services.mcp import slurm_tools as st
 
 
 def test_sherlock_get_guide_wrapper_returns_batch_commands():
-    result = srv.sherlock_guide(action="guide", topic="batch", pi_group="your_pi_group")
+    result = srv.sherlock_guide(action="guide", topic="batch", pi_group="russpold")
 
     assert result["ok"] is True
     assert result["topic"] == "batch"
@@ -79,7 +79,9 @@ def test_sherlock_render_sbatch_script_gpu_multinode_contains_expected_directive
 
 
 def test_sherlock_patch_sbatch_script_updates_memory_and_cpu():
-    original = "#!/bin/bash\n#SBATCH --mem=32G\n#SBATCH --cpus-per-task=8\npython run.py\n"
+    original = (
+        "#!/bin/bash\n#SBATCH --mem=32G\n#SBATCH --cpus-per-task=8\npython run.py\n"
+    )
 
     result = st.sherlock_patch_sbatch_script(
         change_request="increase memory to 64G and set cpus-per-task to 16",
@@ -117,7 +119,7 @@ def test_sherlock_job_inspect_parses_local_command_outputs(monkeypatch):
                 "ok": True,
                 "stdout": (
                     "JobID|JobName|Partition|State|ExitCode|Elapsed|MaxRSS|NodeList|AllocCPUS\n"
-                    "123|test|<pi_group>|COMPLETED|0:0|00:10:00|2G|node001|8\n"
+                    "123|test|russpold|COMPLETED|0:0|00:10:00|2G|node001|8\n"
                 ),
                 "stderr": "",
                 "returncode": 0,

@@ -195,7 +195,7 @@ spec:
         target:
           type: Utilization
           averageUtilization: 60
-    
+
     # Memory utilization
     - type: Resource
       resource:
@@ -203,7 +203,7 @@ spec:
         target:
           type: Utilization
           averageUtilization: 65
-    
+
     # Custom metric: HTTP requests per second
     - type: Pods
       pods:
@@ -212,7 +212,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "100"
-    
+
     # Custom metric: Queue depth from Redis
     - type: External
       external:
@@ -224,7 +224,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "30"
-    
+
     # Custom metric: Active WebSocket connections
     - type: Object
       object:
@@ -237,7 +237,7 @@ spec:
         target:
           type: Value
           value: "500"
-    
+
     # Custom metric: Response time percentile
     - type: Pods
       pods:
@@ -246,7 +246,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "2000"  # 2 seconds
-  
+
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 180  # 3 minutes
@@ -273,16 +273,16 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: neurokg-custom-hpa
+  name: br-kg-custom-hpa
   namespace: brain-researcher-core
   labels:
-    app.kubernetes.io/name: neurokg
-    app.kubernetes.io/component: neurokg-custom-autoscaler
+    app.kubernetes.io/name: br-kg
+    app.kubernetes.io/component: br-kg-custom-autoscaler
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: neurokg
+    name: br-kg
   minReplicas: 2
   maxReplicas: 10
   metrics:
@@ -292,14 +292,14 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
-    
+
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
           averageUtilization: 75
-    
+
     # Custom metric: Database query rate
     - type: Pods
       pods:
@@ -308,7 +308,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "50"
-    
+
     # Custom metric: Knowledge graph search latency
     - type: Pods
       pods:
@@ -317,7 +317,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "1500"  # 1.5 seconds
-    
+
     # External metric: Vector index size
     - type: External
       external:
@@ -325,11 +325,11 @@ spec:
           name: vector_index_memory_usage
           selector:
             matchLabels:
-              service: "neurokg"
+              service: "br-kg"
         target:
           type: AverageValue
           averageValue: "80"  # 80% of available memory
-  
+
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 120
@@ -375,14 +375,14 @@ spec:
         target:
           type: Utilization
           averageUtilization: 80
-    
+
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
           averageUtilization: 85
-    
+
     # Custom metric: LLM request queue depth
     - type: External
       external:
@@ -394,7 +394,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "10"
-    
+
     # Custom metric: Token processing rate
     - type: Pods
       pods:
@@ -403,7 +403,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "5000"
-    
+
     # Custom metric: Model inference latency
     - type: Pods
       pods:
@@ -412,7 +412,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "30000"  # 30 seconds
-  
+
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 300  # 5 minutes (longer for LLM services)

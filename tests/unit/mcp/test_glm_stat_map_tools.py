@@ -107,6 +107,7 @@ def _mock_dataset_context(monkeypatch, tmp_path: Path, glm_root: Path) -> None:
 
 
 def test_tool_execute_resolve_dataset_asset_supports_stat_map(tmp_path, monkeypatch):
+    from brain_researcher.services.mcp import runstore
     from brain_researcher.services.mcp import server as srv
 
     openneuro_root = _write_openneuro_tree(tmp_path)
@@ -116,7 +117,7 @@ def test_tool_execute_resolve_dataset_asset_supports_stat_map(tmp_path, monkeypa
     clear_reference_asset_registry_cache()
     clear_glm_stat_map_selector_cache()
     _mock_dataset_context(monkeypatch, tmp_path, openneuro_root)
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"resolve_dataset_asset"})
@@ -154,6 +155,7 @@ def test_tool_execute_resolve_dataset_asset_supports_stat_map(tmp_path, monkeypa
 def test_tool_execute_resolve_reference_map_supports_structured_glm_query(
     tmp_path, monkeypatch
 ):
+    from brain_researcher.services.mcp import runstore
     from brain_researcher.services.mcp import server as srv
 
     openneuro_root = _write_openneuro_tree(tmp_path)
@@ -163,7 +165,7 @@ def test_tool_execute_resolve_reference_map_supports_structured_glm_query(
     clear_reference_asset_registry_cache()
     clear_glm_stat_map_selector_cache()
     _mock_dataset_context(monkeypatch, tmp_path, openneuro_root)
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"resolve_reference_map"})
@@ -203,6 +205,7 @@ def test_tool_execute_resolve_reference_map_supports_structured_glm_query(
 def test_tool_execute_resolve_neuroimage_asset_supports_auto_stat_map(
     tmp_path, monkeypatch
 ):
+    from brain_researcher.services.mcp import runstore
     from brain_researcher.services.mcp import server as srv
 
     openneuro_root = _write_openneuro_tree(tmp_path)
@@ -212,7 +215,7 @@ def test_tool_execute_resolve_neuroimage_asset_supports_auto_stat_map(
     clear_reference_asset_registry_cache()
     clear_glm_stat_map_selector_cache()
     _mock_dataset_context(monkeypatch, tmp_path, openneuro_root)
-    monkeypatch.setattr(srv, "RUN_ROOT", tmp_path)
+    monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
     monkeypatch.setattr(srv, "ENABLE_TOOL_EXECUTE", True)
     monkeypatch.setattr(srv, "TOOL_EXECUTE_ALLOWLIST", {"resolve_neuroimage_asset"})

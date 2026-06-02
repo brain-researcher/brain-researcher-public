@@ -16,7 +16,7 @@ def test_resolve_prod_mcp_token_prefers_local_token(monkeypatch) -> None:
     token = mod.resolve_prod_mcp_token(
         vm_name="brain-researcher-vm",
         zone="us-west1-b",
-        project="<YOUR_GCP_PROJECT>",
+        project="hai-gcp-dialogue-brain",
         namespace="brain-researcher-core",
         secret_name="brain-researcher-mcp-auth",
         secret_key="BR_MCP_AUTH_TOKEN",
@@ -25,10 +25,16 @@ def test_resolve_prod_mcp_token_prefers_local_token(monkeypatch) -> None:
     assert token == "local-token"
 
 
-def test_resolve_prod_mcp_token_decodes_legacy_secret_when_local_missing(monkeypatch) -> None:
+def test_resolve_prod_mcp_token_decodes_legacy_secret_when_local_missing(
+    monkeypatch,
+) -> None:
     monkeypatch.setattr(mod, "resolve_mcp_token", lambda: None)
     manifest = json.dumps(
-        {"data": {"BR_MCP_AUTH_TOKEN": base64.b64encode(b"secret-token").decode("ascii")}}
+        {
+            "data": {
+                "BR_MCP_AUTH_TOKEN": base64.b64encode(b"secret-token").decode("ascii")
+            }
+        }
     )
     monkeypatch.setattr(
         mod,
@@ -41,7 +47,7 @@ def test_resolve_prod_mcp_token_decodes_legacy_secret_when_local_missing(monkeyp
     token = mod.resolve_prod_mcp_token(
         vm_name="brain-researcher-vm",
         zone="us-west1-b",
-        project="<YOUR_GCP_PROJECT>",
+        project="hai-gcp-dialogue-brain",
         namespace="brain-researcher-core",
         secret_name="brain-researcher-mcp-auth",
         secret_key="BR_MCP_AUTH_TOKEN",
@@ -55,7 +61,9 @@ def test_resolve_prod_mcp_token_rejects_keyed_token_secret(monkeypatch) -> None:
     manifest = json.dumps(
         {
             "data": {
-                "BR_MCP_AUTH_TOKENS_JSON": base64.b64encode(b'{"kid":{"token_hash":"abc"}}').decode("ascii"),
+                "BR_MCP_AUTH_TOKENS_JSON": base64.b64encode(
+                    b'{"kid":{"token_hash":"abc"}}'
+                ).decode("ascii"),
                 "BR_MCP_TOKEN_PEPPER": base64.b64encode(b"pepper").decode("ascii"),
             }
         }
@@ -72,7 +80,7 @@ def test_resolve_prod_mcp_token_rejects_keyed_token_secret(monkeypatch) -> None:
         mod.resolve_prod_mcp_token(
             vm_name="brain-researcher-vm",
             zone="us-west1-b",
-            project="<YOUR_GCP_PROJECT>",
+            project="hai-gcp-dialogue-brain",
             namespace="brain-researcher-core",
             secret_name="brain-researcher-mcp-auth",
             secret_key="BR_MCP_AUTH_TOKEN",
@@ -439,9 +447,10 @@ def test_local_run_payload_falls_back_to_recipe_derivation() -> None:
     assert "docker pull nipreps/fmriprep:23.2.3" in local_run["commands"]
     assert local_run["required_env_vars"] == ["FS_LICENSE"]
     assert local_run["environment"]["required"][0]["name"] == "FS_LICENSE"
-    assert "Docker or a compatible container runtime" in local_run["prerequisites"][
-        "setup_once"
-    ][0]
+    assert (
+        "Docker or a compatible container runtime"
+        in local_run["prerequisites"]["setup_once"][0]
+    )
 
 
 def test_build_handoff_bundle_patches_external_params(tmp_path: Path) -> None:
@@ -781,12 +790,18 @@ def test_certify_workflow_verified_attaches_handoff_bundle(
     monkeypatch.setattr(
         mod,
         "stage_recipe_files",
-        lambda **kwargs: {"recipe_dir": kwargs["remote_dir"], "file_count": len(kwargs["files"])},
+        lambda **kwargs: {
+            "recipe_dir": kwargs["remote_dir"],
+            "file_count": len(kwargs["files"]),
+        },
     )
     monkeypatch.setattr(
         mod,
         "launch_remote_supervised_job",
-        lambda **kwargs: {"launcher_pid": "1234", "state_dir": kwargs["remote_state_dir"]},
+        lambda **kwargs: {
+            "launcher_pid": "1234",
+            "state_dir": kwargs["remote_state_dir"],
+        },
     )
     monkeypatch.setattr(
         mod,
@@ -799,7 +814,10 @@ def test_certify_workflow_verified_attaches_handoff_bundle(
         lambda **kwargs: {
             "ok": True,
             "artifacts": {
-                "subject_report_html": {"path": "/remote/out/sub-01.html", "exists": True}
+                "subject_report_html": {
+                    "path": "/remote/out/sub-01.html",
+                    "exists": True,
+                }
             },
         },
     )
@@ -824,7 +842,10 @@ def test_certify_workflow_verified_attaches_handoff_bundle(
         lambda **kwargs: {
             "ok": True,
             "workspace": str(
-                tmp_path / "workflow_mriqc" / "handoff_bundle" / "workflow_mriqc_neurodesk_recipe"
+                tmp_path
+                / "workflow_mriqc"
+                / "handoff_bundle"
+                / "workflow_mriqc_neurodesk_recipe"
             ),
             "bundled_artifacts": [{"name": "subject_report_html"}],
             "missing_inputs": ["bids_dir"],
@@ -860,7 +881,10 @@ def test_certify_workflow_verified_attaches_handoff_bundle(
     )
     assert result["classification"] == "verified"
     assert result["handoff_bundle"]["ok"] is True
-    assert result["handoff_bundle"]["bundled_artifacts"][0]["name"] == "subject_report_html"
+    assert (
+        result["handoff_bundle"]["bundled_artifacts"][0]["name"]
+        == "subject_report_html"
+    )
 
 
 def test_certify_workflow_classifies_launch_timeout(

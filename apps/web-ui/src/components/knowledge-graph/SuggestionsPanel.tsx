@@ -495,7 +495,7 @@ export function SuggestionsPanel({ onCountChange }: SuggestionsPanelProps) {
     setAuthRequired(false)
 
     try {
-      const res = await fetch('/api/neurokg/suggestions', { cache: 'no-store' })
+      const res = await fetch('/api/br-kg/suggestions', { cache: 'no-store' })
       if (res.status === 401) {
         setItems([])
         setAuthRequired(true)
@@ -545,7 +545,7 @@ export function SuggestionsPanel({ onCountChange }: SuggestionsPanelProps) {
       setMutatingId(id)
       try {
         const res = await fetch(
-          `/api/neurokg/suggestions/${encodeURIComponent(id)}/${action}`,
+          `/api/br-kg/suggestions/${encodeURIComponent(id)}/${action}`,
           { method: 'POST' },
         )
         if (res.status === 401) {

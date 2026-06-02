@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Backfill BR research-logging session snapshots into NeuroKG."""
+"""Backfill BR research-logging session snapshots into BRKG."""
 
 from __future__ import annotations
 

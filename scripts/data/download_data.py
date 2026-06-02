@@ -196,9 +196,9 @@ def setup():
 
     # Create data directories
     data_dirs = [
-        "data/neurokg/db",
-        "data/neurokg/raw",
-        "data/neurokg/logs",
+        "data/br-kg/db",
+        "data/br-kg/raw",
+        "data/br-kg/logs",
         "data/templates",
         "data/examples",
         "data/test_data",
@@ -231,10 +231,10 @@ def check():
 
     # Check key data files
     key_files = [
-        ("BR-KG Database", "data/neurokg/db/neurokg_full.db"),
-        ("GLM Database", "data/neurokg/db/neurokg_glmfitlins.db"),
-        ("PubMed Data", "data/neurokg/raw/pubmed_publications.json"),
-        ("WikiData", "data/neurokg/raw/wikidata_brain_regions_sample_200.json"),
+        ("BR-KG Database", "data/br-kg/db/br_kg_full.db"),
+        ("GLM Database", "data/br-kg/db/br_kg_glmfitlins.db"),
+        ("PubMed Data", "data/br-kg/raw/pubmed_publications.json"),
+        ("WikiData", "data/br-kg/raw/wikidata_brain_regions_sample_200.json"),
     ]
 
     table = Table(title="Data File Status")

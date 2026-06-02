@@ -1,0 +1,89 @@
+{
+  "schema_version": "demo-run-bundle-v2",
+  "generated_at": "2026-05-26T06:32:41+00:00",
+  "demo": {
+    "slug": "bounded-self-evolving-predictive",
+    "analysis_id": "run_bounded_self_evolving_predictive",
+    "title": "Bounded Self-Evolving Research: Predictive",
+    "description": "Bounded autoresearch predictive case report on calibrated resting-state functional connectivity prediction of HCP behavioral components.",
+    "tags": [
+      "bounded-self-evolving",
+      "predictive",
+      "autoresearch",
+      "rs-fc",
+      "hcp"
+    ],
+    "demo_type": "manuscript_case_report",
+    "stage_tags": [
+      "R5"
+    ],
+    "evidence_mode": "real",
+    "log_mode": "summary_only",
+    "manuscript_figure": null,
+    "canonical_name": "Bounded_Self_Evolving_Predictive",
+    "is_template": false,
+    "template_reason": null
+  },
+  "source_run_ids": [],
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "id": "a001",
+      "path": "docs/prompts/brain_researcher_hybrid/reports/bounded_self_evolving_research_predictive_case_report.pdf",
+      "mime_type": "application/pdf",
+      "roles": [
+        "reference_summary_source",
+        "evidence"
+      ],
+      "stage": "R5",
+      "title": "Calibrated rs-FC Prediction of HCP Behavioral Components"
+    }
+  ],
+  "prompt_pack": {
+    "primary_prompt": "Review the curated PDF case report: Calibrated rs-FC Prediction of HCP Behavioral Components.",
+    "source_artifact_id": null,
+    "followup_prompts": [],
+    "coding_agent_prompts": [],
+    "mcp_prompts": []
+  },
+  "reference_output": {
+    "summary": "Calibrated rs-FC Prediction of HCP Behavioral Components",
+    "summary_kind": "answer",
+    "source_artifact_id": null,
+    "document_ids": [
+      "a001"
+    ],
+    "highlights": [
+      "Calibrated rs-FC Prediction of HCP Behavioral Components"
+    ],
+    "generated_at": null,
+    "dataset_version": null
+  },
+  "replay": {
+    "source": "bundle_steps",
+    "steps": [
+      {
+        "step_id": "stage_R5_1",
+        "stage": "R5",
+        "title": "RunCard / Export",
+        "status": "completed",
+        "tool": null,
+        "tool_calls": [],
+        "prompt_text": "Review the curated PDF case report: Calibrated rs-FC Prediction of HCP Behavioral Components.",
+        "response_text": "Curated PDF report available: Calibrated rs-FC Prediction of HCP Behavioral Components",
+        "prompt_origin": "bundle",
+        "response_origin": "bundle",
+        "artifact_ref_ids": [
+          "a001"
+        ],
+        "started_at": null,
+        "finished_at": null,
+        "duration_ms": null
+      }
+    ]
+  },
+  "fallback": {
+    "level": "none",
+    "reasons": []
+  }
+}

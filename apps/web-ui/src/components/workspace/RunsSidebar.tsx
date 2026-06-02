@@ -93,15 +93,49 @@ const ATTACH_ERROR_TOAST: Record<
   },
 }
 
-function formatTimestamp(value: string | null): string {
-  if (!value) return ''
-  const ms = Date.parse(value)
-  if (!Number.isFinite(ms)) return ''
+// Run timestamps come back as Unix epoch (seconds, sometimes ms) integers OR ISO
+// strings depending on the source, so normalize both to milliseconds.
+function toEpochMs(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null
+    return value < 1e12 ? value * 1000 : value
+  }
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (/^\d+$/.test(trimmed)) {
+    const n = Number(trimmed)
+    return n < 1e12 ? n * 1000 : n
+  }
+  const parsed = Date.parse(trimmed)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function formatTimestamp(value: string | number | null): string {
+  const ms = toEpochMs(value)
+  if (ms === null) return ''
   try {
     return formatDistanceToNow(new Date(ms), { addSuffix: true })
   } catch {
     return ''
   }
+}
+
+function formatDuration(
+  start: string | number | null,
+  end: string | number | null,
+): string {
+  const a = toEpochMs(start)
+  const b = toEpochMs(end)
+  if (a === null || b === null || b < a) return ''
+  const total = Math.round((b - a) / 1000)
+  if (total < 60) return `${total}s`
+  const minutes = Math.floor(total / 60)
+  const seconds = total % 60
+  if (minutes < 60) return seconds ? `${minutes}m ${seconds}s` : `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  const remMinutes = minutes % 60
+  return remMinutes ? `${hours}h ${remMinutes}m` : `${hours}h`
 }
 
 function sleep(ms: number): Promise<void> {
@@ -113,9 +147,18 @@ function sleep(ms: number): Promise<void> {
 export interface RunsSidebarProps {
   brSessionId: string | null
   runtimeReady: boolean
+  // Client-side cell injection through the live marimo session (same-origin
+  // iframe bridge). Preferred over the server path, which cannot reliably target
+  // the browser's live kernel session. Falls back to the server when absent or
+  // when it throws (e.g. bridge not ready / cross-origin).
+  appendCellClient?: (code: string) => Promise<void>
 }
 
-export function RunsSidebar({ brSessionId, runtimeReady }: RunsSidebarProps) {
+export function RunsSidebar({
+  brSessionId,
+  runtimeReady,
+  appendCellClient,
+}: RunsSidebarProps) {
   const { toast } = useToast()
   const [open, setOpen] = React.useState(false)
   const [tab, setTab] = React.useState<RunSidebarTab>('all')
@@ -163,15 +206,46 @@ export function RunsSidebar({ brSessionId, runtimeReady }: RunsSidebarProps) {
       if (!brSessionId) return
       const code = `import brain_researcher.sdk as br\nrun_${run.run_id.replace(/[^A-Za-z0-9]/g, '_')} = br.attach_run('${run.run_id.replace(/'/g, "\\'")}')`
       setAttachingId(run.run_id)
+      // Two distinct success states so the toast never overstates what happened:
+      //  - live: the client bridge injected the cell into the running notebook,
+      //    so it is visible immediately.
+      //  - server: marimo accepted the cell into the document, but its
+      //    transaction API does not echo back to the originating frontend
+      //    (notify excludes the originator), so the cell only appears after a
+      //    reload — say so instead of claiming it was added live.
+      // Success toasts dwell longer than the 5s radix default so the user can
+      // actually read them, with a ✓ for at-a-glance confirmation.
+      const attachedLiveToast = () =>
+        toast({
+          title: `✓ Attached run ${run.run_id.slice(0, 12)} to notebook`,
+          description:
+            'A new cell calling `br.attach_run(...)` was added at the end of the notebook.',
+          duration: 9000,
+        })
+      const attachedServerToast = () =>
+        toast({
+          title: `✓ Attached run ${run.run_id.slice(0, 12)} to the runtime`,
+          description:
+            'A `br.attach_run(...)` cell was added to the notebook file. Reload the notebook to see it.',
+          duration: 9000,
+        })
+      // Prefer client-side injection through the live marimo session; only fall
+      // back to the server path (which can't target the live kernel) on failure.
+      if (appendCellClient) {
+        try {
+          await appendCellClient(code)
+          attachedLiveToast()
+          setAttachingId(null)
+          return
+        } catch {
+          // fall through to the server-side path below
+        }
+      }
       let lastError: AppendHubSessionCellError | null = null
       for (let attempt = 0; attempt <= ATTACH_RETRY_DELAYS_MS.length; attempt++) {
         try {
           await appendHubSessionCell(brSessionId, code)
-          toast({
-            title: `Attached run ${run.run_id.slice(0, 12)} to notebook`,
-            description:
-              'A new cell calling `br.attach_run(...)` was added at the end of the notebook.',
-          })
+          attachedServerToast()
           lastError = null
           break
         } catch (err) {
@@ -204,7 +278,7 @@ export function RunsSidebar({ brSessionId, runtimeReady }: RunsSidebarProps) {
         })
       }
     },
-    [brSessionId, toast],
+    [brSessionId, toast, appendCellClient],
   )
 
   return (
@@ -276,6 +350,11 @@ export function RunsSidebar({ brSessionId, runtimeReady }: RunsSidebarProps) {
               >
                 {filtered.map((run) => {
                   const updated = formatTimestamp(run.updated_at)
+                  const created = formatTimestamp(run.created_at)
+                  const duration = formatDuration(
+                    run.created_at,
+                    run.finished_at,
+                  )
                   const attachDisabled =
                     !runtimeReady || !brSessionId || attachingId === run.run_id
                   const attachButton = (
@@ -302,7 +381,10 @@ export function RunsSidebar({ brSessionId, runtimeReady }: RunsSidebarProps) {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="truncate font-medium">
-                              {run.workflow_id || `Run ${run.run_id.slice(0, 8)}`}
+                              {run.title ||
+                                run.workflow_label ||
+                                run.workflow_id ||
+                                `Run ${run.run_id.slice(0, 8)}`}
                             </span>
                             <Badge
                               className={`px-2 py-0 text-[10px] font-semibold uppercase tracking-wide ${STATUS_PILL_STYLE[run.status]}`}
@@ -310,25 +392,70 @@ export function RunsSidebar({ brSessionId, runtimeReady }: RunsSidebarProps) {
                               {run.status}
                             </Badge>
                           </div>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                          <div className="mt-0.5 font-mono text-[10px] text-slate-400 dark:text-slate-500">
+                            {run.run_id}
+                          </div>
+                          {run.intent ? (
+                            <div
+                              className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300"
+                              title={run.intent}
+                            >
+                              {run.intent}
+                            </div>
+                          ) : null}
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                            {run.source !== 'unknown' ? (
+                              <Badge
+                                variant="outline"
+                                className="px-1.5 py-0 text-[10px]"
+                                data-testid={`runs-sidebar-source-${run.run_id}`}
+                              >
+                                {run.source === 'internal'
+                                  ? 'Studio'
+                                  : 'External agent'}
+                              </Badge>
+                            ) : null}
                             {run.dataset_id ? (
                               <span className="truncate">
-                                Dataset: {run.dataset_id}
+                                Dataset: {run.dataset_label || run.dataset_id}
                               </span>
                             ) : null}
-                            <Badge
-                              variant="outline"
-                              className="px-1.5 py-0 text-[10px]"
-                              data-testid={`runs-sidebar-source-${run.run_id}`}
-                            >
-                              {run.source === 'internal'
-                                ? 'Studio'
-                                : run.source === 'external'
-                                  ? 'External agent'
-                                  : 'Unknown'}
-                            </Badge>
-                            {updated ? <span>· {updated}</span> : null}
+                            {run.task ? (
+                              <span
+                                className="truncate"
+                                data-testid={`runs-sidebar-task-${run.run_id}`}
+                              >
+                                Task: {run.task}
+                              </span>
+                            ) : null}
+                            {created ? <span>Started {created}</span> : null}
+                            {duration ? <span>· {duration}</span> : null}
+                            {!created && updated ? (
+                              <span>Updated {updated}</span>
+                            ) : null}
+                            {typeof run.step_count === 'number' &&
+                            run.step_count > 0 ? (
+                              <span>
+                                · {run.step_count} step
+                                {run.step_count === 1 ? '' : 's'}
+                              </span>
+                            ) : null}
+                            {typeof run.artifact_count === 'number' &&
+                            run.artifact_count > 0 ? (
+                              <span>
+                                · {run.artifact_count} artifact
+                                {run.artifact_count === 1 ? '' : 's'}
+                              </span>
+                            ) : null}
                           </div>
+                          {run.error_message ? (
+                            <div
+                              className="mt-1 truncate text-xs text-rose-600 dark:text-rose-400"
+                              title={run.error_message}
+                            >
+                              {run.error_message}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap items-center gap-2">

@@ -8,7 +8,7 @@ from brain_researcher.core.ingestion.loaders.nilearn_atlas_unified import (
     AtlasSpec,
     NilearnAtlasUnifiedLoader,
 )
-from brain_researcher.services.neurokg.graph.fake_graph_database import FakeGraphDB
+from brain_researcher.services.br_kg.graph.fake_graph_database import FakeGraphDB
 
 
 @pytest.fixture
@@ -43,7 +43,9 @@ def mock_nilearn(tmp_path, monkeypatch):
 
 def test_nilearn_loader_parses_regions(mock_nilearn, tmp_path):
     loader = NilearnAtlasUnifiedLoader(
-        atlas_specs=[AtlasSpec(name="Test AAL", fetcher="fetch_atlas_aal", slug="test_aal")],
+        atlas_specs=[
+            AtlasSpec(name="Test AAL", fetcher="fetch_atlas_aal", slug="test_aal")
+        ],
         data_dir=tmp_path,
     )
 

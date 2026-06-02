@@ -1,0 +1,3460 @@
+tools:
+- id: python.monai_tool.run
+  name: MONAI deep learning
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - deep_learning
+  intents:
+  - monai_deep_learning
+  consumes:
+  - volume_3d
+  - volume_4d
+  produces:
+  - model_artifact
+  - mask_path
+  resources:
+    cpu_min: 4
+    mem_mb_min: 16000
+    gpu: true
+    time_min_default: 30
+  python:
+    module: brain_researcher.services.tools.monai_tool
+    function: MONAITool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - python
+  - deep_learning
+  description: python python.monai_tool.run tool
+  metadata: {}
+- id: python.dl_pytorch_tool.run
+  name: PyTorch deep learning
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - deep_learning
+  intents:
+  - dl_pytorch
+  consumes:
+  - volume_3d
+  - volume_4d
+  - labels
+  produces:
+  - model_artifact
+  resources:
+    cpu_min: 4
+    mem_mb_min: 12000
+    gpu: true
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.dl_pytorch_tool
+    function: PyTorchDeepLearningTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - python
+  - deep_learning
+  description: python python.dl_pytorch_tool.run tool
+  metadata: {}
+- id: python.gnn_connectivity_tool.run
+  name: GNN connectivity analysis
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - dmri
+  capabilities:
+  - connectivity
+  intents:
+  - gnn_connectivity_analysis
+  consumes:
+  - connectivity_matrix
+  - timeseries
+  produces:
+  - graph_metrics
+  resources:
+    cpu_min: 4
+    mem_mb_min: 12000
+    gpu: true
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.gnn_connectivity_tool
+    function: GNNConnectivityTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - python
+  description: python python.gnn_connectivity_tool.run tool
+  metadata: {}
+- id: python.fsl_melodic_tool.run
+  name: FSL MELODIC (python wrapper)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - ica
+  intents:
+  - fsl_melodic_ica
+  consumes:
+  - volume_4d
+  produces:
+  - timeseries
+  - stats_map
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.fsl_melodic_tool
+    function: FSLMELODICTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - python
+  - analysis
+  description: python python.fsl_melodic_tool.run tool
+  metadata: {}
+- id: python.fsl_dual_regression_tool.run
+  name: FSL Dual Regression (python wrapper)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - ica
+  intents:
+  - fsl_dual_regression
+  consumes:
+  - volume_4d
+  - timeseries
+  produces:
+  - stats_map
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.fsl_melodic_tool
+    function: DualRegressionTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - python
+  - analysis
+  description: python python.fsl_dual_regression_tool.run tool
+  metadata: {}
+- id: python.fsl_fix_multirun.run
+  name: FSL FIX multi-run
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - denoising
+  intents:
+  - fsl_fix_multirun
+  consumes:
+  - volume_4d
+  produces:
+  - clean_bold
+  resources:
+    cpu_min: 4
+    mem_mb_min: 10000
+    gpu: false
+    time_min_default: 30
+  python:
+    module: brain_researcher.services.tools.fsl_fix_tool
+    function: FSLFIXMultiRunTool
+    entry_type: class
+  function: preprocessing
+  risk: safe
+  tags:
+  - python
+  - fmri
+  description: python python.fsl_fix_multirun.run tool
+  metadata: {}
+- id: python.xcpd_tool.run
+  name: XCP-D postprocessing
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - preprocessing
+  intents:
+  - xcpd_postprocessing
+  consumes:
+  - preprocessed_bold
+  produces:
+  - clean_bold
+  - connectivity_matrix
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 30
+  python:
+    module: brain_researcher.services.tools.xcpd_tool
+    function: XCPDTool
+    entry_type: class
+  function: preprocessing
+  risk: safe
+  tags:
+  - python
+  - fmri
+  description: python python.xcpd_tool.run tool
+  metadata: {}
+- id: python.multimodal_integration_tool.run
+  name: Multimodal integration
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - multimodal
+  capabilities:
+  - fusion
+  intents:
+  - multimodal_integration
+  consumes:
+  - volume_3d
+  - volume_4d
+  - timeseries
+  produces:
+  - fused_representation
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.multimodal_integration_tool
+    function: MultimodalIntegrationTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - python
+  - multimodal
+  description: python python.multimodal_integration_tool.run tool
+  metadata: {}
+- id: python.read_nwb.run
+  name: Read NWB
+  package: python
+  domain: neurophysiology
+  runtime_kind: python
+  modality:
+  - nwb
+  capabilities:
+  - io
+  intents:
+  - read_nwb
+  consumes:
+  - file_path
+  produces:
+  - features_table
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.nwb_tools
+    function: ReadNWBTool
+    entry_type: class
+  function: data_management
+  risk: safe
+  description: python python.read_nwb.run tool
+  metadata: {}
+- id: python.write_nwb.run
+  name: Write NWB
+  package: python
+  domain: neurophysiology
+  runtime_kind: python
+  modality:
+  - nwb
+  capabilities:
+  - io
+  intents:
+  - write_nwb
+  consumes:
+  - features_table
+  produces:
+  - file_path
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.nwb_tools
+    function: WriteNWBTool
+    entry_type: class
+  function: data_management
+  risk: safe
+  description: python python.write_nwb.run tool
+  metadata: {}
+- id: python.inspect_nwb.run
+  name: Inspect NWB
+  package: python
+  domain: neurophysiology
+  runtime_kind: python
+  modality:
+  - nwb
+  capabilities:
+  - io
+  intents:
+  - inspect_nwb
+  consumes:
+  - file_path
+  produces:
+  - features_table
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.nwb_tools
+    function: InspectNWBTool
+    entry_type: class
+  function: data_management
+  risk: safe
+  description: python python.inspect_nwb.run tool
+  metadata: {}
+- id: python.fetch_atlas.run
+  name: Fetch Atlas
+  package: python
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - atlas_fetch
+  - parcellation
+  - metadata
+  intents:
+  - fetch_atlas_parcellation
+  consumes:
+  - bids_root
+  produces:
+  - parcellation_labels
+  resources:
+    cpu_min: 1
+    mem_mb_min: 256
+    gpu: false
+    time_min_default: 1
+  python:
+    module: brain_researcher.services.tools.fetch_atlas_tool
+    function: FetchAtlasTool
+    entry_type: class
+  metadata:
+    description: Creates or retrieves reference atlases for downstream pipelines.
+  domain: advanced
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.fetch_atlas.run tool
+- id: python.extract_timeseries.run
+  name: Extract Timeseries
+  package: python
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - timeseries_extraction
+  - preprocessing
+  intents:
+  - roi_timeseries_fmri
+  consumes:
+  - volume_4d
+  - parcellation_labels
+  produces:
+  - timeseries
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.extract_timeseries_tool
+    function: ExtractTimeseriesTool
+    entry_type: class
+  metadata:
+    description: Generates ROI mean timeseries from fMRI volumes given an atlas.
+  domain: dmri
+  function: analysis
+  risk: safe
+  tags:
+  - analysis
+  - dmri
+  - python
+  - safe
+  description: python python.extract_timeseries.run tool
+- id: python.nilearn_connectivity_matrix.run
+  name: Nilearn Connectivity Matrix
+  package: python
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - connectivity_matrix
+  - functional_connectivity
+  intents:
+  - connectivity_matrix_fmri
+  consumes:
+  - timeseries
+  produces:
+  - connectivity_matrix
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.nilearn_connectivity_matrix_tool
+    function: NilearnConnectivityMatrixTool
+    entry_type: class
+  metadata:
+    description: Computes lightweight connectivity matrices from ROI timeseries.
+  domain: advanced
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.nilearn_connectivity_matrix.run tool
+- id: ai.llm.router.chat
+  name: LLM Router Chat
+  package: ai
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - general
+  capabilities:
+  - llm_chat
+  intents:
+  - llm_chat
+  consumes:
+  - text_prompt
+  - text_context
+  - llm_task_type
+  produces:
+  - text_completion
+  - llm_usage
+  resources:
+    cpu_min: 1
+    mem_mb_min: 256
+    gpu: false
+    time_min_default: 1
+  python:
+    module: brain_researcher.services.tools.llm_router_tool
+    function: LLMRouterChatTool
+    entry_type: class
+  metadata:
+    source: curated
+    family: llm_router
+    description: Multi-credential LLM router (Gemini-first) with automatic fallback.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: ai ai.llm.router.chat tool
+- id: ai.llm.gemini.chat
+  name: Gemini CLI Chat
+  package: ai
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - general
+  capabilities:
+  - llm_chat
+  intents:
+  - llm_chat
+  consumes:
+  - text_prompt
+  - text_context
+  - llm_model_hint
+  produces:
+  - text_completion
+  - llm_usage
+  resources:
+    cpu_min: 1
+    mem_mb_min: 256
+    gpu: false
+    time_min_default: 1
+  python:
+    module: brain_researcher.services.agent.utils.gemini_fallback
+    function: chat_with_fallback
+    entry_type: function
+  metadata:
+    source: curated
+    family: gemini_cli
+    description: Direct Gemini CLI cascade with automatic credential fallback.
+    prefers_credential: local_gemini_cli
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: ai ai.llm.gemini.chat tool
+- id: code_agent
+  name: Coding Agent
+  package: ai
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - general
+  capabilities:
+  - coding_agent
+  intents:
+  - code_assistant
+  consumes:
+  - text_prompt
+  - path_list
+  - test_list
+  - apply_flag
+  produces:
+  - code_summary
+  - code_diff
+  - code_edit_plan
+  - test_status
+  resources:
+    cpu_min: 1
+    mem_mb_min: 256
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.llm_router_tool
+    function: CodingAgentTool
+    entry_type: class
+  backend:
+    kind: python
+    provider: ai.coding
+  metadata:
+    source: curated
+    family: coding_agent
+    description: LLM-based coding assistant (refactor, debug, write tests) with FS
+      context, iterative run/fix, optional patch apply.
+    parameters:
+      task:
+        type: string
+        required: true
+        description: User coding request
+      paths:
+        type: array
+        items: string
+        required: false
+        description: Files/dirs/globs to focus on
+      tests:
+        type: array
+        items: string
+        required: false
+        description: Test commands to run (e.g. pytest ...)
+      auto_fs_context:
+        type: boolean
+        default: true
+        description: Auto-search/read relevant code via gemini.fs
+      max_iters:
+        type: integer
+        default: 3
+        description: Max generate→run iterations
+      apply:
+        type: boolean
+        default: false
+        description: Apply patches to repo (CLI-only recommended)
+      dry_run:
+        type: boolean
+        default: false
+        description: If apply is true, preview only
+    returns:
+      status:
+        type: string
+        enum:
+        - success
+        - failed
+        - partial
+        - unknown
+      summary:
+        type: string
+        description: Human-readable result summary
+      iterations:
+        type: integer
+      files_touched:
+        type: array
+        items: string
+      files_changed:
+        type: array
+        items: object
+        description: Per-file change summaries
+      patches:
+        type: array
+        items: string
+        description: Unified diff patches (not auto-applied unless apply=true)
+      test_status:
+        type: string
+        enum:
+        - passed
+        - failed
+        - not_run
+        - null
+      exec_stdout:
+        type: string
+        nullable: true
+      exec_stderr:
+        type: string
+        nullable: true
+      requires_confirmation:
+        type: boolean
+        description: True when patches present and not auto-applied
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: ai code_agent tool
+- id: python.nilearn_preprocessing.run
+  name: Nilearn Preprocessing
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - fmri_preprocessing
+  intents:
+  - fmri_preprocessing
+  consumes:
+  - volume_4d
+  produces:
+  - volume_4d
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.nilearn_preprocessing
+    function: NiftiMaskerTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Standard fMRI preprocessing wrappers built on Nilearn.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.nilearn_preprocessing.run tool
+- id: python.nilearn_glm.run
+  name: Nilearn GLM
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - glm_first_level_py
+  - glm_first_level
+  - glm
+  intents:
+  - glm_first_level_fmri
+  consumes:
+  - volume_4d
+  produces:
+  - stats_map
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.nilearn_glm
+    function: GLMFirstLevelTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: General Linear Model fitting using Nilearn.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.nilearn_glm.run tool
+- id: python.nilearn_viz.run
+  name: Nilearn Visualization
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - visualization
+  - plotting
+  - advanced_visualization
+  intents:
+  - fmri_visualization
+  consumes:
+  - stats_map
+  produces:
+  - report_html
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.nilearn_viz
+    function: VizStatMapTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Visualization helpers for statistical maps and surfaces.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.nilearn_viz.run tool
+- id: python.advanced_visualization.run
+  name: Advanced Visualization (Nilearn)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - visualization
+  - plotting
+  - advanced_visualization
+  intents:
+  - fmri_visualization
+  consumes:
+  - stats_map
+  produces:
+  - report_html
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.nilearn_viz
+    function: VizStatMapTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Advanced visualization helpers for statistical maps and surfaces.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: Advanced visualization helpers (alias of Nilearn visualization).
+  constraints:
+    is_alias: true
+    alias_of: python.nilearn_viz.run
+- id: python.nilearn_mvpa.run
+  name: Nilearn MVPA
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - mvpa
+  - decoding
+  intents:
+  - mvpa_decoding_fmri
+  consumes:
+  - volume_4d
+  - labels
+  produces:
+  - classification_report
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.nilearn_mvpa
+    function: MVPADecodingTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Multivariate pattern analysis / decoding using Nilearn.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.nilearn_mvpa.run tool
+- id: python.neurosynth_tools.run
+  name: Neurosynth Meta-analysis
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - meta_analysis
+  - neurosynth
+  intents:
+  - meta_analysis_cbma
+  consumes:
+  - concept_terms
+  produces:
+  - stats_map
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.neurosynth_tools
+    function: NeuroSynthMetaAnalysisTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Neurosynth-based meta-analysis and reverse inference helpers.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.neurosynth_tools.run tool
+- id: python.coordinate_meta_analysis.run
+  name: Coordinate Meta-analysis
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - meta_analysis
+  - coordinate_meta_analysis
+  intents:
+  - meta_analysis_cbma
+  consumes:
+  - coordinates
+  - study_ids
+  produces:
+  - stats_map
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.enhanced_meta_analysis
+    function: CoordinateMetaAnalysisTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Coordinate-based meta-analysis (ALE/MKDA) via NiMARE when available.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.coordinate_meta_analysis.run tool
+- id: python.rag_tools.run
+  name: RAG Retrieval
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - general
+  capabilities:
+  - rag_retrieval
+  consumes:
+  - text_prompt
+  - text_context
+  produces:
+  - text_completion
+  intents:
+  - rag_retrieval
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 1
+  python:
+    module: brain_researcher.services.tools.rag_tools
+    function: RAGTools
+    entry_type: class
+  metadata:
+    source: curated
+    description: Retrieval-augmented generation utilities for documents.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.rag_tools.run tool
+- id: python.advanced_deep_learning.run
+  name: Advanced Deep Learning
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - deep_learning
+  intents:
+  - deep_learning_experiments
+  consumes:
+  - volume_4d
+  produces:
+  - model_artifact
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: true
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.advanced_deep_learning
+    function: VisionTransformerTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Deep learning pipelines (GPU-capable) for neuroimaging.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.advanced_deep_learning.run tool
+- id: python.genetics_genomics_tools.run
+  name: Genetics / Genomics Tools
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - genetics
+  capabilities:
+  - genomics_analysis
+  intents:
+  - genetics_analysis
+  consumes:
+  - genetics_data
+  produces:
+  - association_stats
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.genetics_genomics_tools
+    function: GWASAnalysisTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Genomics workflows (QC/association) for neurogenetics datasets.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.genetics_genomics_tools.run tool
+- id: python.multimodal_fusion.run
+  name: Multimodal fusion / similarity
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - multimodal
+  capabilities:
+  - fusion
+  intents:
+  - brain_similarity_analysis
+  consumes:
+  - volume_3d
+  - volume_4d
+  - features_table
+  produces:
+  - metrics
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.multimodal_fusion
+    function: MultimodalFusionTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - python
+  - multimodal
+  description: Multimodal fusion / brain-similarity metrics across imaging features
+    (Python wrapper).
+- id: python.pet_imaging_tools.run
+  name: PET Imaging Tools
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - pet
+  capabilities:
+  - pet_imaging
+  intents:
+  - pet_preprocessing
+  consumes:
+  - volume_3d
+  produces:
+  - pet_metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 4
+  python:
+    module: brain_researcher.services.tools.pet_imaging_tools
+    function: SUVCalculationTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: PET preprocessing and SUVR/metric extraction.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.pet_imaging_tools.run tool
+- id: python.optical_imaging_tools.run
+  name: Optical Imaging Tools
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - optical
+  capabilities:
+  - optical_imaging
+  intents:
+  - optical_imaging
+  consumes:
+  - optical_timeseries
+  produces:
+  - optical_metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 4
+  python:
+    module: brain_researcher.services.tools.optical_imaging_tools
+    function: CalciumImagingAnalysisTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Optical imaging preprocessing and metric computation.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.optical_imaging_tools.run tool
+- id: python.clinical_decision_support.run
+  name: Clinical Decision Support
+  package: python
+  domain: clinical
+  runtime_kind: python
+  modality:
+  - clinical
+  capabilities:
+  - clinical_decision_support
+  intents:
+  - clinical_decision_support
+  consumes:
+  - clinical_data
+  produces:
+  - risk_scores
+  resources:
+    cpu_min: 1
+    mem_mb_min: 1024
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.clinical_decision_support
+    function: ClinicalDecisionSupport
+    entry_type: class
+  metadata:
+    source: curated
+    description: Risk scoring / support utilities for clinical data.
+  function: analysis
+  risk: safe
+  tags:
+  - analysis
+  - clinical
+  - python
+  - safe
+  description: python python.clinical_decision_support.run tool
+- id: python.causality_analysis.run
+  name: Causality Analysis
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - causal_inference
+  consumes:
+  - timeseries
+  produces:
+  - causal_graph
+  intents:
+  - causal_inference_timeseries
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 4
+  python:
+    module: brain_researcher.services.tools.causality_analysis
+    function: GrangerCausalityTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Causal discovery / inference on timeseries data.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.causality_analysis.run tool
+- id: python.nwb_tools.run
+  name: NWB Tools
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - ieeg
+  - general
+  capabilities:
+  - nwb_io
+  intents:
+  - nwb_io
+  consumes:
+  - nwb_file
+  produces:
+  - nwb_summary
+  resources:
+    cpu_min: 1
+    mem_mb_min: 1024
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.nwb_tools
+    function: NWBTools
+    entry_type: class
+  metadata:
+    source: curated
+    description: Read/inspect/write helpers for Neurodata Without Borders files.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.nwb_tools.run tool
+- id: python.gnn_connectivity.run
+  name: GNN Connectivity (Python)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - gnn_connectivity
+  - graph_metrics
+  intents:
+  - connectivity_matrix_fmri
+  consumes:
+  - timeseries
+  produces:
+  - connectivity_matrix
+  - graph_metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.gnn_connectivity_tool
+    function: GNNConnectivityTool
+    entry_type: class
+  metadata:
+    source: curated
+    family: gnn_connectivity
+    description: Graph neural network connectivity analysis with metrics and embeddings.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.gnn_connectivity.run tool
+- id: python.validate_bids.run
+  name: Validate BIDS
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  - dmri
+  capabilities:
+  - bids_validation
+  intents:
+  - bids_validation
+  consumes:
+  - bids_root
+  produces:
+  - report_html
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.bids_tools
+    function: ValidateBIDSTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.validate_bids.run tool
+  metadata: {}
+- id: python.query_bids_layout.run
+  name: Query BIDS Layout
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  - dmri
+  capabilities:
+  - bids_query
+  intents:
+  - bids_query
+  consumes:
+  - bids_root
+  produces:
+  - metadata
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.bids_tools
+    function: QueryBIDSLayoutTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.query_bids_layout.run tool
+  metadata: {}
+- id: python.fmriprep.run
+  name: fMRIPrep
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - preprocessing
+  - bids_app
+  intents:
+  - fmriprep_preprocessing
+  consumes:
+  - bids_root
+  produces:
+  - preprocessed_bold
+  - report_html
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 120
+  python:
+    module: brain_researcher.services.tools.fmriprep_tool
+    function: FMRIPrepTool
+    entry_type: class
+  backend:
+    kind: container
+    provider: container.bidsapp.fmriprep.run
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.fmriprep.run tool
+  metadata: {}
+- id: python.mriqc.run
+  name: MRIQC
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - quality_control
+  - bids_app
+  intents:
+  - mriqc_single
+  consumes:
+  - bids_root
+  produces:
+  - qc_report
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 30
+  python:
+    module: brain_researcher.services.tools.pipeline_tools
+    function: RunMRIQCTool
+    entry_type: class
+  backend:
+    kind: container
+    provider: container.bidsapp.mriqc.run
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mriqc.run tool
+  metadata: {}
+- id: python.mriqc_group_report.run
+  name: MRIQC Group Report
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - quality_control
+  - reporting
+  intents:
+  - mriqc_group
+  consumes:
+  - qc_report
+  produces:
+  - report_html
+  resources:
+    cpu_min: 1
+    mem_mb_min: 1024
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.qc_tools
+    function: MRIQCGroupReportTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mriqc_group_report.run tool
+  metadata: {}
+- id: python.fitlins.run
+  name: FitLins (BIDS GLM)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - glm
+  - bids_app
+  intents:
+  - fitlins_glm
+  consumes:
+  - bids_root
+  produces:
+  - stats_map
+  - report_html
+  resources:
+    cpu_min: 4
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 60
+  python:
+    module: brain_researcher.services.tools.fitlins_tool
+    function: FitLinsTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.fitlins.run tool
+  metadata: {}
+- id: python.qsiprep.run
+  name: QSIPrep
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - dmri
+  capabilities:
+  - preprocessing
+  - bids_app
+  intents:
+  - qsiprep_preprocessing
+  consumes:
+  - bids_root
+  produces:
+  - dmri_preprocessed
+  - report_html
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 120
+  python:
+    module: brain_researcher.services.tools.qsiprep_tool
+    function: QSIPrepTool
+    entry_type: class
+  backend:
+    kind: container
+    provider: container.bidsapp.qsiprep.run
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.qsiprep.run tool
+  metadata: {}
+- id: python.qsiprep_recon.run
+  name: QSIPrep Reconstruction
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - dmri
+  capabilities:
+  - reconstruction
+  intents:
+  - qsiprep_reconstruction
+  consumes:
+  - dmri_preprocessed
+  produces:
+  - tractography
+  - dmri_metrics
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 90
+  python:
+    module: brain_researcher.services.tools.qsiprep_tool
+    function: QSIPrepReconTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.qsiprep_recon.run tool
+  metadata: {}
+- id: python.qsiprep_qc.run
+  name: QSIPrep QC
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - dmri
+  capabilities:
+  - quality_control
+  intents:
+  - qsiprep_qc
+  consumes:
+  - dmri_preprocessed
+  produces:
+  - qc_report
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.qsiprep_tool
+    function: QSIPrepQCTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.qsiprep_qc.run tool
+  metadata: {}
+- id: python.diffusion_tractography.run
+  name: Diffusion Tractography
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - dmri
+  capabilities:
+  - tractography
+  intents:
+  - dmri_tractography
+  consumes:
+  - dmri_preprocessed
+  produces:
+  - tractography
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 60
+  python:
+    module: brain_researcher.services.tools.diffusion_tractography_tool
+    function: DiffusionTractographyTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.diffusion_tractography.run tool
+  metadata: {}
+- id: python.ieeg_preprocess.run
+  name: iEEG Preprocessing
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - ieeg
+  capabilities:
+  - preprocessing
+  intents:
+  - ieeg_preprocessing
+  consumes:
+  - raw_ieeg
+  produces:
+  - clean_ieeg
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 30
+  python:
+    module: brain_researcher.services.tools.ieeg_preprocess_tool
+    function: IEEGPreprocessTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.ieeg_preprocess.run tool
+  metadata: {}
+- id: python.run_spike_sorting.run
+  name: Spike Sorting
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - ieeg
+  - eeg
+  capabilities:
+  - spike_sorting
+  - specialized_processing
+  intents:
+  - spike_sorting
+  consumes:
+  - raw_ieeg
+  produces:
+  - spike_times
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 60
+  python:
+    module: brain_researcher.services.tools.pipeline_tools
+    function: RunSpikeSortingTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.run_spike_sorting.run tool
+  metadata: {}
+- id: python.run_suite2p.run
+  name: Suite2p Calcium Imaging
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - optical
+  capabilities:
+  - calcium_imaging
+  - specialized_processing
+  intents:
+  - calcium_suite2p
+  consumes:
+  - optical_timeseries
+  produces:
+  - optical_metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 45
+  python:
+    module: brain_researcher.services.tools.pipeline_tools
+    function: RunSuite2pTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.run_suite2p.run tool
+  metadata: {}
+- id: python.specialized_processing.run
+  name: Specialized Processing (Suite2p)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - optical
+  capabilities:
+  - calcium_imaging
+  - specialized_processing
+  intents:
+  - calcium_suite2p
+  consumes:
+  - optical_timeseries
+  produces:
+  - optical_metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 45
+  python:
+    module: brain_researcher.services.tools.pipeline_tools
+    function: RunSuite2pTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: Specialized processing helpers (alias of Suite2p calcium imaging).
+  constraints:
+    is_alias: true
+    alias_of: python.run_suite2p.run
+  metadata: {}
+- id: python.mne_preprocessing.run
+  name: MNE Preprocessing
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - eeg
+  - meg
+  capabilities:
+  - preprocessing
+  - filtering
+  - referencing
+  intents:
+  - eeg_preprocessing
+  consumes:
+  - raw_eeg
+  produces:
+  - clean_eeg
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 30
+  python:
+    module: brain_researcher.services.tools.mne_preprocessing_tool
+    function: MNEPreprocessingTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mne_preprocessing.run tool
+  metadata: {}
+- id: python.mne_autoreject.run
+  name: MNE Autoreject
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - eeg
+  - meg
+  capabilities:
+  - artifact_rejection
+  - preprocessing
+  intents:
+  - eeg_autoreject
+  consumes:
+  - clean_eeg
+  produces:
+  - clean_eeg
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.mne_autoreject_tool
+    function: MNEAutorejectTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mne_autoreject.run tool
+  metadata: {}
+- id: python.mne_ica.run
+  name: MNE ICA
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - eeg
+  - meg
+  capabilities:
+  - artifact_rejection
+  - ica
+  intents:
+  - eeg_ica
+  consumes:
+  - clean_eeg
+  produces:
+  - clean_eeg
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 25
+  python:
+    module: brain_researcher.services.tools.mne_ica_tool
+    function: MNEICATool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mne_ica.run tool
+  metadata: {}
+- id: python.mne_timefreq.run
+  name: MNE Time-Frequency
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - eeg
+  - meg
+  capabilities:
+  - time_frequency
+  - spectral_analysis
+  intents:
+  - eeg_timefreq
+  consumes:
+  - clean_eeg
+  produces:
+  - power_spectra
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 25
+  python:
+    module: brain_researcher.services.tools.mne_timefreq_tool
+    function: MNETimeFreqTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mne_timefreq.run tool
+  metadata: {}
+- id: python.mne_connectivity.run
+  name: MNE Connectivity
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - eeg
+  - meg
+  capabilities:
+  - connectivity
+  - graph_theory
+  intents:
+  - eeg_connectivity
+  consumes:
+  - clean_eeg
+  produces:
+  - connectivity_matrix
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 25
+  python:
+    module: brain_researcher.services.tools.mne_connectivity_tool
+    function: MNEConnectivityTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mne_connectivity.run tool
+  metadata: {}
+- id: python.mne_source_localization.run
+  name: MNE Source Localization
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - eeg
+  - meg
+  capabilities:
+  - source_localization
+  - inverse_modeling
+  intents:
+  - eeg_source_localization
+  consumes:
+  - clean_eeg
+  produces:
+  - source_estimate
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 45
+  python:
+    module: brain_researcher.services.tools.mne_source_tool
+    function: MNESourceLocalizationTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mne_source_localization.run tool
+  metadata: {}
+- id: python.mne_fooof.run
+  name: MNE FOOOF
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - eeg
+  - meg
+  capabilities:
+  - spectral_parameterization
+  - spectral_analysis
+  intents:
+  - eeg_fooof
+  consumes:
+  - psd_file
+  produces:
+  - features_table
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.mne_fooof_tool
+    function: MNEFOOOFTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.mne_fooof.run tool
+  metadata: {}
+- id: python.dmri_model_fit.run
+  name: dMRI Model Fit
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - dmri
+  capabilities:
+  - model_fitting
+  intents:
+  - dmri_model_fit
+  consumes:
+  - dmri_dwi
+  - dmri_bvals
+  - dmri_bvecs
+  produces:
+  - dmri_maps
+  - dmri_model
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.dmri_fit_model_tool
+    function: DMRIFitModelTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.dmri_model_fit.run tool
+  metadata: {}
+- id: python.dmri_parcellate_connectome.run
+  name: dMRI Parcellate Connectome
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - dmri
+  capabilities:
+  - connectome
+  intents:
+  - dmri_parcellate_connectome
+  consumes:
+  - tractography
+  - parcellation
+  produces:
+  - connectivity_matrix
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.dmri_parcellate_connectome_tool
+    function: DMRIParcellateConnectomeTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.dmri_parcellate_connectome.run tool
+  metadata: {}
+- id: python.dmri_resolve_triplet.run
+  name: Resolve DWI Triplet
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - dmri
+  capabilities:
+  - preprocessing
+  intents:
+  - dmri_resolve_triplet
+  consumes:
+  - dmri_dwi
+  produces:
+  - dmri_dwi
+  - dmri_bvals
+  - dmri_bvecs
+  resources:
+    cpu_min: 1
+    mem_mb_min: 1024
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.dmri_resolve_dwi_triplet_tool
+    function: DMRIResolveDwiTripletTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.dmri_resolve_triplet.run tool
+  metadata: {}
+- id: python.connectivity_measures.run
+  name: Connectivity Measures
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - dmri
+  - meg
+  - eeg
+  capabilities:
+  - connectivity
+  intents:
+  - connectivity_measures
+  consumes:
+  - timeseries
+  produces:
+  - connectivity_matrix
+  - metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.connectivity_measures_tool
+    function: ConnectivityMeasuresTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.connectivity_measures.run tool
+  metadata: {}
+- id: python.dynamic_connectivity.run
+  name: Dynamic Connectivity
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - meg
+  - eeg
+  capabilities:
+  - connectivity
+  - time_frequency
+  intents:
+  - dynamic_connectivity
+  consumes:
+  - timeseries
+  produces:
+  - connectivity_matrix
+  - metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.dynamic_connectivity_tool
+    function: DynamicConnectivityTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.dynamic_connectivity.run tool
+  metadata: {}
+- id: python.graph_theory.run
+  name: Graph Theory Metrics
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - dmri
+  - meg
+  - eeg
+  capabilities:
+  - graph_theory
+  intents:
+  - graph_theory_metrics
+  consumes:
+  - connectivity_matrix
+  produces:
+  - graph_metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 3
+  python:
+    module: brain_researcher.services.tools.graph_theory_tool
+    function: GraphTheoryTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.graph_theory.run tool
+  metadata: {}
+- id: python.cpac.run
+  name: CPAC
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - preprocessing
+  - bids_app
+  intents:
+  - cpac_preprocessing
+  consumes:
+  - bids_root
+  produces:
+  - preprocessed_bold
+  - report_html
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 120
+  python:
+    module: brain_researcher.services.tools.cpac_tool
+    function: CPACTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.cpac.run tool
+  metadata: {}
+- id: python.fsl_bedpostx.run
+  name: FSL BedpostX
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - dmri
+  capabilities:
+  - model_fitting
+  intents:
+  - fsl_bedpostx
+  consumes:
+  - dmri_preprocessed
+  produces:
+  - dmri_model
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 90
+  python:
+    module: brain_researcher.services.tools.fsl_bedpostx_tool
+    function: FSLBedpostXTool
+    entry_type: class
+  backend:
+    kind: container
+    provider: container.fsl.bedpostx.run
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.fsl_bedpostx.run tool
+  metadata: {}
+- id: python.fsl_palm.run
+  name: FSL PALM
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - inference
+  - statistical_inference
+  - statistical_inference
+  intents:
+  - fsl_palm_permutation
+  consumes:
+  - stats_map
+  produces:
+  - p_value_map
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 60
+  python:
+    module: brain_researcher.services.tools.fsl_palm_tool
+    function: FSLPALMTool
+    entry_type: class
+  backend:
+    kind: container
+    provider: container.palm.permutation.run
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.fsl_palm.run tool
+  metadata: {}
+- id: python.statistical_inference.run
+  name: Statistical Inference (FSL PALM)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - inference
+  - statistical_inference
+  - fdr_correction_tool
+  - multiple_comparisons
+  - bonferroni_tool
+  - fwe_control
+  intents:
+  - fsl_palm_permutation
+  - multiple_comparison_correction
+  consumes:
+  - stats_map
+  produces:
+  - p_value_map
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 60
+  python:
+    module: brain_researcher.services.tools.fsl_palm_tool
+    function: FSLPALMTool
+    entry_type: class
+  backend:
+    kind: container
+    provider: container.palm.permutation.run
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: Statistical inference helpers (alias of FSL PALM).
+  constraints:
+    is_alias: true
+    alias_of: python.fsl_palm.run
+  metadata: {}
+- id: python.fsl_fix.run
+  name: FSL FIX (single run)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - denoising
+  intents:
+  - fsl_fix_denoising
+  consumes:
+  - volume_4d
+  produces:
+  - clean_bold
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.fsl_fix_tool
+    function: FSLFIXTool
+    entry_type: class
+  function: preprocessing
+  risk: safe
+  tags:
+  - python
+  - fmri
+  description: FSL FIX single-run ICA-based denoising (Python wrapper).
+- id: python.afni_clustsim.run
+  name: AFNI ClustSim
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - inference
+  - statistical_inference
+  intents:
+  - afni_clustsim_correction
+  consumes:
+  - stats_map
+  produces:
+  - corrected_map
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.afni_clustsim_tool
+    function: AFNIClustSimTool
+    entry_type: class
+  backend:
+    kind: container
+    provider: container.afni.clustsim.run
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: 'AFNI ClustSim (Python wrapper): cluster-wise multiple-comparison correction
+    helper.'
+  metadata: {}
+- id: python.qsm.run
+  name: QSM Reconstruction
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - smri
+  capabilities:
+  - reconstruction
+  intents:
+  - qsm_reconstruction
+  consumes:
+  - mri_phase
+  - mri_magnitude
+  produces:
+  - qsm_map
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.qsm_tool
+    function: QSMTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.qsm.run tool
+  metadata: {}
+- id: python.pet_coreg.run
+  name: PET Coregistration
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - pet
+  - smri
+  capabilities:
+  - registration
+  intents:
+  - pet_coregistration
+  consumes:
+  - pet_image
+  - t1w
+  produces:
+  - pet_coreg
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.pet_coreg_tool
+    function: PETCoregTool
+    entry_type: class
+  function: preproc
+  risk: safe
+  tags:
+  - advanced
+  - preproc
+  - python
+  - safe
+  description: python python.pet_coreg.run tool
+  metadata: {}
+- id: python.pet_parcellate.run
+  name: PET Parcellation
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - pet
+  capabilities:
+  - parcellation
+  intents:
+  - pet_parcellation
+  consumes:
+  - pet_coreg
+  - parcellation
+  produces:
+  - roi_metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.pet_parcellate_tool
+    function: PETParcellateTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.pet_parcellate.run tool
+  metadata: {}
+- id: python.pet_suvr.run
+  name: PET SUVR
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - pet
+  capabilities:
+  - quantification
+  intents:
+  - pet_suvr
+  consumes:
+  - pet_coreg
+  - reference_region
+  produces:
+  - suvr_map
+  - roi_metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.pet_suvr_tool
+    function: PETSUVRTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.pet_suvr.run tool
+  metadata: {}
+- id: python.ieeg_connectivity.run
+  name: iEEG Connectivity
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - ieeg
+  capabilities:
+  - connectivity
+  intents:
+  - ieeg_connectivity
+  consumes:
+  - clean_ieeg
+  produces:
+  - connectivity_matrix
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.ieeg_connectivity_tool
+    function: IEEGConnectivityTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.ieeg_connectivity.run tool
+  metadata: {}
+- id: python.ieeg_epoch_features.run
+  name: iEEG Epoch Features
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - ieeg
+  capabilities:
+  - feature_extraction
+  intents:
+  - ieeg_epoch_features
+  consumes:
+  - clean_ieeg
+  produces:
+  - features_table
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.ieeg_epoch_features_tool
+    function: IEEGEpochFeaturesTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.ieeg_epoch_features.run tool
+  metadata: {}
+- id: python.ieeg_electrode_localize.run
+  name: iEEG Electrode Localization
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - ieeg
+  - smri
+  capabilities:
+  - localization
+  intents:
+  - ieeg_electrode_localization
+  consumes:
+  - t1w
+  - electrode_coordinates
+  produces:
+  - electrode_montage
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.ieeg_electrode_localize_tool
+    function: IEEGElectrodeLocalizeTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.ieeg_electrode_localize.run tool
+  metadata: {}
+- id: python.timefreq_tfr.run
+  name: Time-Frequency TFR
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - eeg
+  - meg
+  - ieeg
+  capabilities:
+  - time_frequency
+  intents:
+  - timefreq_tfr
+  consumes:
+  - clean_eeg
+  produces:
+  - power_spectra
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.timefreq_tfr_tool
+    function: TimeFreqTFRTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.timefreq_tfr.run tool
+  metadata: {}
+- id: python.encoding_models_fmri.run
+  name: Encoding Models (fMRI)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - encoding
+  intents:
+  - encoding_models_fmri
+  consumes:
+  - volume_4d
+  - stimulus_features
+  produces:
+  - model
+  - metrics
+  resources:
+    cpu_min: 4
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.encoding_models_tool
+    function: EncodingModelsTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.encoding_models_fmri.run tool
+  metadata: {}
+- id: python.hyperalignment_fmri.run
+  name: Hyperalignment (fMRI)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - alignment
+  intents:
+  - hyperalignment_fmri
+  consumes:
+  - volume_4d
+  produces:
+  - aligned_timeseries
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8192
+    gpu: false
+    time_min_default: 30
+  python:
+    module: brain_researcher.services.tools.hyperalignment_tool
+    function: HyperalignmentTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.hyperalignment_fmri.run tool
+  metadata: {}
+- id: python.temporal_decoding_fmri.run
+  name: Temporal Decoding (fMRI)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - decoding
+  intents:
+  - temporal_decoding_fmri
+  consumes:
+  - volume_4d
+  - labels
+  produces:
+  - metrics
+  resources:
+    cpu_min: 4
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.temporal_decoding_tool
+    function: TemporalDecodingTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.temporal_decoding_fmri.run tool
+  metadata: {}
+- id: python.searchlight_fmri.run
+  name: Searchlight MVPA (fMRI)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - mvpa
+  intents:
+  - searchlight_fmri
+  consumes:
+  - volume_4d
+  - labels
+  produces:
+  - stats_map
+  - metrics
+  resources:
+    cpu_min: 4
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 20
+  python:
+    module: brain_researcher.services.tools.searchlight_tool
+    function: SearchlightTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.searchlight_fmri.run tool
+  metadata: {}
+- id: python.rsa_fmri.run
+  name: RSA (fMRI)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - rsa
+  intents:
+  - rsa_fmri
+  consumes:
+  - volume_4d
+  - labels
+  produces:
+  - rsa_matrix
+  - metrics
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.rsa_toolbox_tool
+    function: RSAToolboxTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.rsa_fmri.run tool
+  metadata: {}
+- id: python.parcellation_fetch.run
+  name: Fetch Parcellation
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - smri
+  - fmri
+  - dmri
+  - pet
+  capabilities:
+  - data_access
+  intents:
+  - parcellation_fetch
+  consumes: []
+  produces:
+  - parcellation
+  resources:
+    cpu_min: 1
+    mem_mb_min: 512
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.parcellation_fetch_tool
+    function: ParcellationFetchTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.parcellation_fetch.run tool
+  metadata: {}
+- id: python.permutation_testing.run
+  name: Permutation Testing
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - inference
+  intents:
+  - permutation_testing
+  consumes:
+  - stats_map
+  produces:
+  - p_value_map
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.permutation_testing_tool
+    function: PermutationTestingTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.permutation_testing.run tool
+  metadata: {}
+- id: python.multiple_comparison_correction.run
+  name: Multiple Comparison Correction
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  capabilities:
+  - inference
+  intents:
+  - multiple_comparison_correction
+  consumes:
+  - stats_map
+  produces:
+  - corrected_map
+  resources:
+    cpu_min: 1
+    mem_mb_min: 1024
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.multiple_comparison_tool
+    function: MultipleComparisonTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.multiple_comparison_correction.run tool
+  metadata: {}
+- id: python.feature_selection_ml.run
+  name: Feature Selection (ML)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  - dmri
+  capabilities:
+  - feature_selection
+  intents:
+  - feature_selection_ml
+  consumes:
+  - features_table
+  produces:
+  - features_table
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.feature_selection_tool
+    function: FeatureSelectionTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: python python.feature_selection_ml.run tool
+  metadata: {}
+- id: python.nilearn_ica_tool.run
+  name: Nilearn ICA Tool
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - ica
+  - decomposition
+  intents:
+  - nilearn_ica
+  consumes:
+  - volume_4d
+  produces:
+  - timeseries
+  - stats_map
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.nilearn_ica_tool
+    function: NilearnICATool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Nilearn ICA decomposition for fMRI data.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - python
+  - ica
+  description: python python.nilearn_ica_tool.run tool
+- id: python.nilearn_preprocessing_tool.run
+  name: Nilearn Preprocessing Tool
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - preprocessing
+  - connectivity
+  intents:
+  - conn_preprocessing
+  consumes:
+  - volume_4d
+  produces:
+  - preprocessed_bold
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4000
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.nilearn_preprocessing_tool
+    function: NilearnPreprocessingTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: CONN-style preprocessing using Nilearn.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - python
+  - preprocessing
+  description: python python.nilearn_preprocessing_tool.run tool
+- id: python.multimodal_fusion_tool.run
+  name: Multimodal Fusion Tool
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - multimodal
+  - fmri
+  - smri
+  capabilities:
+  - fusion
+  - similarity
+  intents:
+  - brain_similarity_analysis
+  - multimodal_fusion
+  consumes:
+  - volume_3d
+  - volume_4d
+  - features_table
+  produces:
+  - fused_representation
+  - connectivity_matrix
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 15
+  python:
+    module: brain_researcher.services.tools.multimodal_fusion_tool
+    function: MultimodalFusionTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Multimodal data fusion and brain similarity analysis.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - python
+  - multimodal
+  description: python python.multimodal_fusion_tool.run tool
+- id: python.nwb_tool.run
+  name: NWB Tool
+  package: python
+  domain: electrophysiology
+  runtime_kind: python
+  modality:
+  - ieeg
+  - eeg
+  - meg
+  capabilities:
+  - nwb_io
+  - data_management
+  intents:
+  - nwb_io
+  consumes:
+  - nwb_file
+  produces:
+  - nwb_summary
+  - nwb_file
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4000
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.nwb_tool
+    function: NWBTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: NWB file operations for neurophysiology data.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - python
+  - electrophysiology
+  description: python python.nwb_tool.run tool
+- id: python.literature_mining.run
+  name: Literature Mining Tool
+  package: python
+  domain: literature
+  runtime_kind: python
+  modality:
+  - literature
+  capabilities:
+  - literature_mining
+  - coordinate_extraction
+  intents:
+  - literature_mining
+  consumes:
+  - pubmed_query
+  - doi_list
+  produces:
+  - coordinate_table
+  - effect_sizes
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4000
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.enhanced_meta_analysis
+    function: LiteratureMiningTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: Extract coordinates, effect sizes, and metadata from neuroimaging
+      literature.
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - python
+  - literature
+  description: python python.literature_mining.run tool
+- id: python.datasets_list_resources.run
+  name: Dataset List Resources Tool
+  package: python
+  domain: data_catalog
+  runtime_kind: python
+  modality:
+  - data_catalog
+  capabilities:
+  - dataset_catalog
+  - resource_listing
+  intents:
+  - datasets_list_resources
+  consumes:
+  - dataset_ref
+  produces:
+  - dataset_resources
+  - bids_path
+  resources:
+    cpu_min: 1
+    mem_mb_min: 1000
+    gpu: false
+    time_min_default: 2
+  python:
+    module: brain_researcher.services.tools.dataset_resources_tool
+    function: DatasetResourcesTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: List available resources for a dataset.
+  function: utility
+  risk: safe
+  tags:
+  - utility
+  - python
+  - datasets
+  description: python python.datasets_list_resources.run tool
+- id: google.file_search
+  name: Google File Search
+  package: google
+  domain: rag
+  runtime_kind: python
+  modality:
+  - rag
+  - search
+  capabilities:
+  - semantic_search
+  - document_retrieval
+  - vector_store
+  intents:
+  - google_file_search
+  consumes:
+  - file_path
+  - search_query
+  produces:
+  - search_results
+  - file_chunks
+  resources:
+    cpu_min: 2
+    mem_mb_min: 1000
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.google_file_search_tool
+    function: GoogleFileSearchTool
+    entry_type: class
+  metadata:
+    source: curated
+    description: RAG operations via Google File Search API - create stores, upload
+      files, query documents.
+    tags:
+    - rag
+    - search
+    - gemini
+    - google
+    dangerous: true
+    cost_hint: normal
+  function: utility
+  risk: dangerous
+  tags:
+  - google
+  - rag
+  - search
+  - vector_store
+  description: google google.file_search tool
+- id: python.data_harmonization.run
+  name: Data Harmonization (ComBat)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - smri
+  - dmri
+  - eeg
+  capabilities:
+  - data_harmonization
+  - preprocessing
+  - combat
+  intents:
+  - data_harmonization
+  consumes:
+  - file_paths
+  - site_labels
+  produces:
+  - harmonized_data
+  - report_json
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 5
+  python:
+    module: brain_researcher.services.tools.phase2_batch_tools
+    function: HarmonizationTool
+    entry_type: class
+  function: preprocessing
+  risk: safe
+  tags:
+  - advanced
+  - preprocessing
+  - python
+  - safe
+  description: Multi-site data harmonization to remove site/scanner effects (ComBat,
+    traveling-subjects).
+  metadata: {}
+- id: python.brain_simulation.run
+  name: Brain Simulation
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  - eeg
+  - meg
+  capabilities:
+  - brain_simulation
+  - simulation
+  - modeling
+  intents:
+  - brain_simulation
+  consumes:
+  - simulation_parameters
+  produces:
+  - timeseries
+  - simulation_results
+  resources:
+    cpu_min: 2
+    mem_mb_min: 2048
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.brain_simulation_tool
+    function: BrainSimulationTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: Run simplified brain simulations (neural mass, spiking, whole-brain)
+    and return simulated time series.
+  metadata: {}
+- id: python.realtime_fmri.run
+  name: Real-time fMRI (Neurofeedback)
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - fmri
+  capabilities:
+  - realtime_fmri
+  - neurofeedback
+  - fmri_preprocessing
+  - preprocessing
+  - quality_control
+  intents:
+  - realtime_fmri
+  consumes:
+  - volume_4d
+  - roi_mask
+  produces:
+  - metrics_json
+  - neurofeedback_signal
+  resources:
+    cpu_min: 4
+    mem_mb_min: 8000
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.realtime_fmri_tool
+    function: RealtimeFMRITool
+    entry_type: class
+  function: preprocessing
+  risk: safe
+  tags:
+  - advanced
+  - fmri
+  - preprocessing
+  - python
+  - safe
+  description: Real-time fMRI processing for neurofeedback/closed-loop experiments
+    (motion correction, smoothing, filtering, incremental GLM, QC).
+  metadata: {}
+- id: python.lesion_detection.run
+  name: Lesion Detection
+  package: python
+  domain: advanced
+  runtime_kind: python
+  modality:
+  - smri
+  - dmri
+  capabilities:
+  - lesion_detection
+  - segmentation
+  - preprocessing
+  intents:
+  - lesion_detection
+  consumes:
+  - volume_3d
+  produces:
+  - mask_path
+  - report_json
+  resources:
+    cpu_min: 2
+    mem_mb_min: 4096
+    gpu: false
+    time_min_default: 10
+  python:
+    module: brain_researcher.services.tools.lesion_detection_tool
+    function: LesionDetectionTool
+    entry_type: class
+  function: analysis
+  risk: safe
+  tags:
+  - advanced
+  - analysis
+  - python
+  - safe
+  description: Detect lesions from MRI (FLAIR/T1/DWI) and output lesion masks and
+    summary report.
+  metadata: {}

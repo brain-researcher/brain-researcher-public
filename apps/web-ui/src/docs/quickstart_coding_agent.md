@@ -22,25 +22,25 @@ corepack pnpm dev  # http://localhost:3000
 
 ## 2) Three workflows to try
 
-1. **T1 → MNI (pipeline preview)**  
+1. **T1 → MNI (pipeline preview)**
    In Chat, mode = “neuro”, run: `preprocess my T1 to MNI` with your T1 path, `use_planning_engine=true`, `pipeline_preview=true`.
 
-2. **ICA + FIX preview**  
+2. **ICA + FIX preview**
    Similar flow (neuro mode), trigger ICA/FIX pipeline to see NiWrap preview commands.
 
-3. **Coding agent (the important one)**  
-   - Switch to **coding** tab  
-   - Repo root: `${BR_REPO_ROOT}`  
-   - Files: `brain_researcher/services/agent/chat_orchestrator.py`  
-   - Prompt: `Add a concise docstring to _delegate_to_code_orchestrator describing the coding flow.`  
+3. **Coding agent (the important one)**
+   - Switch to **coding** tab
+   - Repo root: `/home/zijiaochen/projects/brain_researcher`
+   - Files: `brain_researcher/services/agent/chat_orchestrator.py`
+   - Prompt: `Add a concise docstring to _delegate_to_code_orchestrator describing the coding flow.`
    - Expect streaming events (plan/patch/test/result) under the assistant message; metadata.type will be `coding_tool`.
 
 ## 3) Safety expectations (what is intentionally blocked)
 
-- `python -c '...'` or `python3   -c '...'` → rejected.  
-- `pytest --rootdir=/tmp` / `pytest --rootdir /tmp` → rejected (escape).  
-- `pytest --junitxml=~/out.xml` → rejected.  
-- `pytest --rootdir=<repo_root> tests/` → allowed to run (may pass/fail normally).  
+- `python -c '...'` or `python3   -c '...'` → rejected.
+- `pytest --rootdir=/tmp` / `pytest --rootdir /tmp` → rejected (escape).
+- `pytest --junitxml=~/out.xml` → rejected.
+- `pytest --rootdir=<repo_root> tests/` → allowed to run (may pass/fail normally).
 Default coding settings: `apply=false`, `dry_run=true`, `preview=true`; “Explain only” forces LLM-only path.
 
 ## 4) Quick curl checks
@@ -56,7 +56,7 @@ curl -N -X POST http://127.0.0.1:8000/api/chat/stream \
     "tools":{"mode":"coding"},
     "ctx":{
       "tools":{"mode":"coding"},
-      "repo_root":"${BR_REPO_ROOT}",
+      "repo_root":"/home/zijiaochen/projects/brain_researcher",
       "file_paths":["brain_researcher/services/agent/chat_orchestrator.py"]
     }
   }'

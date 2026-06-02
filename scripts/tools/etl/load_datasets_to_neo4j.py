@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from brain_researcher.core.datasets.catalog import DatasetRecord, load_catalog
-from brain_researcher.services.neurokg.graph.neo4j_graph_database import Neo4jGraphDB
+from brain_researcher.services.br_kg.graph.neo4j_graph_database import Neo4jGraphDB
 
 logger = logging.getLogger(__name__)
 

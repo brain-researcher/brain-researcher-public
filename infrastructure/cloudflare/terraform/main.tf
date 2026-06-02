@@ -65,7 +65,7 @@ resource "cloudflare_record" "api" {
   proxied = true
 }
 
-resource "cloudflare_record" "neurokg" {
+resource "cloudflare_record" "br-kg" {
   zone_id = var.cloudflare_zone_id
   name    = "kg"
   value   = var.origin_server_ip
@@ -139,12 +139,12 @@ resource "cloudflare_zone_settings_override" "ssl_settings" {
     automatic_https_rewrites = "on"
     min_tls_version         = "1.2"
     tls_1_3                 = "on"
-    
+
     # Security settings
     security_level          = "medium"
     challenge_ttl          = 1800
     browser_check          = "on"
-    
+
     # Performance settings
     brotli                 = "on"
     minify {
@@ -152,22 +152,22 @@ resource "cloudflare_zone_settings_override" "ssl_settings" {
       js   = "on"
       html = "on"
     }
-    
+
     # Caching
     browser_cache_ttl     = 14400
     always_online         = "on"
-    
+
     # Additional optimizations
     http2                 = "on"
     http3                 = "on"
     websockets           = "on"
     opportunistic_encryption = "on"
-    
+
     # Image optimization
     polish               = "lossless"
     webp                = "on"
     image_resizing      = "on"
-    
+
     # Mobile optimization
     mirage              = "on"
     mobile_redirect {
@@ -196,14 +196,14 @@ resource "cloudflare_rate_limit" "api_limit" {
   zone_id   = var.cloudflare_zone_id
   threshold = 50
   period    = 60  # 50 requests per minute
-  
+
   match {
     request {
       url_pattern = "api.${var.domain}/*"
       methods     = ["POST", "PUT", "DELETE"]
     }
   }
-  
+
   action {
     mode    = "challenge"
     timeout = 600  # 10 minute timeout
@@ -297,7 +297,7 @@ resource "cloudflare_ruleset" "transform_rules" {
 resource "cloudflare_worker_script" "edge_optimizer" {
   name    = "brain_researcher_edge"
   content = file("${path.module}/workers/edge-optimizer.js")
-  
+
   plain_text_binding {
     name = "SECRET_KEY"
     text = var.worker_secret_key

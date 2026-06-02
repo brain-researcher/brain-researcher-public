@@ -17,8 +17,10 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from brain_researcher.services.neurokg.models.fmri_text_alignment import FmriTextAlignmentModel
-from brain_researcher.services.neurokg.niclip import (
+from brain_researcher.services.br_kg.models.fmri_text_alignment import (
+    FmriTextAlignmentModel,
+)
+from brain_researcher.services.br_kg.niclip import (
     EmbeddingConfig,
     NICLIPEmbeddingService,
 )

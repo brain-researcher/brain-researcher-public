@@ -321,22 +321,6 @@ export function SettingsInterface() {
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <Label className="text-sm">Advanced mode</Label>
-                  <div className="text-xs text-muted-foreground">
-                    Show internal tools/pages meant for debugging and power users.
-                    {!advancedAllowed ? ' (Disabled by policy.)' : ''}
-                  </div>
-                </div>
-                <Switch
-                  checked={advancedAllowed ? prefs.advancedMode : false}
-                  disabled={!advancedAllowed}
-                  onCheckedChange={(checked) =>
-                    setPrefs((prev) => ({ ...prev, advancedMode: checked }))
-                  }
-                />
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

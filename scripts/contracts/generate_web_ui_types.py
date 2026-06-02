@@ -78,9 +78,22 @@ def _repo_imports() -> dict[str, Any]:
     )
     from brain_researcher.core.contracts.ids import IdsV1
     from brain_researcher.core.contracts.job import JobRecordV1, JobSpecV1
+    from brain_researcher.core.contracts.loop_signals import (
+        ConditionConstraintV1,
+        ConditionTagSignalV1,
+        CrossStageContextV1,
+        DesignConstraintSignalV1,
+        DesignConstraintV1,
+        HypothesisDeltaSignalV1,
+        LoopSignalBaseV1,
+        SensitivityConstraintV1,
+        SensitivityFindingSignalV1,
+        UserFeedbackSignalV1,
+    )
     from brain_researcher.core.contracts.observation import (
         ObservationFiles,
         ObservationSpecV1,
+        RMLogMetadataV1,
     )
     from brain_researcher.core.contracts.policy_ref import PolicyRefV1
     from brain_researcher.core.contracts.provenance import (
@@ -99,11 +112,22 @@ def _repo_imports() -> dict[str, Any]:
         "IdsV1": IdsV1,
         "PolicyRefV1": PolicyRefV1,
         "VersionRefV1": VersionRefV1,
+        "LoopSignalBaseV1": LoopSignalBaseV1,
+        "ConditionTagSignalV1": ConditionTagSignalV1,
+        "SensitivityFindingSignalV1": SensitivityFindingSignalV1,
+        "DesignConstraintSignalV1": DesignConstraintSignalV1,
+        "HypothesisDeltaSignalV1": HypothesisDeltaSignalV1,
+        "UserFeedbackSignalV1": UserFeedbackSignalV1,
+        "ConditionConstraintV1": ConditionConstraintV1,
+        "SensitivityConstraintV1": SensitivityConstraintV1,
+        "DesignConstraintV1": DesignConstraintV1,
+        "CrossStageContextV1": CrossStageContextV1,
         "RunCardV1": RunCardV1,
         "TraceEventV1": TraceEventV1,
         "StreamEventV1": StreamEventV1,
         "ObservationSpecV1": ObservationSpecV1,
         "ObservationFiles": ObservationFiles,
+        "RMLogMetadataV1": RMLogMetadataV1,
         "AnalysisBundleV1": AnalysisBundleV1,
         "AnalysisBundleFiles": AnalysisBundleFiles,
         "BundleFileEntry": BundleFileEntry,

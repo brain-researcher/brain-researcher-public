@@ -4,14 +4,30 @@ Direct Cloudflare Setup for Brain Researcher
 Configures Cloudflare to connect directly to service ports without nginx
 """
 
+import os
+from pathlib import Path
 import requests
 import json
 
-# Configuration
-API_TOKEN = "qJ4E1AsWxPtGljVXoFxESCfTA4tIqpKoI3LA5YR7"
-ZONE_ID = "874ab8d012d52c6cdd7b4bfa36742413"
-DOMAIN = "brain-researcher.com"
-SERVER_IP = "171.64.40.32"
+
+def _load_dotenv_if_available():
+    try:
+        import dotenv  # type: ignore
+
+        env_path = Path(__file__).resolve().parents[2] / ".env"
+        if env_path.exists():
+            dotenv.load_dotenv(env_path)
+    except Exception:
+        pass
+
+
+_load_dotenv_if_available()
+
+# Configuration — supplied via environment, never hardcoded.
+API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
+ZONE_ID = os.environ["CLOUDFLARE_ZONE_ID"]
+DOMAIN = os.environ.get("CLOUDFLARE_DOMAIN", "brain-researcher.com")
+SERVER_IP = os.environ["CLOUDFLARE_SERVER_IP"]
 
 # Service ports
 SERVICES = {
@@ -32,23 +48,23 @@ headers = {
 def update_dns_with_ports():
     """Update DNS records to point to specific ports"""
     print("📋 Updating DNS records with port configuration...")
-    
+
     # For direct port access, we need to use Cloudflare's Origin Rules
     # or configure port forwarding at the origin
-    
+
     # Since Cloudflare proxies HTTP/HTTPS traffic, we need to ensure
     # the services are accessible on standard ports
-    
+
     dns_configs = [
         {"name": DOMAIN, "port": 3000, "service": "Web UI"},
         {"name": f"api.{DOMAIN}", "port": 8000, "service": "API"},
         {"name": f"kg.{DOMAIN}", "port": 5000, "service": "BR-KG"},
         {"name": f"agent.{DOMAIN}", "port": 8000, "service": "Agent"}
     ]
-    
+
     for config in dns_configs:
         print(f"  {config['service']}: {config['name']} → {SERVER_IP}:{config['port']}")
-    
+
     print("\n⚠️  Important: Since nginx is not installed, you need to:")
     print("  1. Configure your services to accept connections from Cloudflare IPs")
     print("  2. Set up port forwarding or use a reverse proxy")
@@ -57,18 +73,18 @@ def update_dns_with_ports():
 def create_origin_rules():
     """Create origin rules for port routing"""
     url = f"{BASE_URL}/zones/{ZONE_ID}/rulesets"
-    
+
     # Get existing rulesets
     response = requests.get(url, headers=headers)
     rulesets = response.json().get("result", [])
-    
+
     # Find origin rules ruleset
     origin_ruleset = None
     for ruleset in rulesets:
         if ruleset.get("phase") == "http_request_origin":
             origin_ruleset = ruleset
             break
-    
+
     if not origin_ruleset:
         # Create new ruleset
         ruleset_data = {
@@ -83,7 +99,7 @@ def create_origin_rules():
         else:
             print("❌ Could not create origin ruleset")
             return
-    
+
     # Define origin rules for different subdomains
     rules = [
         {
@@ -120,11 +136,11 @@ def create_origin_rules():
             }
         }
     ]
-    
+
     # Update ruleset
     ruleset_url = f"{url}/{origin_ruleset['id']}"
     response = requests.put(ruleset_url, headers=headers, json={"rules": rules})
-    
+
     if response.status_code == 200:
         print("✅ Created origin routing rules")
     else:
@@ -136,7 +152,7 @@ def setup_firewall_for_cloudflare():
     print("=" * 50)
     print("Run these commands on your server to allow only Cloudflare:")
     print()
-    
+
     cloudflare_ips_v4 = [
         "173.245.48.0/20",
         "103.21.244.0/22",
@@ -154,25 +170,25 @@ def setup_firewall_for_cloudflare():
         "172.64.0.0/13",
         "131.0.72.0/22"
     ]
-    
+
     print("# UFW firewall rules (if using UFW):")
     for ip in cloudflare_ips_v4:
         print(f"sudo ufw allow from {ip} to any port 3000")
         print(f"sudo ufw allow from {ip} to any port 5000")
         print(f"sudo ufw allow from {ip} to any port 8000")
-    
+
     print("\n# Or use iptables:")
     print("# Allow Cloudflare IPs")
     for ip in cloudflare_ips_v4:
         print(f"sudo iptables -A INPUT -p tcp --dport 3000 -s {ip} -j ACCEPT")
         print(f"sudo iptables -A INPUT -p tcp --dport 5000 -s {ip} -j ACCEPT")
         print(f"sudo iptables -A INPUT -p tcp --dport 8000 -s {ip} -j ACCEPT")
-    
+
     print("\n# Block all other IPs from these ports")
     print("sudo iptables -A INPUT -p tcp --dport 3000 -j DROP")
     print("sudo iptables -A INPUT -p tcp --dport 5000 -j DROP")
     print("sudo iptables -A INPUT -p tcp --dport 8000 -j DROP")
-    
+
     print("\n# Save iptables rules")
     print("sudo iptables-save > /etc/iptables/rules.v4")
 
@@ -198,20 +214,20 @@ def main():
     print(f"Domain: {DOMAIN}")
     print(f"Server IP: {SERVER_IP}")
     print()
-    
+
     # Show current setup
     update_dns_with_ports()
-    
+
     # Try to create origin rules (may require higher plan)
     print("\n📋 Attempting to create origin routing rules...")
     create_origin_rules()
-    
+
     # Show firewall configuration
     setup_firewall_for_cloudflare()
-    
+
     # Show Spectrum information
     create_spectrum_config()
-    
+
     print("\n" + "=" * 60)
     print("📋 Summary and Next Steps")
     print("=" * 60)

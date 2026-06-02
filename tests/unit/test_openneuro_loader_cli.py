@@ -17,7 +17,7 @@ class TestOpenNeuroLoaderCLI(unittest.TestCase):
             os.path.join(
                 os.path.dirname(__file__),
                 "..",
-                "neurokg",
+                "br_kg",
                 "etl",
                 "loaders",
                 "openneuro_loader.py",

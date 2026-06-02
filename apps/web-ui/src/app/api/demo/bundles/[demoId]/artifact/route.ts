@@ -36,11 +36,12 @@ export async function GET(
 
   const body = fs.readFileSync(resolved.filePath)
   const filename = resolved.filePath.split('/').pop() || 'artifact'
+  const disposition = req.nextUrl.searchParams.get('download') === '1' ? 'attachment' : 'inline'
   return new NextResponse(body, {
     status: 200,
     headers: {
       'content-type': resolved.mimeType,
-      'content-disposition': `inline; filename="${filename}"`,
+      'content-disposition': `${disposition}; filename="${filename}"`,
       'cache-control': 'no-store',
     },
   })

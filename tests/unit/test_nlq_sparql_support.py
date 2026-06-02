@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from unittest.mock import Mock
 
-from brain_researcher.services.neurokg.nl_query import (
+from brain_researcher.services.br_kg.nl_query import (
     NaturalLanguageQueryOrchestrator,
 )
-from brain_researcher.services.neurokg.nl_query.agents import QueryType
+from brain_researcher.services.br_kg.nl_query.agents import QueryType
 
 
 def _build_orchestrator(*, sparql_executor=None):
@@ -63,7 +63,7 @@ def test_nlq_sparql_with_executor_executes_successfully():
         return_value={
             "results": {
                 "bindings": [
-                    {"s": {"type": "uri", "value": "https://neurokg.org/node/1"}}
+                    {"s": {"type": "uri", "value": "https://br_kg.org/node/1"}}
                 ]
             }
         }
@@ -85,7 +85,7 @@ def test_nlq_sparql_with_executor_executes_successfully():
 
 
 def test_factory_auto_wires_sparql_executor_when_neo4j_db_is_present(monkeypatch):
-    from brain_researcher.services.neurokg.nl_query import nl_query_orchestrator as nqo
+    from brain_researcher.services.br_kg.nl_query import nl_query_orchestrator as nqo
 
     fake_executor = Mock(return_value={"results": {"bindings": []}})
     spy_builder = Mock(return_value=fake_executor)

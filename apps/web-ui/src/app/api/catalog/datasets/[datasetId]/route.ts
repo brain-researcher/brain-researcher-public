@@ -50,7 +50,7 @@ function normalizeDatasetQuery(datasetId: string) {
   return candidates
 }
 
-async function fetchNeurokgDatasetDetail(datasetId: string) {
+async function fetchBRKgDatasetDetail(datasetId: string) {
   const queries = normalizeDatasetQuery(datasetId)
   const desired = decodeDatasetId(datasetId).toLowerCase()
   const base = resolveKgBaseUrl()
@@ -190,9 +190,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
       .find((candidate) => candidate != null)
 
     if (!dataset) {
-      const neurokgDataset = await fetchNeurokgDatasetDetail(candidates[0] ?? params.datasetId)
-      if (neurokgDataset) {
-        return NextResponse.json(neurokgDataset)
+      const brKgDataset = await fetchBRKgDatasetDetail(candidates[0] ?? params.datasetId)
+      if (brKgDataset) {
+        return NextResponse.json(brKgDataset)
       }
       return NextResponse.json({ error: 'Dataset not found' }, { status: 404 })
     }

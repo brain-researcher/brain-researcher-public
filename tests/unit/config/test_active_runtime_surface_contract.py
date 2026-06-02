@@ -10,12 +10,12 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
         "module.exports = require('./next.config.js')",
     ),
     "apps/web-ui/.env.example": (
-        "NEXT_PUBLIC_NEUROKG_API=http://localhost:5000",
-        "NEUROKG_PORT=5000",
+        "NEXT_PUBLIC_BR_KG_API=http://localhost:5000",
+        "BR_KG_PORT=5000",
         "WEB_UI_PORT=3000",
     ),
     "tests/conftest.py": (
-        '"neurokg": {"host": "localhost", "port": 5000, "timeout": 30.0}',
+        '"br_kg": {"host": "localhost", "port": 5000, "timeout": 30.0}',
         '"web_ui": {"host": "localhost", "port": 3000, "timeout": 10.0}',
         '"port": 5000,',
         '"port": 3001,',
@@ -27,25 +27,25 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
     ),
     "tests/performance/k6/config/k6.config.js": ("http://localhost:5000",),
     "tests/performance/k6/scripts/run-smoke-test.sh": (
-        'export NEUROKG_URL=${NEUROKG_URL:-"http://localhost:5000"}',
+        'export BR_KG_URL=${BR_KG_URL:-"http://localhost:5000"}',
         "br serve kg            # Port 5000",
     ),
     "tests/performance/k6/scripts/run-load-test.sh": (
-        'export NEUROKG_URL=${NEUROKG_URL:-"http://localhost:5000"}',
+        'export BR_KG_URL=${BR_KG_URL:-"http://localhost:5000"}',
     ),
     "tests/performance/k6/scripts/run-all-tests.sh": (
-        'export NEUROKG_URL=${NEUROKG_URL:-"http://localhost:5000"}',
+        'export BR_KG_URL=${BR_KG_URL:-"http://localhost:5000"}',
         "br serve kg            # Port 5000",
     ),
     "tests/performance/k6/IMPLEMENTATION_SUMMARY.md": (
         "BR-KG Service (Port 5000)",
-        'export NEUROKG_URL="http://localhost:5000"',
+        'export BR_KG_URL="http://localhost:5000"',
     ),
     "tests/k8s/test_deployment_validation.py": (
-        '("neurokg-service", "brain-researcher-core", 5000)',
+        '("br_kg-service", "brain-researcher-core", 5000)',
     ),
     "tests/k8s/smoke/test_smoke_tests.py": (
-        "http://neurokg-service.brain-researcher-core.svc.cluster.local:5000",
+        "http://br_kg-service.brain-researcher-core.svc.cluster.local:5000",
     ),
     "src/brain_researcher/services/orchestrator/health_monitor.py": (
         'url="http://localhost:3000"',
@@ -54,7 +54,7 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
     "src/brain_researcher/cli/utils/http_client.py": ("http://localhost:3001",),
     "src/brain_researcher/cli/commands/cache_commands.py": ("get_orchestrator_url()",),
     "src/brain_researcher/services/orchestrator/.env.example": (
-        "NEUROKG_SERVICE_URL=http://localhost:5000",
+        "BR_KG_SERVICE_URL=http://localhost:5000",
         "OAUTH_REDIRECT_BASE_URL=http://localhost:3001",
     ),
     "infrastructure/docker/Dockerfile.orchestrator": (
@@ -75,8 +75,8 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
         '- "http://localhost:3000"',
     ),
     "infrastructure/haproxy/haproxy.cfg": (
-        "server neurokg-1 neurokg:5000",
-        "server neurokg-4 neurokg:5000",
+        "server br-kg-1 br-kg:5000",
+        "server br-kg-4 br-kg:5000",
         "use_backend web_ui_backend if is_api",
     ),
     "infrastructure/autoscaling/autoscaler.py": (
@@ -86,7 +86,7 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
     "apps/web-ui/api/viz_service.py": ('allow_origins=["http://localhost:3000"]',),
     "Dockerfile": (
         "uvicorn brain_researcher.services.agent.asgi:app",
-        "FROM base AS neurokg",
+        "FROM base AS br-kg",
         'CMD ["brain-researcher", "serve", "kg", "--port", "5000", "--host", "0.0.0.0"]',
     ),
     "infrastructure/docker/Dockerfile.agent": (
@@ -117,7 +117,7 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
     ),
     "configs/runtime/docker-compose.yml": (
         "context: ../..",
-        "target: neurokg",
+        "target: br-kg",
         "target: agent",
     ),
     "infrastructure/deployment/gce_k3s/QUICKSTART.md": (
@@ -138,7 +138,7 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
     ),
     "apps/web-ui/.env.example": (
         "Default port is 5001",
-        "NEUROKG_PORT=5001",
+        "BR_KG_PORT=5001",
     ),
     "tests/conftest.py": (
         '"port": 5001,',
@@ -165,10 +165,10 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         "http://localhost:5001",
     ),
     "tests/k8s/test_deployment_validation.py": (
-        '("neurokg-service", "brain-researcher-core", 5001)',
+        '("br_kg-service", "brain-researcher-core", 5001)',
     ),
     "tests/k8s/smoke/test_smoke_tests.py": (
-        "http://neurokg-service.brain-researcher-core.svc.cluster.local:5001",
+        "http://br_kg-service.brain-researcher-core.svc.cluster.local:5001",
     ),
     "src/brain_researcher/services/orchestrator/health_monitor.py": (
         'url="http://localhost:8050"',
@@ -177,7 +177,7 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
     "src/brain_researcher/cli/utils/http_client.py": ("http://localhost:8080",),
     "src/brain_researcher/cli/commands/cache_commands.py": ("http://localhost:8002",),
     "src/brain_researcher/services/orchestrator/.env.example": (
-        "NEUROKG_SERVICE_URL=http://localhost:5001",
+        "BR_KG_SERVICE_URL=http://localhost:5001",
     ),
     "infrastructure/docker/Dockerfile.orchestrator": (
         "brain_researcher.services.gateway.asgi_app:app",
@@ -201,7 +201,7 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         "src/brain_researcher/services/orchestrator/Dockerfile",
     ),
     "configs/runtime/docker-compose.yml": (
-        "../services/neurokg",
+        "../services/br_kg",
         "../services/agent",
     ),
     "infrastructure/deployment/gce_k3s/QUICKSTART.md": (
@@ -217,7 +217,7 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         "EXPOSE 5000 8050",
         "brain_researcher.services.gateway.asgi_app:app",
         "BR_DEV_ORCH_COMPAT",
-        "python -m brain_researcher.services.neurokg.api.graph_api",
+        "python -m brain_researcher.services.br_kg.api.graph_api",
     ),
     "tests/security/owasp_zap/zap_baseline.conf": (
         '"http://localhost:8080/api/*"',
@@ -231,7 +231,7 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         '- "http://localhost:8050"',
     ),
     "infrastructure/haproxy/haproxy.cfg": (
-        "server neurokg-1 neurokg:5001",
+        "server br_kg-1 br_kg:5001",
         "use_backend api_gateway_backend if is_api",
         "server api-gw-1 api-gateway:8080",
     ),

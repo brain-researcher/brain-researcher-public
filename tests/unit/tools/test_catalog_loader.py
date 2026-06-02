@@ -33,7 +33,7 @@ class TestCatalogLoader:
         assert isinstance(exposed, list)
 
         # Should contain expected chat tools
-        assert "neurokg.client" in exposed
+        assert "br_kg.client" in exposed
         assert "gemini.fs" in exposed
         assert "datasets.client" in exposed
         assert "realtime_twophoton" in exposed
@@ -303,9 +303,9 @@ class TestCatalogLoader:
             build_toolspec_fallback,
         )
 
-        spec = build_toolspec_fallback("neurokg.client")
+        spec = build_toolspec_fallback("br_kg.client")
 
-        assert spec.name == "neurokg.client"
+        assert spec.name == "br_kg.client"
         assert spec.backend == "python"
         assert spec.kind == "kg"
         assert "knowledge_graph_query" in spec.intents
@@ -560,11 +560,11 @@ class TestCatalogLoader:
         """get_toolspec_by_name returns correct spec."""
         from brain_researcher.services.tools.catalog_loader import get_toolspec_by_name
 
-        spec = get_toolspec_by_name("neurokg.client")
+        spec = get_toolspec_by_name("br_kg.client")
 
         # May return None if not in whitelist, but if found, should be correct
         if spec is not None:
-            assert spec.name == "neurokg.client"
+            assert spec.name == "br_kg.client"
 
     def test_get_toolspec_by_name_resolves_hidden_fsl_runtime_alias(self):
         """Hidden discoverable FSL aliases should still resolve to ToolSpecs."""
@@ -658,7 +658,9 @@ class TestResolveNiwrapMetadata:
         assert "skull_strip_mri" in intents
         assert "fsl.bet.run" in niwrap_id
 
-    def test_resolve_niwrap_metadata_runtime_canonical_id_prefers_descriptor_alias(self):
+    def test_resolve_niwrap_metadata_runtime_canonical_id_prefers_descriptor_alias(
+        self,
+    ):
         """Runtime canonical ids resolve to NiWrap descriptor aliases."""
         from brain_researcher.services.tools.catalog_loader import (
             load_niwrap_mapping,
@@ -782,7 +784,7 @@ class TestUnifiedToolRegistry:
         tool_names = [c.name for c in candidates]
         # At least one should be KG-related
         kg_related = any(
-            "neurokg" in name or "graph" in name or "concept" in name
+            "br_kg" in name or "graph" in name or "concept" in name
             for name in tool_names
         )
         assert kg_related or len(candidates) == 0  # May have no KG tools exposed
@@ -1066,7 +1068,7 @@ class TestHighLevelExposurePolicy:
         assert "motion_quantification" in exposed
         assert "mriqc_group_report" in exposed
         assert "freesurfer_qc" in exposed
-        assert "neurokg.search_nodes" in exposed
+        assert "br_kg.search_nodes" in exposed
         assert "kg_multihop_qa" in exposed
         assert "openneuro.search" in exposed
         assert "mne_ica" in exposed
@@ -1090,7 +1092,9 @@ class TestHighLevelExposurePolicy:
         assert "ml_cross_validation" in exposed
         assert "validation_metrics" in exposed
 
-    def test_discoverable_only_validation_and_cv_tools_stay_hidden_from_agent_surface(self):
+    def test_discoverable_only_validation_and_cv_tools_stay_hidden_from_agent_surface(
+        self,
+    ):
         """New discoverable retrieval helpers should not widen the default chat surface."""
         from brain_researcher.services.tools.catalog_loader import load_exposed_tools
 

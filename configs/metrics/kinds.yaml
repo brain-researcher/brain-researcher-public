@@ -30,4 +30,4 @@ tool_to_kind:
   ants_registration: registration
   mriqc: qc
   niclip: embedding
-  neurokg: kg_query
+  br-kg: kg_query

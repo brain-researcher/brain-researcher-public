@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from benchmarks.harbor_suite_routing.runner import (
     HarborRoutingEvaluator,
     HarborRoutingSuiteSpec,
@@ -56,8 +55,8 @@ class _FakePlanClient:
                 "selected_tool_in_top_5": True,
                 "selected_tool_in_top_10": True,
                 "routing_latency_ms": 13.5,
-                "candidate_source_counts": {"neurokg": 6},
-                "candidate_source": "neurokg",
+                "candidate_source_counts": {"br_kg": 6},
+                "candidate_source": "br_kg",
             }
         elif suite_key == "qarubric":
             diagnostics = {
@@ -86,14 +85,14 @@ class _FakePlanClient:
                 "selected_tool_in_top_5": True,
                 "selected_tool_in_top_10": True,
                 "routing_latency_ms": 9.0,
-                "candidate_source_counts": {"catalog": 3, "neurokg": 4},
+                "candidate_source_counts": {"catalog": 3, "br_kg": 4},
                 "candidate_source": "mixed",
             }
 
         tool_candidates = [
             {
                 "tool_id": f"{suite_key}.tool.{idx}",
-                "source": "catalog" if idx % 2 == 0 else "neurokg",
+                "source": "catalog" if idx % 2 == 0 else "br_kg",
             }
             for idx in range(1, diagnostics["candidate_count"] + 1)
         ]

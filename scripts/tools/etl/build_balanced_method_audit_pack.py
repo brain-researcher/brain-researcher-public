@@ -17,10 +17,10 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from brain_researcher.services.neurokg.etl.loaders.gabriel_loader import (  # noqa: E402
+from brain_researcher.services.br_kg.etl.loaders.gabriel_loader import (  # noqa: E402
     GabrielMeasurementLoader,
 )
-from brain_researcher.services.neurokg.etl.loaders.gabriel_measurements import (  # noqa: E402
+from brain_researcher.services.br_kg.etl.loaders.gabriel_measurements import (  # noqa: E402
     compute_gabriel_variables,
     evaluate_high_precision_gate,
 )

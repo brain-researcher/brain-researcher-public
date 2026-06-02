@@ -41,16 +41,18 @@ async def test_dataset_hints_injected_into_bundle():
         limit=5,
         dataset_hints=hints,
     )
-    ids = [item.source_id for item in bundle.items if item.source_type == EvidenceSourceType.DATASET_CATALOG]
+    ids = [
+        item.source_id
+        for item in bundle.items
+        if item.source_type == EvidenceSourceType.DATASET_CATALOG
+    ]
     assert "ds000001" in ids
-    hint_item = next(
-        item for item in bundle.items if item.source_id == "ds000001"
-    )
+    hint_item = next(item for item in bundle.items if item.source_id == "ds000001")
     assert hint_item.metadata.get("source") == "kg_hint"
 
 
 def test_tool_evidence_source_kg_query(monkeypatch):
-    os.environ["NEUROKG_TOOL_DISCOVERY"] = "1"
+    os.environ["BR_KG_TOOL_DISCOVERY"] = "1"
 
     class StubRegistry:
         def get_tools_for_task(self, query: str, k: int = 10):
@@ -72,22 +74,20 @@ def test_tool_evidence_source_kg_query(monkeypatch):
     def fake_resolve_tool_structured(*args, **kwargs):
         return {"recommendation": {"tool_id": "fsl.bet"}}
 
-    monkeypatch.setenv("NEUROKG_TOOL_DISCOVERY", "1")
+    monkeypatch.setenv("BR_KG_TOOL_DISCOVERY", "1")
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.search_tools_structured",
+        "brain_researcher.services.br_kg.query_service.search_tools_structured",
         fake_search_tools_structured,
     )
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.resolve_tool_structured",
+        "brain_researcher.services.br_kg.query_service.resolve_tool_structured",
         fake_resolve_tool_structured,
     )
 
     source = ToolEvidenceSource(registry=StubRegistry(), use_kg=True)
-    results = source.query_sync(
-        type("Q", (), {"text": "skull strip", "limit": 5})
-    )
+    results = source.query_sync(type("Q", (), {"text": "skull strip", "limit": 5}))
 
     assert results
     top = results[0]
     assert top.id == "fsl.bet"
-    assert top.payload.get("source") == "neurokg"
+    assert top.payload.get("source") == "br_kg"

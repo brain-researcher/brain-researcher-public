@@ -1,0 +1,36 @@
+# Generic SLURM cluster profile template
+#
+# Copy this file to a new profile under configs/slurm/profiles/ (e.g.
+# `mit_satori.yaml`, `nsf_acess.yaml`) and edit the values for your
+# cluster. Then either:
+#
+#   1. Set BR_SLURM_PROFILE=<your_profile_name> in the environment, or
+#   2. Pass profile=<your_profile_name> to slurm_tools functions.
+#
+# The profile name must match the YAML filename (without .yaml).
+
+name: generic_slurm
+description: Template for adding a new SLURM cluster — edit before use
+
+# SLURM account / allocation to charge
+account: REPLACE_ME
+
+# Interactive (srun) submission targets
+interactive_partition: REPLACE_ME       # e.g. "interactive", "debug"
+interactive_qos: ""                     # often left empty on generic clusters
+
+# Batch (sbatch) submission targets
+batch_partition: REPLACE_ME             # e.g. "normal", "compute"
+batch_qos: ""
+
+# Optional: shared module path your cluster pre-stages
+module_use: ""                          # e.g. "/share/PI/<lab>/modules"
+
+# stdout/stderr template (relative to job working dir unless absolute)
+default_output: slurm-%j.out
+default_error: slurm-%j.err
+
+notes:
+  - Replace all REPLACE_ME values before running real jobs.
+  - Verify partition / qos via `sinfo -s` on the target cluster.
+  - For HPC sites without QoS, set the empty string "" instead of omitting the key.

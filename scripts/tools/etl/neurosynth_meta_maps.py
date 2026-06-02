@@ -38,7 +38,7 @@ from nimare.meta.cbma.mkda import MKDAChi2
 from nimare.io import convert_neurosynth_to_dataset
 
 try:
-    from brain_researcher.services.neurokg.graph.neo4j_graph_database import (
+    from brain_researcher.services.br_kg.graph.neo4j_graph_database import (
         Neo4jGraphDB,
     )
 except Exception:
@@ -251,7 +251,7 @@ def main() -> None:
         "--atlas",
         type=Path,
         default=Path(
-            "data/neurokg/raw/nilearn_atlases/yeo_2011/Yeo_JNeurophysiol11_MNI152/"
+            "data/br-kg/raw/nilearn_atlases/yeo_2011/Yeo_JNeurophysiol11_MNI152/"
             "Yeo2011_17Networks_MNI152_FreeSurferConformed1mm.nii.gz"
         ),
     )

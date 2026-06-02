@@ -31,7 +31,7 @@ services:
       target: agent
     container_name: brain-researcher-agent
     depends_on:
-      - neurokg
+      - br-kg
       - redis
     ports:
       - "8000:8000"
@@ -42,7 +42,7 @@ services:
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
-      - NEUROKG_API_URL=http://neurokg:5000
+      - BR_KG_API_URL=http://br-kg:5000
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
@@ -67,17 +67,17 @@ services:
       - brain-researcher-network
 
   # BR-KG Service
-  neurokg:
+  br-kg:
     build:
       context: .
-      target: neurokg
-    container_name: brain-researcher-neurokg
+      target: br-kg
+    container_name: brain-researcher-br-kg
     ports:
       - "5000:5000"
     volumes:
-      - ./data/neurokg:/app/data/neurokg
-      - ./logs/neurokg:/app/logs
-      - neurokg_db:/app/data/neurokg/db
+      - ./data/br-kg:/app/data/br-kg
+      - ./logs/br-kg:/app/logs
+      - br_kg_db:/app/data/br-kg/db
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
@@ -106,7 +106,7 @@ services:
     container_name: brain-researcher-orchestrator
     depends_on:
       - agent
-      - neurokg
+      - br-kg
       - redis
     ports:
       - "3001:3001"
@@ -117,7 +117,7 @@ services:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
       - AGENT_URL=http://agent:8000
-      - NEUROKG_URL=http://neurokg:5000
+      - BR_KG_URL=http://br-kg:5000
       - REDIS_URL=redis://redis:6379/0
       - BR_QUEUE_BACKEND=sqlite
       - BR_QUEUE_DB=/app/data/orchestrator/jobs.sqlite
@@ -156,7 +156,7 @@ services:
       - NEXT_PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:3001}
       - NEXT_PUBLIC_ORCHESTRATOR_URL=${PUBLIC_ORCHESTRATOR_URL:-http://localhost:3001}
       - NEXT_PUBLIC_AGENT_URL=${PUBLIC_AGENT_URL:-http://localhost:8000}
-      - NEXT_PUBLIC_NEUROKG_URL=${PUBLIC_NEUROKG_URL:-http://localhost:5000}
+      - NEXT_PUBLIC_BR_KG_URL=${PUBLIC_BR_KG_URL:-http://localhost:5000}
       - NEXT_PUBLIC_APP_NAME=Brain Researcher
       - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL:-}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
@@ -271,7 +271,7 @@ volumes:
     driver: local
   postgres_data:
     driver: local
-  neurokg_db:
+  br_kg_db:
     driver: local
   prometheus_data:
     driver: local

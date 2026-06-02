@@ -15,7 +15,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -55,7 +54,7 @@ def test_workflow_tms_targeting_ds000114_smoke(tmp_path: Path):
             _resolve_repo_path(
                 PROJECT_ROOT
                 / "data"
-                / "neurokg"
+                / "br_kg"
                 / "raw"
                 / "nilearn_atlases"
                 / "schaefer_2018"
@@ -87,7 +86,11 @@ def test_workflow_tms_targeting_ds000114_smoke(tmp_path: Path):
     conn_file = tmp_path / "fc.npy"
     res_conn = execute_tool(
         "connectivity_matrix",
-        {"timeseries": str(ts_file), "kind": "correlation", "output_file": str(conn_file)},
+        {
+            "timeseries": str(ts_file),
+            "kind": "correlation",
+            "output_file": str(conn_file),
+        },
     )
     assert res_conn.status == "success", res_conn.error
     assert conn_file.exists() and conn_file.stat().st_size > 0

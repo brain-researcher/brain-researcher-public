@@ -126,13 +126,13 @@ If you don't want to use Gemini, omit `brain-researcher-llm-api-keys` and set
 
 If you want to enable DeepXiv-backed literature search in prod, add
 `DEEPXIV_TOKEN` to `brain-researcher-llm-api-keys`. This key is consumed by the
-`mcp` deployment directly and by `neurokg` via `extraEnvFrom`. Switching the
+`mcp` deployment directly and by `br-kg` via `extraEnvFrom`. Switching the
 internal literature provider still requires setting `BR_LITERATURE_PROVIDER=deepxiv`
 on the target services when you are ready to cut over.
 
 ## 6) Build & push images
 
-Build/push the images your deployment enables (`agent`, `orchestrator`, `web-ui`, `neurokg`, `mcp`).
+Build/push the images your deployment enables (`agent`, `orchestrator`, `web-ui`, `br-kg`, `mcp`).
 
 Example (replace with your registry):
 
@@ -153,20 +153,20 @@ docker build -t ${IMAGE_REGISTRY}/web-ui:${TAG} \
   -f apps/web-ui/Dockerfile \
   --build-arg NEXT_PUBLIC_USE_API_PROXY=true \
   --build-arg NEXT_PUBLIC_WS_URL="wss://${DOMAIN}/ws" \
-  --build-arg NEXT_PUBLIC_NEUROKG_API="https://${DOMAIN}/kg" \
+  --build-arg NEXT_PUBLIC_BR_KG_API="https://${DOMAIN}/kg" \
   --build-arg NEXT_PUBLIC_ORCHESTRATOR_URL="https://${DOMAIN}" \
   --build-arg NEXT_PUBLIC_AGENT_API="https://${DOMAIN}" \
   --build-arg ORCHESTRATOR_HOST="${RELEASE}-orchestrator" \
   --build-arg ORCHESTRATOR_PORT="3001" \
   --build-arg AGENT_HOST="${RELEASE}-agent" \
   --build-arg AGENT_PORT="8000" \
-  --build-arg NEUROKG_HOST="${RELEASE}-neurokg" \
-  --build-arg NEUROKG_PORT="5000" \
+  --build-arg BR_KG_HOST="${RELEASE}-br-kg" \
+  --build-arg BR_KG_PORT="5000" \
   .
 docker push ${IMAGE_REGISTRY}/web-ui:${TAG}
 
-docker build -t ${IMAGE_REGISTRY}/neurokg:${TAG} -f Dockerfile --target neurokg .
-docker push ${IMAGE_REGISTRY}/neurokg:${TAG}
+docker build -t ${IMAGE_REGISTRY}/br-kg:${TAG} -f Dockerfile --target br-kg .
+docker push ${IMAGE_REGISTRY}/br-kg:${TAG}
 
 docker build -t ${IMAGE_REGISTRY}/mcp:${TAG} -f infrastructure/docker/Dockerfile.mcp .
 docker push ${IMAGE_REGISTRY}/mcp:${TAG}
@@ -194,3 +194,21 @@ kubectl -n brain-researcher-core get ingress
 
 If your k3s install includes Traefik, it will manage the Ingress. Point your DNS
 `A` record at the VM public IP.
+
+## 9) Widen Traefik websocket timeouts (hosted Marimo)
+
+The hosted Marimo workspace (`/hub/{service}`) is a long-lived websocket. Traefik's
+default entrypoint `idleTimeout` (180s) drops idle kernel sockets and shows up as
+"kernel not found" / reconnect churn in the workspace iframe. This cannot be fixed
+with per-Ingress annotations on Traefik (responding timeouts are entrypoint-level),
+so apply the bundled `HelmChartConfig` once per cluster:
+
+```bash
+kubectl apply -f infrastructure/deployment/gce_k3s/traefik-helmchartconfig.yaml
+kubectl -n kube-system rollout status deploy/traefik
+```
+
+On an nginx-ingress cluster you don't need this — the per-session Marimo Ingress
+already carries `proxy-read-timeout` / `proxy-send-timeout` annotations
+(see `BR_MARIMO_RUNTIME_INGRESS_WS_TIMEOUT`). Operators on other controllers can
+inject custom annotations via `BR_MARIMO_RUNTIME_INGRESS_ANNOTATIONS_JSON`.

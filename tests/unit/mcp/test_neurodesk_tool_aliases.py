@@ -30,8 +30,17 @@ def test_get_execution_recipe_resolves_cat12_alias_with_module_metadata() -> Non
     assert resp["canonical_tool_id"] == "spm12_vbm"
     assert resp["neurodesk_module_name"] == "cat12"
     assert resp["neurodesk_recommended_module"] == "cat12/12.9"
-    assert resp["supported_recipe_targets"] == ["neurodesk", "container", "slurm"]
-    assert resp["recipe"]["run_command"] == "module load cat12/12.9 && python run_spm12_vbm.py"
+    # cat12 (spm12_vbm) is a neurodesk lmod module, not a standalone OCI app: it has
+    # no entry in the container_images registry (which holds only BIDS-App/NiPreps
+    # images like fmriprep/mriqc). So `container` is correctly NOT a supported target
+    # -- get_execution_recipe(..., target_runtime="container") legitimately returns
+    # unsupported for it. Advertising "container" here would lie about what the recipe
+    # generator can actually produce.
+    assert resp["supported_recipe_targets"] == ["neurodesk", "slurm"]
+    assert (
+        resp["recipe"]["run_command"]
+        == "module load cat12/12.9 && python run_spm12_vbm.py"
+    )
 
 
 def test_tool_search_exposed_surface_discovers_spm12_vbm() -> None:

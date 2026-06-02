@@ -93,7 +93,7 @@ export const serviceEndpoints = {
 export const resolveKgGraphUrl = (params: URLSearchParams) => {
   if (serviceEndpoints.useProxy && typeof window !== 'undefined') {
     const qs = params.toString()
-    const proxyPath = `/api/neurokg/graph${qs ? `?${qs}` : ''}`
+    const proxyPath = `/api/br-kg/graph${qs ? `?${qs}` : ''}`
     return proxyPath
   }
 
@@ -107,7 +107,7 @@ export const resolveKgVizUrl = (path: string, params?: URLSearchParams) => {
 
   if (serviceEndpoints.useProxy && typeof window !== 'undefined') {
     const qs = params?.toString()
-    return `/api/neurokg/viz/brain${normalized}${qs ? `?${qs}` : ''}`
+    return `/api/br-kg/viz/brain${normalized}${qs ? `?${qs}` : ''}`
   }
 
   const backendUrl = new URL(`/api/viz/brain${normalized}`, KG_BASE)
@@ -131,7 +131,7 @@ const resolveKgUrl = (
 
   if (serviceEndpoints.useProxy && typeof window !== 'undefined') {
     const qs = params?.toString()
-    return `/api/neurokg/${normalized}${qs ? `?${qs}` : ''}`
+    return `/api/br-kg/${normalized}${qs ? `?${qs}` : ''}`
   }
 
   const backendPath = options?.rootPath ? `/${normalized}` : `/api/${normalized}`
@@ -155,7 +155,7 @@ export const resolveAgentHealthUrl = () =>
 
 export const resolveKgQueryUrl = () =>
   serviceEndpoints.useProxy && typeof window !== 'undefined'
-    ? '/api/neurokg/graph/query'
+    ? '/api/br-kg/graph/query'
     : join(KG_BASE, '/api/graph/query')
 
 export const resolveKgEvidenceUrl = (params?: URLSearchParams) => {

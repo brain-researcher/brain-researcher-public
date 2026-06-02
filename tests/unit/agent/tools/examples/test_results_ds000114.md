@@ -6,7 +6,7 @@
 - **Python Environment**: brain_researcher conda environment
 
 ## Overall Results
-- **Total Tests**: 6 main test categories  
+- **Total Tests**: 6 main test categories
 - **Passed**: 5 (83.3%)
 - **Failed**: 1 (16.7%)
 
@@ -15,7 +15,7 @@
 ### 1. Tool Registry ✅
 - **Status**: SUCCESS
 - **Tools Discovered**: 50 neuroimaging tools
-- **Categories**: 
+- **Categories**:
   - Analysis tools (GLM, ICA, encoding models)
   - Knowledge graph tools (concept mapping, literature search)
   - BIDS tools (validation, query, conversion)
@@ -35,7 +35,7 @@
 - **Output**: `/cvmfs/neurodesk.ardc.edu.au/containers/fsl_6.0.7.16_20250131/feat` command ready
 
 ### 3. FSL MELODIC ICA Tool ✅
-- **Status**: SUCCESS  
+- **Status**: SUCCESS
 - **Test Case**: fingerfootlips motor task
 - **Achievements**:
   - Configured ICA with automatic dimensionality estimation
@@ -49,7 +49,7 @@
 - **Query**: ✅ SUCCESS - Found 5 functional files across sessions
 - **Files Found**:
   - covertverbgeneration task
-  - fingerfootlips task  
+  - fingerfootlips task
   - linebisection task
   - overtverbgeneration task
   - overtwordrepetition task
@@ -79,7 +79,7 @@
 1. **BIDS Validator**: Binary not installed (`bids-validator` command not found)
    - Solution: Install via npm or use Python implementation
 
-### Minor Issues  
+### Minor Issues
 1. **NumPy Version Conflict**: SciPy expects NumPy <1.28.0 but 1.26.4 installed
    - Impact: Warning only, functionality not affected
 
@@ -122,7 +122,7 @@
 
 ## Files Generated
 - Test script: `test_tools_with_real_data.py`
-- Test outputs: `${BR_REPO_ROOT}/outputs/test_outputs/`
+- Test outputs: `/home/zijiaochen/projects/brain_researcher/outputs/test_outputs/`
 - Event files: Temporary directories with FSL-format events
 - Test results: `test_results.json`
 

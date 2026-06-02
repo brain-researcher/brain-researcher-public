@@ -47,12 +47,12 @@ NEXT_PUBLIC_USE_API_PROXY=true
 # Local downstream services
 AGENT_PORT=8000
 ORCHESTRATOR_PORT=3001
-NEUROKG_PORT=5000
+BR_KG_PORT=5000
 
 # Optional server-to-server overrides for Next.js route handlers
 # BR_AGENT_URL=http://localhost:8000
 # BR_ORCHESTRATOR_URL=http://localhost:3001
-# BR_NEUROKG_URL=http://localhost:5000
+# BR_KG_URL=http://localhost:5000
 ```
 
 ## Docker

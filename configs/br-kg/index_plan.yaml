@@ -1,0 +1,90 @@
+# Core Neo4j index and constraint plan for BR-KG
+# Applied via migration framework or manual Cypher execution
+#
+# Schema definitions (node/edge types, properties, ID formats) are now in:
+# configs/br-kg/config.yml (schema section)
+
+node_constraints:
+  - label: Concept
+    type: NODE_KEY
+    properties: ["id"]
+  - label: Task
+    type: NODE_KEY
+    properties: ["id"]
+  - label: Publication
+    type: NODE_KEY
+    properties: ["pmid"]
+  - label: BrainRegion
+    type: NODE_KEY
+    properties: ["id"]
+  - label: Dataset
+    type: NODE_KEY
+    properties: ["accession"]
+  - label: Coordinate
+    type: NODE_KEY
+    properties: ["id"]
+  - label: StatisticalMap
+    type: NODE_KEY
+    properties: ["id"]
+  - label: AgentSession
+    type: NODE_KEY
+    properties: ["id"]
+  - label: TaskSurface
+    type: NODE_KEY
+    properties: ["id"]
+  - label: ValidationEvidence
+    type: NODE_KEY
+    properties: ["id"]
+  - label: OpenRisk
+    type: NODE_KEY
+    properties: ["id"]
+  - label: Outcome
+    type: NODE_KEY
+    properties: ["id"]
+  - label: Lesson
+    type: NODE_KEY
+    properties: ["id"]
+  - label: NextAction
+    type: NODE_KEY
+    properties: ["id"]
+
+indexes:
+  - label: Concept
+    properties: ["name"]
+  - label: Task
+    properties: ["name"]
+  - label: Publication
+    properties: ["doi"]
+  - label: BrainRegion
+    properties: ["name"]
+  - label: Dataset
+    properties: ["name"]
+  - label: Coordinate
+    properties: ["space"]
+  - label: StatisticalMap
+    properties: ["collection_id"]
+  - label: AgentSession
+    properties: ["session_id"]
+  - label: AgentSession
+    properties: ["source_client"]
+  - label: AgentSession
+    properties: ["status"]
+  - label: AgentSession
+    properties: ["last_event_at"]
+  - label: TaskSurface
+    properties: ["name"]
+  - label: ValidationEvidence
+    properties: ["evidence_type"]
+  - label: OpenRisk
+    properties: ["label"]
+  - label: Lesson
+    properties: ["issue_code"]
+  - label: Lesson
+    properties: ["status"]
+  - label: NextAction
+    properties: ["action_type"]
+
+notes:
+  - "Publication DOI index is optional but improves lookup when PMID missing"
+  - "Coordinate node key relies on new coord:<space>:<round_mm>:<x>:<y>:<z>:<origin> IDs"
+  - "Apply via Neo4j CREATE CONSTRAINT/INDEX IF NOT EXISTS statements"

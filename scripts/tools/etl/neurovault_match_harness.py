@@ -20,7 +20,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
 
-from brain_researcher.services.neurokg.etl.loaders.enhanced_neurovault_loader import (
+from brain_researcher.services.br_kg.etl.loaders.enhanced_neurovault_loader import (
     EnhancedNeuroVaultLoader,
 )
 

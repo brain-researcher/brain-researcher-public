@@ -11,7 +11,9 @@ if [[ "${BR_PRODUCT_MODE:-}" == "hosted-cloud" ]]; then
     echo "br-marimo: runtime token file ${BR_MARIMO_RUNTIME_TOKEN_PATH} missing or empty (hosted-cloud)" >&2
     exit 78
   fi
-  token_mode="$(stat -c '%a' "${BR_MARIMO_RUNTIME_TOKEN_PATH}" 2>/dev/null || echo '')"
+  # The token is exposed via a projected-volume symlink; dereference (-L) so we
+  # read the real file's mode (e.g. 0440) rather than the symlink's (lrwxrwxrwx/777).
+  token_mode="$(stat -L -c '%a' "${BR_MARIMO_RUNTIME_TOKEN_PATH}" 2>/dev/null || echo '')"
   case "${token_mode}" in
     400|440|600|640)
       ;;
@@ -79,6 +81,29 @@ if [[ -n "${taskbeacon_repo}" && -n "${taskbeacon_target_path}" ]]; then
   if ! python "${taskbeacon_args[@]}"; then
     echo "TaskBeacon import failed for ${taskbeacon_repo}; continuing runtime startup." >&2
   fi
+fi
+
+# Wait for the BR MCP server to be reachable before launching marimo. marimo's
+# MCP client connects on startup and, on a single failure, marks the server as
+# ERROR and removes it from monitoring WITHOUT retrying — so a boot-time race
+# (the MCP service briefly unreachable, e.g. during its own redeploy or before
+# k8s service DNS settles) would permanently leave this runtime with no MCP
+# tools and a broken AI sidebar. Poll until the MCP endpoint answers (any HTTP
+# status = reachable), bounded by a timeout; if it never comes up we still launch
+# marimo so the notebook itself works (just without MCP tools).
+if [[ -n "${BR_MCP_HTTP_URL:-}" ]] \
+  && [[ "${BR_MARIMO_WAIT_FOR_MCP:-true}" =~ ^(1|true|TRUE|yes|YES|on|ON)$ ]] \
+  && command -v curl >/dev/null 2>&1; then
+  mcp_wait_timeout="${BR_MARIMO_MCP_WAIT_TIMEOUT_S:-45}"
+  mcp_wait_deadline=$(( SECONDS + mcp_wait_timeout ))
+  until curl -sS -o /dev/null --max-time 3 "${BR_MCP_HTTP_URL}"; do
+    if (( SECONDS >= mcp_wait_deadline )); then
+      echo "br-marimo: MCP server ${BR_MCP_HTTP_URL} not reachable after ${mcp_wait_timeout}s; launching marimo anyway (MCP tools may be unavailable until restart)" >&2
+      break
+    fi
+    echo "br-marimo: waiting for MCP server ${BR_MCP_HTTP_URL} to become reachable..." >&2
+    sleep 2
+  done
 fi
 
 exec "$@"

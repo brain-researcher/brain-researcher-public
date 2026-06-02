@@ -64,7 +64,7 @@ NEXT_PUBLIC_USE_API_PROXY=true
 # Server-side downstream targets for Next.js route handlers
 BR_AGENT_URL=https://agent.your-api.com
 BR_ORCHESTRATOR_URL=https://orchestrator.your-api.com
-BR_NEUROKG_URL=https://kg.your-api.com
+BR_KG_URL=https://kg.your-api.com
 
 # Only set this if your websocket endpoint is not available at same-origin /ws
 # NEXT_PUBLIC_WS_URL=wss://orchestrator.your-api.com/ws
@@ -72,7 +72,7 @@ BR_NEUROKG_URL=https://kg.your-api.com
 # Optional direct public service overrides (advanced / opt-out only)
 # NEXT_PUBLIC_AGENT_API=https://agent.your-api.com
 # NEXT_PUBLIC_ORCHESTRATOR_URL=https://orchestrator.your-api.com
-# NEXT_PUBLIC_NEUROKG_API=https://kg.your-api.com
+# NEXT_PUBLIC_BR_KG_API=https://kg.your-api.com
 
 # Supabase (if using)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url

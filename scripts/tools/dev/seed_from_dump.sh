@@ -71,7 +71,7 @@ PY
 
 INDEX_PLAN_SOURCE="$DUMP_DIR/index_plan.yaml"
 if [[ -f "$INDEX_PLAN_SOURCE" ]]; then
-  TARGET_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)/configs/neurokg"
+  TARGET_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)/configs/br-kg"
   mkdir -p "$TARGET_DIR"
   cp "$INDEX_PLAN_SOURCE" "$TARGET_DIR/index_plan.yaml"
 fi

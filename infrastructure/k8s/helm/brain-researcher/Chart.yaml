@@ -31,10 +31,10 @@ sources:
 annotations:
   # Chart category for Artifact Hub
   category: "Analytics"
-  
+
   # License information
   licenses: "MIT"
-  
+
   # Links for documentation
   "artifacthub.io/links": |
     - name: Documentation
@@ -43,7 +43,7 @@ annotations:
       url: https://github.com/zjc062/brain_researcher/tree/main/docs/release
     - name: Support
       url: https://github.com/zjc062/brain_researcher/issues
-  
+
   # Images used in the chart
   "artifacthub.io/images": |
     - name: nginx
@@ -52,8 +52,8 @@ annotations:
       image: docker.io/zjc062/orchestrator:latest
     - name: agent
       image: docker.io/zjc062/agent:latest
-    - name: neurokg
-      image: docker.io/zjc062/neurokg:latest
+    - name: br-kg
+      image: docker.io/zjc062/br-kg:latest
     - name: niclip
       image: docker.io/zjc062/niclip:latest
     - name: web-ui
@@ -66,7 +66,7 @@ annotations:
       image: prom/prometheus:latest
     - name: grafana
       image: grafana/grafana:latest
-  
+
   # Changelog for this version
   "artifacthub.io/changes": |
     - kind: added
@@ -83,36 +83,36 @@ annotations:
       description: Persistent storage configuration for stateful services
     - kind: added
       description: Prometheus and Grafana monitoring stack
-  
+
   # Operating systems supported
   "artifacthub.io/operator": "false"
   "artifacthub.io/operatorCapabilities": "Basic Install"
-  
+
   # Prerelease flag
   "artifacthub.io/prerelease": "true"
-  
+
   # README information
   "artifacthub.io/readme": |
     # Brain Researcher Helm Chart
-    
+
     This repository-local Helm chart deploys the Brain Researcher service stack on Kubernetes for operators and contributors.
-    
+
     ## Prerequisites
-    
+
     - Kubernetes 1.20+
     - Helm 3.8+
     - cert-manager (for SSL certificates)
     - Ingress controller (nginx recommended)
     - StorageClass for persistent volumes
-    
+
     ## Installation
-    
+
     ```bash
     helm install brain-researcher ./infrastructure/k8s/helm/brain-researcher
     ```
-    
+
     ## Configuration
-    
+
     See values.yaml for configuration options.
 
 # Dependencies (subchart dependencies would go here)

@@ -48,7 +48,7 @@ site/
 
 # Data files (will be mounted as volumes)
 data/
-brain_researcher/services/neurokg/data/
+brain_researcher/services/br_kg/data/
 logs/
 *.db
 *.sqlite

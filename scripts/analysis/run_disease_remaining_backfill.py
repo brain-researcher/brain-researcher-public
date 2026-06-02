@@ -271,7 +271,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--base-url",
-        default=_env(repo_root, "NEUROKG_API_URL") or "https://brain-researcher.com/kg",
+        default=_env(repo_root, "BR_KG_API_URL") or "https://brain-researcher.com/kg",
         help="BR-KG base URL for lens endpoints.",
     )
     parser.add_argument("--neo4j-uri", default=_env(repo_root, "NEO4J_URI"))

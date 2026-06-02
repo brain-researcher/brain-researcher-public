@@ -11,7 +11,7 @@ This directory contains test files for the chat upload functionality testing.
 ## Directory Structure
 
 ```
-${BR_REPO_ROOT}/
+/home/zijiaochen/projects/brain_researcher/
 ├── data/
 │   └── uploads/
 │       └── chat/          # Runtime chat uploads go here

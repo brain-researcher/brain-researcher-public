@@ -12,7 +12,7 @@ from typing import Any
 
 from neo4j import GraphDatabase
 
-from brain_researcher.services.neurokg.etl.loaders.scholarly_metadata_loader import (
+from brain_researcher.services.br_kg.etl.loaders.scholarly_metadata_loader import (
     ScholarlyMetadataLoader,
 )
 

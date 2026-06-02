@@ -33,19 +33,19 @@ ACTIVE_RUNTIME_FILES = {
     "src/brain_researcher/services/agent/planner/config_loader.py",
     "src/brain_researcher/services/agent/planner/prior_config.py",
     "src/brain_researcher/services/agent/planner/synonyms_loader.py",
-    "src/brain_researcher/services/neurokg/app.py",
-    "src/brain_researcher/services/neurokg/viz_api.py",
-    "src/brain_researcher/services/neurokg/evidence/caveats.py",
-    "src/brain_researcher/services/neurokg/knowledge/sources/niclip.py",
-    "src/brain_researcher/services/neurokg/niclip/coordinate_mapper.py",
-    "src/brain_researcher/services/neurokg/utils/matching_profile.py",
-    "src/brain_researcher/services/neurokg/utils/node_label_linker.py",
-    "src/brain_researcher/services/neurokg/utils/onvoc_linker.py",
-    "src/brain_researcher/services/neurokg/utils/task_matcher.py",
+    "src/brain_researcher/services/br_kg/app.py",
+    "src/brain_researcher/services/br_kg/viz_api.py",
+    "src/brain_researcher/services/br_kg/evidence/caveats.py",
+    "src/brain_researcher/services/br_kg/knowledge/sources/niclip.py",
+    "src/brain_researcher/services/br_kg/niclip/coordinate_mapper.py",
+    "src/brain_researcher/services/br_kg/utils/matching_profile.py",
+    "src/brain_researcher/services/br_kg/utils/node_label_linker.py",
+    "src/brain_researcher/services/br_kg/utils/onvoc_linker.py",
+    "src/brain_researcher/services/br_kg/utils/task_matcher.py",
     "src/brain_researcher/services/orchestrator/copilot_endpoints.py",
     "src/brain_researcher/services/orchestrator/preflight_endpoints.py",
     "src/brain_researcher/services/tools/env_desc.py",
-    "src/brain_researcher/services/neurokg/etl/load_all.py",
+    "src/brain_researcher/services/br_kg/etl/load_all.py",
 }
 
 FORBIDDEN_SUBSTRINGS = (
@@ -61,4 +61,6 @@ def test_active_cli_runtime_files_do_not_use_path_bootstrap_hacks() -> None:
     for relpath in sorted(ACTIVE_RUNTIME_FILES):
         text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
         for needle in FORBIDDEN_SUBSTRINGS:
-            assert needle not in text, f"Found forbidden path bootstrap in {relpath}: {needle}"
+            assert (
+                needle not in text
+            ), f"Found forbidden path bootstrap in {relpath}: {needle}"

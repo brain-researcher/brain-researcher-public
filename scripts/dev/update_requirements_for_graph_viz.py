@@ -14,7 +14,7 @@ def update_requirements():
         "requests>=2.25.0",
     ]
 
-    requirements_file = "src/brain_researcher/services/neurokg/requirements.txt"
+    requirements_file = "src/brain_researcher/services/br_kg/requirements.txt"
 
     try:
         # Read existing requirements
@@ -68,6 +68,6 @@ if __name__ == "__main__":
     print("1. Copy the GitHub issues from github_issues_graph_visualization.md")
     print("2. Create them in your GitHub repository")
     print(
-        "3. Install the new dependencies: pip install -r src/brain_researcher/services/neurokg/requirements.txt"
+        "3. Install the new dependencies: pip install -r src/brain_researcher/services/br_kg/requirements.txt"
     )
     print("4. Start with Issue G1 (Graph API)")

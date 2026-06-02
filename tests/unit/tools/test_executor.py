@@ -281,8 +281,8 @@ class TestExecuteTool:
         with patch(
             "brain_researcher.services.tools.executor.UnifiedToolRegistry"
         ) as MockRegistry:
-            MockRegistry.return_value.get_toolspec_by_name.side_effect = (
-                lambda name: mapped_spec if name == "python.fetch_atlas.run" else None
+            MockRegistry.return_value.get_toolspec_by_name.side_effect = lambda name: (
+                mapped_spec if name == "python.fetch_atlas.run" else None
             )
             with patch(
                 "brain_researcher.services.tools.executor.resolve_runtime_tool_ids",
@@ -507,12 +507,10 @@ class TestExecuteTool:
         with patch(
             "brain_researcher.services.tools.executor.UnifiedToolRegistry"
         ) as MockRegistry:
-            MockRegistry.return_value.get_toolspec_by_name.side_effect = (
-                lambda name: unresolved_spec
+            MockRegistry.return_value.get_toolspec_by_name.side_effect = lambda name: (
+                unresolved_spec
                 if name == "fmri.connectivity_client.light"
-                else resolved_spec
-                if name == "connectivity_matrix"
-                else None
+                else resolved_spec if name == "connectivity_matrix" else None
             )
             with patch(
                 "brain_researcher.services.tools.executor.resolve_runtime_tool_ids",
@@ -1127,8 +1125,15 @@ class TestExternalAPIBackend:
         assert result.data == {"result": "ok"}
 
     def test_external_api_mcp_bridge_server_info(self):
-        """MCP external_api tools should execute via in-process bridge."""
+        """MCP external_api tools should execute via the registered bridge."""
+        from brain_researcher.services.shared import mcp_runtime_bridge
         from brain_researcher.services.tools.spec import ToolSpec
+
+        class FakeProvider:
+            def call_tool(self, tool_name, arguments=None):
+                assert tool_name == "server_info"
+                assert dict(arguments or {}) == {}
+                return {"ok": True, "data": {"name": "brain-researcher"}}
 
         mock_spec = ToolSpec(
             name="mcp.server_info",
@@ -1141,9 +1146,10 @@ class TestExternalAPIBackend:
             "brain_researcher.services.tools.executor.UnifiedToolRegistry"
         ) as MockRegistry:
             MockRegistry.return_value.get_toolspec_by_name.return_value = mock_spec
-            with patch(
-                "brain_researcher.services.mcp.server.server_info",
-                return_value={"ok": True, "data": {"name": "brain-researcher"}},
+            with patch.object(
+                mcp_runtime_bridge,
+                "_registered_provider",
+                FakeProvider(),
             ):
                 result = execute_tool("mcp.server_info", {})
 
@@ -1152,8 +1158,15 @@ class TestExternalAPIBackend:
         assert result.data.get("ok") is True
 
     def test_external_api_mcp_bridge_sherlock_guide(self):
-        """Aggregated Sherlock MCP tools should execute via the in-process bridge."""
+        """Aggregated Sherlock MCP tools should execute via the bridge."""
+        from brain_researcher.services.shared import mcp_runtime_bridge
         from brain_researcher.services.tools.spec import ToolSpec
+
+        class FakeProvider:
+            def call_tool(self, tool_name, arguments=None):
+                assert tool_name == "sherlock_guide"
+                assert dict(arguments or {})["action"] == "command"
+                return {"ok": True, "commands": ["srun --pty bash"]}
 
         mock_spec = ToolSpec(
             name="mcp.sherlock_guide",
@@ -1166,16 +1179,17 @@ class TestExternalAPIBackend:
             "brain_researcher.services.tools.executor.UnifiedToolRegistry"
         ) as MockRegistry:
             MockRegistry.return_value.get_toolspec_by_name.return_value = mock_spec
-            with patch(
-                "brain_researcher.services.mcp.server.sherlock_guide",
-                return_value={"ok": True, "commands": ["srun --pty bash"]},
+            with patch.object(
+                mcp_runtime_bridge,
+                "_registered_provider",
+                FakeProvider(),
             ):
                 result = execute_tool(
                     "mcp.sherlock_guide",
                     {
                         "action": "command",
                         "intent": "interactive_cpu",
-                        "pi_group": "your_pi_group",
+                        "pi_group": "russpold",
                     },
                 )
 
@@ -1183,8 +1197,18 @@ class TestExternalAPIBackend:
         assert result.data["commands"] == ["srun --pty bash"]
 
     def test_external_api_mcp_bridge_sherlock_slurm(self):
-        """Aggregated Sherlock Slurm MCP tool should execute via the in-process bridge."""
+        """Aggregated Sherlock Slurm MCP tool should execute via the bridge."""
+        from brain_researcher.services.shared import mcp_runtime_bridge
         from brain_researcher.services.tools.spec import ToolSpec
+
+        class FakeProvider:
+            def call_tool(self, tool_name, arguments=None):
+                assert tool_name == "sherlock_slurm"
+                assert dict(arguments or {})["action"] == "render_script"
+                return {
+                    "ok": True,
+                    "script_text": "#!/bin/bash\n#SBATCH --time=24:00:00\n",
+                }
 
         mock_spec = ToolSpec(
             name="mcp.sherlock_slurm",
@@ -1197,12 +1221,10 @@ class TestExternalAPIBackend:
             "brain_researcher.services.tools.executor.UnifiedToolRegistry"
         ) as MockRegistry:
             MockRegistry.return_value.get_toolspec_by_name.return_value = mock_spec
-            with patch(
-                "brain_researcher.services.mcp.server.sherlock_slurm",
-                return_value={
-                    "ok": True,
-                    "script_text": "#!/bin/bash\n#SBATCH --time=24:00:00\n",
-                },
+            with patch.object(
+                mcp_runtime_bridge,
+                "_registered_provider",
+                FakeProvider(),
             ):
                 result = execute_tool(
                     "mcp.sherlock_slurm",
@@ -1216,6 +1238,41 @@ class TestExternalAPIBackend:
 
         assert result.status == "success"
         assert "#SBATCH --time=24:00:00" in result.data["script_text"]
+
+    def test_external_api_mcp_bridge_system_self_test_in_band_error(self):
+        """system_self_test is supported and ok:false payloads stay in-band."""
+        from brain_researcher.services.shared import mcp_runtime_bridge
+        from brain_researcher.services.tools.spec import ToolSpec
+
+        class FakeProvider:
+            def call_tool(self, tool_name, arguments=None):
+                assert tool_name == "system_self_test"
+                assert dict(arguments or {})["mode"] == "quick"
+                return {"ok": False, "error": "self_test_disabled"}
+
+        mock_spec = ToolSpec(
+            name="mcp.system_self_test",
+            description="MCP self-test",
+            backend="external_api",
+            python_class=None,
+        )
+
+        with patch(
+            "brain_researcher.services.tools.executor.UnifiedToolRegistry"
+        ) as MockRegistry:
+            MockRegistry.return_value.get_toolspec_by_name.return_value = mock_spec
+            with patch.object(
+                mcp_runtime_bridge,
+                "_registered_provider",
+                FakeProvider(),
+            ):
+                result = execute_tool("mcp.system_self_test", {"mode": "quick"})
+
+        assert result.status == "error"
+        assert result.error == "self_test_disabled"
+        assert result.data["ok"] is False
+        assert result.data["error"] == "self_test_disabled"
+        assert "failure_diagnostics" in result.data
 
     def test_external_api_gemini_uses_gemini_cli_tools(self):
         """Gemini external_api tools should resolve via gemini_cli_tools registry."""

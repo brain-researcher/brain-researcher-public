@@ -172,7 +172,7 @@ categories:
   knowledge_graph:
     name: "Knowledge Graph & Retrieval"
     description: "BR-KG queries, concept mapping, and literature search"
-    keywords: ["neurokg", "graph_query", "concept", "find_related", "coordinate_to_concept", "task_to_concept", "literature_search", "neurosynth"]
+    keywords: ["br-kg", "graph_query", "concept", "find_related", "coordinate_to_concept", "task_to_concept", "literature_search", "neurosynth"]
     examples:
       - find_related_concepts
       - coordinate_to_concept
@@ -341,14 +341,14 @@ pattern_matching:
     dandi_search: data_management
     neurovault_download_collection: data_management
     neurovault_search_images: data_management
-    
+
     # Knowledge Graph
     find_related_concepts: knowledge_graph
     coordinate_to_concept: knowledge_graph
     concept_literature_search: knowledge_graph
     graph_query: knowledge_graph
     task_to_concept_mapping: knowledge_graph
-    
+
     # Preprocessing
     run_fmriprep: preprocessing
     fmriprep_preprocessing: preprocessing
@@ -357,13 +357,13 @@ pattern_matching:
     run_mriqc: quality_control
     fsl_bet: preprocessing
     mne_preprocessing: electrophysiology
-    
+
     # Statistical Analysis
     glm_analysis: statistical_analysis
     encoding_model: machine_learning
     contrast_analysis: statistical_analysis
     brain_similarity: machine_learning
-    
+
     # Quality Control
     mriqc_group_report: quality_control
     visual_qc_launch: quality_control
@@ -374,7 +374,7 @@ pattern_matching:
     freesurfer_qc: quality_control
     phantom_analysis: quality_control
     validation_metrics: quality_control
-    
+
     # Registration
     fsl_flirt: registration
     fsl_fnirt: registration
@@ -382,7 +382,7 @@ pattern_matching:
     ants_apply_transforms: registration
     ants_template_building: registration
     registration_pipeline: registration
-    
+
     # Segmentation
     freesurfer_recon_all: segmentation
     freesurfer_parcellation: segmentation
@@ -391,7 +391,7 @@ pattern_matching:
     multi_atlas_segmentation: segmentation
     nilearn_parcellation: segmentation
     nilearn_masking: preprocessing
-    
+
     # Statistical Analysis
     fsl_feat_glm: statistical_analysis
     fsl_feat_group: statistical_analysis
@@ -402,7 +402,7 @@ pattern_matching:
     spm12_dcm: advanced_analysis
     spm12_vbm: segmentation
     mixed_effects: statistical_analysis
-    
+
     # Connectivity
     conn_preprocessing: advanced_analysis
     conn_connectivity: connectivity
@@ -413,7 +413,7 @@ pattern_matching:
     gnn_connectivity: connectivity
     dynamic_connectivity: connectivity
     mne_connectivity: connectivity
-    
+
     # Electrophysiology
     mne_ica: electrophysiology
     mne_timefreq: electrophysiology
@@ -422,12 +422,12 @@ pattern_matching:
     mne_dipole_fitting: electrophysiology
     mne_fooof: electrophysiology
     mne_autoreject: electrophysiology
-    
+
     # Diffusion
     fsl_bedpostx: diffusion
     qsiprep_reconstruction: diffusion
     diffusion_tractography: diffusion
-    
+
     # Surface
     hcp_workbench: surface
     cifti_smoothing: surface
@@ -435,7 +435,7 @@ pattern_matching:
     surface_resample: surface
     surface_analysis: surface
     ants_cortical_thickness: surface
-    
+
     # Machine Learning
     nilearn_decoding: machine_learning
     mvpa: machine_learning
@@ -443,11 +443,11 @@ pattern_matching:
     searchlight_analysis: machine_learning
     rsa_toolbox: machine_learning
     temporal_decoding: machine_learning
-    
+
     # Deep Learning
     dl_pytorch: deep_learning
     monai_deep_learning: deep_learning
-    
+
     # Meta-Analysis
     meta_analysis: meta_analysis
     coordinate_meta_analysis: meta_analysis
@@ -455,14 +455,14 @@ pattern_matching:
     effect_size_meta_analysis: meta_analysis
     literature_mining: meta_analysis
     network_meta_analysis: meta_analysis
-    
+
     # Statistical Inference
     permutation_testing: statistical_inference
     multiple_comparison_correction: statistical_inference
     fsl_palm: statistical_inference
     palm_surface: statistical_inference
     afni_3dClustSim: statistical_inference
-    
+
     # Clinical
     lesion_detection: clinical
     qsm_reconstruction: clinical
@@ -471,7 +471,7 @@ pattern_matching:
     pet_spect_analysis: clinical
     radiomics_extraction: clinical
     longitudinal_analysis: clinical
-    
+
     # Real-Time
     realtime_fmri: realtime
     realtime_glm: realtime
@@ -482,7 +482,7 @@ pattern_matching:
     closed_loop_stimulation: realtime
     realtime_connectivity: realtime
     neurofeedback_training: realtime
-    
+
     # Simulation
     neural_mass_model: simulation
     whole_brain_simulation: simulation
@@ -492,12 +492,12 @@ pattern_matching:
     plasticity_simulation: simulation
     oscillator_network: simulation
     biophysical_model: simulation
-    
+
     # Visualization
     advanced_visualization: visualization
     nilearn_surface: visualization
     report_generation: visualization
-    
+
     # Workflow
     nipype_workflow_builder: workflow
     nipype_bids_app: workflow
@@ -508,11 +508,11 @@ pattern_matching:
     neurodesk_command: workflow
     fsl_command: workflow
     mrtrix3_command: workflow
-    
+
     # Feature Selection
     feature_selection: feature_selection
     cross_validation: feature_selection
-    
+
     # Advanced Analysis
     hyperalignment: advanced_analysis
     multimodal_integration: advanced_analysis
@@ -522,12 +522,12 @@ pattern_matching:
     fsl_fix_multirun: advanced_analysis
     nilearn_ica: advanced_analysis
     xcpd_postprocessing: advanced_analysis
-    
+
     # Data Harmonization
     data_harmonization: data_harmonization
     motion_quantification: data_harmonization
     dicom_processing: data_harmonization
-    
+
     # Specialized Processing
     run_suite2p: specialized_processing
     run_spike_sorting: specialized_processing
@@ -558,7 +558,7 @@ pattern_matching:
       category: machine_learning
     - pattern: ".*(pytorch|dl_pytorch|monai|deep_learning|neural_network|cnn|vae|transformer|gnn).*"
       category: deep_learning
-    - pattern: ".*(neurokg|graph_query|concept|find_related|coordinate_to_concept|task_to_concept|literature_search|neurosynth).*"
+    - pattern: ".*(br-kg|graph_query|concept|find_related|coordinate_to_concept|task_to_concept|literature_search|neurosynth).*"
       category: knowledge_graph
     - pattern: ".*(meta_analysis|ale|mkda|coordinate_meta|image_based_meta|effect_size_meta|literature_mining|network_meta).*"
       category: meta_analysis

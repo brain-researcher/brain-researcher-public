@@ -158,7 +158,7 @@ def test_fetch_atlas_tool_local(tmp_path):
 
 def test_fetch_atlas_tool_schaefer_local_first(tmp_path, monkeypatch):
     atlas_root = tmp_path / "atlas_root"
-    schaefer_dir = atlas_root / "neurokg" / "raw" / "nilearn_atlases" / "schaefer_2018"
+    schaefer_dir = atlas_root / "br_kg" / "raw" / "nilearn_atlases" / "schaefer_2018"
     schaefer_dir.mkdir(parents=True)
     schaefer_100 = (
         schaefer_dir / "Schaefer2018_100Parcels_7Networks_order_FSLMNI152_2mm.nii.gz"
@@ -268,7 +268,7 @@ def test_fetch_atlas_tool_schaefer_missing_fails_fast(tmp_path, monkeypatch):
 
 def test_fetch_atlas_tool_real_atlases_default_to_shared_root(tmp_path, monkeypatch):
     atlas_root = tmp_path / "atlas_root"
-    schaefer_dir = atlas_root / "neurokg" / "raw" / "nilearn_atlases" / "schaefer_2018"
+    schaefer_dir = atlas_root / "br_kg" / "raw" / "nilearn_atlases" / "schaefer_2018"
     schaefer_dir.mkdir(parents=True)
     schaefer_100 = (
         schaefer_dir / "Schaefer2018_100Parcels_7Networks_order_FSLMNI152_2mm.nii.gz"
@@ -421,7 +421,7 @@ def test_fetch_atlas_tool_schaefer_prefers_templateflow(tmp_path, monkeypatch):
     )
 
     atlas_root = tmp_path / "atlas_root"
-    schaefer_dir = atlas_root / "neurokg" / "raw" / "nilearn_atlases" / "schaefer_2018"
+    schaefer_dir = atlas_root / "br_kg" / "raw" / "nilearn_atlases" / "schaefer_2018"
     schaefer_dir.mkdir(parents=True)
     _write_atlas(
         schaefer_dir / "Schaefer2018_100Parcels_7Networks_order_FSLMNI152_2mm.nii.gz"

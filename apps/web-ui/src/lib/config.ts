@@ -7,19 +7,18 @@ const RUNTIME_ENV: Record<string, string | undefined> = {
   ORCHESTRATOR_PORT: process.env.ORCHESTRATOR_PORT,
   AGENT_PORT: process.env.AGENT_PORT,
   KG_PORT: process.env.KG_PORT,
-  NEUROKG_PORT: process.env.NEUROKG_PORT,
+  BR_KG_PORT: process.env.BR_KG_PORT,
   NICLIP_PORT: process.env.NICLIP_PORT,
   WEB_UI_PORT: process.env.WEB_UI_PORT,
   ORCHESTRATOR_HOST: process.env.ORCHESTRATOR_HOST,
   AGENT_HOST: process.env.AGENT_HOST,
   KG_HOST: process.env.KG_HOST,
-  NEUROKG_HOST: process.env.NEUROKG_HOST,
+  BR_KG_HOST: process.env.BR_KG_HOST,
   NICLIP_HOST: process.env.NICLIP_HOST,
   WEB_UI_HOST: process.env.WEB_UI_HOST,
   NEXT_PUBLIC_ORCHESTRATOR_URL: process.env.NEXT_PUBLIC_ORCHESTRATOR_URL,
   NEXT_PUBLIC_AGENT_API: process.env.NEXT_PUBLIC_AGENT_API,
   NEXT_PUBLIC_BR_KG_API: process.env.NEXT_PUBLIC_BR_KG_API,
-  NEXT_PUBLIC_NEUROKG_API: process.env.NEXT_PUBLIC_NEUROKG_API,
   NEXT_PUBLIC_NICLIP_API: process.env.NEXT_PUBLIC_NICLIP_API,
   NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
   NEXT_PUBLIC_USE_API_PROXY: process.env.NEXT_PUBLIC_USE_API_PROXY,
@@ -41,8 +40,8 @@ const getEnvVar = (key: keyof typeof RUNTIME_ENV, defaultValue: string): string 
 export const SERVICE_PORTS = {
   ORCHESTRATOR: parseInt(getEnvVar('ORCHESTRATOR_PORT', '3001')),
   AGENT: parseInt(getEnvVar('AGENT_PORT', '8000')),
-  KG: parseInt(getEnvVar('KG_PORT', getEnvVar('NEUROKG_PORT', '5000'))),
-  NEUROKG: parseInt(getEnvVar('NEUROKG_PORT', '5000')),
+  KG: parseInt(getEnvVar('KG_PORT', getEnvVar('BR_KG_PORT', '5000'))),
+  BR_KG: parseInt(getEnvVar('BR_KG_PORT', '5000')),
   NICLIP: parseInt(getEnvVar('NICLIP_PORT', '8001')),
   WEB_UI: parseInt(getEnvVar('WEB_UI_PORT', '3000')),
 } as const
@@ -51,8 +50,8 @@ export const SERVICE_PORTS = {
 export const SERVICE_HOSTS = {
   ORCHESTRATOR: getEnvVar('ORCHESTRATOR_HOST', 'localhost'),
   AGENT: getEnvVar('AGENT_HOST', 'localhost'),
-  KG: getEnvVar('KG_HOST', getEnvVar('NEUROKG_HOST', 'localhost')),
-  NEUROKG: getEnvVar('NEUROKG_HOST', 'localhost'),
+  KG: getEnvVar('KG_HOST', getEnvVar('BR_KG_HOST', 'localhost')),
+  BR_KG: getEnvVar('BR_KG_HOST', 'localhost'),
   NICLIP: getEnvVar('NICLIP_HOST', 'localhost'),
   WEB_UI: getEnvVar('WEB_UI_HOST', 'localhost'),
 } as const
@@ -71,7 +70,7 @@ const browserProxyMode = typeof window !== 'undefined' && proxyEnabled
 const kgServiceUrl = getEnvVar(
   'NEXT_PUBLIC_BR_KG_API',
   getEnvVar(
-    'NEXT_PUBLIC_NEUROKG_API',
+    'NEXT_PUBLIC_BR_KG_API',
     browserProxyMode
       ? '/api/kg'
       : `${PROTOCOLS.HTTP}://${SERVICE_HOSTS.KG}:${SERVICE_PORTS.KG}`
@@ -93,7 +92,7 @@ export const SERVICE_URLS = {
       : `${PROTOCOLS.HTTP}://${SERVICE_HOSTS.AGENT}:${SERVICE_PORTS.AGENT}`
   ),
   KG: kgServiceUrl,
-  NEUROKG: kgServiceUrl,
+  BR_KG: kgServiceUrl,
   NICLIP: getEnvVar('NEXT_PUBLIC_NICLIP_API', `${PROTOCOLS.HTTP}://${SERVICE_HOSTS.NICLIP}:${SERVICE_PORTS.NICLIP}`),
 } as const
 
@@ -135,7 +134,7 @@ export const API_ENDPOINTS = {
     openneuro: `${SERVICE_URLS.KG}/api/openneuro`,
     health: `${SERVICE_URLS.KG}/health`,
   },
-  neurokg: {
+  brKg: {
     base: SERVICE_URLS.KG,
     search: `${SERVICE_URLS.KG}/api/search_and_expand`,
     openneuro: `${SERVICE_URLS.KG}/api/openneuro`,

@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 
-import { AdvancedViewBanner } from "@/components/advanced/advanced-view-banner"
 import { NavigationWrapper } from "@/components/navigation/navigation-wrapper"
 import { AnalysisStreamEventsPanel } from "@/components/progress/analysis-stream-events-panel"
 import { Badge } from "@/components/ui/badge"
@@ -66,7 +65,6 @@ export default function JobStepsPage({ params }: { params: { jobId: string } }) 
     <NavigationWrapper>
       <div className="min-h-screen bg-gray-50">
         <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-10">
-          <AdvancedViewBanner canonicalHref={`/analyses/${encodeURIComponent(jobId)}`} />
 
           <header className="space-y-1">
             <div className="flex items-center gap-3">

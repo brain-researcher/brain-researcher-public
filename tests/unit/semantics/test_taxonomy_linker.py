@@ -1,6 +1,6 @@
 import pytest
 
-from brain_researcher.services.neurokg.etl.linkers.taxonomy_linker import TaxonomyLinker
+from brain_researcher.services.br_kg.etl.linkers.taxonomy_linker import TaxonomyLinker
 
 
 def test_taxonomy_linker_returns_concepts_for_known_task():

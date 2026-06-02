@@ -3,8 +3,8 @@
 
 eval "$(conda shell.bash hook)"
 conda activate brain_researcher
-export PYTHONPATH="${BR_REPO_ROOT}:${PYTHONPATH}"
-cd "${BR_REPO_ROOT}"
+export PYTHONPATH="/home/zijiaochen/projects/brain_researcher:${PYTHONPATH}"
+cd "/home/zijiaochen/projects/brain_researcher"
 
 # Ensure MNE/Numba imports work inside the sandboxed environment.
 export NUMBA_DISABLE_CACHING="${NUMBA_DISABLE_CACHING:-1}"

@@ -24,8 +24,8 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from brain_researcher.services.neurokg.etl.load_all import MasterDataLoader
-from brain_researcher.services.neurokg.graph.graph_factory import create_graph_client
+from brain_researcher.services.br_kg.etl.load_all import MasterDataLoader
+from brain_researcher.services.br_kg.graph.graph_factory import create_graph_client
 
 # Configure logging
 logging.basicConfig(
@@ -52,8 +52,8 @@ def main():
 
     # Initialize loader (defaults to Neo4j; falls back to SQLite only if allowed)
     loader = MasterDataLoader(
-        db_factory=lambda: create_graph_client(db_path="data/neurokg/db/neurokg_full.db"),
-        db_path="data/neurokg/db/neurokg_full.db",
+        db_factory=lambda: create_graph_client(db_path="data/br-kg/db/br_kg_full.db"),
+        db_path="data/br-kg/db/br_kg_full.db",
     )
 
     # Load NeuroVault metadata

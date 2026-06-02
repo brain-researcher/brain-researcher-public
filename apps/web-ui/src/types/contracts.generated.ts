@@ -34,7 +34,7 @@ export interface VersionRefV1 {
 export interface LoopSignalBaseV1 {
   schema_version?: 'loop-signal-v1'
   signal_id?: string
-  signal_type?: 'condition_tag' | 'sensitivity_finding' | 'design_constraint' | 'hypothesis_delta' | 'user_feedback'
+  signal_type: 'condition_tag' | 'sensitivity_finding' | 'design_constraint' | 'hypothesis_delta' | 'user_feedback'
   stage?: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'unknown'
   run_id?: string
   plan_id?: string
@@ -43,31 +43,63 @@ export interface LoopSignalBaseV1 {
   provenance?: Record<string, any>
 }
 
-export interface ConditionTagSignalV1 extends LoopSignalBaseV1 {
+export interface ConditionTagSignalV1 {
+  schema_version?: 'loop-signal-v1'
+  signal_id?: string
   signal_type?: 'condition_tag'
+  stage?: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'unknown'
+  run_id?: string
+  plan_id?: string
+  confidence?: number
+  created_at?: string
+  provenance?: Record<string, any>
   condition_key: string
   condition_value: string
   conclusion?: string
   conflict_state?: string
 }
 
-export interface SensitivityFindingSignalV1 extends LoopSignalBaseV1 {
+export interface SensitivityFindingSignalV1 {
+  schema_version?: 'loop-signal-v1'
+  signal_id?: string
   signal_type?: 'sensitivity_finding'
+  stage?: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'unknown'
+  run_id?: string
+  plan_id?: string
+  confidence?: number
+  created_at?: string
+  provenance?: Record<string, any>
   analysis_axis: string
   eta_squared: number
   stability_label?: string
   recommended_action?: string
 }
 
-export interface DesignConstraintSignalV1 extends LoopSignalBaseV1 {
+export interface DesignConstraintSignalV1 {
+  schema_version?: 'loop-signal-v1'
+  signal_id?: string
   signal_type?: 'design_constraint'
+  stage?: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'unknown'
+  run_id?: string
+  plan_id?: string
+  confidence?: number
+  created_at?: string
+  provenance?: Record<string, any>
   constraint_type: string
   target: string
   requirement: string
 }
 
-export interface HypothesisDeltaSignalV1 extends LoopSignalBaseV1 {
+export interface HypothesisDeltaSignalV1 {
+  schema_version?: 'loop-signal-v1'
+  signal_id?: string
   signal_type?: 'hypothesis_delta'
+  stage?: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'unknown'
+  run_id?: string
+  plan_id?: string
+  confidence?: number
+  created_at?: string
+  provenance?: Record<string, any>
   hypothesis_id: string
   delta_metric: string
   prior_value?: number
@@ -75,8 +107,16 @@ export interface HypothesisDeltaSignalV1 extends LoopSignalBaseV1 {
   delta_value?: number
 }
 
-export interface UserFeedbackSignalV1 extends LoopSignalBaseV1 {
+export interface UserFeedbackSignalV1 {
+  schema_version?: 'loop-signal-v1'
+  signal_id?: string
   signal_type?: 'user_feedback'
+  stage?: 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'unknown'
+  run_id?: string
+  plan_id?: string
+  confidence?: number
+  created_at?: string
+  provenance?: Record<string, any>
   rating?: number
   helpful?: boolean
   feedback_text?: string
@@ -169,12 +209,15 @@ export interface ObservationSpecV1 {
   versions?: VersionRefV1
   job_id: string
   run_id?: string
+  round_id?: string
   state: string
   created_at?: number
   started_at?: number
   finished_at?: number
   run_dir?: string
   files?: ObservationFiles
+  inputs_manifest_ref?: string
+  failure_summary?: string
   run_card?: RunCardV1 | Record<string, any>
   provenance?: Record<string, any>
   artifacts?: Array<Record<string, any>>
@@ -191,6 +234,19 @@ export interface ObservationFiles {
   provenance_json?: string
   trace_jsonl?: string
   reward_breakdown_json?: string
+  research_episode_json?: string
+  option_set_json?: string
+  evidence_gate_json?: string
+  commitment_json?: string
+  claim_report_json?: string
+  claim_update_json?: string
+  correction_summary_json?: string
+  threshold_summary_json?: string
+  thresholded_map?: string
+  design_matrix?: string
+  contrast_table?: string
+  cluster_table?: string
+  peak_table?: string
   rm_pairwise_redacted_json?: string
   rm_pairwise_raw_json?: string
   rm_process_redacted_json?: string
@@ -225,6 +281,9 @@ export interface AnalysisBundleV1 {
   finished_at?: number
   run_dir?: string
   generated_at: string
+  evidence_index?: Array<string>
+  qc_summary_ref?: string
+  source_manifests?: Array<string>
   files?: AnalysisBundleFiles
   file_manifest?: Array<BundleFileEntry>
   observation?: Record<string, any>
@@ -236,6 +295,7 @@ export interface AnalysisBundleV1 {
   trajectory?: Record<string, any>
   artifacts?: Array<Record<string, any>>
   run_card?: Record<string, any>
+  review_context?: Record<string, any>
   provenance?: Record<string, any>
   cross_stage_context?: CrossStageContextV1 | Record<string, any>
   loop_signals?: Array<ConditionTagSignalV1 | SensitivityFindingSignalV1 | DesignConstraintSignalV1 | HypothesisDeltaSignalV1 | UserFeedbackSignalV1>
@@ -259,7 +319,25 @@ export interface AnalysisBundleFiles {
   requirements_txt?: string
   environment_yml?: string
   docker_compose_yml?: string
+  user_environment_yml?: string
+  user_docker_compose_yml?: string
+  user_env_example?: string
+  user_quickstart_md?: string
+  user_installation_md?: string
   reward_breakdown_json?: string
+  research_episode_json?: string
+  option_set_json?: string
+  evidence_gate_json?: string
+  commitment_json?: string
+  claim_report_json?: string
+  claim_update_json?: string
+  correction_summary_json?: string
+  threshold_summary_json?: string
+  thresholded_map?: string
+  design_matrix?: string
+  contrast_table?: string
+  cluster_table?: string
+  peak_table?: string
   stdout_txt?: string
   stderr_txt?: string
   rm_pairwise_redacted_json?: string

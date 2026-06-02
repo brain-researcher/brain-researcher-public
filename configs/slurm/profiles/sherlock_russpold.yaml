@@ -1,0 +1,24 @@
+# Stanford Sherlock SLURM profile — russpold PI group
+#
+# Default profile shipped with Brain Researcher for back-compat with the
+# original Sherlock/OAK workflow. Other SLURM clusters should copy this
+# file (or generic_slurm.yaml) and customize the values below.
+#
+# Loaded by slurm_tools.py via CLUSTER_PROFILES["sherlock_russpold"] when
+# the BR_SLURM_PROFILE env var (or per-call profile= parameter) selects it.
+
+name: sherlock_russpold
+description: Stanford Sherlock cluster, russpold PI group
+
+account: russpold
+interactive_partition: russpold
+interactive_qos: russpold_interactive
+batch_partition: russpold
+batch_qos: russpold
+module_use: /share/PI/russpold/modules
+default_output: slurm-%j.out
+default_error: slurm-%j.err
+
+notes:
+  - Profile follows the checked-in sherlock-oak-workflow skill.
+  - Adjust partition/qos if your group uses a different Sherlock queue.

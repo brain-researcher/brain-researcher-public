@@ -1,7 +1,6 @@
 """Unit tests for job service module."""
 
 import json
-import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -52,7 +51,7 @@ class TestAgentJobService:
         from brain_researcher.services.agent.job_service import AgentJobService
 
         with patch(
-            "brain_researcher.services.orchestrator.job_store_factory.get_initialized_job_store",
+            "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
             return_value=mock_job_store,
         ):
             service = AgentJobService()
@@ -257,7 +256,7 @@ class TestStatusMapping:
         from brain_researcher.services.agent.job_service import AgentJobService
 
         with patch(
-            "brain_researcher.services.orchestrator.job_store_factory.get_initialized_job_store",
+            "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
             return_value=MagicMock(),
         ):
             return AgentJobService()
@@ -267,8 +266,11 @@ class TestStatusMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.PENDING, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.PENDING,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["status"] == "pending"
@@ -278,8 +280,11 @@ class TestStatusMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.QUEUED, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.QUEUED,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["status"] == "queued"
@@ -289,8 +294,11 @@ class TestStatusMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.CLAIMED, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.CLAIMED,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["status"] == "running"
@@ -300,8 +308,11 @@ class TestStatusMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.RUNNING, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.RUNNING,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["status"] == "running"
@@ -311,8 +322,11 @@ class TestStatusMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.SUCCEEDED, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.SUCCEEDED,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["status"] == "completed"
@@ -322,8 +336,11 @@ class TestStatusMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.FAILED, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.FAILED,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["status"] == "failed"
@@ -333,8 +350,11 @@ class TestStatusMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.CANCELLED, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.CANCELLED,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["status"] == "cancelled"
@@ -344,8 +364,11 @@ class TestStatusMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.TIMEOUT, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.TIMEOUT,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["status"] == "timeout"
@@ -360,7 +383,7 @@ class TestProgressMapping:
         from brain_researcher.services.agent.job_service import AgentJobService
 
         with patch(
-            "brain_researcher.services.orchestrator.job_store_factory.get_initialized_job_store",
+            "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
             return_value=MagicMock(),
         ):
             return AgentJobService()
@@ -370,8 +393,11 @@ class TestProgressMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.PENDING, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.PENDING,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["progress"] == 0.0
@@ -381,8 +407,11 @@ class TestProgressMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.RUNNING, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.RUNNING,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["progress"] == 0.5
@@ -392,8 +421,11 @@ class TestProgressMapping:
         from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
 
         record = JobRecord(
-            job_id="test", kind="plan", payload_json="{}",
-            state=JobState.SUCCEEDED, created_at=0
+            job_id="test",
+            kind="plan",
+            payload_json="{}",
+            state=JobState.SUCCEEDED,
+            created_at=0,
         )
         result = job_service._to_api_format(record)
         assert result["progress"] == 1.0
@@ -404,14 +436,14 @@ class TestSingletonInstance:
 
     def test_get_job_service_returns_instance(self):
         """get_job_service should return an AgentJobService instance."""
-        from brain_researcher.services.agent.job_service import get_job_service
-
         # Reset singleton for test isolation
         import brain_researcher.services.agent.job_service as module
+        from brain_researcher.services.agent.job_service import get_job_service
+
         module._job_service = None
 
         with patch(
-            "brain_researcher.services.orchestrator.job_store_factory.get_initialized_job_store",
+            "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
             return_value=MagicMock(),
         ):
             service = get_job_service()
@@ -420,14 +452,14 @@ class TestSingletonInstance:
 
     def test_get_job_service_is_singleton(self):
         """Multiple calls should return the same instance."""
-        from brain_researcher.services.agent.job_service import get_job_service
-
         # Reset singleton for test isolation
         import brain_researcher.services.agent.job_service as module
+        from brain_researcher.services.agent.job_service import get_job_service
+
         module._job_service = None
 
         with patch(
-            "brain_researcher.services.orchestrator.job_store_factory.get_initialized_job_store",
+            "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
             return_value=MagicMock(),
         ):
             service1 = get_job_service()
@@ -445,7 +477,7 @@ class TestAPIFormatFields:
         from brain_researcher.services.agent.job_service import AgentJobService
 
         with patch(
-            "brain_researcher.services.orchestrator.job_store_factory.get_initialized_job_store",
+            "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
             return_value=MagicMock(),
         ):
             return AgentJobService()
@@ -516,3 +548,114 @@ class TestAPIFormatFields:
 
         result = job_service._to_api_format(record)
         assert result["plan"] == {}
+
+
+class TestRunSourceDerivation:
+    """Tests for _derive_run_source and the `source` field in _to_api_format.
+
+    Policy (2026-06-01): runs in the drawer are the user's own -> "internal"
+    (Studio) UNLESS they carry an explicit outside-Studio origin marker
+    (mcp_pipeline_execute / api_tools_run / tools_run_compat / external), in
+    which case "external". "direct" (create_run default) is Studio, not external.
+    """
+
+    @pytest.fixture
+    def job_service(self):
+        from brain_researcher.services.agent.job_service import AgentJobService
+
+        with patch(
+            "brain_researcher.services.shared.job_store_registry.get_initialized_job_store",
+            return_value=MagicMock(),
+        ):
+            return AgentJobService()
+
+    def _record(self, **kwargs):
+        from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
+
+        kwargs.setdefault("job_id", "test")
+        kwargs.setdefault("state", JobState.QUEUED)
+        kwargs.setdefault("created_at", 0)
+        return JobRecord(**kwargs)
+
+    def test_kind_plan_is_internal(self, job_service):
+        """Studio workflow run (kind 'plan') -> internal."""
+        record = self._record(kind="plan", payload_json="{}")
+        assert job_service._derive_run_source(record) == "internal"
+
+    def test_studio_plan_execute_agent_tool_is_internal(self, job_service):
+        """In-app plan-execute / agent-assisted run (no external origin) -> internal.
+
+        These are the user's own Studio runs (type=plan_execution,
+        job_kind=agent_tool) created by the in-app agent; they must read as
+        Studio, not as an external agent.
+        """
+        record = self._record(
+            kind="plan_execution",
+            payload_json=json.dumps(
+                {
+                    "type": "plan_execution",
+                    "metadata": {"job_kind": "agent_tool", "plan_execute": True},
+                }
+            ),
+        )
+        assert job_service._derive_run_source(record) == "internal"
+
+    def test_direct_origin_is_internal(self, job_service):
+        """'direct' is the create_run default (Studio sync) -> internal, NOT external."""
+        record = self._record(
+            kind="tool_execution",
+            payload_json=json.dumps({"origin": "direct"}),
+        )
+        assert job_service._derive_run_source(record) == "internal"
+
+    @pytest.mark.parametrize(
+        "origin",
+        ["mcp_pipeline_execute", "external", "api_tools_run", "tools_run_compat"],
+    )
+    def test_explicit_external_origin_is_external(self, job_service, origin):
+        """An explicit outside-Studio origin -> external."""
+        record = self._record(
+            kind="plan_execution",
+            payload_json=json.dumps({"origin": origin}),
+        )
+        assert job_service._derive_run_source(record) == "external"
+
+    def test_external_origin_nested_in_metadata_is_external(self, job_service):
+        """External origin nested under metadata is still detected."""
+        record = self._record(
+            kind="plan_execution",
+            payload_json=json.dumps({"metadata": {"origin": "mcp_pipeline_execute"}}),
+        )
+        assert job_service._derive_run_source(record) == "external"
+
+    def test_unknown_kind_no_origin_is_internal(self, job_service):
+        """Unrecognized kind with no external marker -> internal (user's own run)."""
+        record = self._record(kind="mystery", payload_json="{}")
+        assert job_service._derive_run_source(record) == "internal"
+
+    def test_none_kind_no_payload_is_internal(self, job_service):
+        """Missing kind and no payload -> internal (no external marker)."""
+        record = self._record(kind=None, payload_json=None)
+        assert job_service._derive_run_source(record) == "internal"
+
+    def test_malformed_payload_does_not_raise(self, job_service):
+        """Non-JSON payload_json falls back to internal without raising."""
+        record = self._record(kind="mystery", payload_json="not json {")
+        assert job_service._derive_run_source(record) == "internal"
+
+    def test_to_api_format_emits_source_for_studio_run(self, job_service):
+        """_to_api_format emits source=internal for a Studio (plan) run."""
+        record = self._record(kind="plan", payload_json="{}")
+        result = job_service._to_api_format(record)
+        assert result["source"] == "internal"
+
+    def test_to_api_format_emits_source_for_external_run(self, job_service):
+        """_to_api_format emits source=external for a genuinely external run."""
+        record = self._record(
+            kind="tool_execution",
+            payload_json=json.dumps(
+                {"execution_type": "tool", "origin": "api_tools_run"}
+            ),
+        )
+        result = job_service._to_api_format(record)
+        assert result["source"] == "external"

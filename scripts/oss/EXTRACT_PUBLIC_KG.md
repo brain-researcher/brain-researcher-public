@@ -3,7 +3,7 @@
 `scripts/oss/extract_public_kg.py` produces a publishable subset of the live
 Brain Researcher knowledge graph by:
 
-1. Reading the `public` profile from `configs/neurokg/pii_redaction.yaml`.
+1. Reading the `public` profile from `configs/br-kg/pii_redaction.yaml`.
 2. Applying per-label keep/drop/transform rules from that profile.
 3. For node labels not covered by the PII config, applying a
    white/blacklist policy declared in the script itself

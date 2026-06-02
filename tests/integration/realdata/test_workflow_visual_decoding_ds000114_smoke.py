@@ -17,7 +17,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TMP_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -48,7 +47,10 @@ def test_workflow_visual_decoding_ds000114_smoke(tmp_path: Path):
     if not participants.exists():
         pytest.skip(f"participants.tsv not found: {participants}")
     part_df = pd.read_csv(participants, sep="\t")
-    if "participant_id" not in part_df.columns or "dominant_hand" not in part_df.columns:
+    if (
+        "participant_id" not in part_df.columns
+        or "dominant_hand" not in part_df.columns
+    ):
         pytest.skip("participants.tsv missing participant_id/dominant_hand columns")
 
     label_map = {"left": 0, "right": 1}
@@ -77,7 +79,7 @@ def test_workflow_visual_decoding_ds000114_smoke(tmp_path: Path):
     atlas = (
         PROJECT_ROOT
         / "data"
-        / "neurokg"
+        / "br_kg"
         / "raw"
         / "nilearn_atlases"
         / "schaefer_2018"

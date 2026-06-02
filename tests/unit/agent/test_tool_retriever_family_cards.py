@@ -682,7 +682,7 @@ family_cards:
       - Map coordinates, atlases, or networks to ontology terms
       - Traverse evidence paths in BR-KG
     tags: [knowledge, graph, ontology, concept, region, atlas, coordinate, neurosynth]
-    canonical_entrypoints: [neurokg.search_nodes, kg_multihop_qa, coordinate_to_concept, find_related_concepts, graph_query]
+    canonical_entrypoints: [br_kg.search_nodes, kg_multihop_qa, coordinate_to_concept, find_related_concepts, graph_query]
     query_service_intents: []
     graph_family_ids: []
   - id: electrophysiology_ica
@@ -840,7 +840,7 @@ def test_query_service_family_cards_map_to_primary_intents(
 ):
     monkeypatch.setenv("BR_TOOL_FAMILY_ROUTING_MODE", "cards")
     monkeypatch.setenv("BR_TOOL_FAMILY_CARDS_PATH", str(family_cards_path))
-    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "neurokg")
+    monkeypatch.setenv("BR_TOOL_RETRIEVER_SOURCE", "br_kg")
     monkeypatch.setattr(
         "brain_researcher.services.agent.tool_retriever.GraphDatabase.driver",
         lambda *args, **kwargs: _DummyDriver(),
@@ -864,7 +864,7 @@ def test_query_service_family_cards_map_to_primary_intents(
         }
 
     monkeypatch.setattr(
-        "brain_researcher.services.neurokg.query_service.search_tools_structured",
+        "brain_researcher.services.br_kg.query_service.search_tools_structured",
         _fake_search_tools_structured,
     )
 

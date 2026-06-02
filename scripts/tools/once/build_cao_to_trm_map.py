@@ -11,7 +11,7 @@ from rapidfuzz import fuzz, process
 
 
 # TODO: these files are all examples, please revise and see what should we use
-# TODO: use full set of information in /app/brain_researcher/configs/neurokg to build this mapping
+# TODO: use full set of information in /app/brain_researcher/configs/br-kg to build this mapping
 TAXONOMY = Path("brain_researcher/semantics/taxonomy/entities.json")
 TRM_SYNS = Path("configs/legacy/mappings/concept_synonyms.yaml")
 OUTPUT   = Path("configs/legacy/mappings/cao_to_trm.yaml")

@@ -11,8 +11,8 @@ describe('kg-api browser routing', () => {
     vi.resetModules()
   })
 
-  it('uses same-origin KG proxy even when NEXT_PUBLIC_NEUROKG_API is set', async () => {
-    vi.stubEnv('NEXT_PUBLIC_NEUROKG_API', 'http://localhost:5000')
+  it('uses same-origin KG proxy even when NEXT_PUBLIC_BR_KG_API is set', async () => {
+    vi.stubEnv('NEXT_PUBLIC_BR_KG_API', 'http://localhost:5000')
     mockFetch.mockResolvedValue(
       new Response(JSON.stringify({ items: [] }), {
         status: 200,

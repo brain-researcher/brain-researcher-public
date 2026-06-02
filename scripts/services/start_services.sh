@@ -34,8 +34,8 @@ export NODE_ENV="${NODE_ENV:-production}"
 export ORCHESTRATOR_URL="${ORCHESTRATOR_URL:-http://localhost:3001}"
 export BR_ORCHESTRATOR_URL="${BR_ORCHESTRATOR_URL:-$ORCHESTRATOR_URL}"
 export AGENT_URL="${AGENT_URL:-http://localhost:8000}"
-export NEUROKG_API_URL="${NEUROKG_API_URL:-http://localhost:5000}"
-export NEUROKG_URL="${NEUROKG_URL:-http://localhost:5000}"
+export BR_KG_API_URL="${BR_KG_API_URL:-http://localhost:5000}"
+export BR_KG_URL="${BR_KG_URL:-http://localhost:5000}"
 export BR_MCP_HTTP_URL="${BR_MCP_HTTP_URL:-http://localhost:7000/mcp}"
 
 check_port() {

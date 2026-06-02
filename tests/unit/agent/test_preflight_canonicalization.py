@@ -25,8 +25,8 @@ def test_ensure_tool_candidates_canonicalizes_ids_without_registry():
     class _StubRetriever:
         def retrieve_tools(self, query, family_ids=None, top_k=10, filters=None):
             return [
-                {"id": "python.fetch_atlas.run", "score": 0.9, "source": "neurokg"},
-                {"id": "fsl.bet.run", "score": 0.8, "source": "neurokg"},
+                {"id": "python.fetch_atlas.run", "score": 0.9, "source": "br_kg"},
+                {"id": "fsl.bet.run", "score": 0.8, "source": "br_kg"},
             ]
 
     ctx: dict[str, object] = {}
@@ -42,7 +42,7 @@ def test_ensure_tool_candidates_canonicalizes_ids_without_registry():
             "tool_id": "fetch_atlas",
             "tool_id_raw": "python.fetch_atlas.run",
             "score": 0.9,
-            "source": "neurokg",
+            "source": "br_kg",
             "available": None,
             "registry_available": None,
             "catalog_available": True,
@@ -52,7 +52,7 @@ def test_ensure_tool_candidates_canonicalizes_ids_without_registry():
             "tool_id": "fsl_bet",
             "tool_id_raw": "fsl.bet.run",
             "score": 0.8,
-            "source": "neurokg",
+            "source": "br_kg",
             "available": None,
             "registry_available": None,
             "catalog_available": True,

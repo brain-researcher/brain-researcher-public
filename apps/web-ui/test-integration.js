@@ -14,10 +14,11 @@ const ORCHESTRATOR_URL =
   process.env.ORCHESTRATOR_BASE_URL ||
   process.env.ORCHESTRATOR_URL ||
   'http://localhost:3001';
-const NEUROKG_URL =
-  process.env.BR_NEUROKG_URL ||
-  process.env.NEUROKG_API_URL ||
-  process.env.NEUROKG_URL ||
+const BR_KG_URL =
+  process.env.BR_KG_URL ||
+  process.env.BR_KG_BASE_URL ||
+  process.env.BR_KG_API_URL ||
+  process.env.BR_KG_API ||
   'http://localhost:5000';
 
 // Color codes for console output
@@ -48,17 +49,17 @@ async function testEndpoint(name, url, options = {}) {
 
 async function runTests() {
   console.log(`${colors.blue}=== Brain Researcher Integration Tests ===${colors.reset}\n`);
-  
+
   let passedTests = 0;
   let totalTests = 0;
-  
+
   // Test Agent
   console.log(`${colors.yellow}Agent Service:${colors.reset}`);
   totalTests++;
   if (await testEndpoint('Health Check', `${AGENT_URL}/health`)) {
     passedTests++;
   }
-  
+
   // Test Dataset Endpoint
   totalTests++;
   if (await testEndpoint('Dataset Search', `${AGENT_URL}/api/datasets/search`, {
@@ -68,7 +69,7 @@ async function runTests() {
   })) {
     passedTests++;
   }
-  
+
   console.log();
 
   // Test Orchestrator
@@ -79,34 +80,34 @@ async function runTests() {
   }
 
   console.log();
-  
+
   // Test BR-KG Service
   console.log(`${colors.yellow}BR-KG Service:${colors.reset}`);
   totalTests++;
-  if (await testEndpoint('BR-KG Health', `${NEUROKG_URL}/health`)) {
+  if (await testEndpoint('BR-KG Health', `${BR_KG_URL}/health`)) {
     passedTests++;
   }
-  
+
   totalTests++;
-  if (await testEndpoint('Graph Stats', `${NEUROKG_URL}/api/statistics`)) {
+  if (await testEndpoint('Graph Stats', `${BR_KG_URL}/api/statistics`)) {
     passedTests++;
   }
-  
+
   totalTests++;
-  if (await testEndpoint('GraphQL Endpoint', `${NEUROKG_URL}/graphql`, {
+  if (await testEndpoint('GraphQL Endpoint', `${BR_KG_URL}/graphql`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      query: '{ concepts(limit: 1) { id name } }' 
+    body: JSON.stringify({
+      query: '{ concepts(limit: 1) { id name } }'
     })
   })) {
     passedTests++;
   }
-  
+
   console.log();
   console.log(`${colors.blue}=== Test Results ===${colors.reset}`);
   console.log(`Passed: ${colors.green}${passedTests}${colors.reset}/${totalTests}`);
-  
+
   if (passedTests === totalTests) {
     console.log(`${colors.green}✓ All tests passed! Integration is ready.${colors.reset}`);
     process.exit(0);
@@ -119,7 +120,7 @@ async function runTests() {
     console.log(`   - br serve kg (port 5000)`);
     console.log(`   - cd apps/web-ui && npm run dev:3002`);
     console.log(`2. Check service logs for errors`);
-    console.log(`3. Verify BR_AGENT_URL / BR_ORCHESTRATOR_URL / BR_NEUROKG_URL overrides if you are not using local defaults`);
+    console.log(`3. Verify BR_AGENT_URL / BR_ORCHESTRATOR_URL / BR_KG_URL overrides if you are not using local defaults`);
     process.exit(1);
   }
 }

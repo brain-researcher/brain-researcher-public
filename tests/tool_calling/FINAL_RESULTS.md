@@ -128,7 +128,7 @@
 - Returned generic "brain region", "cortical area" concepts
 
 **After Configuration**:
-- Set `NICLIP_DATA_PATH=${BR_REPO_ROOT}/data/niclip/data`
+- Set `NICLIP_DATA_PATH=/home/zijiaochen/projects/brain_researcher/data/niclip/data`
 - Mapper successfully loaded:
   - Brain mask (91x109x91 MNI space)
   - 851 cognitive task priors

@@ -2,10 +2,10 @@
 """Validate tool-related KG YAML files against JSON Schemas.
 
 Checks:
-- configs/neurokg/schema/tool.yaml          -> configs/schemas/tool.schema.json
-- configs/neurokg/schema/tool_version.yaml  -> configs/schemas/tool_version.schema.json
-- configs/neurokg/schema/tool_run.yaml      -> configs/schemas/tool_run.schema.json (optional; skipped if missing)
-- configs/neurokg/tool_evidence.yaml structure (basic shape only)
+- configs/br-kg/schema/tool.yaml          -> configs/schemas/tool.schema.json
+- configs/br-kg/schema/tool_version.yaml  -> configs/schemas/tool_version.schema.json
+- configs/br-kg/schema/tool_run.yaml      -> configs/schemas/tool_run.schema.json (optional; skipped if missing)
+- configs/br-kg/tool_evidence.yaml structure (basic shape only)
 """
 
 from __future__ import annotations
@@ -72,14 +72,14 @@ def validate_evidence(evidence_path: Path) -> None:
 
 def main() -> None:
     schema_dir = ROOT / "configs/schemas"
-    kg_schema_dir = ROOT / "configs/neurokg/schema"
+    kg_schema_dir = ROOT / "configs/br-kg/schema"
     validate_schema_yaml_shape(kg_schema_dir / "tool.yaml")
     validate_schema_yaml_shape(kg_schema_dir / "tool_version.yaml")
     tool_run_yaml = kg_schema_dir / "tool_run.yaml"
     tool_run_schema = schema_dir / "tool_run.schema.json"
     if tool_run_yaml.exists() and tool_run_schema.exists():
         validate_schema_yaml_shape(tool_run_yaml)
-    validate_evidence(ROOT / "configs/neurokg/tool_evidence.yaml")
+    validate_evidence(ROOT / "configs/br-kg/tool_evidence.yaml")
     print("tool schemas validated ok")
 
 

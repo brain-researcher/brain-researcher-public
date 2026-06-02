@@ -1,0 +1,296 @@
+# Provenance Configuration
+# Defines provenance schema and requirements for all nodes and edges
+# Referenced by: invariants.md (PROV-01, PROV-02)
+#
+# Schema definitions (node/edge types, properties, ID formats) are now in:
+# configs/br-kg/config.yml (schema section)
+
+# Provenance schema (PROV-01: All nodes/edges must have provenance)
+provenance_schema:
+  # Core required fields
+  required_fields:
+    - "source"      # Data source identifier
+    - "method"      # How the entity/relationship was created
+    - "timestamp"   # ISO-8601 timestamp
+    - "loader_version"  # Version of loader that created this (PROV-02)
+
+  # Optional but recommended fields
+  recommended_fields:
+    - "confidence"  # Confidence score (0.0-1.0)
+    - "evidence_components"  # Breakdown of evidence
+    - "params_hash"  # Hash of configuration parameters used
+    - "activity_id"  # Link to processing activity
+    - "input_hash"   # Hash of input data
+    - "notes"        # Human-readable notes
+
+# Data source identifiers
+sources:
+  # Core data sources
+  - "brainmap"
+  - "neurosynth"
+  - "cognitive_atlas"
+  - "neurovault"
+  - "openneuro"
+  - "wikidata"
+  - "pubmed"
+  - "bids"
+  - "niclip"
+  - "gabriel"
+  - "manual"  # Manual curation
+  - "computed"  # Computed/derived entities
+
+  # Additional sources
+  - "uk_biobank"
+  - "abcd"
+  - "adni"
+  - "hcp"
+  - "allen_brain"
+  - "cam_can"
+  - "enigma"
+
+# Method identifiers (how entity/relationship was created)
+methods:
+  # Direct extraction methods
+  - "exact_id"  # Matched by exact external ID (DOI, PMID, etc.)
+  - "direct_extraction"  # Extracted directly from source data
+
+  # Matching methods
+  - "string_match"  # String similarity matching
+  - "fuzzy_match"  # Fuzzy string matching
+  - "embedding_match"  # Semantic embedding similarity
+  - "spatial_overlap"  # Spatial coordinate matching
+  - "rule"  # Rule-based matching
+
+  # Meta-analytic methods
+  - "meta_analysis"  # Meta-analytic aggregation
+  - "ale"  # Activation Likelihood Estimation
+  - "mkda"  # Multilevel Kernel Density Analysis
+
+  # Manual methods
+  - "manual"  # Manual curation
+  - "expert_review"  # Expert-reviewed match
+
+  # Computed methods
+  - "computed"  # Computed/derived
+  - "inferred"  # Inferred from other relationships
+  - "llm_codify"
+  - "llm_extract"
+  - "llm_merge"
+  - "llm_deduplicate"
+
+# Evidence components structure
+evidence_components:
+  # Literature evidence
+  literature_count:
+    description: "Number of papers supporting this relationship"
+    type: "integer"
+    min: 0
+
+  # Spatial evidence
+  z_overlap:
+    description: "Z-score overlap in meta-analysis"
+    type: "float"
+    range: [0.0, 1.0]
+
+  spatial_distance_mm:
+    description: "Spatial distance in mm"
+    type: "float"
+    min: 0.0
+
+  # Semantic evidence
+  niclip_cos:
+    description: "NiCLIP embedding cosine similarity"
+    type: "float"
+    range: [0.0, 1.0]
+
+  sbert_cos:
+    description: "SBERT embedding cosine similarity"
+    type: "float"
+    range: [0.0, 1.0]
+
+  # User feedback
+  user_feedback:
+    description: "User-provided confidence adjustment"
+    type: "float"
+    range: [-1.0, 1.0]
+    notes: "Positive = confirmed, negative = rejected"
+
+# Timestamp format (ISO-8601)
+timestamp:
+  format: "ISO-8601"
+  example: "2025-01-06T14:30:00Z"
+  timezone: "UTC"  # All timestamps in UTC
+  precision: "seconds"  # or "milliseconds" for high-frequency operations
+
+# Loader versioning (PROV-02)
+loader_versioning:
+  # Version format
+  format: "semver"  # e.g., "v1.2.3" or "v0.0.1"
+
+  # Required in provenance
+  required: true
+
+  # Auto-injection
+  auto_inject: true  # Automatically inject loader version from loader metadata
+
+  # Version tracking
+  track_changes: true  # Track when loader version changes affect entities
+
+# Parameters hash
+params_hash:
+  # Purpose: Hash of configuration parameters used during creation
+  # Enables reproducibility and change detection
+  algorithm: "sha256"
+
+  # What to include in hash
+  include:
+    - "matching_thresholds"
+    - "scoring_weights"
+    - "normalization_settings"
+    - "model_versions"
+
+  # What to exclude
+  exclude:
+    - "paths"  # File paths may vary
+    - "timestamps"  # Timestamps change
+    - "random_seeds"  # If applicable
+
+# Activity tracking
+activity:
+  # Link entities to processing activities
+  track_activities: true
+
+  # Activity ID format
+  id_format: "activity:{timestamp}:{source}:{hash}"
+
+  # Activity metadata
+  metadata_fields:
+    - "activity_type"  # e.g., "ingestion", "matching", "curation"
+    - "start_time"
+    - "end_time"
+    - "input_files"
+    - "output_files"
+    - "config_snapshot"
+
+# Node-specific provenance requirements
+node_provenance:
+  # All node types require
+  all_nodes:
+    required: ["source", "method", "timestamp", "loader_version"]
+
+  # Publication nodes
+  Publication:
+    recommended: ["doi", "pmid", "crossref_id"]
+
+  # Coordinate nodes
+  Coordinate:
+    required: ["space", "transformation_provenance"]  # If transformed
+    recommended: ["publication_id", "study_id"]
+
+  # Task/Concept nodes
+  Task:
+    recommended: ["canonical_source", "synonym_sources"]
+  Concept:
+    recommended: ["canonical_source", "synonym_sources"]
+
+# Edge-specific provenance requirements
+edge_provenance:
+  # All edges require
+  all_edges:
+    required: ["source", "method", "timestamp", "loader_version"]
+
+  # SAME_AS edges
+  SAME_AS:
+    required: ["confidence", "evidence_components"]
+    recommended: ["merge_timestamp", "merged_by"]
+
+  # ACTIVATES edges
+  ACTIVATES:
+    required: ["confidence", "strength"]
+    recommended: ["evidence_components", "meta_analytic_z"]
+
+  # GABRIEL evidence-first edges
+  MENTIONS:
+    required: ["confidence", "mention_strength", "mapping_confidence", "provenance_completeness"]
+    recommended: ["claim_polarity", "claim_strength", "evidence_quality", "method_rigor"]
+  MENTIONS_REGION:
+    required: ["confidence", "mention_strength", "mapping_confidence", "provenance_completeness"]
+    recommended: ["claim_strength", "evidence_quality", "method_rigor"]
+  REPORTS_CLAIM:
+    required: ["claim_polarity", "claim_strength", "method_rigor", "provenance_completeness"]
+    recommended: ["claim_kind", "related_claim_id", "confidence", "run_id"]
+  SUPPORTS:
+    required: ["mention_strength", "evidence_quality", "provenance_completeness"]
+    recommended: ["evidence_quality_score", "confidence", "run_id"]
+  ASSUMES:
+    required: ["provenance_completeness"]
+    recommended: ["assumption_confidence", "confidence", "run_id"]
+  CHALLENGES_ASSUMPTION:
+    required: ["provenance_completeness"]
+    recommended: ["challenge_mode", "confidence", "run_id"]
+  CONTRADICTS:
+    required: ["provenance_completeness"]
+    recommended: ["contradiction_scope", "confidence", "run_id"]
+  NULL_RESULT_FOR:
+    required: ["provenance_completeness"]
+    recommended: ["null_result_type", "confidence", "run_id"]
+  REPLICATES:
+    required: ["provenance_completeness"]
+    recommended: ["replication_type", "confidence", "run_id"]
+  FAILED_REPLICATION_OF:
+    required: ["provenance_completeness"]
+    recommended: ["replication_type", "confidence", "run_id"]
+  GENERATED:
+    required: ["run_id", "method", "loader_version", "timestamp"]
+    recommended: ["model", "prompt_hash", "template_hash", "raw_response_path"]
+
+  # MEASURES edges
+  MEASURES:
+    required: ["confidence"]
+    recommended: ["evidence_components", "semantic_similarity"]
+
+# Validation rules
+validation:
+  # Pre-ingestion validation
+  pre_ingestion:
+    - "Check required fields present"
+    - "Validate source identifier"
+    - "Validate method identifier"
+    - "Validate timestamp format"
+    - "Validate loader_version format"
+
+  # Runtime validation
+  runtime:
+    - "Reject nodes/edges without provenance"
+    - "Log provenance violations"
+    - "Track provenance completeness metrics"
+
+  # Post-ingestion QA
+  post_ingestion:
+    - "Check provenance completeness percentage"
+    - "Identify entities with missing provenance"
+    - "Validate provenance consistency"
+
+# Error handling
+error_handling:
+  # Missing provenance
+  missing_provenance:
+    action: "reject"  # or "warn" or "default"
+    default_provenance:
+      source: "unknown"
+      method: "unknown"
+      timestamp: "auto"  # Current timestamp
+      loader_version: "unknown"
+
+  # Invalid provenance
+  invalid_provenance:
+    action: "reject"
+    log_to: "logs/provenance_errors.ndjson"
+
+# Notes
+notes:
+  - "All nodes and edges MUST have provenance (PROV-01)"
+  - "Loader version MUST be tracked (PROV-02)"
+  - "Provenance enables reproducibility and data lineage tracking"
+  - "Invalid or missing provenance will cause ingestion to fail"
+  - "Provenance fields are immutable after creation"

@@ -5,17 +5,16 @@ Shared test fixtures for agent_langgraph tests.
 import os
 import sys
 
-# Add parent directory to path for neurokg imports
+# Add parent directory to path for br_kg imports
 sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
+# Silence noisy third-party warnings that are not actionable for unit tests
+import warnings
 from unittest.mock import Mock
 
 import pytest
-
-# Silence noisy third-party warnings that are not actionable for unit tests
-import warnings
 
 warnings.filterwarnings(
     "ignore",
@@ -30,7 +29,7 @@ warnings.filterwarnings(
 from langchain_core.messages import AIMessage, HumanMessage
 
 from brain_researcher.services.agent.states.base import NeuroAgentState, ResearchState
-from brain_researcher.services.tools.tool_base import NeuroKGToolWrapper
+from brain_researcher.services.tools.tool_base import BRKGToolWrapper
 
 
 # Mock API responses
@@ -86,7 +85,7 @@ def mock_fmri_api():
 
 
 @pytest.fixture
-def mock_neurokg_api():
+def mock_br_kg_api():
     """Mock BR-KG API responses."""
     mock = Mock()
 
@@ -318,7 +317,7 @@ def pytest_configure(config):
 # Utility functions for tests
 def create_mock_tool(name: str, description: str, success: bool = True) -> Mock:
     """Create a mock tool for testing."""
-    tool = Mock(spec=NeuroKGToolWrapper)
+    tool = Mock(spec=BRKGToolWrapper)
     tool.get_tool_name.return_value = name
     tool.get_tool_description.return_value = description
 

@@ -12,18 +12,18 @@ spec:
   # Installation configuration
   installation_tag: v1.73.0
   istio_namespace: istio-system
-  
+
   # Kiali server configuration
   server:
     web_root: /kiali
     web_fqdn: kiali.brain-researcher.local
     web_port: 20001
     web_schema: http
-    
+
   # Authentication strategy
   auth:
     strategy: anonymous  # For development - use token/oauth for production
-    
+
   # External services configuration
   external_services:
     # Prometheus configuration
@@ -31,7 +31,7 @@ spec:
       url: http://prometheus.brain-researcher.svc.cluster.local:9090
       custom_metrics_url: http://prometheus.brain-researcher.svc.cluster.local:9090
       health_check_url: http://prometheus.brain-researcher.svc.cluster.local:9090/-/ready
-      
+
     # Grafana integration
     grafana:
       enabled: true
@@ -48,14 +48,14 @@ spec:
       - name: "Brain Researcher Services Dashboard"
         variables:
           namespace: "brain-researcher"
-          
+
     # Jaeger tracing
     tracing:
       enabled: true
       in_cluster_url: http://jaeger-query.istio-system:16686
       url: http://jaeger-query.istio-system:16686
       use_grpc: true
-      
+
     # Istio configuration
     istio:
       root_namespace: istio-system
@@ -63,7 +63,7 @@ spec:
       istio_sidecar_annotation: sidecar.istio.io/status
       istio_sidecar_injector_config_map_name: istio-sidecar-injector
       istiod_deployment_name: istiod
-      
+
   # Deployment configuration
   deployment:
     # Resources for Brain Researcher workload
@@ -74,39 +74,39 @@ spec:
       limits:
         cpu: 1000m
         memory: 1Gi
-        
+
     # Replica count for high availability
     replicas: 2
-    
+
     # Additional service annotations
     service_annotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9090"
       prometheus.io/path: "/kiali/api/v1/status"
-      
+
     # Pod annotations for service mesh
     pod_annotations:
       sidecar.istio.io/inject: "true"
       prometheus.io/scrape: "true"
       prometheus.io/port: "9090"
-      
+
     # Node selector for specific node pools if needed
     node_selector:
       kubernetes.io/arch: amd64
-      
+
     # Tolerations for dedicated monitoring nodes
     tolerations:
     - key: monitoring
       operator: Equal
       value: "true"
       effect: NoSchedule
-      
+
     # Security context
     security_context:
       runAsNonRoot: true
       runAsUser: 1001
       fsGroup: 1001
-      
+
   # Kiali feature configuration
   kiali_feature_flags:
     # Enable certificates management
@@ -115,7 +115,7 @@ spec:
       secrets:
       - brain-researcher-tls-cert
       - istio-ca-secret
-      
+
     # UI features
     ui_defaults:
       graph:
@@ -144,10 +144,10 @@ spec:
         - display_name: Istio Revision
           label: istio_io_rev
       refresh_interval: "60s"
-      
+
     # Brain Researcher specific namespaces
     istio_injection_action: true
-    
+
   # Custom dashboard configuration for Brain Researcher
   custom_dashboards:
   - name: brain-researcher-overview
@@ -195,8 +195,8 @@ spec:
         aggregations:
         - label: "source_service_name"
           displayName: "Source Service"
-          
-  - name: neurokg-analysis
+
+  - name: br-kg-analysis
     title: "BR-KG Analysis Dashboard"
     runtime: "BR-KG"
     discoverOn: "service"
@@ -228,7 +228,7 @@ spec:
         aggregations:
         - label: "database"
           displayName: "Database"
-          
+
   - name: agent-performance
     title: "LLM Agent Performance"
     runtime: "Agent"
@@ -282,16 +282,16 @@ data:
   config.yaml: |
     # Kiali configuration for Brain Researcher
     istio_namespace: istio-system
-    
+
     server:
       web_root: /kiali
       web_fqdn: kiali.brain-researcher.local
       web_port: 20001
       web_schema: http
-      
+
     auth:
       strategy: anonymous
-      
+
     external_services:
       prometheus:
         url: "http://prometheus.brain-researcher.svc.cluster.local:9090"
@@ -305,7 +305,7 @@ data:
       tracing:
         enabled: true
         in_cluster_url: "http://jaeger-query.istio-system:16686"
-        
+
     # Brain Researcher specific configurations
     additional_display_details:
     - title: "Brain Researcher Service"
@@ -315,13 +315,13 @@ data:
       annotation: "brain-researcher.io/analysis-type"
     - title: "Data Source"
       annotation: "brain-researcher.io/data-source"
-      
+
     # Health configuration
     health_config:
       rate:
       - namespace: "brain-researcher"
         kind: "service"
-        name: "neurokg-service"
+        name: "br-kg-service"
         tolerance:
         - code: "5XX"
           failure_threshold: 10

@@ -1,9 +1,10 @@
-import pytest
 from types import SimpleNamespace
 
+import pytest
+
 from brain_researcher.services.agent.tool_router import (
-    ToolFamily,
     RoutingView,
+    ToolFamily,
     ToolRouter,
 )
 
@@ -44,42 +45,42 @@ class FakeRuntimeRegistry:
         return self._tools
 
 
-def make_family_neurokg_client():
+def make_family_br_kg_client():
     return ToolFamily(
-        id="neurokg.client",
+        id="br_kg.client",
         description="Client for BR-KG",
         op_param="op",
         ops={
-            "search_datasets": "neurokg.search_datasets",
-            "search_tasks": "neurokg.search_tasks",
+            "search_datasets": "br_kg.search_datasets",
+            "search_tasks": "br_kg.search_tasks",
         },
     )
 
 
 def test_family_folding_and_leaf_remaining():
     t1 = FakeRuntimeTool(
-        "neurokg.search_datasets",
-        "neurokg.search_datasets",
+        "br_kg.search_datasets",
+        "br_kg.search_datasets",
         "search datasets",
-        ["neurokg"],
+        ["br_kg"],
     )
     t2 = FakeRuntimeTool(
-        "neurokg.search_tasks", "neurokg.search_tasks", "search tasks", ["neurokg"]
+        "br_kg.search_tasks", "br_kg.search_tasks", "search tasks", ["br_kg"]
     )
     t3 = FakeRuntimeTool("other.tool", "other.tool", "something else", ["other"])
 
     registry = FakeRuntimeRegistry([t1, t2, t3])
-    families = {"neurokg.client": make_family_neurokg_client()}
+    families = {"br_kg.client": make_family_br_kg_client()}
 
     view = RoutingView(registry, families=families)
     views = view.all_tools()
 
     assert len(views) == 2  # 1 family + 1 remaining leaf
     by_id = {v.runtime_id: v for v in views}
-    assert "neurokg.client" in by_id
+    assert "br_kg.client" in by_id
     assert "other.tool" in by_id
-    fam_view = by_id["neurokg.client"]
-    assert fam_view.family_id == "neurokg.client"
+    fam_view = by_id["br_kg.client"]
+    assert fam_view.family_id == "br_kg.client"
     assert set(fam_view.family_ops) == {"search_datasets", "search_tasks"}
 
 

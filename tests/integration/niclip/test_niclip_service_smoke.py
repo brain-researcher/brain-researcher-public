@@ -14,12 +14,14 @@ def test_niclip_engine_smoke():
     if not data_path or not Path(data_path).exists():
         pytest.skip("Set NICLIP_DATA_PATH or NICLIP_EMBEDDINGS_PATH to a valid path")
 
-    from brain_researcher.services.neurokg.niclip.engine import (
+    from brain_researcher.services.br_kg.niclip.engine import (
         NiclipEngine,
         NiclipEngineConfig,
     )
 
-    engine = NiclipEngine.get(NiclipEngineConfig(data_path=data_path), force_reload=True)
+    engine = NiclipEngine.get(
+        NiclipEngineConfig(data_path=data_path), force_reload=True
+    )
     status = engine.status()
     if status.get("status") != "healthy":
         pytest.skip(f"NiCLIP engine not ready: {status.get('missing')}")

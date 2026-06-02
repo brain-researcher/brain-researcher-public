@@ -301,8 +301,8 @@ def fetch_db_family_stats(driver: Any) -> dict[str, dict[str, int]]:
 
 def scan_runtime_consumers(repo_root: Path) -> dict[str, Any]:
     scan_paths = [
-        repo_root / "src/brain_researcher/services/neurokg/app.py",
-        repo_root / "src/brain_researcher/services/neurokg/api",
+        repo_root / "src/brain_researcher/services/br_kg/app.py",
+        repo_root / "src/brain_researcher/services/br_kg/api",
         repo_root / "src/brain_researcher/services/agent",
         repo_root / "src/brain_researcher/services/orchestrator",
     ]

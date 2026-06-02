@@ -67,24 +67,24 @@ groups:
         labels:
           service: "brain-researcher-agent"
 
-  - name: neurokg.rules
+  - name: br-kg.rules
     interval: 30s
     rules:
       # Knowledge Graph specific metrics
-      - record: neurokg:query_rate_5m
-        expr: rate(neurokg_queries_total{job="brain-researcher-neurokg"}[5m])
+      - record: br-kg:query_rate_5m
+        expr: rate(br_kg_queries_total{job="brain-researcher-br-kg"}[5m])
         labels:
-          service: "brain-researcher-neurokg"
+          service: "brain-researcher-br-kg"
 
-      - record: neurokg:database_connection_pool_usage
-        expr: neurokg_db_connections_active{job="brain-researcher-neurokg"} / neurokg_db_connections_max{job="brain-researcher-neurokg"} * 100
+      - record: br-kg:database_connection_pool_usage
+        expr: br_kg_db_connections_active{job="brain-researcher-br-kg"} / br_kg_db_connections_max{job="brain-researcher-br-kg"} * 100
         labels:
-          service: "brain-researcher-neurokg"
+          service: "brain-researcher-br-kg"
 
-      - record: neurokg:semantic_search_latency_p95_5m
-        expr: histogram_quantile(0.95, rate(neurokg_semantic_search_duration_seconds_bucket{job="brain-researcher-neurokg"}[5m]))
+      - record: br-kg:semantic_search_latency_p95_5m
+        expr: histogram_quantile(0.95, rate(br_kg_semantic_search_duration_seconds_bucket{job="brain-researcher-br-kg"}[5m]))
         labels:
-          service: "brain-researcher-neurokg"
+          service: "brain-researcher-br-kg"
 
   - name: system.rules
     interval: 30s

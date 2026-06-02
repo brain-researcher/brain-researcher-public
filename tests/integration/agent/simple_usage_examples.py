@@ -22,16 +22,17 @@ The agent will automatically:
 """
 
 # === OPTION 2: Direct Python Usage ===
-from brain_researcher.services.tools.neurokg_tools import (
-    TaskMappingTool,
+from brain_researcher.services.tools.br_kg_tools import (
     CoordinateToConceptTool,
-    FindRelatedConceptsTool
+    FindRelatedConceptsTool,
+    TaskMappingTool,
 )
 from brain_researcher.services.tools.fmri_tools import ContrastAnalysisTool
 
+
 def simple_examples():
     """Most common tool usage patterns."""
-    
+
     # Example 1: Map a cognitive task to brain concepts
     print("Example 1: What concepts are related to the n-back task?")
     task_tool = TaskMappingTool()
@@ -39,54 +40,59 @@ def simple_examples():
     if result.status == "success":
         print(f"Concepts: {result.data['concepts']}")
         print(f"Data source: {result.data.get('source', 'unknown')}\n")
-    
+
     # Example 2: What cognitive function is at this brain location?
     print("Example 2: What's at MNI coordinate [-42, -22, 54]?")
     coord_tool = CoordinateToConceptTool()
     result = coord_tool._run(coordinates=[[-42, -22, 54]])
     if result.status == "success":
-        mapping = result.data['coordinate_mappings'][0]
-        top_concept = mapping['concepts'][0]
-        print(f"Top concept: {top_concept['concept']} (score: {top_concept['score']:.2f})")
+        mapping = result.data["coordinate_mappings"][0]
+        top_concept = mapping["concepts"][0]
+        print(
+            f"Top concept: {top_concept['concept']} (score: {top_concept['score']:.2f})"
+        )
         print(f"Method: {result.data.get('method', 'unknown')}\n")
-    
+
     # Example 3: Analyze a contrast with real GLM data
     print("Example 3: Analyze the 'pumps' contrast from balloon task")
     contrast_tool = ContrastAnalysisTool()
     result = contrast_tool._run(
-        z_map_path="/data/glm/ds000001/pumps_zmap.nii.gz",
-        contrast_name="pumps"
+        z_map_path="/data/glm/ds000001/pumps_zmap.nii.gz", contrast_name="pumps"
     )
     if result.status == "success":
         print(f"Using real data: {not result.metadata.get('mock_mode', True)}")
-        if result.data.get('z_map_used'):
+        if result.data.get("z_map_used"):
             print(f"File: {result.data['z_map_used']}")
         print(f"Found {result.data['n_clusters']} significant clusters\n")
-    
+
     # Example 4: Find related concepts in the knowledge graph
     print("Example 4: What's related to 'working memory'?")
     concept_tool = FindRelatedConceptsTool()
     result = concept_tool._run(concept="working memory", limit=3)
     if result.status == "success":
-        for rel in result.data['related_concepts']:
+        for rel in result.data["related_concepts"]:
             print(f"- {rel['concept']} ({rel['relationship']})")
 
 
 # === OPTION 3: Through LangGraph Agent ===
 async def agent_example():
     """Use through the LangGraph agent for complex queries."""
-    from brain_researcher.services.agent.brain_researcher_graph import BrainResearcherGraph
-    
+    from brain_researcher.services.agent.brain_researcher_graph import (
+        BrainResearcherGraph,
+    )
+
     # Initialize agent
     graph = BrainResearcherGraph()
-    
+
     # Complex query that uses multiple tools
-    result = await graph.arun({
-        "query": "Compare activation patterns between pumps and control conditions in the balloon task, focusing on motor regions",
-        "thread_id": "analysis-001"
-    })
-    
-    print(result['response'])
+    result = await graph.arun(
+        {
+            "query": "Compare activation patterns between pumps and control conditions in the balloon task, focusing on motor regions",
+            "thread_id": "analysis-001",
+        }
+    )
+
+    print(result["response"])
 
 
 # === Common Query Patterns ===
@@ -138,7 +144,7 @@ The tools will automatically use these real data sources when available:
 if __name__ == "__main__":
     print("=== Simple Brain Researcher Tool Examples ===\n")
     simple_examples()
-    
+
     print("\n=== Quick Reference ===")
     print("Chat API: POST /chat with message and thread_id")
     print("Tools: task_mapping, coordinate_mapping, contrast_analysis, concept_search")

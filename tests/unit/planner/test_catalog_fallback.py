@@ -5,14 +5,16 @@ Verifies that when catalog loading fails, the system falls back gracefully
 to legacy mode and logs appropriate error messages.
 """
 
-import pytest
-from unittest.mock import patch, Mock
 import os
+from unittest.mock import Mock, patch
+
+import pytest
 
 from brain_researcher.services.agent.planner.catalog_loader import (
-    get_capability_index,
-    get_planner_source,
     CapabilityIndex,
+    get_capability_index,
+    get_catalog_status,
+    get_planner_source,
 )
 
 
@@ -60,6 +62,25 @@ class TestCatalogFallback:
         # Should return empty index (fallback)
         assert isinstance(index, CapabilityIndex)
 
+    def test_catalog_status_records_load_failure(self, monkeypatch):
+        """Catalog fallback exposes effective legacy/degraded status."""
+        monkeypatch.setenv("BR_PLANNER_SOURCE", "catalog")
+        get_capability_index.cache_clear()
+
+        with patch(
+            "brain_researcher.services.agent.planner.catalog_loader.load_capabilities_yaml",
+            side_effect=ValueError("YAML parsing error"),
+        ):
+            index = get_capability_index()
+
+        status = get_catalog_status()
+        assert isinstance(index, CapabilityIndex)
+        assert status["status"] == "degraded"
+        assert status["planner_mode"] == "legacy"
+        assert status["loaded"] is False
+        assert status["tool_count"] == 0
+        assert status["reason"] == "load_exception"
+
     def test_legacy_source_returns_empty_index(self, monkeypatch):
         """Test that legacy mode returns empty index without attempting catalog load."""
         monkeypatch.setenv("BR_PLANNER_SOURCE", "legacy")
@@ -76,6 +97,21 @@ class TestCatalogFallback:
 
         # Verify it's empty (no tools loaded from catalog)
         # Note: may have entries if legacy load_tool_catalog is called elsewhere
+
+    def test_catalog_status_records_explicit_legacy_source(self, monkeypatch):
+        """Explicit legacy source is visible instead of indistinguishable empty."""
+        monkeypatch.setenv("BR_PLANNER_SOURCE", "legacy")
+        get_capability_index.cache_clear()
+
+        index = get_capability_index()
+
+        status = get_catalog_status()
+        assert isinstance(index, CapabilityIndex)
+        assert status["status"] == "degraded"
+        assert status["planner_mode"] == "legacy"
+        assert status["loaded"] is False
+        assert status["source"] == "BR_PLANNER_SOURCE"
+        assert status["reason"] == "BR_PLANNER_SOURCE=legacy"
 
     def test_planner_source_env_var_precedence(self, monkeypatch):
         """Test that BR_PLANNER_SOURCE environment variable is respected."""

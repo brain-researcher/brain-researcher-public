@@ -1,0 +1,21 @@
+# Tool family overrides (human-curated).
+#
+# This file is intentionally small and reviewable. It is merged *on top of*
+# configs/catalog/tool_families.yaml by loaders at runtime/ingest time.
+#
+# Use this to apply incremental fixes without rewriting the generated/large base
+# file. Typical uses:
+# - Add missing leaf tool_ids to an existing family (ops mapping)
+# - Override an op -> leaf mapping when the leaf id changes
+# - Add a small new family for a new client/tool surface
+#
+# Schema:
+# families:
+#   - id: <family_id>
+#     description: <optional>
+#     op_param: <optional>
+#     internal: <optional>
+#     ops:
+#       <op_name>: <leaf_tool_id>
+#
+families: []

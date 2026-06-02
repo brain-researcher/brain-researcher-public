@@ -68,7 +68,7 @@ def _write_config(
                     "posterior_superior_temporal_sulcus",
                     "extrastriate_body_area",
                 ],
-                "neurokg_tags": [
+                "br_kg_tags": [
                     "biological_motion",
                     "motion_localizer",
                     "social_perception",

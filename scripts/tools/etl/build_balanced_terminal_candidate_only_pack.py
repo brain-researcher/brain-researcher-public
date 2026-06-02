@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from brain_researcher.services.neurokg.graph.neo4j_utils import require_neo4j_db
+from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
 
 
 def _utc_now_iso() -> str:

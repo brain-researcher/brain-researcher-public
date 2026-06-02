@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from brain_researcher.config.paths import resolve_from_config
 from brain_researcher.services.agent.copilot import CopilotAssistant
-from brain_researcher.services.tools.tool_base import NeuroKGToolWrapper, ToolResult
+from brain_researcher.services.tools.tool_base import BRKGToolWrapper, ToolResult
 from brain_researcher.services.tools.tool_registry import ToolRegistry
 
 
@@ -18,7 +18,7 @@ class _ArgsB(BaseModel):
     smoothing_kernel: float | None = None
 
 
-class FakeToolA(NeuroKGToolWrapper):
+class FakeToolA(BRKGToolWrapper):
     def get_tool_name(self) -> str:
         return "spm-glm"
 
@@ -32,7 +32,7 @@ class FakeToolA(NeuroKGToolWrapper):
         return ToolResult(status="success", data={"ok": True})
 
 
-class FakeToolB(NeuroKGToolWrapper):
+class FakeToolB(BRKGToolWrapper):
     def get_tool_name(self) -> str:
         return "fsl-bet"
 

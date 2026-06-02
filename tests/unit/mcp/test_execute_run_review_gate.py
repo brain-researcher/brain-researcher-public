@@ -58,6 +58,24 @@ def _severity_only_block_verdict() -> dict:
     }
 
 
+def _critical_block_verdict() -> dict:
+    return {
+        "ok": True,
+        "overall_decision": "stop_with_rationale",
+        "correctness": {
+            "decision": "flag",
+            "findings": [
+                {
+                    "rule_id": "REVIEW_VALUEDOMAIN_FISHER_Z_INPUT",
+                    "severity": "critical",
+                    "action": "block",
+                    "message": "netmats values outside [-1, 1]; silent repair refused",
+                }
+            ],
+        },
+    }
+
+
 def _seed_run(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, *, claim_mode: str
 ) -> str:
@@ -172,6 +190,38 @@ def test_gate_keeps_exploratory_run_succeeded_with_caveats(
             "message": "caveat-only",
         }
     ]
+
+
+@pytest.mark.unit
+def test_gate_blocks_exploratory_run_with_critical_finding(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """A critical correctness finding blocks regardless of claim mode.
+
+    A corrupted result (e.g. silently-repaired out-of-range netmats) is invalid
+    whether the claim is confirmatory or exploratory, so the exploratory
+    downgrade must not apply to ``critical`` severity findings.
+    """
+
+    run_id = _seed_run(monkeypatch, tmp_path, claim_mode="exploratory")
+    monkeypatch.setattr(
+        mcp_server,
+        "run_scientific_review",
+        lambda _id, **kw: _critical_block_verdict(),
+    )
+    monkeypatch.delenv("BR_DISABLE_EXECUTION_REVIEW_GATE", raising=False)
+
+    mcp_server._run_post_execution_review_gate(run_id)
+
+    record = mcp_server._load_run(run_id)
+    assert record.status == "review_blocked"
+    assert record.error == "review_blocked_by_correctness_findings"
+    assert record.progress["scientific_review_blocking_findings"][0]["rule_id"] == (
+        "REVIEW_VALUEDOMAIN_FISHER_Z_INPUT"
+    )
+    claim_contract = _claim_contract(run_id)
+    assert claim_contract["report_allowed"] is False
+    assert claim_contract["report_gate_status"] == "blocked"
 
 
 @pytest.mark.unit

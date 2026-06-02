@@ -1,0 +1,88 @@
+{
+  "schema_version": "demo-run-bundle-v2",
+  "generated_at": "2026-05-26T06:32:41+00:00",
+  "demo": {
+    "slug": "bounded-self-evolving-discovery",
+    "analysis_id": "run_bounded_self_evolving_discovery",
+    "title": "Bounded Self-Evolving Research: Discovery",
+    "description": "Bounded autoresearch discovery case report using TRIBE stimulus discovery as the worked example.",
+    "tags": [
+      "bounded-self-evolving",
+      "discovery",
+      "autoresearch",
+      "tribe"
+    ],
+    "demo_type": "manuscript_case_report",
+    "stage_tags": [
+      "R5"
+    ],
+    "evidence_mode": "real",
+    "log_mode": "summary_only",
+    "manuscript_figure": null,
+    "canonical_name": "Bounded_Self_Evolving_Discovery",
+    "is_template": false,
+    "template_reason": null
+  },
+  "source_run_ids": [],
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "id": "a001",
+      "path": "docs/prompts/brain_researcher_hybrid/reports/bounded_self_evolving_research_discovery_case_report.pdf",
+      "mime_type": "application/pdf",
+      "roles": [
+        "reference_summary_source",
+        "evidence"
+      ],
+      "stage": "R5",
+      "title": "TRIBE Stimulus Discovery as a Bounded Autoresearch Case Study"
+    }
+  ],
+  "prompt_pack": {
+    "primary_prompt": "Review the curated PDF case report: TRIBE Stimulus Discovery as a Bounded Autoresearch Case Study.",
+    "source_artifact_id": null,
+    "followup_prompts": [],
+    "coding_agent_prompts": [],
+    "mcp_prompts": []
+  },
+  "reference_output": {
+    "summary": "TRIBE Stimulus Discovery as a Bounded Autoresearch Case Study",
+    "summary_kind": "answer",
+    "source_artifact_id": null,
+    "document_ids": [
+      "a001"
+    ],
+    "highlights": [
+      "TRIBE Stimulus Discovery as a Bounded Autoresearch Case Study"
+    ],
+    "generated_at": null,
+    "dataset_version": null
+  },
+  "replay": {
+    "source": "bundle_steps",
+    "steps": [
+      {
+        "step_id": "stage_R5_1",
+        "stage": "R5",
+        "title": "RunCard / Export",
+        "status": "completed",
+        "tool": null,
+        "tool_calls": [],
+        "prompt_text": "Review the curated PDF case report: TRIBE Stimulus Discovery as a Bounded Autoresearch Case Study.",
+        "response_text": "Curated PDF report available: TRIBE Stimulus Discovery as a Bounded Autoresearch Case Study",
+        "prompt_origin": "bundle",
+        "response_origin": "bundle",
+        "artifact_ref_ids": [
+          "a001"
+        ],
+        "started_at": null,
+        "finished_at": null,
+        "duration_ms": null
+      }
+    ]
+  },
+  "fallback": {
+    "level": "none",
+    "reasons": []
+  }
+}

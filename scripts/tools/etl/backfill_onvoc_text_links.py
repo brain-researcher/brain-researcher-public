@@ -20,6 +20,7 @@ import yaml
 
 
 ONVOC_CONCEPT_LABELS = ["ONVOC", "Concept", "OnvocClass", "OntologyConcept"]
+MIN_TEXT_TERM_CHARS = 3
 
 
 @dataclass(frozen=True)
@@ -130,12 +131,38 @@ def _build_acronym_regex(acronyms: list[str]) -> str:
     return "(?i).*(?:" + "|".join([rf"\\b{token}\\b" for token in cleaned]) + ").*"
 
 
+def _has_minimum_text_term_length(term: str) -> bool:
+    compact = re.sub(r"[^a-z0-9]+", "", term.lower())
+    return len(compact) >= MIN_TEXT_TERM_CHARS
+
+
+def _build_term_regex(terms: list[str]) -> str:
+    cleaned = []
+    for raw in terms:
+        token = (raw or "").strip()
+        if not token or not _has_minimum_text_term_length(token):
+            continue
+        cleaned.append(re.escape(token))
+    if not cleaned:
+        return ""
+    # Match configured text terms as complete lexical spans, not substrings.
+    boundary_left = r"(?<![A-Za-z0-9_])"
+    boundary_right = r"(?![A-Za-z0-9_])"
+    return (
+        "(?i).*(?:"
+        + "|".join([rf"{boundary_left}{token}{boundary_right}" for token in cleaned])
+        + ").*"
+    )
+
+
 def _normalize_terms(terms: list[str]) -> list[str]:
     out: list[str] = []
     seen = set()
     for raw in terms:
         val = (raw or "").strip().lower()
         if not val or val in seen:
+            continue
+        if not _has_minimum_text_term_length(val):
             continue
         seen.add(val)
         out.append(val)
@@ -211,8 +238,9 @@ def _run_for_category(
       AND (coalesce(c.scheme, '') = 'ONVOC' OR c.id STARTS WITH 'ONVOC_')
     """
     text_expr = _text_expr("n", spec.fields)
+    term_regex = _build_term_regex(terms)
     where_expr = """
-    WHERE (size($terms) > 0 AND any(term IN $terms WHERE txt CONTAINS term))
+    WHERE ($term_regex <> '' AND txt =~ $term_regex)
        OR ($acronym_regex <> '' AND txt =~ $acronym_regex)
     """
 
@@ -239,6 +267,7 @@ def _run_for_category(
                     "concept_labels": ONVOC_CONCEPT_LABELS,
                     "node_labels": spec.labels,
                     "terms": terms,
+                    "term_regex": term_regex,
                     "acronym_regex": acronym_regex,
                 },
             ).single()
@@ -279,6 +308,7 @@ def _run_for_category(
                 "concept_labels": ONVOC_CONCEPT_LABELS,
                 "node_labels": spec.labels,
                 "terms": terms,
+                "term_regex": term_regex,
                 "acronym_regex": acronym_regex,
                 "source": source,
                 "confidence": confidence,

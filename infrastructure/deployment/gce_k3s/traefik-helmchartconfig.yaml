@@ -1,0 +1,36 @@
+# Traefik entrypoint tuning for the hosted Marimo workspace (k3s prod).
+#
+# k3s ships Traefik as a packaged HelmChart; this HelmChartConfig overlays extra
+# values onto it. The hosted Marimo surface (`/hub/{service}`) runs entirely over
+# a long-lived websocket between the browser iframe and the per-session kernel.
+# Traefik's default entrypoint idleTimeout (180s) silently closes an otherwise
+# quiet kernel socket, which surfaces in the UI as "kernel not found" / reconnect
+# churn. Per-Ingress annotations cannot fix this on Traefik — responding timeouts
+# live on the entrypoint — so we widen them here.
+#
+#   readTimeout=0      disables the per-request read deadline (required for
+#                      streaming / websocket upgrades).
+#   idleTimeout=3600s  keeps an idle keep-alive / websocket connection open for
+#                      up to an hour instead of the 180s default.
+#
+# Apply once per cluster (k3s reconciles it into the managed Traefik release):
+#
+#   kubectl apply -f infrastructure/deployment/gce_k3s/traefik-helmchartconfig.yaml
+#
+# Then confirm Traefik restarted with the new args:
+#
+#   kubectl -n kube-system rollout status deploy/traefik
+#   kubectl -n kube-system get pod -l app.kubernetes.io/name=traefik \
+#     -o jsonpath='{.items[0].spec.containers[0].args}' | tr ',' '\n' | grep respondingTimeouts
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    additionalArguments:
+      - "--entryPoints.web.transport.respondingTimeouts.readTimeout=0"
+      - "--entryPoints.web.transport.respondingTimeouts.idleTimeout=3600s"
+      - "--entryPoints.websecure.transport.respondingTimeouts.readTimeout=0"
+      - "--entryPoints.websecure.transport.respondingTimeouts.idleTimeout=3600s"

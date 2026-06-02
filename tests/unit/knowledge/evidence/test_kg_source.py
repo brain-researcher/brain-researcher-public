@@ -1,7 +1,8 @@
 """Tests for KG evidence source adapter."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from brain_researcher.services.knowledge.evidence.base import (
     EvidenceQuery,
@@ -25,14 +26,14 @@ class TestKGEvidenceSource:
     def test_source_properties(self):
         """Test source type and id properties."""
         assert self.source.source_type == EvidenceSourceType.KNOWLEDGE_GRAPH
-        assert self.source.source_id == "neurokg"
+        assert self.source.source_id == "br_kg"
 
     def test_source_without_db(self):
         """Test source can be created without explicit db."""
         source = KGEvidenceSource()
         assert source._db is None
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_query_sync_basic(self, mock_search_nodes):
         """Test basic query returns results."""
         # Setup mock
@@ -59,7 +60,7 @@ class TestKGEvidenceSource:
 
         mock_search_nodes.assert_called_once()
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_query_sync_empty_results(self, mock_search_nodes):
         """Test query with no results."""
         mock_search_nodes.return_value = []
@@ -69,7 +70,7 @@ class TestKGEvidenceSource:
 
         assert results == []
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_query_sync_handles_exception(self, mock_search_nodes):
         """Test query handles exceptions gracefully."""
         mock_search_nodes.side_effect = Exception("DB connection failed")
@@ -79,7 +80,7 @@ class TestKGEvidenceSource:
 
         assert results == []
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_query_sync_multiple_results(self, mock_search_nodes):
         """Test query with multiple results."""
         mock_nodes = []
@@ -103,7 +104,7 @@ class TestKGEvidenceSource:
         assert results[1].relevance_score == 0.8
         assert abs(results[2].relevance_score - 0.7) < 0.01
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_query_sync_with_node_types_filter(self, mock_search_nodes):
         """Test query with node_types filter."""
         mock_node = MagicMock()
@@ -122,7 +123,7 @@ class TestKGEvidenceSource:
         call_kwargs = mock_search_nodes.call_args[1]
         assert call_kwargs.get("node_types") == ["BrainRegion"]
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_query_sync_passes_limit(self, mock_search_nodes):
         """Test that limit is passed to the query service."""
         mock_search_nodes.return_value = []
@@ -133,7 +134,7 @@ class TestKGEvidenceSource:
         call_kwargs = mock_search_nodes.call_args[1]
         assert call_kwargs.get("limit") == 25
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_query_sync_brain_region_detection(self, mock_search_nodes):
         """Test that brain regions are correctly identified."""
         mock_region = MagicMock()
@@ -165,7 +166,7 @@ class TestKGEvidenceSource:
         assert isinstance(results[1].payload, dict)
         assert results[1].relevance_score == 0.85
 
-    @patch("brain_researcher.services.neurokg.query_service.get_default_db")
+    @patch("brain_researcher.services.br_kg.query_service.get_default_db")
     def test_health_check_sync_with_db(self, mock_get_default_db):
         """Test health check with database."""
         mock_get_default_db.return_value = MagicMock()
@@ -173,7 +174,7 @@ class TestKGEvidenceSource:
         result = self.source.health_check_sync()
         assert result is True
 
-    @patch("brain_researcher.services.neurokg.query_service.get_default_db")
+    @patch("brain_researcher.services.br_kg.query_service.get_default_db")
     def test_health_check_sync_no_db(self, mock_get_default_db):
         """Test health check when db is not available."""
         source = KGEvidenceSource()  # No db passed
@@ -186,7 +187,7 @@ class TestKGEvidenceSource:
 class TestConvenienceFunctions:
     """Test convenience functions for KG queries."""
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_get_concepts(self, mock_search_nodes):
         """Test get_concepts convenience function."""
         mock_node = MagicMock()
@@ -207,7 +208,7 @@ class TestConvenienceFunctions:
         assert "Concept" in node_types
         assert call_kwargs.get("limit") == 5
 
-    @patch("brain_researcher.services.neurokg.query_service.search_nodes")
+    @patch("brain_researcher.services.br_kg.query_service.search_nodes")
     def test_get_brain_regions(self, mock_search_nodes):
         """Test get_brain_regions convenience function."""
         mock_node = MagicMock()

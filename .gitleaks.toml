@@ -1,0 +1,41 @@
+# Gitleaks config for brain-researcher-public.
+# Extends the default ruleset; adds allowlists for known false positives
+# that the default `generic-api-key` / `stripe-access-token` /
+# `curl-auth-header` rules flag in test fixtures, docs, and placeholders.
+#
+# A real Cloudflare API token was previously hardcoded in
+# infrastructure/cloudflare/*.py — that has been removed and moved to
+# environment variables (CLOUDFLARE_API_TOKEN). Do NOT add a blanket
+# allowlist for that path; only the placeholder docs below are exempt.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented false positives (see docs/architecture/gitleaks_history_triage.md)"
+
+# Stripe's official, publicly documented test key — appears in test fixtures.
+regexes = [
+  '''sk_test_4eC39HqLyjWDarjtT1zdp7dc''',
+  '''replace_with_64_hex_chars''',
+  '''YOUR_API_TOKEN''',
+  '''YOUR_ZONE_ID''',
+]
+
+# Paths that only contain test fixtures, placeholders, or documentation of
+# past findings — never live secrets.
+paths = [
+  '''\.env\.example$''',
+  '''docs/architecture/gitleaks_history_triage\.md$''',
+  '''scripts/oss/EXTRACT_PUBLIC_KG\.md$''',
+  '''infrastructure/cloudflare/README\.md$''',
+  '''tests/.*''',
+  '''packages/brain-researcher/src/brain_researcher/services/telemetry/example_usage\.py$''',
+]
+
+# Specific fixture-attribute matches (API_USD_BUCKET / API_USD_CURRENCY) that
+# the generic-api-key rule mis-detects as keys.
+stopwords = [
+  "API_USD_BUCKET",
+  "API_USD_CURRENCY",
+]

@@ -14,7 +14,7 @@ from typing import Any
 import yaml
 from neo4j import GraphDatabase
 
-from brain_researcher.services.neurokg.task_family_matcher import (
+from brain_researcher.services.br_kg.task_family_matcher import (
     TaskFamilyMatcher,
     normalize_task_label,
 )

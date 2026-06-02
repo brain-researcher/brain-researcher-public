@@ -1,6 +1,6 @@
 """Extract a sanitized public subset of the live Brain Researcher KG.
 
-Reads configs/neurokg/pii_redaction.yaml (profile = "public") and applies
+Reads configs/br-kg/pii_redaction.yaml (profile = "public") and applies
 per-label keep/drop/transform rules. For labels not covered by the PII
 config, applies a hardcoded ship/drop policy declared below.
 
@@ -35,7 +35,7 @@ except ImportError:
     sys.exit("install pyyaml first: pip install pyyaml")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PII_CONFIG = REPO_ROOT / "configs" / "neurokg" / "pii_redaction.yaml"
+PII_CONFIG = REPO_ROOT / "configs" / "br-kg" / "pii_redaction.yaml"
 
 # All node labels accepted by bulk_loader.VALID_NODE_TYPES. Mirrored here so
 # the extractor stays runnable without importing brain_researcher.
@@ -203,7 +203,7 @@ def extract_from_neo4j(out_dir: Path) -> dict:
 def extract_from_fixtures(out_dir: Path) -> dict:
     """Dry-run: use bundled sample JSONL fixtures so the pipeline can be
     tested without a live Neo4j."""
-    sample = REPO_ROOT / "tests" / "fixtures" / "neurokg" / "gabriel_measurements.sample.jsonl"
+    sample = REPO_ROOT / "tests" / "fixtures" / "br_kg" / "gabriel_measurements.sample.jsonl"
     counts_kept = defaultdict(int)
     cypher_path = out_dir / "kg_public.cypher"
     pii_profile = load_pii_profile("public")
