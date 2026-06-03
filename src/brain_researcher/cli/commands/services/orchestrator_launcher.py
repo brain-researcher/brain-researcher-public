@@ -37,9 +37,7 @@ def launch_orchestrator(
     orchestrator_dir = get_package_root() / "services" / "orchestrator"
 
     if not orchestrator_dir.exists():
-        console.print(
-            f"[red]Orchestrator directory not found: {orchestrator_dir}[/red]"
-        )
+        console.print(f"[red]Orchestrator directory not found: {orchestrator_dir}[/red]")
         raise typer.Exit(1)
 
     # Check if required dependencies are installed
@@ -77,14 +75,10 @@ def launch_orchestrator(
     # Build uvicorn command
     # Launch using module path so relative imports in orchestrator package work
     cmd = [
-        sys.executable,
-        "-m",
-        "uvicorn",
+        sys.executable, "-m", "uvicorn",
         "brain_researcher.services.orchestrator.main_enhanced:app",
-        "--host",
-        host,
-        "--port",
-        str(port),
+        "--host", host,
+        "--port", str(port),
     ]
 
     if reload:

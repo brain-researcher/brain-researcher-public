@@ -72,7 +72,6 @@ def _get_relevant_tool_context(
         get_agent,
         logger,
     )
-
     global _tool_context_cache, _tool_context_cache_time
 
     try:
@@ -251,7 +250,6 @@ def _build_context_for_query(
 def _get_fallback_tool_registry():
     """Best-effort access to the agent tool registry for signature checks."""
     from brain_researcher.services.agent.web_service import get_agent
-
     global _FALLBACK_TOOL_REGISTRY
     if _FALLBACK_TOOL_REGISTRY is None:
         try:
@@ -298,7 +296,6 @@ def _get_relevant_tool_context_legacy(query: str, max_tools: int = 15) -> str:
         Formatted tool context string or empty string if no tools
     """
     from brain_researcher.services.agent.web_service import get_agent, logger
-
     try:
         # Initialize agent to get tools
         agent = get_agent()

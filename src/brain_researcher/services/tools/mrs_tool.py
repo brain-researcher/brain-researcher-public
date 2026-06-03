@@ -4,14 +4,14 @@ MR Spectroscopy tool for metabolite quantification and analysis.
 Implements MRS processing for biochemical analysis of brain tissue.
 """
 
-import json
 import logging
-import warnings
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+import json
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Tuple
+import warnings
+
+from pydantic import BaseModel, Field, ConfigDict
 
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -23,141 +23,216 @@ logger = logging.getLogger(__name__)
 
 class MRSpectroscopyArgs(BaseModel):
     """Arguments for MR Spectroscopy analysis."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Input data
     fid_file: Optional[str] = Field(
-        default=None, description="FID (Free Induction Decay) data file"
+        default=None,
+        description="FID (Free Induction Decay) data file"
     )
     spectrum_file: Optional[str] = Field(
-        default=None, description="Pre-processed spectrum file"
+        default=None,
+        description="Pre-processed spectrum file"
     )
     water_file: Optional[str] = Field(
-        default=None, description="Water reference file for calibration"
+        default=None,
+        description="Water reference file for calibration"
     )
 
     # Acquisition parameters
     field_strength: float = Field(
-        default=3.0, description="Magnetic field strength in Tesla"
+        default=3.0,
+        description="Magnetic field strength in Tesla"
     )
-    te: float = Field(default=30.0, description="Echo time in ms")
-    tr: float = Field(default=2000.0, description="Repetition time in ms")
+    te: float = Field(
+        default=30.0,
+        description="Echo time in ms"
+    )
+    tr: float = Field(
+        default=2000.0,
+        description="Repetition time in ms"
+    )
     sequence_type: str = Field(
         default="press",
-        description="Sequence type: 'press', 'steam', 'mega_press', 'special'",
+        description="Sequence type: 'press', 'steam', 'mega_press', 'special'"
     )
 
     # Spectral parameters
-    spectral_width: float = Field(default=2000.0, description="Spectral width in Hz")
-    n_points: int = Field(default=2048, description="Number of spectral points")
+    spectral_width: float = Field(
+        default=2000.0,
+        description="Spectral width in Hz"
+    )
+    n_points: int = Field(
+        default=2048,
+        description="Number of spectral points"
+    )
     center_frequency: float = Field(
-        default=123.2, description="Center frequency in MHz"
+        default=123.2,
+        description="Center frequency in MHz"
     )
 
     # VOI parameters
     voxel_size: List[float] = Field(
-        default=[20, 20, 20], description="Voxel size in mm"
+        default=[20, 20, 20],
+        description="Voxel size in mm"
     )
     voxel_location: str = Field(
         default="pcc",
-        description="Voxel location: 'pcc', 'acc', 'hippocampus', 'basal_ganglia', 'custom'",
+        description="Voxel location: 'pcc', 'acc', 'hippocampus', 'basal_ganglia', 'custom'"
     )
 
     # Processing parameters
     processing_method: str = Field(
         default="lcmodel",
-        description="Processing: 'lcmodel', 'tarquin', 'custom', 'jmrui'",
+        description="Processing: 'lcmodel', 'tarquin', 'custom', 'jmrui'"
     )
     water_suppression: bool = Field(
-        default=True, description="Water suppression applied"
+        default=True,
+        description="Water suppression applied"
     )
 
     # Preprocessing
-    apply_ecc: bool = Field(default=True, description="Apply eddy current correction")
+    apply_ecc: bool = Field(
+        default=True,
+        description="Apply eddy current correction"
+    )
     phase_correction: str = Field(
-        default="auto", description="Phase correction: 'auto', 'manual', 'none'"
+        default="auto",
+        description="Phase correction: 'auto', 'manual', 'none'"
     )
     frequency_alignment: bool = Field(
-        default=True, description="Perform frequency alignment"
+        default=True,
+        description="Perform frequency alignment"
     )
     apodization: str = Field(
         default="exponential",
-        description="Apodization: 'exponential', 'gaussian', 'none'",
+        description="Apodization: 'exponential', 'gaussian', 'none'"
     )
-    line_broadening: float = Field(default=2.0, description="Line broadening in Hz")
+    line_broadening: float = Field(
+        default=2.0,
+        description="Line broadening in Hz"
+    )
 
     # Baseline correction
     baseline_correction: str = Field(
         default="polynomial",
-        description="Baseline: 'polynomial', 'spline', 'wavelet', 'none'",
+        description="Baseline: 'polynomial', 'spline', 'wavelet', 'none'"
     )
-    baseline_order: int = Field(default=3, description="Polynomial order for baseline")
+    baseline_order: int = Field(
+        default=3,
+        description="Polynomial order for baseline"
+    )
 
     # Metabolite fitting
     metabolites: List[str] = Field(
         default=["NAA", "Cr", "Cho", "mI", "Glx", "Lac", "Lip"],
-        description="Metabolites to quantify",
+        description="Metabolites to quantify"
     )
-    use_basis_set: bool = Field(default=True, description="Use basis set for fitting")
+    use_basis_set: bool = Field(
+        default=True,
+        description="Use basis set for fitting"
+    )
     basis_set_file: Optional[str] = Field(
-        default=None, description="Custom basis set file"
+        default=None,
+        description="Custom basis set file"
     )
 
     # Quantification
     reference_method: str = Field(
-        default="water", description="Reference: 'water', 'creatine', 'internal'"
+        default="water",
+        description="Reference: 'water', 'creatine', 'internal'"
     )
-    tissue_correction: bool = Field(default=True, description="Apply tissue correction")
+    tissue_correction: bool = Field(
+        default=True,
+        description="Apply tissue correction"
+    )
     gm_fraction: Optional[float] = Field(
-        default=None, description="Gray matter fraction in voxel"
+        default=None,
+        description="Gray matter fraction in voxel"
     )
     wm_fraction: Optional[float] = Field(
-        default=None, description="White matter fraction in voxel"
+        default=None,
+        description="White matter fraction in voxel"
     )
     csf_fraction: Optional[float] = Field(
-        default=None, description="CSF fraction in voxel"
+        default=None,
+        description="CSF fraction in voxel"
     )
 
     # Quality control
     compute_crlb: bool = Field(
-        default=True, description="Compute Cramér-Rao lower bounds"
+        default=True,
+        description="Compute Cramér-Rao lower bounds"
     )
-    snr_threshold: float = Field(default=5.0, description="Minimum SNR threshold")
+    snr_threshold: float = Field(
+        default=5.0,
+        description="Minimum SNR threshold"
+    )
     linewidth_threshold: float = Field(
-        default=0.1, description="Maximum linewidth in ppm"
+        default=0.1,
+        description="Maximum linewidth in ppm"
     )
 
     # MEGA-PRESS specific
     edit_on_file: Optional[str] = Field(
-        default=None, description="Edit-ON spectrum for MEGA-PRESS"
+        default=None,
+        description="Edit-ON spectrum for MEGA-PRESS"
     )
     edit_off_file: Optional[str] = Field(
-        default=None, description="Edit-OFF spectrum for MEGA-PRESS"
+        default=None,
+        description="Edit-OFF spectrum for MEGA-PRESS"
     )
     target_metabolite: str = Field(
-        default="GABA", description="Target for editing: 'GABA', 'GSH', '2HG'"
+        default="GABA",
+        description="Target for editing: 'GABA', 'GSH', '2HG'"
     )
 
     # MRSI parameters
-    mrsi_mode: bool = Field(default=False, description="MRSI (multi-voxel) mode")
-    grid_size: List[int] = Field(default=[16, 16, 1], description="MRSI grid size")
+    mrsi_mode: bool = Field(
+        default=False,
+        description="MRSI (multi-voxel) mode"
+    )
+    grid_size: List[int] = Field(
+        default=[16, 16, 1],
+        description="MRSI grid size"
+    )
 
     # Output options
-    output_dir: str = Field(description="Output directory")
-    save_fitted_spectrum: bool = Field(default=True, description="Save fitted spectrum")
-    save_residuals: bool = Field(default=True, description="Save fitting residuals")
-    generate_report: bool = Field(default=True, description="Generate analysis report")
+    output_dir: str = Field(
+        description="Output directory"
+    )
+    save_fitted_spectrum: bool = Field(
+        default=True,
+        description="Save fitted spectrum"
+    )
+    save_residuals: bool = Field(
+        default=True,
+        description="Save fitting residuals"
+    )
+    generate_report: bool = Field(
+        default=True,
+        description="Generate analysis report"
+    )
 
     # Visualization
-    visualize: bool = Field(default=True, description="Generate visualizations")
+    visualize: bool = Field(
+        default=True,
+        description="Generate visualizations"
+    )
     plot_range: List[float] = Field(
-        default=[0.5, 4.5], description="Chemical shift range for plotting (ppm)"
+        default=[0.5, 4.5],
+        description="Chemical shift range for plotting (ppm)"
     )
 
     # Advanced options
-    verbose: bool = Field(default=True, description="Verbose output")
-    n_workers: int = Field(default=-1, description="Number of parallel workers")
+    verbose: bool = Field(
+        default=True,
+        description="Verbose output"
+    )
+    n_workers: int = Field(
+        default=-1,
+        description="Number of parallel workers"
+    )
 
 
 class MRSpectroscopyTool(NeuroToolWrapper):
@@ -175,7 +250,6 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
         try:
             import nmrglue
-
             self.nmrglue_available = True
             logger.info("NMRglue available for spectroscopy processing")
         except ImportError:
@@ -184,33 +258,33 @@ class MRSpectroscopyTool(NeuroToolWrapper):
     def _init_metabolite_info(self):
         """Initialize metabolite chemical shifts and properties."""
         self.metabolite_shifts = {
-            "NAA": 2.01,  # N-Acetylaspartate
-            "Cr": 3.03,  # Creatine
-            "Cho": 3.21,  # Choline
-            "mI": 3.56,  # myo-Inositol
-            "Glx": 2.35,  # Glutamate + Glutamine
-            "Glu": 2.35,  # Glutamate
-            "Gln": 2.45,  # Glutamine
-            "GABA": 3.01,  # gamma-Aminobutyric acid
-            "Lac": 1.33,  # Lactate
-            "Ala": 1.48,  # Alanine
-            "Asp": 2.80,  # Aspartate
-            "GSH": 2.95,  # Glutathione
-            "Tau": 3.42,  # Taurine
-            "Lip": 1.30,  # Lipids
-            "MM": 0.90,  # Macromolecules
-            "2HG": 2.25,  # 2-Hydroxyglutarate
+            'NAA': 2.01,      # N-Acetylaspartate
+            'Cr': 3.03,       # Creatine
+            'Cho': 3.21,      # Choline
+            'mI': 3.56,       # myo-Inositol
+            'Glx': 2.35,      # Glutamate + Glutamine
+            'Glu': 2.35,      # Glutamate
+            'Gln': 2.45,      # Glutamine
+            'GABA': 3.01,     # gamma-Aminobutyric acid
+            'Lac': 1.33,      # Lactate
+            'Ala': 1.48,      # Alanine
+            'Asp': 2.80,      # Aspartate
+            'GSH': 2.95,      # Glutathione
+            'Tau': 3.42,      # Taurine
+            'Lip': 1.30,      # Lipids
+            'MM': 0.90,       # Macromolecules
+            '2HG': 2.25       # 2-Hydroxyglutarate
         }
 
         # Normal concentration ranges (mM) at 3T
         self.normal_ranges = {
-            "NAA": (7.5, 17.0),
-            "Cr": (5.0, 10.5),
-            "Cho": (0.9, 2.5),
-            "mI": (4.0, 9.0),
-            "Glx": (6.0, 12.5),
-            "GABA": (1.0, 2.0),
-            "GSH": (1.0, 3.0),
+            'NAA': (7.5, 17.0),
+            'Cr': (5.0, 10.5),
+            'Cho': (0.9, 2.5),
+            'mI': (4.0, 9.0),
+            'Glx': (6.0, 12.5),
+            'GABA': (1.0, 2.0),
+            'GSH': (1.0, 3.0)
         }
 
     def get_tool_name(self) -> str:
@@ -269,7 +343,7 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
         return fid
 
-    def _preprocess_fid(self, fid, apply_ecc=True, apodization="exponential", lb=2.0):
+    def _preprocess_fid(self, fid, apply_ecc=True, apodization='exponential', lb=2.0):
         """Preprocess FID data."""
         processed = fid.copy()
 
@@ -283,12 +357,12 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         n_points = len(processed)
         t = np.arange(n_points) / 1000.0  # Time in seconds
 
-        if apodization == "exponential":
+        if apodization == 'exponential':
             window = np.exp(-np.pi * lb * t)
             processed *= window
-        elif apodization == "gaussian":
+        elif apodization == 'gaussian':
             sigma = n_points / (4 * lb)
-            window = np.exp(-((t - t.mean()) ** 2) / (2 * sigma**2))
+            window = np.exp(-(t - t.mean())**2 / (2 * sigma**2))
             processed *= window
 
         return processed
@@ -304,16 +378,16 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         spectrum = np.fft.fftshift(np.fft.fft(zero_filled))
 
         # Create frequency axis
-        freq = np.linspace(-spectral_width / 2, spectral_width / 2, len(spectrum))
+        freq = np.linspace(-spectral_width/2, spectral_width/2, len(spectrum))
 
         # Convert to ppm (assume 3T, water at 4.7 ppm)
         ppm = freq / 123.2 + 4.7
 
         return spectrum, ppm
 
-    def _phase_correction(self, spectrum, method="auto"):
+    def _phase_correction(self, spectrum, method='auto'):
         """Apply phase correction."""
-        if method == "auto":
+        if method == 'auto':
             # Automatic phase correction
             # Find phase that maximizes real part
             phases = np.linspace(-np.pi, np.pi, 360)
@@ -332,35 +406,31 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
         return spectrum
 
-    def _baseline_correction(self, spectrum, ppm, method="polynomial", order=3):
+    def _baseline_correction(self, spectrum, ppm, method='polynomial', order=3):
         """Correct baseline."""
         real_spectrum = np.real(spectrum)
 
-        if method == "polynomial":
+        if method == 'polynomial':
             # Identify baseline regions (no metabolites)
             baseline_mask = (ppm < 0.5) | (ppm > 4.5)
 
             if np.any(baseline_mask):
                 # Fit polynomial to baseline regions
-                coeffs = np.polyfit(
-                    ppm[baseline_mask], real_spectrum[baseline_mask], order
-                )
+                coeffs = np.polyfit(ppm[baseline_mask], real_spectrum[baseline_mask], order)
                 baseline = np.polyval(coeffs, ppm)
 
                 corrected = real_spectrum - baseline
             else:
                 corrected = real_spectrum
 
-        elif method == "spline":
+        elif method == 'spline':
             from scipy.interpolate import UnivariateSpline
 
             # Use regions without peaks
             baseline_mask = (ppm < 0.5) | (ppm > 4.5)
 
             if np.any(baseline_mask):
-                spline = UnivariateSpline(
-                    ppm[baseline_mask], real_spectrum[baseline_mask], s=0
-                )
+                spline = UnivariateSpline(ppm[baseline_mask], real_spectrum[baseline_mask], s=0)
                 baseline = spline(ppm)
                 corrected = real_spectrum - baseline
             else:
@@ -381,26 +451,26 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
                 # Create Lorentzian peak
                 width = 0.02  # ppm
-                peak = 1 / (1 + ((ppm - shift) / width) ** 2)
+                peak = 1 / (1 + ((ppm - shift) / width)**2)
 
                 # Add multiplet structure for some metabolites
-                if metabolite == "NAA":
+                if metabolite == 'NAA':
                     # NAA has multiplet at 2.01 ppm
-                    peak += 0.3 / (1 + ((ppm - 2.49) / width) ** 2)  # CH2 group
-                elif metabolite == "Lac":
+                    peak += 0.3 / (1 + ((ppm - 2.49) / width)**2)  # CH2 group
+                elif metabolite == 'Lac':
                     # Lactate doublet
-                    peak += 1 / (1 + ((ppm - 1.31) / width) ** 2)
-                elif metabolite == "Glx":
+                    peak += 1 / (1 + ((ppm - 1.31) / width)**2)
+                elif metabolite == 'Glx':
                     # Glx multiplet
-                    peak += 0.5 / (1 + ((ppm - 3.75) / width) ** 2)
+                    peak += 0.5 / (1 + ((ppm - 3.75) / width)**2)
 
                 basis[metabolite] = peak / np.max(peak)
 
         return basis
 
-    def _fit_metabolites(self, spectrum, ppm, basis_set, method="nnls"):
+    def _fit_metabolites(self, spectrum, ppm, basis_set, method='nnls'):
         """Fit metabolites using basis set."""
-        from scipy.optimize import least_squares, nnls
+        from scipy.optimize import nnls, least_squares
 
         # Select fitting range
         fit_mask = (ppm >= 0.5) & (ppm <= 4.5)
@@ -420,21 +490,19 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         # Add baseline terms
         n_baseline = 3
         for i in range(n_baseline):
-            baseline_term = ppm_fit**i
+            baseline_term = ppm_fit ** i
             basis_matrix = np.column_stack([basis_matrix, baseline_term])
 
         # Fit using non-negative least squares
-        if method == "nnls":
+        if method == 'nnls':
             amplitudes, residual = nnls(basis_matrix, spectrum_fit)
         else:
             # Use bounded least squares
             def objective(x):
-                return np.sum((spectrum_fit - basis_matrix @ x) ** 2)
+                return np.sum((spectrum_fit - basis_matrix @ x)**2)
 
             bounds = [(0, None)] * basis_matrix.shape[1]
-            result = least_squares(
-                objective, np.ones(basis_matrix.shape[1]), bounds=bounds
-            )
+            result = least_squares(objective, np.ones(basis_matrix.shape[1]), bounds=bounds)
             amplitudes = result.x
             residual = result.cost
 
@@ -469,17 +537,12 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
         return crlb
 
-    def _quantify_concentrations(
-        self,
-        amplitudes,
-        reference_method="water",
-        water_amplitude=None,
-        tissue_fractions=None,
-    ):
+    def _quantify_concentrations(self, amplitudes, reference_method='water',
+                                water_amplitude=None, tissue_fractions=None):
         """Convert amplitudes to concentrations."""
         concentrations = {}
 
-        if reference_method == "water":
+        if reference_method == 'water':
             # Water concentration in brain tissue (~35.5 M)
             water_conc = 35500  # mM
 
@@ -491,29 +554,25 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
                     # Apply tissue correction if available
                     if tissue_fractions:
-                        gm_frac = tissue_fractions.get("gm", 0.5)
-                        wm_frac = tissue_fractions.get("wm", 0.4)
-                        csf_frac = tissue_fractions.get("csf", 0.1)
+                        gm_frac = tissue_fractions.get('gm', 0.5)
+                        wm_frac = tissue_fractions.get('wm', 0.4)
+                        csf_frac = tissue_fractions.get('csf', 0.1)
 
                         # Different water content in tissues
                         tissue_water = gm_frac * 0.78 + wm_frac * 0.71 + csf_frac * 0.97
                         correction_factor *= tissue_water
 
-                    concentrations[metabolite] = (
-                        (amplitude / water_amplitude) * water_conc * correction_factor
-                    )
+                    concentrations[metabolite] = (amplitude / water_amplitude) * water_conc * correction_factor
             else:
                 # No water reference - use relative values
                 total = sum(amplitudes.values())
                 for metabolite, amplitude in amplitudes.items():
-                    concentrations[metabolite] = (
-                        amplitude / total
-                    ) * 10  # Arbitrary units
+                    concentrations[metabolite] = (amplitude / total) * 10  # Arbitrary units
 
-        elif reference_method == "creatine":
+        elif reference_method == 'creatine':
             # Use creatine as internal reference (assume 8 mM)
             cr_conc = 8.0
-            cr_amplitude = amplitudes.get("Cr", 1.0)
+            cr_amplitude = amplitudes.get('Cr', 1.0)
 
             for metabolite, amplitude in amplitudes.items():
                 concentrations[metabolite] = (amplitude / cr_amplitude) * cr_conc
@@ -529,34 +588,28 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         ratios = {}
 
         # Common clinical ratios
-        if "Cr" in concentrations and concentrations["Cr"] > 0:
-            cr = concentrations["Cr"]
+        if 'Cr' in concentrations and concentrations['Cr'] > 0:
+            cr = concentrations['Cr']
 
-            if "NAA" in concentrations:
-                ratios["NAA/Cr"] = concentrations["NAA"] / cr
+            if 'NAA' in concentrations:
+                ratios['NAA/Cr'] = concentrations['NAA'] / cr
 
-            if "Cho" in concentrations:
-                ratios["Cho/Cr"] = concentrations["Cho"] / cr
+            if 'Cho' in concentrations:
+                ratios['Cho/Cr'] = concentrations['Cho'] / cr
 
-            if "mI" in concentrations:
-                ratios["mI/Cr"] = concentrations["mI"] / cr
+            if 'mI' in concentrations:
+                ratios['mI/Cr'] = concentrations['mI'] / cr
 
-            if "Glx" in concentrations:
-                ratios["Glx/Cr"] = concentrations["Glx"] / cr
+            if 'Glx' in concentrations:
+                ratios['Glx/Cr'] = concentrations['Glx'] / cr
 
         # NAA/Cho ratio
-        if (
-            "NAA" in concentrations
-            and "Cho" in concentrations
-            and concentrations["Cho"] > 0
-        ):
-            ratios["NAA/Cho"] = concentrations["NAA"] / concentrations["Cho"]
+        if 'NAA' in concentrations and 'Cho' in concentrations and concentrations['Cho'] > 0:
+            ratios['NAA/Cho'] = concentrations['NAA'] / concentrations['Cho']
 
         return ratios
 
-    def _quality_control(
-        self, spectrum, fitted, ppm, snr_threshold=5, linewidth_threshold=0.1
-    ):
+    def _quality_control(self, spectrum, fitted, ppm, snr_threshold=5, linewidth_threshold=0.1):
         """Perform quality control."""
         qc = {}
 
@@ -569,11 +622,11 @@ class MRSpectroscopyTool(NeuroToolWrapper):
             noise = np.std(np.real(spectrum[noise_region]))
 
             if noise > 0:
-                qc["snr"] = float(signal / noise)
+                qc['snr'] = float(signal / noise)
             else:
-                qc["snr"] = 0
+                qc['snr'] = 0
         else:
-            qc["snr"] = 0
+            qc['snr'] = 0
 
         # Estimate linewidth (FWHM of NAA peak)
         naa_region = (ppm >= 1.9) & (ppm <= 2.1)
@@ -586,26 +639,26 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
             if np.any(above_half):
                 fwhm = naa_ppm[above_half][-1] - naa_ppm[above_half][0]
-                qc["linewidth_ppm"] = float(fwhm)
+                qc['linewidth_ppm'] = float(fwhm)
             else:
-                qc["linewidth_ppm"] = 999
+                qc['linewidth_ppm'] = 999
         else:
-            qc["linewidth_ppm"] = 999
+            qc['linewidth_ppm'] = 999
 
         # Quality assessment
-        qc["snr_pass"] = qc["snr"] >= snr_threshold
-        qc["linewidth_pass"] = qc["linewidth_ppm"] <= linewidth_threshold
-        qc["overall_pass"] = qc["snr_pass"] and qc["linewidth_pass"]
+        qc['snr_pass'] = qc['snr'] >= snr_threshold
+        qc['linewidth_pass'] = qc['linewidth_ppm'] <= linewidth_threshold
+        qc['overall_pass'] = qc['snr_pass'] and qc['linewidth_pass']
 
         # Fitting quality
         if fitted is not None:
             residual_std = np.std(np.real(spectrum) - fitted)
-            qc["residual_std"] = float(residual_std)
-            qc["fit_quality"] = float(1 - residual_std / np.std(np.real(spectrum)))
+            qc['residual_std'] = float(residual_std)
+            qc['fit_quality'] = float(1 - residual_std / np.std(np.real(spectrum)))
 
         return qc
 
-    def _process_mega_press(self, edit_on, edit_off, target="GABA"):
+    def _process_mega_press(self, edit_on, edit_off, target='GABA'):
         """Process MEGA-PRESS edited spectra."""
         # Difference spectrum
         diff_spectrum = edit_on - edit_off
@@ -614,22 +667,15 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         sum_spectrum = (edit_on + edit_off) / 2
 
         results = {
-            "difference": diff_spectrum,
-            "sum": sum_spectrum,
-            "target_metabolite": target,
+            'difference': diff_spectrum,
+            'sum': sum_spectrum,
+            'target_metabolite': target
         }
 
         return results
 
-    def _visualize_spectrum(
-        self,
-        spectrum,
-        ppm,
-        fitted=None,
-        metabolite_amplitudes=None,
-        output_path=None,
-        plot_range=[0.5, 4.5],
-    ):
+    def _visualize_spectrum(self, spectrum, ppm, fitted=None, metabolite_amplitudes=None,
+                           output_path=None, plot_range=[0.5, 4.5]):
         """Visualize MRS spectrum."""
         import matplotlib.pyplot as plt
 
@@ -638,46 +684,29 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         # Plot spectrum
         plot_mask = (ppm >= plot_range[0]) & (ppm <= plot_range[1])
 
-        axes[0].plot(
-            ppm[plot_mask],
-            np.real(spectrum[plot_mask]),
-            "b-",
-            label="Spectrum",
-            linewidth=1,
-        )
+        axes[0].plot(ppm[plot_mask], np.real(spectrum[plot_mask]), 'b-',
+                    label='Spectrum', linewidth=1)
 
         if fitted is not None:
-            axes[0].plot(
-                ppm[plot_mask], fitted, "r-", label="Fitted", linewidth=1, alpha=0.7
-            )
+            axes[0].plot(ppm[plot_mask], fitted, 'r-',
+                        label='Fitted', linewidth=1, alpha=0.7)
 
             # Residuals
             residuals = np.real(spectrum[plot_mask]) - fitted
-            axes[0].plot(
-                ppm[plot_mask],
-                residuals - np.min(np.real(spectrum[plot_mask])) * 0.5,
-                "g-",
-                label="Residuals",
-                linewidth=0.5,
-            )
+            axes[0].plot(ppm[plot_mask], residuals - np.min(np.real(spectrum[plot_mask])) * 0.5,
+                        'g-', label='Residuals', linewidth=0.5)
 
         # Add metabolite labels
         for metabolite, shift in self.metabolite_shifts.items():
             if plot_range[0] <= shift <= plot_range[1]:
-                axes[0].axvline(shift, color="gray", linestyle="--", alpha=0.3)
-                axes[0].text(
-                    shift,
-                    axes[0].get_ylim()[1] * 0.9,
-                    metabolite,
-                    rotation=90,
-                    fontsize=8,
-                    ha="right",
-                )
+                axes[0].axvline(shift, color='gray', linestyle='--', alpha=0.3)
+                axes[0].text(shift, axes[0].get_ylim()[1] * 0.9, metabolite,
+                           rotation=90, fontsize=8, ha='right')
 
         axes[0].set_xlim(plot_range[1], plot_range[0])  # Reverse x-axis
-        axes[0].set_xlabel("Chemical Shift (ppm)")
-        axes[0].set_ylabel("Signal Intensity")
-        axes[0].set_title("MR Spectrum")
+        axes[0].set_xlabel('Chemical Shift (ppm)')
+        axes[0].set_ylabel('Signal Intensity')
+        axes[0].set_title('MR Spectrum')
         axes[0].legend()
         axes[0].grid(True, alpha=0.3)
 
@@ -686,23 +715,23 @@ class MRSpectroscopyTool(NeuroToolWrapper):
             metabolites = list(metabolite_amplitudes.keys())
             concentrations = list(metabolite_amplitudes.values())
 
-            axes[1].bar(metabolites, concentrations, color="steelblue", alpha=0.7)
-            axes[1].set_xlabel("Metabolite")
-            axes[1].set_ylabel("Concentration (mM)")
-            axes[1].set_title("Metabolite Quantification")
+            axes[1].bar(metabolites, concentrations, color='steelblue', alpha=0.7)
+            axes[1].set_xlabel('Metabolite')
+            axes[1].set_ylabel('Concentration (mM)')
+            axes[1].set_title('Metabolite Quantification')
             axes[1].grid(True, alpha=0.3)
 
             # Add normal range indicators
             for i, metabolite in enumerate(metabolites):
                 if metabolite in self.normal_ranges:
                     low, high = self.normal_ranges[metabolite]
-                    axes[1].plot([i - 0.3, i + 0.3], [low, low], "g--", alpha=0.5)
-                    axes[1].plot([i - 0.3, i + 0.3], [high, high], "r--", alpha=0.5)
+                    axes[1].plot([i-0.3, i+0.3], [low, low], 'g--', alpha=0.5)
+                    axes[1].plot([i-0.3, i+0.3], [high, high], 'r--', alpha=0.5)
 
         plt.tight_layout()
 
         if output_path:
-            plt.savefig(output_path / "mrs_spectrum.png", dpi=150, bbox_inches="tight")
+            plt.savefig(output_path / 'mrs_spectrum.png', dpi=150, bbox_inches='tight')
 
         plt.close()
 
@@ -717,9 +746,7 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         report.append("Quality Control:")
         report.append(f"  SNR: {qc_metrics.get('snr', 0):.1f}")
         report.append(f"  Linewidth: {qc_metrics.get('linewidth_ppm', 999):.3f} ppm")
-        report.append(
-            f"  Overall QC: {'PASS' if qc_metrics.get('overall_pass', False) else 'FAIL'}"
-        )
+        report.append(f"  Overall QC: {'PASS' if qc_metrics.get('overall_pass', False) else 'FAIL'}")
         report.append("")
 
         # Metabolite concentrations
@@ -747,24 +774,24 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         report.append("Clinical Interpretation:")
 
         # NAA reduction
-        if "NAA" in concentrations:
-            naa = concentrations["NAA"]
+        if 'NAA' in concentrations:
+            naa = concentrations['NAA']
             if naa < 7.5:
                 report.append("  - Reduced NAA: suggests neuronal loss or dysfunction")
 
         # Cho elevation
-        if "Cho" in concentrations:
-            cho = concentrations["Cho"]
+        if 'Cho' in concentrations:
+            cho = concentrations['Cho']
             if cho > 2.5:
                 report.append("  - Elevated Cho: suggests increased membrane turnover")
 
         # Lactate presence
-        if "Lac" in concentrations and concentrations["Lac"] > 0.5:
+        if 'Lac' in concentrations and concentrations['Lac'] > 0.5:
             report.append("  - Lactate detected: suggests anaerobic metabolism")
 
         # mI elevation
-        if "mI" in concentrations:
-            mi = concentrations["mI"]
+        if 'mI' in concentrations:
+            mi = concentrations['mI']
             if mi > 9.0:
                 report.append("  - Elevated mI: suggests glial proliferation")
 
@@ -817,7 +844,7 @@ class MRSpectroscopyTool(NeuroToolWrapper):
         plot_range: List[float] = [0.5, 4.5],
         verbose: bool = True,
         n_workers: int = -1,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute MR Spectroscopy analysis."""
         try:
@@ -843,37 +870,33 @@ class MRSpectroscopyTool(NeuroToolWrapper):
                 fid_data,
                 apply_ecc=apply_ecc,
                 apodization=apodization,
-                lb=line_broadening,
+                lb=line_broadening
             )
 
             # Convert to spectrum
             spectrum, ppm = self._fft_spectrum(processed_fid, spectral_width)
 
             # Phase correction
-            if phase_correction != "none":
+            if phase_correction != 'none':
                 if verbose:
                     logger.info("Applying phase correction")
                 spectrum = self._phase_correction(spectrum, phase_correction)
 
             # Baseline correction
-            if baseline_correction != "none":
+            if baseline_correction != 'none':
                 if verbose:
                     logger.info("Applying baseline correction")
-                spectrum = self._baseline_correction(
-                    spectrum, ppm, baseline_correction, baseline_order
-                )
+                spectrum = self._baseline_correction(spectrum, ppm, baseline_correction, baseline_order)
 
             # MEGA-PRESS processing
-            if sequence_type == "mega_press" and edit_on_file and edit_off_file:
+            if sequence_type == 'mega_press' and edit_on_file and edit_off_file:
                 if verbose:
                     logger.info(f"Processing MEGA-PRESS for {target_metabolite}")
 
                 # Load edit-on and edit-off
                 # Simplified - would load actual data
-                mega_results = self._process_mega_press(
-                    spectrum, spectrum, target_metabolite
-                )
-                spectrum = mega_results["difference"]
+                mega_results = self._process_mega_press(spectrum, spectrum, target_metabolite)
+                spectrum = mega_results['difference']
 
             # Create basis set
             if use_basis_set:
@@ -909,16 +932,16 @@ class MRSpectroscopyTool(NeuroToolWrapper):
             tissue_fractions = None
             if tissue_correction:
                 tissue_fractions = {
-                    "gm": gm_fraction or 0.5,
-                    "wm": wm_fraction or 0.4,
-                    "csf": csf_fraction or 0.1,
+                    'gm': gm_fraction or 0.5,
+                    'wm': wm_fraction or 0.4,
+                    'csf': csf_fraction or 0.1
                 }
 
             concentrations = self._quantify_concentrations(
                 metabolite_amplitudes,
                 reference_method,
                 water_amplitude,
-                tissue_fractions,
+                tissue_fractions
             )
 
             # Calculate ratios
@@ -926,7 +949,8 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
             # Quality control
             qc_metrics = self._quality_control(
-                spectrum, fitted_spectrum, ppm, snr_threshold, linewidth_threshold
+                spectrum, fitted_spectrum, ppm,
+                snr_threshold, linewidth_threshold
             )
 
             # Visualization
@@ -935,12 +959,8 @@ class MRSpectroscopyTool(NeuroToolWrapper):
                     logger.info("Generating visualizations")
 
                 self._visualize_spectrum(
-                    spectrum,
-                    ppm,
-                    fitted_spectrum,
-                    concentrations,
-                    output_path,
-                    plot_range,
+                    spectrum, ppm, fitted_spectrum, concentrations,
+                    output_path, plot_range
                 )
 
             # Generate report
@@ -950,8 +970,8 @@ class MRSpectroscopyTool(NeuroToolWrapper):
                     concentrations, ratios, qc_metrics, voxel_location
                 )
 
-                report_file = output_path / "mrs_report.txt"
-                with open(report_file, "w") as f:
+                report_file = output_path / 'mrs_report.txt'
+                with open(report_file, 'w') as f:
                     f.write(report)
 
             # Save outputs
@@ -959,67 +979,71 @@ class MRSpectroscopyTool(NeuroToolWrapper):
 
             # Save fitted spectrum
             if save_fitted_spectrum:
-                fitted_file = output_path / "fitted_spectrum.npy"
+                fitted_file = output_path / 'fitted_spectrum.npy'
                 np.save(fitted_file, fitted_spectrum)
-                outputs["fitted_spectrum"] = str(fitted_file)
+                outputs['fitted_spectrum'] = str(fitted_file)
 
             # Save residuals
             if save_residuals:
-                residuals_file = output_path / "residuals.npy"
+                residuals_file = output_path / 'residuals.npy'
                 np.save(residuals_file, residuals)
-                outputs["residuals"] = str(residuals_file)
+                outputs['residuals'] = str(residuals_file)
 
             # Prepare results
             results = {
-                "sequence_type": sequence_type,
-                "voxel_location": voxel_location,
-                "field_strength": field_strength,
-                "metabolite_concentrations": {
-                    k: float(v) for k, v in concentrations.items()
-                },
-                "metabolite_ratios": {k: float(v) for k, v in ratios.items()},
-                "quality_metrics": qc_metrics,
-                "processing_parameters": {
-                    "te": te,
-                    "tr": tr,
-                    "apodization": apodization,
-                    "baseline_correction": baseline_correction,
-                },
+                'sequence_type': sequence_type,
+                'voxel_location': voxel_location,
+                'field_strength': field_strength,
+                'metabolite_concentrations': {k: float(v) for k, v in concentrations.items()},
+                'metabolite_ratios': {k: float(v) for k, v in ratios.items()},
+                'quality_metrics': qc_metrics,
+                'processing_parameters': {
+                    'te': te,
+                    'tr': tr,
+                    'apodization': apodization,
+                    'baseline_correction': baseline_correction
+                }
             }
 
             if crlb:
-                results["crlb"] = {k: float(v) for k, v in crlb.items()}
+                results['crlb'] = {k: float(v) for k, v in crlb.items()}
 
             # Save results
-            results_file = output_path / "mrs_results.json"
-            with open(results_file, "w") as f:
+            results_file = output_path / 'mrs_results.json'
+            with open(results_file, 'w') as f:
                 json.dump(results, f, indent=2)
 
-            outputs["results"] = str(results_file)
+            outputs['results'] = str(results_file)
 
             if report:
-                outputs["report"] = str(output_path / "mrs_report.txt")
+                outputs['report'] = str(output_path / 'mrs_report.txt')
 
             if visualize:
-                outputs["visualization"] = str(output_path / "mrs_spectrum.png")
+                outputs['visualization'] = str(output_path / 'mrs_spectrum.png')
 
             # Prepare message
-            message = (
-                f"MRS analysis completed: {len(metabolites)} metabolites quantified"
-            )
-            if qc_metrics.get("overall_pass", False):
+            message = f"MRS analysis completed: {len(metabolites)} metabolites quantified"
+            if qc_metrics.get('overall_pass', False):
                 message += ", QC PASS"
             else:
                 message += ", QC FAIL"
 
             return ToolResult(
                 status="success",
-                data={"outputs": outputs, "summary": results, "message": message},
+                data={
+                    "outputs": outputs,
+                    "summary": results,
+                    "message": message
+                }
             )
 
         except Exception as e:
             logger.error(f"MRS analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class MRSpectroscopyTools:
@@ -1028,4 +1052,6 @@ class MRSpectroscopyTools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all MRS tools."""
-        return [MRSpectroscopyTool()]
+        return [
+            MRSpectroscopyTool()
+        ]

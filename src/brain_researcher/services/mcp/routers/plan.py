@@ -76,13 +76,11 @@ def plan_preflight(
     domain: str = "neuroimaging",
     modality: list[str] | None = None,
     inputs: dict[str, Any] | None = None,
-    allowlist_mode: (
-        enum_str(
-            ("curated", "diagnostic"),
-            "allowlist surface for planner selection; 'diagnostic' widens to the full catalog",
-        )
-        | None
-    ) = None,
+    allowlist_mode: enum_str(
+        ("curated", "diagnostic"),
+        "allowlist surface for planner selection; 'diagnostic' widens to the full catalog",
+    )
+    | None = None,
     semantic: bool = False,
     selection_mode: bool = False,
 ) -> dict[str, Any]:
@@ -141,13 +139,11 @@ def plan_create(
     domain: str = "neuroimaging",
     modality: list[str] | None = None,
     inputs: dict[str, Any] | None = None,
-    allowlist_mode: (
-        enum_str(
-            ("curated", "diagnostic"),
-            "allowlist surface for planner selection; 'diagnostic' widens to the full catalog",
-        )
-        | None
-    ) = None,
+    allowlist_mode: enum_str(
+        ("curated", "diagnostic"),
+        "allowlist surface for planner selection; 'diagnostic' widens to the full catalog",
+    )
+    | None = None,
     query_understanding: dict[str, Any] | None = None,
     include_debug: bool = False,
     semantic: bool = False,

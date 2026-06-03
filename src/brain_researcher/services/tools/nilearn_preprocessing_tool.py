@@ -14,8 +14,8 @@ import pandas as pd
 from nilearn.image import clean_img
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.spec import ToolSpec
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
+from brain_researcher.services.tools.spec import ToolSpec
 
 logger = logging.getLogger(__name__)
 
@@ -37,25 +37,43 @@ def _sample_standardize_columns(values: np.ndarray) -> np.ndarray:
 class NilearnPreprocessingArgs(BaseModel):
     """Arguments for Nilearn preprocessing pipeline."""
 
-    input_file: str = Field(description="Path to 4D NIfTI file for preprocessing")
-    output_dir: str = Field(description="Output directory for preprocessed data")
-    confounds_file: Optional[str] = Field(
-        default=None, description="Path to confounds TSV file (fMRIPrep format)"
+    input_file: str = Field(
+        description="Path to 4D NIfTI file for preprocessing"
     )
-    tr: Optional[float] = Field(default=None, description="Repetition time in seconds")
-    high_pass: float = Field(default=0.01, description="High-pass filter cutoff in Hz")
+    output_dir: str = Field(
+        description="Output directory for preprocessed data"
+    )
+    confounds_file: Optional[str] = Field(
+        default=None,
+        description="Path to confounds TSV file (fMRIPrep format)"
+    )
+    tr: Optional[float] = Field(
+        default=None,
+        description="Repetition time in seconds"
+    )
+    high_pass: float = Field(
+        default=0.01,
+        description="High-pass filter cutoff in Hz"
+    )
     low_pass: Optional[float] = Field(
-        default=None, description="Low-pass filter cutoff in Hz (optional)"
+        default=None,
+        description="Low-pass filter cutoff in Hz (optional)"
     )
     smoothing_fwhm: Optional[float] = Field(
-        default=None, description="Smoothing FWHM in mm (optional)"
+        default=None,
+        description="Smoothing FWHM in mm (optional)"
     )
     standardize: bool = Field(
-        default=True, description="Whether to standardize the data"
+        default=True,
+        description="Whether to standardize the data"
     )
-    detrend: bool = Field(default=True, description="Whether to detrend the data")
+    detrend: bool = Field(
+        default=True,
+        description="Whether to detrend the data"
+    )
     confound_columns: Optional[List[str]] = Field(
-        default=None, description="List of confound columns to regress out"
+        default=None,
+        description="List of confound columns to regress out"
     )
 
 
@@ -97,7 +115,8 @@ TOOL_SPEC = ToolSpec(
 
 
 class NilearnPreprocessingTool(NeuroToolWrapper):
-    """Nilearn preprocessing tool for CONN-style connectivity analysis."""
+    """Nilearn preprocessing tool for CONN-style connectivity analysis.
+    """
 
     def __init__(self):
         """Initialize Nilearn preprocessing tool."""
@@ -128,7 +147,7 @@ class NilearnPreprocessingTool(NeuroToolWrapper):
         standardize: bool = True,
         detrend: bool = True,
         confound_columns: Optional[List[str]] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute Nilearn preprocessing pipeline."""
         try:
@@ -177,16 +196,16 @@ class NilearnPreprocessingTool(NeuroToolWrapper):
             }
 
             summary_path = output_path / "preprocessing_summary.json"
-            summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+            summary_path.write_text(
+                json.dumps(summary, indent=2), encoding="utf-8"
+            )
 
             return ToolResult(
                 status="success",
                 data={
                     "outputs": {
                         "preprocessed_file": str(output_file),
-                        "confounds_used": (
-                            str(confounds_path) if confounds_path else None
-                        ),
+                        "confounds_used": str(confounds_path) if confounds_path else None,
                         "summary": str(summary_path),
                     },
                     "summary": summary,

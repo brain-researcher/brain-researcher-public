@@ -13,11 +13,7 @@ class AutoExecutor:
         steps = 0
         next_action = planner.next_action()
 
-        while (
-            next_action
-            and getattr(next_action, "safe", False)
-            and steps < self.step_budget
-        ):
+        while next_action and getattr(next_action, "safe", False) and steps < self.step_budget:
             next_action()
             steps += 1
             next_action = planner.next_action()

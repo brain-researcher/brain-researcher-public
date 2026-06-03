@@ -8,45 +8,43 @@ This module tests the Kafka producer/consumer integration including:
 - Integration with CDC processor
 """
 
+import pytest
 import asyncio
 import json
 from datetime import datetime
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from typing import Dict, Any, List
 
 # Import the modules to test
 try:
-    from brain_researcher.services.br_kg.streaming.cdc_processor import (
-        ChangeType,
-        GraphChangeEvent,
-    )
     from brain_researcher.services.br_kg.streaming.kafka_integration import (
-        KafkaConsumer,
         KafkaProducer,
-        KafkaStreamingError,
+        KafkaConsumer,
         StreamConfig,
+        KafkaStreamingError,
         create_cdc_kafka_integration,
-        create_kafka_subscription_integration,
+        create_kafka_subscription_integration
+    )
+    from brain_researcher.services.br_kg.streaming.cdc_processor import (
+        GraphChangeEvent,
+        ChangeType
     )
 except ImportError:
     # Fallback if absolute imports don't work
-    import os
     import sys
-
-    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-    from brain_researcher.services.br_kg.streaming.cdc_processor import (
-        ChangeType,
-        GraphChangeEvent,
-    )
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
     from brain_researcher.services.br_kg.streaming.kafka_integration import (
-        KafkaConsumer,
         KafkaProducer,
-        KafkaStreamingError,
+        KafkaConsumer,
         StreamConfig,
+        KafkaStreamingError,
         create_cdc_kafka_integration,
-        create_kafka_subscription_integration,
+        create_kafka_subscription_integration
+    )
+    from brain_researcher.services.br_kg.streaming.cdc_processor import (
+        GraphChangeEvent,
+        ChangeType
     )
 
 
@@ -76,7 +74,7 @@ class TestStreamConfig:
             sasl_plain_password="pass",
             default_topic="custom-topic",
             producer_batch_size=32768,
-            consumer_group_id="custom-group",
+            consumer_group_id="custom-group"
         )
 
         assert config.bootstrap_servers == "kafka:9092"
@@ -96,7 +94,7 @@ class TestStreamConfig:
             sasl_mechanism="PLAIN",
             sasl_plain_username="user",
             sasl_plain_password="pass",
-            producer_batch_size=32768,
+            producer_batch_size=32768
         )
 
         producer_config = config.to_producer_config()
@@ -115,7 +113,7 @@ class TestStreamConfig:
         config = StreamConfig(
             bootstrap_servers="kafka:9092",
             consumer_group_id="test-group",
-            max_poll_records=100,
+            max_poll_records=100
         )
 
         consumer_config = config.to_consumer_config()
@@ -134,7 +132,8 @@ class TestKafkaProducer:
     def stream_config(self):
         """Create test stream configuration."""
         return StreamConfig(
-            bootstrap_servers="localhost:9092", default_topic="test-topic"
+            bootstrap_servers="localhost:9092",
+            default_topic="test-topic"
         )
 
     @pytest.fixture
@@ -149,18 +148,14 @@ class TestKafkaProducer:
     @pytest.fixture
     def kafka_producer(self, stream_config):
         """Create KafkaProducer with mocked dependencies."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer"
-        ) as mock_producer_class:
+        with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer') as mock_producer_class:
             producer = KafkaProducer(stream_config)
             producer.producer = AsyncMock()  # Mock the actual producer
             return producer
 
     def test_producer_initialization(self, stream_config):
         """Test Kafka producer initialization."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer"
-        ) as mock_producer_class:
+        with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer') as mock_producer_class:
             producer = KafkaProducer(stream_config)
 
             assert producer.config == stream_config
@@ -171,10 +166,8 @@ class TestKafkaProducer:
     @pytest.mark.asyncio
     async def test_start_stop_producer(self, kafka_producer):
         """Test starting and stopping Kafka producer."""
-        with patch.object(kafka_producer, "_ensure_topics", AsyncMock()):
-            with patch(
-                "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer"
-            ) as mock_producer_class:
+        with patch.object(kafka_producer, '_ensure_topics', AsyncMock()):
+            with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer') as mock_producer_class:
                 mock_producer = AsyncMock()
                 mock_producer_class.return_value = mock_producer
 
@@ -202,7 +195,7 @@ class TestKafkaProducer:
             entity_id="node-456",
             entity_type="node",
             labels=["Person"],
-            new_properties={"name": "John"},
+            new_properties={"name": "John"}
         )
 
         # Mock producer
@@ -241,14 +234,14 @@ class TestKafkaProducer:
             change_type=ChangeType.NODE_CREATED,
             timestamp=datetime.now(),
             entity_id="node-456",
-            entity_type="node",
+            entity_type="node"
         )
 
         # Mock producer that fails
         mock_producer = AsyncMock()
         mock_producer.send.side_effect = [
             Exception("Send failed"),  # First call fails
-            AsyncMock(),  # DLQ send succeeds
+            AsyncMock()  # DLQ send succeeds
         ]
         kafka_producer.producer = mock_producer
         kafka_producer.is_running = True
@@ -280,7 +273,7 @@ class TestKafkaProducer:
                 change_type=ChangeType.NODE_CREATED,
                 timestamp=datetime.now(),
                 entity_id=f"node-{i}",
-                entity_type="node",
+                entity_type="node"
             )
             events.append(event)
 
@@ -304,7 +297,7 @@ class TestKafkaProducer:
                 timestamp=datetime.now(),
                 entity_id="node-1",
                 entity_type="node",
-                labels=["Person"],
+                labels=["Person"]
             )
         ]
 
@@ -339,10 +332,7 @@ class TestKafkaProducer:
     @pytest.mark.asyncio
     async def test_import_error_handling(self):
         """Test handling when aiokafka is not available."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer",
-            None,
-        ):
+        with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer', None):
             config = StreamConfig()
 
             with pytest.raises(ImportError, match="aiokafka is required"):
@@ -358,24 +348,20 @@ class TestKafkaConsumer:
         return StreamConfig(
             bootstrap_servers="localhost:9092",
             default_topic="test-topic",
-            consumer_group_id="test-group",
+            consumer_group_id="test-group"
         )
 
     @pytest.fixture
     def kafka_consumer(self, stream_config):
         """Create KafkaConsumer with mocked dependencies."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer"
-        ):
+        with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer'):
             consumer = KafkaConsumer(stream_config)
             consumer.consumer = AsyncMock()  # Mock the actual consumer
             return consumer
 
     def test_consumer_initialization(self, stream_config):
         """Test Kafka consumer initialization."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer"
-        ):
+        with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer'):
             consumer = KafkaConsumer(stream_config, topics=["topic1", "topic2"])
 
             assert consumer.config == stream_config
@@ -389,9 +375,7 @@ class TestKafkaConsumer:
     @pytest.mark.asyncio
     async def test_start_stop_consumer(self, kafka_consumer):
         """Test starting and stopping Kafka consumer."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer"
-        ) as mock_consumer_class:
+        with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer') as mock_consumer_class:
             mock_consumer = AsyncMock()
             mock_consumer_class.return_value = mock_consumer
 
@@ -411,7 +395,6 @@ class TestKafkaConsumer:
     @pytest.mark.asyncio
     async def test_event_handler_registration(self, kafka_consumer):
         """Test event handler registration."""
-
         def test_event_handler(event, record):
             pass
 
@@ -454,7 +437,7 @@ class TestKafkaConsumer:
             "timestamp": datetime.now().isoformat(),
             "entity_id": "node-456",
             "entity_type": "node",
-            "_kafka_metadata": {"sent_at": datetime.now().isoformat()},
+            "_kafka_metadata": {"sent_at": datetime.now().isoformat()}
         }
 
         # Process single message (simulate what happens in consume loop)
@@ -488,7 +471,7 @@ class TestKafkaConsumer:
                 change_type=ChangeType.NODE_CREATED,
                 timestamp=datetime.now(),
                 entity_id=f"node-{i}",
-                entity_type="node",
+                entity_type="node"
             )
             events.append(event)
 
@@ -604,10 +587,10 @@ class TestIntegrationHelpers:
             change_type=ChangeType.NODE_CREATED,
             timestamp=datetime.now(),
             entity_id="node-456",
-            entity_type="node",
+            entity_type="node"
         )
 
-        with patch("asyncio.create_task") as mock_create_task:
+        with patch('asyncio.create_task') as mock_create_task:
             registered_handler(test_event)
             mock_create_task.assert_called_once()
 
@@ -622,9 +605,7 @@ class TestIntegrationHelpers:
         mock_subscription_system = Mock()
 
         # Create integration
-        handler = create_kafka_subscription_integration(
-            mock_kafka_consumer, mock_subscription_system
-        )
+        handler = create_kafka_subscription_integration(mock_kafka_consumer, mock_subscription_system)
 
         # Verify handler was registered
         mock_kafka_consumer.add_event_handler.assert_called_once()
@@ -637,7 +618,7 @@ class TestIntegrationHelpers:
             timestamp=datetime.now(),
             entity_id="node-456",
             entity_type="node",
-            user_id="user-123",
+            user_id="user-123"
         )
 
         mock_record = Mock()
@@ -645,7 +626,7 @@ class TestIntegrationHelpers:
         mock_record.partition = 0
         mock_record.offset = 123
 
-        with patch("asyncio.create_task") as mock_create_task:
+        with patch('asyncio.create_task') as mock_create_task:
             registered_handler(test_event, mock_record)
             mock_create_task.assert_called_once()
 
@@ -653,12 +634,8 @@ class TestIntegrationHelpers:
 @pytest.mark.asyncio
 async def test_end_to_end_messaging():
     """Test end-to-end message flow."""
-    with patch(
-        "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer"
-    ):
-        with patch(
-            "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer"
-        ):
+    with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer'):
+        with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer'):
             config = StreamConfig(default_topic="test-topic")
 
             # Create producer and consumer
@@ -683,7 +660,7 @@ async def test_end_to_end_messaging():
                 entity_id="node-123",
                 entity_type="node",
                 old_properties={"name": "Old"},
-                new_properties={"name": "New"},
+                new_properties={"name": "New"}
             )
 
             # Send event through producer
@@ -701,12 +678,8 @@ async def test_end_to_end_messaging():
 @pytest.mark.asyncio
 async def test_concurrent_operations():
     """Test concurrent producer/consumer operations."""
-    with patch(
-        "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer"
-    ):
-        with patch(
-            "brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer"
-        ):
+    with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaProducer'):
+        with patch('brain_researcher.services.br_kg.streaming.kafka_integration.AIOKafkaConsumer'):
             config = StreamConfig()
             producer = KafkaProducer(config)
 
@@ -721,7 +694,7 @@ async def test_concurrent_operations():
                     change_type=ChangeType.NODE_CREATED,
                     timestamp=datetime.now(),
                     entity_id=f"node-{i}",
-                    entity_type="node",
+                    entity_type="node"
                 )
                 events.append(event)
 

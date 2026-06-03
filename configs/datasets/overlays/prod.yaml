@@ -44,6 +44,6 @@ dataset_priority:
   - api
 
 br-kg:
-  db_path: /home/zijiaochen/projects/brain_researcher/data/br-kg/db/br-kg_full.db
-  vector_cache: /home/zijiaochen/projects/brain_researcher/data/br-kg/vector_cache
-  logs: /home/zijiaochen/projects/brain_researcher/data/br-kg/logs
+  db_path: ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/data/br-kg/db/br-kg_full.db
+  vector_cache: ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/data/br-kg/vector_cache
+  logs: ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/data/br-kg/logs

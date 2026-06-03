@@ -14,9 +14,7 @@ class RegionPrior(BaseModel):
     """Prior weight injected into a region's external drive."""
 
     region_id: str = Field(..., description="Canonical Region.id in BR-KG.")
-    strength: float = Field(
-        ..., description="Evidence strength (e.g., ACT" "IVATES.strength)."
-    )
+    strength: float = Field(..., description="Evidence strength (e.g., ACT" "IVATES.strength).")
     weight: Optional[float] = Field(
         None, description="Normalized weight applied to the simulation input vector."
     )
@@ -128,9 +126,7 @@ class SimulateRequest(BaseModel):
     priors: Optional[List[RegionPrior]] = Field(
         None, description="Explicit priors (bypass suggest_params)."
     )
-    persist: bool = Field(
-        True, description="Store Simulation node and artefact metadata."
-    )
+    persist: bool = Field(True, description="Store Simulation node and artefact metadata.")
     seed: Optional[int] = Field(None, description="Random seed for reproducibility.")
     include_metrics: bool = Field(
         True, description="Compute quick QC metrics (FC correlation, PSD)."

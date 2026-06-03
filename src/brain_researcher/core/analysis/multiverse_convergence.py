@@ -245,8 +245,8 @@ def _compute_roi_summary(
     - mean_z (across models), std_z, fraction_significant
     """
     try:
-        import nibabel as nib
         from nilearn import datasets, maskers
+        import nibabel as nib
     except ImportError:
         logger.warning("nilearn not available for ROI analysis")
         return {}
@@ -330,20 +330,14 @@ def _compute_roi_summary(
         }
         # Add per-model columns
         for j, model_id in enumerate(model_ids):
-            row[f"z_{model_id}"] = (
-                round(float(values[j]), 3) if not np.isnan(values[j]) else ""
-            )
+            row[f"z_{model_id}"] = round(float(values[j]), 3) if not np.isnan(values[j]) else ""
         rows.append(row)
 
     # Write CSV
     if rows:
-        fieldnames = [
-            "roi_id",
-            "roi_name",
-            "mean_z",
-            "std_z",
-            "fraction_significant",
-        ] + [f"z_{m}" for m in model_ids]
+        fieldnames = ["roi_id", "roi_name", "mean_z", "std_z", "fraction_significant"] + [
+            f"z_{m}" for m in model_ids
+        ]
         with open(output_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()

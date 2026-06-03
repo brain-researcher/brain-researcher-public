@@ -16,7 +16,7 @@ import json
 import logging
 import os
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, asdict
 from typing import Any, Dict, Optional
 
 from brain_researcher.services.agent.planner.config_loader import load_planner_config
@@ -27,13 +27,11 @@ def _load_cache_settings() -> Dict[str, Any]:
     config = load_planner_config("preflight.yaml")
     return config.get("cache", {})
 
-
 logger = logging.getLogger(__name__)
 
 # Try to import Redis, fallback gracefully if unavailable
 try:
     import redis
-
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -43,7 +41,6 @@ except ImportError:
 @dataclass
 class CacheEntry:
     """Cache entry with value and expiration."""
-
     value: Any
     expires_at: float  # Unix timestamp
 
@@ -263,7 +260,8 @@ class PreflightCache:
         """
         now = time.time()
         expired_keys = [
-            key for key, entry in self._memory_store.items() if now >= entry.expires_at
+            key for key, entry in self._memory_store.items()
+            if now >= entry.expires_at
         ]
 
         for key in expired_keys:

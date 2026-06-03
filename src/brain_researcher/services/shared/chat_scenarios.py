@@ -1,5 +1,4 @@
 """Shared chat scenario definitions for orchestrator and agent services."""
-
 from __future__ import annotations
 
 import json
@@ -7,7 +6,7 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 
 @dataclass(frozen=True)
@@ -56,11 +55,7 @@ class ChatScenario:
 def _config_path() -> Path:
     default_root = Path(__file__).resolve().parents[3]
     repo_root = Path(os.environ.get("BRAIN_RESEARCHER_ROOT", default_root))
-    return Path(
-        os.environ.get(
-            "CHAT_SCENARIO_CONFIG", repo_root / "configs" / "chat_scenarios.json"
-        )
-    )
+    return Path(os.environ.get("CHAT_SCENARIO_CONFIG", repo_root / "configs" / "chat_scenarios.json"))
 
 
 @lru_cache(maxsize=1)

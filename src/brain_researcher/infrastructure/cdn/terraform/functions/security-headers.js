@@ -15,9 +15,9 @@ function handler(event) {
         var allowedOrigins = [
             'localhost:3000',
             'localhost:3001',
-            'brain-researcher.com',
-            'www.brain-researcher.com',
-            'app.brain-researcher.com'
+            '${PUBLIC_HOSTNAME}',
+            'www.${PUBLIC_HOSTNAME}',
+            'app.${PUBLIC_HOSTNAME}'
         ];
 
         var host = headers.host ? headers.host.value : '';

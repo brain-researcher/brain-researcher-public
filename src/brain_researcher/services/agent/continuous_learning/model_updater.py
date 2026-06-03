@@ -1,14 +1,13 @@
 """Model updater for incremental learning and adaptation."""
 
-import json
-import logging
-from collections import deque
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
 import numpy as np
+import logging
+from typing import Dict, List, Optional, Tuple, Any, Union, Callable
+from datetime import datetime, timedelta
+from dataclasses import dataclass
+from enum import Enum
+import json
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,6 @@ class UpdateTrigger(Enum):
 @dataclass
 class UpdateResult:
     """Result of model update operation."""
-
     success: bool
     update_type: UpdateStrategy
     performance_change: float
@@ -43,7 +41,6 @@ class UpdateResult:
 @dataclass
 class UpdateConfig:
     """Configuration for model updates."""
-
     strategy: UpdateStrategy
     trigger: UpdateTrigger
     update_frequency: timedelta
@@ -61,7 +58,7 @@ class ModelUpdater:
         self,
         model: Any,
         config: UpdateConfig,
-        performance_metric: Callable[[Any, Any], float],
+        performance_metric: Callable[[Any, Any], float]
     ):
         self.model = model
         self.config = config
@@ -89,14 +86,17 @@ class ModelUpdater:
         logger.info(f"Initialized ModelUpdater with {config.strategy.value} strategy")
 
     def add_training_data(
-        self, features: Any, labels: Any, metadata: Optional[Dict[str, Any]] = None
+        self,
+        features: Any,
+        labels: Any,
+        metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Add new training data to buffer."""
         sample = {
             "features": features,
             "labels": labels,
             "timestamp": datetime.utcnow(),
-            "metadata": metadata or {},
+            "metadata": metadata or {}
         }
 
         self.training_buffer.append(sample)
@@ -107,20 +107,18 @@ class ModelUpdater:
 
     def add_performance_measurement(self, performance: float) -> None:
         """Add performance measurement for monitoring."""
-        self.performance_history.append(
-            {"value": performance, "timestamp": datetime.utcnow()}
-        )
+        self.performance_history.append({
+            "value": performance,
+            "timestamp": datetime.utcnow()
+        })
 
         # Set baseline if first measurement
         if self.baseline_performance is None:
             self.baseline_performance = performance
 
         # Trigger update if performance drops significantly
-        if (
-            self.config.trigger == UpdateTrigger.PERFORMANCE_BASED
-            and performance
-            < self.baseline_performance - self.config.performance_threshold
-        ):
+        if (self.config.trigger == UpdateTrigger.PERFORMANCE_BASED and
+            performance < self.baseline_performance - self.config.performance_threshold):
             logger.info(f"Performance dropped to {performance:.3f}, triggering update")
             self.trigger_update()
 
@@ -134,7 +132,7 @@ class ModelUpdater:
                 performance_change=0.0,
                 update_time=datetime.utcnow(),
                 metadata={"reason": "rate_limited"},
-                error_message="Update rate limit exceeded",
+                error_message="Update rate limit exceeded"
             )
 
         # Check if we have enough data
@@ -144,11 +142,8 @@ class ModelUpdater:
                 update_type=self.config.strategy,
                 performance_change=0.0,
                 update_time=datetime.utcnow(),
-                metadata={
-                    "reason": "insufficient_data",
-                    "buffer_size": len(self.training_buffer),
-                },
-                error_message="Insufficient training data",
+                metadata={"reason": "insufficient_data", "buffer_size": len(self.training_buffer)},
+                error_message="Insufficient training data"
             )
 
         try:
@@ -177,10 +172,8 @@ class ModelUpdater:
             # Update rate limiting
             self._update_rate_limit()
 
-            logger.info(
-                f"Model update completed: {result.success}, "
-                f"performance change: {result.performance_change:.4f}"
-            )
+            logger.info(f"Model update completed: {result.success}, "
+                       f"performance change: {result.performance_change:.4f}")
 
             return result
 
@@ -191,7 +184,7 @@ class ModelUpdater:
                 performance_change=0.0,
                 update_time=datetime.utcnow(),
                 metadata={"error": str(e)},
-                error_message=str(e),
+                error_message=str(e)
             )
 
             self.update_history.append(error_result)
@@ -202,7 +195,7 @@ class ModelUpdater:
     def _incremental_update(self) -> UpdateResult:
         """Perform incremental model update."""
         # Get recent samples
-        recent_samples = list(self.training_buffer)[-self.config.batch_size :]
+        recent_samples = list(self.training_buffer)[-self.config.batch_size:]
 
         # Measure pre-update performance
         pre_performance = self._evaluate_model()
@@ -212,7 +205,7 @@ class ModelUpdater:
             self._update_model_single_sample(
                 sample["features"],
                 sample["labels"],
-                learning_rate=self.config.learning_rate,
+                learning_rate=self.config.learning_rate
             )
 
         # Measure post-update performance
@@ -228,8 +221,8 @@ class ModelUpdater:
                 "samples_used": len(recent_samples),
                 "pre_performance": pre_performance,
                 "post_performance": post_performance,
-                "learning_rate": self.config.learning_rate,
-            },
+                "learning_rate": self.config.learning_rate
+            }
         )
 
     def _batch_update(self) -> UpdateResult:
@@ -265,8 +258,8 @@ class ModelUpdater:
                 "train_samples": len(train_samples),
                 "val_samples": len(val_samples),
                 "pre_performance": pre_performance,
-                "post_performance": post_performance,
-            },
+                "post_performance": post_performance
+            }
         )
 
     def _episodic_update(self) -> UpdateResult:
@@ -302,8 +295,8 @@ class ModelUpdater:
                 "episodes_used": len(episodes),
                 "total_samples": total_samples,
                 "pre_performance": pre_performance,
-                "post_performance": post_performance,
-            },
+                "post_performance": post_performance
+            }
         )
 
     def _adaptive_update(self) -> UpdateResult:
@@ -316,9 +309,7 @@ class ModelUpdater:
             return self._incremental_update()
 
         # Check performance trend
-        performance_trend = np.polyfit(
-            range(len(recent_performance)), recent_performance, 1
-        )[0]
+        performance_trend = np.polyfit(range(len(recent_performance)), recent_performance, 1)[0]
 
         if performance_trend < -0.01:  # Declining performance
             # Use batch update for significant improvement
@@ -405,19 +396,22 @@ class ModelUpdater:
     def _predict_sample(self, features: Any) -> Any:
         """Make prediction for a single sample."""
         # This would be implemented by subclass or use model.predict()
-        if hasattr(self.model, "predict"):
+        if hasattr(self.model, 'predict'):
             return self.model.predict(features)
         else:
             raise NotImplementedError("Model prediction method not available")
 
     def _update_model_single_sample(
-        self, features: Any, labels: Any, learning_rate: float
+        self,
+        features: Any,
+        labels: Any,
+        learning_rate: float
     ) -> None:
         """Update model with single sample."""
         # This would be implemented by subclass
-        if hasattr(self.model, "partial_fit"):
+        if hasattr(self.model, 'partial_fit'):
             self.model.partial_fit(features, labels)
-        elif hasattr(self.model, "fit"):
+        elif hasattr(self.model, 'fit'):
             # Fallback for models without incremental learning
             self.model.fit(features, labels)
         else:
@@ -426,7 +420,7 @@ class ModelUpdater:
     def _update_model_batch(self, features: List[Any], labels: List[Any]) -> None:
         """Update model with batch of data."""
         # This would be implemented by subclass
-        if hasattr(self.model, "fit"):
+        if hasattr(self.model, 'fit'):
             self.model.fit(features, labels)
         else:
             raise NotImplementedError("Model batch update method not available")
@@ -448,8 +442,7 @@ class ModelUpdater:
     def get_statistics(self) -> Dict[str, Any]:
         """Get updater statistics."""
         recent_updates = [
-            u
-            for u in self.update_history
+            u for u in self.update_history
             if (datetime.utcnow() - u.update_time).days < 7
         ]
 
@@ -462,8 +455,7 @@ class ModelUpdater:
             "successful_updates": self.successful_updates,
             "success_rate": self.successful_updates / max(1, self.total_updates),
             "performance_improvements": self.performance_improvements,
-            "improvement_rate": self.performance_improvements
-            / max(1, self.successful_updates),
+            "improvement_rate": self.performance_improvements / max(1, self.successful_updates),
             "updates_this_hour": self.updates_this_hour,
             "training_buffer_size": len(self.training_buffer),
             "validation_buffer_size": len(self.validation_buffer),
@@ -471,17 +463,13 @@ class ModelUpdater:
             "baseline_performance": self.baseline_performance,
             "current_performance": self._evaluate_model(),
             "recent_updates": len(recent_updates),
-            "recent_avg_performance_change": (
-                float(np.mean(recent_performance_changes))
-                if recent_performance_changes
-                else 0.0
-            ),
+            "recent_avg_performance_change": float(np.mean(recent_performance_changes)) if recent_performance_changes else 0.0,
             "config": {
                 "strategy": self.config.strategy.value,
                 "trigger": self.config.trigger.value,
                 "batch_size": self.config.batch_size,
-                "learning_rate": self.config.learning_rate,
-            },
+                "learning_rate": self.config.learning_rate
+            }
         }
 
         return stats
@@ -510,7 +498,7 @@ class IncrementalModelUpdater(ModelUpdater):
         performance_metric: Callable[[Any, Any], float],
         learning_rate: float = 0.01,
         update_frequency: timedelta = timedelta(minutes=15),
-        batch_size: int = 32,
+        batch_size: int = 32
     ):
         config = UpdateConfig(
             strategy=UpdateStrategy.INCREMENTAL,
@@ -519,7 +507,7 @@ class IncrementalModelUpdater(ModelUpdater):
             batch_size=batch_size,
             learning_rate=learning_rate,
             performance_threshold=0.05,
-            validation_split=0.1,
+            validation_split=0.1
         )
 
         super().__init__(model, config, performance_metric)
@@ -537,7 +525,7 @@ class IncrementalModelUpdater(ModelUpdater):
     def _incremental_update(self) -> UpdateResult:
         """Enhanced incremental update with adaptive learning rate."""
         # Get recent samples
-        recent_samples = list(self.training_buffer)[-self.config.batch_size :]
+        recent_samples = list(self.training_buffer)[-self.config.batch_size:]
 
         # Measure pre-update performance
         pre_performance = self._evaluate_model()
@@ -548,7 +536,10 @@ class IncrementalModelUpdater(ModelUpdater):
 
         # Update model incrementally with momentum
         for sample in recent_samples:
-            self._incremental_update_with_momentum(sample["features"], sample["labels"])
+            self._incremental_update_with_momentum(
+                sample["features"],
+                sample["labels"]
+            )
 
         # Measure post-update performance
         post_performance = self._evaluate_model()
@@ -568,8 +559,8 @@ class IncrementalModelUpdater(ModelUpdater):
                 "post_performance": post_performance,
                 "learning_rate": self.config.learning_rate,
                 "adaptive_lr_used": self.adaptive_lr,
-                "momentum": self.momentum,
-            },
+                "momentum": self.momentum
+            }
         )
 
     def _adjust_learning_rate(self, current_performance: float) -> None:
@@ -580,9 +571,7 @@ class IncrementalModelUpdater(ModelUpdater):
 
         # Update moving average
         alpha = 0.1
-        self.performance_ma = (
-            alpha * current_performance + (1 - alpha) * self.performance_ma
-        )
+        self.performance_ma = alpha * current_performance + (1 - alpha) * self.performance_ma
 
         # Check recent performance changes
         if len(self.lr_adjustment_history) >= 3:
@@ -592,17 +581,13 @@ class IncrementalModelUpdater(ModelUpdater):
                 # Performance declining, reduce learning rate
                 self.config.learning_rate *= self.lr_decay
                 self.config.learning_rate = max(self.min_lr, self.config.learning_rate)
-                logger.debug(
-                    f"Reduced learning rate to {self.config.learning_rate:.6f}"
-                )
+                logger.debug(f"Reduced learning rate to {self.config.learning_rate:.6f}")
 
             elif all(change > 0 for change in recent_changes):
                 # Performance improving, slightly increase learning rate
                 self.config.learning_rate *= 1.05
                 self.config.learning_rate = min(0.1, self.config.learning_rate)
-                logger.debug(
-                    f"Increased learning rate to {self.config.learning_rate:.6f}"
-                )
+                logger.debug(f"Increased learning rate to {self.config.learning_rate:.6f}")
 
     def _incremental_update_with_momentum(self, features: Any, labels: Any) -> None:
         """Update model with momentum (if supported)."""
@@ -619,7 +604,7 @@ class EnsembleModelUpdater(ModelUpdater):
         ensemble_models: List[Any],
         performance_metric: Callable[[Any, Any], float],
         member_weights: Optional[List[float]] = None,
-        diversity_bonus: float = 0.1,
+        diversity_bonus: float = 0.1
     ):
         # Use adaptive strategy for ensembles
         config = UpdateConfig(
@@ -629,7 +614,7 @@ class EnsembleModelUpdater(ModelUpdater):
             batch_size=100,
             learning_rate=0.01,
             performance_threshold=0.02,
-            validation_split=0.2,
+            validation_split=0.2
         )
 
         # Use first model as representative
@@ -652,7 +637,7 @@ class EnsembleModelUpdater(ModelUpdater):
                 performance_change=0.0,
                 update_time=datetime.utcnow(),
                 metadata={"reason": "rate_limited"},
-                error_message="Update rate limit exceeded",
+                error_message="Update rate limit exceeded"
             )
 
         try:
@@ -683,8 +668,8 @@ class EnsembleModelUpdater(ModelUpdater):
                     "post_performance": post_performance,
                     "member_results": [asdict(r) for r in member_results],
                     "member_weights": self.member_weights.copy(),
-                    "diversity_score": self._calculate_diversity(),
-                },
+                    "diversity_score": self._calculate_diversity()
+                }
             )
 
             # Track update
@@ -697,9 +682,7 @@ class EnsembleModelUpdater(ModelUpdater):
 
             self._update_rate_limit()
 
-            logger.info(
-                f"Ensemble update completed: performance change: {performance_change:.4f}"
-            )
+            logger.info(f"Ensemble update completed: performance change: {performance_change:.4f}")
             return result
 
         except Exception as e:
@@ -709,7 +692,7 @@ class EnsembleModelUpdater(ModelUpdater):
                 performance_change=0.0,
                 update_time=datetime.utcnow(),
                 metadata={"error": str(e)},
-                error_message=str(e),
+                error_message=str(e)
             )
 
             self.update_history.append(error_result)
@@ -726,7 +709,7 @@ class EnsembleModelUpdater(ModelUpdater):
         member_samples = np.random.choice(
             len(all_samples),
             size=min(self.config.batch_size, len(all_samples)),
-            replace=True,
+            replace=True
         )
 
         # Get subset for this member
@@ -739,7 +722,7 @@ class EnsembleModelUpdater(ModelUpdater):
         features = [s["features"] for s in member_data]
         labels = [s["labels"] for s in member_data]
 
-        if hasattr(model, "fit"):
+        if hasattr(model, 'fit'):
             model.fit(features, labels)
 
         # Measure member performance after update
@@ -758,8 +741,8 @@ class EnsembleModelUpdater(ModelUpdater):
                 "member_index": member_index,
                 "samples_used": len(member_data),
                 "pre_performance": pre_perf,
-                "post_performance": post_perf,
-            },
+                "post_performance": post_perf
+            }
         )
 
     def _evaluate_ensemble(self, validation_data: Optional[List[Dict]] = None) -> float:
@@ -778,16 +761,14 @@ class EnsembleModelUpdater(ModelUpdater):
                 # Get predictions from all members
                 predictions = []
                 for i, model in enumerate(self.ensemble_models):
-                    if hasattr(model, "predict"):
+                    if hasattr(model, 'predict'):
                         pred = model.predict(sample["features"])
                         predictions.append(pred)
 
                 if predictions:
                     # Weighted average prediction
                     ensemble_pred = np.average(predictions, weights=self.member_weights)
-                    performance = self.performance_metric(
-                        ensemble_pred, sample["labels"]
-                    )
+                    performance = self.performance_metric(ensemble_pred, sample["labels"])
                     total_performance += performance
                     count += 1
 
@@ -805,7 +786,7 @@ class EnsembleModelUpdater(ModelUpdater):
 
         for sample in data:
             try:
-                if hasattr(model, "predict"):
+                if hasattr(model, 'predict'):
                     prediction = model.predict(sample["features"])
                     performance = self.performance_metric(prediction, sample["labels"])
                     total_performance += performance
@@ -844,7 +825,7 @@ class EnsembleModelUpdater(ModelUpdater):
             try:
                 predictions = []
                 for model in self.ensemble_models:
-                    if hasattr(model, "predict"):
+                    if hasattr(model, 'predict'):
                         pred = model.predict(sample["features"])
                         predictions.append(pred)
 
@@ -867,9 +848,5 @@ class EnsembleModelUpdater(ModelUpdater):
         diversity_contributions = np.abs(performances - mean_perf)
 
         # Normalize
-        max_div = (
-            np.max(diversity_contributions)
-            if np.max(diversity_contributions) > 0
-            else 1.0
-        )
+        max_div = np.max(diversity_contributions) if np.max(diversity_contributions) > 0 else 1.0
         return diversity_contributions / max_div

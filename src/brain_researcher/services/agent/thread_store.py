@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Message:
     """A single chat message within a thread."""
-
     id: str
     role: str  # "user", "assistant", "system", "tool"
     content: str
@@ -38,7 +37,6 @@ class Message:
 @dataclass
 class Thread:
     """A chat thread with messages and ownership."""
-
     id: str
     owner_id: str
     tenant_id: str = "default"
@@ -79,7 +77,10 @@ class ThreadStore:
     """
 
     def __init__(
-        self, redis_client=None, ttl_days: int = None, namespace: str = "agent_threads"
+        self,
+        redis_client=None,
+        ttl_days: int = None,
+        namespace: str = "agent_threads"
     ):
         """
         Initialize thread store.
@@ -92,33 +93,26 @@ class ThreadStore:
         self.namespace = namespace
         # Read TTL from env if not explicitly provided
         if ttl_days is None:
-            ttl_days = int(os.getenv("THREAD_STORE_TTL_DAYS", "30"))
+            ttl_days = int(os.getenv('THREAD_STORE_TTL_DAYS', '30'))
         self.ttl_seconds = ttl_days * 24 * 3600
         self._lock = threading.Lock()
-        self._is_persistent = (
-            True  # Will be set by _create_redis_client or client detection
-        )
+        self._is_persistent = True  # Will be set by _create_redis_client or client detection
 
         if redis_client:
             self.redis = redis_client
             # Detect if it's fakeredis
-            self._is_persistent = "Fake" not in type(redis_client).__name__
+            self._is_persistent = 'Fake' not in type(redis_client).__name__
         else:
             self.redis = self._create_redis_client()
 
-        logger.info(
-            f"ThreadStore initialized: namespace={namespace}, ttl_days={ttl_days}, persistent={self._is_persistent}"
-        )
+        logger.info(f"ThreadStore initialized: namespace={namespace}, ttl_days={ttl_days}, persistent={self._is_persistent}")
 
     def _create_redis_client(self):
         """Create Redis client with fakeredis fallback."""
         try:
             import redis
-
             # Prefer dedicated THREAD_STORE_REDIS_URL, fall back to REDIS_URL
-            redis_url = os.getenv("THREAD_STORE_REDIS_URL") or os.getenv(
-                "REDIS_URL", "redis://localhost:6379/2"
-            )
+            redis_url = os.getenv('THREAD_STORE_REDIS_URL') or os.getenv('REDIS_URL', 'redis://localhost:6379/2')
             client = redis.from_url(redis_url, decode_responses=True)
             client.ping()
             logger.info(f"ThreadStore connected to Redis at {redis_url}")
@@ -126,19 +120,14 @@ class ThreadStore:
             return client
         except Exception as e:
             logger.warning(f"Redis connection failed: {e}")
-            logger.warning(
-                "Using in-memory storage (NOT DURABLE - data will be lost on restart)"
-            )
+            logger.warning("Using in-memory storage (NOT DURABLE - data will be lost on restart)")
             self._is_persistent = False
             try:
                 import fakeredis
-
                 return fakeredis.FakeRedis(decode_responses=True)
             except ImportError:
                 logger.error("Neither redis nor fakeredis available")
-                raise RuntimeError(
-                    "No Redis backend available. Install redis or fakeredis."
-                )
+                raise RuntimeError("No Redis backend available. Install redis or fakeredis.")
 
     def _thread_key(self, thread_id: str) -> str:
         return f"{self.namespace}:thread:{thread_id}"
@@ -259,7 +248,7 @@ class ThreadStore:
         content: str,
         user_id: Optional[str] = None,
         tenant_id: str = "default",
-        **extra: Any,
+        **extra: Any
     ) -> Message:
         """
         Add a message to a thread.
@@ -284,9 +273,7 @@ class ThreadStore:
             if user_id:
                 thread = self.create_thread(thread_id, user_id, tenant_id=tenant_id)
             else:
-                raise ValueError(
-                    f"Thread {thread_id} not found and no user_id to create"
-                )
+                raise ValueError(f"Thread {thread_id} not found and no user_id to create")
 
         now = datetime.utcnow().isoformat()
         message = Message(
@@ -297,9 +284,7 @@ class ThreadStore:
             user_id=user_id,
             tool_call_id=extra.get("tool_call_id"),
             tool_name=extra.get("tool_name"),
-            metadata={
-                k: v for k, v in extra.items() if k not in ("tool_call_id", "tool_name")
-            },
+            metadata={k: v for k, v in extra.items() if k not in ("tool_call_id", "tool_name")},
         )
 
         thread.messages.append(message)
@@ -315,7 +300,10 @@ class ThreadStore:
         return message
 
     def get_messages(
-        self, thread_id: str, limit: Optional[int] = None, offset: int = 0
+        self,
+        thread_id: str,
+        limit: Optional[int] = None,
+        offset: int = 0
     ) -> List[Message]:
         """
         Get messages from a thread.
@@ -342,7 +330,7 @@ class ThreadStore:
         user_id: str,
         tenant_id: str = "default",
         limit: int = 50,
-        include_messages: bool = False,
+        include_messages: bool = False
     ) -> List[Dict[str, Any]]:
         """
         List threads owned by a user.
@@ -371,9 +359,7 @@ class ThreadStore:
         threads.sort(key=lambda t: t.get("updated_at", ""), reverse=True)
         return threads[:limit]
 
-    def check_access(
-        self, thread_id: str, user_id: str, tenant_id: str = "default"
-    ) -> bool:
+    def check_access(self, thread_id: str, user_id: str, tenant_id: str = "default") -> bool:
         """
         Check if user has access to thread.
 
@@ -389,9 +375,7 @@ class ThreadStore:
             return True  # Non-existent threads can be created
         return thread.owner_id == user_id and thread.tenant_id == tenant_id
 
-    def delete_thread(
-        self, thread_id: str, user_id: str, tenant_id: str = "default"
-    ) -> bool:
+    def delete_thread(self, thread_id: str, user_id: str, tenant_id: str = "default") -> bool:
         """
         Delete a thread (only if user is owner).
 
@@ -432,7 +416,7 @@ class ThreadStore:
 
         Safe to call multiple times. Logs any errors but doesn't raise.
         """
-        if hasattr(self.redis, "close"):
+        if hasattr(self.redis, 'close'):
             try:
                 self.redis.close()
                 logger.info("ThreadStore connection closed")

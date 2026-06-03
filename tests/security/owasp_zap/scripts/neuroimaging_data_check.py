@@ -8,9 +8,8 @@ This script checks for:
 - Proper anonymization of neuroimaging data
 """
 
-import json
 import re
-
+import json
 from org.parosproxy.paros.network import HttpMessage
 from org.zaproxy.zap.extension.httpsender import HttpSenderScriptHelper
 
@@ -19,8 +18,8 @@ PARTICIPANT_ID_PATTERNS = [
     r'participant[_-]?id["\s:]*["\s]*([A-Za-z0-9_-]+)',
     r'subject[_-]?id["\s:]*["\s]*([A-Za-z0-9_-]+)',
     r'patient[_-]?id["\s:]*["\s]*([A-Za-z0-9_-]+)',
-    r"sub[_-]?([0-9]{2,})",  # BIDS subject format
-    r'participant["\s:]*["\s]*([A-Za-z0-9_-]+)',
+    r'sub[_-]?([0-9]{2,})',  # BIDS subject format
+    r'participant["\s:]*["\s]*([A-Za-z0-9_-]+)'
 ]
 
 MEDICAL_DATA_PATTERNS = [
@@ -28,15 +27,14 @@ MEDICAL_DATA_PATTERNS = [
     r'medical[_-]?history["\s:]*["\s]*([^"}\n]+)',
     r'condition["\s:]*["\s]*([^"}\n]+)',
     r'medication["\s:]*["\s]*([^"}\n]+)',
-    r'symptom[s]?["\s:]*["\s]*([^"}\n]+)',
+    r'symptom[s]?["\s:]*["\s]*([^"}\n]+)'
 ]
 
 COORDINATE_PATTERNS = [
     r'mni[_-]?coordinates?["\s:]*["\s]*\[[^\]]+\]',
     r'tal[airach]*[_-]?coordinates?["\s:]*["\s]*\[[^\]]+\]',
-    r'xyz[_-]?coordinates?["\s:]*["\s]*\[[^\]]+\]',
+    r'xyz[_-]?coordinates?["\s:]*["\s]*\[[^\]]+\]'
 ]
-
 
 def sendingRequest(msg, initiator, helper):
     """
@@ -63,9 +61,8 @@ def sendingRequest(msg, initiator, helper):
                 reference="https://www.hhs.gov/hipaa/for-professionals/privacy/special-topics/de-identification/index.html",
                 evidence=matches[0],
                 cweId=200,
-                wascId=13,
+                wascId=13
             )
-
 
 def responseReceived(msg, initiator, helper):
     """
@@ -93,7 +90,7 @@ def responseReceived(msg, initiator, helper):
                 reference="https://www.hhs.gov/hipaa/for-professionals/privacy/special-topics/de-identification/index.html",
                 evidence=matches[0],
                 cweId=200,
-                wascId=13,
+                wascId=13
             )
 
     # Check for medical data exposure
@@ -113,7 +110,7 @@ def responseReceived(msg, initiator, helper):
                 reference="https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html",
                 evidence=matches[0],
                 cweId=200,
-                wascId=13,
+                wascId=13
             )
 
     # Check for brain coordinates (may be sensitive research data)
@@ -133,21 +130,12 @@ def responseReceived(msg, initiator, helper):
                 reference="https://www.nitrc.org/projects/bxh_xcede/",
                 evidence=matches[0],
                 cweId=200,
-                wascId=13,
+                wascId=13
             )
 
     # Check for unencrypted transmission of sensitive endpoints
-    if not uri.startswith("https://") and any(
-        sensitive in uri.lower()
-        for sensitive in [
-            "participant",
-            "subject",
-            "patient",
-            "medical",
-            "data",
-            "analysis",
-        ]
-    ):
+    if not uri.startswith('https://') and any(sensitive in uri.lower() for sensitive in
+        ['participant', 'subject', 'patient', 'medical', 'data', 'analysis']):
         helper.raiseAlert(
             risk=2,  # Medium risk
             confidence=3,  # High confidence
@@ -161,15 +149,15 @@ def responseReceived(msg, initiator, helper):
             reference="https://owasp.org/www-project-top-ten/2017/A3_2017-Sensitive_Data_Exposure",
             evidence=uri,
             cweId=319,
-            wascId=4,
+            wascId=4
         )
 
     # Check response headers for security
     headers_lower = response_headers.lower()
 
     # Check for missing security headers on sensitive endpoints
-    if any(sensitive in uri.lower() for sensitive in ["api", "data", "analysis"]):
-        if "x-content-type-options" not in headers_lower:
+    if any(sensitive in uri.lower() for sensitive in ['api', 'data', 'analysis']):
+        if 'x-content-type-options' not in headers_lower:
             helper.raiseAlert(
                 risk=1,  # Low risk
                 confidence=3,  # High confidence
@@ -183,13 +171,10 @@ def responseReceived(msg, initiator, helper):
                 reference="https://owasp.org/www-project-secure-headers/",
                 evidence="Missing header: X-Content-Type-Options",
                 cweId=16,
-                wascId=15,
+                wascId=15
             )
 
-        if (
-            "x-frame-options" not in headers_lower
-            and "content-security-policy" not in headers_lower
-        ):
+        if 'x-frame-options' not in headers_lower and 'content-security-policy' not in headers_lower:
             helper.raiseAlert(
                 risk=2,  # Medium risk
                 confidence=3,  # High confidence
@@ -203,5 +188,5 @@ def responseReceived(msg, initiator, helper):
                 reference="https://owasp.org/www-community/attacks/Clickjacking",
                 evidence="Missing headers: X-Frame-Options and frame-ancestors CSP",
                 cweId=1021,
-                wascId=15,
+                wascId=15
             )

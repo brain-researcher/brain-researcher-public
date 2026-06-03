@@ -70,9 +70,7 @@ def test_evidence_anchor_marks_title_only_low_rigor() -> None:
 
 
 def test_evidence_anchor_marks_semantic_mismatch(monkeypatch) -> None:
-    monkeypatch.setattr(
-        PACK, "_semantic_text_similarity", lambda left, right: (0.05, "stub")
-    )
+    monkeypatch.setattr(PACK, "_semantic_text_similarity", lambda left, right: (0.05, "stub"))
     record = {
         "paper": {"id": "pmid:2", "title": "Cerebellar changes in NMOSD"},
         "claim": {"id": "claim:2"},

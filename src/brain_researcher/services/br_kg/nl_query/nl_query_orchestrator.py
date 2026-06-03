@@ -5,25 +5,24 @@ Coordinates 4 specialized subagents to translate natural language queries
 into executable graph queries and format results.
 """
 
-import json
 import logging
-import os
 import time
+import json
+import os
+from typing import Callable, Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from .agents.parser_agent import ParsedQuery, QueryParserAgent
-from .agents.query_builder_agent import ExecutableQuery, QueryBuilderAgent
-from .agents.result_formatter_agent import FormattedResult, ResultFormatterAgent
-from .agents.schema_mapper_agent import MappedQuery, SchemaMapperAgent
+from .agents.parser_agent import QueryParserAgent, ParsedQuery
+from .agents.schema_mapper_agent import SchemaMapperAgent, MappedQuery
+from .agents.query_builder_agent import QueryBuilderAgent, ExecutableQuery
+from .agents.result_formatter_agent import ResultFormatterAgent, FormattedResult
 
 logger = logging.getLogger(__name__)
 
 
 class QueryExecutionPhase(str, Enum):
     """Phases of query execution"""
-
     PARSING = "parsing"
     MAPPING = "mapping"
     BUILDING = "building"
@@ -47,7 +46,8 @@ class QueryTypeNotSupportedError(ValueError):
         self.supported_query_types = supported_query_types
         self.error_code = "not_supported"
         self.detail = (
-            message or f"query_type={query_type} is not supported by this orchestrator"
+            message
+            or f"query_type={query_type} is not supported by this orchestrator"
         )
         super().__init__(self.detail)
 
@@ -90,7 +90,7 @@ class NaturalLanguageQueryOrchestrator:
         formatter_agent: Optional[ResultFormatterAgent] = None,
         sparql_executor: Optional[Callable[[str], Dict[str, Any]]] = None,
         enable_caching: bool = True,
-        max_retries: int = 3,
+        max_retries: int = 3
     ):
         """
         Initialize the NL query orchestrator
@@ -126,18 +126,18 @@ class NaturalLanguageQueryOrchestrator:
 
         # Performance metrics
         self.metrics = {
-            "queries_processed": 0,
-            "successful_queries": 0,
-            "failed_queries": 0,
-            "cache_hits": 0,
-            "average_execution_time": 0.0,
+            'queries_processed': 0,
+            'successful_queries': 0,
+            'failed_queries': 0,
+            'cache_hits': 0,
+            'average_execution_time': 0.0
         }
 
     def process_query(
         self,
         natural_language_query: str,
         user_context: Optional[Dict[str, Any]] = None,
-        return_intermediate: bool = False,
+        return_intermediate: bool = False
     ) -> Dict[str, Any]:
         """
         Process a natural language query through all agents
@@ -158,19 +158,17 @@ class NaturalLanguageQueryOrchestrator:
             cache_key = self._get_cache_key(natural_language_query, user_context)
             if cache_key in self._query_cache:
                 cache_entry = self._query_cache[cache_key]
-                if time.time() - cache_entry["timestamp"] < self._cache_ttl:
-                    self.metrics["cache_hits"] += 1
-                    logger.info(
-                        f"Cache hit for query: {natural_language_query[:50]}..."
-                    )
-                    return cache_entry["result"]
+                if time.time() - cache_entry['timestamp'] < self._cache_ttl:
+                    self.metrics['cache_hits'] += 1
+                    logger.info(f"Cache hit for query: {natural_language_query[:50]}...")
+                    return cache_entry['result']
 
         # Initialize execution context
         context = QueryExecutionContext(
             query_id=query_id,
             original_query=natural_language_query,
             user_context=user_context or {},
-            current_phase=QueryExecutionPhase.PARSING,
+            current_phase=QueryExecutionPhase.PARSING
         )
 
         try:
@@ -191,21 +189,19 @@ class NaturalLanguageQueryOrchestrator:
 
             # Update metrics
             execution_time = time.time() - start_time
-            self.metrics["queries_processed"] += 1
-            self.metrics["successful_queries"] += 1
+            self.metrics['queries_processed'] += 1
+            self.metrics['successful_queries'] += 1
             self._update_average_execution_time(execution_time)
 
             # Build response
-            response = self._build_response(
-                context, execution_time, return_intermediate
-            )
+            response = self._build_response(context, execution_time, return_intermediate)
 
             # Cache successful result
             if self.enable_caching and context.formatted_result:
                 cache_key = self._get_cache_key(natural_language_query, user_context)
                 self._query_cache[cache_key] = {
-                    "result": response,
-                    "timestamp": time.time(),
+                    'result': response,
+                    'timestamp': time.time()
                 }
 
             return response
@@ -215,8 +211,8 @@ class NaturalLanguageQueryOrchestrator:
             context.current_phase = QueryExecutionPhase.ERROR
             context.errors.append(str(e))
 
-            self.metrics["queries_processed"] += 1
-            self.metrics["failed_queries"] += 1
+            self.metrics['queries_processed'] += 1
+            self.metrics['failed_queries'] += 1
 
             return self._build_error_response(context, str(e), error=e)
 
@@ -227,9 +223,10 @@ class NaturalLanguageQueryOrchestrator:
 
         try:
             context.parsed_query = self.parser_agent.parse(
-                context.original_query, context.user_context
+                context.original_query,
+                context.user_context
             )
-            context.confidence_scores["parsing"] = context.parsed_query.confidence_score
+            context.confidence_scores['parsing'] = context.parsed_query.confidence_score
             logger.debug(f"Parsed intent: {context.parsed_query.intent}")
             logger.debug(f"Extracted entities: {context.parsed_query.entities}")
         except Exception as e:
@@ -237,7 +234,7 @@ class NaturalLanguageQueryOrchestrator:
             context.errors.append(f"Parsing error: {e}")
             raise
 
-        context.execution_time["parsing"] = time.time() - start_time
+        context.execution_time['parsing'] = time.time() - start_time
         return context
 
     def _execute_mapping(self, context: QueryExecutionContext) -> QueryExecutionContext:
@@ -251,21 +248,20 @@ class NaturalLanguageQueryOrchestrator:
 
         try:
             context.mapped_query = self.mapper_agent.map_to_schema(
-                context.parsed_query, context.user_context
+                context.parsed_query,
+                context.user_context
             )
-            context.confidence_scores["mapping"] = context.mapped_query.confidence_score
+            context.confidence_scores['mapping'] = context.mapped_query.confidence_score
             logger.debug(f"Mapped patterns: {len(context.mapped_query.graph_patterns)}")
         except Exception as e:
             logger.error(f"Mapping failed: {e}")
             context.errors.append(f"Mapping error: {e}")
             raise
 
-        context.execution_time["mapping"] = time.time() - start_time
+        context.execution_time['mapping'] = time.time() - start_time
         return context
 
-    def _execute_building(
-        self, context: QueryExecutionContext
-    ) -> QueryExecutionContext:
+    def _execute_building(self, context: QueryExecutionContext) -> QueryExecutionContext:
         """Execute the query building phase"""
         logger.info(f"[{context.query_id}] Phase 3: Building query")
         start_time = time.time()
@@ -276,18 +272,17 @@ class NaturalLanguageQueryOrchestrator:
 
         try:
             context.executable_query = self.builder_agent.build_query(
-                context.mapped_query, context.user_context
+                context.mapped_query,
+                context.user_context
             )
-            context.confidence_scores["building"] = (
-                context.executable_query.confidence_score
-            )
+            context.confidence_scores['building'] = context.executable_query.confidence_score
             logger.debug(f"Built {context.executable_query.query_type} query")
         except Exception as e:
             logger.error(f"Query building failed: {e}")
             context.errors.append(f"Building error: {e}")
             raise
 
-        context.execution_time["building"] = time.time() - start_time
+        context.execution_time['building'] = time.time() - start_time
         return context
 
     def _execute_query(self, context: QueryExecutionContext) -> QueryExecutionContext:
@@ -301,23 +296,19 @@ class NaturalLanguageQueryOrchestrator:
 
         try:
             # Execute based on query type
-            if context.executable_query.query_type == "cypher":
+            if context.executable_query.query_type == 'cypher':
                 context.raw_results = self._execute_cypher(
                     context.executable_query.query_string,
-                    context.executable_query.parameters,
+                    context.executable_query.parameters
                 )
-            elif context.executable_query.query_type == "sparql":
+            elif context.executable_query.query_type == 'sparql':
                 context.raw_results = self._execute_sparql(
                     context.executable_query.query_string
                 )
             else:
-                raise ValueError(
-                    f"Unsupported query type: {context.executable_query.query_type}"
-                )
+                raise ValueError(f"Unsupported query type: {context.executable_query.query_type}")
 
-            logger.debug(
-                f"Query returned {len(context.raw_results.get('results', []))} results"
-            )
+            logger.debug(f"Query returned {len(context.raw_results.get('results', []))} results")
         except Exception as e:
             logger.error(f"Query execution failed: {e}")
             context.errors.append(f"Execution error: {e}")
@@ -331,7 +322,8 @@ class NaturalLanguageQueryOrchestrator:
                 logger.info("Trying fallback query")
                 try:
                     context.raw_results = self._execute_cypher(
-                        context.executable_query.fallback_query, {}
+                        context.executable_query.fallback_query,
+                        {}
                     )
                 except Exception as fallback_error:
                     logger.error(f"Fallback query also failed: {fallback_error}")
@@ -339,12 +331,10 @@ class NaturalLanguageQueryOrchestrator:
             else:
                 raise
 
-        context.execution_time["execution"] = time.time() - start_time
+        context.execution_time['execution'] = time.time() - start_time
         return context
 
-    def _execute_formatting(
-        self, context: QueryExecutionContext
-    ) -> QueryExecutionContext:
+    def _execute_formatting(self, context: QueryExecutionContext) -> QueryExecutionContext:
         """Execute the result formatting phase"""
         logger.info(f"[{context.query_id}] Phase 5: Formatting results")
         start_time = time.time()
@@ -356,40 +346,44 @@ class NaturalLanguageQueryOrchestrator:
                 summary="No results found for your query.",
                 data=[],
                 visualization_hints={},
-                confidence_score=0.5,
+                confidence_score=0.5
             )
         else:
             try:
                 context.formatted_result = self.formatter_agent.format_results(
-                    context.raw_results, context.parsed_query, context.user_context
+                    context.raw_results,
+                    context.parsed_query,
+                    context.user_context
                 )
-                context.confidence_scores["formatting"] = (
-                    context.formatted_result.confidence_score
-                )
+                context.confidence_scores['formatting'] = context.formatted_result.confidence_score
             except Exception as e:
                 logger.error(f"Formatting failed: {e}")
                 context.errors.append(f"Formatting error: {e}")
                 # Provide raw results as fallback
                 context.formatted_result = FormattedResult(
                     summary="Results found but formatting failed.",
-                    data=context.raw_results.get("results", []),
+                    data=context.raw_results.get('results', []),
                     visualization_hints={},
-                    confidence_score=0.3,
+                    confidence_score=0.3
                 )
 
-        context.execution_time["formatting"] = time.time() - start_time
+        context.execution_time['formatting'] = time.time() - start_time
         context.current_phase = QueryExecutionPhase.COMPLETE
         return context
 
     def _execute_cypher(
-        self, cypher_query: str, parameters: Dict[str, Any]
+        self,
+        cypher_query: str,
+        parameters: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute a Cypher query against Neo4j"""
         if not self.neo4j_db:
             # Mock response for testing
             return {
-                "results": [{"node": {"id": 1, "label": "Test", "properties": {}}}],
-                "count": 1,
+                'results': [
+                    {'node': {'id': 1, 'label': 'Test', 'properties': {}}}
+                ],
+                'count': 1
             }
 
         # Execute query
@@ -399,7 +393,7 @@ class NaturalLanguageQueryOrchestrator:
             for record in result:
                 results.append(dict(record))
 
-        return {"results": results, "count": len(results)}
+        return {'results': results, 'count': len(results)}
 
     def _execute_sparql(self, sparql_query: str) -> Dict[str, Any]:
         """Execute a SPARQL query via configured backend.
@@ -422,65 +416,37 @@ class NaturalLanguageQueryOrchestrator:
         self,
         context: QueryExecutionContext,
         execution_time: float,
-        return_intermediate: bool,
+        return_intermediate: bool
     ) -> Dict[str, Any]:
         """Build the final response"""
         response = {
-            "query_id": context.query_id,
-            "success": True,
-            "execution_time": execution_time,
-            "result": {
-                "summary": (
-                    context.formatted_result.summary if context.formatted_result else ""
-                ),
-                "data": (
-                    context.formatted_result.data if context.formatted_result else []
-                ),
-                "visualization": (
-                    context.formatted_result.visualization_hints
-                    if context.formatted_result
-                    else {}
-                ),
-                "explanation": (
-                    context.formatted_result.explanation
-                    if context.formatted_result
-                    else ""
-                ),
+            'query_id': context.query_id,
+            'success': True,
+            'execution_time': execution_time,
+            'result': {
+                'summary': context.formatted_result.summary if context.formatted_result else '',
+                'data': context.formatted_result.data if context.formatted_result else [],
+                'visualization': context.formatted_result.visualization_hints if context.formatted_result else {},
+                'explanation': context.formatted_result.explanation if context.formatted_result else ''
             },
-            "confidence": {
-                "overall": self._calculate_overall_confidence(context),
-                "breakdown": context.confidence_scores,
-            },
+            'confidence': {
+                'overall': self._calculate_overall_confidence(context),
+                'breakdown': context.confidence_scores
+            }
         }
 
         if return_intermediate:
-            response["intermediate"] = {
-                "parsed_query": (
-                    context.parsed_query.__dict__ if context.parsed_query else None
-                ),
-                "mapped_query": {
-                    "patterns": (
-                        context.mapped_query.graph_patterns
-                        if context.mapped_query
-                        else []
-                    ),
-                    "constraints": (
-                        context.mapped_query.constraints if context.mapped_query else []
-                    ),
+            response['intermediate'] = {
+                'parsed_query': context.parsed_query.__dict__ if context.parsed_query else None,
+                'mapped_query': {
+                    'patterns': context.mapped_query.graph_patterns if context.mapped_query else [],
+                    'constraints': context.mapped_query.constraints if context.mapped_query else []
                 },
-                "executable_query": {
-                    "type": (
-                        context.executable_query.query_type
-                        if context.executable_query
-                        else None
-                    ),
-                    "query": (
-                        context.executable_query.query_string
-                        if context.executable_query
-                        else None
-                    ),
+                'executable_query': {
+                    'type': context.executable_query.query_type if context.executable_query else None,
+                    'query': context.executable_query.query_string if context.executable_query else None
                 },
-                "execution_times": context.execution_time,
+                'execution_times': context.execution_time
             }
 
         return response
@@ -489,28 +455,28 @@ class NaturalLanguageQueryOrchestrator:
         self,
         context: QueryExecutionContext,
         error_message: str,
-        error: Optional[Exception] = None,
+        error: Optional[Exception] = None
     ) -> Dict[str, Any]:
         """Build an error response"""
         response = {
-            "query_id": context.query_id,
-            "success": False,
-            "error": error_message,
-            "errors": context.errors,
-            "phase_failed": context.current_phase.value,
-            "partial_results": {
-                "parsed": context.parsed_query is not None,
-                "mapped": context.mapped_query is not None,
-                "built": context.executable_query is not None,
-                "executed": context.raw_results is not None,
-            },
+            'query_id': context.query_id,
+            'success': False,
+            'error': error_message,
+            'errors': context.errors,
+            'phase_failed': context.current_phase.value,
+            'partial_results': {
+                'parsed': context.parsed_query is not None,
+                'mapped': context.mapped_query is not None,
+                'built': context.executable_query is not None,
+                'executed': context.raw_results is not None
+            }
         }
         if isinstance(error, QueryTypeNotSupportedError):
-            response["error_code"] = error.error_code
-            response["not_supported"] = {
-                "query_type": error.query_type,
-                "supported_query_types": error.supported_query_types,
-                "message": str(error),
+            response['error_code'] = error.error_code
+            response['not_supported'] = {
+                'query_type': error.query_type,
+                'supported_query_types': error.supported_query_types,
+                'message': str(error),
             }
         return response
 
@@ -520,7 +486,12 @@ class NaturalLanguageQueryOrchestrator:
             return 0.0
 
         # Weighted average of phase confidences
-        weights = {"parsing": 0.2, "mapping": 0.3, "building": 0.2, "formatting": 0.3}
+        weights = {
+            'parsing': 0.2,
+            'mapping': 0.3,
+            'building': 0.2,
+            'formatting': 0.3
+        }
 
         total_score = 0.0
         total_weight = 0.0
@@ -532,22 +503,26 @@ class NaturalLanguageQueryOrchestrator:
 
         return total_score / total_weight if total_weight > 0 else 0.0
 
-    def _get_cache_key(self, query: str, context: Optional[Dict[str, Any]]) -> str:
+    def _get_cache_key(
+        self,
+        query: str,
+        context: Optional[Dict[str, Any]]
+    ) -> str:
         """Generate cache key for a query"""
         context_str = json.dumps(context, sort_keys=True) if context else ""
         return f"{query.lower().strip()}:{context_str}"
 
     def _update_average_execution_time(self, new_time: float):
         """Update running average of execution time"""
-        current_avg = self.metrics["average_execution_time"]
-        count = self.metrics["successful_queries"]
+        current_avg = self.metrics['average_execution_time']
+        count = self.metrics['successful_queries']
 
         if count == 0:
-            self.metrics["average_execution_time"] = new_time
+            self.metrics['average_execution_time'] = new_time
         else:
-            self.metrics["average_execution_time"] = (
-                current_avg * (count - 1) + new_time
-            ) / count
+            self.metrics['average_execution_time'] = (
+                (current_avg * (count - 1) + new_time) / count
+            )
 
     def get_metrics(self) -> Dict[str, Any]:
         """Get performance metrics"""
@@ -572,9 +547,10 @@ def _build_default_sparql_executor(
         from brain_researcher.services.br_kg.sparql.endpoint import SPARQLEndpoint
 
         base_uri = os.getenv("BR_KG_BASE_URI", "https://br_kg.org/")
-        enable_federation = os.getenv(
-            "BR_NLQ_SPARQL_ENABLE_FEDERATION", "1"
-        ).strip().lower() not in {"0", "false", "no"}
+        enable_federation = (
+            os.getenv("BR_NLQ_SPARQL_ENABLE_FEDERATION", "1").strip().lower()
+            not in {"0", "false", "no"}
+        )
         endpoint = SPARQLEndpoint(
             neo4j_db,
             base_uri=base_uri,

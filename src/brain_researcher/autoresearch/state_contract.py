@@ -26,7 +26,8 @@ def _json_ready(value: Any) -> Any:
 
 
 class _ToDict(Protocol):
-    def to_dict(self) -> dict[str, Any]: ...
+    def to_dict(self) -> dict[str, Any]:
+        ...
 
 
 @dataclass(frozen=True)
@@ -206,7 +207,8 @@ class RuntimeStateArtifact:
             ),
             scorer_name=str(payload.get("scorer_name", "")),
             runtime_paths=dict(payload.get("runtime_paths") or {}),
-            last_recovery_event=dict(payload.get("last_recovery_event") or {}) or None,
+            last_recovery_event=dict(payload.get("last_recovery_event") or {})
+            or None,
             updated_at_utc=str(payload.get("updated_at_utc") or _utc_now()),
         )
 
@@ -319,7 +321,9 @@ def write_json_artifact(path: Path | str, payload: _ToDict | dict[str, Any]) -> 
     return target
 
 
-def append_jsonl_artifact(path: Path | str, payload: _ToDict | dict[str, Any]) -> Path:
+def append_jsonl_artifact(
+    path: Path | str, payload: _ToDict | dict[str, Any]
+) -> Path:
     target = Path(path).expanduser().resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     rendered = payload.to_dict() if hasattr(payload, "to_dict") else payload

@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Simple examples of using NiCLIP with the Brain Researcher agent."""
 
-import json
-
 import requests
-
+import json
 
 def run_examples():
     """Run simple examples using the debug endpoint."""
@@ -25,7 +23,7 @@ def run_examples():
         ("go/no-go task", "Response inhibition"),
         ("gambling task", "Decision making and reward"),
         ("rest", "Resting state baseline"),
-        ("2-back", "Working memory variant"),
+        ("2-back", "Working memory variant")
     ]
 
     for task_name, description in test_tasks:
@@ -37,7 +35,7 @@ def run_examples():
             response = requests.post(
                 f"{base_url}/debug/tool/task_to_concept_mapping",
                 json={"args": {"task_name": task_name, "include_synonyms": True}},
-                timeout=10,
+                timeout=10
             )
 
             if response.status_code == 200:
@@ -45,26 +43,24 @@ def run_examples():
 
                 if result and isinstance(result, dict):
                     # Extract data from nested result
-                    result_data = result.get("result", {})
-                    data = result_data.get("data", {})
-                    status = result_data.get("status", "unknown")
+                    result_data = result.get('result', {})
+                    data = result_data.get('data', {})
+                    status = result_data.get('status', 'unknown')
 
-                    if status == "success" and data:
-                        concepts = data.get("concepts", [])
-                        process = data.get("primary_process", "Not mapped")
-                        source = data.get("source", "unknown")
-                        matched_task = data.get("matched_task", task_name)
+                    if status == 'success' and data:
+                        concepts = data.get('concepts', [])
+                        process = data.get('primary_process', 'Not mapped')
+                        source = data.get('source', 'unknown')
+                        matched_task = data.get('matched_task', task_name)
 
                         print(f"   ✓ Status: {status}")
                         if matched_task != task_name:
                             print(f"   → Matched to: {matched_task}")
-                        print(
-                            f"   → Concepts: {', '.join(concepts) if concepts else 'None'}"
-                        )
+                        print(f"   → Concepts: {', '.join(concepts) if concepts else 'None'}")
                         print(f"   → Cognitive Process: {process}")
                         print(f"   → Data Source: {source}")
                     else:
-                        error = result_data.get("error", "Unknown error")
+                        error = result_data.get('error', 'Unknown error')
                         print(f"   ✗ Status: {status}")
                         print(f"   → Error: {error}")
                 else:
@@ -88,7 +84,6 @@ def run_examples():
     print("- Some tasks fall back to old classification if not in NiCLIP")
     print("- NiCLIP provides scientifically validated mappings")
 
-
 if __name__ == "__main__":
     print("Checking if agent service is running...")
     try:
@@ -101,6 +96,4 @@ if __name__ == "__main__":
     except:
         print("✗ Cannot connect to agent service on port 8000")
         print("Please start the service with:")
-        print(
-            "BR_KG_API_URL=http://localhost:5005 python -m brain_researcher.services.agent.web_service"
-        )
+        print("BR_KG_API_URL=http://localhost:5005 python -m brain_researcher.services.agent.web_service")

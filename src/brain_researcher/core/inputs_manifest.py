@@ -221,12 +221,7 @@ def save_inputs_manifest(job: Any, output_dir: Path) -> None:
             elif resolved.is_dir():
                 hexdigest, status, reason, size = None, "skipped", "is_directory", None
             else:
-                hexdigest, status, reason, size = (
-                    None,
-                    "skipped",
-                    "not_a_regular_file",
-                    None,
-                )
+                hexdigest, status, reason, size = None, "skipped", "not_a_regular_file", None
             cache[cache_key] = (hexdigest, status, reason, size)
 
         if size is not None:

@@ -34,7 +34,6 @@ def _ensure_models():
     global _User, _UserRole
     if _User is None:
         from .models import User, UserRole
-
         _User = User
         _UserRole = UserRole
 
@@ -90,7 +89,6 @@ async def _get_redis():
     _redis_last_connect_attempt = now
     try:
         import redis.asyncio as aioredis
-
         client = aioredis.from_url(
             _get_redis_url(),
             decode_responses=True,
@@ -106,9 +104,7 @@ async def _get_redis():
     except Exception as exc:
         # Avoid flooding logs when Redis is temporarily unavailable.
         if not _redis_connect_error_logged:
-            logger.warning(
-                "UserStore: Redis unavailable (%s), falling back to in-memory", exc
-            )
+            logger.warning("UserStore: Redis unavailable (%s), falling back to in-memory", exc)
             _redis_connect_error_logged = True
         else:
             logger.debug("UserStore: Redis still unavailable (%s)", exc)
@@ -128,7 +124,6 @@ _mem_username_idx: Dict[str, str] = {}
 # ---------------------------------------------------------------------------
 # Serialisation helpers
 # ---------------------------------------------------------------------------
-
 
 def _user_to_dict(user) -> Dict[str, Any]:
     """Serialise a User model to a plain dict for storage."""
@@ -154,7 +149,6 @@ def _generate_user_id() -> str:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
-
 
 class UserStore:
     """Async user store backed by Redis with in-memory fallback."""
@@ -270,10 +264,7 @@ class UserStore:
             if provider and provider != existing.auth_provider:
                 existing.auth_provider = provider
                 changed = True
-            if (
-                provider_account_id
-                and provider_account_id != existing.provider_account_id
-            ):
+            if provider_account_id and provider_account_id != existing.provider_account_id:
                 existing.provider_account_id = provider_account_id
                 changed = True
             if image and image != existing.picture:
@@ -288,7 +279,6 @@ class UserStore:
         user_id = _generate_user_id()
         # Derive username from email, sanitise to match User.username pattern ^[a-zA-Z0-9_]+$
         import re
-
         raw_stem = email.split("@")[0]
         username = re.sub(r"[^a-zA-Z0-9_]", "_", raw_stem) or "user"
         # Enforce min length (3)
@@ -312,9 +302,7 @@ class UserStore:
             picture=image,
         )
         await UserStore._persist(user)
-        logger.info(
-            "UserStore: created OAuth user %s (%s via %s)", user_id, email, provider
-        )
+        logger.info("UserStore: created OAuth user %s (%s via %s)", user_id, email, provider)
         return user, True
 
     @staticmethod

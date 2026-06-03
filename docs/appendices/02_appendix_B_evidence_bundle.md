@@ -105,13 +105,13 @@ Full node/edge source counts and source-by-label coverage are in Appendix D (bel
 
 ### Purpose
 
-NeuroKG should not be treated as a static graph dump. It is a maintained scientific knowledge system whose reliability depends on three processes working together:
+BR-KG should not be treated as a static graph dump. It is a maintained scientific knowledge system whose reliability depends on three processes working together:
 
 - **Source refresh**: external sources such as OpenNeuro, NeuroVault, Neurostore, PubMed, Cognitive Atlas, ONVOC, atlases, and tool registries need explicit refresh schedules and source-specific provenance.
 - **Human contribution**: domain experts should be able to submit corrections, mappings, evidence links, and workflow notes without writing Cypher or directly editing Neo4j.
 - **Agent contribution**: automated agents should be able to propose structured graph changes, but those proposals must remain candidate records until validated and reviewed.
 
-The goal is to make NeuroKG easy to improve while keeping the compiled graph schema-strict, provenance-aware, and scientifically conservative.
+The goal is to make BR-KG easy to improve while keeping the compiled graph schema-strict, provenance-aware, and scientifically conservative.
 
 ### Three-layer contribution architecture
 
@@ -248,15 +248,14 @@ Suggested fixes:
 
 | Artifact | What it anchors | Current note |
 |----------|-----------------|---------------|
-| `docs/BR-KG/BR-KG_reader_question_live_values_20260503.json.txt` | Raw live values used to fill this inventory | Generated from production Neo4j and source/property profile queries on 2026-05-03. The `.txt` suffix avoids the repo-wide `*.json` ignore rule for new files. |
-| `docs/operations/prod_BR-KG_plot_probe_20260502/SUMMARY.md` | Production schema/plot probe | Bounded production queries through brain-researcher-vm and brain-researcher-BR-KG-0; useful but not a full data export. |
-| `docs/operations/prod_BR-KG_plot_probe_20260502/tables/BR-KG_schema_inventory_data_dictionary.md` | Schema inventory file layout | Lists generated CSV/HTML inventory tables and recommended comprehensive table. |
-| `docs/operations/prod_BR-KG_plot_probe_20260502/tables/BR-KG_schema_triples_comprehensive.csv` | Canonical source-label / relationship / target-label triples | 151 schema triples in the existing artifact. |
-| `docs/operations/prod_BR-KG_plot_probe_20260502/tables/BR-KG_node_labels_inventory.csv` | Node-label counts and surfaces | 75 node labels; multi-label endpoints need careful interpretation. |
-| `docs/operations/prod_BR-KG_plot_probe_20260502/tables/BR-KG_relationship_types_inventory.csv` | Relationship-type counts and dominant schema triples | 85 relationship types. |
-| `docs/operations/prod_BR-KG_plot_probe_20260502/tables/BR-KG_schema_inventory_summary.json` | Schema inventory summary | total_edges=2,423,334, top1_share=44.4%, top3_share=77.6%, top10_share=93.4%. |
+| `docs/use_cases/br_kg_plot_probe_20260502/SUMMARY.md` | Production schema/plot probe | Bounded production queries through ${GCE_VM_NAME} and brain-researcher-BR-KG-0; useful but not a full data export. |
+| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_inventory_data_dictionary.md` | Schema inventory file layout | Lists generated CSV/HTML inventory tables and recommended comprehensive table. |
+| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_triples_comprehensive.csv` | Canonical source-label / relationship / target-label triples | 151 schema triples in the existing artifact. |
+| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_node_labels_inventory.csv` | Node-label counts and surfaces | 75 node labels; multi-label endpoints need careful interpretation. |
+| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_relationship_types_inventory.csv` | Relationship-type counts and dominant schema triples | 85 relationship types. |
+| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_inventory_summary.json` | Schema inventory summary | total_edges=2,423,334, top1_share=44.4%, top3_share=77.6%, top10_share=93.4%. |
 | `docs/specs/BR-KG_structural_quality_benchmark_v1.md` | KG structural-quality framing | Evaluation should be a versioned quality card, not only node/edge counts. |
-| `docs/BR-KG/gabriel_full_pipeline.md` | Gabriel paper-mining generation/ingest lane | Anchors LLM/heuristic extraction, review queues, candidate lanes, and KGGen evaluation. |
+| `docs/services/br-kg/gabriel_full_pipeline.md` | Gabriel paper-mining generation/ingest lane | Anchors LLM/heuristic extraction, review queues, candidate lanes, and KGGen evaluation. |
 | `docs/standards/BR-KG_Standards.md` | Standards skeleton | Useful for ID/provenance/merge-policy intent; verify before citing as implemented. |
 | `docs/standards/BR-KG_graph_schema.md` | Historical sparse snapshot | Explicitly historical; do not use for current live graph claims. |
 

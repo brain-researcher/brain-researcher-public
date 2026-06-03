@@ -5,18 +5,18 @@ and audit logging for the BR-KG system.
 """
 
 import hashlib
-import logging
 import secrets
-from dataclasses import dataclass, field
+import logging
 from datetime import datetime, timedelta
+from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
 
-import bcrypt
 import jwt
+import bcrypt
 import redis
-from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import HTTPException, Security, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
 from pydantic import BaseModel, EmailStr, Field
 
 logger = logging.getLogger(__name__)
@@ -164,7 +164,7 @@ class AuthenticationManager:
         algorithm: str = "HS256",
         access_token_expire_minutes: int = 30,
         refresh_token_expire_days: int = 7,
-        redis_client: Optional[redis.Redis] = None,
+        redis_client: Optional[redis.Redis] = None
     ):
         """Initialize authentication manager.
 
@@ -188,12 +188,15 @@ class AuthenticationManager:
     def _create_redis_client(self) -> redis.Redis:
         """Create Redis client with fallback."""
         try:
-            client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+            client = redis.Redis(
+                host='localhost',
+                port=6379,
+                decode_responses=True
+            )
             client.ping()
             return client
         except:
             import fakeredis
-
             return fakeredis.FakeRedis(decode_responses=True)
 
     def hash_password(self, password: str) -> str:
@@ -206,7 +209,7 @@ class AuthenticationManager:
             Hashed password
         """
         salt = bcrypt.gensalt()
-        return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """Verify password against hash.
@@ -219,7 +222,8 @@ class AuthenticationManager:
             True if password matches
         """
         return bcrypt.checkpw(
-            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+            plain_password.encode('utf-8'),
+            hashed_password.encode('utf-8')
         )
 
     def create_access_token(self, user: User) -> str:
@@ -238,18 +242,20 @@ class AuthenticationManager:
             email=user.email,
             role=user.role,
             permissions=ROLE_PERMISSIONS[user.role],
-            exp=expire,
+            exp=expire
         )
 
         encoded_jwt = jwt.encode(
-            token_data.dict(), self.secret_key, algorithm=self.algorithm
+            token_data.dict(),
+            self.secret_key,
+            algorithm=self.algorithm
         )
 
         # Store token in Redis for tracking
         self.redis.setex(
             f"token:access:{token_data.jti}",
             int(self.access_token_expire.total_seconds()),
-            user.user_id,
+            user.user_id
         )
 
         return encoded_jwt
@@ -270,16 +276,20 @@ class AuthenticationManager:
             "type": "refresh",
             "exp": expire,
             "iat": datetime.utcnow(),
-            "jti": secrets.token_urlsafe(16),
+            "jti": secrets.token_urlsafe(16)
         }
 
-        encoded_jwt = jwt.encode(token_data, self.secret_key, algorithm=self.algorithm)
+        encoded_jwt = jwt.encode(
+            token_data,
+            self.secret_key,
+            algorithm=self.algorithm
+        )
 
         # Store refresh token
         self.redis.setex(
             f"token:refresh:{token_data['jti']}",
             int(self.refresh_token_expire.total_seconds()),
-            user.user_id,
+            user.user_id
         )
 
         return encoded_jwt
@@ -294,10 +304,14 @@ class AuthenticationManager:
             Token data if valid
         """
         try:
-            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+            payload = jwt.decode(
+                token,
+                self.secret_key,
+                algorithms=[self.algorithm]
+            )
 
             # Check if token is blacklisted
-            jti = payload.get("jti")
+            jti = payload.get('jti')
             if jti and self.redis.exists(f"token:blacklist:{jti}"):
                 return None
 
@@ -321,16 +335,20 @@ class AuthenticationManager:
                 token,
                 self.secret_key,
                 algorithms=[self.algorithm],
-                options={"verify_exp": False},
+                options={"verify_exp": False}
             )
 
-            jti = payload.get("jti")
+            jti = payload.get('jti')
             if jti:
                 # Add to blacklist
-                exp = payload.get("exp")
+                exp = payload.get('exp')
                 ttl = exp - datetime.utcnow().timestamp() if exp else 86400
 
-                self.redis.setex(f"token:blacklist:{jti}", int(ttl), "revoked")
+                self.redis.setex(
+                    f"token:blacklist:{jti}",
+                    int(ttl),
+                    "revoked"
+                )
 
                 logger.info(f"Token revoked: {jti}")
 
@@ -358,7 +376,7 @@ class AuthenticationManager:
             key_hash=key_hash,
             user_id=user.user_id,
             name=name,
-            scopes=scopes,
+            scopes=scopes
         )
 
         # Store API key
@@ -366,13 +384,11 @@ class AuthenticationManager:
         self.redis.hset(
             "api_keys",
             key_hash,
-            json.dumps(
-                {
-                    "user_id": user.user_id,
-                    "scopes": scopes,
-                    "created_at": api_key_obj.created_at.isoformat(),
-                }
-            ),
+            json.dumps({
+                "user_id": user.user_id,
+                "scopes": scopes,
+                "created_at": api_key_obj.created_at.isoformat()
+            })
         )
 
         logger.info(f"Created API key for user {user.user_id}: {name}")
@@ -405,7 +421,9 @@ class AuthenticationManager:
             if user and user.is_active:
                 # Update last used
                 self.redis.hset(
-                    "api_keys:last_used", key_hash, datetime.utcnow().isoformat()
+                    "api_keys:last_used",
+                    key_hash,
+                    datetime.utcnow().isoformat()
                 )
 
                 return user, key_info["scopes"]
@@ -420,7 +438,11 @@ class AuthenticationManager:
         return None
 
     def create_user(
-        self, email: str, username: str, password: str, role: Role = Role.VIEWER
+        self,
+        email: str,
+        username: str,
+        password: str,
+        role: Role = Role.VIEWER
     ) -> User:
         """Create new user.
 
@@ -436,7 +458,12 @@ class AuthenticationManager:
         user_id = secrets.token_urlsafe(16)
         hashed_password = self.hash_password(password)
 
-        user = User(user_id=user_id, email=email, username=username, role=role)
+        user = User(
+            user_id=user_id,
+            email=email,
+            username=username,
+            role=role
+        )
 
         # Store user
         self.users[user_id] = user
@@ -445,15 +472,13 @@ class AuthenticationManager:
         self.redis.hset(
             "users",
             user_id,
-            json.dumps(
-                {
-                    "email": email,
-                    "username": username,
-                    "password": hashed_password,
-                    "role": role.value,
-                    "created_at": user.created_at.isoformat(),
-                }
-            ),
+            json.dumps({
+                "email": email,
+                "username": username,
+                "password": hashed_password,
+                "role": role.value,
+                "created_at": user.created_at.isoformat()
+            })
         )
 
         logger.info(f"Created user: {username} ({email})")
@@ -482,7 +507,7 @@ class AuthenticationManager:
                 email=user_info["email"],
                 username=user_info["username"],
                 role=Role(user_info["role"]),
-                created_at=datetime.fromisoformat(user_info["created_at"]),
+                created_at=datetime.fromisoformat(user_info["created_at"])
             )
 
             self.users[user_id] = user
@@ -522,7 +547,7 @@ class AuthenticationManager:
             email=user_data["email"],
             username=user_data["username"],
             role=Role(user_data["role"]),
-            created_at=datetime.fromisoformat(user_data["created_at"]),
+            created_at=datetime.fromisoformat(user_data["created_at"])
         )
 
         self.users[user.user_id] = user
@@ -551,7 +576,7 @@ class AuthenticationManager:
         user_agent: str = "unknown",
         success: bool = True,
         error_message: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None
     ):
         """Log audit event.
 
@@ -576,7 +601,7 @@ class AuthenticationManager:
             user_agent=user_agent,
             success=success,
             error_message=error_message,
-            metadata=metadata or {},
+            metadata=metadata or {}
         )
 
         self.audit_logs.append(audit_log)
@@ -584,30 +609,26 @@ class AuthenticationManager:
         # Store in Redis
         self.redis.lpush(
             "audit_logs",
-            json.dumps(
-                {
-                    "log_id": audit_log.log_id,
-                    "user_id": audit_log.user_id,
-                    "action": audit_log.action,
-                    "resource": audit_log.resource,
-                    "resource_id": audit_log.resource_id,
-                    "ip_address": audit_log.ip_address,
-                    "user_agent": audit_log.user_agent,
-                    "timestamp": audit_log.timestamp.isoformat(),
-                    "success": audit_log.success,
-                    "error_message": audit_log.error_message,
-                    "metadata": audit_log.metadata,
-                }
-            ),
+            json.dumps({
+                "log_id": audit_log.log_id,
+                "user_id": audit_log.user_id,
+                "action": audit_log.action,
+                "resource": audit_log.resource,
+                "resource_id": audit_log.resource_id,
+                "ip_address": audit_log.ip_address,
+                "user_agent": audit_log.user_agent,
+                "timestamp": audit_log.timestamp.isoformat(),
+                "success": audit_log.success,
+                "error_message": audit_log.error_message,
+                "metadata": audit_log.metadata
+            })
         )
 
         # Trim to keep only last 10000 entries
         self.redis.ltrim("audit_logs", 0, 9999)
 
         if not success:
-            logger.warning(
-                f"Audit: {action} on {resource} failed for user {user_id}: {error_message}"
-            )
+            logger.warning(f"Audit: {action} on {resource} failed for user {user_id}: {error_message}")
         else:
             logger.info(f"Audit: {action} on {resource} by user {user_id}")
 
@@ -619,7 +640,7 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Security(security),
-    auth_manager: AuthenticationManager = Depends(),
+    auth_manager: AuthenticationManager = Depends()
 ) -> User:
     """Get current user from JWT token.
 
@@ -640,7 +661,7 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
     user = auth_manager.get_user(token_data.sub)
@@ -648,7 +669,7 @@ async def get_current_user(
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive",
+            detail="User not found or inactive"
         )
 
     return user
@@ -656,7 +677,7 @@ async def get_current_user(
 
 async def get_api_user(
     api_key: Optional[str] = Security(api_key_header),
-    auth_manager: AuthenticationManager = Depends(),
+    auth_manager: AuthenticationManager = Depends()
 ) -> Optional[User]:
     """Get user from API key.
 
@@ -688,15 +709,14 @@ def require_permission(permission: Permission):
     Returns:
         Dependency function
     """
-
     async def permission_checker(
         current_user: User = Depends(get_current_user),
-        auth_manager: AuthenticationManager = Depends(),
+        auth_manager: AuthenticationManager = Depends()
     ):
         if not auth_manager.check_permission(current_user, permission):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: {permission.value}",
+                detail=f"Permission denied: {permission.value}"
             )
         return current_user
 

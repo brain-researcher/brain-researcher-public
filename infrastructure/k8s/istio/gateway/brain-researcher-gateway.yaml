@@ -33,8 +33,8 @@ spec:
     hosts:
     - "brain-researcher.local"
     - "*.brain-researcher.local"
-    - "app.brain-researcher.com"
-    - "*.app.brain-researcher.com"
+    - "app.${PUBLIC_HOSTNAME}"
+    - "*.app.${PUBLIC_HOSTNAME}"
 
   # BR-KG API port
   - port:
@@ -44,8 +44,8 @@ spec:
     hosts:
     - "api.brain-researcher.local"
     - "br-kg.brain-researcher.local"
-    - "api.brain-researcher.com"
-    - "br-kg.brain-researcher.com"
+    - "api.${PUBLIC_HOSTNAME}"
+    - "br-kg.${PUBLIC_HOSTNAME}"
 
   # Agent service port
   - port:
@@ -55,8 +55,8 @@ spec:
     hosts:
     - "agent.brain-researcher.local"
     - "llm.brain-researcher.local"
-    - "agent.brain-researcher.com"
-    - "llm.brain-researcher.com"
+    - "agent.${PUBLIC_HOSTNAME}"
+    - "llm.${PUBLIC_HOSTNAME}"
 
   # Web UI port
   - port:
@@ -66,8 +66,8 @@ spec:
     hosts:
     - "ui.brain-researcher.local"
     - "dashboard.brain-researcher.local"
-    - "ui.brain-researcher.com"
-    - "dashboard.brain-researcher.com"
+    - "ui.${PUBLIC_HOSTNAME}"
+    - "dashboard.${PUBLIC_HOSTNAME}"
 
 ---
 # Egress Gateway for external neuroimaging data sources

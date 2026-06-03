@@ -9,17 +9,17 @@ Sources:
 
 from __future__ import annotations
 
-import logging
 import os
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from neo4j import GraphDatabase
 from pydantic import BaseModel, Field
+from neo4j import GraphDatabase
 
-from brain_researcher.core.literature.references import gather_references
-from brain_researcher.services.tools.br_kg_tools import GLMPriorsTool
 from brain_researcher.services.tools.tool_base import CachedToolWrapper, ToolResult
+from brain_researcher.services.tools.br_kg_tools import GLMPriorsTool
+from brain_researcher.core.literature.references import gather_references
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +166,9 @@ class GLMLiteratureTool(CachedToolWrapper):
         # Avoid circular refs: copy prevalence dicts before nesting
         evidence.setdefault("prevalence", {})
         if neo_evidence.get("prevalence"):
-            evidence["prevalence"]["br_kg"] = dict(neo_evidence.get("prevalence") or {})
+            evidence["prevalence"]["br_kg"] = dict(
+                neo_evidence.get("prevalence") or {}
+            )
         if use_br_kg and evidence.get("br_kg_priors"):
             evidence["prevalence"]["priors"] = dict(evidence["br_kg_priors"])
 

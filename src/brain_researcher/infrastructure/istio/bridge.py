@@ -36,9 +36,7 @@ class IstioBridge:
             async with session.request(method, url, json=data) as resp:
                 return await resp.json()
 
-    def configure_circuit_breaker(
-        self, service_name: str, config: Dict[str, Any]
-    ) -> bool:
+    def configure_circuit_breaker(self, service_name: str, config: Dict[str, Any]) -> bool:
         self.circuit_breakers[service_name] = dict(config)
         return True
 
@@ -50,8 +48,6 @@ class IstioBridge:
         self.timeouts[service_name] = dict(config)
         return True
 
-    def configure_health_checks(
-        self, service_name: str, config: Dict[str, Any]
-    ) -> bool:
+    def configure_health_checks(self, service_name: str, config: Dict[str, Any]) -> bool:
         self.health_checks[service_name] = dict(config)
         return True

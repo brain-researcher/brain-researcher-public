@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-import nibabel as nib
 import numpy as np
 import pandas as pd
+import nibabel as nib
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.stats.multitest import multipletests
@@ -75,7 +75,6 @@ def statsmodels_glm_from_payload(payload: Dict[str, any]) -> StatsmodelsGLMParam
         compute_diagnostics=bool(payload.get("compute_diagnostics", True)),
         plot_diagnostics=bool(payload.get("plot_diagnostics", True)),
     )
-
 
 def _is_nifti(path: Path) -> bool:
     suffixes = [s.lower() for s in path.suffixes]
@@ -146,14 +145,8 @@ def _standardize_design(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _default_contrasts(
-    columns: List[str], contrast_names: Optional[Sequence[str]]
-) -> Dict[str, np.ndarray]:
-    names = (
-        list(contrast_names)
-        if contrast_names
-        else [c for c in columns if c.lower() not in {"const", "intercept"}]
-    )
+def _default_contrasts(columns: List[str], contrast_names: Optional[Sequence[str]]) -> Dict[str, np.ndarray]:
+    names = list(contrast_names) if contrast_names else [c for c in columns if c.lower() not in {"const", "intercept"}]
     contrasts: Dict[str, np.ndarray] = {}
     for name in names:
         if name not in columns:
@@ -239,18 +232,14 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
         fitted = x @ betas
         resid = y - fitted
         df_resid = max(n_time - x.shape[1], 1)
-        sigma2 = (resid**2).sum(axis=0) / df_resid
+        sigma2 = (resid ** 2).sum(axis=0) / df_resid
 
-        contrast_defs = params.contrasts or _default_contrasts(
-            list(design_df.columns), params.contrast_names
-        )
+        contrast_defs = params.contrasts or _default_contrasts(list(design_df.columns), params.contrast_names)
         stat_maps: List[str] = []
         for name, contrast in contrast_defs.items():
             c = np.asarray(contrast, dtype=float)
             if c.ndim != 1 or c.size != x.shape[1]:
-                raise ValueError(
-                    f"Contrast {name} has wrong length (expected {x.shape[1]})"
-                )
+                raise ValueError(f"Contrast {name} has wrong length (expected {x.shape[1]})")
             denom = np.sqrt(np.maximum(sigma2 * (c @ xtx_inv @ c), 1e-12))
             tvals = (c @ betas) / denom
             zvals = _t_to_z(tvals, df_resid)
@@ -348,9 +337,7 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
             np.save(fitted_path, fitted)
             outputs["fitted"] = str(fitted_path)
 
-        contrast_defs = params.contrasts or _default_contrasts(
-            list(exog.columns), params.contrast_names
-        )
+        contrast_defs = params.contrasts or _default_contrasts(list(exog.columns), params.contrast_names)
         contrast_results = []
         for name, contrast in contrast_defs.items():
             try:
@@ -378,8 +365,7 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
             params_dict = {k: float(v) for k, v in params_values.to_dict().items()}
         else:
             params_dict = {
-                col: float(val)
-                for col, val in zip(exog.columns, np.asarray(params_values))
+                col: float(val) for col, val in zip(exog.columns, np.asarray(params_values))
             }
         if pvalues_values is None:
             pvalues_dict = {}
@@ -387,8 +373,7 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
             pvalues_dict = {k: float(v) for k, v in pvalues_values.to_dict().items()}
         else:
             pvalues_dict = {
-                col: float(val)
-                for col, val in zip(exog.columns, np.asarray(pvalues_values))
+                col: float(val) for col, val in zip(exog.columns, np.asarray(pvalues_values))
             }
 
         summary = {

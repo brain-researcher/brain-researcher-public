@@ -36,9 +36,7 @@ def load_prior_config() -> Dict[str, Any]:
     except Exception:
         cfg = {}
 
-    def _merge(
-        default: Dict[str, Any], override: Dict[str, Any] | None
-    ) -> Dict[str, Any]:
+    def _merge(default: Dict[str, Any], override: Dict[str, Any] | None) -> Dict[str, Any]:
         out = dict(default)
         for k, v in (override or {}).items():
             if isinstance(v, dict) and isinstance(out.get(k), dict):

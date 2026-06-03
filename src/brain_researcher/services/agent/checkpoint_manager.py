@@ -20,11 +20,9 @@ from fakeredis import FakeRedis
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class ExecutionState:
     """Execution state for checkpointing."""
-
     execution_id: str
     current_step: int
     completed_steps: List[int]
@@ -32,7 +30,6 @@ class ExecutionState:
     variables: Dict[str, Any]
     timestamp: float
     metadata: Dict[str, Any]
-
 
 class CheckpointManager:
     """
@@ -120,7 +117,6 @@ class CheckpointManager:
         """Deserialize execution state."""
         state_dict = json.loads(data)
         return ExecutionState(**state_dict)
-
 
 class AdaptiveCheckpointing:
     """Adaptive checkpointing strategy."""

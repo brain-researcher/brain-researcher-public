@@ -100,15 +100,9 @@ def evaluate_kggen_coverage(
             "Ensure KGGen input includes paper IDs matching baseline records."
         )
 
-    sampled_papers = _sample_paper_ids(
-        overlap_papers, sample_size=sample_size, seed=seed
-    )
-    baseline_records = _filter_records_by_paper_ids(
-        baseline_payload["records"], sampled_papers
-    )
-    kggen_records = _filter_records_by_paper_ids(
-        kggen_payload["records"], sampled_papers
-    )
+    sampled_papers = _sample_paper_ids(overlap_papers, sample_size=sample_size, seed=seed)
+    baseline_records = _filter_records_by_paper_ids(baseline_payload["records"], sampled_papers)
+    kggen_records = _filter_records_by_paper_ids(kggen_payload["records"], sampled_papers)
 
     baseline_eval = _evaluate_arm(
         name="baseline",
@@ -153,9 +147,7 @@ def evaluate_kggen_coverage(
             "paper_ids": sampled_papers,
             "records_evaluated_baseline": len(baseline_records),
             "records_evaluated_kggen": len(kggen_records),
-            "manual_annotation_target": int(
-                round(len(sampled_papers) * annotate_fraction)
-            ),
+            "manual_annotation_target": int(round(len(sampled_papers) * annotate_fraction)),
         },
         "baseline": asdict(_arm_stats_from_eval(baseline_eval)),
         "kggen": asdict(_arm_stats_from_eval(kggen_eval)),
@@ -163,21 +155,15 @@ def evaluate_kggen_coverage(
         "quality": {
             "pass_rate_baseline": baseline_eval["acceptance_rate"],
             "pass_rate_kggen": kggen_eval["acceptance_rate"],
-            "pass_rate_delta": kggen_eval["acceptance_rate"]
-            - baseline_eval["acceptance_rate"],
+            "pass_rate_delta": kggen_eval["acceptance_rate"] - baseline_eval["acceptance_rate"],
             "avg_mapping_confidence_baseline": baseline_eval["avg_mapping_confidence"],
             "avg_mapping_confidence_kggen": kggen_eval["avg_mapping_confidence"],
-            "avg_provenance_completeness_baseline": baseline_eval[
-                "avg_provenance_completeness"
-            ],
-            "avg_provenance_completeness_kggen": kggen_eval[
-                "avg_provenance_completeness"
-            ],
+            "avg_provenance_completeness_baseline": baseline_eval["avg_provenance_completeness"],
+            "avg_provenance_completeness_kggen": kggen_eval["avg_provenance_completeness"],
         },
         "ops": {
             "parse_error_rate_baseline": _ratio(
-                baseline_payload["parse_errors"],
-                max(1, baseline_payload["records_total"]),
+                baseline_payload["parse_errors"], max(1, baseline_payload["records_total"])
             ),
             "parse_error_rate_kggen": _ratio(
                 kggen_payload["parse_errors"], max(1, kggen_payload["records_total"])
@@ -222,9 +208,7 @@ def _load_baseline_records(
     input_paths: list[Path] = []
 
     if baseline_jsonl_paths:
-        input_paths = [
-            Path(path).expanduser().resolve() for path in baseline_jsonl_paths
-        ]
+        input_paths = [Path(path).expanduser().resolve() for path in baseline_jsonl_paths]
     else:
         resolved = resolve_manifest_path(manifest_path, output_root)
         resolved_manifest = str(resolved)
@@ -551,9 +535,7 @@ def _record_from_relation_payload(
         has_statistical_detail=has_statistical_detail,
         evidence_quote=evidence_quote,
     )
-    mention_frequency = _coerce_int(
-        payload.get("mention_frequency"), default=1, minimum=0
-    )
+    mention_frequency = _coerce_int(payload.get("mention_frequency"), default=1, minimum=0)
     max_frequency = _coerce_int(payload.get("max_frequency"), default=5, minimum=1)
     max_frequency = max(max_frequency, mention_frequency, 1)
 
@@ -571,13 +553,9 @@ def _record_from_relation_payload(
         payload.get("sample_size_adequacy"),
         default=0.45,
     )
-    roi_definition_clear = _coerce_bool(
-        payload.get("roi_definition_clear"), default=False
-    )
+    roi_definition_clear = _coerce_bool(payload.get("roi_definition_clear"), default=False)
 
-    paper = _extract_paper_payload(
-        payload, parent_payload=parent_payload, source_path=source_path, ordinal=ordinal
-    )
+    paper = _extract_paper_payload(payload, parent_payload=parent_payload, source_path=source_path, ordinal=ordinal)
     relation_text = f"{subject} {predicate} {obj}"
 
     run_id = f"kggen:{_stable_hash(f'{source_path}:{ordinal}')[:12]}"
@@ -585,9 +563,7 @@ def _record_from_relation_payload(
         "run": {
             "run_id": run_id,
             "tool": "kggen",
-            "model": _as_nonempty_str(
-                payload.get("model"), parent_payload.get("model"), "kggen-unknown"
-            ),
+            "model": _as_nonempty_str(payload.get("model"), parent_payload.get("model"), "kggen-unknown"),
             "prompt_hash": _stable_hash(f"{source_path}:prompt:{ordinal}"),
             "template_hash": ADAPTER_VERSION,
             "raw_response_path": str(source_path),
@@ -617,7 +593,9 @@ def _record_from_relation_payload(
             "id": f"claim:{_stable_hash(relation_text)[:12]}",
             "text": _as_nonempty_str(payload.get("claim_text"), relation_text),
             "polarity": _normalize_polarity(
-                payload.get("polarity") or payload.get("direction") or "supports"
+                payload.get("polarity")
+                or payload.get("direction")
+                or "supports"
             ),
             "claim_strength": claim_strength,
         },
@@ -639,18 +617,14 @@ def _record_from_relation_payload(
             "abstract_hit": bool(payload.get("abstract_hit")),
             "semantic_similarity": mapping_confidence,
             "ontology_match": bool(
-                payload.get("ontology_match")
-                or payload.get("target_id")
-                or payload.get("canonical_id")
+                payload.get("ontology_match") or payload.get("target_id") or payload.get("canonical_id")
             ),
             "context_overlap": context_overlap,
             "modal_density": modal_density,
             "statistical_density": statistical_density,
             "assertive_verb_ratio": assertive_verb_ratio,
             "preregistration": bool(payload.get("preregistration")),
-            "threshold_correction_reported": bool(
-                payload.get("threshold_correction_reported")
-            ),
+            "threshold_correction_reported": bool(payload.get("threshold_correction_reported")),
             "sample_size_adequacy": sample_size_adequacy,
             "roi_definition_clear": roi_definition_clear,
             "open_data_or_code": bool(payload.get("open_data_or_code")),
@@ -843,9 +817,7 @@ def _arm_stats_from_eval(payload: dict[str, Any]) -> ArmStats:
     )
 
 
-def _aggregate_variable_metrics(
-    variables_list: list[GabrielVariables],
-) -> dict[str, float]:
+def _aggregate_variable_metrics(variables_list: list[GabrielVariables]) -> dict[str, float]:
     if not variables_list:
         return {
             "avg_mapping_confidence": 0.0,
@@ -856,13 +828,10 @@ def _aggregate_variable_metrics(
 
     count = float(len(variables_list))
     return {
-        "avg_mapping_confidence": sum(v.mapping_confidence for v in variables_list)
-        / count,
+        "avg_mapping_confidence": sum(v.mapping_confidence for v in variables_list) / count,
         "avg_claim_strength": sum(v.claim_strength for v in variables_list) / count,
         "avg_method_rigor": sum(v.method_rigor for v in variables_list) / count,
-        "avg_provenance_completeness": sum(
-            v.provenance_completeness for v in variables_list
-        )
+        "avg_provenance_completeness": sum(v.provenance_completeness for v in variables_list)
         / count,
     }
 
@@ -882,13 +851,9 @@ def _compute_coverage_metrics(
         "kggen_high_conf_edges": kggen_count,
         "overlap_high_conf_edges": len(overlap),
         "new_high_conf_edges": len(new_edges),
-        "edge_recall_proxy": (
-            _ratio(len(overlap), baseline_count) if baseline_count else None
-        ),
+        "edge_recall_proxy": _ratio(len(overlap), baseline_count) if baseline_count else None,
         "edge_yield_delta": yield_delta,
-        "edge_yield_delta_pct": (
-            _ratio(yield_delta, baseline_count) if baseline_count else None
-        ),
+        "edge_yield_delta_pct": _ratio(yield_delta, baseline_count) if baseline_count else None,
     }
 
 
@@ -926,9 +891,7 @@ def _target_id(record: dict[str, Any]) -> str:
 
 
 def _paper_id_set(records: list[dict[str, Any]]) -> set[str]:
-    return {
-        paper_id for paper_id in (_paper_id(record) for record in records) if paper_id
-    }
+    return {paper_id for paper_id in (_paper_id(record) for record in records) if paper_id}
 
 
 def _filter_records_by_paper_ids(
@@ -1154,9 +1117,7 @@ def _infer_method_rigor(
     prereg_score = (
         1.0
         if prereg
-        else (
-            0.70 if _contains_any_term(text_hints, _PREREGISTRATION_HINT_TERMS) else 0.0
-        )
+        else (0.70 if _contains_any_term(text_hints, _PREREGISTRATION_HINT_TERMS) else 0.0)
     )
     threshold_score = (
         1.0

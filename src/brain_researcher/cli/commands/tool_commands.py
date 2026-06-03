@@ -13,21 +13,15 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.json import JSON
-from rich.panel import Panel
 from rich.table import Table
+from rich.panel import Panel
 
-from brain_researcher.services.tools.metadata_schema import (
-    normalize_tags,  # type: ignore
-)
-from brain_researcher.services.tools.metadata_schema import (
-    DOMAIN,
-    FUNCTION,
-    RISK,
-)
 from brain_researcher.services.tools.neurodesk_tools import (
-    NEURODESK_TOOLS,
     NeurodeskTools,
+    NEURODESK_TOOLS,
 )
+from brain_researcher.services.tools.metadata_schema import DOMAIN, FUNCTION, RISK
+from brain_researcher.services.tools.metadata_schema import normalize_tags  # type: ignore
 
 app = typer.Typer(help="Neuroimaging tools commands")
 console = Console()
@@ -46,27 +40,10 @@ def list_tools():
 
 @app.command("catalog")
 def catalog_list(
-    domain: Optional[str] = typer.Option(
-        None,
-        "--domain",
-        "-d",
-        help="Filter by domain (e.g., fmri, fmri.glm, dmri.tractography)",
-    ),
-    function: Optional[str] = typer.Option(
-        None,
-        "--function",
-        "-f",
-        help="Filter by function (e.g., preproc, glm, connectivity)",
-    ),
-    risk: Optional[str] = typer.Option(
-        None,
-        "--risk",
-        "-r",
-        help="Filter by risk (safe|dangerous|external_net|high_cost)",
-    ),
-    allow_dangerous: bool = typer.Option(
-        False, "--allow-dangerous", help="Include tools tagged dangerous/high_cost"
-    ),
+    domain: Optional[str] = typer.Option(None, "--domain", "-d", help="Filter by domain (e.g., fmri, fmri.glm, dmri.tractography)"),
+    function: Optional[str] = typer.Option(None, "--function", "-f", help="Filter by function (e.g., preproc, glm, connectivity)"),
+    risk: Optional[str] = typer.Option(None, "--risk", "-r", help="Filter by risk (safe|dangerous|external_net|high_cost)"),
+    allow_dangerous: bool = typer.Option(False, "--allow-dangerous", help="Include tools tagged dangerous/high_cost"),
     limit: int = typer.Option(30, "--limit", "-l", help="Max rows to show"),
 ):
     """List catalog tools with metadata filters (domain/function/risk)."""
@@ -151,9 +128,7 @@ def audit_tools(
         hide_input=True,
     ),
     neo4j_database: Optional[str] = typer.Option(
-        None,
-        "--neo4j-database",
-        help="Neo4j database (default: NEO4J_DATABASE env/.env)",
+        None, "--neo4j-database", help="Neo4j database (default: NEO4J_DATABASE env/.env)"
     ),
 ):
     """Generate repeatable tool audit reports (TSV) to drive catalog quality improvements."""
@@ -203,13 +178,9 @@ def _parse_params(p: Optional[str]) -> dict:
 def generate(
     tool: str = typer.Option(..., "--tool", "-t", help="Neurodesk tool key, e.g., fsl"),
     command: str = typer.Option(..., "--command", "-c", help="Command, e.g., bet"),
-    input: list[str] = typer.Option(
-        ..., "--input", "-i", help="Input file(s)", rich_help_panel="Inputs"
-    ),
+    input: list[str] = typer.Option(..., "--input", "-i", help="Input file(s)", rich_help_panel="Inputs"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output path"),
-    params: Optional[str] = typer.Option(
-        None, "--params", "-p", help="JSON or k=v pairs"
-    ),
+    params: Optional[str] = typer.Option(None, "--params", "-p", help="JSON or k=v pairs"),
     mode: str = typer.Option("module", "--mode", help="module or cvmfs"),
 ):
     """Generate a Neurodesk command for a given tool/command.
@@ -288,16 +259,13 @@ def niwrap_list(
 
 @niwrap_app.command("info")
 def niwrap_info(
-    tool_name: str = typer.Argument(
-        ..., help="Full tool name (e.g., afni.24.2.06.3dBlurInMask.run)"
-    ),
+    tool_name: str = typer.Argument(..., help="Full tool name (e.g., afni.24.2.06.3dBlurInMask.run)"),
     show_schema: bool = typer.Option(
         True, "--schema/--no-schema", help="Show full input schema"
     ),
 ):
     """NiWrap MCP catalog has been removed."""
     console.print("[red]NiWrap MCP catalog is no longer available.")
-
 
 @niwrap_app.command("preview")
 def niwrap_preview(
@@ -309,19 +277,14 @@ def niwrap_preview(
     """NiWrap MCP catalog has been removed."""
     console.print("[red]NiWrap MCP catalog is no longer available.")
 
-
 @niwrap_app.command("execute")
 def niwrap_execute(
     tool_name: str = typer.Argument(..., help="Full tool name"),
     params: str = typer.Option(
         ..., "--params", "-p", help="Parameters as JSON string or path to JSON file"
     ),
-    allow_write: bool = typer.Option(
-        False, "--allow-write", help="Allow tools to write to disk"
-    ),
-    container_override: str | None = typer.Option(
-        None, "--container-config", help="Path to container override JSON"
-    ),
+    allow_write: bool = typer.Option(False, "--allow-write", help="Allow tools to write to disk"),
+    container_override: str | None = typer.Option(None, "--container-config", help="Path to container override JSON"),
 ):
     """NiWrap MCP catalog has been removed."""
     console.print("[red]NiWrap MCP catalog is no longer available.")

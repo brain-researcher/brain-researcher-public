@@ -674,9 +674,7 @@ class TaskSurface(BaseNode):
 
     def model_post_init(self, __context) -> None:  # type: ignore[override]
         if not self.id:
-            self.id = (
-                f"task_surface:{_normalize_identifier(self.surface_id or self.name)}"
-            )
+            self.id = f"task_surface:{_normalize_identifier(self.surface_id or self.name)}"
 
 
 class ValidationEvidence(BaseNode):
@@ -688,9 +686,7 @@ class ValidationEvidence(BaseNode):
 
     def model_post_init(self, __context) -> None:  # type: ignore[override]
         if not self.id:
-            digest = hashlib.md5(
-                f"{self.evidence_type}:{self.text}".encode()
-            ).hexdigest()
+            digest = hashlib.md5(f"{self.evidence_type}:{self.text}".encode()).hexdigest()
             self.id = f"validation_evidence:{digest[:12]}"
 
 

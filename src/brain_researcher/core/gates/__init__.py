@@ -1,5 +1,5 @@
 """Gate evaluation utilities."""
 
-from .engine import GateEngine, GateEvaluation
+from .engine import GateEvaluation, GateEngine
 
 __all__ = ["GateEngine", "GateEvaluation"]

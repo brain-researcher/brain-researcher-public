@@ -4,23 +4,20 @@ This module provides a comprehensive notification system for agent interactions,
 integrating with all the new infrastructure components.
 """
 
+import logging
 import asyncio
 import json
-import logging
-import uuid
+from typing import Dict, List, Any, Optional, Callable, Set
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+import uuid
 
-from brain_researcher.services.agent.error_integration import (
-    IntegrationErrorManager,
-    IntegrationType,
-)
 from brain_researcher.services.agent.subscription_integration import (
-    AgentNotification,
-    AgentNotificationType,
-    AgentSubscriptionManager,
+    AgentSubscriptionManager, AgentNotification, AgentNotificationType
+)
+from brain_researcher.services.agent.error_integration import (
+    IntegrationErrorManager, IntegrationType
 )
 
 logger = logging.getLogger(__name__)
@@ -29,12 +26,12 @@ logger = logging.getLogger(__name__)
 class NotificationChannel(Enum):
     """Notification delivery channels."""
 
-    IN_CHAT = "in_chat"  # Show in conversation
-    POPUP = "popup"  # Browser popup/modal
-    EMAIL = "email"  # Email notification
-    WEBSOCKET = "websocket"  # Real-time WebSocket
-    PUSH = "push"  # Push notification
-    LOG = "log"  # Log file only
+    IN_CHAT = "in_chat"          # Show in conversation
+    POPUP = "popup"              # Browser popup/modal
+    EMAIL = "email"              # Email notification
+    WEBSOCKET = "websocket"      # Real-time WebSocket
+    PUSH = "push"                # Push notification
+    LOG = "log"                  # Log file only
 
 
 class NotificationPriority(Enum):
@@ -74,12 +71,10 @@ class NotificationPreference:
 class AgentNotificationSystem:
     """Comprehensive notification system for agent interactions."""
 
-    def __init__(
-        self,
-        subscription_manager: Optional[AgentSubscriptionManager] = None,
-        error_manager: Optional[IntegrationErrorManager] = None,
-        redis_client=None,
-    ):
+    def __init__(self,
+                 subscription_manager: Optional[AgentSubscriptionManager] = None,
+                 error_manager: Optional[IntegrationErrorManager] = None,
+                 redis_client=None):
         """Initialize notification system.
 
         Args:
@@ -108,7 +103,7 @@ class AgentNotificationSystem:
             "notifications_failed": 0,
             "by_channel": {channel.value: 0 for channel in NotificationChannel},
             "by_priority": {priority.value: 0 for priority in NotificationPriority},
-            "by_template": {},
+            "by_template": {}
         }
 
         # Rate limiting
@@ -124,75 +119,54 @@ class AgentNotificationSystem:
                 name="Analysis Started",
                 title_template="Analysis Started: {analysis_type}",
                 message_template="Your {analysis_type} analysis has started and is being processed.",
-                default_channels=[
-                    NotificationChannel.IN_CHAT,
-                    NotificationChannel.WEBSOCKET,
-                ],
+                default_channels=[NotificationChannel.IN_CHAT, NotificationChannel.WEBSOCKET],
                 default_priority=NotificationPriority.MEDIUM,
-                variables=["analysis_type", "analysis_id"],
+                variables=["analysis_type", "analysis_id"]
             ),
             NotificationTemplate(
                 template_id="analysis_completed",
                 name="Analysis Completed",
                 title_template="Analysis Completed: {analysis_type}",
                 message_template="Your {analysis_type} analysis has completed successfully. {result_summary}",
-                default_channels=[
-                    NotificationChannel.IN_CHAT,
-                    NotificationChannel.POPUP,
-                    NotificationChannel.WEBSOCKET,
-                ],
+                default_channels=[NotificationChannel.IN_CHAT, NotificationChannel.POPUP, NotificationChannel.WEBSOCKET],
                 default_priority=NotificationPriority.HIGH,
-                variables=["analysis_type", "analysis_id", "result_summary"],
+                variables=["analysis_type", "analysis_id", "result_summary"]
             ),
             NotificationTemplate(
                 template_id="analysis_failed",
                 name="Analysis Failed",
                 title_template="Analysis Failed: {analysis_type}",
                 message_template="Your {analysis_type} analysis failed: {error_message}. Please check the logs for details.",
-                default_channels=[
-                    NotificationChannel.IN_CHAT,
-                    NotificationChannel.POPUP,
-                    NotificationChannel.EMAIL,
-                ],
+                default_channels=[NotificationChannel.IN_CHAT, NotificationChannel.POPUP, NotificationChannel.EMAIL],
                 default_priority=NotificationPriority.HIGH,
-                variables=["analysis_type", "analysis_id", "error_message"],
+                variables=["analysis_type", "analysis_id", "error_message"]
             ),
             NotificationTemplate(
                 template_id="data_updated",
                 name="Data Updated",
                 title_template="Knowledge Graph Updated",
                 message_template="New data has been added to the knowledge graph: {update_summary}",
-                default_channels=[
-                    NotificationChannel.IN_CHAT,
-                    NotificationChannel.WEBSOCKET,
-                ],
+                default_channels=[NotificationChannel.IN_CHAT, NotificationChannel.WEBSOCKET],
                 default_priority=NotificationPriority.LOW,
-                variables=["update_summary", "entity_count"],
+                variables=["update_summary", "entity_count"]
             ),
             NotificationTemplate(
                 template_id="system_error",
                 name="System Error",
                 title_template="System Error Occurred",
                 message_template="A system error occurred in {component}: {error_message}",
-                default_channels=[
-                    NotificationChannel.POPUP,
-                    NotificationChannel.EMAIL,
-                    NotificationChannel.LOG,
-                ],
+                default_channels=[NotificationChannel.POPUP, NotificationChannel.EMAIL, NotificationChannel.LOG],
                 default_priority=NotificationPriority.CRITICAL,
-                variables=["component", "error_message", "error_id"],
+                variables=["component", "error_message", "error_id"]
             ),
             NotificationTemplate(
                 template_id="tool_execution",
                 name="Tool Execution",
                 title_template="Tool Executed: {tool_name}",
                 message_template="Tool {tool_name} completed execution. {result_summary}",
-                default_channels=[
-                    NotificationChannel.IN_CHAT,
-                    NotificationChannel.WEBSOCKET,
-                ],
+                default_channels=[NotificationChannel.IN_CHAT, NotificationChannel.WEBSOCKET],
                 default_priority=NotificationPriority.MEDIUM,
-                variables=["tool_name", "result_summary", "execution_time"],
+                variables=["tool_name", "result_summary", "execution_time"]
             ),
             NotificationTemplate(
                 template_id="plugin_loaded",
@@ -201,20 +175,17 @@ class AgentNotificationSystem:
                 message_template="Data source plugin {plugin_name} has been loaded and is available for use.",
                 default_channels=[NotificationChannel.IN_CHAT],
                 default_priority=NotificationPriority.LOW,
-                variables=["plugin_name", "plugin_type"],
+                variables=["plugin_name", "plugin_type"]
             ),
             NotificationTemplate(
                 template_id="duplicate_found",
                 name="Duplicates Found",
                 title_template="Duplicate Data Found",
                 message_template="Found {duplicate_count} potential duplicates in {data_type} data. Review suggested.",
-                default_channels=[
-                    NotificationChannel.IN_CHAT,
-                    NotificationChannel.WEBSOCKET,
-                ],
+                default_channels=[NotificationChannel.IN_CHAT, NotificationChannel.WEBSOCKET],
                 default_priority=NotificationPriority.MEDIUM,
-                variables=["duplicate_count", "data_type", "similarity_score"],
-            ),
+                variables=["duplicate_count", "data_type", "similarity_score"]
+            )
         ]
 
         for template in templates:
@@ -230,18 +201,16 @@ class AgentNotificationSystem:
             NotificationChannel.LOG: self._deliver_log,
             NotificationChannel.POPUP: self._deliver_popup,
             NotificationChannel.EMAIL: self._deliver_email,
-            NotificationChannel.PUSH: self._deliver_push,
+            NotificationChannel.PUSH: self._deliver_push
         }
 
-    async def send_notification(
-        self,
-        template_id: str,
-        thread_id: str,
-        variables: Dict[str, Any],
-        user_id: Optional[str] = None,
-        channels: Optional[List[NotificationChannel]] = None,
-        priority: Optional[NotificationPriority] = None,
-    ) -> bool:
+    async def send_notification(self,
+                              template_id: str,
+                              thread_id: str,
+                              variables: Dict[str, Any],
+                              user_id: Optional[str] = None,
+                              channels: Optional[List[NotificationChannel]] = None,
+                              priority: Optional[NotificationPriority] = None) -> bool:
         """Send a notification using a template.
 
         Args:
@@ -277,19 +246,16 @@ class AgentNotificationSystem:
             # Filter channels by preferences
             if preferences:
                 final_channels = [
-                    ch
-                    for ch in final_channels
-                    if ch in preferences.enabled_channels
-                    and final_priority.value >= preferences.priority_threshold.value
+                    ch for ch in final_channels
+                    if ch in preferences.enabled_channels and
+                       final_priority.value >= preferences.priority_threshold.value
                 ]
 
             # Check quiet hours
             if preferences and self._in_quiet_hours(preferences):
                 # Only allow critical notifications during quiet hours
                 if final_priority != NotificationPriority.CRITICAL:
-                    logger.info(
-                        f"Skipping notification during quiet hours: {template_id}"
-                    )
+                    logger.info(f"Skipping notification during quiet hours: {template_id}")
                     return True
 
             # Generate notification content
@@ -307,9 +273,9 @@ class AgentNotificationSystem:
                     "template_id": template_id,
                     "variables": variables,
                     "channels": [ch.value for ch in final_channels],
-                    "priority": final_priority.value,
+                    "priority": final_priority.value
                 },
-                priority=final_priority.value,
+                priority=final_priority.value
             )
 
             # Deliver through each channel
@@ -319,9 +285,7 @@ class AgentNotificationSystem:
                     await self._deliver_notification(notification, channel)
                     self.stats["by_channel"][channel.value] += 1
                 except Exception as e:
-                    logger.error(
-                        f"Failed to deliver notification via {channel.value}: {e}"
-                    )
+                    logger.error(f"Failed to deliver notification via {channel.value}: {e}")
                     success = False
 
             # Update statistics
@@ -331,9 +295,7 @@ class AgentNotificationSystem:
                 self.stats["notifications_failed"] += 1
 
             self.stats["by_priority"][final_priority.value] += 1
-            self.stats["by_template"][template_id] = (
-                self.stats["by_template"].get(template_id, 0) + 1
-            )
+            self.stats["by_template"][template_id] = self.stats["by_template"].get(template_id, 0) + 1
 
             # Update rate limit
             self._update_rate_limit(user_id or thread_id, template_id)
@@ -342,9 +304,7 @@ class AgentNotificationSystem:
             return success
 
         except Exception as e:
-            logger.error(
-                f"Error sending notification {template_id}: {e}", exc_info=True
-            )
+            logger.error(f"Error sending notification {template_id}: {e}", exc_info=True)
             self.stats["notifications_failed"] += 1
             return False
 
@@ -369,14 +329,13 @@ class AgentNotificationSystem:
             "system_error": AgentNotificationType.ERROR_OCCURRED,
             "tool_execution": AgentNotificationType.ANALYSIS_COMPLETED,
             "plugin_loaded": AgentNotificationType.DATA_UPDATED,
-            "duplicate_found": AgentNotificationType.DATA_UPDATED,
+            "duplicate_found": AgentNotificationType.DATA_UPDATED
         }
 
         return mapping.get(template_id, AgentNotificationType.DATA_UPDATED)
 
-    async def _deliver_notification(
-        self, notification: AgentNotification, channel: NotificationChannel
-    ):
+    async def _deliver_notification(self, notification: AgentNotification,
+                                  channel: NotificationChannel):
         """Deliver notification through a specific channel."""
         handler = self.delivery_handlers.get(channel)
         if handler:
@@ -406,9 +365,7 @@ class AgentNotificationSystem:
 
     async def _deliver_log(self, notification: AgentNotification):
         """Deliver notification to log file."""
-        logger.info(
-            f"NOTIFICATION [{notification.priority}] {notification.title}: {notification.message}"
-        )
+        logger.info(f"NOTIFICATION [{notification.priority}] {notification.title}: {notification.message}")
 
     async def _deliver_popup(self, notification: AgentNotification):
         """Deliver popup notification."""
@@ -425,9 +382,7 @@ class AgentNotificationSystem:
         # This would integrate with push notification service
         logger.debug(f"Would send push notification: {notification.title}")
 
-    def _get_user_preferences(
-        self, user_id: Optional[str]
-    ) -> Optional[NotificationPreference]:
+    def _get_user_preferences(self, user_id: Optional[str]) -> Optional[NotificationPreference]:
         """Get user notification preferences."""
         if user_id:
             return self.preferences.get(user_id)
@@ -440,7 +395,6 @@ class AgentNotificationSystem:
 
         try:
             from datetime import time
-
             now = datetime.now().time()
             start = datetime.strptime(preferences.quiet_hours["start"], "%H:%M").time()
             end = datetime.strptime(preferences.quiet_hours["end"], "%H:%M").time()
@@ -475,22 +429,21 @@ class AgentNotificationSystem:
         now = datetime.now()
 
         if key not in self.rate_limits:
-            self.rate_limits[key] = {"window_start": now, "count": 1}
+            self.rate_limits[key] = {
+                "window_start": now,
+                "count": 1
+            }
         else:
             limit_data = self.rate_limits[key]
 
             # Check if we're in a new window
-            if now - limit_data["window_start"] > timedelta(
-                seconds=self.rate_limit_window
-            ):
+            if now - limit_data["window_start"] > timedelta(seconds=self.rate_limit_window):
                 limit_data["window_start"] = now
                 limit_data["count"] = 1
             else:
                 limit_data["count"] += 1
 
-    async def set_user_preferences(
-        self, user_id: str, preferences: NotificationPreference
-    ):
+    async def set_user_preferences(self, user_id: str, preferences: NotificationPreference):
         """Set user notification preferences."""
         self.preferences[user_id] = preferences
 
@@ -500,17 +453,13 @@ class AgentNotificationSystem:
                 key = f"agent:notification_prefs:{user_id}"
                 prefs_data = {
                     "user_id": preferences.user_id,
-                    "enabled_channels": [
-                        ch.value for ch in preferences.enabled_channels
-                    ],
+                    "enabled_channels": [ch.value for ch in preferences.enabled_channels],
                     "priority_threshold": preferences.priority_threshold.value,
                     "quiet_hours": preferences.quiet_hours,
-                    "thread_specific": preferences.thread_specific,
+                    "thread_specific": preferences.thread_specific
                 }
 
-                await self.redis.setex(
-                    key, 86400 * 30, json.dumps(prefs_data)
-                )  # 30 day TTL
+                await self.redis.setex(key, 86400 * 30, json.dumps(prefs_data))  # 30 day TTL
 
             except Exception as e:
                 logger.error(f"Failed to store user preferences: {e}")
@@ -522,9 +471,7 @@ class AgentNotificationSystem:
         self.templates[template.template_id] = template
         logger.info(f"Registered custom notification template: {template.template_id}")
 
-    def register_delivery_handler(
-        self, channel: NotificationChannel, handler: Callable
-    ):
+    def register_delivery_handler(self, channel: NotificationChannel, handler: Callable):
         """Register a custom delivery handler."""
         self.delivery_handlers[channel] = handler
         logger.info(f"Registered custom delivery handler for {channel.value}")
@@ -543,7 +490,7 @@ class AgentNotificationSystem:
                 "message_template": template.message_template,
                 "default_channels": [ch.value for ch in template.default_channels],
                 "default_priority": template.default_priority.value,
-                "variables": template.variables,
+                "variables": template.variables
             }
             for template in self.templates.values()
         ]
@@ -553,7 +500,7 @@ class AgentNotificationSystem:
 async def setup_agent_notifications(
     subscription_manager: Optional[AgentSubscriptionManager] = None,
     error_manager: Optional[IntegrationErrorManager] = None,
-    redis_client=None,
+    redis_client=None
 ) -> AgentNotificationSystem:
     """Set up agent notification system.
 
@@ -574,27 +521,22 @@ async def setup_agent_notifications(
 
 
 # Convenience functions for common notifications
-async def notify_analysis_started(
-    notification_system: AgentNotificationSystem,
-    thread_id: str,
-    analysis_type: str,
-    analysis_id: str,
-):
+async def notify_analysis_started(notification_system: AgentNotificationSystem,
+                                thread_id: str, analysis_type: str, analysis_id: str):
     """Send analysis started notification."""
     await notification_system.send_notification(
         "analysis_started",
         thread_id,
-        {"analysis_type": analysis_type, "analysis_id": analysis_id},
+        {
+            "analysis_type": analysis_type,
+            "analysis_id": analysis_id
+        }
     )
 
 
-async def notify_analysis_completed(
-    notification_system: AgentNotificationSystem,
-    thread_id: str,
-    analysis_type: str,
-    analysis_id: str,
-    result_summary: str,
-):
+async def notify_analysis_completed(notification_system: AgentNotificationSystem,
+                                  thread_id: str, analysis_type: str, analysis_id: str,
+                                  result_summary: str):
     """Send analysis completed notification."""
     await notification_system.send_notification(
         "analysis_completed",
@@ -602,21 +544,21 @@ async def notify_analysis_completed(
         {
             "analysis_type": analysis_type,
             "analysis_id": analysis_id,
-            "result_summary": result_summary,
-        },
+            "result_summary": result_summary
+        }
     )
 
 
-async def notify_system_error(
-    notification_system: AgentNotificationSystem,
-    thread_id: str,
-    component: str,
-    error_message: str,
-    error_id: str,
-):
+async def notify_system_error(notification_system: AgentNotificationSystem,
+                            thread_id: str, component: str, error_message: str,
+                            error_id: str):
     """Send system error notification."""
     await notification_system.send_notification(
         "system_error",
         thread_id,
-        {"component": component, "error_message": error_message, "error_id": error_id},
+        {
+            "component": component,
+            "error_message": error_message,
+            "error_id": error_id
+        }
     )

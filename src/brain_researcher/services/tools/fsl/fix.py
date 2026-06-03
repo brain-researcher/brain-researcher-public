@@ -3,17 +3,16 @@
 This module provides FSL FIX (ICA-based Xnoiseifier) conforming to the NeuroTool interface.
 It delegates to the existing agent tool implementation to avoid duplication.
 """
-
 from typing import Any
 
 from pydantic import BaseModel
 
-from brain_researcher.services.tools.base import ExecutionMode, NeuroTool
-from brain_researcher.services.tools.fsl_fix_tool import (
-    FSLFIXMultiRunTool,
-    FSLFIXTool,
-)
+from brain_researcher.services.tools.base import NeuroTool, ExecutionMode
 from brain_researcher.services.tools.result import ToolResult
+from brain_researcher.services.tools.fsl_fix_tool import (
+    FSLFIXTool,
+    FSLFIXMultiRunTool,
+)
 
 
 class FSLFIXPipeline(NeuroTool):

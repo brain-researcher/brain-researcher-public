@@ -149,7 +149,7 @@ orchestrator:
   # setting either:
   # - BR_STUDIO_JUPYTER_BASE_URL: fixed base URL for a single runtime target
   # - BR_STUDIO_JUPYTER_BASE_URL_TEMPLATE: template such as
-  #   https://hub.brain-researcher.com/user/{jupyter_user_name_url}
+  #   https://hub.${PUBLIC_HOSTNAME}/user/{jupyter_user_name_url}
   # Together with BR_STUDIO_JUPYTER_TOKEN (or BR_JUPYTER_TOKEN), the
   # orchestrator can talk to the bound Neurodesk/Jupyter server directly.
   marimoRuntime:

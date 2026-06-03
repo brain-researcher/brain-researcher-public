@@ -5,20 +5,16 @@ Tests tenant lifecycle, authentication, configuration management,
 and multi-tenant isolation for BR-KG.
 """
 
+import pytest
 import json
 import time
-from dataclasses import asdict
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, MagicMock, patch
+from dataclasses import asdict
 
 from brain_researcher.services.br_kg.tenants.manager import (
-    TenantConfiguration,
-    TenantManager,
-    TenantStatus,
-    TenantTier,
-    TenantUser,
+    TenantManager, TenantConfiguration, TenantUser,
+    TenantStatus, TenantTier
 )
 
 
@@ -48,7 +44,7 @@ class TestTenantConfiguration:
             expires_at=None,
             admin_email="admin@example.com",
             billing_contact=None,
-            custom_settings={},
+            custom_settings={}
         )
 
         assert config.tenant_id == "test_tenant_123"
@@ -81,13 +77,13 @@ class TestTenantConfiguration:
             expires_at=None,
             admin_email="admin@test.com",
             billing_contact=None,
-            custom_settings={"key": "value"},
+            custom_settings={"key": "value"}
         )
 
         config_dict = asdict(config)
-        assert config_dict["tenant_id"] == "test_tenant"
-        assert config_dict["tier"] == TenantTier.FREE
-        assert config_dict["custom_settings"] == {"key": "value"}
+        assert config_dict['tenant_id'] == "test_tenant"
+        assert config_dict['tier'] == TenantTier.FREE
+        assert config_dict['custom_settings'] == {"key": "value"}
 
 
 class TestTenantUser:
@@ -105,7 +101,7 @@ class TestTenantUser:
             api_key="test_api_key",
             created_at=datetime.now(),
             last_active=None,
-            is_active=True,
+            is_active=True
         )
 
         assert user.user_id == "user_123"
@@ -152,21 +148,21 @@ class TestTenantManager:
     def test_tier_configurations(self, tenant_manager):
         """Test default tier configurations"""
         free_config = tenant_manager.tier_configurations[TenantTier.FREE]
-        assert free_config["max_nodes"] == 10000
-        assert free_config["max_users"] == 1
-        assert free_config["federation_enabled"] is False
+        assert free_config['max_nodes'] == 10000
+        assert free_config['max_users'] == 1
+        assert free_config['federation_enabled'] is False
 
         enterprise_config = tenant_manager.tier_configurations[TenantTier.ENTERPRISE]
-        assert enterprise_config["max_nodes"] == -1  # Unlimited
-        assert enterprise_config["max_users"] == -1  # Unlimited
-        assert enterprise_config["federation_enabled"] is True
+        assert enterprise_config['max_nodes'] == -1  # Unlimited
+        assert enterprise_config['max_users'] == -1  # Unlimited
+        assert enterprise_config['federation_enabled'] is True
 
     def test_generate_tenant_id(self, tenant_manager):
         """Test tenant ID generation"""
         name = "Test Tenant Name"
 
         # Mock time.time() to ensure consistent testing
-        with patch("time.time", return_value=1234567890):
+        with patch('time.time', return_value=1234567890):
             tenant_id = tenant_manager._generate_tenant_id(name)
 
         assert tenant_id.startswith("tenant_")
@@ -178,7 +174,7 @@ class TestTenantManager:
         tenant_id = "tenant_123"
         username = "Test User"
 
-        with patch("time.time", return_value=9876543210):
+        with patch('time.time', return_value=9876543210):
             user_id = tenant_manager._generate_user_id(tenant_id, username)
 
         assert user_id.startswith(tenant_id)
@@ -200,11 +196,11 @@ class TestTenantManager:
         """Test successful tenant creation"""
         # Mock database operations
         tenant_manager._create_tenant_in_database = Mock()
-        tenant_manager._create_admin_user = Mock(
-            return_value=Mock(
-                user_id="admin_123", api_key="test_key", spec=["user_id", "api_key"]
-            )
-        )
+        tenant_manager._create_admin_user = Mock(return_value=Mock(
+            user_id="admin_123",
+            api_key="test_key",
+            spec=['user_id', 'api_key']
+        ))
         tenant_manager._initialize_tenant_workspace = Mock()
         tenant_manager._update_tenant_in_database = Mock()
 
@@ -212,7 +208,7 @@ class TestTenantManager:
             name="Test Tenant",
             admin_email="admin@test.com",
             tier=TenantTier.BASIC,
-            description="Test tenant description",
+            description="Test tenant description"
         )
 
         assert isinstance(tenant_config, TenantConfiguration)
@@ -239,21 +235,21 @@ class TestTenantManager:
 
         with pytest.raises(ValueError, match="already exists"):
             tenant_manager.create_tenant(
-                name="Existing Tenant", admin_email="admin@test.com"
+                name="Existing Tenant",
+                admin_email="admin@test.com"
             )
 
     def test_create_tenant_database_failure(self, tenant_manager):
         """Test tenant creation with database failure"""
         # Mock database operation to fail
-        tenant_manager._create_tenant_in_database = Mock(
-            side_effect=Exception("DB Error")
-        )
+        tenant_manager._create_tenant_in_database = Mock(side_effect=Exception("DB Error"))
         tenant_manager._cleanup_failed_tenant_creation = Mock()
         tenant_manager.get_tenant = Mock(return_value=None)  # Tenant doesn't exist
 
         with pytest.raises(ValueError, match="Failed to create tenant"):
             tenant_manager.create_tenant(
-                name="Test Tenant", admin_email="admin@test.com"
+                name="Test Tenant",
+                admin_email="admin@test.com"
             )
 
         # Cleanup should be called
@@ -306,14 +302,17 @@ class TestTenantManager:
         tenant_manager.get_tenant = Mock(return_value=existing_config)
         tenant_manager._update_tenant_in_database = Mock()
 
-        updates = {"name": "New Name", "description": "New Description"}
+        updates = {
+            "name": "New Name",
+            "description": "New Description"
+        }
 
         result = tenant_manager.update_tenant(tenant_id, updates)
 
         assert result == existing_config
         assert existing_config.name == "New Name"
         assert existing_config.description == "New Description"
-        assert hasattr(existing_config, "updated_at")
+        assert hasattr(existing_config, 'updated_at')
 
         tenant_manager._update_tenant_in_database.assert_called_once()
         assert tenant_manager.tenant_cache[tenant_id] == existing_config
@@ -341,7 +340,7 @@ class TestTenantManager:
 
         assert result is True
         assert tenant_config.status == TenantStatus.DELETED
-        assert hasattr(tenant_config, "updated_at")
+        assert hasattr(tenant_config, 'updated_at')
 
         # Should be removed from cache
         assert tenant_id not in tenant_manager.tenant_cache
@@ -410,27 +409,11 @@ class TestTenantManager:
         """Test listing tenants without filters"""
         # Mock database result
         mock_records = [
-            {
-                "t": {
-                    "tenant_id": "tenant1",
-                    "name": "Tenant 1",
-                    "status": "active",
-                    "tier": "basic",
-                }
-            },
-            {
-                "t": {
-                    "tenant_id": "tenant2",
-                    "name": "Tenant 2",
-                    "status": "active",
-                    "tier": "free",
-                }
-            },
+            {'t': {'tenant_id': 'tenant1', 'name': 'Tenant 1', 'status': 'active', 'tier': 'basic'}},
+            {'t': {'tenant_id': 'tenant2', 'name': 'Tenant 2', 'status': 'active', 'tier': 'free'}}
         ]
         tenant_manager.neo4j_db._run.return_value = mock_records
-        tenant_manager._dict_to_tenant_config = Mock(
-            side_effect=lambda x: Mock(tenant_id=x["tenant_id"])
-        )
+        tenant_manager._dict_to_tenant_config = Mock(side_effect=lambda x: Mock(tenant_id=x['tenant_id']))
 
         result = tenant_manager.list_tenants()
 
@@ -440,8 +423,8 @@ class TestTenantManager:
         call_args = tenant_manager.neo4j_db._run.call_args
         query, params = call_args[0], call_args[1]
         assert "MATCH (t:Tenant)" in query
-        assert params["limit"] == 100
-        assert params["offset"] == 0
+        assert params['limit'] == 100
+        assert params['offset'] == 0
 
     def test_list_tenants_with_filters(self, tenant_manager):
         """Test listing tenants with status and tier filters"""
@@ -452,7 +435,7 @@ class TestTenantManager:
             status=TenantStatus.ACTIVE,
             tier=TenantTier.PROFESSIONAL,
             limit=50,
-            offset=10,
+            offset=10
         )
 
         call_args = tenant_manager.neo4j_db._run.call_args
@@ -460,10 +443,10 @@ class TestTenantManager:
 
         assert "AND t.status = $status" in query
         assert "AND t.tier = $tier" in query
-        assert params["status"] == "active"
-        assert params["tier"] == "professional"
-        assert params["limit"] == 50
-        assert params["offset"] == 10
+        assert params['status'] == 'active'
+        assert params['tier'] == 'professional'
+        assert params['limit'] == 50
+        assert params['offset'] == 10
 
     def test_authenticate_user_from_cache(self, tenant_manager):
         """Test user authentication from cache"""
@@ -493,7 +476,7 @@ class TestTenantManager:
         result = tenant_manager.authenticate_user(api_key)
 
         assert result == user_from_db
-        assert hasattr(user_from_db, "last_active")
+        assert hasattr(user_from_db, 'last_active')
 
         # Should be cached
         assert tenant_manager.user_cache[user_from_db.user_id] == user_from_db
@@ -539,7 +522,7 @@ class TestTenantManager:
             username="testuser",
             email="test@example.com",
             role="editor",
-            permissions={"read", "write"},
+            permissions={"read", "write"}
         )
 
         assert isinstance(user, TenantUser)
@@ -566,7 +549,9 @@ class TestTenantManager:
         tenant_manager.get_tenant = Mock(return_value=tenant_config)
 
         result = tenant_manager.create_user(
-            tenant_id=tenant_id, username="testuser", email="test@example.com"
+            tenant_id=tenant_id,
+            username="testuser",
+            email="test@example.com"
         )
 
         assert result is None
@@ -583,7 +568,9 @@ class TestTenantManager:
 
         with pytest.raises(ValueError, match="user limit exceeded"):
             tenant_manager.create_user(
-                tenant_id=tenant_id, username="testuser", email="test@example.com"
+                tenant_id=tenant_id,
+                username="testuser",
+                email="test@example.com"
             )
 
     def test_create_user_database_error(self, tenant_manager):
@@ -595,12 +582,12 @@ class TestTenantManager:
 
         tenant_manager.get_tenant = Mock(return_value=tenant_config)
         tenant_manager._count_tenant_users = Mock(return_value=1)
-        tenant_manager._create_user_in_database = Mock(
-            side_effect=Exception("DB Error")
-        )
+        tenant_manager._create_user_in_database = Mock(side_effect=Exception("DB Error"))
 
         result = tenant_manager.create_user(
-            tenant_id=tenant_id, username="testuser", email="test@example.com"
+            tenant_id=tenant_id,
+            username="testuser",
+            email="test@example.com"
         )
 
         assert result is None
@@ -611,13 +598,11 @@ class TestTenantManager:
 
         # Mock database result
         mock_records = [
-            {"u": {"user_id": "user1", "username": "user1", "tenant_id": tenant_id}},
-            {"u": {"user_id": "user2", "username": "user2", "tenant_id": tenant_id}},
+            {'u': {'user_id': 'user1', 'username': 'user1', 'tenant_id': tenant_id}},
+            {'u': {'user_id': 'user2', 'username': 'user2', 'tenant_id': tenant_id}}
         ]
         tenant_manager.neo4j_db._run.return_value = mock_records
-        tenant_manager._dict_to_tenant_user = Mock(
-            side_effect=lambda x: Mock(user_id=x["user_id"])
-        )
+        tenant_manager._dict_to_tenant_user = Mock(side_effect=lambda x: Mock(user_id=x['user_id']))
 
         users = tenant_manager.get_tenant_users(tenant_id)
 
@@ -627,7 +612,7 @@ class TestTenantManager:
         call_args = tenant_manager.neo4j_db._run.call_args
         query, params = call_args[0], call_args[1]
         assert "MATCH (u:TenantUser {tenant_id: $tenant_id})" in query
-        assert params["tenant_id"] == tenant_id
+        assert params['tenant_id'] == tenant_id
 
     def test_get_tenant_stats(self, tenant_manager):
         """Test getting tenant statistics"""
@@ -635,20 +620,20 @@ class TestTenantManager:
 
         # Mock database queries
         tenant_manager.neo4j_db._run.side_effect = [
-            [{"count": 1000}],  # Node count
-            [{"count": 5000}],  # Relationship count
+            [{'count': 1000}],  # Node count
+            [{'count': 5000}],  # Relationship count
         ]
         tenant_manager._count_tenant_users = Mock(return_value=3)
 
         stats = tenant_manager.get_tenant_stats(tenant_id)
 
-        assert stats["tenant_id"] == tenant_id
-        assert stats["nodes"] == 1000
-        assert stats["relationships"] == 5000
-        assert stats["users"] == 3
-        assert "storage_mb" in stats
-        assert "queries_today" in stats
-        assert "last_activity" in stats
+        assert stats['tenant_id'] == tenant_id
+        assert stats['nodes'] == 1000
+        assert stats['relationships'] == 5000
+        assert stats['users'] == 3
+        assert 'storage_mb' in stats
+        assert 'queries_today' in stats
+        assert 'last_activity' in stats
 
 
 class TestTenantManagerDatabaseOperations:
@@ -683,7 +668,7 @@ class TestTenantManagerDatabaseOperations:
             expires_at=None,
             admin_email="admin@test.com",
             billing_contact=None,
-            custom_settings={"key": "value"},
+            custom_settings={"key": "value"}
         )
 
         tenant_manager._create_tenant_in_database(tenant_config)
@@ -695,11 +680,11 @@ class TestTenantManagerDatabaseOperations:
         query, params = call_args[0], call_args[1]
 
         assert "CREATE (t:Tenant {" in query
-        assert params["tenant_id"] == "test_tenant"
-        assert params["name"] == "Test Tenant"
-        assert params["tier"] == "basic"
-        assert params["status"] == "active"
-        assert params["custom_settings"] == '{"key": "value"}'
+        assert params['tenant_id'] == "test_tenant"
+        assert params['name'] == "Test Tenant"
+        assert params['tier'] == "basic"
+        assert params['status'] == "active"
+        assert params['custom_settings'] == '{"key": "value"}'
 
     def test_create_user_in_database(self, tenant_manager):
         """Test creating user record in Neo4j"""
@@ -713,7 +698,7 @@ class TestTenantManagerDatabaseOperations:
             api_key="test_api_key",
             created_at=datetime.now(),
             last_active=None,
-            is_active=True,
+            is_active=True
         )
 
         tenant_manager._create_user_in_database(user)
@@ -724,17 +709,14 @@ class TestTenantManagerDatabaseOperations:
         query, params = call_args[0], call_args[1]
 
         assert "CREATE (u:TenantUser {" in query
-        assert params["user_id"] == "user_123"
-        assert params["tenant_id"] == "tenant_123"
-        assert params["username"] == "testuser"
-        assert params["email"] == "test@example.com"
-        assert params["role"] == "editor"
-        assert (
-            '["read", "write"]' in params["permissions"]
-            or '["write", "read"]' in params["permissions"]
-        )
-        assert params["api_key"] == "test_api_key"
-        assert params["is_active"] is True
+        assert params['user_id'] == "user_123"
+        assert params['tenant_id'] == "tenant_123"
+        assert params['username'] == "testuser"
+        assert params['email'] == "test@example.com"
+        assert params['role'] == "editor"
+        assert '["read", "write"]' in params['permissions'] or '["write", "read"]' in params['permissions']
+        assert params['api_key'] == "test_api_key"
+        assert params['is_active'] is True
 
     def test_load_tenant_from_database(self, tenant_manager):
         """Test loading tenant from database"""
@@ -743,21 +725,19 @@ class TestTenantManagerDatabaseOperations:
         # Mock database result
         mock_result = Mock()
         mock_result.single.return_value = {
-            "t": {
-                "tenant_id": tenant_id,
-                "name": "Test Tenant",
-                "tier": "basic",
-                "status": "active",
-                "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat(),
-                "admin_email": "admin@test.com",
-                "custom_settings": "{}",
+            't': {
+                'tenant_id': tenant_id,
+                'name': 'Test Tenant',
+                'tier': 'basic',
+                'status': 'active',
+                'created_at': datetime.now().isoformat(),
+                'updated_at': datetime.now().isoformat(),
+                'admin_email': 'admin@test.com',
+                'custom_settings': '{}'
             }
         }
         tenant_manager.neo4j_db._run.return_value = mock_result
-        tenant_manager._dict_to_tenant_config = Mock(
-            return_value=Mock(tenant_id=tenant_id)
-        )
+        tenant_manager._dict_to_tenant_config = Mock(return_value=Mock(tenant_id=tenant_id))
 
         result = tenant_manager._load_tenant_from_database(tenant_id)
 
@@ -767,7 +747,7 @@ class TestTenantManagerDatabaseOperations:
         query, params = call_args[0], call_args[1]
 
         assert "MATCH (t:Tenant {tenant_id: $tenant_id})" in query
-        assert params["tenant_id"] == tenant_id
+        assert params['tenant_id'] == tenant_id
 
     def test_load_tenant_from_database_not_found(self, tenant_manager):
         """Test loading non-existent tenant from database"""
@@ -785,34 +765,34 @@ class TestTenantManagerDatabaseOperations:
     def test_dict_to_tenant_config(self, tenant_manager):
         """Test conversion of dict to TenantConfiguration"""
         data = {
-            "tenant_id": "test_tenant",
-            "name": "Test Tenant",
-            "description": "Test Description",
-            "tier": "basic",
-            "status": "active",
-            "max_nodes": 100000,
-            "max_relationships": 500000,
-            "max_queries_per_day": 10000,
-            "max_concurrent_queries": 5,
-            "max_storage_mb": 1000,
-            "max_users": 5,
-            "sparql_enabled": True,
-            "federation_enabled": True,
-            "analytics_enabled": True,
-            "api_access_enabled": True,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat(),
-            "expires_at": None,
-            "admin_email": "admin@test.com",
-            "billing_contact": None,
-            "custom_settings": '{"key": "value"}',
+            'tenant_id': 'test_tenant',
+            'name': 'Test Tenant',
+            'description': 'Test Description',
+            'tier': 'basic',
+            'status': 'active',
+            'max_nodes': 100000,
+            'max_relationships': 500000,
+            'max_queries_per_day': 10000,
+            'max_concurrent_queries': 5,
+            'max_storage_mb': 1000,
+            'max_users': 5,
+            'sparql_enabled': True,
+            'federation_enabled': True,
+            'analytics_enabled': True,
+            'api_access_enabled': True,
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat(),
+            'expires_at': None,
+            'admin_email': 'admin@test.com',
+            'billing_contact': None,
+            'custom_settings': '{"key": "value"}'
         }
 
         config = tenant_manager._dict_to_tenant_config(data)
 
         assert isinstance(config, TenantConfiguration)
-        assert config.tenant_id == "test_tenant"
-        assert config.name == "Test Tenant"
+        assert config.tenant_id == 'test_tenant'
+        assert config.name == 'Test Tenant'
         assert config.tier == TenantTier.BASIC
         assert config.status == TenantStatus.ACTIVE
         assert config.custom_settings == {"key": "value"}
@@ -822,28 +802,28 @@ class TestTenantManagerDatabaseOperations:
     def test_dict_to_tenant_user(self, tenant_manager):
         """Test conversion of dict to TenantUser"""
         data = {
-            "user_id": "user_123",
-            "tenant_id": "tenant_123",
-            "username": "testuser",
-            "email": "test@example.com",
-            "role": "editor",
-            "permissions": '["read", "write"]',
-            "api_key": "test_api_key",
-            "created_at": datetime.now().isoformat(),
-            "last_active": None,
-            "is_active": True,
+            'user_id': 'user_123',
+            'tenant_id': 'tenant_123',
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'role': 'editor',
+            'permissions': '["read", "write"]',
+            'api_key': 'test_api_key',
+            'created_at': datetime.now().isoformat(),
+            'last_active': None,
+            'is_active': True
         }
 
         user = tenant_manager._dict_to_tenant_user(data)
 
         assert isinstance(user, TenantUser)
-        assert user.user_id == "user_123"
-        assert user.tenant_id == "tenant_123"
-        assert user.username == "testuser"
-        assert user.email == "test@example.com"
-        assert user.role == "editor"
+        assert user.user_id == 'user_123'
+        assert user.tenant_id == 'tenant_123'
+        assert user.username == 'testuser'
+        assert user.email == 'test@example.com'
+        assert user.role == 'editor'
         assert user.permissions == {"read", "write"}
-        assert user.api_key == "test_api_key"
+        assert user.api_key == 'test_api_key'
         assert user.is_active is True
         assert isinstance(user.created_at, datetime)
         assert user.last_active is None
@@ -862,12 +842,12 @@ class TestTenantManagerDatabaseOperations:
         # Check tenant deletion query
         tenant_query, tenant_params = calls[0][0], calls[0][1]
         assert "DELETE t" in tenant_query
-        assert tenant_params["tenant_id"] == tenant_id
+        assert tenant_params['tenant_id'] == tenant_id
 
         # Check user deletion query
         user_query, user_params = calls[1][0], calls[1][1]
         assert "DELETE u" in user_query
-        assert user_params["tenant_id"] == tenant_id
+        assert user_params['tenant_id'] == tenant_id
 
     def test_delete_tenant_data(self, tenant_manager):
         """Test deletion of tenant-specific data"""
@@ -883,8 +863,8 @@ class TestTenantManagerDatabaseOperations:
         for call_args, call_kwargs in calls:
             query, params = call_args
             assert "_tenant_id = $tenant_id" in query
-            assert params["tenant_id"] == tenant_id
+            assert params['tenant_id'] == tenant_id
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])

@@ -4,33 +4,28 @@ Multi-Voxel Pattern Analysis (MVPA) tool for neuroimaging data.
 Implements classification, cross-validation, and pattern analysis for fMRI/MEG/EEG data.
 """
 
-import json
 import logging
-import warnings
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+import json
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
-from scipy import stats
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Tuple
+from sklearn.svm import SVC, LinearSVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    precision_recall_fscore_support,
-)
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import (
-    LeaveOneGroupOut,
-    StratifiedKFold,
-    cross_val_predict,
-    cross_val_score,
-    permutation_test_score,
+    cross_val_score, StratifiedKFold, LeaveOneGroupOut,
+    permutation_test_score, cross_val_predict
+)
+from sklearn.metrics import (
+    accuracy_score, precision_recall_fscore_support,
+    confusion_matrix, classification_report
 )
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC, LinearSVC
+from scipy import stats
+import warnings
+
+from pydantic import BaseModel, Field, ConfigDict
 
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -42,82 +37,128 @@ logger = logging.getLogger(__name__)
 
 class MVPAArgs(BaseModel):
     """Arguments for MVPA analysis."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Input data
-    data_file: str = Field(description="Path to neuroimaging data (samples x features)")
-    labels_file: str = Field(description="Path to labels/conditions file")
+    data_file: str = Field(
+        description="Path to neuroimaging data (samples x features)"
+    )
+    labels_file: str = Field(
+        description="Path to labels/conditions file"
+    )
     groups_file: Optional[str] = Field(
-        default=None, description="Path to groups file (runs/subjects for CV)"
+        default=None,
+        description="Path to groups file (runs/subjects for CV)"
     )
 
     # Data type
     data_type: str = Field(
-        default="fmri", description="Data type: 'fmri', 'meg', 'eeg', 'mixed'"
+        default="fmri",
+        description="Data type: 'fmri', 'meg', 'eeg', 'mixed'"
     )
 
     # Classifier
     classifier: str = Field(
         default="svm",
-        description="Classifier: 'svm', 'linear_svm', 'lda', 'logistic', 'random_forest'",
+        description="Classifier: 'svm', 'linear_svm', 'lda', 'logistic', 'random_forest'"
     )
 
     # SVM parameters
     svm_kernel: str = Field(
-        default="linear", description="SVM kernel: 'linear', 'rbf', 'poly'"
+        default="linear",
+        description="SVM kernel: 'linear', 'rbf', 'poly'"
     )
-    svm_c: float = Field(default=1.0, description="SVM regularization parameter")
+    svm_c: float = Field(
+        default=1.0,
+        description="SVM regularization parameter"
+    )
 
     # Cross-validation
     cv_type: str = Field(
         default="stratified",
-        description="CV type: 'stratified', 'leave_one_out', 'leave_one_group_out', 'custom'",
+        description="CV type: 'stratified', 'leave_one_out', 'leave_one_group_out', 'custom'"
     )
-    n_folds: int = Field(default=5, description="Number of folds for stratified CV")
+    n_folds: int = Field(
+        default=5,
+        description="Number of folds for stratified CV"
+    )
 
     # Feature processing
-    standardize: bool = Field(default=True, description="Standardize features")
+    standardize: bool = Field(
+        default=True,
+        description="Standardize features"
+    )
     feature_selection: Optional[str] = Field(
         default=None,
-        description="Feature selection: 'anova', 'mutual_info', 'variance'",
+        description="Feature selection: 'anova', 'mutual_info', 'variance'"
     )
     n_features: Optional[int] = Field(
-        default=None, description="Number of features to select"
+        default=None,
+        description="Number of features to select"
     )
 
     # Pattern analysis
     compute_patterns: bool = Field(
-        default=True, description="Compute classifier weights/patterns"
+        default=True,
+        description="Compute classifier weights/patterns"
     )
     compute_similarity: bool = Field(
-        default=False, description="Compute pattern similarity matrix"
+        default=False,
+        description="Compute pattern similarity matrix"
     )
 
     # Permutation testing
     permutation_test: bool = Field(
-        default=True, description="Perform permutation testing"
+        default=True,
+        description="Perform permutation testing"
     )
-    n_permutations: int = Field(default=100, description="Number of permutations")
+    n_permutations: int = Field(
+        default=100,
+        description="Number of permutations"
+    )
 
     # Output options
-    output_dir: str = Field(description="Output directory for results")
-    save_predictions: bool = Field(default=True, description="Save predictions")
-    save_patterns: bool = Field(default=True, description="Save classifier patterns")
-    save_confusion: bool = Field(default=True, description="Save confusion matrix")
-    visualize: bool = Field(default=True, description="Generate visualizations")
+    output_dir: str = Field(
+        description="Output directory for results"
+    )
+    save_predictions: bool = Field(
+        default=True,
+        description="Save predictions"
+    )
+    save_patterns: bool = Field(
+        default=True,
+        description="Save classifier patterns"
+    )
+    save_confusion: bool = Field(
+        default=True,
+        description="Save confusion matrix"
+    )
+    visualize: bool = Field(
+        default=True,
+        description="Generate visualizations"
+    )
 
     # Advanced options
     multiclass_strategy: str = Field(
         default="ovr",
-        description="Multiclass strategy: 'ovr' (one-vs-rest), 'ovo' (one-vs-one)",
+        description="Multiclass strategy: 'ovr' (one-vs-rest), 'ovo' (one-vs-one)"
     )
     class_weight: Optional[str] = Field(
-        default=None, description="Class weight: None or 'balanced'"
+        default=None,
+        description="Class weight: None or 'balanced'"
     )
-    random_state: int = Field(default=42, description="Random seed")
-    n_jobs: int = Field(default=-1, description="Number of parallel jobs")
-    verbose: bool = Field(default=True, description="Verbose output")
+    random_state: int = Field(
+        default=42,
+        description="Random seed"
+    )
+    n_jobs: int = Field(
+        default=-1,
+        description="Number of parallel jobs"
+    )
+    verbose: bool = Field(
+        default=True,
+        description="Verbose output"
+    )
 
 
 class MVPATool(NeuroToolWrapper):
@@ -134,7 +175,6 @@ class MVPATool(NeuroToolWrapper):
 
         try:
             import sklearn
-
             self.sklearn_available = True
             logger.info("Scikit-learn available")
         except ImportError:
@@ -159,13 +199,13 @@ class MVPATool(NeuroToolWrapper):
     def _load_data(self, data_file, labels_file, groups_file=None):
         """Load MVPA data."""
         # Load data
-        if data_file.endswith(".npy"):
+        if data_file.endswith('.npy'):
             X = np.load(data_file)
         else:
             X = np.loadtxt(data_file)
 
         # Load labels
-        if labels_file.endswith(".npy"):
+        if labels_file.endswith('.npy'):
             y = np.load(labels_file)
         else:
             y = np.loadtxt(labels_file)
@@ -173,7 +213,7 @@ class MVPATool(NeuroToolWrapper):
         # Load groups if provided
         groups = None
         if groups_file:
-            if groups_file.endswith(".npy"):
+            if groups_file.endswith('.npy'):
                 groups = np.load(groups_file)
             else:
                 groups = np.loadtxt(groups_file)
@@ -190,38 +230,38 @@ class MVPATool(NeuroToolWrapper):
         """Get classifier object."""
         if classifier == "svm":
             return SVC(
-                kernel=kwargs.get("svm_kernel", "linear"),
-                C=kwargs.get("svm_c", 1.0),
+                kernel=kwargs.get('svm_kernel', 'linear'),
+                C=kwargs.get('svm_c', 1.0),
                 probability=True,
-                random_state=kwargs.get("random_state", 42),
-                class_weight=kwargs.get("class_weight"),
+                random_state=kwargs.get('random_state', 42),
+                class_weight=kwargs.get('class_weight')
             )
         elif classifier == "linear_svm":
             return LinearSVC(
-                C=kwargs.get("svm_c", 1.0),
-                random_state=kwargs.get("random_state", 42),
-                class_weight=kwargs.get("class_weight"),
-                max_iter=10000,
+                C=kwargs.get('svm_c', 1.0),
+                random_state=kwargs.get('random_state', 42),
+                class_weight=kwargs.get('class_weight'),
+                max_iter=10000
             )
         elif classifier == "lda":
             return LinearDiscriminantAnalysis()
         elif classifier == "logistic":
             return LogisticRegression(
-                random_state=kwargs.get("random_state", 42),
-                class_weight=kwargs.get("class_weight"),
+                random_state=kwargs.get('random_state', 42),
+                class_weight=kwargs.get('class_weight'),
                 max_iter=1000,
-                multi_class=kwargs.get("multiclass_strategy", "ovr"),
+                multi_class=kwargs.get('multiclass_strategy', 'ovr')
             )
         elif classifier == "random_forest":
             return RandomForestClassifier(
                 n_estimators=100,
-                random_state=kwargs.get("random_state", 42),
-                class_weight=kwargs.get("class_weight"),
-                n_jobs=kwargs.get("n_jobs", -1),
+                random_state=kwargs.get('random_state', 42),
+                class_weight=kwargs.get('class_weight'),
+                n_jobs=kwargs.get('n_jobs', -1)
             )
         else:
             # Default to SVM
-            return SVC(kernel="linear", random_state=42)
+            return SVC(kernel='linear', random_state=42)
 
     def _get_cv_splitter(self, cv_type, n_folds, groups=None):
         """Get cross-validation splitter."""
@@ -236,10 +276,7 @@ class MVPATool(NeuroToolWrapper):
     def _select_features(self, X, y, method, n_features):
         """Select features based on univariate statistics."""
         from sklearn.feature_selection import (
-            SelectKBest,
-            VarianceThreshold,
-            f_classif,
-            mutual_info_classif,
+            SelectKBest, f_classif, mutual_info_classif, VarianceThreshold
         )
 
         if method == "anova":
@@ -271,12 +308,12 @@ class MVPATool(NeuroToolWrapper):
         """Extract classifier patterns/weights."""
         patterns = None
 
-        if hasattr(clf, "coef_"):
+        if hasattr(clf, 'coef_'):
             # Linear classifier
             patterns = clf.coef_
             if patterns.shape[0] == 1:
                 patterns = patterns.ravel()
-        elif hasattr(clf, "feature_importances_"):
+        elif hasattr(clf, 'feature_importances_'):
             # Tree-based classifier
             patterns = clf.feature_importances_
 
@@ -304,61 +341,57 @@ class MVPATool(NeuroToolWrapper):
         fig, axes = plt.subplots(2, 2, figsize=(12, 10))
 
         # Plot 1: Confusion matrix
-        im = axes[0, 0].imshow(confusion_mat, cmap="Blues")
-        axes[0, 0].set_xlabel("Predicted")
-        axes[0, 0].set_ylabel("True")
-        axes[0, 0].set_title("Confusion Matrix")
+        im = axes[0, 0].imshow(confusion_mat, cmap='Blues')
+        axes[0, 0].set_xlabel('Predicted')
+        axes[0, 0].set_ylabel('True')
+        axes[0, 0].set_title('Confusion Matrix')
         plt.colorbar(im, ax=axes[0, 0])
 
         # Add text annotations
         for i in range(confusion_mat.shape[0]):
             for j in range(confusion_mat.shape[1]):
-                axes[0, 0].text(
-                    j, i, str(confusion_mat[i, j]), ha="center", va="center"
-                )
+                axes[0, 0].text(j, i, str(confusion_mat[i, j]),
+                              ha="center", va="center")
 
         # Plot 2: Accuracy over time (if sequential)
         window_size = min(20, len(y_true) // 10)
         if len(y_true) > window_size:
             accuracies = []
             for i in range(len(y_true) - window_size):
-                acc = accuracy_score(
-                    y_true[i : i + window_size], y_pred[i : i + window_size]
-                )
+                acc = accuracy_score(y_true[i:i+window_size],
+                                   y_pred[i:i+window_size])
                 accuracies.append(acc)
             axes[0, 1].plot(accuracies)
-            axes[0, 1].set_xlabel("Window start")
-            axes[0, 1].set_ylabel("Accuracy")
-            axes[0, 1].set_title("Sliding Window Accuracy")
-            axes[0, 1].axhline(y=0.5, color="r", linestyle="--", label="Chance")
+            axes[0, 1].set_xlabel('Window start')
+            axes[0, 1].set_ylabel('Accuracy')
+            axes[0, 1].set_title('Sliding Window Accuracy')
+            axes[0, 1].axhline(y=0.5, color='r', linestyle='--', label='Chance')
 
         # Plot 3: Class distribution
         unique_labels, counts = np.unique(y_true, return_counts=True)
         axes[1, 0].bar(unique_labels, counts)
-        axes[1, 0].set_xlabel("Class")
-        axes[1, 0].set_ylabel("Count")
-        axes[1, 0].set_title("Class Distribution")
+        axes[1, 0].set_xlabel('Class')
+        axes[1, 0].set_ylabel('Count')
+        axes[1, 0].set_title('Class Distribution')
 
         # Plot 4: Feature weights/patterns
         if patterns is not None:
             if len(patterns.shape) == 1:
                 # Single set of weights
                 axes[1, 1].plot(patterns[:100])  # Show first 100 features
-                axes[1, 1].set_xlabel("Feature index")
-                axes[1, 1].set_ylabel("Weight")
-                axes[1, 1].set_title("Classifier Weights (first 100)")
+                axes[1, 1].set_xlabel('Feature index')
+                axes[1, 1].set_ylabel('Weight')
+                axes[1, 1].set_title('Classifier Weights (first 100)')
             else:
                 # Multiple sets (multiclass)
-                im = axes[1, 1].imshow(patterns[:, :100], aspect="auto", cmap="RdBu_r")
-                axes[1, 1].set_xlabel("Feature index")
-                axes[1, 1].set_ylabel("Class")
-                axes[1, 1].set_title("Classifier Weights (first 100)")
+                im = axes[1, 1].imshow(patterns[:, :100], aspect='auto', cmap='RdBu_r')
+                axes[1, 1].set_xlabel('Feature index')
+                axes[1, 1].set_ylabel('Class')
+                axes[1, 1].set_title('Classifier Weights (first 100)')
                 plt.colorbar(im, ax=axes[1, 1])
 
         plt.tight_layout()
-        plt.savefig(
-            output_path / "mvpa_visualization.png", dpi=150, bbox_inches="tight"
-        )
+        plt.savefig(output_path / 'mvpa_visualization.png', dpi=150, bbox_inches='tight')
         plt.close()
 
     def _run(
@@ -389,7 +422,7 @@ class MVPATool(NeuroToolWrapper):
         random_state: int = 42,
         n_jobs: int = -1,
         verbose: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute MVPA analysis."""
         try:
@@ -419,12 +452,8 @@ class MVPATool(NeuroToolWrapper):
             selected_indices = None
             if feature_selection and n_features:
                 if verbose:
-                    logger.info(
-                        f"Selecting {n_features} features using {feature_selection}"
-                    )
-                X, selected_indices = self._select_features(
-                    X, y, feature_selection, n_features
-                )
+                    logger.info(f"Selecting {n_features} features using {feature_selection}")
+                X, selected_indices = self._select_features(X, y, feature_selection, n_features)
                 if verbose:
                     logger.info(f"Selected features shape: {X.shape}")
 
@@ -436,7 +465,7 @@ class MVPATool(NeuroToolWrapper):
                 random_state=random_state,
                 class_weight=class_weight,
                 multiclass_strategy=multiclass_strategy,
-                n_jobs=n_jobs,
+                n_jobs=n_jobs
             )
 
             # Get CV splitter
@@ -448,9 +477,7 @@ class MVPATool(NeuroToolWrapper):
 
             # Get predictions
             if groups is not None and cv_type == "leave_one_group_out":
-                y_pred = cross_val_predict(
-                    clf, X, y, cv=cv, groups=groups, n_jobs=n_jobs
-                )
+                y_pred = cross_val_predict(clf, X, y, cv=cv, groups=groups, n_jobs=n_jobs)
                 scores = []
                 for train_idx, test_idx in cv.split(X, y, groups):
                     clf.fit(X[train_idx], y[train_idx])
@@ -464,45 +491,32 @@ class MVPATool(NeuroToolWrapper):
             # Calculate metrics
             accuracy = accuracy_score(y, y_pred)
             precision, recall, f1, _ = precision_recall_fscore_support(
-                y, y_pred, average="weighted"
+                y, y_pred, average='weighted'
             )
             confusion_mat = confusion_matrix(y, y_pred)
 
             if verbose:
                 logger.info(f"Accuracy: {accuracy:.3f}")
-                logger.info(
-                    f"Cross-validation scores: {scores.mean():.3f} (+/- {scores.std():.3f})"
-                )
+                logger.info(f"Cross-validation scores: {scores.mean():.3f} (+/- {scores.std():.3f})")
 
             # Permutation test
             pvalue = None
             if permutation_test:
                 if verbose:
-                    logger.info(
-                        f"Running permutation test ({n_permutations} permutations)"
-                    )
+                    logger.info(f"Running permutation test ({n_permutations} permutations)")
 
                 if groups is not None and cv_type == "leave_one_group_out":
                     # Manual permutation test for group CV
                     score, perm_scores, pvalue = permutation_test_score(
-                        clf,
-                        X,
-                        y,
-                        cv=cv,
-                        groups=groups,
+                        clf, X, y, cv=cv, groups=groups,
                         n_permutations=n_permutations,
-                        n_jobs=n_jobs,
-                        random_state=random_state,
+                        n_jobs=n_jobs, random_state=random_state
                     )
                 else:
                     score, perm_scores, pvalue = permutation_test_score(
-                        clf,
-                        X,
-                        y,
-                        cv=cv,
+                        clf, X, y, cv=cv,
                         n_permutations=n_permutations,
-                        n_jobs=n_jobs,
-                        random_state=random_state,
+                        n_jobs=n_jobs, random_state=random_state
                     )
 
                 if verbose:
@@ -548,23 +562,23 @@ class MVPATool(NeuroToolWrapper):
 
             # Prepare results
             results = {
-                "classifier": classifier,
-                "accuracy": float(accuracy),
-                "precision": float(precision),
-                "recall": float(recall),
-                "f1_score": float(f1),
-                "cv_scores_mean": float(scores.mean()),
-                "cv_scores_std": float(scores.std()),
-                "p_value": float(pvalue) if pvalue is not None else None,
-                "n_samples": int(X.shape[0]),
-                "n_features": int(X.shape[1]),
-                "n_classes": int(len(np.unique(y))),
-                "classification_report": report,
+                'classifier': classifier,
+                'accuracy': float(accuracy),
+                'precision': float(precision),
+                'recall': float(recall),
+                'f1_score': float(f1),
+                'cv_scores_mean': float(scores.mean()),
+                'cv_scores_std': float(scores.std()),
+                'p_value': float(pvalue) if pvalue is not None else None,
+                'n_samples': int(X.shape[0]),
+                'n_features': int(X.shape[1]),
+                'n_classes': int(len(np.unique(y))),
+                'classification_report': report
             }
 
             # Save results
             results_file = output_path / "mvpa_results.json"
-            with open(results_file, "w") as f:
+            with open(results_file, 'w') as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -572,33 +586,23 @@ class MVPATool(NeuroToolWrapper):
                 data={
                     "outputs": {
                         "results": str(results_file),
-                        "predictions": (
-                            str(predictions_file) if save_predictions else None
-                        ),
-                        "patterns": (
-                            str(patterns_file)
-                            if save_patterns and patterns is not None
-                            else None
-                        ),
+                        "predictions": str(predictions_file) if save_predictions else None,
+                        "patterns": str(patterns_file) if save_patterns and patterns is not None else None,
                         "confusion": str(confusion_file) if save_confusion else None,
-                        "visualization": (
-                            str(output_path / "mvpa_visualization.png")
-                            if visualize
-                            else None
-                        ),
+                        "visualization": str(output_path / "mvpa_visualization.png") if visualize else None
                     },
                     "summary": results,
-                    "message": (
-                        f"MVPA completed: {accuracy:.3f} accuracy, p={pvalue:.4f}"
-                        if pvalue
-                        else f"MVPA completed: {accuracy:.3f} accuracy"
-                    ),
-                },
+                    "message": f"MVPA completed: {accuracy:.3f} accuracy, p={pvalue:.4f}" if pvalue else f"MVPA completed: {accuracy:.3f} accuracy"
+                }
             )
 
         except Exception as e:
             logger.error(f"MVPA analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class MVPATools:
@@ -607,4 +611,6 @@ class MVPATools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all MVPA tools."""
-        return [MVPATool()]
+        return [
+            MVPATool()
+        ]

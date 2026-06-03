@@ -331,7 +331,7 @@ export const HELP_FAQS: HelpFaq[] = [
     id: 'agent-cant-see-mcp-tools',
     question: "My agent can't see the MCP tools. How do I fix it?",
     answer:
-      "Most often the token is wrong. Use the RAW brk_<kid>.<secret> value in BR_MCP_TOKEN - never put 'Bearer ' inside the token; the config adds Authorization: Bearer ${BR_MCP_TOKEN} for you. Confirm the server URL is https://brain-researcher.com/mcp and the Accept header is 'application/json, text/event-stream'. Reload your shell so BR_MCP_TOKEN is set, restart the client, then ask it to call server_info (expect ok=true) and system_self_test (expect overall=pass). If it still can't see tools, have it inspect the exposed MCP tool names before trying anything else.",
+      "Most often the token is wrong. Use the RAW brk_<kid>.<secret> value in BR_MCP_TOKEN - never put 'Bearer ' inside the token; the config adds Authorization: Bearer ${BR_MCP_TOKEN} for you. Confirm the server URL is https://${PUBLIC_HOSTNAME}/mcp and the Accept header is 'application/json, text/event-stream'. Reload your shell so BR_MCP_TOKEN is set, restart the client, then ask it to call server_info (expect ok=true) and system_self_test (expect overall=pass). If it still can't see tools, have it inspect the exposed MCP tool names before trying anything else.",
     category: 'troubleshooting',
     tags: ['mcp', 'tools', 'token', 'bearer'],
     relatedRoute: '/mcp/setup',
@@ -385,7 +385,7 @@ export const HELP_FAQS: HelpFaq[] = [
     id: 'data-handling-privacy',
     question: 'How does BR handle my data?',
     answer:
-      'With the hosted cloud MCP and Studio, requests go to brain-researcher.com over an authenticated connection tied to your personal token. If you need data to stay on your own machine, use the local MCP server (npx -y @brain-researcher/mcp-server start) with ALLOW_NETWORK=false and ALLOWED_ROOTS scoped to the directories you permit, so the server never reaches the network and only reads the roots you list. Tokens are personal, one active per user, and can be rotated or revoked at any time on /mcp/setup.',
+      'With the hosted cloud MCP and Studio, requests go to ${PUBLIC_HOSTNAME} over an authenticated connection tied to your personal token. If you need data to stay on your own machine, use the local MCP server (npx -y @brain-researcher/mcp-server start) with ALLOW_NETWORK=false and ALLOWED_ROOTS scoped to the directories you permit, so the server never reaches the network and only reads the roots you list. Tokens are personal, one active per user, and can be rotated or revoked at any time on /mcp/setup.',
     category: 'mcp',
     tags: ['data', 'privacy', 'security', 'local'],
     relatedRoute: '/mcp/setup',

@@ -46,10 +46,7 @@ def test_orchestrate_success(monkeypatch):
                 "activation_maps": [object()],
                 "n_studies": 12,
                 "n_coords": 2,
-                "coordinates": [
-                    {"x": 40, "y": 24, "z": 32},
-                    {"x": -42, "y": 22, "z": 30},
-                ],
+                "coordinates": [{"x": 40, "y": 24, "z": 32}, {"x": -42, "y": 22, "z": 30}],
                 "threshold_count": 3.0,
             }
         return {"activation_maps": []}

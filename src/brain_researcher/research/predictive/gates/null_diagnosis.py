@@ -83,9 +83,7 @@ def build_null_diagnosis(
     pipeline_spread, spread_term_index = shared_term_spread(rows)
     term_range, leader_term_scores = backbone_term_range(rows, leader["backbone"])
     positive_terms = sorted(
-        term_index
-        for term_index, score in best_score_by_term(rows).items()
-        if score > 0
+        term_index for term_index, score in best_score_by_term(rows).items() if score > 0
     )
     positive_backbones = sorted(
         backbone
@@ -114,9 +112,7 @@ def build_null_diagnosis(
         action = "change_measure_axis"
 
     evidence.append(f"Positive terms observed so far: {positive_terms or 'none'}")
-    evidence.append(
-        f"Positive backbones observed so far: {positive_backbones or 'none'}"
-    )
+    evidence.append(f"Positive backbones observed so far: {positive_backbones or 'none'}")
     if leader_term_scores:
         ranked_terms = sorted(
             leader_term_scores.items(),

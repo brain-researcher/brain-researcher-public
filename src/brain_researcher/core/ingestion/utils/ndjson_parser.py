@@ -9,15 +9,13 @@ import bz2
 import gzip
 import logging
 from pathlib import Path
-from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Tuple
+from typing import IO, Iterator, Dict, Any, Optional, Callable, List, Tuple
 
 try:
     import orjson
-
     HAS_ORJSON = True
 except ImportError:
     import json
-
     HAS_ORJSON = False
     logging.warning("orjson not available, falling back to standard json")
 
@@ -46,7 +44,7 @@ def open_any(path: str | Path) -> IO[bytes]:
 def iter_ndjson(
     stream: IO[bytes],
     on_error: Optional[Callable[[int, bytes, Exception], None]] = None,
-    max_errors: int = 100,
+    max_errors: int = 100
 ) -> Iterator[Dict[str, Any]]:
     """Iterate over NDJSON lines from a stream.
 
@@ -95,7 +93,7 @@ def parse_ndjson_file(
     batch_size: int = 1000,
     on_batch: Optional[Callable[[List[Dict[str, Any]]], None]] = None,
     on_error: Optional[Callable[[int, bytes, Exception], None]] = None,
-    max_errors: int = 100,
+    max_errors: int = 100
 ) -> Tuple[int, int, List[Tuple[int, str]]]:
     """Parse an entire NDJSON file with batching support.
 
@@ -167,7 +165,7 @@ class NDJSONStreamProcessor:
         self,
         batch_size: int = 1000,
         max_memory_mb: int = 500,
-        error_buffer_size: int = 100,
+        error_buffer_size: int = 100
     ):
         """Initialize stream processor.
 
@@ -190,7 +188,7 @@ class NDJSONStreamProcessor:
             "valid": 0,
             "invalid": 0,
             "batches": 0,
-            "bytes_processed": 0,
+            "bytes_processed": 0
         }
 
     def add_error(self, line_num: int, error: str):
@@ -203,7 +201,9 @@ class NDJSONStreamProcessor:
             self.error_position = (self.error_position + 1) % self.error_buffer_size
 
     def process_stream(
-        self, stream: IO[bytes], processor: Callable[[List[Dict[str, Any]]], None]
+        self,
+        stream: IO[bytes],
+        processor: Callable[[List[Dict[str, Any]]], None]
     ) -> Dict[str, Any]:
         """Process a stream with backpressure control.
 
@@ -240,4 +240,7 @@ class NDJSONStreamProcessor:
             processor(list(batch))
             self.stats["batches"] += 1
 
-        return {**self.stats, "recent_errors": list(self.error_buffer)}
+        return {
+            **self.stats,
+            "recent_errors": list(self.error_buffer)
+        }

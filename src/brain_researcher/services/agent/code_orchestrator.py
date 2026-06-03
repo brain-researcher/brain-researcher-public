@@ -7,26 +7,26 @@ for plan/patch/test progress.
 
 from __future__ import annotations
 
-import logging
 import os
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from brain_researcher.services.agent.router import LLMRouter
 from brain_researcher.services.agent.codegen.context import CodegenContext, FileSnippet
+from brain_researcher.services.agent.codegen.loop import CodegenLoop
+from brain_researcher.services.agent.codegen.render import render_result_for_chat
 from brain_researcher.services.agent.codegen.fs_context import (
     GeminiCliFsClient,
     build_fs_context_for_task_sync,
 )
-from brain_researcher.services.agent.codegen.loop import CodegenLoop
-from brain_researcher.services.agent.codegen.render import render_result_for_chat
 from brain_researcher.services.agent.llm_budget_manager import (
     get_shared_llm_budget_manager,
 )
 from brain_researcher.services.agent.managed_credential_pool import (
     get_shared_managed_pool,
 )
-from brain_researcher.services.agent.router import LLMRouter
 
 logger = logging.getLogger(__name__)
 
@@ -200,12 +200,12 @@ class CodeOrchestrator:
                 files_touched=loop_result.files_touched,
                 iterations=loop_result.iterations,
                 test_status=self._exec_status(loop_result.exec_result),
-                exec_stdout=(
-                    loop_result.exec_result.stdout if loop_result.exec_result else None
-                ),
-                exec_stderr=(
-                    loop_result.exec_result.stderr if loop_result.exec_result else None
-                ),
+                exec_stdout=loop_result.exec_result.stdout
+                if loop_result.exec_result
+                else None,
+                exec_stderr=loop_result.exec_result.stderr
+                if loop_result.exec_result
+                else None,
                 requires_confirmation=bool(loop_result.patches) and not apply,
                 apply_logs=apply_logs,
                 metadata={

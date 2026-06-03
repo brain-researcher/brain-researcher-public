@@ -83,7 +83,7 @@ _FALLBACK_PROFILES: dict[str, dict[str, Any]] = {
         "interactive_qos": "russpold_interactive",
         "batch_partition": "russpold",
         "batch_qos": "russpold",
-        "module_use": "/share/PI/russpold/modules",
+        "module_use": "${CLUSTER_PI_MODULES}/modules",
         "default_output": "slurm-%j.out",
         "default_error": "slurm-%j.err",
         "notes": [
@@ -454,7 +454,7 @@ def sherlock_get_guide(topic: GuideTopic, pi_group: str = "russpold") -> dict[st
                     "label": "acl_dry_run",
                     "command": (
                         "bash skills/sherlock-oak-workflow/scripts/restrict_acl.sh "
-                        "--dir /oak/stanford/groups/russpold/data/<dataset> "
+                        "--dir ${CLUSTER_GROUP_ROOT}/data/<dataset> "
                         "--user <sunetid> --group oak_russpold"
                     ),
                 }
@@ -475,7 +475,7 @@ def sherlock_get_guide(topic: GuideTopic, pi_group: str = "russpold") -> dict[st
                     "label": "readonly_dry_run",
                     "command": (
                         "bash skills/sherlock-oak-workflow/scripts/lock_dataset_readonly.sh "
-                        "--dir /oak/stanford/groups/russpold/data/<dataset>"
+                        "--dir ${CLUSTER_GROUP_ROOT}/data/<dataset>"
                     ),
                 }
             ],

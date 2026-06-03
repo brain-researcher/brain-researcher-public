@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-
 from brain_researcher.core.utils import configure_mne_environment
 
 
@@ -92,9 +91,7 @@ def _autoreject_with_package(epochs, params: MNEAutorejectParameters, pick_idx):
     thresholds: Dict[str, Any] = {}
     if hasattr(ar, "threshes_"):
         threshes = ar.threshes_
-        thresholds["thresholds"] = (
-            threshes.tolist() if hasattr(threshes, "tolist") else threshes
-        )
+        thresholds["thresholds"] = threshes.tolist() if hasattr(threshes, "tolist") else threshes
     if hasattr(ar, "consensus_"):
         thresholds["consensus"] = float(ar.consensus_)
     if hasattr(ar, "n_interpolate_"):
@@ -173,9 +170,7 @@ def _autoreject_fallback(epochs, params: MNEAutorejectParameters, pick_idx):
     return epochs_clean, reject_log, {}
 
 
-def _calculate_rejection_stats(
-    epochs_original, epochs_clean, reject_log
-) -> Dict[str, Any]:
+def _calculate_rejection_stats(epochs_original, epochs_clean, reject_log) -> Dict[str, Any]:
     n_epochs_original = len(epochs_original)
     n_epochs_clean = len(epochs_clean)
     n_rejected = n_epochs_original - n_epochs_clean
@@ -207,19 +202,13 @@ def _plot_reject_log(has_package: bool, epochs, reject_log, output_file: Path) -
 
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
     axes[0].plot(bad_epochs.astype(int), "r-", alpha=0.7)
-    axes[0].fill_between(
-        range(len(bad_epochs)), 0, bad_epochs.astype(int), alpha=0.3, color="red"
-    )
+    axes[0].fill_between(range(len(bad_epochs)), 0, bad_epochs.astype(int), alpha=0.3, color="red")
     axes[0].set_xlabel("Epoch")
     axes[0].set_ylabel("Rejected")
-    axes[0].set_title(
-        f"Epoch Rejection ({np.sum(bad_epochs)}/{len(bad_epochs)} rejected)"
-    )
+    axes[0].set_title(f"Epoch Rejection ({np.sum(bad_epochs)}/{len(bad_epochs)} rejected)")
     axes[0].set_ylim(-0.1, 1.1)
 
-    im = axes[1].imshow(
-        labels.T, aspect="auto", cmap="RdYlGn_r", interpolation="nearest"
-    )
+    im = axes[1].imshow(labels.T, aspect="auto", cmap="RdYlGn_r", interpolation="nearest")
     axes[1].set_xlabel("Epoch")
     axes[1].set_ylabel("Channel")
     axes[1].set_title("Bad Channels per Epoch (red = bad)")
@@ -237,8 +226,8 @@ def run_mne_autoreject(params: MNEAutorejectParameters) -> Dict[str, Any]:
     os.environ.setdefault("NUMBA_DISABLE_CACHING", "1")
     os.environ.setdefault("MNE_HOME", str(Path(params.output_dir)))
 
-    import matplotlib
     import mne
+    import matplotlib
 
     matplotlib.use("Agg")
 
@@ -260,21 +249,10 @@ def run_mne_autoreject(params: MNEAutorejectParameters) -> Dict[str, Any]:
 
     try:
         has_autoreject = True
-        epochs_clean, reject_log, thresholds = _autoreject_with_package(
-            epochs, params, pick_idx
-        )
-    except (
-        ImportError,
-        RuntimeError,
-        ValueError,
-        AttributeError,
-        TypeError,
-        Exception,
-    ):
+        epochs_clean, reject_log, thresholds = _autoreject_with_package(epochs, params, pick_idx)
+    except (ImportError, RuntimeError, ValueError, AttributeError, TypeError, Exception):
         has_autoreject = False
-        epochs_clean, reject_log, thresholds = _autoreject_fallback(
-            epochs, params, pick_idx
-        )
+        epochs_clean, reject_log, thresholds = _autoreject_fallback(epochs, params, pick_idx)
 
     stats = _calculate_rejection_stats(epochs, epochs_clean, reject_log)
 
@@ -306,9 +284,7 @@ def run_mne_autoreject(params: MNEAutorejectParameters) -> Dict[str, Any]:
         axes[0].set_ylabel("Amplitude")
 
         data_clean = epochs_clean.get_data()
-        axes[1].plot(
-            epochs_clean.times, np.mean(data_clean, axis=(0, 1)), "g-", alpha=0.7
-        )
+        axes[1].plot(epochs_clean.times, np.mean(data_clean, axis=(0, 1)), "g-", alpha=0.7)
         axes[1].fill_between(
             epochs_clean.times,
             np.mean(data_clean, axis=(0, 1)) - np.std(data_clean, axis=(0, 1)),

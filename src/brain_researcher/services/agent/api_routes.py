@@ -29,7 +29,6 @@ def usage_summary():
         JSON with usage aggregation by provider, model, and billing target
     """
     from brain_researcher.services.agent.web_service import logger
-
     try:
         from brain_researcher.services.agent.usage_aggregator import UsageTracker
 
@@ -83,7 +82,6 @@ def usage_records():
         JSON array of usage records
     """
     from brain_researcher.services.agent.web_service import logger
-
     try:
         from brain_researcher.services.agent.usage_aggregator import UsageTracker
 
@@ -175,7 +173,6 @@ def cli_proxy():
         logger,
         simple_chat_internal,
     )
-
     try:
         data = request.json
         if not data:
@@ -241,7 +238,7 @@ def cli_proxy():
 
 def register(app):
     """Register the /api/* usage/budget/cli routes on the Flask app (called each import)."""
-    app.add_url_rule("/api/usage/summary", methods=["GET"], view_func=usage_summary)
-    app.add_url_rule("/api/usage/records", methods=["GET"], view_func=usage_records)
-    app.add_url_rule("/api/budget/status", methods=["GET"], view_func=budget_status)
-    app.add_url_rule("/api/cli", methods=["POST"], view_func=cli_proxy)
+    app.add_url_rule('/api/usage/summary', methods=['GET'], view_func=usage_summary)
+    app.add_url_rule('/api/usage/records', methods=['GET'], view_func=usage_records)
+    app.add_url_rule('/api/budget/status', methods=['GET'], view_func=budget_status)
+    app.add_url_rule('/api/cli', methods=['POST'], view_func=cli_proxy)

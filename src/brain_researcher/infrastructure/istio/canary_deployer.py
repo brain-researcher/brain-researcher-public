@@ -80,9 +80,7 @@ class CanaryDeployer:
 
         deployment["current_traffic"] = splits[current_step]
         deployment["current_step"] = current_step + 1
-        deployment["phase"] = (
-            "completed" if deployment["current_step"] >= len(splits) else "rolling_out"
-        )
+        deployment["phase"] = "completed" if deployment["current_step"] >= len(splits) else "rolling_out"
         return True
 
     def execute_rollback(self, deployment_id: str, reason: str = "") -> Dict[str, Any]:

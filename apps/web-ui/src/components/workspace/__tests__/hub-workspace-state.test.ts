@@ -127,29 +127,29 @@ describe('buildHubRuntimeTargetUrl', () => {
     // marimo owns its own session id now; the studio id must not be threaded in.
     expect(
       buildHubRuntimeTargetUrl(
-        'https://brain-researcher.com/hub/br-marimo-rt-demo/',
+        'https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo/',
         'studio_demo123',
       ),
-    ).toBe('https://brain-researcher.com/hub/br-marimo-rt-demo/')
+    ).toBe('https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo/')
   })
 
   it('preserves other query params while stripping any session_id', () => {
     expect(
       buildHubRuntimeTargetUrl(
-        'https://brain-researcher.com/hub/br-marimo-rt-demo/?path=projects%2Fdemo&session_id=studio_demo123',
+        'https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo/?path=projects%2Fdemo&session_id=studio_demo123',
         'studio_demo123',
       ),
     ).toBe(
-      'https://brain-researcher.com/hub/br-marimo-rt-demo/?path=projects%2Fdemo',
+      'https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo/?path=projects%2Fdemo',
     )
   })
 
   it('returns the original URL when no session id is available', () => {
     expect(
       buildHubRuntimeTargetUrl(
-        'https://brain-researcher.com/hub/br-marimo-rt-demo/',
+        'https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo/',
         null,
       ),
-    ).toBe('https://brain-researcher.com/hub/br-marimo-rt-demo/')
+    ).toBe('https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo/')
   })
 })

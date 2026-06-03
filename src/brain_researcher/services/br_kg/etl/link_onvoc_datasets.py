@@ -85,9 +85,7 @@ def link_datasets(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Link Dataset nodes to ONVOC classes using crosswalk"
-    )
+    parser = argparse.ArgumentParser(description="Link Dataset nodes to ONVOC classes using crosswalk")
     parser.add_argument("--neo4j-uri", required=True)
     parser.add_argument("--neo4j-user", required=True)
     parser.add_argument("--neo4j-password", required=True)
@@ -113,17 +111,10 @@ def main() -> None:
     except Exception as exc:  # pragma: no cover - parse safeguard
         raise ValueError(f"Crosswalk YAML is invalid: {exc}") from exc
 
-    db = Neo4jGraphDB(
-        args.neo4j_uri,
-        args.neo4j_user,
-        args.neo4j_password,
-        database=args.neo4j_database,
-    )
+    db = Neo4jGraphDB(args.neo4j_uri, args.neo4j_user, args.neo4j_password, database=args.neo4j_database)
     linker = OnvocLinker(db, crosswalk_path=resolved_crosswalk)
     if not linker.available:
-        raise RuntimeError(
-            "ONVOC classes are not present in the graph; load ONVOC first."
-        )
+        raise RuntimeError("ONVOC classes are not present in the graph; load ONVOC first.")
 
     stats = link_datasets(db, linker)
     logger.info("Linking done: %s", stats)

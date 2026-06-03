@@ -6,32 +6,31 @@ for combining features from different neuroimaging modalities.
 
 import json
 import logging
-from enum import Enum
 from pathlib import Path
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field
 from sklearn.cross_decomposition import CCA, PLSRegression
-from sklearn.decomposition import PCA, FastICA
+from sklearn.decomposition import FastICA, PCA
 from sklearn.metrics.pairwise import cosine_similarity, pairwise_distances
 from sklearn.preprocessing import StandardScaler
+from pydantic import BaseModel, Field
 
 from brain_researcher.core.analysis.value_domain_router import (
     contracts_for,
     evaluate_value_domain,
     write_value_domain_diagnostics,
 )
-from brain_researcher.services.tools.spec import ToolSpec
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
+from brain_researcher.services.tools.spec import ToolSpec
 
 logger = logging.getLogger(__name__)
 
 
 class FusionMethod(str, Enum):
     """Multimodal fusion methods."""
-
     CCA = "cca"  # Canonical Correlation Analysis
     PLS = "pls"  # Partial Least Squares
     CONCAT = "concat"  # Simple concatenation
@@ -42,7 +41,6 @@ class FusionMethod(str, Enum):
 
 class SimilarityMetric(str, Enum):
     """Brain similarity metrics."""
-
     CORRELATION = "correlation"
     COSINE = "cosine"
     EUCLIDEAN = "euclidean"
@@ -56,20 +54,28 @@ class MultimodalFusionArgs(BaseModel):
     modality_files: Dict[str, str] = Field(
         description="Dictionary mapping modality names to file paths"
     )
-    output_dir: str = Field(description="Output directory for fusion results")
+    output_dir: str = Field(
+        description="Output directory for fusion results"
+    )
     method: FusionMethod = Field(
-        default=FusionMethod.CCA, description="Fusion method to use"
+        default=FusionMethod.CCA,
+        description="Fusion method to use"
     )
     n_components: int = Field(
-        default=10, description="Number of components for dimensionality reduction"
+        default=10,
+        description="Number of components for dimensionality reduction"
     )
     similarity_metric: SimilarityMetric = Field(
         default=SimilarityMetric.CORRELATION,
-        description="Similarity metric for brain similarity analysis",
+        description="Similarity metric for brain similarity analysis"
     )
-    mask: Optional[str] = Field(default=None, description="Brain mask file (optional)")
+    mask: Optional[str] = Field(
+        default=None,
+        description="Brain mask file (optional)"
+    )
     standardize: bool = Field(
-        default=True, description="Whether to standardize each modality"
+        default=True,
+        description="Whether to standardize each modality"
     )
 
 
@@ -111,7 +117,8 @@ TOOL_SPEC = ToolSpec(
 
 
 class MultimodalFusionTool(NeuroToolWrapper):
-    """Multimodal fusion and brain similarity tool."""
+    """Multimodal fusion and brain similarity tool.
+    """
 
     def __init__(self):
         """Initialize multimodal fusion tool."""
@@ -151,9 +158,7 @@ class MultimodalFusionTool(NeuroToolWrapper):
                 if all(isinstance(v, (list, tuple)) for v in payload.values()):
                     lengths = {len(v) for v in payload.values()}
                     if len(lengths) != 1:
-                        raise ValueError(
-                            "JSON modality values have inconsistent lengths"
-                        )
+                        raise ValueError("JSON modality values have inconsistent lengths")
                     data = np.column_stack([payload[k] for k in sorted(payload.keys())])
                 else:
                     data = np.array(list(payload.values()), dtype=float).reshape(1, -1)
@@ -253,7 +258,7 @@ class MultimodalFusionTool(NeuroToolWrapper):
         similarity_metric: SimilarityMetric = SimilarityMetric.CORRELATION,
         mask: Optional[str] = None,
         standardize: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute multimodal fusion analysis."""
         try:
@@ -296,11 +301,7 @@ class MultimodalFusionTool(NeuroToolWrapper):
                         "x_weights": cca.x_weights_.tolist(),
                         "y_weights": cca.y_weights_.tolist(),
                         "canonical_correlations": [
-                            float(
-                                np.corrcoef(
-                                    primary_scores[:, i], secondary_scores[:, i]
-                                )[0, 1]
-                            )
+                            float(np.corrcoef(primary_scores[:, i], secondary_scores[:, i])[0, 1])
                             for i in range(primary_scores.shape[1])
                         ],
                     }
@@ -326,9 +327,7 @@ class MultimodalFusionTool(NeuroToolWrapper):
                     for name, arr in modalities.items()
                 }
                 fused = np.mean(list(reduced.values()), axis=0)
-                weights.update(
-                    {"weights": {name: 1.0 / len(reduced) for name in reduced}}
-                )
+                weights.update({"weights": {name: 1.0 / len(reduced) for name in reduced}})
             elif method == FusionMethod.JICA:
                 combined = np.concatenate(list(modalities.values()), axis=1)
                 n_comp = min(n_components, combined.shape[1])

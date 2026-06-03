@@ -8,7 +8,7 @@ All notable changes to the Brain Researcher project are documented in this file.
 
 #### ✨ Added
 - **StructuredToolAdapter**: New adapter class in `services.tools.adapter`
-  - Wraps LangChain `StructuredTool` to expose `NeuroKGToolWrapper` interface
+  - Wraps LangChain `StructuredTool` to expose `BR-KGToolWrapper` interface
   - Enables UnifiedToolRegistry integration with Agent ToolRegistry
   - `wrap_structured_tools()` helper for batch wrapping
   - No double-wrapping: `as_langchain_tool()` returns the original tool
@@ -27,7 +27,7 @@ All notable changes to the Brain Researcher project are documented in this file.
 
 #### 📚 Architecture
 - **Single Source of Truth**: UnifiedToolRegistry is canonical tool source
-- **Agent Compatibility**: StructuredToolAdapter bridges StructuredTool → NeuroKGToolWrapper
+- **Agent Compatibility**: StructuredToolAdapter bridges StructuredTool → BR-KGToolWrapper
 - **Discovery Order**: UnifiedToolRegistry → Light/Full Discovery → Capabilities
 
 ---
@@ -70,7 +70,7 @@ All notable changes to the Brain Researcher project are documented in this file.
 
 #### ⚙️ Tool Registry Architecture
 - **UnifiedToolRegistry** (`services.tools.registry`): Returns LangChain `StructuredTool` for direct consumers
-- **Agent ToolRegistry** (`services.tools.registry`): Uses `NeuroKGToolWrapper` with rich metadata
+- **Agent ToolRegistry** (`services.tools.registry`): Uses `BR-KGToolWrapper` with rich metadata
 - Both registries serve complementary purposes and coexist in the architecture
 
 ### Phase 1.4 - Hierarchical Config Overrides (2025-11-13)
@@ -91,7 +91,7 @@ All notable changes to the Brain Researcher project are documented in this file.
 - **Test Isolation**: All env-var tests now use proper cache clearing pattern
 
 #### 📚 Documentation
-- Added Phase 1.4 completion notes to `docs/issues/09_move_planning_into_agent.md`
+- Added Phase 1.4 completion notes to the retired planner issue notes
 - Enhanced `clear_scoring_weights_cache()` docstring with usage patterns and examples
 - Documented cache semantics: when to call, how it affects planner processes
 
@@ -190,7 +190,7 @@ pip install -e ".[all]"
 **Running Services**:
 ```bash
 # Old way
-./start_neurokg_gui.sh
+./start_br_kg_gui.sh
 python simple_cli.py
 
 # New way
@@ -202,7 +202,7 @@ brain-researcher chat
 ```bash
 # Old way
 python add_sample_datasets.py
-python query_neurokg_interactive.py
+python query_br_kg_interactive.py
 
 # New way
 brain-researcher data load-samples
@@ -252,4 +252,4 @@ This modernization was inspired by the clean architecture patterns from:
 
 ## Previous Versions
 
-For changes prior to v2.0.0, see the [archived documentation](docs/archive/).
+Older internal archive docs were removed from the public documentation surface.

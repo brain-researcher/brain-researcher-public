@@ -6,17 +6,17 @@ import os
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from brain_researcher.cli.metrics import record_cli_command_metric
-from brain_researcher.services.agent import telemetry
+from brain_researcher.services.agent.router import LLMRouter, infer_provider
 from brain_researcher.services.agent.llm_budget_manager import (
     get_shared_llm_budget_manager,
 )
 from brain_researcher.services.agent.managed_credential_pool import (
     get_shared_managed_pool,
 )
-from brain_researcher.services.agent.router import LLMRouter, infer_provider
+from brain_researcher.services.agent import telemetry
 from brain_researcher.services.telemetry.job_kind import JobKind
 from brain_researcher.services.telemetry.metrics_kind_resolver import resolve_job_kind
+from brain_researcher.cli.metrics import record_cli_command_metric
 from brain_researcher.services.tools.base import ToolResult
 
 _ROUTER = LLMRouter(
@@ -141,13 +141,13 @@ def _act_in_process_core(
     Returns a dict including selection and (if run) tool result/artifacts.
     """
     from brain_researcher.services.agent.agents.neuro_agent import NeuroAgent
-    from brain_researcher.services.agent.tool_executor import BudgetedToolExecutor
-    from brain_researcher.services.tools.args_resolver import ArgsResolver
     from brain_researcher.services.tools.spec import (
+        spec_from_tool,
         ToolSpecRegistry,
         compress_schema,
-        spec_from_tool,
     )
+    from brain_researcher.services.tools.args_resolver import ArgsResolver
+    from brain_researcher.services.agent.tool_executor import BudgetedToolExecutor
 
     # Initialize agent and registry
     agent = NeuroAgent()
@@ -522,14 +522,12 @@ def act_in_process(
             },
             "selection": selection,
             "spans": spans,
-            "error": (
-                {
-                    "message": str(error_info),
-                    "type": type(error_info).__name__,
-                }
-                if error_info
-                else None
-            ),
+            "error": {
+                "message": str(error_info),
+                "type": type(error_info).__name__,
+            }
+            if error_info
+            else None,
         }
         try:
             telemetry.record_event(event_payload, event_type="act")

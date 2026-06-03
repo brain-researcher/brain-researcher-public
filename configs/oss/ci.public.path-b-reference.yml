@@ -1,0 +1,789 @@
+name: Brain Researcher CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: brain-researcher
+
+permissions:
+  actions: read
+  contents: read
+  packages: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Secret scanning — gate everything else on this
+  secret-scan:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # full history for git-history scan
+    - name: Run gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Static analysis and linting
+  lint:
+    name: Lint and Static Analysis
+    runs-on: ubuntu-latest
+    needs: [secret-scan]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black ruff mypy isort jsonschema
+        pip install -e .[dev]
+
+    - name: Generate resource types schema
+      run: python scripts/ci/generate_resources_schema.py
+
+    - name: Validate capabilities catalog
+      run: python scripts/ci/validate_capabilities.py
+
+    - name: Validate tools catalog schema
+      run: python -m jsonschema -i configs/tools_catalog.json configs/schemas/tools_catalog.schema.json
+
+    - name: Determine changed Python files
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        PUSH_BEFORE_SHA: ${{ github.event.before }}
+        CURRENT_SHA: ${{ github.sha }}
+      run: |
+        files_path="$RUNNER_TEMP/changed-python-files.txt"
+        base_sha=""
+        head_sha="$CURRENT_SHA"
+
+        if [ "$EVENT_NAME" = "pull_request" ]; then
+          base_sha="$PR_BASE_SHA"
+          head_sha="${PR_HEAD_SHA:-$CURRENT_SHA}"
+        elif [ -n "$PUSH_BEFORE_SHA" ] && [ "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+          base_sha="$PUSH_BEFORE_SHA"
+        else
+          base_sha="$(git rev-parse HEAD^ 2>/dev/null || true)"
+        fi
+
+        if [ -n "$base_sha" ] && git cat-file -e "$base_sha^{commit}" 2>/dev/null; then
+          git diff --name-only "$base_sha" "$head_sha" -- src/brain_researcher tests \
+            | awk '/\.py$/ { print }' > "$files_path"
+        else
+          : > "$files_path"
+        fi
+
+        count="$(wc -l < "$files_path" | tr -d ' ')"
+        echo "CHANGED_PYTHON_FILES=$files_path" >> "$GITHUB_ENV"
+        echo "count=$count" >> "$GITHUB_OUTPUT"
+        echo "Changed Python files: $count"
+        sed -n '1,200p' "$files_path"
+
+    - name: Run Black (code formatting)
+      run: |
+        mapfile -t files < "$CHANGED_PYTHON_FILES"
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "No changed Python files under src/brain_researcher or tests."
+          exit 0
+        fi
+        black --check "${files[@]}"
+
+    - name: Run Ruff (linting)
+      run: |
+        mapfile -t files < "$CHANGED_PYTHON_FILES"
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "No changed Python files under src/brain_researcher or tests."
+          exit 0
+        fi
+        ruff check "${files[@]}"
+
+    - name: Run isort (import sorting)
+      run: |
+        mapfile -t files < "$CHANGED_PYTHON_FILES"
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "No changed Python files under src/brain_researcher or tests."
+          exit 0
+        fi
+        isort --check-only "${files[@]}"
+
+    - name: Run MyPy (type checking)
+      continue-on-error: true
+      run: |
+        mapfile -t files < <(grep '^src/brain_researcher/.*\.py$' "$CHANGED_PYTHON_FILES" || true)
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "No changed Python source files under src/brain_researcher."
+          exit 0
+        fi
+        echo "MyPy is advisory until a repo baseline is established."
+        mypy "${files[@]}" --strict --ignore-missing-imports
+
+  helm-chart:
+    name: Helm Lint and Render
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Install Helm
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+    - name: Lint chart (default + production overrides)
+      run: |
+        CHART_DIR="infrastructure/k8s/helm/brain-researcher"
+        GCE_VALUES="infrastructure/deployment/gce_k3s/values.prod.yaml"
+        GCP_VALUES="infrastructure/deployment/gcp/values.prod.yaml"
+
+        helm lint "$CHART_DIR"
+        helm lint "$CHART_DIR" -f "$GCE_VALUES"
+        helm lint "$CHART_DIR" -f "$GCP_VALUES"
+
+    - name: Render templates for production
+      run: |
+        CHART_DIR="infrastructure/k8s/helm/brain-researcher"
+        GCE_VALUES="infrastructure/deployment/gce_k3s/values.prod.yaml"
+        GCP_VALUES="infrastructure/deployment/gcp/values.prod.yaml"
+
+        helm template brain-researcher "$CHART_DIR" \
+          -f "$GCE_VALUES" \
+          --namespace brain-researcher-core \
+          > /tmp/brain-researcher-rendered-gce-k3s.yaml
+
+        helm template brain-researcher "$CHART_DIR" \
+          -f "$GCP_VALUES" \
+          --namespace brain-researcher-core \
+          > /tmp/brain-researcher-rendered-gcp.yaml
+
+        ls -lh /tmp/brain-researcher-rendered-*.yaml
+
+  # Security scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v4
+      if: ${{ always() && vars.ENABLE_CODE_SCANNING == 'true' }}
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Unit tests
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      neo4j:
+        image: neo4j:5.20
+        ports:
+          - 7687:7687
+          - 7474:7474
+        env:
+          NEO4J_AUTH: neo4j/password
+          NEO4J_dbms_memory_pagecache_size: 256M
+          NEO4J_dbms_memory_heap_initial__size: 256M
+          NEO4J_dbms_memory_heap_max__size: 512M
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        lfs: true
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,agent]"
+
+    - name: Configure MNE/Numba environment
+      run: |
+        {
+          echo "NUMBA_DISABLE_CACHING=1"
+          echo "MNE_USE_NATIVE_CODE=0"
+          echo "NUMBA_CACHE_DIR=$RUNNER_TEMP/numba-cache"
+          echo "MNE_HOME=$RUNNER_TEMP/mne"
+        } >> "$GITHUB_ENV"
+        mkdir -p "$RUNNER_TEMP/numba-cache" "$RUNNER_TEMP/mne"
+
+    - name: Create test data directories
+      run: |
+        mkdir -p data/neurokg/db
+        mkdir -p data/test_data
+        mkdir -p logs
+
+    - name: Audit execution recipe coverage
+      if: matrix.python-version == '3.11'
+      env:
+        PYTHONPATH: ${{ github.workspace }}/src
+      run: |
+        status=0
+        python scripts/tools/audit_execution_recipes.py \
+          --fail-on-flags \
+          --output "$RUNNER_TEMP/execution-recipe-audit.json" || status=$?
+        python - <<'PY'
+        import json
+        import os
+
+        path = os.path.join(os.environ["RUNNER_TEMP"], "execution-recipe-audit.json")
+        with open(path, encoding="utf-8") as handle:
+            payload = json.load(handle)
+        print(json.dumps(payload["summary"], indent=2, sort_keys=True))
+        PY
+        exit $status
+
+    - name: Run PR unit smoke shard
+      if: matrix.python-version == '3.11'
+      env:
+        REDIS_URL: redis://localhost:6379/0
+        PYTHONPATH: ${{ github.workspace }}/src
+        DEFAULT_LLM_MODEL: gpt-4o
+        OPENAI_API_KEY: test-key
+        JWT_SECRET_KEY: test-secret
+      run: |
+        # Layout-agnostic smoke set. The config/ and skills/ contract tests
+        # assert the main repo's src/ layout and the presence of
+        # AGENTS.md / CLAUDE.md / SKILL.md, which the public carve does not
+        # reproduce — they are intentionally omitted here. See
+        # docs/release/oss_public_repo_relaunch_checklist.md in the source repo.
+        pytest -q \
+          tests/unit/core/test_grounding_references.py \
+          tests/unit/core/test_analysis_bundle.py \
+          tests/unit/agent/test_execution_runners.py \
+          --tb=short
+
+    - name: Collect unit shards for Python compatibility
+      env:
+        REDIS_URL: redis://localhost:6379/0
+        PYTHONPATH: ${{ github.workspace }}/src
+        DEFAULT_LLM_MODEL: gpt-4o
+        OPENAI_API_KEY: test-key
+        JWT_SECRET_KEY: test-secret
+      run: |
+        # Scoped to subtrees that collect cleanly in the public carve.
+        # The full tests/unit/ has ~41 collection errors from modules the
+        # carve dropped (e.g. tests/unit/scripts importing scripts.ops).
+        pytest --collect-only -q tests/unit/core tests/unit/agent
+
+  # Integration tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl gcc g++ libsqlite3-dev
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,agent]"
+
+    - name: Prepare data directories
+      run: |
+        mkdir -p data/test_data logs
+
+    - name: Run PR integration smoke shard
+      env:
+        PYTHONPATH: ${{ github.workspace }}/src
+        DEFAULT_LLM_MODEL: gpt-4o
+        OPENAI_API_KEY: test-key
+        JWT_SECRET_KEY: test-secret
+      run: |
+        pytest -q \
+          tests/integration/test_legacy_demo_guards.py \
+          tests/integration/orchestrator/test_job_routes_with_jobstore.py \
+          tests/integration/test_plan_tool_preservation.py::test_mcp_plan_preserves_tool_ids \
+          tests/integration/test_plan_tool_preservation.py::test_observation_records_executed_tools \
+          --tb=short
+
+  web-ui-smoke:
+    name: Web UI Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: apps/web-ui/package-lock.json
+
+    - name: Install web UI dependencies
+      working-directory: apps/web-ui
+      run: npm ci
+
+    - name: Run BranchTimeline snapshot test
+      working-directory: apps/web-ui
+      run: |
+        npx vitest --run \
+          src/components/chat/__tests__/branch-timeline.test.tsx \
+          src/components/chat/__tests__/execution-block.test.tsx
+
+  # Build Docker images
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [lint, test, helm-chart]
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-metadata: ${{ steps.build.outputs.metadata }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: orchestrator
+            dockerfile: infrastructure/docker/Dockerfile.orchestrator
+            target: orchestrator
+          - service: agent
+            dockerfile: infrastructure/docker/Dockerfile.agent
+            target: agent
+          - service: neurokg
+            dockerfile: Dockerfile
+            target: neurokg
+          - service: web-ui
+            dockerfile: apps/web-ui/Dockerfile
+            target: runner
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        lfs: true
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,format=long
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ${{ matrix.dockerfile }}
+        target: ${{ matrix.target }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        # Production deployment currently targets x86_64 GCE/GKE nodes.
+        platforms: linux/amd64
+
+  # Security scanning for Docker images
+  scan-images:
+    name: Scan Docker Images
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [orchestrator, agent, neurokg, web-ui]
+
+    steps:
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:sha-${{ github.sha }}
+        format: 'sarif'
+        output: 'trivy-${{ matrix.service }}.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v4
+      if: ${{ vars.ENABLE_CODE_SCANNING == 'true' }}
+      with:
+        sarif_file: 'trivy-${{ matrix.service }}.sarif'
+
+  # End-to-end testing
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        sparse-checkout-cone-mode: false
+        sparse-checkout: |
+          docker-compose.yml
+          infrastructure/docker/compose/docker-compose.ci.yml
+          scripts/ci/generate_e2e_auth_token.py
+          scripts/tools/dev/seed_from_dump.sh
+          tests/fixtures/neurokg/mini_dump/**
+          apps/web-ui/.npmrc
+          apps/web-ui/package.json
+          apps/web-ui/package-lock.json
+          apps/web-ui/playwright.config.ts
+          apps/web-ui/tests/e2e/**
+
+    - name: Free runner disk for Docker E2E
+      run: |
+        set -euo pipefail
+        echo "::group::Disk before cleanup"
+        df -h
+        docker system df || true
+        echo "::endgroup::"
+
+        sudo rm -rf \
+          /usr/local/lib/android \
+          /usr/share/dotnet \
+          /opt/ghc \
+          /usr/local/.ghcup \
+          /opt/az \
+          "${AGENT_TOOLSDIRECTORY:-/opt/hostedtoolcache}"
+        docker system prune -af || true
+
+        echo "::group::Disk after cleanup"
+        df -h
+        docker system df || true
+        echo "::endgroup::"
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Install E2E Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install neo4j
+
+    - name: Set up Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: apps/web-ui/package-lock.json
+
+    - name: Generate CI auth token
+      id: e2e-auth
+      run: |
+        set -euo pipefail
+        SECRET="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+        echo "JWT_SECRET_KEY=$SECRET" >> "$GITHUB_ENV"
+        echo "NEXTAUTH_SECRET=$SECRET" >> "$GITHUB_ENV"
+        TOKEN="$(JWT_SECRET_KEY="$SECRET" python scripts/ci/generate_e2e_auth_token.py)"
+        echo "E2E_AUTH_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
+    - name: Set up Docker Compose
+      run: |
+        mkdir -p data/neurokg/db
+        mkdir -p logs
+        {
+          echo "OPENAI_API_KEY=test-key"
+          echo "POSTGRES_PASSWORD=test-pass"
+          echo "NEO4J_PASSWORD=password"
+          echo "JWT_SECRET_KEY=${JWT_SECRET_KEY}"
+          echo "NEXTAUTH_SECRET=${NEXTAUTH_SECRET}"
+        } > .env
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Start Neo4j
+      run: |
+        docker compose -f docker-compose.yml up -d neo4j
+
+    - name: Wait for Neo4j
+      run: |
+        python - <<'PY'
+        import time
+        from neo4j import GraphDatabase
+
+        uri = "bolt://localhost:7687"
+        auth = ("neo4j", "password")
+        deadline = time.time() + 180
+        last_error = None
+        while time.time() < deadline:
+            try:
+                driver = GraphDatabase.driver(uri, auth=auth)
+                with driver.session() as session:
+                    session.run("RETURN 1").consume()
+                driver.close()
+                break
+            except Exception as exc:
+                last_error = exc
+                time.sleep(5)
+        else:
+            raise SystemExit(f"Neo4j failed to start: {last_error}")
+        PY
+
+    - name: Seed Neo4j mini dump
+      run: |
+        chmod +x scripts/tools/dev/seed_from_dump.sh
+        NEO4J_USER=neo4j NEO4J_PASSWORD=password scripts/tools/dev/seed_from_dump.sh tests/fixtures/neurokg/mini_dump
+
+    - name: Start application services
+      run: |
+        set -euo pipefail
+        echo "::group::Disk before application service pull"
+        df -h
+        docker system df || true
+        echo "::endgroup::"
+
+        for image in \
+          "${REGISTRY}/${GITHUB_REPOSITORY}/orchestrator:sha-${GITHUB_SHA}" \
+          "${REGISTRY}/${GITHUB_REPOSITORY}/neurokg:sha-${GITHUB_SHA}" \
+          "${REGISTRY}/${GITHUB_REPOSITORY}/agent:sha-${GITHUB_SHA}" \
+          "${REGISTRY}/${GITHUB_REPOSITORY}/web-ui:sha-${GITHUB_SHA}" \
+          "redis:7-alpine"; do
+          docker pull "$image"
+          docker image inspect "$image" >/dev/null
+        done
+
+        docker compose -f docker-compose.yml -f infrastructure/docker/compose/docker-compose.ci.yml up -d --no-build --pull never redis neurokg agent orchestrator web-ui
+        docker compose -f docker-compose.yml -f infrastructure/docker/compose/docker-compose.ci.yml ps
+        sleep 60  # Wait for services to start
+
+    - name: Wait for services to be healthy
+      run: |
+        for i in {1..45}; do
+          if curl -fsS http://localhost:8000/health >/dev/null && \
+             curl -fsS http://localhost:5000/health >/dev/null && \
+             curl -fsS http://localhost:3001/health >/dev/null && \
+             curl -fsS http://localhost:3000/api/health >/dev/null; then
+            echo "Agent, BR-KG, Orchestrator, and Web UI are healthy"
+            break
+          fi
+          echo "Waiting for services to start... ($i/45)"
+          sleep 10
+        done
+
+    - name: Run smoke tests
+      run: |
+        curl -f http://localhost:8000/health
+        curl -f http://localhost:5000/health
+        curl -f http://localhost:3001/health
+        curl -f http://localhost:3000/api/health
+
+    - name: Install Web UI deps + Playwright
+      working-directory: apps/web-ui
+      run: |
+        npm ci --ignore-scripts
+        npx playwright install chromium --with-deps
+
+    - name: Run Playwright analyses contract smoke
+      working-directory: apps/web-ui
+      env:
+        CI: "1"
+        E2E_BASE_URL: http://localhost:3000
+        E2E_AUTH_TOKEN: ${{ env.E2E_AUTH_TOKEN }}
+        PW_WORKERS: "1"
+      run: |
+        npx playwright test \
+          tests/e2e/smoke.smoke.spec.ts \
+          tests/e2e/kg.lens.smoke.spec.ts \
+          tests/e2e/steps.failed.spec.ts \
+          --reporter=line
+
+    - name: Collect logs
+      if: failure()
+      run: |
+        docker compose -f docker-compose.yml -f infrastructure/docker/compose/docker-compose.ci.yml logs > docker-logs.txt
+        cat docker-logs.txt
+
+    - name: Upload Playwright artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-artifacts
+        path: |
+          artifacts/playwright
+          artifacts/playwright-report
+          apps/web-ui/test-results
+          docker-logs.txt
+
+    - name: Stop services
+      if: always()
+      run: docker compose -f docker-compose.yml -f infrastructure/docker/compose/docker-compose.ci.yml down -v
+
+  # Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, integration-tests]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment commands here
+        # For example, using kubectl, docker-compose, or deployment scripts
+
+  # Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, e2e-tests]
+    if: github.event_name == 'release'
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here
+
+    - name: Run post-deployment tests
+      run: |
+        echo "Running post-deployment validation..."
+        # Add validation commands here
+
+  # Notify on completion
+  notify:
+    name: Notify Completion
+    runs-on: ubuntu-latest
+    needs: [deploy-production, deploy-staging]
+    if: always()
+
+    steps:
+    - name: Send notification
+      uses: 8398a7/action-slack@v3
+      if: env.SLACK_WEBHOOK_URL
+      with:
+        status: ${{ job.status }}
+        text: "Brain Researcher deployment completed with status: ${{ job.status }}"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  k8s-tests:
+    name: Kubernetes Tests (opt-in)
+    runs-on: ubuntu-latest
+    needs: [helm-chart, build]
+    if: ${{ vars.RUN_K8S_TESTS == 'true' }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install kubectl and dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y kubectl
+        python -m pip install --upgrade pip
+        pip install -e ".[test]"
+
+    - name: Run Kubernetes smoke tests
+      env:
+        K8S_NAMESPACE: brain-researcher-core
+        PYTHONPATH: ${{ github.workspace }}/src
+      run: |
+        chmod +x tests/k8s/run_k8s_tests.sh
+        tests/k8s/run_k8s_tests.sh --wait-for-ready smoke

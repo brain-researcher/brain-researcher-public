@@ -6,14 +6,14 @@ handling both within-subject and between-subject variance using statsmodels
 and nilearn.
 """
 
-import json
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import nibabel as nib
+import json
 import numpy as np
 import pandas as pd
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Tuple
+import nibabel as nib
+
 from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.tool_base import (
@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 class RandomEffectStructure(str):
     """Random effect covariance structures."""
-
     INDEPENDENCE = "independence"
     EXCHANGEABLE = "exchangeable"
     AUTOREGRESSIVE = "autoregressive"
@@ -37,7 +36,6 @@ class RandomEffectStructure(str):
 
 class EstimationMethod(str):
     """Estimation methods for mixed models."""
-
     REML = "reml"  # Restricted Maximum Likelihood
     ML = "ml"  # Maximum Likelihood
     BFGS = "bfgs"  # Broyden-Fletcher-Goldfarb-Shanno
@@ -53,88 +51,120 @@ class MixedEffectsArgs(BaseModel):
     data_file: str = Field(
         description="Input data file (CSV/TSV for behavioral or NIfTI for imaging)"
     )
-    output_dir: str = Field(description="Output directory for results")
+    output_dir: str = Field(
+        description="Output directory for results"
+    )
 
     # Model specification
     formula: str = Field(
         description="Model formula in Wilkinson notation (e.g., 'y ~ x1 + x2 + (1|subject)')"
     )
     dependent_var: Optional[str] = Field(
-        default=None, description="Name of dependent variable (for CSV/TSV data)"
+        default=None,
+        description="Name of dependent variable (for CSV/TSV data)"
     )
 
     # Random effects specification
     groups: Optional[str] = Field(
         default=None,
-        description="Grouping variable for random effects (e.g., 'subject')",
+        description="Grouping variable for random effects (e.g., 'subject')"
     )
     re_formula: Optional[str] = Field(
-        default=None, description="Random effects formula if not in main formula"
+        default=None,
+        description="Random effects formula if not in main formula"
     )
     covariance_structure: str = Field(
         default="unstructured",
-        description="Random effects covariance: independence, exchangeable, autoregressive, unstructured",
+        description="Random effects covariance: independence, exchangeable, autoregressive, unstructured"
     )
 
     # For neuroimaging data
     mask_file: Optional[str] = Field(
-        default=None, description="Brain mask for voxel-wise analysis"
+        default=None,
+        description="Brain mask for voxel-wise analysis"
     )
     first_level_maps: Optional[List[str]] = Field(
-        default=None, description="List of first-level contrast maps for group analysis"
+        default=None,
+        description="List of first-level contrast maps for group analysis"
     )
     design_matrix_file: Optional[str] = Field(
-        default=None, description="Second-level design matrix (CSV/TSV)"
+        default=None,
+        description="Second-level design matrix (CSV/TSV)"
     )
 
     # Model parameters
     estimation_method: str = Field(
-        default="reml", description="Estimation method: reml, ml, bfgs, powell, cg, nm"
+        default="reml",
+        description="Estimation method: reml, ml, bfgs, powell, cg, nm"
     )
     start_params: Optional[List[float]] = Field(
-        default=None, description="Starting values for optimization"
+        default=None,
+        description="Starting values for optimization"
     )
-    maxiter: int = Field(default=100, description="Maximum iterations for optimization")
+    maxiter: int = Field(
+        default=100,
+        description="Maximum iterations for optimization"
+    )
 
     # Statistical parameters
-    alpha: float = Field(default=0.05, description="Significance level")
+    alpha: float = Field(
+        default=0.05,
+        description="Significance level"
+    )
     correction_method: str = Field(
         default="fdr",
-        description="Multiple comparison correction: none, bonferroni, fdr, fwe",
+        description="Multiple comparison correction: none, bonferroni, fdr, fwe"
     )
     permutations: Optional[int] = Field(
-        default=None, description="Number of permutations for non-parametric inference"
+        default=None,
+        description="Number of permutations for non-parametric inference"
     )
 
     # Contrasts
     contrasts: Optional[Dict[str, List[float]]] = Field(
-        default=None, description="Contrast vectors for hypothesis testing"
+        default=None,
+        description="Contrast vectors for hypothesis testing"
     )
     tfce: bool = Field(
-        default=False, description="Use Threshold-Free Cluster Enhancement"
+        default=False,
+        description="Use Threshold-Free Cluster Enhancement"
     )
 
     # Output options
-    save_residuals: bool = Field(default=True, description="Save model residuals")
-    save_random_effects: bool = Field(
-        default=True, description="Save estimated random effects"
+    save_residuals: bool = Field(
+        default=True,
+        description="Save model residuals"
     )
-    save_predicted: bool = Field(default=True, description="Save predicted values")
+    save_random_effects: bool = Field(
+        default=True,
+        description="Save estimated random effects"
+    )
+    save_predicted: bool = Field(
+        default=True,
+        description="Save predicted values"
+    )
     plot_diagnostics: bool = Field(
-        default=True, description="Generate diagnostic plots"
+        default=True,
+        description="Generate diagnostic plots"
     )
 
     # Advanced options
     variance_components: bool = Field(
-        default=True, description="Estimate variance components"
+        default=True,
+        description="Estimate variance components"
     )
     profile_likelihood: bool = Field(
-        default=False, description="Compute profile likelihood confidence intervals"
+        default=False,
+        description="Compute profile likelihood confidence intervals"
     )
     bootstrap_ci: bool = Field(
-        default=False, description="Compute bootstrap confidence intervals"
+        default=False,
+        description="Compute bootstrap confidence intervals"
     )
-    n_bootstrap: int = Field(default=1000, description="Number of bootstrap samples")
+    n_bootstrap: int = Field(
+        default=1000,
+        description="Number of bootstrap samples"
+    )
 
 
 class MixedEffectsTool(NeuroToolWrapper):
@@ -149,12 +179,11 @@ class MixedEffectsTool(NeuroToolWrapper):
         """Check required dependencies."""
         self.dependencies_available = True
         try:
-            import nilearn
             import statsmodels.api as sm
             import statsmodels.formula.api as smf
-            from nilearn.glm.second_level import SecondLevelModel
             from statsmodels.regression.mixed_linear_model import MixedLM
-
+            import nilearn
+            from nilearn.glm.second_level import SecondLevelModel
             logger.info("Mixed effects dependencies available")
         except ImportError as e:
             self.dependencies_available = False
@@ -179,11 +208,11 @@ class MixedEffectsTool(NeuroToolWrapper):
         import re
 
         # Extract random effects specification (1|group) or (var|group)
-        random_pattern = r"\([^)]*\|[^)]*\)"
+        random_pattern = r'\([^)]*\|[^)]*\)'
         random_effects = re.findall(random_pattern, formula)
 
         # Remove random effects from formula to get fixed effects
-        fixed_formula = re.sub(random_pattern, "", formula).strip()
+        fixed_formula = re.sub(random_pattern, '', formula).strip()
 
         # Parse random effects
         re_specs = []
@@ -191,11 +220,14 @@ class MixedEffectsTool(NeuroToolWrapper):
             # Remove parentheses
             re_spec = re_spec[1:-1]
             # Split by |
-            parts = re_spec.split("|")
+            parts = re_spec.split('|')
             if len(parts) == 2:
                 re_formula = parts[0].strip()
                 re_group = parts[1].strip()
-                re_specs.append({"formula": re_formula, "group": re_group})
+                re_specs.append({
+                    'formula': re_formula,
+                    'group': re_group
+                })
 
         return fixed_formula, re_specs
 
@@ -206,11 +238,11 @@ class MixedEffectsTool(NeuroToolWrapper):
         groups: Optional[str] = None,
         re_formula: Optional[str] = None,
         method: str = "reml",
-        covariance_structure: str = "unstructured",
+        covariance_structure: str = "unstructured"
     ):
         """Fit mixed effects model for behavioral data."""
-        import statsmodels.formula.api as smf
         from statsmodels.regression.mixed_linear_model import MixedLM
+        import statsmodels.formula.api as smf
 
         # Parse formula
         fixed_formula, random_specs = self._parse_formula(formula)
@@ -218,8 +250,8 @@ class MixedEffectsTool(NeuroToolWrapper):
         # Determine groups and random effects
         if random_specs:
             # Use first random effect specification
-            groups = groups or random_specs[0]["group"]
-            re_formula = re_formula or random_specs[0]["formula"]
+            groups = groups or random_specs[0]['group']
+            re_formula = re_formula or random_specs[0]['formula']
 
         if not groups:
             raise ValueError("No grouping variable specified for random effects")
@@ -229,7 +261,7 @@ class MixedEffectsTool(NeuroToolWrapper):
             "independence": "ind",
             "exchangeable": "ex",
             "autoregressive": "ar",
-            "unstructured": "un",
+            "unstructured": "un"
         }
 
         vc_formula = None
@@ -247,12 +279,15 @@ class MixedEffectsTool(NeuroToolWrapper):
                 groups=data[groups],
                 data=data,
                 re_formula=re_formula,
-                vc_formula=vc_formula,
+                vc_formula=vc_formula
             )
         else:
             # Random intercepts only
             model = MixedLM.from_formula(
-                fixed_formula, groups=data[groups], data=data, vc_formula=vc_formula
+                fixed_formula,
+                groups=data[groups],
+                data=data,
+                vc_formula=vc_formula
             )
 
         # Fit with specified method
@@ -270,18 +305,19 @@ class MixedEffectsTool(NeuroToolWrapper):
         first_level_maps: List[str],
         design_matrix: pd.DataFrame,
         mask: Optional[str] = None,
-        smoothing_fwhm: Optional[float] = None,
+        smoothing_fwhm: Optional[float] = None
     ):
         """Fit mixed effects model for neuroimaging data."""
-        from nilearn.glm.second_level import SecondLevelModel, non_parametric_inference
+        from nilearn.glm.second_level import SecondLevelModel
+        from nilearn.glm.second_level import non_parametric_inference
 
         # Create second-level model
         model = SecondLevelModel(
             mask_img=mask,
             smoothing_fwhm=smoothing_fwhm,
-            memory="nilearn_cache",
+            memory='nilearn_cache',
             minimize_memory=False,
-            n_jobs=1,
+            n_jobs=1
         )
 
         # Fit model
@@ -299,20 +335,25 @@ class MixedEffectsTool(NeuroToolWrapper):
             logger.info(f"Computing contrast: {name}")
 
             # Compute contrast
-            z_map = model.compute_contrast(contrast_vector, output_type="z_score")
+            z_map = model.compute_contrast(
+                contrast_vector,
+                output_type='z_score'
+            )
 
             # Get statistics
             from nilearn.glm import threshold_stats_img
-
             thresholded_map, threshold = threshold_stats_img(
-                z_map, alpha=0.05, height_control="fdr", cluster_threshold=10
+                z_map,
+                alpha=0.05,
+                height_control='fdr',
+                cluster_threshold=10
             )
 
             contrast_maps[name] = z_map
             contrast_stats[name] = {
-                "threshold": float(threshold),
-                "max_z": float(z_map.get_fdata().max()),
-                "min_z": float(z_map.get_fdata().min()),
+                'threshold': float(threshold),
+                'max_z': float(z_map.get_fdata().max()),
+                'min_z': float(z_map.get_fdata().min())
             }
 
         return contrast_maps, contrast_stats
@@ -324,7 +365,7 @@ class MixedEffectsTool(NeuroToolWrapper):
         contrast: List[float],
         mask: Optional[str] = None,
         n_perm: int = 10000,
-        tfce: bool = False,
+        tfce: bool = False
     ):
         """Run permutation-based inference."""
         from nilearn.glm.second_level import non_parametric_inference
@@ -340,7 +381,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                 mask=mask,
                 n_perm=n_perm,
                 threshold=0.001,
-                tfce=True,
+                tfce=True
             )
         else:
             # Standard permutation test
@@ -349,7 +390,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                 design_matrix=design_matrix,
                 second_level_contrast=contrast,
                 mask=mask,
-                n_perm=n_perm,
+                n_perm=n_perm
             )
 
         return out
@@ -359,43 +400,28 @@ class MixedEffectsTool(NeuroToolWrapper):
         variance_components = {}
 
         # Fixed effects variance
-        variance_components["fixed"] = {
-            "params": (
-                model_result.params.to_dict()
-                if hasattr(model_result.params, "to_dict")
-                else dict(model_result.params)
-            ),
-            "std_errors": (
-                model_result.bse.to_dict()
-                if hasattr(model_result.bse, "to_dict")
-                else dict(model_result.bse)
-            ),
+        variance_components['fixed'] = {
+            'params': model_result.params.to_dict() if hasattr(model_result.params, 'to_dict') else dict(model_result.params),
+            'std_errors': model_result.bse.to_dict() if hasattr(model_result.bse, 'to_dict') else dict(model_result.bse)
         }
 
         # Random effects variance
-        if hasattr(model_result, "cov_re"):
-            variance_components["random"] = {
-                "covariance": (
-                    model_result.cov_re.tolist()
-                    if hasattr(model_result.cov_re, "tolist")
-                    else model_result.cov_re
-                )
+        if hasattr(model_result, 'cov_re'):
+            variance_components['random'] = {
+                'covariance': model_result.cov_re.tolist() if hasattr(model_result.cov_re, 'tolist') else model_result.cov_re
             }
 
         # Residual variance
-        if hasattr(model_result, "scale"):
-            variance_components["residual"] = float(model_result.scale)
+        if hasattr(model_result, 'scale'):
+            variance_components['residual'] = float(model_result.scale)
 
         # ICC (Intraclass Correlation Coefficient)
         try:
-            total_var = variance_components.get("residual", 0)
-            if (
-                "random" in variance_components
-                and "covariance" in variance_components["random"]
-            ):
-                random_var = np.diag(variance_components["random"]["covariance"])[0]
+            total_var = variance_components.get('residual', 0)
+            if 'random' in variance_components and 'covariance' in variance_components['random']:
+                random_var = np.diag(variance_components['random']['covariance'])[0]
                 total_var += random_var
-                variance_components["icc"] = float(random_var / total_var)
+                variance_components['icc'] = float(random_var / total_var)
         except:
             pass
 
@@ -404,8 +430,7 @@ class MixedEffectsTool(NeuroToolWrapper):
     def _generate_diagnostic_plots(self, model_result, output_dir):
         """Generate diagnostic plots for mixed model."""
         import matplotlib
-
-        matplotlib.use("Agg")
+        matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from scipy import stats
 
@@ -426,7 +451,7 @@ class MixedEffectsTool(NeuroToolWrapper):
             fig, ax = plt.subplots(figsize=(8, 6))
             fitted = model_result.fittedvalues
             ax.scatter(fitted, residuals, alpha=0.5)
-            ax.axhline(y=0, color="r", linestyle="--")
+            ax.axhline(y=0, color='r', linestyle='--')
             ax.set_xlabel("Fitted Values")
             ax.set_ylabel("Residuals")
             ax.set_title("Residuals vs Fitted Values")
@@ -436,12 +461,12 @@ class MixedEffectsTool(NeuroToolWrapper):
             plot_files["residuals_vs_fitted"] = str(resid_file)
 
             # Random effects distribution
-            if hasattr(model_result, "random_effects"):
+            if hasattr(model_result, 'random_effects'):
                 fig, ax = plt.subplots(figsize=(8, 6))
                 re_values = []
                 for group_re in model_result.random_effects.values():
                     re_values.extend(group_re.values())
-                ax.hist(re_values, bins=30, edgecolor="black")
+                ax.hist(re_values, bins=30, edgecolor='black')
                 ax.set_xlabel("Random Effect Value")
                 ax.set_ylabel("Frequency")
                 ax.set_title("Distribution of Random Effects")
@@ -483,7 +508,7 @@ class MixedEffectsTool(NeuroToolWrapper):
         profile_likelihood: bool = False,
         bootstrap_ci: bool = False,
         n_bootstrap: int = 1000,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute Mixed Effects Model analysis."""
         try:
@@ -491,7 +516,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error="Mixed effects dependencies not available",
-                    data={},
+                    data={}
                 )
 
             import statsmodels.api as sm
@@ -511,14 +536,17 @@ class MixedEffectsTool(NeuroToolWrapper):
                     design_matrix = pd.read_csv(design_matrix_file)
                 else:
                     # Create simple design matrix
-                    design_matrix = pd.DataFrame(
-                        {"intercept": np.ones(len(first_level_maps))}
-                    )
+                    design_matrix = pd.DataFrame({
+                        'intercept': np.ones(len(first_level_maps))
+                    })
 
                 # Fit second-level model
                 from nilearn.glm.second_level import SecondLevelModel
 
-                model = SecondLevelModel(mask_img=mask_file, minimize_memory=False)
+                model = SecondLevelModel(
+                    mask_img=mask_file,
+                    minimize_memory=False
+                )
 
                 model.fit(first_level_maps, design_matrix=design_matrix)
 
@@ -528,7 +556,10 @@ class MixedEffectsTool(NeuroToolWrapper):
 
                 if contrasts:
                     for name, contrast in contrasts.items():
-                        z_map = model.compute_contrast(contrast, output_type="z_score")
+                        z_map = model.compute_contrast(
+                            contrast,
+                            output_type='z_score'
+                        )
 
                         # Save contrast map
                         contrast_file = output_path / f"contrast_{name}_z.nii.gz"
@@ -538,9 +569,9 @@ class MixedEffectsTool(NeuroToolWrapper):
                         # Get statistics
                         z_data = z_map.get_fdata()
                         contrast_stats[name] = {
-                            "max_z": float(np.max(z_data)),
-                            "min_z": float(np.min(z_data)),
-                            "mean_z": float(np.mean(z_data)),
+                            'max_z': float(np.max(z_data)),
+                            'min_z': float(np.min(z_data)),
+                            'mean_z': float(np.mean(z_data))
                         }
 
                 # Permutation testing if requested
@@ -548,9 +579,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                 if permutations and contrasts:
                     from nilearn.glm.second_level import non_parametric_inference
 
-                    for name, contrast in list(contrasts.items())[
-                        :1
-                    ]:  # First contrast only
+                    for name, contrast in list(contrasts.items())[:1]:  # First contrast only
                         logger.info(f"Running permutation test for {name}")
 
                         perm_out = non_parametric_inference(
@@ -559,7 +588,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                             second_level_contrast=contrast,
                             mask=mask_file,
                             n_perm=permutations,
-                            tfce=tfce,
+                            tfce=tfce
                         )
 
                         # Save permutation results
@@ -577,7 +606,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                     "design_matrix": design_matrix.to_dict(),
                     "contrasts": contrast_stats,
                     "contrast_maps": contrast_maps,
-                    "permutation_results": perm_results if permutations else None,
+                    "permutation_results": perm_results if permutations else None
                 }
 
             else:
@@ -594,34 +623,18 @@ class MixedEffectsTool(NeuroToolWrapper):
                     groups=groups,
                     re_formula=re_formula,
                     method=estimation_method,
-                    covariance_structure=covariance_structure,
+                    covariance_structure=covariance_structure
                 )
 
                 # Extract results
                 model_summary = {
-                    "coefficients": (
-                        result.params.to_dict()
-                        if hasattr(result.params, "to_dict")
-                        else dict(result.params)
-                    ),
-                    "std_errors": (
-                        result.bse.to_dict()
-                        if hasattr(result.bse, "to_dict")
-                        else dict(result.bse)
-                    ),
-                    "t_values": (
-                        result.tvalues.to_dict()
-                        if hasattr(result.tvalues, "to_dict")
-                        else dict(result.tvalues)
-                    ),
-                    "p_values": (
-                        result.pvalues.to_dict()
-                        if hasattr(result.pvalues, "to_dict")
-                        else dict(result.pvalues)
-                    ),
+                    "coefficients": result.params.to_dict() if hasattr(result.params, 'to_dict') else dict(result.params),
+                    "std_errors": result.bse.to_dict() if hasattr(result.bse, 'to_dict') else dict(result.bse),
+                    "t_values": result.tvalues.to_dict() if hasattr(result.tvalues, 'to_dict') else dict(result.tvalues),
+                    "p_values": result.pvalues.to_dict() if hasattr(result.pvalues, 'to_dict') else dict(result.pvalues),
                     "log_likelihood": float(result.llf),
                     "aic": float(result.aic),
-                    "bic": float(result.bic),
+                    "bic": float(result.bic)
                 }
 
                 # Variance components
@@ -630,7 +643,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                     model_summary["variance_components"] = var_comp
 
                 # Random effects
-                if save_random_effects and hasattr(result, "random_effects"):
+                if save_random_effects and hasattr(result, 'random_effects'):
                     re_df = pd.DataFrame(result.random_effects).T
                     re_file = output_path / "random_effects.csv"
                     re_df.to_csv(re_file)
@@ -638,22 +651,18 @@ class MixedEffectsTool(NeuroToolWrapper):
 
                 # Predictions and residuals
                 if save_predicted:
-                    pred_df = pd.DataFrame(
-                        {
-                            "observed": result.model.endog,
-                            "predicted": result.fittedvalues,
-                        }
-                    )
+                    pred_df = pd.DataFrame({
+                        'observed': result.model.endog,
+                        'predicted': result.fittedvalues
+                    })
                     pred_file = output_path / "predictions.csv"
                     pred_df.to_csv(pred_file, index=False)
 
                 if save_residuals:
-                    resid_df = pd.DataFrame(
-                        {
-                            "residuals": result.resid,
-                            "standardized": result.resid / np.std(result.resid),
-                        }
-                    )
+                    resid_df = pd.DataFrame({
+                        'residuals': result.resid,
+                        'standardized': result.resid / np.std(result.resid)
+                    })
                     resid_file = output_path / "residuals.csv"
                     resid_df.to_csv(resid_file, index=False)
 
@@ -677,7 +686,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                                 groups=groups,
                                 re_formula=re_formula,
                                 method=estimation_method,
-                                covariance_structure=covariance_structure,
+                                covariance_structure=covariance_structure
                             )
                             boot_params.append(boot_result.params.values)
                         except:
@@ -691,7 +700,7 @@ class MixedEffectsTool(NeuroToolWrapper):
                         model_summary["bootstrap_ci"] = {
                             "lower": ci_lower.tolist(),
                             "upper": ci_upper.tolist(),
-                            "n_successful": len(boot_params),
+                            "n_successful": len(boot_params)
                         }
 
                 # Generate report
@@ -699,16 +708,14 @@ class MixedEffectsTool(NeuroToolWrapper):
                     "analysis_type": "behavioral_mixed_effects",
                     "formula": formula,
                     "n_observations": len(data),
-                    "n_groups": (
-                        result.n_groups if hasattr(result, "n_groups") else None
-                    ),
+                    "n_groups": result.n_groups if hasattr(result, 'n_groups') else None,
                     "model_summary": model_summary,
-                    "plots": plot_files,
+                    "plots": plot_files
                 }
 
             # Save report
             report_file = output_path / "mixed_effects_report.json"
-            with open(report_file, "w") as f:
+            with open(report_file, 'w') as f:
                 json.dump(report, f, indent=2, default=str)
 
             return ToolResult(
@@ -716,22 +723,22 @@ class MixedEffectsTool(NeuroToolWrapper):
                 data={
                     "outputs": {
                         "report": str(report_file),
-                        "plots": plot_files if "plot_files" in locals() else {},
-                        "contrast_maps": (
-                            contrast_maps if "contrast_maps" in locals() else {}
-                        ),
-                        "permutation_results": (
-                            perm_results if "perm_results" in locals() else {}
-                        ),
+                        "plots": plot_files if 'plot_files' in locals() else {},
+                        "contrast_maps": contrast_maps if 'contrast_maps' in locals() else {},
+                        "permutation_results": perm_results if 'perm_results' in locals() else {}
                     },
                     "summary": report,
-                    "message": "Mixed effects analysis completed successfully",
-                },
+                    "message": "Mixed effects analysis completed successfully"
+                }
             )
 
         except Exception as e:
             logger.error(f"Mixed effects analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class MixedEffectsTools:
@@ -740,4 +747,6 @@ class MixedEffectsTools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all Mixed Effects tools."""
-        return [MixedEffectsTool()]
+        return [
+            MixedEffectsTool()
+        ]

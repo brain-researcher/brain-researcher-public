@@ -6,11 +6,11 @@ This module provides the retry decision engine that:
 - Determines if a job should be retried
 """
 
+import random
 import hashlib
 import logging
-import random
-from dataclasses import dataclass
 from datetime import datetime, timedelta
+from dataclasses import dataclass
 from typing import Optional
 
 from brain_researcher.config.retry_settings import RetrySettings, get_retry_settings
@@ -64,9 +64,9 @@ class RetryDecision:
             "reason": self.reason,
             "category": self.category,
             "delay_seconds": self.delay_seconds,
-            "next_retry_at": (
-                self.next_retry_at.isoformat() if self.next_retry_at else None
-            ),
+            "next_retry_at": self.next_retry_at.isoformat()
+            if self.next_retry_at
+            else None,
             "attempt": self.attempt,
             "max_attempts": self.max_attempts,
             "metadata": self.metadata,

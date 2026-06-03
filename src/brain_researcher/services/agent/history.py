@@ -288,11 +288,9 @@ class QueryHistory:
             {
                 "query_id": q["query_id"],
                 "timestamp": q["timestamp"],
-                "query_text": (
-                    q["query_text"][:100] + "..."
-                    if len(q["query_text"]) > 100
-                    else q["query_text"]
-                ),
+                "query_text": q["query_text"][:100] + "..."
+                if len(q["query_text"]) > 100
+                else q["query_text"],
                 "has_feedback": bool(q.get("feedback")),
             }
             for q in history[:10]
@@ -302,11 +300,9 @@ class QueryHistory:
             "total_queries": total_queries,
             "queries_with_feedback": queries_with_feedback,
             "average_rating": round(avg_rating, 2) if avg_rating else None,
-            "feedback_rate": (
-                round(queries_with_feedback / total_queries * 100, 1)
-                if total_queries > 0
-                else 0
-            ),
+            "feedback_rate": round(queries_with_feedback / total_queries * 100, 1)
+            if total_queries > 0
+            else 0,
             "queries_by_type": dict(queries_by_type),
             "recent_activity": recent_activity,
         }
@@ -358,14 +354,12 @@ class QueryHistory:
             "total_users": len(all_users),
             "total_queries": total_queries,
             "total_feedback": total_feedback,
-            "average_rating": (
-                round(sum(all_ratings) / len(all_ratings), 2) if all_ratings else None
-            ),
-            "feedback_rate": (
-                round(total_feedback / total_queries * 100, 1)
-                if total_queries > 0
-                else 0
-            ),
+            "average_rating": round(sum(all_ratings) / len(all_ratings), 2)
+            if all_ratings
+            else None,
+            "feedback_rate": round(total_feedback / total_queries * 100, 1)
+            if total_queries > 0
+            else 0,
         }
 
     def _summarize_results(self, results: list[dict[str, Any]]) -> dict[str, Any]:
@@ -392,11 +386,9 @@ class QueryHistory:
             top_papers.append(
                 {
                     "id": r.get("id"),
-                    "title": (
-                        r.get("title", "")[:100] + "..."
-                        if len(r.get("title", "")) > 100
-                        else r.get("title", "")
-                    ),
+                    "title": r.get("title", "")[:100] + "..."
+                    if len(r.get("title", "")) > 100
+                    else r.get("title", ""),
                 }
             )
 

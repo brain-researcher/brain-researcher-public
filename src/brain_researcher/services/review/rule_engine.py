@@ -118,9 +118,7 @@ class ReviewRuleEngine:
             try:
                 rules.append(ReviewRule.model_validate(raw))
             except Exception as exc:
-                logger.warning(
-                    "Skipping invalid review rule %r: %s", raw.get("rule_id"), exc
-                )
+                logger.warning("Skipping invalid review rule %r: %s", raw.get("rule_id"), exc)
         return cls(rules)
 
     def evaluate_artifacts(
@@ -147,10 +145,10 @@ class ReviewRuleEngine:
 
             # Metric-based artifact rules: paths into stats_metrics or scorecard_snapshot
             if rule.metric.startswith("stats_metrics."):
-                key = rule.metric[len("stats_metrics.") :]
+                key = rule.metric[len("stats_metrics."):]
                 value = bundle.stats_metrics.get(key)
             elif rule.metric.startswith("scorecard_snapshot."):
-                key = rule.metric[len("scorecard_snapshot.") :]
+                key = rule.metric[len("scorecard_snapshot."):]
                 value = bundle.scorecard_snapshot.get(key)
             else:
                 continue
@@ -189,26 +187,22 @@ class ReviewRuleEngine:
             # Metric-based rules
             if rule.metric.startswith("plan."):
                 # Plan-level metric (e.g. plan.step_count)
-                value = _get_from_context(plan_context, rule.metric[len("plan.") :])
+                value = _get_from_context(plan_context, rule.metric[len("plan."):])
                 finding = self._evaluate_metric(rule, value, step_id=None)
                 if finding is not None:
                     findings.append(finding)
             elif rule.metric.startswith("params."):
                 # Step-level metric — evaluate per step (with optional tool_filter)
-                param_key = rule.metric[len("params.") :]
+                param_key = rule.metric[len("params."):]
                 for step in bundle.plan_steps:
                     tool = str(step.get("tool") or "").lower()
-                    if rule.tool_filter and tool not in {
-                        t.lower() for t in rule.tool_filter
-                    }:
+                    if rule.tool_filter and tool not in {t.lower() for t in rule.tool_filter}:
                         continue
                     params = step.get("params") or {}
                     value = _get_from_context(params, param_key)
                     if value is None:
                         continue
-                    finding = self._evaluate_metric(
-                        rule, value, step_id=step.get("step_id")
-                    )
+                    finding = self._evaluate_metric(rule, value, step_id=step.get("step_id"))
                     if finding is not None:
                         findings.append(finding)
 

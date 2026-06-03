@@ -20,11 +20,8 @@ try:
 except ImportError:
     # When running as a script from brain_researcher.services.br_kg directory
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from brain_researcher.services.br_kg.etl.loaders.openneuro_loader.metadata_loader import OpenNeuroMetadataLoader
     from graph.graph_database import BRKGGraphDB
-
-    from brain_researcher.services.br_kg.etl.loaders.openneuro_loader.metadata_loader import (
-        OpenNeuroMetadataLoader,
-    )
 
 logger = logging.getLogger(__name__)
 

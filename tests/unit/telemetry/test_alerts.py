@@ -5,22 +5,15 @@ Tests alert thresholds, notifications, and dashboard configurations
 
 import asyncio
 import json
-from datetime import datetime, timedelta
-from typing import Any, Dict
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-
 import pytest
+from datetime import datetime, timedelta
+from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from typing import Dict, Any
 
 from brain_researcher.services.telemetry.alerts import (
-    Alert,
-    AlertManager,
-    AlertRule,
-    AlertSeverity,
-    AlertStatus,
-    AlertThreshold,
-    MetricsCollector,
-    NotificationChannel,
-    NotificationManager,
+    AlertManager, AlertRule, AlertThreshold, Alert,
+    AlertSeverity, AlertStatus, NotificationChannel,
+    NotificationManager, MetricsCollector
 )
 from brain_researcher.services.telemetry.models import ServiceType
 
@@ -42,13 +35,11 @@ def mock_redis():
 def mock_telemetry_collector():
     """Create mock telemetry collector."""
     collector_mock = MagicMock()
-    collector_mock.get_stats = MagicMock(
-        return_value={
-            "events_collected": 1000,
-            "avg_processing_time_ms": 25,
-            "buffer_size": 500,
-        }
-    )
+    collector_mock.get_stats = MagicMock(return_value={
+        "events_collected": 1000,
+        "avg_processing_time_ms": 25,
+        "buffer_size": 500
+    })
     return collector_mock
 
 
@@ -64,18 +55,18 @@ def notification_config():
             "from_address": "alerts@test.com",
             "to_addresses": ["admin@test.com"],
             "username": "test_user",
-            "password": "test_pass",
+            "password": "test_pass"
         },
         "slack": {
             "enabled": True,
             "webhook_url": "https://hooks.slack.com/test",
-            "channel": "#alerts",
+            "channel": "#alerts"
         },
         "webhook": {
             "enabled": True,
             "url": "https://webhook.test.com/alerts",
-            "headers": {"Authorization": "Bearer test"},
-        },
+            "headers": {"Authorization": "Bearer test"}
+        }
     }
 
 
@@ -85,7 +76,7 @@ async def alert_manager(mock_redis, mock_telemetry_collector, notification_confi
     manager = AlertManager(
         redis_client=mock_redis,
         telemetry_collector=mock_telemetry_collector,
-        notification_config=notification_config,
+        notification_config=notification_config
     )
     yield manager
     if manager._running:
@@ -98,7 +89,9 @@ class TestAlertThreshold:
     def test_threshold_greater_than(self):
         """Test greater than operator."""
         threshold = AlertThreshold(
-            metric_name="response_time", operator=">", value=2000.0
+            metric_name="response_time",
+            operator=">",
+            value=2000.0
         )
         assert threshold.evaluate(2500.0) == True
         assert threshold.evaluate(1500.0) == False
@@ -106,14 +99,21 @@ class TestAlertThreshold:
 
     def test_threshold_less_than(self):
         """Test less than operator."""
-        threshold = AlertThreshold(metric_name="success_rate", operator="<", value=95.0)
+        threshold = AlertThreshold(
+            metric_name="success_rate",
+            operator="<",
+            value=95.0
+        )
         assert threshold.evaluate(90.0) == True
         assert threshold.evaluate(98.0) == False
 
     def test_threshold_with_duration(self):
         """Test threshold with duration requirement."""
         threshold = AlertThreshold(
-            metric_name="error_rate", operator=">=", value=5.0, duration_seconds=300
+            metric_name="error_rate",
+            operator=">=",
+            value=5.0,
+            duration_seconds=300
         )
         assert threshold.evaluate(6.0, duration_met=True) == True
         assert threshold.evaluate(6.0, duration_met=False) == False
@@ -136,10 +136,10 @@ class TestNotificationManager:
             current_value=3000.0,
             threshold_value=2000.0,
             message="Response time is too high",
-            triggered_at=datetime.utcnow(),
+            triggered_at=datetime.utcnow()
         )
 
-        with patch("smtplib.SMTP") as mock_smtp:
+        with patch('smtplib.SMTP') as mock_smtp:
             smtp_instance = mock_smtp.return_value
             result = await manager.send_notification(alert, NotificationChannel.EMAIL)
             assert result == True
@@ -160,10 +160,10 @@ class TestNotificationManager:
             current_value=15.0,
             threshold_value=5.0,
             message="Error rate critically high",
-            triggered_at=datetime.utcnow(),
+            triggered_at=datetime.utcnow()
         )
 
-        with patch("requests.post") as mock_post:
+        with patch('requests.post') as mock_post:
             mock_post.return_value.status_code = 200
             result = await manager.send_notification(alert, NotificationChannel.SLACK)
             assert result == True
@@ -171,9 +171,9 @@ class TestNotificationManager:
 
             # Check payload structure
             call_args = mock_post.call_args
-            payload = call_args.kwargs["json"]
-            assert payload["channel"] == "#alerts"
-            assert "Critical" in payload["attachments"][0]["title"]
+            payload = call_args.kwargs['json']
+            assert payload['channel'] == "#alerts"
+            assert "Critical" in payload['attachments'][0]['title']
 
     @pytest.mark.asyncio
     async def test_send_webhook_notification(self, notification_config):
@@ -189,17 +189,17 @@ class TestNotificationManager:
             current_value=85.0,
             threshold_value=80.0,
             message="Memory usage high",
-            triggered_at=datetime.utcnow(),
+            triggered_at=datetime.utcnow()
         )
 
-        with patch("requests.post") as mock_post:
+        with patch('requests.post') as mock_post:
             mock_post.return_value.status_code = 200
             result = await manager.send_notification(alert, NotificationChannel.WEBHOOK)
             assert result == True
 
             call_args = mock_post.call_args
-            assert call_args.kwargs["json"]["is_resolution"] == False
-            assert "Authorization" in call_args.kwargs["headers"]
+            assert call_args.kwargs['json']['is_resolution'] == False
+            assert 'Authorization' in call_args.kwargs['headers']
 
 
 class TestMetricsCollector:
@@ -213,21 +213,17 @@ class TestMetricsCollector:
         # Mock Redis responses
         mock_redis.zrangebyscore.return_value = [b"req_1", b"req_2"]
         mock_redis.get.side_effect = [
-            json.dumps(
-                {
-                    "service": ServiceType.ORCHESTRATOR,
-                    "duration_ms": 1500,
-                    "status_code": 200,
-                }
-            ),
-            json.dumps(
-                {
-                    "service": ServiceType.ORCHESTRATOR,
-                    "duration_ms": 2500,
-                    "status_code": 500,
-                    "error": True,
-                }
-            ),
+            json.dumps({
+                "service": ServiceType.ORCHESTRATOR,
+                "duration_ms": 1500,
+                "status_code": 200
+            }),
+            json.dumps({
+                "service": ServiceType.ORCHESTRATOR,
+                "duration_ms": 2500,
+                "status_code": 500,
+                "error": True
+            })
         ]
 
         metrics = await collector.get_service_metrics(ServiceType.ORCHESTRATOR, 5)
@@ -248,7 +244,7 @@ class TestMetricsCollector:
         mock_redis.get.side_effect = [
             json.dumps({"service": ServiceType.API_GATEWAY, "status_code": 200}),
             json.dumps({"service": ServiceType.API_GATEWAY, "status_code": 404}),
-            json.dumps({"service": ServiceType.API_GATEWAY, "status_code": 500}),
+            json.dumps({"service": ServiceType.API_GATEWAY, "status_code": 500})
         ]
 
         error_rate = await collector._calculate_error_rate(ServiceType.API_GATEWAY, 5)
@@ -288,14 +284,14 @@ class TestAlertManager:
                 metric_name="response_time_ms",
                 operator=">",
                 value=1000.0,
-                severity=AlertSeverity.WARNING,
+                severity=AlertSeverity.WARNING
             ),
-            service=ServiceType.ORCHESTRATOR,
+            service=ServiceType.ORCHESTRATOR
         )
 
         metrics = {"response_time_ms": 2000.0}
 
-        with patch.object(alert_manager, "_trigger_alert") as mock_trigger:
+        with patch.object(alert_manager, '_trigger_alert') as mock_trigger:
             await alert_manager._evaluate_rule(rule, metrics)
             mock_trigger.assert_called_once()
 
@@ -320,19 +316,23 @@ class TestAlertManager:
             current_value=10.0,
             threshold_value=5.0,
             message="Error rate high",
-            triggered_at=datetime.utcnow(),
+            triggered_at=datetime.utcnow()
         )
         alert_manager.active_alerts[rule_name] = existing_alert
 
         rule = AlertRule(
             name=rule_name,
-            threshold=AlertThreshold(metric_name="error_rate", operator=">", value=5.0),
-            service=ServiceType.AGENT,
+            threshold=AlertThreshold(
+                metric_name="error_rate",
+                operator=">",
+                value=5.0
+            ),
+            service=ServiceType.AGENT
         )
 
         metrics = {"error_rate": 3.0}  # Below threshold
 
-        with patch.object(alert_manager, "_resolve_alert") as mock_resolve:
+        with patch.object(alert_manager, '_resolve_alert') as mock_resolve:
             await alert_manager._evaluate_rule(rule, metrics)
             mock_resolve.assert_called_once()
             assert existing_alert.status == AlertStatus.RESOLVED
@@ -342,7 +342,7 @@ class TestAlertManager:
         rule = AlertRule(
             name="test_rule",
             threshold=AlertThreshold("metric", ">", 10.0),
-            service=ServiceType.ORCHESTRATOR,
+            service=ServiceType.ORCHESTRATOR
         )
 
         # Alert with no previous notification
@@ -355,7 +355,7 @@ class TestAlertManager:
             current_value=15.0,
             threshold_value=10.0,
             message="Test",
-            triggered_at=datetime.utcnow(),
+            triggered_at=datetime.utcnow()
         )
         assert alert_manager._should_re_alert(alert1, rule) == True
 
@@ -370,7 +370,7 @@ class TestAlertManager:
             threshold_value=10.0,
             message="Test",
             triggered_at=datetime.utcnow(),
-            last_notification=datetime.utcnow() - timedelta(hours=1, minutes=1),
+            last_notification=datetime.utcnow() - timedelta(hours=1, minutes=1)
         )
         assert alert_manager._should_re_alert(alert2, rule) == True
 
@@ -385,7 +385,7 @@ class TestAlertManager:
             threshold_value=10.0,
             message="Test",
             triggered_at=datetime.utcnow(),
-            last_notification=datetime.utcnow() - timedelta(hours=3),
+            last_notification=datetime.utcnow() - timedelta(hours=3)
         )
         assert alert_manager._should_re_alert(alert3, rule) == False
 
@@ -394,7 +394,7 @@ class TestAlertManager:
         new_rule = AlertRule(
             name="custom_rule",
             threshold=AlertThreshold("custom_metric", ">", 100.0),
-            service=ServiceType.WEB_UI,
+            service=ServiceType.WEB_UI
         )
 
         alert_manager.add_rule(new_rule)
@@ -438,7 +438,7 @@ class TestAlertManager:
             current_value=15.0,
             threshold_value=10.0,
             message="Test alert",
-            triggered_at=datetime.utcnow(),
+            triggered_at=datetime.utcnow()
         )
 
         await alert_manager._store_alert(alert)
@@ -450,23 +450,23 @@ class TestAlertManager:
     def test_parse_stored_alert(self, alert_manager):
         """Test parsing stored alert from Redis."""
         alert_data = {
-            b"id": b"stored_alert",
-            b"rule_name": b"test_rule",
-            b"service": b"orchestrator",
-            b"severity": b"warning",
-            b"status": b"active",
-            b"current_value": b"25.5",
-            b"threshold_value": b"20.0",
-            b"message": b"Test message",
-            b"triggered_at": datetime.utcnow().isoformat().encode(),
-            b"resolved_at": b"None",
-            b"notification_count": b"2",
-            b"tags": b"{}",
+            b'id': b'stored_alert',
+            b'rule_name': b'test_rule',
+            b'service': b'orchestrator',
+            b'severity': b'warning',
+            b'status': b'active',
+            b'current_value': b'25.5',
+            b'threshold_value': b'20.0',
+            b'message': b'Test message',
+            b'triggered_at': datetime.utcnow().isoformat().encode(),
+            b'resolved_at': b'None',
+            b'notification_count': b'2',
+            b'tags': b'{}'
         }
 
         parsed = alert_manager._parse_stored_alert(alert_data)
         assert parsed is not None
-        assert parsed.id == "stored_alert"
+        assert parsed.id == 'stored_alert'
         assert parsed.current_value == 25.5
         assert parsed.notification_count == 2
 
@@ -484,18 +484,17 @@ class TestAlertIntegration:
                 operator=">",
                 value=50.0,
                 duration_seconds=0,
-                severity=AlertSeverity.WARNING,
+                severity=AlertSeverity.WARNING
             ),
             service=ServiceType.ORCHESTRATOR,
-            cooldown_seconds=1,
+            cooldown_seconds=1
         )
         alert_manager.add_rule(rule)
 
         # Phase 1: Trigger alert
         high_metrics = {"test_metric": 75.0}
-        with patch.object(
-            alert_manager.notification_manager, "send_notification", return_value=True
-        ) as mock_notify:
+        with patch.object(alert_manager.notification_manager, 'send_notification',
+                         return_value=True) as mock_notify:
             await alert_manager._evaluate_rule(rule, high_metrics)
 
             assert "lifecycle_test" in alert_manager.active_alerts
@@ -506,24 +505,20 @@ class TestAlertIntegration:
 
         # Phase 2: Re-alert check (should not re-alert immediately)
         alert.last_notification = datetime.utcnow()
-        with patch.object(
-            alert_manager.notification_manager, "send_notification"
-        ) as mock_notify:
+        with patch.object(alert_manager.notification_manager, 'send_notification') as mock_notify:
             await alert_manager._evaluate_rule(rule, high_metrics)
             mock_notify.assert_not_called()
 
         # Phase 3: Resolve alert
         low_metrics = {"test_metric": 25.0}
-        with patch.object(
-            alert_manager.notification_manager, "send_notification", return_value=True
-        ) as mock_notify:
+        with patch.object(alert_manager.notification_manager, 'send_notification',
+                         return_value=True) as mock_notify:
             await alert_manager._evaluate_rule(rule, low_metrics)
 
             assert alert.status == AlertStatus.RESOLVED
             assert alert.resolved_at is not None
-            mock_notify.assert_called_with(
-                alert, rule.notification_channels[0], is_resolution=True
-            )
+            mock_notify.assert_called_with(alert, rule.notification_channels[0],
+                                          is_resolution=True)
 
         # Wait for cleanup
         await asyncio.sleep(1.5)
@@ -539,20 +534,18 @@ class TestAlertIntegration:
             rule = AlertRule(
                 name=f"{service}_concurrent_test",
                 threshold=AlertThreshold("concurrent_metric", ">", 10.0),
-                service=service,
+                service=service
             )
             alert_manager.add_rule(rule)
 
         # Trigger alerts concurrently
         metrics = {"concurrent_metric": 20.0}
 
-        with patch.object(
-            alert_manager.notification_manager, "send_notification", return_value=True
-        ):
+        with patch.object(alert_manager.notification_manager, 'send_notification',
+                         return_value=True):
             tasks = [
-                alert_manager._evaluate_rule(
-                    alert_manager.alert_rules[f"{service}_concurrent_test"], metrics
-                )
+                alert_manager._evaluate_rule(alert_manager.alert_rules[f"{service}_concurrent_test"],
+                                            metrics)
                 for service in services
             ]
             await asyncio.gather(*tasks)
@@ -579,7 +572,7 @@ class TestAlertPerformance:
             rule = AlertRule(
                 name=f"perf_test_{i}",
                 threshold=AlertThreshold(f"metric_{i}", ">", float(i)),
-                service=ServiceType.ORCHESTRATOR,
+                service=ServiceType.ORCHESTRATOR
             )
             alert_manager.add_rule(rule)
 
@@ -588,9 +581,8 @@ class TestAlertPerformance:
 
         start_time = time.time()
 
-        with patch.object(
-            alert_manager.notification_manager, "send_notification", return_value=True
-        ):
+        with patch.object(alert_manager.notification_manager, 'send_notification',
+                         return_value=True):
             # Evaluate all rules
             tasks = [
                 alert_manager._evaluate_rule(rule, metrics)

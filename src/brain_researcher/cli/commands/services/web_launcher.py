@@ -34,9 +34,7 @@ def launch_web_service(
 
     if not web_ui_dir.exists():
         console.print(f"[red]Web UI directory not found: {web_ui_dir}[/red]")
-        console.print(
-            "[yellow]Please ensure the web UI is properly installed.[/yellow]"
-        )
+        console.print("[yellow]Please ensure the web UI is properly installed.[/yellow]")
         sys.exit(1)
 
     # Check if package.json exists
@@ -49,9 +47,7 @@ def launch_web_service(
     # Check if node_modules exists, if not, install dependencies
     node_modules = web_ui_dir / "node_modules"
     if not node_modules.exists():
-        console.print(
-            "[yellow]Installing dependencies (this may take a few minutes)...[/yellow]"
-        )
+        console.print("[yellow]Installing dependencies (this may take a few minutes)...[/yellow]")
         try:
             subprocess.run(
                 ["npm", "install"],
@@ -90,9 +86,7 @@ def launch_web_service(
         # If not verbose, consume and display filtered output
         if not verbose:
             console.print(f"[green]✓ Web UI started on http://{host}:{port}[/green]")
-            console.print(
-                "[dim]Server logs suppressed. Use --verbose to see full output.[/dim]"
-            )
+            console.print("[dim]Server logs suppressed. Use --verbose to see full output.[/dim]")
 
             # Keep the process running
             try:

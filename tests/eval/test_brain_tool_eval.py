@@ -8,11 +8,11 @@ Level 1: Single tool selection (tool appears in top-k)
 Level 2: Two-step chain detection (multiple related tools appear)
 """
 
+import pytest
 from typing import List
 
-import pytest
-
 from brain_researcher.services.tools.registry import get_candidate_tools
+
 
 # =============================================================================
 # Level 1: Single Tool Selection
@@ -261,7 +261,9 @@ class TestModalityFiltering:
         for candidate in candidates:
             # Tool should either have matching modality or no modality constraint
             if candidate.modalities:
-                assert any(m in case["modalities"] for m in candidate.modalities), (
+                assert any(
+                    m in case["modalities"] for m in candidate.modalities
+                ), (
                     f"Modality mismatch for: {case['id']}\n"
                     f"Tool {candidate.name} has modalities {candidate.modalities}\n"
                     f"but filter was {case['modalities']}"
@@ -271,7 +273,6 @@ class TestModalityFiltering:
 # =============================================================================
 # Coverage Metrics
 # =============================================================================
-
 
 def test_exposed_tools_have_descriptions():
     """Ensure all exposed tools have meaningful descriptions."""

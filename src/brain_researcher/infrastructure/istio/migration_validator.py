@@ -11,9 +11,7 @@ class MigrationValidator:
     def __init__(self, namespace: str = "default"):
         self.namespace = namespace
 
-    def run_pre_migration_checks(
-        self, service_config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def run_pre_migration_checks(self, service_config: Dict[str, Any]) -> Dict[str, Any]:
         checks = {
             "resource_validation": {"passed": True},
             "port_validation": {"passed": True},
@@ -33,9 +31,7 @@ class MigrationValidator:
         ready = all(component.get("ready") for component in components.values())
         return {"ready": ready, "components": components}
 
-    def validate_mesh_compatibility(
-        self, service_spec: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def validate_mesh_compatibility(self, service_spec: Dict[str, Any]) -> Dict[str, Any]:
         protocols = service_spec.get("protocols", [])
         protocol_support = {protocol: True for protocol in protocols}
         return {
@@ -44,7 +40,5 @@ class MigrationValidator:
             "observability_ready": bool(service_spec.get("observability_ready", True)),
         }
 
-    def validate_network_policies(
-        self, network_policies: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def validate_network_policies(self, network_policies: List[Dict[str, Any]]) -> Dict[str, Any]:
         return {"compatible": True, "migration_required": True}

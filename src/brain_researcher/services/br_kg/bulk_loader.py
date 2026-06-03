@@ -222,13 +222,7 @@ class EntityValidator:
 
         if node_type == "Study" and not any(
             entity.get(field)
-            for field in (
-                "title",
-                "name",
-                "study_id",
-                "gwas_catalog_id",
-                "pgc_study_id",
-            )
+            for field in ("title", "name", "study_id", "gwas_catalog_id", "pgc_study_id")
         ):
             return False, "Study requires title or a study identifier"
 
@@ -245,8 +239,7 @@ class EntityValidator:
             return False, "Population requires a name or ancestry identifier"
 
         if node_type == "Gene" and not any(
-            entity.get(field)
-            for field in ("symbol", "gene_id", "hgnc_id", "ensembl_id")
+            entity.get(field) for field in ("symbol", "gene_id", "hgnc_id", "ensembl_id")
         ):
             return False, "Gene requires a symbol or gene identifier"
 
@@ -270,10 +263,7 @@ class EntityValidator:
         if node_type == "OpenRisk":
             label = str(entity.get("label") or "")
             if label not in cls.CANONICAL_OPEN_RISK_LABELS:
-                return (
-                    False,
-                    f"OpenRisk label must be one of {sorted(cls.CANONICAL_OPEN_RISK_LABELS)}",
-                )
+                return False, f"OpenRisk label must be one of {sorted(cls.CANONICAL_OPEN_RISK_LABELS)}"
             if not entity.get("text"):
                 return False, "OpenRisk requires text"
 
@@ -393,10 +383,13 @@ class EntityValidator:
                 or source_id.startswith(disease_prefixes)
                 or source_id.startswith(concept_prefixes)
             )
-            target_ok = target_id.startswith(disease_prefixes) or (
-                ":" in target_id
-                and not target_id.startswith(
-                    ("coord:", "map:", "nv:", "statmap:", "statsmap:")
+            target_ok = (
+                target_id.startswith(disease_prefixes)
+                or (
+                    ":" in target_id
+                    and not target_id.startswith(
+                        ("coord:", "map:", "nv:", "statmap:", "statsmap:")
+                    )
                 )
             )
             if not source_ok:

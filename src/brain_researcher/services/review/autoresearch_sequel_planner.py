@@ -165,9 +165,7 @@ def build_closeout_card(
 
     components = _parse_primary_analysis_components(report_text)
     confirmed_wins = [
-        name
-        for name, payload in components.items()
-        if payload.get("status") == "strong"
+        name for name, payload in components.items() if payload.get("status") == "strong"
     ]
     tentative_components = [
         name for name, payload in components.items() if payload.get("status") == "mixed"
@@ -218,21 +216,17 @@ def build_closeout_card(
             [
                 "no_blind_replication_baseline",
                 "no_kg_grounded_sequel",
-                (
-                    "pe_feature_vs_data_limit_unresolved"
-                    if "ICA_PersonalityEmotion" in tentative_components
-                    else ""
-                ),
-                (
-                    "generalization_axes_blocked"
-                    if any(
-                        "alternate_parcellation" in item
-                        or "external_cohort" in item
-                        or "replication_evidence" in item
-                        for item in validation_missing
-                    )
-                    else ""
-                ),
+                "pe_feature_vs_data_limit_unresolved"
+                if "ICA_PersonalityEmotion" in tentative_components
+                else "",
+                "generalization_axes_blocked"
+                if any(
+                    "alternate_parcellation" in item
+                    or "external_cohort" in item
+                    or "replication_evidence" in item
+                    for item in validation_missing
+                )
+                else "",
             ]
         ),
     }
@@ -285,9 +279,7 @@ def build_candidate_lines(
     module_presets: dict[str, dict[str, Any]] | None = None,
     workspace_root: str | Path | None = None,
 ) -> dict[str, Any]:
-    root = Path(
-        workspace_root or Path(closeout_card["source_workspace"]).parent
-    ).resolve()
+    root = Path(workspace_root or Path(closeout_card["source_workspace"]).parent).resolve()
     module_presets = module_presets or {}
     existing = _infer_existing_line_types(root)
     demo_gaps = set(_normalize_list(closeout_card.get("demo_gaps")))
@@ -372,21 +364,19 @@ def build_candidate_lines(
                 expected_demo_value="medium",
                 priority=80,
                 triggered_by=[
-                    (
-                        "pe_feature_vs_data_limit_unresolved"
-                        if "pe_feature_vs_data_limit_unresolved" in demo_gaps
-                        else "mixed_strength_components_present"
-                    )
+                    "pe_feature_vs_data_limit_unresolved"
+                    if "pe_feature_vs_data_limit_unresolved" in demo_gaps
+                    else "mixed_strength_components_present"
                 ],
                 existing_workspaces=existing.get("representation_scaling", []),
                 blockers=[],
                 module_presets=module_presets,
                 budget_envelope={
-                    "max_runner_turns": 10,
-                    "max_wallclock_hours": 10,
-                    "exploration_floor_iters": 8,
-                    "max_confirmation_fraction": 0.4,
-                },
+                "max_runner_turns": 10,
+                "max_wallclock_hours": 10,
+                "exploration_floor_iters": 8,
+                "max_confirmation_fraction": 0.4,
+            },
             )
         )
 
@@ -410,11 +400,11 @@ def build_candidate_lines(
                 blockers=[],
                 module_presets=module_presets,
                 budget_envelope={
-                    "max_runner_turns": 12,
-                    "max_wallclock_hours": 12,
-                    "exploration_floor_iters": 10,
-                    "max_confirmation_fraction": 0.3,
-                },
+                "max_runner_turns": 12,
+                "max_wallclock_hours": 12,
+                "exploration_floor_iters": 10,
+                "max_confirmation_fraction": 0.3,
+            },
             )
         )
 
@@ -439,11 +429,11 @@ def build_candidate_lines(
                 blockers=sorted(data_blockers),
                 module_presets=module_presets,
                 budget_envelope={
-                    "max_runner_turns": 10,
-                    "max_wallclock_hours": 12,
-                    "exploration_floor_iters": 8,
-                    "max_confirmation_fraction": 0.4,
-                },
+                "max_runner_turns": 10,
+                "max_wallclock_hours": 12,
+                "exploration_floor_iters": 8,
+                "max_confirmation_fraction": 0.4,
+            },
             )
         )
 
@@ -468,17 +458,15 @@ def build_candidate_lines(
                 blockers=[],
                 module_presets=module_presets,
                 budget_envelope={
-                    "max_runner_turns": 10,
-                    "max_wallclock_hours": 16,
-                    "exploration_floor_iters": 8,
-                    "max_confirmation_fraction": 0.4,
-                },
+                "max_runner_turns": 10,
+                "max_wallclock_hours": 16,
+                "exploration_floor_iters": 8,
+                "max_confirmation_fraction": 0.4,
+            },
             )
         )
 
-    foundation_blockers = (
-        ["raw_bold_not_available"] if "raw_bold_not_available" in data_blockers else []
-    )
+    foundation_blockers = ["raw_bold_not_available"] if "raw_bold_not_available" in data_blockers else []
     candidates.append(
         _candidate(
             candidate_id="foundation_transfer_feasibility",
@@ -507,9 +495,7 @@ def build_candidate_lines(
         )
     )
 
-    candidates = sorted(
-        candidates, key=lambda item: (-int(item["priority"]), item["candidate_id"])
-    )
+    candidates = sorted(candidates, key=lambda item: (-int(item["priority"]), item["candidate_id"]))
     selected = next((item for item in candidates if item["status"] == "ready"), None)
 
     return {
@@ -544,9 +530,9 @@ def build_line_spec(
         "schema_version": "autoresearch-line-spec-v1",
         "generated_at_utc": _utc_now(),
         "source_workspace": closeout_card["source_workspace"],
-        "source_closeout_claim_strength": (closeout_card.get("review") or {}).get(
-            "claim_strength"
-        ),
+        "source_closeout_claim_strength": (
+            closeout_card.get("review") or {}
+        ).get("claim_strength"),
         "selected_candidate_id": selected_id,
         "line_spec": selected,
     }

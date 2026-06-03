@@ -47,9 +47,7 @@ def budget_status(
         return
 
     console.print("[yellow]⚠ Budget enforcement not yet implemented (Track 1)[/yellow]")
-    console.print(
-        "\nUse [bold]br budget usage[/bold] to view actual LLM usage and costs."
-    )
+    console.print("\nUse [bold]br budget usage[/bold] to view actual LLM usage and costs.")
 
 
 @app.command("usage")
@@ -114,9 +112,7 @@ def usage_report(
     if json_output:
         # Remove full records from JSON output (too verbose)
         summary_copy = summary.copy()
-        summary_copy["records"] = (
-            f"{len(summary['records'])} records (use --verbose for details)"
-        )
+        summary_copy["records"] = f"{len(summary['records'])} records (use --verbose for details)"
         print(json.dumps(summary_copy, indent=2))
         return
 
@@ -228,9 +224,7 @@ def set_budget(
     Example:
         br budget set --monthly-usd 50 --daily-usd 5
     """
-    console.print(
-        "[yellow]⚠ Budget enforcement not yet implemented (Track 1)[/yellow]\n"
-    )
+    console.print("[yellow]⚠ Budget enforcement not yet implemented (Track 1)[/yellow]\n")
     console.print("Budget limits will be saved once BudgetTracker is implemented.")
     console.print("\nRequested limits:")
     if daily_usd is not None:

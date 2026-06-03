@@ -281,8 +281,7 @@ class StudioExecutionRuntime:
             items = [
                 execution
                 for execution in self._executions.values()
-                if execution.owner_user_id == owner_user_id
-                and execution.session_id == session_id
+                if execution.owner_user_id == owner_user_id and execution.session_id == session_id
             ]
         hydrated = [await self._hydrate_execution(item) for item in items]
         if kind is not None:
@@ -340,9 +339,7 @@ class StudioExecutionRuntime:
                 try:
                     await self._cancel_runtime_task(execution, payload.reason)
                 except Exception:
-                    logger.exception(
-                        "Failed to cancel runtime task %s", runtime_task_id
-                    )
+                    logger.exception("Failed to cancel runtime task %s", runtime_task_id)
             now = _utc_now()
             updated = execution.model_copy(
                 update={
@@ -354,9 +351,7 @@ class StudioExecutionRuntime:
                         exit_code=130,
                         stdout=execution.result.stdout if execution.result else "",
                         stderr=execution.result.stderr if execution.result else "",
-                        artifacts=(
-                            execution.result.artifacts if execution.result else []
-                        ),
+                        artifacts=execution.result.artifacts if execution.result else [],
                         summary=payload.reason or "Execution canceled",
                     ),
                 }
@@ -481,9 +476,7 @@ class StudioExecutionRuntime:
             update={"working_directory": resolved_working_directory}
         )
         shell_command, runtime_kind = self._build_shell_command(normalized_request)
-        backend_job_id = (
-            f"job_{secrets.token_urlsafe(9).replace('-', '').replace('_', '')}"
-        )
+        backend_job_id = f"job_{secrets.token_urlsafe(9).replace('-', '').replace('_', '')}"
 
         from brain_researcher.services.orchestrator.job_management_endpoints import (
             Job,
@@ -491,9 +484,7 @@ class StudioExecutionRuntime:
         )
 
         queued_now = _utc_now_naive()
-        job_status = (
-            JobStatus.QUEUED if run_backend == "jobstore" else JobStatus.PENDING
-        )
+        job_status = JobStatus.QUEUED if run_backend == "jobstore" else JobStatus.PENDING
         backend_mode = "jobstore_worker"
         if run_backend != "jobstore" or not worker_pool:
             backend_mode = "tool_executor_direct"
@@ -555,11 +546,7 @@ class StudioExecutionRuntime:
                 )
             )
             self._backend_tasks[backend_job_id] = task
-            task.add_done_callback(
-                lambda _task, job_id=backend_job_id: self._backend_tasks.pop(
-                    job_id, None
-                )
-            )
+            task.add_done_callback(lambda _task, job_id=backend_job_id: self._backend_tasks.pop(job_id, None))
 
         return {
             "backend_kind": "orchestrator_job",
@@ -600,9 +587,7 @@ class StudioExecutionRuntime:
         )
         self._backend_tasks[runtime_task_id] = task
         task.add_done_callback(
-            lambda _task, task_id=runtime_task_id: self._backend_tasks.pop(
-                task_id, None
-            )
+            lambda _task, task_id=runtime_task_id: self._backend_tasks.pop(task_id, None)
         )
         await self._studio_session_runtime.update_runtime_session(
             runtime_session.id,
@@ -836,8 +821,7 @@ class StudioExecutionRuntime:
                         stdout=current.result.stdout if current.result else "",
                         stderr=message,
                         artifacts=current.result.artifacts if current.result else [],
-                        summary=message
-                        or "Execution failed on the bound Jupyter kernel",
+                        summary=message or "Execution failed on the bound Jupyter kernel",
                     ),
                 }
             )
@@ -871,9 +855,7 @@ class StudioExecutionRuntime:
                 try:
                     executor.cancel(backend_job_id)
                 except Exception:
-                    logger.debug(
-                        "Direct executor cancellation failed for %s", backend_job_id
-                    )
+                    logger.debug("Direct executor cancellation failed for %s", backend_job_id)
         return canceled
 
     async def _cancel_runtime_task(
@@ -887,11 +869,7 @@ class StudioExecutionRuntime:
         runtime = await self._studio_session_runtime.get_runtime_session(
             execution.runtime_session_id
         )
-        if (
-            runtime is not None
-            and runtime.jupyter_kernel_id
-            and runtime.jupyter_base_url
-        ):
+        if runtime is not None and runtime.jupyter_kernel_id and runtime.jupyter_base_url:
             try:
                 await interrupt_kernel(
                     self._build_jupyter_runtime_target(
@@ -938,13 +916,8 @@ class StudioExecutionRuntime:
         if job is None:
             return
 
-        if (
-            getattr(job, "cancellation_requested", False)
-            or str(getattr(job, "status", "")).lower() == "cancelled"
-        ):
-            await self._mark_job_cancelled(
-                job, job_adapter, "Execution cancelled before start"
-            )
+        if getattr(job, "cancellation_requested", False) or str(getattr(job, "status", "")).lower() == "cancelled":
+            await self._mark_job_cancelled(job, job_adapter, "Execution cancelled before start")
             return
 
         from brain_researcher.services.agent.tool_executor import (
@@ -978,9 +951,7 @@ class StudioExecutionRuntime:
         try:
             result = await asyncio.to_thread(executor.execute, tool_request)
         except Exception as exc:
-            logger.exception(
-                "Studio execution backend failed for job %s", backend_job_id
-            )
+            logger.exception("Studio execution backend failed for job %s", backend_job_id)
             refreshed = await job_adapter.get_job(backend_job_id) or job
             await self._mark_job_failed(refreshed, job_adapter, str(exc))
             await self._refresh_bound_execution_from_job(backend_job_id)
@@ -988,14 +959,10 @@ class StudioExecutionRuntime:
 
         refreshed = await job_adapter.get_job(backend_job_id) or job
         await self._apply_tool_result_to_job(refreshed, job_adapter, result)
-        if not self._update_bound_execution_from_tool_result(
-            backend_job_id, refreshed, result
-        ):
+        if not self._update_bound_execution_from_tool_result(backend_job_id, refreshed, result):
             await self._refresh_bound_execution_from_job(backend_job_id)
 
-    async def _mark_job_cancelled(
-        self, job: Any, job_adapter: Any, reason: str
-    ) -> None:
+    async def _mark_job_cancelled(self, job: Any, job_adapter: Any, reason: str) -> None:
         from brain_researcher.services.orchestrator.job_management_endpoints import (
             JobStatus,
         )
@@ -1106,9 +1073,7 @@ class StudioExecutionRuntime:
                     "backend_job_status": hydrated.metadata.get("backend_job_status"),
                     "backend_run_id": hydrated.metadata.get("backend_run_id"),
                     "backend_run_dir": hydrated.metadata.get("backend_run_dir"),
-                    "backend_provenance_path": hydrated.metadata.get(
-                        "backend_provenance_path"
-                    ),
+                    "backend_provenance_path": hydrated.metadata.get("backend_provenance_path"),
                 }
             )
             hydrated = execution.model_copy(
@@ -1141,24 +1106,12 @@ class StudioExecutionRuntime:
         hydrated_error = str(hydrated.metadata.get("backend_error") or "").strip()
         current_returncode = current.metadata.get("backend_returncode")
         hydrated_returncode = hydrated.metadata.get("backend_returncode")
-        current_stdout = (
-            str(current_result.stdout or "").strip() if current_result else ""
-        )
-        current_stderr = (
-            str(current_result.stderr or "").strip() if current_result else ""
-        )
-        hydrated_stdout = (
-            str(hydrated_result.stdout or "").strip() if hydrated_result else ""
-        )
-        hydrated_stderr = (
-            str(hydrated_result.stderr or "").strip() if hydrated_result else ""
-        )
-        current_summary = (
-            str(current_result.summary or "").strip() if current_result else ""
-        )
-        hydrated_summary = (
-            str(hydrated_result.summary or "").strip() if hydrated_result else ""
-        )
+        current_stdout = str(current_result.stdout or "").strip() if current_result else ""
+        current_stderr = str(current_result.stderr or "").strip() if current_result else ""
+        hydrated_stdout = str(hydrated_result.stdout or "").strip() if hydrated_result else ""
+        hydrated_stderr = str(hydrated_result.stderr or "").strip() if hydrated_result else ""
+        current_summary = str(current_result.summary or "").strip() if current_result else ""
+        hydrated_summary = str(hydrated_result.summary or "").strip() if hydrated_result else ""
 
         current_is_richer = bool(
             current_error
@@ -1207,17 +1160,15 @@ class StudioExecutionRuntime:
             return False
 
         normalized_job_status = self._normalize_job_status(getattr(job, "status", None))
-        execution_status = self._map_job_status_to_execution_status(
-            normalized_job_status
-        )
+        execution_status = self._map_job_status_to_execution_status(normalized_job_status)
         payload = getattr(result, "result", None)
         payload_data = payload if isinstance(payload, dict) else {}
         stdout_text = self._coerce_result_text(payload_data.get("stdout"))
         stderr_text = self._coerce_result_text(payload_data.get("stderr"))
         exit_code = self._coerce_exit_code(payload_data.get("returncode"))
-        backend_error = self._derive_tool_result_error(
-            result, payload_data
-        ) or self._stringify_job_error(getattr(job, "error", None))
+        backend_error = self._derive_tool_result_error(result, payload_data) or self._stringify_job_error(
+            getattr(job, "error", None)
+        )
         summary = (
             backend_error
             if execution_status == StudioExecutionStatus.FAILED and backend_error
@@ -1229,35 +1180,27 @@ class StudioExecutionRuntime:
             {
                 "backend_job_status": normalized_job_status,
                 "backend_run_id": getattr(job, "run_id", None),
-                "backend_run_dir": str(
-                    self._resolve_run_dir(getattr(job, "run_dir", None)) or ""
-                )
+                "backend_run_dir": str(self._resolve_run_dir(getattr(job, "run_dir", None)) or "")
                 or None,
                 "backend_provenance_path": getattr(job, "provenance_path", None),
                 "backend_error": backend_error,
                 "backend_returncode": exit_code,
             }
         )
-        completed_at = (
-            self._coerce_datetime(getattr(job, "completed_at", None)) or _utc_now()
-        )
+        completed_at = self._coerce_datetime(getattr(job, "completed_at", None)) or _utc_now()
         updated = current.model_copy(
             update={
                 "status": execution_status,
                 "metadata": metadata,
                 "updated_at": completed_at,
-                "completed_at": (
-                    completed_at
-                    if execution_status.value in _TERMINAL_EXECUTION_STATUSES
-                    else None
-                ),
+                "completed_at": completed_at
+                if execution_status.value in _TERMINAL_EXECUTION_STATUSES
+                else None,
                 "result": StudioExecutionResult(
                     stubbed=False,
-                    exit_code=(
-                        exit_code
-                        if exit_code is not None
-                        else self._infer_exit_code(execution_status)
-                    ),
+                    exit_code=exit_code
+                    if exit_code is not None
+                    else self._infer_exit_code(execution_status),
                     stdout=stdout_text,
                     stderr=stderr_text,
                     artifacts=[],
@@ -1273,25 +1216,21 @@ class StudioExecutionRuntime:
         self, execution: StudioExecution, job: Any
     ) -> dict[str, Any]:
         normalized_job_status = self._normalize_job_status(getattr(job, "status", None))
-        execution_status = self._map_job_status_to_execution_status(
-            normalized_job_status
-        )
+        execution_status = self._map_job_status_to_execution_status(normalized_job_status)
         run_dir = self._resolve_run_dir(getattr(job, "run_dir", None))
         job_metadata = dict(getattr(job, "metadata", {}) or {})
-        stdout_text = self._read_output_file(
-            run_dir, "stdout.txt"
-        ) or self._coerce_result_text(job_metadata.get("result_stdout"))
-        stderr_text = self._read_output_file(
-            run_dir, "stderr.txt"
-        ) or self._coerce_result_text(job_metadata.get("result_stderr"))
+        stdout_text = self._read_output_file(run_dir, "stdout.txt") or self._coerce_result_text(
+            job_metadata.get("result_stdout")
+        )
+        stderr_text = self._read_output_file(run_dir, "stderr.txt") or self._coerce_result_text(
+            job_metadata.get("result_stderr")
+        )
         stored_returncode = job_metadata.get("result_returncode")
         result = StudioExecutionResult(
             stubbed=False,
-            exit_code=(
-                self._coerce_exit_code(stored_returncode)
-                if self._coerce_exit_code(stored_returncode) is not None
-                else self._infer_exit_code(execution_status)
-            ),
+            exit_code=self._coerce_exit_code(stored_returncode)
+            if self._coerce_exit_code(stored_returncode) is not None
+            else self._infer_exit_code(execution_status),
             stdout=stdout_text,
             stderr=stderr_text,
             artifacts=self._collect_artifacts(job, run_dir),
@@ -1322,11 +1261,9 @@ class StudioExecutionRuntime:
             "metadata": metadata,
             "result": result,
             "updated_at": updated_at,
-            "completed_at": (
-                completed_at
-                if execution_status.value in _TERMINAL_EXECUTION_STATUSES
-                else None
-            ),
+            "completed_at": completed_at
+            if execution_status.value in _TERMINAL_EXECUTION_STATUSES
+            else None,
         }
 
     @staticmethod
@@ -1379,9 +1316,7 @@ class StudioExecutionRuntime:
         except OSError:
             return ""
 
-    def _collect_artifacts(
-        self, job: Any, run_dir: Path | None
-    ) -> list[dict[str, Any]]:
+    def _collect_artifacts(self, job: Any, run_dir: Path | None) -> list[dict[str, Any]]:
         artifacts: list[dict[str, Any]] = []
         seen_paths: set[str] = set()
         for artifact in getattr(job, "artifacts", []) or []:
@@ -1431,22 +1366,15 @@ class StudioExecutionRuntime:
     ) -> str:
         if execution_status == StudioExecutionStatus.ACCEPTED:
             return self._queued_summary(
-                str(
-                    getattr(job, "metadata", {}).get("backend_mode", "orchestrator_job")
-                )
+                str(getattr(job, "metadata", {}).get("backend_mode", "orchestrator_job"))
             )
         if execution_status == StudioExecutionStatus.RUNNING:
             return "Execution is running on the orchestrator backend"
         if execution_status == StudioExecutionStatus.SUCCEEDED:
             return "Execution completed successfully"
         if execution_status == StudioExecutionStatus.CANCELED:
-            return (
-                self._stringify_job_error(getattr(job, "error", None))
-                or "Execution canceled"
-            )
-        return (
-            self._stringify_job_error(getattr(job, "error", None)) or "Execution failed"
-        )
+            return self._stringify_job_error(getattr(job, "error", None)) or "Execution canceled"
+        return self._stringify_job_error(getattr(job, "error", None)) or "Execution failed"
 
     @staticmethod
     def _stringify_job_error(error: Any) -> str | None:
@@ -1490,9 +1418,7 @@ class StudioExecutionRuntime:
         except (TypeError, ValueError):
             return None
 
-    def _derive_tool_result_error(
-        self, result: Any, payload_data: dict[str, Any]
-    ) -> str | None:
+    def _derive_tool_result_error(self, result: Any, payload_data: dict[str, Any]) -> str | None:
         explicit_error = str(getattr(result, "error", "") or "").strip()
         if explicit_error:
             return explicit_error
@@ -1507,7 +1433,9 @@ class StudioExecutionRuntime:
             return stdout_text
         return None
 
-    def _build_shell_command(self, request: StudioExecutionRequest) -> tuple[str, str]:
+    def _build_shell_command(
+        self, request: StudioExecutionRequest
+    ) -> tuple[str, str]:
         if request.kind == StudioExecutionKind.CODE:
             language = (request.language or "python").strip().lower()
             code = (request.code or "").strip()

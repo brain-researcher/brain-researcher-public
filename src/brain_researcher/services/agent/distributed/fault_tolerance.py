@@ -7,22 +7,22 @@ for the distributed brain researcher agent system.
 import asyncio
 import json
 import logging
-import random
 import time
-from collections import defaultdict, deque
-from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Set, Tuple, Callable
+from dataclasses import dataclass, asdict, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from collections import defaultdict, deque
+import random
 
 import redis.asyncio as redis
+
 
 logger = logging.getLogger(__name__)
 
 
 class FailureType(str, Enum):
     """Types of failures that can occur"""
-
     NODE_FAILURE = "node_failure"
     NETWORK_PARTITION = "network_partition"
     TASK_FAILURE = "task_failure"
@@ -33,7 +33,6 @@ class FailureType(str, Enum):
 
 class RecoveryAction(str, Enum):
     """Recovery actions that can be taken"""
-
     RESTART_NODE = "restart_node"
     REASSIGN_TASKS = "reassign_tasks"
     ELECT_NEW_LEADER = "elect_new_leader"
@@ -46,7 +45,6 @@ class RecoveryAction(str, Enum):
 
 class NodeState(str, Enum):
     """Possible node states"""
-
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     SUSPECTED = "suspected"
@@ -58,7 +56,6 @@ class NodeState(str, Enum):
 @dataclass
 class FailureEvent:
     """Represents a detected failure event"""
-
     failure_id: str
     failure_type: FailureType
     affected_nodes: List[str]
@@ -71,24 +68,23 @@ class FailureEvent:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        data["detected_at"] = self.detected_at.isoformat()
+        data['detected_at'] = self.detected_at.isoformat()
         if self.resolved_at:
-            data["resolved_at"] = self.resolved_at.isoformat()
+            data['resolved_at'] = self.resolved_at.isoformat()
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "FailureEvent":
-        if "detected_at" in data:
-            data["detected_at"] = datetime.fromisoformat(data["detected_at"])
-        if "resolved_at" in data and data["resolved_at"]:
-            data["resolved_at"] = datetime.fromisoformat(data["resolved_at"])
+    def from_dict(cls, data: Dict) -> 'FailureEvent':
+        if 'detected_at' in data:
+            data['detected_at'] = datetime.fromisoformat(data['detected_at'])
+        if 'resolved_at' in data and data['resolved_at']:
+            data['resolved_at'] = datetime.fromisoformat(data['resolved_at'])
         return cls(**data)
 
 
 @dataclass
 class RecoveryPlan:
     """Recovery plan for handling failures"""
-
     plan_id: str
     failure_event: FailureEvent
     recovery_actions: List[Tuple[RecoveryAction, Dict[str, Any]]]
@@ -101,11 +97,11 @@ class RecoveryPlan:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        data["created_at"] = self.created_at.isoformat()
+        data['created_at'] = self.created_at.isoformat()
         if self.executed_at:
-            data["executed_at"] = self.executed_at.isoformat()
+            data['executed_at'] = self.executed_at.isoformat()
         if self.completed_at:
-            data["completed_at"] = self.completed_at.isoformat()
+            data['completed_at'] = self.completed_at.isoformat()
         return data
 
 
@@ -175,7 +171,7 @@ class FailureDetector:
 
             # Get all nodes and their heartbeats
             async for key in self.redis.scan_iter(match="heartbeat:*"):
-                node_id = key.decode().split(":")[1]
+                node_id = key.decode().split(':')[1]
 
                 heartbeat_data = await self.redis.hgetall(key)
                 if not heartbeat_data:
@@ -183,20 +179,15 @@ class FailureDetector:
                     continue
 
                 try:
-                    timestamp_str = heartbeat_data.get(b"timestamp", b"").decode()
+                    timestamp_str = heartbeat_data.get(b'timestamp', b'').decode()
                     if timestamp_str:
                         last_heartbeat = datetime.fromisoformat(timestamp_str)
                         self.last_heartbeats[node_id] = last_heartbeat
 
                         # Check if heartbeat is stale
                         time_since_heartbeat = current_time - last_heartbeat
-                        if (
-                            time_since_heartbeat.total_seconds()
-                            > self.heartbeat_timeout
-                        ):
-                            await self._handle_stale_heartbeat(
-                                node_id, time_since_heartbeat.total_seconds()
-                            )
+                        if time_since_heartbeat.total_seconds() > self.heartbeat_timeout:
+                            await self._handle_stale_heartbeat(node_id, time_since_heartbeat.total_seconds())
                         else:
                             # Reset failure count for healthy nodes
                             if node_id in self.failure_counts:
@@ -221,7 +212,7 @@ class FailureDetector:
                     [node_id],
                     f"Node {node_id} missing heartbeat",
                     severity=8,
-                    metadata={"missing_heartbeat_duration": "unknown"},
+                    metadata={"missing_heartbeat_duration": "unknown"}
                 )
                 self.node_states[node_id] = NodeState.FAILED
         else:
@@ -238,7 +229,7 @@ class FailureDetector:
                     [node_id],
                     f"Node {node_id} heartbeat timeout",
                     severity=7,
-                    metadata={"stale_seconds": stale_seconds},
+                    metadata={"stale_seconds": stale_seconds}
                 )
                 self.node_states[node_id] = NodeState.FAILED
         else:
@@ -256,15 +247,14 @@ class FailureDetector:
             active_nodes = set()
             async for key in self.redis.scan_iter(match="node:*"):
                 node_data = await self.redis.hgetall(key)
-                if node_data and node_data.get(b"status") == b"active":
-                    node_id = node_data.get(b"node_id", b"").decode()
+                if node_data and node_data.get(b'status') == b'active':
+                    node_id = node_data.get(b'node_id', b'').decode()
                     if node_id:
                         active_nodes.add(node_id)
 
             # Check for sudden loss of many nodes (possible partition)
             healthy_nodes = set(
-                node_id
-                for node_id, state in self.node_states.items()
+                node_id for node_id, state in self.node_states.items()
                 if state in [NodeState.HEALTHY, NodeState.DEGRADED]
             )
 
@@ -280,8 +270,8 @@ class FailureDetector:
                         metadata={
                             "healthy_nodes": len(healthy_nodes),
                             "total_nodes": len(active_nodes),
-                            "partition_ratio": partition_ratio,
-                        },
+                            "partition_ratio": partition_ratio
+                        }
                     )
 
         except Exception as e:
@@ -292,7 +282,7 @@ class FailureDetector:
         try:
             # Check node metrics for resource exhaustion
             async for key in self.redis.scan_iter(match="node_metrics:*"):
-                node_id = key.decode().split(":")[1]
+                node_id = key.decode().split(':')[1]
 
                 metrics_data = await self.redis.get(key)
                 if not metrics_data:
@@ -302,8 +292,8 @@ class FailureDetector:
                     metrics = json.loads(metrics_data)
 
                     # Check CPU utilization
-                    cpu_util = metrics.get("cpu_utilization", 0)
-                    memory_util = metrics.get("memory_utilization", 0)
+                    cpu_util = metrics.get('cpu_utilization', 0)
+                    memory_util = metrics.get('memory_utilization', 0)
 
                     if cpu_util > 95 or memory_util > 95:
                         await self._create_failure_event(
@@ -313,8 +303,8 @@ class FailureDetector:
                             severity=6,
                             metadata={
                                 "cpu_utilization": cpu_util,
-                                "memory_utilization": memory_util,
-                            },
+                                "memory_utilization": memory_util
+                            }
                         )
 
                 except json.JSONDecodeError:
@@ -334,27 +324,21 @@ class FailureDetector:
                 if result_data:
                     try:
                         result = json.loads(result_data)
-                        if result.get("status") == "failed":
+                        if result.get('status') == 'failed':
                             failed_tasks.append(result)
                     except json.JSONDecodeError:
                         continue
 
             # If too many tasks are failing, it might indicate a service issue
             if len(failed_tasks) > 10:  # Threshold for service failure
-                affected_nodes = list(
-                    set(
-                        task.get("node_id")
-                        for task in failed_tasks
-                        if task.get("node_id")
-                    )
-                )
+                affected_nodes = list(set(task.get('node_id') for task in failed_tasks if task.get('node_id')))
 
                 await self._create_failure_event(
                     FailureType.SERVICE_FAILURE,
                     affected_nodes,
                     f"High task failure rate detected - {len(failed_tasks)} failed tasks",
                     severity=7,
-                    metadata={"failed_task_count": len(failed_tasks)},
+                    metadata={"failed_task_count": len(failed_tasks)}
                 )
 
         except Exception as e:
@@ -372,13 +356,13 @@ class FailureDetector:
                     [],
                     "No cluster leader detected",
                     severity=8,
-                    metadata={"issue": "no_leader"},
+                    metadata={"issue": "no_leader"}
                 )
                 return
 
             try:
                 leader_info = json.loads(leader_data)
-                leader_id = leader_info.get("node_id")
+                leader_id = leader_info.get('node_id')
 
                 if leader_id and leader_id in self.node_states:
                     leader_state = self.node_states[leader_id]
@@ -389,7 +373,7 @@ class FailureDetector:
                             [leader_id],
                             f"Leader node {leader_id} is in {leader_state.value} state",
                             severity=9,
-                            metadata={"leader_state": leader_state.value},
+                            metadata={"leader_state": leader_state.value}
                         )
 
             except json.JSONDecodeError:
@@ -398,14 +382,12 @@ class FailureDetector:
         except Exception as e:
             logger.error(f"Leadership failure detection error: {e}")
 
-    async def _create_failure_event(
-        self,
-        failure_type: FailureType,
-        affected_nodes: List[str],
-        description: str,
-        severity: int,
-        metadata: Dict = None,
-    ):
+    async def _create_failure_event(self,
+                                  failure_type: FailureType,
+                                  affected_nodes: List[str],
+                                  description: str,
+                                  severity: int,
+                                  metadata: Dict = None):
         """Create and store a failure event"""
         failure_id = f"failure_{int(time.time())}_{random.randint(1000, 9999)}"
 
@@ -416,7 +398,7 @@ class FailureDetector:
             detected_at=datetime.utcnow(),
             description=description,
             severity=severity,
-            metadata=metadata or {},
+            metadata=metadata or {}
         )
 
         # Store in history
@@ -426,13 +408,16 @@ class FailureDetector:
         await self.redis.setex(
             f"failure_event:{failure_id}",
             3600,  # 1 hour TTL
-            json.dumps(event.to_dict()),
+            json.dumps(event.to_dict())
         )
 
         # Publish failure event
         await self.redis.publish(
             "cluster:failures",
-            json.dumps({"event_type": "failure_detected", "failure": event.to_dict()}),
+            json.dumps({
+                "event_type": "failure_detected",
+                "failure": event.to_dict()
+            })
         )
 
         logger.warning(f"Failure detected: {failure_type.value} - {description}")
@@ -460,25 +445,21 @@ class RecoveryManager:
             RecoveryAction.ELECT_NEW_LEADER: self._elect_new_leader,
             RecoveryAction.PARTITION_HEALING: self._heal_partition,
             RecoveryAction.FAILOVER: self._failover,
-            RecoveryAction.CIRCUIT_BREAKER: self._circuit_breaker,
+            RecoveryAction.CIRCUIT_BREAKER: self._circuit_breaker
         }
 
         # Recovery state
         self.active_recoveries: Dict[str, RecoveryPlan] = {}
         self.recovery_history: deque = deque(maxlen=1000)
 
-    async def handle_failure(
-        self, failure_event: FailureEvent
-    ) -> Optional[RecoveryPlan]:
+    async def handle_failure(self, failure_event: FailureEvent) -> Optional[RecoveryPlan]:
         """Create and execute recovery plan for failure"""
         try:
             # Generate recovery plan
             recovery_plan = await self._generate_recovery_plan(failure_event)
 
             if not recovery_plan:
-                logger.warning(
-                    f"No recovery plan generated for failure {failure_event.failure_id}"
-                )
+                logger.warning(f"No recovery plan generated for failure {failure_event.failure_id}")
                 return None
 
             # Store active recovery
@@ -490,14 +471,10 @@ class RecoveryManager:
             return recovery_plan
 
         except Exception as e:
-            logger.error(
-                f"Recovery handling failed for {failure_event.failure_id}: {e}"
-            )
+            logger.error(f"Recovery handling failed for {failure_event.failure_id}: {e}")
             return None
 
-    async def _generate_recovery_plan(
-        self, failure_event: FailureEvent
-    ) -> Optional[RecoveryPlan]:
+    async def _generate_recovery_plan(self, failure_event: FailureEvent) -> Optional[RecoveryPlan]:
         """Generate recovery plan based on failure type"""
         plan_id = f"recovery_{failure_event.failure_id}_{int(time.time())}"
         recovery_actions = []
@@ -506,54 +483,39 @@ class RecoveryManager:
 
         if failure_event.failure_type == FailureType.NODE_FAILURE:
             recovery_actions = [
-                (
-                    RecoveryAction.REASSIGN_TASKS,
-                    {"nodes": failure_event.affected_nodes},
-                ),
-                (RecoveryAction.RESTART_NODE, {"nodes": failure_event.affected_nodes}),
+                (RecoveryAction.REASSIGN_TASKS, {"nodes": failure_event.affected_nodes}),
+                (RecoveryAction.RESTART_NODE, {"nodes": failure_event.affected_nodes})
             ]
             estimated_time = 180  # 3 minutes
 
         elif failure_event.failure_type == FailureType.LEADERSHIP_FAILURE:
-            recovery_actions = [(RecoveryAction.ELECT_NEW_LEADER, {})]
+            recovery_actions = [
+                (RecoveryAction.ELECT_NEW_LEADER, {})
+            ]
             estimated_time = 60  # 1 minute
 
         elif failure_event.failure_type == FailureType.NETWORK_PARTITION:
             recovery_actions = [
-                (
-                    RecoveryAction.PARTITION_HEALING,
-                    {"nodes": failure_event.affected_nodes},
-                )
+                (RecoveryAction.PARTITION_HEALING, {"nodes": failure_event.affected_nodes})
             ]
             estimated_time = 300  # 5 minutes
 
         elif failure_event.failure_type == FailureType.RESOURCE_EXHAUSTION:
             recovery_actions = [
-                (
-                    RecoveryAction.CIRCUIT_BREAKER,
-                    {"nodes": failure_event.affected_nodes},
-                ),
-                (
-                    RecoveryAction.REASSIGN_TASKS,
-                    {"nodes": failure_event.affected_nodes},
-                ),
+                (RecoveryAction.CIRCUIT_BREAKER, {"nodes": failure_event.affected_nodes}),
+                (RecoveryAction.REASSIGN_TASKS, {"nodes": failure_event.affected_nodes})
             ]
             estimated_time = 120  # 2 minutes
 
         elif failure_event.failure_type == FailureType.SERVICE_FAILURE:
             recovery_actions = [
                 (RecoveryAction.RESTART_NODE, {"nodes": failure_event.affected_nodes}),
-                (
-                    RecoveryAction.CIRCUIT_BREAKER,
-                    {"nodes": failure_event.affected_nodes},
-                ),
+                (RecoveryAction.CIRCUIT_BREAKER, {"nodes": failure_event.affected_nodes})
             ]
             estimated_time = 240  # 4 minutes
 
         else:
-            logger.warning(
-                f"No recovery plan for failure type: {failure_event.failure_type}"
-            )
+            logger.warning(f"No recovery plan for failure type: {failure_event.failure_type}")
             return None
 
         return RecoveryPlan(
@@ -561,7 +523,7 @@ class RecoveryManager:
             failure_event=failure_event,
             recovery_actions=recovery_actions,
             estimated_recovery_time=estimated_time,
-            priority=priority,
+            priority=priority
         )
 
     async def _execute_recovery_plan(self, recovery_plan: RecoveryPlan):
@@ -579,9 +541,7 @@ class RecoveryManager:
                         await self.recovery_handlers[action](**params)
                         logger.info(f"Recovery action {action.value} completed")
                     else:
-                        logger.warning(
-                            f"No handler for recovery action: {action.value}"
-                        )
+                        logger.warning(f"No handler for recovery action: {action.value}")
                         success = False
 
                 except Exception as e:
@@ -600,9 +560,7 @@ class RecoveryManager:
             if success:
                 recovery_plan.failure_event.resolved_at = datetime.utcnow()
 
-            logger.info(
-                f"Recovery plan {recovery_plan.plan_id} completed - Success: {success}"
-            )
+            logger.info(f"Recovery plan {recovery_plan.plan_id} completed - Success: {success}")
 
         except Exception as e:
             logger.error(f"Recovery plan execution failed: {e}")
@@ -617,12 +575,7 @@ class RecoveryManager:
                 # For now, we'll mark for restart and publish event
                 await self.redis.publish(
                     f"node_control:{node_id}",
-                    json.dumps(
-                        {
-                            "action": "restart",
-                            "timestamp": datetime.utcnow().isoformat(),
-                        }
-                    ),
+                    json.dumps({"action": "restart", "timestamp": datetime.utcnow().isoformat()})
                 )
                 logger.info(f"Restart requested for node {node_id}")
 
@@ -651,7 +604,7 @@ class RecoveryManager:
     async def _elect_new_leader(self):
         """Trigger new leader election"""
         try:
-            if hasattr(self.coordinator, "elect_leader"):
+            if hasattr(self.coordinator, 'elect_leader'):
                 await self.coordinator.elect_leader()
                 logger.info("New leader election triggered")
             else:
@@ -666,13 +619,11 @@ class RecoveryManager:
             # Publish partition healing event
             await self.redis.publish(
                 "cluster:partition_healing",
-                json.dumps(
-                    {
-                        "action": "heal_partition",
-                        "affected_nodes": nodes,
-                        "timestamp": datetime.utcnow().isoformat(),
-                    }
-                ),
+                json.dumps({
+                    "action": "heal_partition",
+                    "affected_nodes": nodes,
+                    "timestamp": datetime.utcnow().isoformat()
+                })
             )
 
             logger.info(f"Partition healing initiated for nodes: {nodes}")
@@ -685,7 +636,11 @@ class RecoveryManager:
         try:
             for node_id in nodes:
                 # Mark node for failover
-                await self.redis.hset(f"node:{node_id}", "status", "failed_over")
+                await self.redis.hset(
+                    f"node:{node_id}",
+                    "status",
+                    "failed_over"
+                )
 
             # Trigger rebalancing
             await self.coordinator._trigger_rebalance()
@@ -703,7 +658,7 @@ class RecoveryManager:
                 await self.redis.setex(
                     f"circuit_breaker:{node_id}",
                     300,  # 5 minutes
-                    json.dumps({"activated_at": datetime.utcnow().isoformat()}),
+                    json.dumps({"activated_at": datetime.utcnow().isoformat()})
                 )
 
             logger.info(f"Circuit breaker activated for nodes: {nodes}")
@@ -764,17 +719,15 @@ class FaultTolerance:
 
             while self._monitoring:
                 message = await pubsub.get_message(timeout=1.0)
-                if message and message["type"] == "message":
+                if message and message['type'] == 'message':
                     try:
-                        event_data = json.loads(message["data"])
+                        event_data = json.loads(message['data'])
 
-                        if event_data.get("event_type") == "failure_detected":
-                            failure_data = event_data.get("failure")
+                        if event_data.get('event_type') == 'failure_detected':
+                            failure_data = event_data.get('failure')
                             if failure_data:
                                 failure_event = FailureEvent.from_dict(failure_data)
-                                await self.recovery_manager.handle_failure(
-                                    failure_event
-                                )
+                                await self.recovery_manager.handle_failure(failure_event)
 
                     except (json.JSONDecodeError, KeyError) as e:
                         logger.warning(f"Invalid failure event message: {e}")
@@ -797,7 +750,7 @@ class FaultTolerance:
                 affected_nodes=[node_id],
                 detected_at=datetime.utcnow(),
                 description=f"Manual handling of node {node_id} failure",
-                severity=8,
+                severity=8
             )
 
             # Trigger recovery
@@ -818,7 +771,7 @@ class FaultTolerance:
                 affected_nodes=affected_nodes,
                 detected_at=datetime.utcnow(),
                 description=f"Manual handling of network partition affecting {len(affected_nodes)} nodes",
-                severity=9,
+                severity=9
             )
 
             recovery_plan = await self.recovery_manager.handle_failure(failure_event)
@@ -835,11 +788,8 @@ class FaultTolerance:
         for node_id, state in self.failure_detector.node_states.items():
             node_states[node_id] = state.value
 
-        healthy_nodes = sum(
-            1
-            for state in self.failure_detector.node_states.values()
-            if state == NodeState.HEALTHY
-        )
+        healthy_nodes = sum(1 for state in self.failure_detector.node_states.values()
+                           if state == NodeState.HEALTHY)
         total_nodes = len(self.failure_detector.node_states)
 
         health_ratio = healthy_nodes / total_nodes if total_nodes > 0 else 1.0
@@ -860,7 +810,5 @@ class FaultTolerance:
             "total_nodes": total_nodes,
             "node_states": node_states,
             "active_recoveries": len(self.recovery_manager.active_recoveries),
-            "recent_failures": len(
-                self.failure_detector.get_failure_history(24)
-            ),  # last 24 failures
+            "recent_failures": len(self.failure_detector.get_failure_history(24))  # last 24 failures
         }

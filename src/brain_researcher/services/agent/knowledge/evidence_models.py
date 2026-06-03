@@ -122,9 +122,7 @@ class EvidenceBundle:
         elif item.source_type == EvidenceSourceType.TOOL_CATALOG:
             self.total_tool_count += 1
 
-    def get_items_by_source(
-        self, source_type: EvidenceSourceType
-    ) -> List[EvidenceItem]:
+    def get_items_by_source(self, source_type: EvidenceSourceType) -> List[EvidenceItem]:
         """Get all items from a specific source type.
 
         Args:
@@ -162,19 +160,9 @@ class EvidenceBundle:
         import math
 
         # Base confidence from evidence counts
-        lit_score = (
-            min(1.0, self.total_literature_count / 10.0)
-            if self.total_literature_count > 0
-            else 0.0
-        )
-        dataset_score = (
-            min(1.0, self.total_dataset_count / 5.0)
-            if self.total_dataset_count > 0
-            else 0.0
-        )
-        tool_score = (
-            min(1.0, self.total_tool_count / 3.0) if self.total_tool_count > 0 else 0.0
-        )
+        lit_score = min(1.0, self.total_literature_count / 10.0) if self.total_literature_count > 0 else 0.0
+        dataset_score = min(1.0, self.total_dataset_count / 5.0) if self.total_dataset_count > 0 else 0.0
+        tool_score = min(1.0, self.total_tool_count / 3.0) if self.total_tool_count > 0 else 0.0
 
         # Weighted combination
         raw_score = (
@@ -204,14 +192,12 @@ class EvidenceBundle:
         """
         citations = []
         for i, item in enumerate(self.get_top_items(max_citations), start=1):
-            citations.append(
-                {
-                    "ref": f"[{i}]",
-                    "label": item.label,
-                    "url": item.url or "",
-                    "source": item.source_type.value,
-                }
-            )
+            citations.append({
+                "ref": f"[{i}]",
+                "label": item.label,
+                "url": item.url or "",
+                "source": item.source_type.value,
+            })
         return citations
 
     def summary(self) -> Dict[str, Any]:

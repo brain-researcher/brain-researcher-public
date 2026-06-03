@@ -38,14 +38,9 @@ def test_catalog_loader_retains_internal_legacy_merge_compatibility() -> None:
 
 
 def test_active_planner_docs_no_longer_advertise_legacy_runtime_mode() -> None:
-    planner_catalog = _read("docs/development/planner_catalog.md")
     catalog_readme = _read("docs/catalog_README.md")
 
-    for text in (planner_catalog, catalog_readme):
-        assert "default: `legacy`" not in text
-        assert "BR_PLANNER_SOURCE=legacy" not in text
-        assert "legacy` (templates)" not in text
-
-    assert "catalog-only" in planner_catalog
-    assert "compatibility/testing only" in planner_catalog
+    assert "default: `legacy`" not in catalog_readme
+    assert "BR_PLANNER_SOURCE=legacy" not in catalog_readme
+    assert "legacy` (templates)" not in catalog_readme
     assert "Active runtime planner mode" in catalog_readme

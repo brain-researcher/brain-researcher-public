@@ -207,7 +207,7 @@ Tests are configured to run automatically via:
 ### Import Errors
 If you see import errors, ensure you're in the project root:
 ```bash
-cd /home/zijiaochen/projects/brain_researcher
+cd ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher
 python3 -m pytest
 ```
 

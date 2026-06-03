@@ -10,11 +10,8 @@ from typing import Any, Iterable, List, Optional
 import yaml
 
 from brain_researcher.core.contracts.gate_rule import GateRule
-from brain_researcher.core.contracts.violation import (
-    EvidenceRef,
-    Violation,
-    ViolationLocation,
-)
+from brain_researcher.core.contracts.violation import EvidenceRef, Violation, ViolationLocation
+
 
 _OPS = {
     "lt": operator.lt,
@@ -88,10 +85,7 @@ class GateEngine:
                     severity=rule.severity,
                     blocking=rule.action == "block",
                     where=ViolationLocation(
-                        component=component,
-                        stage=rule.stage,
-                        step_id=step_id,
-                        path=rule.metric,
+                        component=component, stage=rule.stage, step_id=step_id, path=rule.metric
                     ),
                     evidence=[
                         EvidenceRef(
@@ -101,13 +95,7 @@ class GateEngine:
                         )
                     ],
                     suggested_fix=rule.suggested_fix,
-                    details={
-                        "metric": rule.metric,
-                        "value": value,
-                        "threshold": rule.threshold,
-                    },
+                    details={"metric": rule.metric, "value": value, "threshold": rule.threshold},
                 )
-            evaluations.append(
-                GateEvaluation(rule=rule, value=value, violation=violation)
-            )
+            evaluations.append(GateEvaluation(rule=rule, value=value, violation=violation))
         return evaluations

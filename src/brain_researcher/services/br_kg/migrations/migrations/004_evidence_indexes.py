@@ -4,9 +4,8 @@ Version: 004_evidence_indexes
 Created: 2025-01-17
 """
 
-import logging
-
 from brain_researcher.services.br_kg.migrations import Migration
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ class Migration_004(Migration):
     def __init__(self):
         super().__init__(
             version="004_evidence_indexes",
-            description="Add Neo4j indexes for evidence queries",
+            description="Add Neo4j indexes for evidence queries"
         )
 
     def up(self, db):
@@ -29,21 +28,18 @@ class Migration_004(Migration):
         Supports both Neo4jGraphDB and raw neo4j.Driver instances.
         """
         # Check if db is Neo4j driver or Neo4jGraphDB wrapper
-        if hasattr(db, "execute_query"):
+        if hasattr(db, 'execute_query'):
             # Neo4jGraphDB wrapper
             neo4j_execute = db.execute_query
-        elif hasattr(db, "session"):
+        elif hasattr(db, 'session'):
             # Raw neo4j.Driver
             def neo4j_execute(cypher, params=None):
                 with db.session() as session:
                     result = session.run(cypher, params or {})
                     return [record.data() for record in result]
-
         else:
             # Not a Neo4j database - fail fast so migration is not marked applied
-            raise RuntimeError(
-                "Migration 004 requires a Neo4j database (execute_query or session missing)"
-            )
+            raise RuntimeError("Migration 004 requires a Neo4j database (execute_query or session missing)")
 
         try:
             # Composite index for ONVOC concept lookup
@@ -98,19 +94,15 @@ class Migration_004(Migration):
         """
         Drop evidence query indexes.
         """
-        if hasattr(db, "execute_query"):
+        if hasattr(db, 'execute_query'):
             neo4j_execute = db.execute_query
-        elif hasattr(db, "session"):
-
+        elif hasattr(db, 'session'):
             def neo4j_execute(cypher, params=None):
                 with db.session() as session:
                     result = session.run(cypher, params or {})
                     return [record.data() for record in result]
-
         else:
-            raise RuntimeError(
-                "Migration 004 requires a Neo4j database to drop indexes"
-            )
+            raise RuntimeError("Migration 004 requires a Neo4j database to drop indexes")
 
         try:
             # Drop indexes in reverse order

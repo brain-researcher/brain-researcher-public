@@ -108,9 +108,9 @@ class FixedHrfLiteratureScopingTool(NeuroToolWrapper):
             payload = run_fixed_hrf_literature_scoping(params)
             payload["review_strategy"] = {
                 "query": build_fixed_hrf_scoping_query(params),
-                "static_anchor_count": (
-                    len(gather_fixed_hrf_static_refs()) if params.include_static else 0
-                ),
+                "static_anchor_count": len(gather_fixed_hrf_static_refs())
+                if params.include_static
+                else 0,
                 "hit_bucket_counts": payload.get("hit_summary", {}).get(
                     "bucket_counts", {}
                 ),

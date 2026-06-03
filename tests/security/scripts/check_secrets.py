@@ -9,11 +9,11 @@ Checks for:
 - Neuroimaging service credentials
 """
 
-import argparse
 import re
 import sys
+import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple, Dict
 
 
 class SecretChecker:

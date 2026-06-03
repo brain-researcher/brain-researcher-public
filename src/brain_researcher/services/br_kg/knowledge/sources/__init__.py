@@ -6,10 +6,10 @@ Each source wraps an existing service and converts results to KnowledgeItem form
 from .base import BaseEvidenceSource, SourceCapabilities
 from .dataset import DatasetEvidenceSource
 from .kg import KGEvidenceSource
-from .neurostore import NeuroStoreEvidenceSource
 from .niclip import NiCLIPEvidenceSource
-from .pubmed import PubMedEvidenceSource
 from .tool import ToolEvidenceSource
+from .pubmed import PubMedEvidenceSource
+from .neurostore import NeuroStoreEvidenceSource
 
 __all__ = [
     "BaseEvidenceSource",

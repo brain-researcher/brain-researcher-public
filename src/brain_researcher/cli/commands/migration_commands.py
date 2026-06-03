@@ -2,10 +2,9 @@
 BR-KG Migration CLI Commands.
 """
 
+import typer
 from pathlib import Path
 from typing import Optional
-
-import typer
 
 from brain_researcher.services.br_kg.migrations.cli import cli as migration_cli
 

@@ -19,9 +19,7 @@ def _default_path() -> Path:
     return get_data_root() / "neuro_methods_kb.yaml"
 
 
-def load_caveats(
-    path: Optional[Path] = None, force: bool = False
-) -> List[Dict[str, Any]]:
+def load_caveats(path: Optional[Path] = None, force: bool = False) -> List[Dict[str, Any]]:
     global _cached_caveats
     if _cached_caveats is not None and not force:
         return _cached_caveats

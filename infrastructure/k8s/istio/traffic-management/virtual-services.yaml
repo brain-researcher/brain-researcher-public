@@ -11,7 +11,7 @@ metadata:
 spec:
   hosts:
   - "brain-researcher.local"
-  - "app.brain-researcher.com"
+  - "app.${PUBLIC_HOSTNAME}"
   - "ui.brain-researcher.local"
   - "dashboard.brain-researcher.local"
   gateways:
@@ -131,7 +131,7 @@ spec:
   hosts:
   - "api.brain-researcher.local"
   - "br-kg.brain-researcher.local"
-  - "api.brain-researcher.com"
+  - "api.${PUBLIC_HOSTNAME}"
   gateways:
   - brain-researcher-gateway
   http:
@@ -258,7 +258,7 @@ spec:
   hosts:
   - "agent.brain-researcher.local"
   - "llm.brain-researcher.local"
-  - "agent.brain-researcher.com"
+  - "agent.${PUBLIC_HOSTNAME}"
   gateways:
   - brain-researcher-gateway
   http:

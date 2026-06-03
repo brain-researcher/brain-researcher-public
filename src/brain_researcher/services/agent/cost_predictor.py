@@ -11,31 +11,28 @@ This module provides sophisticated cost prediction with confidence intervals for
 """
 
 import asyncio
-import json
 import logging
-import warnings
-from abc import ABC, abstractmethod
+from typing import Dict, List, Optional, Any, Tuple, Union
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.model_selection import cross_val_score
+from datetime import datetime, timedelta
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
-
-warnings.filterwarnings("ignore")
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import joblib
+import json
+from abc import ABC, abstractmethod
+import warnings
+warnings.filterwarnings('ignore')
 
 logger = logging.getLogger(__name__)
 
 
 class JobType(Enum):
     """Types of neuroimaging jobs"""
-
     PREPROCESSING = "preprocessing"
     FIRST_LEVEL_ANALYSIS = "first_level_analysis"
     GROUP_ANALYSIS = "group_analysis"
@@ -47,7 +44,6 @@ class JobType(Enum):
 
 class ComplexityLevel(Enum):
     """Job complexity levels"""
-
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -57,7 +53,6 @@ class ComplexityLevel(Enum):
 @dataclass
 class JobSpecification:
     """Specification for a neuroimaging job"""
-
     job_type: JobType
 
     # Data characteristics
@@ -87,9 +82,7 @@ class JobSpecification:
     priority: str = "normal"  # low, normal, high, urgent
 
     # Software requirements
-    software_stack: List[str] = field(
-        default_factory=list
-    )  # fsl, freesurfer, afni, etc.
+    software_stack: List[str] = field(default_factory=list)  # fsl, freesurfer, afni, etc.
 
     # Metadata
     user_id: Optional[str] = None
@@ -100,7 +93,6 @@ class JobSpecification:
 @dataclass
 class CostPrediction:
     """Cost prediction with confidence intervals"""
-
     estimated_cost: float
     confidence_interval: Tuple[float, float]
     confidence_level: float = 0.95
@@ -129,7 +121,6 @@ class CostPrediction:
 @dataclass
 class HistoricalJob:
     """Historical job data for training prediction models"""
-
     job_id: str
     job_spec: JobSpecification
     actual_cost: float
@@ -176,44 +167,47 @@ class FeatureEngineer:
             "n_subjects": float(job_spec.n_subjects),
             "n_sessions": float(job_spec.n_sessions),
             "n_runs": float(job_spec.n_runs),
-            "total_images": float(
-                job_spec.n_subjects * job_spec.n_sessions * job_spec.n_runs
-            ),
+            "total_images": float(job_spec.n_subjects * job_spec.n_sessions * job_spec.n_runs),
             "voxel_count": float(job_spec.voxel_count),
             "file_size_gb": job_spec.file_size_gb,
+
             # Resource requirements
             "cpu_cores": float(job_spec.cpu_cores),
             "memory_gb": job_spec.memory_gb,
             "storage_gb": job_spec.storage_gb,
             "gpu_required": float(job_spec.gpu_required),
+
             # Processing complexity
             "n_preprocessing_steps": float(len(job_spec.preprocessing_steps)),
             "n_analysis_methods": float(len(job_spec.analysis_methods)),
             "smoothing_fwhm": job_spec.smoothing_fwhm,
+
             # Complexity indicators
             "complexity_score": self._calculate_complexity_score(job_spec),
             "quality_score": self._quality_to_score(job_spec.quality_level),
             "priority_score": self._priority_to_score(job_spec.priority),
+
             # Software requirements
             "n_software_packages": float(len(job_spec.software_stack)),
             "has_fsl": float("fsl" in job_spec.software_stack),
             "has_freesurfer": float("freesurfer" in job_spec.software_stack),
             "has_afni": float("afni" in job_spec.software_stack),
             "has_spm": float("spm" in job_spec.software_stack),
+
             # Job type encoding (one-hot)
             "is_preprocessing": float(job_spec.job_type == JobType.PREPROCESSING),
             "is_first_level": float(job_spec.job_type == JobType.FIRST_LEVEL_ANALYSIS),
             "is_group_analysis": float(job_spec.job_type == JobType.GROUP_ANALYSIS),
-            "is_connectivity": float(
-                job_spec.job_type == JobType.CONNECTIVITY_ANALYSIS
-            ),
+            "is_connectivity": float(job_spec.job_type == JobType.CONNECTIVITY_ANALYSIS),
             "is_ml": float(job_spec.job_type == JobType.MACHINE_LEARNING),
             "is_qc": float(job_spec.job_type == JobType.QUALITY_CONTROL),
+
             # Derived features
             "voxels_per_subject": job_spec.voxel_count / max(job_spec.n_subjects, 1),
             "gb_per_subject": job_spec.file_size_gb / max(job_spec.n_subjects, 1),
             "memory_to_cpu_ratio": job_spec.memory_gb / max(job_spec.cpu_cores, 1),
             "storage_to_memory_ratio": job_spec.storage_gb / max(job_spec.memory_gb, 1),
+
             # Time-based features
             "has_deadline": float(job_spec.deadline is not None),
             "days_to_deadline": self._days_to_deadline(job_spec.deadline),
@@ -228,7 +222,7 @@ class FeatureEngineer:
             ComplexityLevel.LOW: 1.0,
             ComplexityLevel.MEDIUM: 2.0,
             ComplexityLevel.HIGH: 3.0,
-            ComplexityLevel.VERY_HIGH: 4.0,
+            ComplexityLevel.VERY_HIGH: 4.0
         }
 
         base_score = base_scores[job_spec.complexity_level]
@@ -271,12 +265,10 @@ class FeatureEngineer:
         self.feature_names = sorted(feature_dicts[0].keys())
 
         # Convert to matrix
-        feature_matrix = np.array(
-            [
-                [feat_dict[name] for name in self.feature_names]
-                for feat_dict in feature_dicts
-            ]
-        )
+        feature_matrix = np.array([
+            [feat_dict[name] for name in self.feature_names]
+            for feat_dict in feature_dicts
+        ])
 
         # Fit and transform
         scaled_features = self.scaler.fit_transform(feature_matrix)
@@ -296,12 +288,10 @@ class FeatureEngineer:
             return np.array([])
 
         # Convert to matrix
-        feature_matrix = np.array(
-            [
-                [feat_dict[name] for name in self.feature_names]
-                for feat_dict in feature_dicts
-            ]
-        )
+        feature_matrix = np.array([
+            [feat_dict[name] for name in self.feature_names]
+            for feat_dict in feature_dicts
+        ])
 
         return self.scaler.transform(feature_matrix)
 
@@ -335,7 +325,9 @@ class RandomForestCostModel(CostModel):
 
     def __init__(self, n_estimators: int = 100, random_state: int = 42):
         self.model = RandomForestRegressor(
-            n_estimators=n_estimators, random_state=random_state, n_jobs=-1
+            n_estimators=n_estimators,
+            random_state=random_state,
+            n_jobs=-1
         )
         self.feature_names = []
         self.is_fitted = False
@@ -357,9 +349,9 @@ class RandomForestCostModel(CostModel):
             raise ValueError("Model must be fitted before prediction")
 
         # Get predictions from all trees
-        tree_predictions = np.array(
-            [tree.predict(X) for tree in self.model.estimators_]
-        )
+        tree_predictions = np.array([
+            tree.predict(X) for tree in self.model.estimators_
+        ])
 
         # Calculate mean and standard deviation
         predictions = np.mean(tree_predictions, axis=0)
@@ -373,22 +365,20 @@ class RandomForestCostModel(CostModel):
             return {}
 
         importances = self.model.feature_importances_
-        return {f"feature_{i}": importance for i, importance in enumerate(importances)}
+        return {
+            f"feature_{i}": importance
+            for i, importance in enumerate(importances)
+        }
 
 
 class GradientBoostingCostModel(CostModel):
     """Gradient Boosting based cost prediction model"""
 
-    def __init__(
-        self,
-        n_estimators: int = 100,
-        learning_rate: float = 0.1,
-        random_state: int = 42,
-    ):
+    def __init__(self, n_estimators: int = 100, learning_rate: float = 0.1, random_state: int = 42):
         self.model = GradientBoostingRegressor(
             n_estimators=n_estimators,
             learning_rate=learning_rate,
-            random_state=random_state,
+            random_state=random_state
         )
         self.is_fitted = False
 
@@ -429,7 +419,10 @@ class GradientBoostingCostModel(CostModel):
             return {}
 
         importances = self.model.feature_importances_
-        return {f"feature_{i}": importance for i, importance in enumerate(importances)}
+        return {
+            f"feature_{i}": importance
+            for i, importance in enumerate(importances)
+        }
 
 
 class EnsembleCostModel(CostModel):
@@ -523,9 +516,8 @@ class EnsembleCostModel(CostModel):
         scores = []
         for model in self.models:
             # Use negative MAE as score (higher is better)
-            cv_scores = cross_val_score(
-                model.model, X, y, scoring="neg_mean_absolute_error", cv=5
-            )
+            cv_scores = cross_val_score(model.model, X, y,
+                                      scoring='neg_mean_absolute_error', cv=5)
             scores.append(np.mean(cv_scores))
 
         # Convert scores to weights (softmax)
@@ -546,9 +538,7 @@ class HistoricalCostDatabase:
     def add_job(self, job: HistoricalJob) -> None:
         """Add a completed job to the database"""
         self.historical_jobs.append(job)
-        logger.info(
-            f"Added historical job {job.job_id} with cost ${job.actual_cost:.2f}"
-        )
+        logger.info(f"Added historical job {job.job_id} with cost ${job.actual_cost:.2f}")
 
     def get_training_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get training data for ML models"""
@@ -572,42 +562,35 @@ class HistoricalCostDatabase:
             return np.array([]), np.array([])
 
         job_specs = [job.job_spec for job in self.historical_jobs]
-        durations = np.array(
-            [job.actual_duration_hours for job in self.historical_jobs]
-        )
+        durations = np.array([job.actual_duration_hours for job in self.historical_jobs])
 
         features = self.feature_engineer.transform(job_specs)
 
         return features, durations
 
-    def filter_jobs(
-        self,
-        job_type: Optional[JobType] = None,
-        min_date: Optional[datetime] = None,
-        cloud_provider: Optional[str] = None,
-    ) -> List[HistoricalJob]:
+    def filter_jobs(self, job_type: Optional[JobType] = None,
+                   min_date: Optional[datetime] = None,
+                   cloud_provider: Optional[str] = None) -> List[HistoricalJob]:
         """Filter historical jobs by criteria"""
 
         filtered_jobs = self.historical_jobs
 
         if job_type:
-            filtered_jobs = [
-                job for job in filtered_jobs if job.job_spec.job_type == job_type
-            ]
+            filtered_jobs = [job for job in filtered_jobs
+                           if job.job_spec.job_type == job_type]
 
         if min_date:
-            filtered_jobs = [job for job in filtered_jobs if job.start_time >= min_date]
+            filtered_jobs = [job for job in filtered_jobs
+                           if job.start_time >= min_date]
 
         if cloud_provider:
-            filtered_jobs = [
-                job for job in filtered_jobs if job.cloud_provider == cloud_provider
-            ]
+            filtered_jobs = [job for job in filtered_jobs
+                           if job.cloud_provider == cloud_provider]
 
         return filtered_jobs
 
-    def get_similar_jobs(
-        self, job_spec: JobSpecification, similarity_threshold: float = 0.8
-    ) -> List[HistoricalJob]:
+    def get_similar_jobs(self, job_spec: JobSpecification,
+                        similarity_threshold: float = 0.8) -> List[HistoricalJob]:
         """Find historically similar jobs"""
 
         # Simple similarity based on job type and size
@@ -628,52 +611,36 @@ class HistoricalCostDatabase:
 
         return similar_jobs
 
-    def _calculate_similarity(
-        self, spec1: JobSpecification, spec2: JobSpecification
-    ) -> float:
+    def _calculate_similarity(self, spec1: JobSpecification,
+                             spec2: JobSpecification) -> float:
         """Calculate similarity between two job specifications"""
 
         similarities = []
 
         # Subject count similarity
         if max(spec1.n_subjects, spec2.n_subjects) > 0:
-            subject_sim = min(spec1.n_subjects, spec2.n_subjects) / max(
-                spec1.n_subjects, spec2.n_subjects
-            )
+            subject_sim = min(spec1.n_subjects, spec2.n_subjects) / max(spec1.n_subjects, spec2.n_subjects)
             similarities.append(subject_sim)
 
         # File size similarity
         if max(spec1.file_size_gb, spec2.file_size_gb) > 0:
-            size_sim = min(spec1.file_size_gb, spec2.file_size_gb) / max(
-                spec1.file_size_gb, spec2.file_size_gb
-            )
+            size_sim = min(spec1.file_size_gb, spec2.file_size_gb) / max(spec1.file_size_gb, spec2.file_size_gb)
             similarities.append(size_sim)
 
         # Complexity similarity
-        complexity_map = {
-            ComplexityLevel.LOW: 1,
-            ComplexityLevel.MEDIUM: 2,
-            ComplexityLevel.HIGH: 3,
-            ComplexityLevel.VERY_HIGH: 4,
-        }
-        c1, c2 = (
-            complexity_map[spec1.complexity_level],
-            complexity_map[spec2.complexity_level],
-        )
+        complexity_map = {ComplexityLevel.LOW: 1, ComplexityLevel.MEDIUM: 2,
+                         ComplexityLevel.HIGH: 3, ComplexityLevel.VERY_HIGH: 4}
+        c1, c2 = complexity_map[spec1.complexity_level], complexity_map[spec2.complexity_level]
         complexity_sim = 1 - abs(c1 - c2) / 3  # Normalize to [0,1]
         similarities.append(complexity_sim)
 
         # Resource similarity
         if max(spec1.cpu_cores, spec2.cpu_cores) > 0:
-            cpu_sim = min(spec1.cpu_cores, spec2.cpu_cores) / max(
-                spec1.cpu_cores, spec2.cpu_cores
-            )
+            cpu_sim = min(spec1.cpu_cores, spec2.cpu_cores) / max(spec1.cpu_cores, spec2.cpu_cores)
             similarities.append(cpu_sim)
 
         if max(spec1.memory_gb, spec2.memory_gb) > 0:
-            memory_sim = min(spec1.memory_gb, spec2.memory_gb) / max(
-                spec1.memory_gb, spec2.memory_gb
-            )
+            memory_sim = min(spec1.memory_gb, spec2.memory_gb) / max(spec1.memory_gb, spec2.memory_gb)
             similarities.append(memory_sim)
 
         return np.mean(similarities) if similarities else 0.0
@@ -703,7 +670,7 @@ class CostPredictor:
             "compute": 0.65,
             "storage": 0.20,
             "network": 0.10,
-            "overhead": 0.05,
+            "overhead": 0.05
         }
 
     def add_historical_job(self, job: HistoricalJob) -> None:
@@ -718,9 +685,7 @@ class CostPredictor:
         X_duration, y_duration = self.historical_db.get_duration_training_data()
 
         if len(X) < 10:
-            logger.warning(
-                "Insufficient historical data for training. Using fallback model."
-            )
+            logger.warning("Insufficient historical data for training. Using fallback model.")
             return {"cost_model_score": 0.0, "duration_model_score": 0.0}
 
         # Train cost model
@@ -734,24 +699,15 @@ class CostPredictor:
 
         # Evaluate models
         cost_score = self._evaluate_model(self.cost_model, X, y_cost)
-        duration_score = (
-            self._evaluate_model(self.duration_model, X_duration, y_duration)
-            if len(X_duration) >= 10
-            else 0.0
-        )
+        duration_score = self._evaluate_model(self.duration_model, X_duration, y_duration) if len(X_duration) >= 10 else 0.0
 
-        logger.info(
-            f"Models trained. Cost model R²: {cost_score:.3f}, Duration model R²: {duration_score:.3f}"
-        )
+        logger.info(f"Models trained. Cost model R²: {cost_score:.3f}, Duration model R²: {duration_score:.3f}")
 
         return {"cost_model_score": cost_score, "duration_model_score": duration_score}
 
-    def predict_job_cost(
-        self,
-        job_spec: JobSpecification,
-        backend: str = "aws",
-        confidence_level: float = 0.95,
-    ) -> CostPrediction:
+    def predict_job_cost(self, job_spec: JobSpecification,
+                        backend: str = "aws",
+                        confidence_level: float = 0.95) -> CostPrediction:
         """Predict cost for a job specification"""
 
         if not self.is_trained:
@@ -768,21 +724,18 @@ class CostPredictor:
 
         # Calculate confidence interval
         from scipy import stats
-
         z_score = stats.norm.ppf((1 + confidence_level) / 2)
         ci_lower = max(0, estimated_cost - z_score * cost_std)
         ci_upper = estimated_cost + z_score * cost_std
 
         # Get duration prediction
         try:
-            duration_pred, duration_uncertainty = (
-                self.duration_model.predict_with_uncertainty(features)
-            )
+            duration_pred, duration_uncertainty = self.duration_model.predict_with_uncertainty(features)
             estimated_duration = float(duration_pred[0])
             duration_std = float(duration_uncertainty[0])
             duration_ci = (
                 max(0.1, estimated_duration - z_score * duration_std),
-                estimated_duration + z_score * duration_std,
+                estimated_duration + z_score * duration_std
             )
         except:
             # Fallback duration estimation
@@ -796,9 +749,7 @@ class CostPredictor:
         feature_importance = self.cost_model.get_feature_importance()
 
         # Generate optimization suggestions
-        optimization_suggestions = self._generate_optimization_suggestions(
-            job_spec, estimated_cost
-        )
+        optimization_suggestions = self._generate_optimization_suggestions(job_spec, estimated_cost)
 
         # Calculate model confidence
         model_confidence = self._calculate_model_confidence(job_spec)
@@ -809,22 +760,16 @@ class CostPredictor:
             confidence_level=confidence_level,
             breakdown=breakdown,
             model_confidence=model_confidence,
-            prediction_method=(
-                "ensemble_ml"
-                if isinstance(self.cost_model, EnsembleCostModel)
-                else "ml"
-            ),
+            prediction_method="ensemble_ml" if isinstance(self.cost_model, EnsembleCostModel) else "ml",
             feature_importance=feature_importance,
             best_case_cost=ci_lower,
             worst_case_cost=ci_upper,
             estimated_duration_hours=estimated_duration,
             duration_confidence_interval=duration_ci,
-            cost_optimization_suggestions=optimization_suggestions,
+            cost_optimization_suggestions=optimization_suggestions
         )
 
-    def _fallback_prediction(
-        self, job_spec: JobSpecification, backend: str
-    ) -> CostPrediction:
+    def _fallback_prediction(self, job_spec: JobSpecification, backend: str) -> CostPrediction:
         """Fallback prediction when no training data is available"""
 
         # Simple heuristic-based prediction
@@ -834,7 +779,7 @@ class CostPredictor:
             JobType.GROUP_ANALYSIS: 5.0,
             JobType.CONNECTIVITY_ANALYSIS: 3.0,
             JobType.MACHINE_LEARNING: 8.0,
-            JobType.QUALITY_CONTROL: 0.5,
+            JobType.QUALITY_CONTROL: 0.5
         }
 
         base_cost = base_cost_per_subject.get(job_spec.job_type, 2.0)
@@ -844,14 +789,13 @@ class CostPredictor:
             ComplexityLevel.LOW: 0.5,
             ComplexityLevel.MEDIUM: 1.0,
             ComplexityLevel.HIGH: 2.0,
-            ComplexityLevel.VERY_HIGH: 4.0,
+            ComplexityLevel.VERY_HIGH: 4.0
         }
 
         estimated_cost = (
-            base_cost
-            * job_spec.n_subjects
-            * complexity_multiplier[job_spec.complexity_level]
-            * (1 + len(job_spec.preprocessing_steps) * 0.2)
+            base_cost * job_spec.n_subjects *
+            complexity_multiplier[job_spec.complexity_level] *
+            (1 + len(job_spec.preprocessing_steps) * 0.2)
         )
 
         # Add resource costs
@@ -879,13 +823,8 @@ class CostPredictor:
             model_confidence=0.3,  # Low confidence
             prediction_method="heuristic_fallback",
             estimated_duration_hours=estimated_duration,
-            duration_confidence_interval=(
-                estimated_duration * 0.5,
-                estimated_duration * 2.0,
-            ),
-            cost_optimization_suggestions=self._generate_optimization_suggestions(
-                job_spec, estimated_cost
-            ),
+            duration_confidence_interval=(estimated_duration * 0.5, estimated_duration * 2.0),
+            cost_optimization_suggestions=self._generate_optimization_suggestions(job_spec, estimated_cost)
         )
 
     def _estimate_duration_fallback(self, job_spec: JobSpecification) -> float:
@@ -897,7 +836,7 @@ class CostPredictor:
             JobType.GROUP_ANALYSIS: 4.0,
             JobType.CONNECTIVITY_ANALYSIS: 3.0,
             JobType.MACHINE_LEARNING: 6.0,
-            JobType.QUALITY_CONTROL: 0.5,
+            JobType.QUALITY_CONTROL: 0.5
         }
 
         base_time = base_hours.get(job_spec.job_type, 2.0)
@@ -910,13 +849,12 @@ class CostPredictor:
             ComplexityLevel.LOW: 0.5,
             ComplexityLevel.MEDIUM: 1.0,
             ComplexityLevel.HIGH: 2.0,
-            ComplexityLevel.VERY_HIGH: 4.0,
+            ComplexityLevel.VERY_HIGH: 4.0
         }
 
         estimated_hours = (
-            base_time
-            * subject_multiplier
-            * complexity_multiplier[job_spec.complexity_level]
+            base_time * subject_multiplier *
+            complexity_multiplier[job_spec.complexity_level]
         )
 
         # Adjust for resource allocation
@@ -925,9 +863,8 @@ class CostPredictor:
 
         return max(estimated_hours, 0.1)  # Minimum 0.1 hours
 
-    def _generate_cost_breakdown(
-        self, total_cost: float, job_spec: JobSpecification, backend: str
-    ) -> Dict[str, float]:
+    def _generate_cost_breakdown(self, total_cost: float, job_spec: JobSpecification,
+                                backend: str) -> Dict[str, float]:
         """Generate detailed cost breakdown"""
 
         breakdown = {}
@@ -937,10 +874,7 @@ class CostPredictor:
             breakdown[component] = total_cost * weight
 
         # Adjust for job characteristics
-        if job_spec.job_type in [
-            JobType.MACHINE_LEARNING,
-            JobType.CONNECTIVITY_ANALYSIS,
-        ]:
+        if job_spec.job_type in [JobType.MACHINE_LEARNING, JobType.CONNECTIVITY_ANALYSIS]:
             # More compute-intensive
             breakdown["compute"] *= 1.5
             breakdown["storage"] *= 0.8
@@ -957,9 +891,8 @@ class CostPredictor:
 
         return breakdown
 
-    def _generate_optimization_suggestions(
-        self, job_spec: JobSpecification, estimated_cost: float
-    ) -> List[str]:
+    def _generate_optimization_suggestions(self, job_spec: JobSpecification,
+                                         estimated_cost: float) -> List[str]:
         """Generate cost optimization suggestions"""
 
         suggestions = []
@@ -968,27 +901,19 @@ class CostPredictor:
             suggestions.append("Consider using spot instances for 30-70% cost savings")
 
         if job_spec.n_subjects > 20:
-            suggestions.append(
-                "Large batch processing may qualify for volume discounts"
-            )
+            suggestions.append("Large batch processing may qualify for volume discounts")
 
         if job_spec.gpu_required and job_spec.job_type != JobType.MACHINE_LEARNING:
-            suggestions.append(
-                "Evaluate if GPU acceleration is necessary for this workload"
-            )
+            suggestions.append("Evaluate if GPU acceleration is necessary for this workload")
 
         if job_spec.storage_gb > 500:
-            suggestions.append(
-                "Consider data compression or archival for large datasets"
-            )
+            suggestions.append("Consider data compression or archival for large datasets")
 
         if job_spec.complexity_level == ComplexityLevel.VERY_HIGH:
             suggestions.append("Optimize pipeline to reduce computational complexity")
 
         if job_spec.priority == "low":
-            suggestions.append(
-                "Low-priority jobs can use preemptible/spot instances for maximum savings"
-            )
+            suggestions.append("Low-priority jobs can use preemptible/spot instances for maximum savings")
 
         return suggestions
 
@@ -999,14 +924,10 @@ class CostPredictor:
             return 0.3  # Low confidence for untrained model
 
         # Find similar historical jobs
-        similar_jobs = self.historical_db.get_similar_jobs(
-            job_spec, similarity_threshold=0.7
-        )
+        similar_jobs = self.historical_db.get_similar_jobs(job_spec, similarity_threshold=0.7)
 
         # Confidence based on similarity and recency of data
-        confidence = min(
-            len(similar_jobs) / 10, 1.0
-        )  # Up to 10 similar jobs for full confidence
+        confidence = min(len(similar_jobs) / 10, 1.0)  # Up to 10 similar jobs for full confidence
 
         # Reduce confidence for extrapolation
         if job_spec.n_subjects > 100:  # Large jobs are less common
@@ -1025,7 +946,7 @@ class CostPredictor:
 
         try:
             # Use R² score
-            scores = cross_val_score(model.model, X, y, scoring="r2", cv=min(5, len(X)))
+            scores = cross_val_score(model.model, X, y, scoring='r2', cv=min(5, len(X)))
             return np.mean(scores)
         except:
             return 0.0
@@ -1038,7 +959,7 @@ class CostPredictor:
             "duration_model": self.duration_model,
             "feature_engineer": self.historical_db.feature_engineer,
             "is_trained": self.is_trained,
-            "saved_at": datetime.now().isoformat(),
+            "saved_at": datetime.now().isoformat()
         }
 
         joblib.dump(model_data, filepath)
@@ -1071,17 +992,13 @@ if __name__ == "__main__":
             cpu_cores=np.random.choice([4, 8, 16]),
             memory_gb=np.random.uniform(16, 64),
             complexity_level=np.random.choice(list(ComplexityLevel)),
-            software_stack=["fsl", "freesurfer"],
+            software_stack=["fsl", "freesurfer"]
         )
 
         # Simulate realistic costs
         base_cost = job_spec.n_subjects * 2.0
         complexity_mult = {"low": 0.5, "medium": 1.0, "high": 2.0, "very_high": 4.0}
-        actual_cost = (
-            base_cost
-            * complexity_mult[job_spec.complexity_level.value]
-            * np.random.uniform(0.8, 1.2)
-        )
+        actual_cost = base_cost * complexity_mult[job_spec.complexity_level.value] * np.random.uniform(0.8, 1.2)
 
         historical_job = HistoricalJob(
             job_id=f"job_{i:03d}",
@@ -1093,7 +1010,7 @@ if __name__ == "__main__":
             storage_used_gb=job_spec.file_size_gb,
             completed_successfully=True,
             cloud_provider="aws",
-            instance_type="m5.xlarge",
+            instance_type="m5.xlarge"
         )
 
         predictor.add_historical_job(historical_job)
@@ -1111,16 +1028,14 @@ if __name__ == "__main__":
         cpu_cores=8,
         memory_gb=32.0,
         complexity_level=ComplexityLevel.MEDIUM,
-        software_stack=["fsl", "nilearn"],
+        software_stack=["fsl", "nilearn"]
     )
 
     prediction = predictor.predict_job_cost(test_job, "aws")
 
     print(f"\nCost Prediction:")
     print(f"Estimated Cost: ${prediction.estimated_cost:.2f}")
-    print(
-        f"Confidence Interval: ${prediction.confidence_interval[0]:.2f} - ${prediction.confidence_interval[1]:.2f}"
-    )
+    print(f"Confidence Interval: ${prediction.confidence_interval[0]:.2f} - ${prediction.confidence_interval[1]:.2f}")
     print(f"Estimated Duration: {prediction.estimated_duration_hours:.1f} hours")
     print(f"Model Confidence: {prediction.model_confidence:.2f}")
     print(f"Breakdown: {prediction.breakdown}")

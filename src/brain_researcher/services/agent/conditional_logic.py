@@ -11,19 +11,18 @@ conditional branches in DAG workflows. It supports:
 """
 
 import ast
-import logging
 import operator
 import re
-from dataclasses import dataclass
+from typing import Dict, Any, List, Optional, Union, Callable
+import logging
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 
 class ComparisonOperator(Enum):
     """Supported comparison operators"""
-
     EQ = "=="
     NE = "!="
     LT = "<"
@@ -40,7 +39,6 @@ class ComparisonOperator(Enum):
 
 class LogicalOperator(Enum):
     """Supported logical operators"""
-
     AND = "and"
     OR = "or"
     NOT = "not"
@@ -49,7 +47,6 @@ class LogicalOperator(Enum):
 @dataclass
 class ConditionResult:
     """Result of condition evaluation"""
-
     value: bool
     explanation: str
     variables_used: List[str]
@@ -84,15 +81,15 @@ class SafeExpressionEvaluator:
 
     # Allowed functions
     ALLOWED_FUNCTIONS = {
-        "len": len,
-        "str": str,
-        "int": int,
-        "float": float,
-        "bool": bool,
-        "min": min,
-        "max": max,
-        "abs": abs,
-        "round": round,
+        'len': len,
+        'str': str,
+        'int': int,
+        'float': float,
+        'bool': bool,
+        'min': min,
+        'max': max,
+        'abs': abs,
+        'round': round,
     }
 
     def __init__(self):
@@ -104,7 +101,7 @@ class SafeExpressionEvaluator:
 
         try:
             # Parse the expression
-            tree = ast.parse(expression, mode="eval")
+            tree = ast.parse(expression, mode='eval')
             return self._eval_node(tree.body, context)
         except Exception as e:
             logger.error(f"Error evaluating expression '{expression}': {e}")
@@ -152,9 +149,7 @@ class SafeExpressionEvaluator:
                         return False
                     left = right  # For chained comparisons
                 else:
-                    raise ValueError(
-                        f"Comparison operator {type(op).__name__} not allowed"
-                    )
+                    raise ValueError(f"Comparison operator {type(op).__name__} not allowed")
             return True
         elif isinstance(node, ast.BoolOp):
             values = [self._eval_node(value, context) for value in node.values]
@@ -163,16 +158,12 @@ class SafeExpressionEvaluator:
             elif isinstance(node.op, ast.Or):
                 return any(values)
             else:
-                raise ValueError(
-                    f"Boolean operator {type(node.op).__name__} not allowed"
-                )
+                raise ValueError(f"Boolean operator {type(node.op).__name__} not allowed")
         elif isinstance(node, ast.Call):
             func_name = node.func.id if isinstance(node.func, ast.Name) else None
             if func_name in self.ALLOWED_FUNCTIONS:
                 args = [self._eval_node(arg, context) for arg in node.args]
-                kwargs = {
-                    kw.arg: self._eval_node(kw.value, context) for kw in node.keywords
-                }
+                kwargs = {kw.arg: self._eval_node(kw.value, context) for kw in node.keywords}
                 return self.ALLOWED_FUNCTIONS[func_name](*args, **kwargs)
             else:
                 raise ValueError(f"Function '{func_name}' not allowed")
@@ -199,9 +190,7 @@ class ConditionalExecutor:
     def __init__(self):
         self.evaluator = SafeExpressionEvaluator()
 
-    def evaluate_condition(
-        self, condition: str, context: Dict[str, Any]
-    ) -> ConditionResult:
+    def evaluate_condition(self, condition: str, context: Dict[str, Any]) -> ConditionResult:
         """Evaluate a conditional expression and return detailed result"""
         try:
             # Preprocess condition for common patterns
@@ -217,7 +206,7 @@ class ConditionalExecutor:
                 value=bool_result,
                 explanation=f"Condition '{condition}' evaluated to {bool_result}",
                 variables_used=list(self.evaluator.variables_used),
-                errors=[],
+                errors=[]
             )
 
         except Exception as e:
@@ -226,30 +215,23 @@ class ConditionalExecutor:
                 value=False,
                 explanation=f"Condition evaluation failed: {e}",
                 variables_used=[],
-                errors=[str(e)],
+                errors=[str(e)]
             )
 
     def _preprocess_condition(self, condition: str) -> str:
         """Preprocess condition to handle common patterns"""
         # Handle attribute access patterns like "node.status == 'success'"
-        condition = re.sub(r"(\w+)\.(\w+)", r'\1["\2"]', condition)
+        condition = re.sub(r'(\w+)\.(\w+)', r'\1["\2"]', condition)
 
         # Handle contains/starts_with/ends_with patterns
-        condition = re.sub(r"(\w+)\s+contains\s+(.+)", r'"\2" in \1', condition)
-        condition = re.sub(
-            r"(\w+)\s+starts_with\s+(.+)", r"\1.startswith(\2)", condition
-        )
-        condition = re.sub(r"(\w+)\s+ends_with\s+(.+)", r"\1.endswith(\2)", condition)
+        condition = re.sub(r'(\w+)\s+contains\s+(.+)', r'"\2" in \1', condition)
+        condition = re.sub(r'(\w+)\s+starts_with\s+(.+)', r'\1.startswith(\2)', condition)
+        condition = re.sub(r'(\w+)\s+ends_with\s+(.+)', r'\1.endswith(\2)', condition)
 
         return condition
 
-    def execute_if_else(
-        self,
-        condition: str,
-        true_branch: List[str],
-        false_branch: List[str],
-        context: Dict[str, Any],
-    ) -> List[str]:
+    def execute_if_else(self, condition: str, true_branch: List[str],
+                       false_branch: List[str], context: Dict[str, Any]) -> List[str]:
         """Execute if-else conditional logic"""
         result = self.evaluate_condition(condition, context)
 
@@ -260,12 +242,8 @@ class ConditionalExecutor:
             logger.info(f"Condition '{condition}' is false, executing false branch")
             return false_branch
 
-    def execute_switch(
-        self,
-        switch_value: Any,
-        branches: Dict[str, List[str]],
-        default_branch: Optional[List[str]] = None,
-    ) -> List[str]:
+    def execute_switch(self, switch_value: Any, branches: Dict[str, List[str]],
+                      default_branch: Optional[List[str]] = None) -> List[str]:
         """Execute switch-case logic"""
         switch_value_str = str(switch_value)
 
@@ -273,23 +251,18 @@ class ConditionalExecutor:
             logger.info(f"Switch value '{switch_value}' matched, executing branch")
             return branches[switch_value_str]
         elif default_branch:
-            logger.info(
-                f"Switch value '{switch_value}' not matched, executing default branch"
-            )
+            logger.info(f"Switch value '{switch_value}' not matched, executing default branch")
             return default_branch
         else:
-            logger.warning(
-                f"Switch value '{switch_value}' not matched and no default branch"
-            )
+            logger.warning(f"Switch value '{switch_value}' not matched and no default branch")
             return []
 
-    def execute_multi_condition(
-        self, conditions: List[Dict[str, Any]], context: Dict[str, Any]
-    ) -> List[str]:
+    def execute_multi_condition(self, conditions: List[Dict[str, Any]],
+                               context: Dict[str, Any]) -> List[str]:
         """Execute multiple conditions (if-elif-else pattern)"""
         for condition_spec in conditions:
-            condition = condition_spec.get("condition")
-            branch = condition_spec.get("branch", [])
+            condition = condition_spec.get('condition')
+            branch = condition_spec.get('branch', [])
 
             if condition is None:  # else clause
                 logger.info("Executing else clause")
@@ -311,36 +284,29 @@ class LoopManager:
         self.evaluator = SafeExpressionEvaluator()
         self.max_global_iterations = 10000  # Global safety limit
 
-    def execute_for_loop(
-        self,
-        items: List[Any],
-        body: List[str],
-        max_iterations: int,
-        context: Dict[str, Any],
-        break_condition: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+    def execute_for_loop(self, items: List[Any], body: List[str],
+                        max_iterations: int, context: Dict[str, Any],
+                        break_condition: Optional[str] = None) -> List[Dict[str, Any]]:
         """Execute a for loop with iteration bounds"""
         results = []
         iterations = 0
 
         for i, item in enumerate(items):
             if iterations >= max_iterations:
-                logger.warning(
-                    f"For loop terminated: reached max iterations ({max_iterations})"
-                )
+                logger.warning(f"For loop terminated: reached max iterations ({max_iterations})")
                 break
 
             if iterations >= self.max_global_iterations:
-                logger.error(
-                    f"For loop terminated: reached global safety limit ({self.max_global_iterations})"
-                )
+                logger.error(f"For loop terminated: reached global safety limit ({self.max_global_iterations})")
                 break
 
             # Update context with loop variables
             loop_context = context.copy()
-            loop_context.update(
-                {"loop_item": item, "loop_index": i, "loop_iteration": iterations}
-            )
+            loop_context.update({
+                'loop_item': item,
+                'loop_index': i,
+                'loop_iteration': iterations
+            })
 
             # Check break condition
             if break_condition and self._should_break(break_condition, loop_context):
@@ -348,26 +314,19 @@ class LoopManager:
                 break
 
             # Execute loop body (this would be handled by the DAG executor)
-            results.append(
-                {
-                    "iteration": iterations,
-                    "item": item,
-                    "body_nodes": body,
-                    "context": loop_context,
-                }
-            )
+            results.append({
+                'iteration': iterations,
+                'item': item,
+                'body_nodes': body,
+                'context': loop_context
+            })
 
             iterations += 1
 
         return results
 
-    def execute_while_loop(
-        self,
-        condition: str,
-        body: List[str],
-        max_iterations: int,
-        context: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+    def execute_while_loop(self, condition: str, body: List[str],
+                          max_iterations: int, context: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Execute a while loop with iteration bounds"""
         results = []
         iterations = 0
@@ -375,63 +334,50 @@ class LoopManager:
         while iterations < max_iterations and iterations < self.max_global_iterations:
             # Update context with loop variables
             loop_context = context.copy()
-            loop_context.update({"loop_iteration": iterations})
+            loop_context.update({
+                'loop_iteration': iterations
+            })
 
             # Evaluate while condition
             try:
                 condition_result = self.evaluator.evaluate(condition, loop_context)
                 if not condition_result:
-                    logger.info(
-                        f"While loop terminated: condition '{condition}' is false"
-                    )
+                    logger.info(f"While loop terminated: condition '{condition}' is false")
                     break
             except Exception as e:
                 logger.error(f"Error evaluating while condition '{condition}': {e}")
                 break
 
             # Execute loop body
-            results.append(
-                {"iteration": iterations, "body_nodes": body, "context": loop_context}
-            )
+            results.append({
+                'iteration': iterations,
+                'body_nodes': body,
+                'context': loop_context
+            })
 
             iterations += 1
 
         if iterations >= max_iterations:
-            logger.warning(
-                f"While loop terminated: reached max iterations ({max_iterations})"
-            )
+            logger.warning(f"While loop terminated: reached max iterations ({max_iterations})")
         elif iterations >= self.max_global_iterations:
-            logger.error(
-                f"While loop terminated: reached global safety limit ({self.max_global_iterations})"
-            )
+            logger.error(f"While loop terminated: reached global safety limit ({self.max_global_iterations})")
 
         return results
 
-    def execute_foreach_loop(
-        self,
-        items_param: str,
-        body: List[str],
-        max_iterations: int,
-        context: Dict[str, Any],
-        break_condition: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+    def execute_foreach_loop(self, items_param: str, body: List[str],
+                           max_iterations: int, context: Dict[str, Any],
+                           break_condition: Optional[str] = None) -> List[Dict[str, Any]]:
         """Execute a foreach loop over items in context"""
         if items_param not in context:
-            logger.error(
-                f"Foreach loop error: items parameter '{items_param}' not found in context"
-            )
+            logger.error(f"Foreach loop error: items parameter '{items_param}' not found in context")
             return []
 
         items = context[items_param]
         if not isinstance(items, (list, tuple)):
-            logger.error(
-                f"Foreach loop error: items parameter '{items_param}' is not iterable"
-            )
+            logger.error(f"Foreach loop error: items parameter '{items_param}' is not iterable")
             return []
 
-        return self.execute_for_loop(
-            items, body, max_iterations, context, break_condition
-        )
+        return self.execute_for_loop(items, body, max_iterations, context, break_condition)
 
     def _should_break(self, break_condition: str, context: Dict[str, Any]) -> bool:
         """Check if break condition is met"""
@@ -449,25 +395,31 @@ class ConditionalBranchBuilder:
     def __init__(self):
         self.conditions = []
 
-    def if_condition(
-        self, condition: str, branch: List[str]
-    ) -> "ConditionalBranchBuilder":
+    def if_condition(self, condition: str, branch: List[str]) -> 'ConditionalBranchBuilder':
         """Add an if condition"""
-        self.conditions.append({"type": "if", "condition": condition, "branch": branch})
+        self.conditions.append({
+            'type': 'if',
+            'condition': condition,
+            'branch': branch
+        })
         return self
 
-    def elif_condition(
-        self, condition: str, branch: List[str]
-    ) -> "ConditionalBranchBuilder":
+    def elif_condition(self, condition: str, branch: List[str]) -> 'ConditionalBranchBuilder':
         """Add an elif condition"""
-        self.conditions.append(
-            {"type": "elif", "condition": condition, "branch": branch}
-        )
+        self.conditions.append({
+            'type': 'elif',
+            'condition': condition,
+            'branch': branch
+        })
         return self
 
-    def else_branch(self, branch: List[str]) -> "ConditionalBranchBuilder":
+    def else_branch(self, branch: List[str]) -> 'ConditionalBranchBuilder':
         """Add an else branch"""
-        self.conditions.append({"type": "else", "condition": None, "branch": branch})
+        self.conditions.append({
+            'type': 'else',
+            'condition': None,
+            'branch': branch
+        })
         return self
 
     def build(self) -> List[Dict[str, Any]]:
@@ -482,26 +434,22 @@ if __name__ == "__main__":
 
     # Test basic conditions
     context = {
-        "qc_score": 0.85,
-        "subjects": ["sub-001", "sub-002", "sub-003"],
-        "threshold": 0.05,
-        "preprocessing": {"status": "success", "qc_score": 0.85},
+        'qc_score': 0.85,
+        'subjects': ['sub-001', 'sub-002', 'sub-003'],
+        'threshold': 0.05,
+        'preprocessing': {'status': 'success', 'qc_score': 0.85}
     }
 
     # Test simple condition
-    result = executor.evaluate_condition("qc_score > 0.8", context)
+    result = executor.evaluate_condition('qc_score > 0.8', context)
     print(f"Simple condition result: {result.value}")
 
     # Test complex condition
-    result = executor.evaluate_condition(
-        "len(subjects) >= 3 and threshold < 0.1", context
-    )
+    result = executor.evaluate_condition('len(subjects) >= 3 and threshold < 0.1', context)
     print(f"Complex condition result: {result.value}")
 
     # Test attribute access
-    result = executor.evaluate_condition(
-        'preprocessing["status"] == "success"', context
-    )
+    result = executor.evaluate_condition('preprocessing["status"] == "success"', context)
     print(f"Attribute access result: {result.value}")
 
     # Test loop manager
@@ -509,20 +457,19 @@ if __name__ == "__main__":
 
     # Test for loop
     loop_results = loop_manager.execute_for_loop(
-        items=["sub-001", "sub-002"],
-        body=["process_subject", "compute_stats"],
+        items=['sub-001', 'sub-002'],
+        body=['process_subject', 'compute_stats'],
         max_iterations=10,
-        context=context,
+        context=context
     )
     print(f"For loop executed {len(loop_results)} iterations")
 
     # Test conditional branch builder
     builder = ConditionalBranchBuilder()
-    branches = (
-        builder.if_condition("qc_score > 0.9", ["high_quality_analysis"])
-        .elif_condition("qc_score > 0.7", ["standard_analysis"])
-        .else_branch(["reprocess_data"])
-        .build()
-    )
+    branches = (builder
+                .if_condition('qc_score > 0.9', ['high_quality_analysis'])
+                .elif_condition('qc_score > 0.7', ['standard_analysis'])
+                .else_branch(['reprocess_data'])
+                .build())
 
     print(f"Built {len(branches)} conditional branches")

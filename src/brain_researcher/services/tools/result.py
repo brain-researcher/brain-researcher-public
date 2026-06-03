@@ -2,7 +2,6 @@
 
 This module provides consistent result types used across all tools.
 """
-
 from __future__ import annotations
 
 from typing import Any, Dict, Literal, Optional

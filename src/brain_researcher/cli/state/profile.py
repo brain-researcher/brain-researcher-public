@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import yaml
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
-import yaml
 
 DEFAULT_PROFILE = {
     "step_budget": 2,
@@ -14,7 +14,6 @@ DEFAULT_PROFILE = {
     "require_confirm": False,
     "allow_external_net": False,
 }
-
 
 @dataclass
 class Profile:

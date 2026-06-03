@@ -19,7 +19,6 @@ from flask import request
 def search_wikidata():
     """Search Wikidata for brain-related entities"""
     from brain_researcher.services.br_kg.app import logger, wikidata_connector
-
     if not wikidata_connector:
         return {"error": "Wikidata connector not available"}, 503
 
@@ -51,7 +50,6 @@ def search_wikidata():
 def search_dbpedia():
     """Search DBpedia for brain-related entities"""
     from brain_researcher.services.br_kg.app import dbpedia_connector, logger
-
     if not dbpedia_connector:
         return {"error": "DBpedia connector not available"}, 503
 
@@ -90,7 +88,6 @@ def federated_search():
         logger,
         wikidata_connector,
     )
-
     if not wikidata_connector or not dbpedia_connector or not federation_merger:
         return {"error": "Federation services not available"}, 503
 
@@ -155,12 +152,6 @@ def federated_search():
 
 def register(app):
     """Register the federation routes on the Flask app (called by app.py each import)."""
-    app.add_url_rule(
-        "/api/federation/wikidata/search", methods=["GET"], view_func=search_wikidata
-    )
-    app.add_url_rule(
-        "/api/federation/dbpedia/search", methods=["GET"], view_func=search_dbpedia
-    )
-    app.add_url_rule(
-        "/api/federation/search", methods=["GET"], view_func=federated_search
-    )
+    app.add_url_rule('/api/federation/wikidata/search', methods=['GET'], view_func=search_wikidata)
+    app.add_url_rule('/api/federation/dbpedia/search', methods=['GET'], view_func=search_dbpedia)
+    app.add_url_rule('/api/federation/search', methods=['GET'], view_func=federated_search)

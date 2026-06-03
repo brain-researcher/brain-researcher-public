@@ -26,9 +26,7 @@ class LesionDetectionParameters:
     save_report: bool
 
 
-def lesion_detection_from_payload(
-    payload: Dict[str, object],
-) -> LesionDetectionParameters:
+def lesion_detection_from_payload(payload: Dict[str, object]) -> LesionDetectionParameters:
     """Create parameters from payload."""
 
     return LesionDetectionParameters(
@@ -53,9 +51,7 @@ def _load_or_simulate(path: Optional[str], rng: np.random.Generator) -> np.ndarr
     return rng.normal(size=(64, 64, 64))
 
 
-def _detect_lesions(
-    image: np.ndarray, threshold_method: str, rng: np.random.Generator
-) -> np.ndarray:
+def _detect_lesions(image: np.ndarray, threshold_method: str, rng: np.random.Generator) -> np.ndarray:
     if threshold_method == "manual":
         thresh = np.mean(image) + np.std(image)
     elif threshold_method == "zscore":
@@ -98,11 +94,7 @@ def run_lesion_detection(params: LesionDetectionParameters) -> Dict[str, object]
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
-        "summary": None,
-        "lesion_mask": None,
-        "report": None,
-    }
+    outputs: Dict[str, Optional[str]] = {"summary": None, "lesion_mask": None, "report": None}
 
     if params.save_masks:
         mask_path = out_dir / "lesion_mask.npy"

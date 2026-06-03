@@ -2,6 +2,7 @@ import pytest
 
 from brain_researcher.services.br_kg.bulk_loader import EntityValidator
 
+
 GWAS_NODE_TYPES = {"Study", "DiseaseTrait", "Population", "Gene", "RiskLocus"}
 GWAS_RELATIONSHIP_TYPES = {
     "STUDIES",
@@ -74,11 +75,7 @@ def test_entity_validator_registers_session_lesson_types() -> None:
             "id": "agent_session:s1",
             "session_id": "s1",
         },
-        {
-            "type": "TaskSurface",
-            "id": "task_surface:prod-runtime",
-            "name": "prod-runtime",
-        },
+        {"type": "TaskSurface", "id": "task_surface:prod-runtime", "name": "prod-runtime"},
         {
             "type": "ValidationEvidence",
             "id": "validation_evidence:1",

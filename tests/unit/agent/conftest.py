@@ -10,11 +10,12 @@ sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-# Silence noisy third-party warnings that are not actionable for unit tests
-import warnings
 from unittest.mock import Mock
 
 import pytest
+
+# Silence noisy third-party warnings that are not actionable for unit tests
+import warnings
 
 warnings.filterwarnings(
     "ignore",

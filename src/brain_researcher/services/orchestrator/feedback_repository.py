@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import os
 import sqlite3
 from contextlib import contextmanager
@@ -12,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from threading import RLock
 from typing import Any, Dict, Iterable, List, Optional
+
+import logging
 
 from brain_researcher.config.paths import get_data_root
 

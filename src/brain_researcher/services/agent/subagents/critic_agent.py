@@ -185,9 +185,7 @@ class CriticAgent:
                 reason="allowlist_block",
             )
 
-        if isinstance(tool_metadata, dict) and _is_truthy(
-            tool_metadata.get("dangerous")
-        ):
+        if isinstance(tool_metadata, dict) and _is_truthy(tool_metadata.get("dangerous")):
             issue = CriticIssue(
                 code="DANGEROUS_TOOL",
                 message="Dangerous tool execution should be audited.",

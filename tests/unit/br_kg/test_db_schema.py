@@ -8,9 +8,7 @@ class _RecordingDB:
         self.constraints: list[tuple[str, str, str]] = []
         self.indexes: list[tuple[str, str, str]] = []
 
-    def create_constraint(
-        self, label: str, prop: str, constraint_type: str = "UNIQUE"
-    ) -> None:
+    def create_constraint(self, label: str, prop: str, constraint_type: str = "UNIQUE") -> None:
         self.constraints.append((label, prop, constraint_type))
 
     def create_index(self, label: str, prop: str, index_type: str = "BTREE") -> None:

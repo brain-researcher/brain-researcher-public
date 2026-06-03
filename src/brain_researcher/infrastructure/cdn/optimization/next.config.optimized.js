@@ -13,8 +13,8 @@ const nextConfig = {
   // Image optimization
   images: {
     domains: [
-      'api.brain-researcher.com',
-      'cdn.brain-researcher.com',
+      'api.${PUBLIC_HOSTNAME}',
+      'cdn.${PUBLIC_HOSTNAME}',
       'images.unsplash.com',
       'via.placeholder.com'
     ],
@@ -90,7 +90,7 @@ const nextConfig = {
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           "img-src 'self' data: blob: https:",
-          "connect-src 'self' https://api.brain-researcher.com wss:",
+          "connect-src 'self' https://api.${PUBLIC_HOSTNAME} wss:",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",

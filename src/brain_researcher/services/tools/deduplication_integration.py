@@ -44,11 +44,7 @@ class AgentDeduplicationConfig:
 class AgentDataDeduplication:
     """Agent-specific data deduplication manager."""
 
-    def __init__(
-        self,
-        deduplication_system: DataDeduplication,
-        config: AgentDeduplicationConfig | None = None,
-    ):
+    def __init__(self, deduplication_system: DataDeduplication, config: AgentDeduplicationConfig | None = None):
         """Initialize agent deduplication manager.
 
         Args:
@@ -63,7 +59,7 @@ class AgentDataDeduplication:
             "tool_calls_deduplicated": 0,
             "duplicates_found": 0,
             "duplicates_merged": 0,
-            "processing_time_saved": 0.0,
+            "processing_time_saved": 0.0
         }
 
         # Cache of recent deduplication decisions
@@ -71,7 +67,10 @@ class AgentDataDeduplication:
         self.cache_max_size = 1000
 
     async def deduplicate_tool_results(
-        self, tool_name: str, results: list[dict[str, Any]], entity_type: str = "result"
+        self,
+        tool_name: str,
+        results: list[dict[str, Any]],
+        entity_type: str = "result"
     ) -> tuple[list[dict[str, Any]], DeduplicationReport]:
         """Deduplicate results from a tool execution.
 
@@ -94,7 +93,7 @@ class AgentDataDeduplication:
                 duplicates_merged=0,
                 duplicates_skipped=0,
                 conflicts_encountered=0,
-                execution_time_ms=0,
+                execution_time_ms=0
             )
             return results, empty_report
 
@@ -107,18 +106,19 @@ class AgentDataDeduplication:
 
         # Find duplicates
         duplicates = self.deduplication.find_duplicates(
-            results, entity_type, match_types
+            results,
+            entity_type,
+            match_types
         )
 
         # Filter by similarity threshold
         duplicates = [
-            d
-            for d in duplicates
+            d for d in duplicates
             if d.similarity_score >= self.config.similarity_threshold
         ]
 
         # Limit number of candidates
-        duplicates = duplicates[: self.config.max_candidates]
+        duplicates = duplicates[:self.config.max_candidates]
 
         # Group duplicates for merging
         merge_groups = self._group_duplicates(duplicates, results)
@@ -134,7 +134,8 @@ class AgentDataDeduplication:
             if self.config.auto_deduplicate:
                 # Automatic merge
                 decision = self.deduplication.merge_entities(
-                    group, self.config.merge_strategy
+                    group,
+                    self.config.merge_strategy
                 )
                 merge_decisions.append(decision)
                 merged_results.append(decision.merged_entity)
@@ -160,7 +161,10 @@ class AgentDataDeduplication:
         execution_time = (datetime.now() - start_time).total_seconds() * 1000
 
         report = self.deduplication.generate_report(
-            duplicates, merge_decisions, execution_time, len(results)
+            duplicates,
+            merge_decisions,
+            execution_time,
+            len(results)
         )
 
         # Update statistics
@@ -182,7 +186,9 @@ class AgentDataDeduplication:
         return merged_results, report
 
     def _group_duplicates(
-        self, duplicates: list[DuplicateCandidate], entities: list[dict[str, Any]]
+        self,
+        duplicates: list[DuplicateCandidate],
+        entities: list[dict[str, Any]]
     ) -> list[list[dict[str, Any]]]:
         """Group duplicate candidates into merge groups.
 
@@ -248,14 +254,17 @@ class AgentDataDeduplication:
             # Remove oldest entry
             oldest_key = min(
                 self.decision_cache.keys(),
-                key=lambda k: self.decision_cache[k].timestamp,
+                key=lambda k: self.decision_cache[k].timestamp
             )
             del self.decision_cache[oldest_key]
 
         self.decision_cache[decision.decision_id] = decision
 
     async def check_query_duplicates(
-        self, query: str, thread_id: str, recent_queries: list[dict[str, Any]]
+        self,
+        query: str,
+        thread_id: str,
+        recent_queries: list[dict[str, Any]]
     ) -> dict[str, Any] | None:
         """Check if a query is similar to recent queries in the thread.
 
@@ -278,7 +287,7 @@ class AgentDataDeduplication:
             "id": f"query_{datetime.now().timestamp()}",
             "query": query,
             "thread_id": thread_id,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat()
         }
         query_entities.append(current_entity)
 
@@ -288,38 +297,30 @@ class AgentDataDeduplication:
                 "id": f"recent_{i}",
                 "query": recent_query.get("query", ""),
                 "thread_id": thread_id,
-                "timestamp": recent_query.get("timestamp", ""),
+                "timestamp": recent_query.get("timestamp", "")
             }
             query_entities.append(entity)
 
         # Find duplicates
         try:
             duplicates = self.deduplication.find_duplicates(
-                query_entities, "query", [MatchType.FUZZY]
+                query_entities,
+                "query",
+                [MatchType.FUZZY]
             )
 
             # Look for matches to current query
             for dup in duplicates:
-                if (
-                    dup.entity1_id == current_entity["id"]
-                    or dup.entity2_id == current_entity["id"]
-                ):
+                if (dup.entity1_id == current_entity["id"] or
+                    dup.entity2_id == current_entity["id"]):
                     if dup.similarity_score >= 0.9:  # High threshold for queries
                         # Find the matching recent query
-                        match_id = (
-                            dup.entity2_id
-                            if dup.entity1_id == current_entity["id"]
-                            else dup.entity1_id
-                        )
+                        match_id = (dup.entity2_id if dup.entity1_id == current_entity["id"]
+                                   else dup.entity1_id)
 
                         for recent_query in recent_queries:
-                            if (
-                                f"recent_{recent_queries.index(recent_query)}"
-                                == match_id
-                            ):
-                                logger.info(
-                                    f"Found similar query in thread {thread_id}"
-                                )
+                            if f"recent_{recent_queries.index(recent_query)}" == match_id:
+                                logger.info(f"Found similar query in thread {thread_id}")
                                 return recent_query
 
         except Exception as e:
@@ -348,9 +349,7 @@ class AgentDataDeduplication:
 class DeduplicatedToolWrapper(NeuroToolWrapper):
     """Wrapper that adds deduplication to tool results."""
 
-    def __init__(
-        self, original_tool: NeuroToolWrapper, dedup_manager: AgentDataDeduplication
-    ):
+    def __init__(self, original_tool: NeuroToolWrapper, dedup_manager: AgentDataDeduplication):
         """Initialize wrapper.
 
         Args:
@@ -375,10 +374,9 @@ class DeduplicatedToolWrapper(NeuroToolWrapper):
 
         # Only deduplicate if result is a list of dictionaries
         if isinstance(result, list) and result and isinstance(result[0], dict):
-            deduplicated_result, report = (
-                await self.dedup_manager.deduplicate_tool_results(
-                    self.original_tool.get_tool_name(), result
-                )
+            deduplicated_result, report = await self.dedup_manager.deduplicate_tool_results(
+                self.original_tool.get_tool_name(),
+                result
             )
 
             # Attach deduplication report to result
@@ -399,7 +397,7 @@ async def setup_agent_deduplication(
     agent_state_machine,
     neo4j_driver=None,
     redis_client=None,
-    config: AgentDeduplicationConfig | None = None,
+    config: AgentDeduplicationConfig | None = None
 ) -> AgentDataDeduplication:
     """Set up agent deduplication integration.
 
@@ -429,7 +427,7 @@ async def setup_agent_deduplication(
 def wrap_tools_for_deduplication(
     tool_registry,
     dedup_manager: AgentDataDeduplication,
-    tool_names: list[str] | None = None,
+    tool_names: list[str] | None = None
 ):
     """Wrap specified tools with deduplication.
 
@@ -468,7 +466,10 @@ class QueryDeduplicationMiddleware:
         self.redis = redis_client
 
     async def check_query(
-        self, query: str, thread_id: str, max_recent: int = 10
+        self,
+        query: str,
+        thread_id: str,
+        max_recent: int = 10
     ) -> dict[str, Any] | None:
         """Check if query is similar to recent queries.
 
@@ -493,9 +494,7 @@ class QueryDeduplicationMiddleware:
 
         return similar_query
 
-    async def _get_recent_queries(
-        self, thread_id: str, limit: int
-    ) -> list[dict[str, Any]]:
+    async def _get_recent_queries(self, thread_id: str, limit: int) -> list[dict[str, Any]]:
         """Get recent queries for a thread."""
         if not self.redis:
             return []
@@ -528,7 +527,7 @@ class QueryDeduplicationMiddleware:
             query_data = {
                 "query": query,
                 "timestamp": datetime.now().isoformat(),
-                "thread_id": thread_id,
+                "thread_id": thread_id
             }
 
             await self.redis.lpush(key, json.dumps(query_data))

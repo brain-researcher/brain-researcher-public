@@ -10,11 +10,8 @@ import unittest
 br_kg_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, br_kg_path)
 
+from brain_researcher.services.br_kg.etl.loaders.openneuro_loader.metadata_loader import OpenNeuroMetadataLoader
 from graph.graph_database import BRKGGraphDB
-
-from brain_researcher.services.br_kg.etl.loaders.openneuro_loader.metadata_loader import (
-    OpenNeuroMetadataLoader,
-)
 
 
 class TestSubjectPhenotypeRelationships(unittest.TestCase):

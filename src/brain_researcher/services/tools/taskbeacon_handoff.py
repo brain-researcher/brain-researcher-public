@@ -83,9 +83,7 @@ def taskbeacon_clone_url(repo: str) -> str:
     return f"https://github.com/{normalized}.git"
 
 
-def resolve_taskbeacon_target_path(
-    workspace_root: str | Path, target_path: str
-) -> Path:
+def resolve_taskbeacon_target_path(workspace_root: str | Path, target_path: str) -> Path:
     workspace = Path(workspace_root).expanduser().resolve()
     relative = Path(target_path)
     if relative.is_absolute():
@@ -206,18 +204,18 @@ def _write_taskbeacon_runner(target_dir: Path) -> str:
     runner.write_text(
         "#!/usr/bin/env bash\n"
         "set -euo pipefail\n"
-        'task_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\n'
-        'mode="qa"\n'
-        'if [[ $# -gt 0 && "${1}" != --* ]]; then\n'
-        '  mode="${1}"\n'
+        "task_dir=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\n"
+        "mode=\"qa\"\n"
+        "if [[ $# -gt 0 && \"${1}\" != --* ]]; then\n"
+        "  mode=\"${1}\"\n"
         "  shift\n"
         "fi\n"
-        'runner="${BR_TASKBEACON_RUNNER:-/app/scripts/runtime/run_taskbeacon_task.sh}"\n'
-        'if [[ ! -f "${runner}" ]]; then\n'
-        '  echo "BR TaskBeacon runner not found: ${runner}" >&2\n'
+        "runner=\"${BR_TASKBEACON_RUNNER:-/app/scripts/runtime/run_taskbeacon_task.sh}\"\n"
+        "if [[ ! -f \"${runner}\" ]]; then\n"
+        "  echo \"BR TaskBeacon runner not found: ${runner}\" >&2\n"
         "  exit 127\n"
         "fi\n"
-        'exec bash "${runner}" "${mode}" --task-dir "${task_dir}" "$@"\n',
+        "exec bash \"${runner}\" \"${mode}\" --task-dir \"${task_dir}\" \"$@\"\n",
         encoding="utf-8",
     )
     runner.chmod(0o755)
@@ -274,9 +272,7 @@ def materialize_taskbeacon_repo(
 
     if target_dir.exists():
         if target_dir.is_file():
-            raise ValueError(
-                f"TaskBeacon target_path points to a file: {target_path!r}"
-            )
+            raise ValueError(f"TaskBeacon target_path points to a file: {target_path!r}")
         if any(target_dir.iterdir()):
             runtime_patch = apply_taskbeacon_runtime_patches(target_dir)
             return {
@@ -326,9 +322,7 @@ def materialize_taskbeacon_repo(
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Materialize a TaskBeacon repo in a workspace"
-    )
+    parser = argparse.ArgumentParser(description="Materialize a TaskBeacon repo in a workspace")
     parser.add_argument("--workspace-root", required=True)
     parser.add_argument("--repo", required=True)
     parser.add_argument("--target-path", required=True)

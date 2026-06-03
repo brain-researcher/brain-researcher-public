@@ -174,11 +174,7 @@ def _resolve_python_script(run_dir: Path, command: list[str]) -> str | None:
     existing = _resolve_existing_file(run_dir, _PYTHON_SCRIPT_CANDIDATES)
     if existing:
         return existing
-    if (
-        len(command) >= 2
-        and command[0].startswith("python")
-        and command[1].endswith(".py")
-    ):
+    if len(command) >= 2 and command[0].startswith("python") and command[1].endswith(".py"):
         candidate = Path(command[1])
         if candidate.is_absolute():
             try:
@@ -191,9 +187,7 @@ def _resolve_python_script(run_dir: Path, command: list[str]) -> str | None:
     return None
 
 
-def _write_requirements_if_missing(
-    run_dir: Path, packages: dict[str, str]
-) -> str | None:
+def _write_requirements_if_missing(run_dir: Path, packages: dict[str, str]) -> str | None:
     existing = _resolve_existing_file(run_dir, _ENV_FILE_CANDIDATES)
     if existing:
         return existing
@@ -274,23 +268,17 @@ def _extract_outputs(artifacts: list[dict[str, Any]]) -> list[ExecutionIORefV1]:
                 or Path(path).name
                 or "output",
                 kind=kind,
-                description=_first_text(
-                    artifact.get("type"), artifact.get("media_type")
-                ),
+                description=_first_text(artifact.get("type"), artifact.get("media_type")),
                 path=path,
             )
         )
     return outputs
 
 
-def _extract_python_version(
-    *, provenance: dict[str, Any], run_card: dict[str, Any]
-) -> str | None:
+def _extract_python_version(*, provenance: dict[str, Any], run_card: dict[str, Any]) -> str | None:
     candidates = [
         _safe_dict(provenance.get("environment")).get("python_version"),
-        _safe_dict(_safe_dict(provenance.get("runtime")).get("host")).get(
-            "python_version"
-        ),
+        _safe_dict(_safe_dict(provenance.get("runtime")).get("host")).get("python_version"),
         _safe_dict(run_card.get("environment")).get("python_version"),
     ]
     for candidate in candidates:
@@ -306,18 +294,10 @@ def _extract_neurodesk(command: list[str]) -> NeurodeskExecutionV1 | None:
     command_text = shlex.join(command)
     if not any(
         token in command_text
-        for token in (
-            "neurodesk",
-            "/cvmfs/neurodesk",
-            "apptainer",
-            "singularity",
-            ".simg",
-        )
+        for token in ("neurodesk", "/cvmfs/neurodesk", "apptainer", "singularity", ".simg")
     ):
         return None
-    modules = sorted(
-        set(re.findall(r"module\s+load\s+([A-Za-z0-9._/-]+)", command_text))
-    )
+    modules = sorted(set(re.findall(r"module\s+load\s+([A-Za-z0-9._/-]+)", command_text)))
     container_paths = sorted(
         {
             token
@@ -365,32 +345,15 @@ def build_execution_manifest(
     provenance: dict[str, Any] | None = None,
     run_card: dict[str, Any] | None = None,
 ) -> ExecutionManifestV1:
-    run_dir = (
-        Path(getattr(job, "run_dir", output_dir))
-        if job is not None
-        else Path(output_dir)
-    )
+    run_dir = Path(getattr(job, "run_dir", output_dir)) if job is not None else Path(output_dir)
     payload = _extract_payload(job) if job is not None else {}
-    observation = (
-        observation or _read_json_if_exists(run_dir / "observation.json") or {}
-    )
-    analysis_manifest = (
-        analysis_manifest or _read_json_if_exists(run_dir / "analysis.json") or {}
-    )
-    artifact_manifest = (
-        artifact_manifest
-        or _read_json_if_exists(run_dir / "artifact_manifest.json")
-        or {}
-    )
-    inputs_manifest = (
-        inputs_manifest or _read_json_if_exists(run_dir / "inputs_manifest.json") or {}
-    )
-    provenance = (
-        provenance
-        or _safe_dict(observation.get("provenance"))
-        or _read_json_if_exists(run_dir / "provenance.json")
-        or {}
-    )
+    observation = observation or _read_json_if_exists(run_dir / "observation.json") or {}
+    analysis_manifest = analysis_manifest or _read_json_if_exists(run_dir / "analysis.json") or {}
+    artifact_manifest = artifact_manifest or _read_json_if_exists(run_dir / "artifact_manifest.json") or {}
+    inputs_manifest = inputs_manifest or _read_json_if_exists(run_dir / "inputs_manifest.json") or {}
+    provenance = provenance or _safe_dict(observation.get("provenance")) or _read_json_if_exists(
+        run_dir / "provenance.json"
+    ) or {}
     run_card = run_card or _safe_dict(observation.get("run_card"))
 
     command = _command_from_sources(
@@ -413,9 +376,7 @@ def build_execution_manifest(
         environment_file=environment_file,
         docker_compose=docker_compose,
     )
-    execution_mode = _resolve_execution_mode(
-        entrypoints=entrypoints, neurodesk=neurodesk
-    )
+    execution_mode = _resolve_execution_mode(entrypoints=entrypoints, neurodesk=neurodesk)
     repro_command = shlex.join(command) if command else None
 
     summary = _first_text(
@@ -432,24 +393,18 @@ def build_execution_manifest(
     elif execution_mode == ExecutionModeV1.unknown:
         notes = "Best-effort manifest; no runnable entrypoint was recovered."
 
-    artifacts = _safe_list(observation.get("artifacts")) or _safe_list(
-        artifact_manifest.get("artifacts")
-    )
+    artifacts = _safe_list(observation.get("artifacts")) or _safe_list(artifact_manifest.get("artifacts"))
     manifest = ExecutionManifestV1(
         execution_mode=execution_mode,
         summary=summary,
         entrypoints=entrypoints,
         runtime=ExecutionRuntimeV1(
-            python_version=_extract_python_version(
-                provenance=provenance, run_card=run_card
-            ),
+            python_version=_extract_python_version(provenance=provenance, run_card=run_card),
             docker_supported=bool(docker_compose),
             neurodesk_supported=neurodesk is not None,
         ),
         inputs=_extract_inputs(inputs_manifest),
-        outputs=_extract_outputs(
-            [item for item in artifacts if isinstance(item, dict)]
-        ),
+        outputs=_extract_outputs([item for item in artifacts if isinstance(item, dict)]),
         parameters=_extract_parameters(
             provenance=provenance,
             run_card=run_card,
@@ -477,11 +432,7 @@ def save_execution_manifest(
     provenance: dict[str, Any] | None = None,
     run_card: dict[str, Any] | None = None,
 ) -> Path:
-    run_dir = (
-        Path(getattr(job, "run_dir", output_dir))
-        if job is not None
-        else Path(output_dir)
-    )
+    run_dir = Path(getattr(job, "run_dir", output_dir)) if job is not None else Path(output_dir)
     manifest = build_execution_manifest(
         job,
         run_dir,

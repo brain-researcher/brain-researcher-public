@@ -66,10 +66,14 @@ class OptionSetV1(BaseModel):
 class EvidenceGateVerdictV1(BaseModel):
     """Verdict produced by the evidence gate for an episode."""
 
-    schema_version: Literal["evidence-gate-verdict-v1"] = "evidence-gate-verdict-v1"
+    schema_version: Literal["evidence-gate-verdict-v1"] = (
+        "evidence-gate-verdict-v1"
+    )
 
     decision: Literal["go", "collect_more", "stop"] = "collect_more"
-    summary: str | None = Field(default=None, description="Short verdict summary")
+    summary: str | None = Field(
+        default=None, description="Short verdict summary"
+    )
     required_evidence_ids: list[str] = Field(default_factory=list)
     supporting_evidence_ids: list[str] = Field(default_factory=list)
     missing_evidence_ids: list[str] = Field(default_factory=list)
@@ -137,7 +141,9 @@ class ClaimReportV1(BaseModel):
 
     schema_version: Literal["claim-report-v1"] = "claim-report-v1"
 
-    report_id: str | None = Field(default=None, description="Stable id for the report")
+    report_id: str | None = Field(
+        default=None, description="Stable id for the report"
+    )
     episode_id: str | None = Field(
         default=None, description="Episode this report belongs to"
     )
@@ -249,10 +255,7 @@ class ResearchEpisodeV1(BaseModel):
 
     @model_validator(mode="after")
     def _validate_option_linkage(self) -> ResearchEpisodeV1:
-        if (
-            self.option_set is not None
-            and self.option_set.selected_option_id is not None
-        ):
+        if self.option_set is not None and self.option_set.selected_option_id is not None:
             option_ids = {option.option_id for option in self.option_set.options}
             if self.option_set.selected_option_id not in option_ids:
                 raise ValueError(

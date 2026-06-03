@@ -8,9 +8,7 @@ from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResu
 
 
 class ResolveMontageArgs(BaseModel):
-    montage_name: str = Field(
-        default="standard_1020", description="Requested montage template"
-    )
+    montage_name: str = Field(default="standard_1020", description="Requested montage template")
 
 
 class ResolveMontageTool(NeuroToolWrapper):

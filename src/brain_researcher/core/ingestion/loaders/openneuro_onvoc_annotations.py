@@ -9,6 +9,7 @@ from typing import Any
 
 from brain_researcher.core.ingestion.loaders.onvoc_unified import OnvocUnifiedLoader
 
+
 logger = logging.getLogger(__name__)
 
 

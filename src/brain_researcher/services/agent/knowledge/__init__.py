@@ -7,6 +7,13 @@ This package provides:
 - K+D: High-level neuroassistant tools for the agent
 """
 
+from brain_researcher.services.agent.knowledge.evidence_models import (
+    DecisionType,
+    EvidenceBundle,
+    EvidenceItem,
+    EvidenceSourceType,
+    KnowledgePlan,
+)
 from brain_researcher.services.agent.knowledge.evidence_connector import (
     DatasetCatalogConnector,
     EvidenceAggregator,
@@ -16,25 +23,18 @@ from brain_researcher.services.agent.knowledge.evidence_connector import (
     NeuroStoreConnector,
     ToolCatalogConnector,
 )
-from brain_researcher.services.agent.knowledge.evidence_models import (
-    DecisionType,
-    EvidenceBundle,
-    EvidenceItem,
-    EvidenceSourceType,
-    KnowledgePlan,
-)
-from brain_researcher.services.agent.knowledge.knowledge_planner import (
-    KnowledgePlanner,
-    create_knowledge_planner,
-)
-from brain_researcher.services.agent.knowledge.llm_utils import get_llm_router
-from brain_researcher.services.agent.knowledge.memory_store import KnowledgeMemoryStore
 from brain_researcher.services.agent.knowledge.niclip_scorer import (
     NiCLIPConnector,
     NiCLIPScorer,
     ScoredConcept,
     create_niclip_scorer,
 )
+from brain_researcher.services.agent.knowledge.knowledge_planner import (
+    KnowledgePlanner,
+    create_knowledge_planner,
+)
+from brain_researcher.services.agent.knowledge.memory_store import KnowledgeMemoryStore
+from brain_researcher.services.agent.knowledge.llm_utils import get_llm_router
 from brain_researcher.services.agent.knowledge.tools import (
     BuildKnowledgePlanTool,
     ExplainTool,

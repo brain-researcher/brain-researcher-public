@@ -43,7 +43,9 @@ class PETCoregTool(NeuroToolWrapper):
         return "pet_coreg"
 
     def get_tool_description(self) -> str:
-        return "Coregister PET volume to T1-weighted anatomical space using rigid or affine registration."
+        return (
+            "Coregister PET volume to T1-weighted anatomical space using rigid or affine registration."
+        )
 
     def get_args_schema(self):
         return PETCoregArgs

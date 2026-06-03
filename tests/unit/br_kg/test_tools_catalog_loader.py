@@ -53,16 +53,11 @@ def test_iter_tools_parses_python_and_container(tmp_path):
     py_tool, py_ver, py_edges, py_mods, py_fams = items[0]
     assert py_tool["runtime_kind"] == "python"
     assert py_ver["python_module"] == "brain_researcher.services.tools.fetch_atlas_tool"
-    assert any(
-        res == "parcellation_labels" and rel == "PRODUCES_RESOURCE"
-        for _, res, rel in py_edges
-    )
+    assert any(res == "parcellation_labels" and rel == "PRODUCES_RESOURCE" for _, res, rel in py_edges)
     assert "fmri" in py_mods and "atlas_fetch" in py_fams
     container_tool, container_ver, cont_edges, cont_mods, cont_fams = items[1]
     assert container_ver["container_image"] == "fsl:latest"
-    assert any(
-        rel == "CONSUMES_RESOURCE" and res == "volume_3d" for _, res, rel in cont_edges
-    )
+    assert any(rel == "CONSUMES_RESOURCE" and res == "volume_3d" for _, res, rel in cont_edges)
     assert "smri" in cont_mods and "skull_strip" in cont_fams
 
 
@@ -97,16 +92,8 @@ tools:
     assert any(n[0] == "Tool" for n in tx.nodes)
     assert any(n[0] == "ToolVersion" for n in tx.nodes)
     # Resource edges should target ResourceType on the version
-    assert any(
-        r[3] == "CONSUMES_RESOURCE" and r[0] == "ToolVersion" and r[6] == "bids_root"
-        for r in tx.rels
-    )
-    assert any(
-        r[3] == "PRODUCES_RESOURCE"
-        and r[0] == "ToolVersion"
-        and r[6] == "parcellation_labels"
-        for r in tx.rels
-    )
+    assert any(r[3] == "CONSUMES_RESOURCE" and r[0] == "ToolVersion" and r[6] == "bids_root" for r in tx.rels)
+    assert any(r[3] == "PRODUCES_RESOURCE" and r[0] == "ToolVersion" and r[6] == "parcellation_labels" for r in tx.rels)
     # Modality and capability edges
     assert any(r[3] == "SUPPORTS_MODALITY" for r in tx.rels)
     assert any(r[3] == "IMPLEMENTS_FAMILY" for r in tx.rels)
@@ -136,14 +123,8 @@ tools:
 def test_version_id_fallbacks():
     base = {"id": "tool.a", "python": {"module": "m", "function": "f"}}
     assert loader._build_version_id({**base, "version": "1.0"}) == "tool.a@1.0"
-    assert (
-        loader._build_version_id({**base, "container": {"digest": "sha"}})
-        == "tool.a@image:sha"
-    )
-    assert (
-        loader._build_version_id({**base, "container": {"image": "img"}})
-        == "tool.a@image:img"
-    )
+    assert loader._build_version_id({**base, "container": {"digest": "sha"}}) == "tool.a@image:sha"
+    assert loader._build_version_id({**base, "container": {"image": "img"}}) == "tool.a@image:img"
     assert loader._build_version_id(base) == "tool.a@py:m:f"
 
 
@@ -170,9 +151,7 @@ def test_iter_tools_op_key_alias_injects_method_intent(tmp_path):
         "priority": ["glm_first_level_fmri"],
     }
 
-    items = list(
-        loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config)
-    )
+    items = list(loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config))
     assert len(items) == 1
     tool_node, version_node, *_ = items[0]
     assert tool_node.get("software") == "fsl"
@@ -184,9 +163,7 @@ def test_iter_tools_op_key_alias_injects_method_intent(tmp_path):
     assert version_node.get("software") == "fsl"
     assert version_node.get("version") == "6.0.4"
     assert version_node.get("op") == "film_gls"
-    assert (
-        version_node.get("op_key") is None
-    )  # ToolVersion keeps op/software/version only
+    assert version_node.get("op_key") is None  # ToolVersion keeps op/software/version only
 
 
 def test_iter_tools_op_key_alias_injects_visualization_intent(tmp_path):
@@ -212,9 +189,7 @@ def test_iter_tools_op_key_alias_injects_visualization_intent(tmp_path):
         "priority": ["visualization"],
     }
 
-    items = list(
-        loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config)
-    )
+    items = list(loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config))
     assert len(items) == 1
     tool_node, version_node, *_ = items[0]
     assert tool_node.get("software") == "afni"
@@ -249,9 +224,7 @@ def test_iter_tools_op_key_prefix_alias_injects_utilities_intent(tmp_path):
         "priority": ["glm_first_level_fmri"],
     }
 
-    items = list(
-        loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config)
-    )
+    items = list(loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config))
     assert len(items) == 1
     tool_node, *_ = items[0]
     assert tool_node.get("op_key") == "1dcat"
@@ -278,15 +251,11 @@ def test_iter_tools_op_key_patterns_inject_data_access_for_converters(tmp_path):
     tool_meta = loader.build_tool_meta(caps_loaded, catalog=None)
     intent_config = {
         "impl_intents": ["generic_container_op"],
-        "op_key_patterns": [
-            {"pattern": "to(nifti|analyze|raw|niml|afni|3d)$", "method": "data_access"}
-        ],
+        "op_key_patterns": [{"pattern": "to(nifti|analyze|raw|niml|afni|3d)$", "method": "data_access"}],
         "priority": ["data_access"],
     }
 
-    items = list(
-        loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config)
-    )
+    items = list(loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config))
     assert len(items) == 1
     tool_node, *_ = items[0]
     assert tool_node.get("op_key") == "3dafnitonifti"
@@ -317,9 +286,7 @@ def test_iter_tools_op_key_alias_maps_segmentation_fast(tmp_path):
         "priority": ["segmentation"],
     }
 
-    items = list(
-        loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config)
-    )
+    items = list(loader.iter_tools(caps_loaded, tool_meta=tool_meta, intent_config=intent_config))
     assert len(items) == 1
     tool_node, *_ = items[0]
     assert tool_node.get("software") == "fsl"
@@ -347,26 +314,18 @@ def test_load_intent_config_normalizes_op_key_aliases(tmp_path, monkeypatch):
     loader.load_intent_config.cache_clear()
 
     intent_config = loader.load_intent_config()
-    assert (
-        intent_config.get("op_key_aliases", {}).get("filmgls") == "glm_first_level_fmri"
-    )
-    assert (
-        intent_config.get("op_key_aliases", {}).get("fslsbca")
-        == "seed_based_connectivity"
-    )
+    assert intent_config.get("op_key_aliases", {}).get("filmgls") == "glm_first_level_fmri"
+    assert intent_config.get("op_key_aliases", {}).get("fslsbca") == "seed_based_connectivity"
     loader.load_intent_config.cache_clear()
 
 
 def test_op_key_alias_overrides_single_niwrap_method_intent(tmp_path, monkeypatch):
     """op_key_aliases should be able to override a single NiWrap-derived method intent."""
-
     def _fake_resolve_niwrap_metadata(_tool_id, _package, _niwrap_map):
         # (category, intents, display_name)
         return None, ["glm_first_level_fmri"], None
 
-    monkeypatch.setattr(
-        loader, "resolve_niwrap_metadata", _fake_resolve_niwrap_metadata
-    )
+    monkeypatch.setattr(loader, "resolve_niwrap_metadata", _fake_resolve_niwrap_metadata)
 
     caps = {
         "tools": [
@@ -478,10 +437,7 @@ def test_exposure_policy_denies_known_long_tail_prefixes(tmp_path):
     default_by_group = loader.select_default_tools(tool_meta, default_config={})
     intent_config = {
         "impl_intents": ["generic_container_op"],
-        "op_key_aliases": {
-            "1dbandpass": "glm_first_level_fmri",
-            "aligncenters": "glm_first_level_fmri",
-        },
+        "op_key_aliases": {"1dbandpass": "glm_first_level_fmri", "aligncenters": "glm_first_level_fmri"},
         "priority": ["glm_first_level_fmri"],
     }
     exposure_policy = {
@@ -499,9 +455,7 @@ def test_exposure_policy_denies_known_long_tail_prefixes(tmp_path):
             exposure_policy=exposure_policy,
         )
     )
-    exposed = {
-        tool_node["tool_id"]: tool_node.get("exposed") for tool_node, *_ in items
-    }
+    exposed = {tool_node["tool_id"]: tool_node.get("exposed") for tool_node, *_ in items}
     assert exposed["afni.24.2.06.1dbandpass.run"] is False
     assert exposed["afni.24.2.06.@Align_Centers.run"] is False
 
@@ -602,10 +556,7 @@ def test_select_primary_intent_applies_aliases_to_category_fallback():
         },
         "priority": ["data_access", "statistical_inference"],
     }
-    assert (
-        loader.select_primary_intent([], "data_management", [], intent_config)
-        == "data_access"
-    )
+    assert loader.select_primary_intent([], "data_management", [], intent_config) == "data_access"
     assert (
         loader.select_primary_intent([], "Statistical_Analysis", [], intent_config)
         == "statistical_inference"
@@ -754,10 +705,7 @@ tools:
 """
     )
     evidence = {
-        "ibl_one": {
-            "publications": [],
-            "validated_on_collections": ["ds:manual:ibl_brainwide"],
-        },
+        "ibl_one": {"publications": [], "validated_on_collections": ["ds:manual:ibl_brainwide"]},
         "ibl_brainbox_session_ephys": {
             "publications": [],
             "validated_on_collections": ["ds:manual:ibl_brainwide"],
@@ -779,13 +727,9 @@ tools:
     tx = StubTx()
     loader.ingest(tx, caps_path, evidence)
 
-    tool_nodes = {
-        props["tool_id"]: props for label, _, props in tx.nodes if label == "Tool"
-    }
+    tool_nodes = {props["tool_id"]: props for label, _, props in tx.nodes if label == "Tool"}
     version_nodes = {
-        props["tool_id"]: props
-        for label, _, props in tx.nodes
-        if label == "ToolVersion"
+        props["tool_id"]: props for label, _, props in tx.nodes if label == "ToolVersion"
     }
     resource_names = {
         props["name"] for label, _, props in tx.nodes if label == "ResourceType"
@@ -800,10 +744,7 @@ tools:
     }
     assert tool_nodes["ibl_one"]["runtime_kind"] == "python"
     assert version_nodes["ibl_one"]["python_module"] == "one.api"
-    assert (
-        version_nodes["ibl_brainbox_session_ephys"]["python_module"]
-        == "brainbox.io.one"
-    )
+    assert version_nodes["ibl_brainbox_session_ephys"]["python_module"] == "brainbox.io.one"
     assert "spike_times" in resource_names
     assert "parcellation_labels" in resource_names
     assert "qc_report" in resource_names
@@ -974,12 +915,7 @@ def test_ingest_neuropixels_workflow_slice_parses_kilosort_pose_and_alignment(
             "wrapper_tool",
             "service_tool",
         ],
-        "priority": [
-            "spike_sorting",
-            "pose_tracking",
-            "behavior_alignment",
-            "pipeline_run",
-        ],
+        "priority": ["spike_sorting", "pose_tracking", "behavior_alignment", "pipeline_run"],
         "op_key_aliases": {
             "kilosort": "spike_sorting",
             "deeplabcut": "pose_tracking",
@@ -1041,13 +977,9 @@ def test_ingest_neuropixels_workflow_slice_parses_kilosort_pose_and_alignment(
 
     loader.ingest(tx, caps_path, evidence)
 
-    tool_nodes = {
-        props["tool_id"]: props for label, _, props in tx.nodes if label == "Tool"
-    }
+    tool_nodes = {props["tool_id"]: props for label, _, props in tx.nodes if label == "Tool"}
     version_nodes = {
-        props["tool_id"]: props
-        for label, _, props in tx.nodes
-        if label == "ToolVersion"
+        props["tool_id"]: props for label, _, props in tx.nodes if label == "ToolVersion"
     }
     resource_names = {
         props["name"] for label, _, props in tx.nodes if label == "ResourceType"

@@ -14,13 +14,12 @@ Features:
 Author: Brain Researcher Team
 """
 
-import gzip
 import json
 import logging
+import gzip
 import pickle
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
 import pandas as pd
 from scipy import sparse
@@ -111,19 +110,17 @@ class NeuroSynthUnifiedLoader:
             "coordinates_loaded": 0,
             "terms_loaded": 0,
             "models_loaded": 0,
-            "topic_assignments": 0,
+            "topic_assignments": 0
         }
 
-        logger.info(
-            f"Initialized NeuroSynthUnifiedLoader (NICLIP: {use_niclip_models})"
-        )
+        logger.info(f"Initialized NeuroSynthUnifiedLoader (NICLIP: {use_niclip_models})")
 
     def load_data(
         self,
         include_coordinates: bool = True,
         include_metadata: bool = True,
         include_features: bool = True,
-        include_models: bool = True,
+        include_models: bool = True
     ) -> Dict[str, Any]:
         """
         Load NeuroSynth data with optional NICLIP enhancements.
@@ -161,7 +158,9 @@ class NeuroSynthUnifiedLoader:
             # Apply topic models to enhance data
             if "coordinates" in data and "topic_models" in data:
                 data["enhanced_associations"] = self._enhance_with_topics(
-                    data["coordinates"], data["metadata"], data["topic_models"]
+                    data["coordinates"],
+                    data["metadata"],
+                    data["topic_models"]
                 )
 
         return data
@@ -179,24 +178,22 @@ class NeuroSynthUnifiedLoader:
 
         try:
             # Load coordinates
-            with gzip.open(coords_file, "rt") as f:
-                coords_df = pd.read_csv(f, sep="\t")
+            with gzip.open(coords_file, 'rt') as f:
+                coords_df = pd.read_csv(f, sep='\t')
 
             # Rename 'id' to 'study_id' to prevent node_id collisions
             # The 'id' column contains the study PMID, but if used as-is,
             # it causes coordinates to overwrite Study/Publication nodes
-            if "id" in coords_df.columns:
-                coords_df.rename(columns={"id": "study_id"}, inplace=True)
-                logger.info(
-                    "Renamed 'id' column to 'study_id' to prevent node collisions"
-                )
+            if 'id' in coords_df.columns:
+                coords_df.rename(columns={'id': 'study_id'}, inplace=True)
+                logger.info("Renamed 'id' column to 'study_id' to prevent node collisions")
 
             # Add source field for provenance
-            coords_df["source"] = "neurosynth_v7"
+            coords_df['source'] = 'neurosynth_v7'
 
             # Add space field if not present
-            if "space" not in coords_df.columns:
-                coords_df["space"] = "MNI"
+            if 'space' not in coords_df.columns:
+                coords_df['space'] = 'MNI'
 
             self._coordinates_cache = coords_df
             self.stats["coordinates_loaded"] = len(coords_df)
@@ -221,8 +218,8 @@ class NeuroSynthUnifiedLoader:
 
         try:
             # Load metadata
-            with gzip.open(metadata_file, "rt") as f:
-                metadata_df = pd.read_csv(f, sep="\t")
+            with gzip.open(metadata_file, 'rt') as f:
+                metadata_df = pd.read_csv(f, sep='\t')
 
             self._metadata_cache = metadata_df
             self.stats["studies_loaded"] = len(metadata_df)
@@ -239,17 +236,11 @@ class NeuroSynthUnifiedLoader:
         if self._features_cache is not None:
             return self._features_cache
 
-        features_file = (
-            self.data_path
-            / f"data-neurosynth_version-7_vocab-terms_source-{self.section}_type-tfidf_features.npz"
-        )
+        features_file = self.data_path / f"data-neurosynth_version-7_vocab-terms_source-{self.section}_type-tfidf_features.npz"
 
         if not features_file.exists():
             if self.section != "abstract":
-                fallback = (
-                    self.data_path
-                    / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
-                )
+                fallback = self.data_path / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
                 if fallback.exists():
                     logger.warning(
                         "Features file for section '%s' not found; falling back to abstract features",
@@ -281,9 +272,7 @@ class NeuroSynthUnifiedLoader:
         if self._vocabulary_cache is not None:
             return self._vocabulary_cache
 
-        vocab_file = (
-            self.data_path / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
-        )
+        vocab_file = self.data_path / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
 
         if not vocab_file.exists():
             logger.error(f"Vocabulary file not found: {vocab_file}")
@@ -361,23 +350,26 @@ class NeuroSynthUnifiedLoader:
 
                 # Try gzip-compressed pickle first (most common)
                 try:
-                    with gzip.open(model_file, "rb") as f:
+                    with gzip.open(model_file, 'rb') as f:
                         model = pickle.load(f)
                 except (OSError, gzip.BadGzipFile):
                     # Fallback to regular pickle
-                    with open(model_file, "rb") as f:
+                    with open(model_file, 'rb') as f:
                         model = pickle.load(f)
 
                 # Extract model configuration from filename
-                parts = model_file.stem.split("_")
+                parts = model_file.stem.split('_')
                 config = {
                     "type": "gclda",
                     "embedding": self.model_name,
                     "section": self.section,
-                    "file": model_file.name,
+                    "file": model_file.name
                 }
 
-                models[model_file.stem] = {"model": model, "config": config}
+                models[model_file.stem] = {
+                    "model": model,
+                    "config": config
+                }
 
             except Exception as e:
                 logger.warning(f"Could not load model {model_file}: {e}")
@@ -402,11 +394,11 @@ class NeuroSynthUnifiedLoader:
 
                 # Try gzip-compressed pickle first (most common)
                 try:
-                    with gzip.open(model_file, "rb") as f:
+                    with gzip.open(model_file, 'rb') as f:
                         model = pickle.load(f)
                 except (OSError, gzip.BadGzipFile):
                     # Fallback to regular pickle
-                    with open(model_file, "rb") as f:
+                    with open(model_file, 'rb') as f:
                         model = pickle.load(f)
 
                 models[model_file.stem] = {
@@ -414,8 +406,8 @@ class NeuroSynthUnifiedLoader:
                     "config": {
                         "type": "neurosynth_baseline",
                         "embedding": self.model_name,
-                        "section": self.section,
-                    },
+                        "section": self.section
+                    }
                 }
 
             except Exception as e:
@@ -446,9 +438,7 @@ class NeuroSynthUnifiedLoader:
                     if indices_file.exists():
                         models[model_file.stem]["indices"] = np.load(indices_file)
             except Exception as e:
-                logger.warning(
-                    "Could not load override clip model %s: %s", model_file, e
-                )
+                logger.warning("Could not load override clip model %s: %s", model_file, e)
             # If override provided, still allow directory scan in case additional models exist
 
         pubmed_dir = self.niclip_path / "results" / "pubmed"
@@ -456,9 +446,7 @@ class NeuroSynthUnifiedLoader:
             return models
 
         # Load best CLIP models from directory matching section/model
-        model_pattern = (
-            f"model-clip_section-{self.section}_embedding-{self.model_name}_best.pth"
-        )
+        model_pattern = f"model-clip_section-{self.section}_embedding-{self.model_name}_best.pth"
 
         for model_file in pubmed_dir.glob(model_pattern):
             if model_file.stem in models:
@@ -473,8 +461,8 @@ class NeuroSynthUnifiedLoader:
                     "config": {
                         "type": "clip",
                         "embedding": self.model_name,
-                        "section": self.section,
-                    },
+                        "section": self.section
+                    }
                 }
 
                 # Load associated indices if available
@@ -492,7 +480,7 @@ class NeuroSynthUnifiedLoader:
         self,
         coordinates: pd.DataFrame,
         metadata: pd.DataFrame,
-        topic_models: Dict[str, Any],
+        topic_models: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Enhance NeuroSynth data with topic model predictions."""
         enhancements = {}
@@ -509,7 +497,7 @@ class NeuroSynthUnifiedLoader:
 
         try:
             # Extract topic assignments
-            if hasattr(model, "doc_topic_"):
+            if hasattr(model, 'doc_topic_'):
                 doc_topics = model.doc_topic_
                 enhancements["document_topics"] = doc_topics
 
@@ -520,12 +508,12 @@ class NeuroSynthUnifiedLoader:
                 self.stats["topic_assignments"] = len(dominant_topics)
 
             # Extract topic-word distributions
-            if hasattr(model, "topic_word_"):
+            if hasattr(model, 'topic_word_'):
                 topic_words = model.topic_word_
                 enhancements["topic_words"] = topic_words
 
             # Extract topic-coordinate distributions if available
-            if hasattr(model, "topic_coordinate_"):
+            if hasattr(model, 'topic_coordinate_'):
                 topic_coords = model.topic_coordinate_
                 enhancements["topic_coordinates"] = topic_coords
 
@@ -537,7 +525,9 @@ class NeuroSynthUnifiedLoader:
         return enhancements
 
     def get_term_associations(
-        self, term: str, threshold: float = 0.001
+        self,
+        term: str,
+        threshold: float = 0.001
     ) -> List[Dict[str, Any]]:
         """Get brain regions associated with a term."""
         associations = []
@@ -560,25 +550,30 @@ class NeuroSynthUnifiedLoader:
 
         # Get coordinates for active studies
         for study_idx in active_studies:
-            study_coords = coordinates[coordinates["id"] == study_idx]
+            study_coords = coordinates[coordinates['id'] == study_idx]
             for _, coord in study_coords.iterrows():
-                associations.append(
-                    {
-                        "study_id": study_idx,
-                        "x": coord["x"],
-                        "y": coord["y"],
-                        "z": coord["z"],
-                        "weight": term_features[study_idx],
-                    }
-                )
+                associations.append({
+                    "study_id": study_idx,
+                    "x": coord['x'],
+                    "y": coord['y'],
+                    "z": coord['z'],
+                    "weight": term_features[study_idx]
+                })
 
         return associations
 
     def perform_meta_analysis(
-        self, terms: List[str], method: str = "mkda"
+        self,
+        terms: List[str],
+        method: str = "mkda"
     ) -> Dict[str, Any]:
         """Perform meta-analysis for given terms."""
-        results = {"terms": terms, "method": method, "studies": [], "coordinates": []}
+        results = {
+            "terms": terms,
+            "method": method,
+            "studies": [],
+            "coordinates": []
+        }
 
         # Get associations for each term
         all_coords = []
@@ -594,8 +589,8 @@ class NeuroSynthUnifiedLoader:
         coords_df = pd.DataFrame(all_coords)
 
         # Simple aggregation for now
-        results["studies"] = coords_df["study_id"].unique().tolist()
-        results["coordinates"] = coords_df[["x", "y", "z", "weight"]].to_dict("records")
+        results["studies"] = coords_df['study_id'].unique().tolist()
+        results["coordinates"] = coords_df[['x', 'y', 'z', 'weight']].to_dict('records')
         results["n_studies"] = len(results["studies"])
         results["n_coordinates"] = len(results["coordinates"])
 
@@ -612,22 +607,22 @@ class NeuroSynthUnifiedLoader:
         coords = self.load_coordinates()
         if not coords.empty:
             coords_file = output_dir / "coordinates.tsv"
-            coords.to_csv(coords_file, sep="\t", index=False)
+            coords.to_csv(coords_file, sep='\t', index=False)
             files["coordinates"] = str(coords_file)
 
         # Export metadata
         metadata = self.load_metadata()
         if not metadata.empty:
             metadata_file = output_dir / "metadata.tsv"
-            metadata.to_csv(metadata_file, sep="\t", index=False)
+            metadata.to_csv(metadata_file, sep='\t', index=False)
             files["metadata"] = str(metadata_file)
 
         # Export vocabulary
         vocabulary = self.load_vocabulary()
         if vocabulary:
             vocab_file = output_dir / "vocabulary.txt"
-            with open(vocab_file, "w") as f:
-                f.write("\n".join(vocabulary))
+            with open(vocab_file, 'w') as f:
+                f.write('\n'.join(vocabulary))
             files["vocabulary"] = str(vocab_file)
 
         logger.info(f"Exported NiMARE data to {output_dir}")
@@ -669,9 +664,7 @@ if __name__ == "__main__":
 
     # Perform meta-analysis
     results = loader.perform_meta_analysis(["working memory", "attention"])
-    print(
-        f"\nMeta-analysis: {results['n_studies']} studies, {results['n_coordinates']} coordinates"
-    )
+    print(f"\nMeta-analysis: {results['n_studies']} studies, {results['n_coordinates']} coordinates")
 
     # Get term associations
     associations = loader.get_term_associations("language")

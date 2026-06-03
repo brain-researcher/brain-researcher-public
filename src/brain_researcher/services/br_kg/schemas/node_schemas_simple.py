@@ -3,32 +3,24 @@ Simplified Pydantic schemas for BR-KG node types.
 Compatible with both Pydantic v1 and v2.
 """
 
-import hashlib
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
-
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, Field
+import hashlib
 
 
 class ProvenanceInfo(BaseModel):
     """Provenance information required for all entities."""
-
     source: str = Field(..., description="Data source (e.g., pubmed, cognitive_atlas)")
     method: str = Field(..., description="Extraction method")
     timestamp: datetime = Field(default_factory=datetime.now)
     loader_version: str = Field(..., description="Version of the loader used")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
 
-
 class BaseNode(BaseModel):
     """Base class for all node types."""
-
-    id: Optional[str] = Field(
-        None, description="Unique identifier (auto-generated if not provided)"
-    )
-    canonical_id: Optional[str] = Field(
-        None, description="Canonical ID for merged entities"
-    )
+    id: Optional[str] = Field(None, description="Unique identifier (auto-generated if not provided)")
+    canonical_id: Optional[str] = Field(None, description="Canonical ID for merged entities")
     labels: List[str] = Field(default_factory=list)
     aliases: List[str] = Field(default_factory=list)
     prov: ProvenanceInfo
@@ -41,7 +33,9 @@ class BaseNode(BaseModel):
         return hashlib.md5(id_string.encode()).hexdigest()
 
     class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
 
 def _normalize_identifier(value: Any) -> str:
@@ -55,7 +49,6 @@ def _normalize_identifier(value: Any) -> str:
 
 class Publication(BaseNode):
     """Scientific publication node."""
-
     pmid: Optional[str] = None
     doi: Optional[str] = None
     title: str = Field(..., min_length=1)
@@ -75,7 +68,7 @@ class Publication(BaseNode):
         elif self.doi:
             return f"doi:{self.doi}"
         else:
-            key_fields = {"title": self.title, "year": self.year}
+            key_fields = {'title': self.title, 'year': self.year}
             return hashlib.md5(str(key_fields).encode()).hexdigest()
 
 
@@ -114,9 +107,7 @@ class Study(BaseNode):
             return f"study:doi:{_normalize_identifier(self.doi)}"
         if self.url:
             return f"study:url:{hashlib.md5(self.url.encode()).hexdigest()}"
-        return (
-            f"study:{_normalize_identifier(self.title or self.study_type or 'study')}"
-        )
+        return f"study:{_normalize_identifier(self.title or self.study_type or 'study')}"
 
     def model_post_init(self, __context) -> None:  # type: ignore[override]
         if not self.id:
@@ -125,7 +116,6 @@ class Study(BaseNode):
 
 class Task(BaseNode):
     """Cognitive/behavioral task node."""
-
     name: str = Field(..., min_length=1)
     description: Optional[str] = None
     cognitive_atlas_id: Optional[str] = None
@@ -144,7 +134,6 @@ class Task(BaseNode):
 
 class Concept(BaseNode):
     """Cognitive concept or construct node."""
-
     label: str = Field(..., min_length=1)
     definition: Optional[str] = None
     cognitive_atlas_id: Optional[str] = None
@@ -163,7 +152,6 @@ class Concept(BaseNode):
 
 class Region(BaseNode):
     """Brain region node."""
-
     name: str = Field(..., min_length=1)
     atlas: str = Field(..., description="Atlas name (e.g., schaefer400-7n)")
     hemisphere: Optional[Literal["left", "right", "bilateral"]] = None
@@ -181,7 +169,6 @@ class Region(BaseNode):
 
 class Coordinate(BaseNode):
     """Brain coordinate node."""
-
     x: float = Field(..., ge=-100, le=100)
     y: float = Field(..., ge=-150, le=150)
     z: float = Field(..., ge=-100, le=100)
@@ -199,7 +186,6 @@ class Coordinate(BaseNode):
 
 class StatisticalMap(BaseNode):
     """Statistical brain map node."""
-
     name: str = Field(..., min_length=1)
     space: str = Field(default="MNI152_2009c")
     modality: str = Field(..., description="Imaging modality")
@@ -222,7 +208,6 @@ class StatisticalMap(BaseNode):
 
 class Dataset(BaseNode):
     """Neuroimaging dataset node."""
-
     name: str = Field(..., min_length=1)
     accession: Optional[str] = None
     source: str = Field(..., description="Data source")
@@ -357,7 +342,6 @@ class RiskLocus(BaseNode):
 
 class Subject(BaseNode):
     """Study subject/participant node."""
-
     participant_id: str = Field(..., description="Anonymized participant ID")
     dataset_id: str = Field(..., description="Parent dataset ID")
     group: Optional[str] = None
@@ -373,7 +357,6 @@ class Subject(BaseNode):
 
 class SubjectGroup(BaseNode):
     """Group of subjects node."""
-
     name: str = Field(..., min_length=1)
     dataset_id: str = Field(..., description="Parent dataset ID")
     n_subjects: int = Field(..., ge=1)
@@ -389,7 +372,6 @@ class SubjectGroup(BaseNode):
 
 class Phenotype(BaseNode):
     """Phenotype or clinical measure node."""
-
     name: str = Field(..., min_length=1)
     category: str = Field(..., description="Category")
     measurement_type: Optional[str] = None
@@ -406,7 +388,6 @@ class Phenotype(BaseNode):
 
 class Contrast(BaseNode):
     """Statistical contrast node."""
-
     name: str = Field(..., min_length=1)
     dataset_id: str = Field(..., description="Parent dataset ID")
     task_name: Optional[str] = None
@@ -423,7 +404,6 @@ class Contrast(BaseNode):
 
 class AgentSession(BaseNode):
     """Agent work-session summary derived from BR research logging."""
-
     session_id: str = Field(..., min_length=1)
     run_id: Optional[str] = None
     source_client: Optional[str] = None
@@ -444,7 +424,6 @@ class AgentSession(BaseNode):
 
 class TaskSurface(BaseNode):
     """Coarse task surface inferred from a session."""
-
     name: str = Field(..., min_length=1)
     surface_id: Optional[str] = None
 
@@ -457,7 +436,6 @@ class TaskSurface(BaseNode):
 
 class ValidationEvidence(BaseNode):
     """Concrete validation evidence extracted from a session handoff."""
-
     evidence_type: str = Field(..., min_length=1)
     text: str = Field(..., min_length=1)
     source_field: str = "done_items"
@@ -472,7 +450,6 @@ class ValidationEvidence(BaseNode):
 
 class OpenRisk(BaseNode):
     """Canonicalized open risk left by an agent session."""
-
     label: Literal[
         "uncommitted-local",
         "unrelated-dirty-worktree",
@@ -489,14 +466,12 @@ class OpenRisk(BaseNode):
 
 class Outcome(BaseNode):
     """Done item or artifact-like result from a session."""
-
     text: str = Field(..., min_length=1)
     source_field: str = "done"
 
 
 class Lesson(BaseNode):
     """Candidate policy lesson extracted from session patterns."""
-
     issue_code: str = Field(..., min_length=1)
     text: str = Field(..., min_length=1)
     status: str = "candidate"
@@ -504,7 +479,6 @@ class Lesson(BaseNode):
 
 class NextAction(BaseNode):
     """Concrete next command or remediation action from a session handoff."""
-
     command: Optional[str] = None
     action_type: Optional[str] = None
 

@@ -7,11 +7,11 @@ Provides APIs for cluster management, node operations, and system monitoring.
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
-import redis.asyncio as redis
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel, Field
+import redis.asyncio as redis
 
 from ...agent.distributed.coordinator import (
     DistributedCoordinator,
@@ -27,6 +27,7 @@ from ...agent.distributed.load_balancer import (
 )
 from ..models import ErrorResponse
 
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/distributed", tags=["distributed"])
@@ -40,10 +41,8 @@ redis_client: Optional[redis.Redis] = None
 
 # Request/Response Models
 
-
 class NodeRegistrationRequest(BaseModel):
     """Request to register a new node"""
-
     node_id: str = Field(..., description="Unique node identifier")
     hostname: str = Field(..., description="Node hostname")
     cpu_cores: int = Field(..., description="Number of CPU cores", ge=1)
@@ -59,7 +58,6 @@ class NodeRegistrationRequest(BaseModel):
 
 class NodeResponse(BaseModel):
     """Node information response"""
-
     node_id: str
     hostname: str
     capacity: Dict[str, Any]
@@ -73,7 +71,6 @@ class NodeResponse(BaseModel):
 
 class ClusterStatusResponse(BaseModel):
     """Cluster status response"""
-
     nodes: List[NodeResponse]
     leader_id: Optional[str]
     partition_detected: bool
@@ -84,7 +81,6 @@ class ClusterStatusResponse(BaseModel):
 
 class TaskSchedulingRequest(BaseModel):
     """Request to schedule a task"""
-
     task_id: str = Field(..., description="Unique task identifier")
     task_type: str = Field(..., description="Task type")
     payload: Dict[str, Any] = Field(..., description="Task payload")
@@ -98,7 +94,6 @@ class TaskSchedulingRequest(BaseModel):
 
 class TaskSchedulingResponse(BaseModel):
     """Task scheduling response"""
-
     task_id: str
     assigned_node: Optional[str]
     strategy_used: str
@@ -107,7 +102,6 @@ class TaskSchedulingResponse(BaseModel):
 
 class LoadBalancingStatsResponse(BaseModel):
     """Load balancing statistics response"""
-
     total_nodes: int
     total_capacity: float
     average_utilization: float
@@ -117,7 +111,6 @@ class LoadBalancingStatsResponse(BaseModel):
 
 class ClusterHealthResponse(BaseModel):
     """Cluster health response"""
-
     overall_health: str
     health_ratio: float
     healthy_nodes: int
@@ -129,7 +122,6 @@ class ClusterHealthResponse(BaseModel):
 
 class FailureHandlingRequest(BaseModel):
     """Request to handle a failure manually"""
-
     failure_type: str = Field(..., description="Type of failure")
     affected_nodes: List[str] = Field(..., description="List of affected node IDs")
     description: str = Field(..., description="Failure description")
@@ -137,7 +129,6 @@ class FailureHandlingRequest(BaseModel):
 
 
 # Dependency injection
-
 
 async def get_redis_client():
     """Get Redis client dependency"""
@@ -178,39 +169,34 @@ async def get_fault_tolerance():
 
 # Endpoints
 
-
 @router.get("/status", response_model=ClusterStatusResponse)
-async def get_cluster_status(
-    coordinator: DistributedCoordinator = Depends(get_coordinator),
-):
+async def get_cluster_status(coordinator: DistributedCoordinator = Depends(get_coordinator)):
     """Get current cluster status"""
     try:
         status = await coordinator.get_cluster_status()
 
         # Convert to response format
         nodes = []
-        for node_data in status["nodes"]:
-            nodes.append(
-                NodeResponse(
-                    node_id=node_data["node_id"],
-                    hostname=node_data["hostname"],
-                    capacity=node_data["capacity"],
-                    status=node_data["status"],
-                    leader=node_data["leader"],
-                    last_heartbeat=node_data.get("last_heartbeat"),
-                    joined_at=node_data.get("joined_at"),
-                    tasks_running=node_data["tasks_running"],
-                    load_average=node_data["load_average"],
-                )
-            )
+        for node_data in status['nodes']:
+            nodes.append(NodeResponse(
+                node_id=node_data['node_id'],
+                hostname=node_data['hostname'],
+                capacity=node_data['capacity'],
+                status=node_data['status'],
+                leader=node_data['leader'],
+                last_heartbeat=node_data.get('last_heartbeat'),
+                joined_at=node_data.get('joined_at'),
+                tasks_running=node_data['tasks_running'],
+                load_average=node_data['load_average']
+            ))
 
         return ClusterStatusResponse(
             nodes=nodes,
-            leader_id=status["leader_id"],
-            partition_detected=status["partition_detected"],
-            total_capacity=status["total_capacity"],
-            active_tasks=status["active_tasks"],
-            cluster_health=status["cluster_health"],
+            leader_id=status['leader_id'],
+            partition_detected=status['partition_detected'],
+            total_capacity=status['total_capacity'],
+            active_tasks=status['active_tasks'],
+            cluster_health=status['cluster_health']
         )
 
     except Exception as e:
@@ -221,7 +207,7 @@ async def get_cluster_status(
 @router.post("/nodes/register", response_model=Dict[str, str])
 async def register_node(
     request: NodeRegistrationRequest,
-    coordinator: DistributedCoordinator = Depends(get_coordinator),
+    coordinator: DistributedCoordinator = Depends(get_coordinator)
 ):
     """Register a new node in the cluster"""
     try:
@@ -231,14 +217,14 @@ async def register_node(
             memory_gb=request.memory_gb,
             gpu_count=request.gpu_count,
             storage_gb=request.storage_gb,
-            network_mbps=request.network_mbps,
+            network_mbps=request.network_mbps
         )
 
         node_info = NodeInfo(
             node_id=request.node_id,
             hostname=request.hostname,
             capacity=capacity,
-            status=NodeStatus.JOINING,
+            status=NodeStatus.JOINING
         )
 
         # Register node
@@ -256,7 +242,8 @@ async def register_node(
 
 @router.delete("/nodes/{node_id}")
 async def deregister_node(
-    node_id: str, coordinator: DistributedCoordinator = Depends(get_coordinator)
+    node_id: str,
+    coordinator: DistributedCoordinator = Depends(get_coordinator)
 ):
     """Deregister a node from the cluster"""
     try:
@@ -282,7 +269,7 @@ async def get_leader(coordinator: DistributedCoordinator = Depends(get_coordinat
             return {
                 "leader_id": leader_id,
                 "is_this_node": leader_id == coordinator.node_id,
-                "elected_at": datetime.utcnow().isoformat(),
+                "elected_at": datetime.utcnow().isoformat()
             }
         else:
             return {"leader_id": None, "message": "No leader elected"}
@@ -295,7 +282,7 @@ async def get_leader(coordinator: DistributedCoordinator = Depends(get_coordinat
 @router.post("/leader/elect")
 async def elect_leader(
     background_tasks: BackgroundTasks,
-    coordinator: DistributedCoordinator = Depends(get_coordinator),
+    coordinator: DistributedCoordinator = Depends(get_coordinator)
 ):
     """Trigger leader election"""
     try:
@@ -312,7 +299,7 @@ async def elect_leader(
 @router.post("/tasks/schedule", response_model=TaskSchedulingResponse)
 async def schedule_task(
     request: TaskSchedulingRequest,
-    load_balancer: DistributedLoadBalancer = Depends(get_load_balancer),
+    load_balancer: DistributedLoadBalancer = Depends(get_load_balancer)
 ):
     """Schedule a task on the cluster"""
     try:
@@ -321,7 +308,7 @@ async def schedule_task(
             cpu_cores=request.cpu_cores,
             memory_gb=request.memory_gb,
             gpu_memory_gb=request.gpu_memory_gb,
-            estimated_duration=request.timeout_seconds,
+            estimated_duration=request.timeout_seconds
         )
 
         # Determine strategy
@@ -330,13 +317,13 @@ async def schedule_task(
             try:
                 strategy = LoadBalancingStrategy(request.strategy)
             except ValueError:
-                raise HTTPException(
-                    status_code=400, detail=f"Invalid strategy: {request.strategy}"
-                )
+                raise HTTPException(status_code=400, detail=f"Invalid strategy: {request.strategy}")
 
         # Select node
         selected_node = await load_balancer.select_node(
-            requirements, strategy=strategy, task_id=request.task_id
+            requirements,
+            strategy=strategy,
+            task_id=request.task_id
         )
 
         if selected_node:
@@ -347,11 +334,12 @@ async def schedule_task(
                 strategy_used=strategy.value if strategy else "adaptive",
                 estimated_completion=(
                     datetime.utcnow().isoformat() + f"+{request.timeout_seconds}s"
-                ),
+                )
             )
         else:
             raise HTTPException(
-                status_code=503, detail="No suitable node available for task"
+                status_code=503,
+                detail="No suitable node available for task"
             )
 
     except HTTPException:
@@ -363,7 +351,7 @@ async def schedule_task(
 
 @router.get("/load-balancing/stats", response_model=LoadBalancingStatsResponse)
 async def get_load_balancing_stats(
-    load_balancer: DistributedLoadBalancer = Depends(get_load_balancer),
+    load_balancer: DistributedLoadBalancer = Depends(get_load_balancer)
 ):
     """Get load balancing statistics"""
     try:
@@ -384,7 +372,7 @@ async def get_load_balancing_stats(
 @router.post("/rebalance")
 async def rebalance_cluster(
     background_tasks: BackgroundTasks,
-    load_balancer: DistributedLoadBalancer = Depends(get_load_balancer),
+    load_balancer: DistributedLoadBalancer = Depends(get_load_balancer)
 ):
     """Trigger cluster rebalancing"""
     try:
@@ -400,7 +388,7 @@ async def rebalance_cluster(
 
 @router.get("/health", response_model=ClusterHealthResponse)
 async def get_cluster_health(
-    fault_tolerance: FaultTolerance = Depends(get_fault_tolerance),
+    fault_tolerance: FaultTolerance = Depends(get_fault_tolerance)
 ):
     """Get cluster health status"""
     try:
@@ -417,29 +405,25 @@ async def get_cluster_health(
 async def handle_failure(
     request: FailureHandlingRequest,
     background_tasks: BackgroundTasks,
-    fault_tolerance: FaultTolerance = Depends(get_fault_tolerance),
+    fault_tolerance: FaultTolerance = Depends(get_fault_tolerance)
 ):
     """Manually handle a failure"""
     try:
         if request.failure_type == "node_failure" and len(request.affected_nodes) == 1:
             # Handle single node failure
-            success = await fault_tolerance.handle_node_failure(
-                request.affected_nodes[0]
-            )
+            success = await fault_tolerance.handle_node_failure(request.affected_nodes[0])
         elif request.failure_type == "network_partition":
             # Handle network partition
-            success = await fault_tolerance.handle_network_partition(
-                request.affected_nodes
-            )
+            success = await fault_tolerance.handle_network_partition(request.affected_nodes)
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Unsupported failure type: {request.failure_type}",
+                detail=f"Unsupported failure type: {request.failure_type}"
             )
 
         return {
             "message": f"Failure handling {'succeeded' if success else 'failed'}",
-            "success": success,
+            "success": success
         }
 
     except HTTPException:
@@ -451,7 +435,8 @@ async def handle_failure(
 
 @router.get("/failures/history")
 async def get_failure_history(
-    limit: int = 50, fault_tolerance: FaultTolerance = Depends(get_fault_tolerance)
+    limit: int = 50,
+    fault_tolerance: FaultTolerance = Depends(get_fault_tolerance)
 ):
     """Get failure history"""
     try:
@@ -459,7 +444,7 @@ async def get_failure_history(
 
         return {
             "failures": [failure.to_dict() for failure in history],
-            "total_count": len(history),
+            "total_count": len(history)
         }
 
     except Exception as e:
@@ -469,7 +454,7 @@ async def get_failure_history(
 
 @router.get("/recovery/active")
 async def get_active_recoveries(
-    fault_tolerance: FaultTolerance = Depends(get_fault_tolerance),
+    fault_tolerance: FaultTolerance = Depends(get_fault_tolerance)
 ):
     """Get active recovery operations"""
     try:
@@ -479,7 +464,7 @@ async def get_active_recoveries(
             "active_recoveries": [
                 recovery.to_dict() for recovery in active_recoveries.values()
             ],
-            "count": len(active_recoveries),
+            "count": len(active_recoveries)
         }
 
     except Exception as e:
@@ -489,7 +474,7 @@ async def get_active_recoveries(
 
 @router.get("/metrics/nodes")
 async def get_node_metrics(
-    load_balancer: DistributedLoadBalancer = Depends(get_load_balancer),
+    load_balancer: DistributedLoadBalancer = Depends(get_load_balancer)
 ):
     """Get detailed metrics for all nodes"""
     try:
@@ -497,7 +482,7 @@ async def get_node_metrics(
 
         return {
             "nodes": [node.to_dict() for node in nodes_metrics],
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.utcnow().isoformat()
         }
 
     except Exception as e:
@@ -507,7 +492,8 @@ async def get_node_metrics(
 
 @router.post("/maintenance/start/{node_id}")
 async def start_node_maintenance(
-    node_id: str, coordinator: DistributedCoordinator = Depends(get_coordinator)
+    node_id: str,
+    coordinator: DistributedCoordinator = Depends(get_coordinator)
 ):
     """Put a node into maintenance mode"""
     try:
@@ -533,7 +519,8 @@ async def start_node_maintenance(
 
 @router.post("/maintenance/end/{node_id}")
 async def end_node_maintenance(
-    node_id: str, coordinator: DistributedCoordinator = Depends(get_coordinator)
+    node_id: str,
+    coordinator: DistributedCoordinator = Depends(get_coordinator)
 ):
     """Take a node out of maintenance mode"""
     try:
@@ -552,7 +539,6 @@ async def end_node_maintenance(
 
 
 # Startup/Shutdown events
-
 
 async def startup_distributed_system():
     """Initialize distributed system on startup"""

@@ -23,7 +23,9 @@ class ResolveBIDSArgs(BaseModel):
     session_id: Optional[str] = Field(
         default=None, description="Session identifier (without 'ses-' prefix)"
     )
-    datatype: str = Field(description="BIDS datatype (anat, func, dwi, ieeg, eeg, meg)")
+    datatype: str = Field(
+        description="BIDS datatype (anat, func, dwi, ieeg, eeg, meg)"
+    )
     suffix: str = Field(description="BIDS suffix (T1w, bold, dwi, eeg, etc.)")
     task_id: Optional[str] = Field(
         default=None, description="Task identifier (without 'task-' prefix)"
@@ -41,9 +43,7 @@ class ResolveBIDSTool(NeuroToolWrapper):
         return "resolve_bids"
 
     def get_tool_description(self) -> str:
-        return (
-            "Query BIDS dataset to resolve file paths for a given subject and datatype."
-        )
+        return "Query BIDS dataset to resolve file paths for a given subject and datatype."
 
     def get_args_schema(self):
         return ResolveBIDSArgs

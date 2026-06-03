@@ -22,9 +22,7 @@ class User(BaseModel):
 
 async def get_current_user() -> User:
     """Return a minimal test user."""
-    return User(
-        id="test-user", username="test", email="test@example.com", roles=["tester"]
-    )
+    return User(id="test-user", username="test", email="test@example.com", roles=["tester"])
 
 
 async def get_current_active_user() -> User:

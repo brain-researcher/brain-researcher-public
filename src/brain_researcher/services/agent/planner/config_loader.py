@@ -39,7 +39,6 @@ def load_planner_config(filename: str) -> Dict[str, Any]:
     path = get_repo_root() / "configs" / "planner" / filename
     return _load_yaml_file(path)
 
-
 @lru_cache(maxsize=1)
 def load_capability_crosswalk() -> Dict[str, Any]:
     """Load configs/planner/capability_crosswalk.yaml.
@@ -87,7 +86,7 @@ def load_scoring_weights() -> Dict[str, Any]:
             "Please upgrade to v0.2 format. "
             "See configs/planner/scoring_weights.yaml for the new structure.",
             DeprecationWarning,
-            stacklevel=2,
+            stacklevel=2
         )
         logger.warning(
             "Deprecated scoring_weights.yaml v0.1 format detected. "
@@ -97,7 +96,8 @@ def load_scoring_weights() -> Dict[str, Any]:
 
     # Unknown version - assume v0.1 for backward compatibility
     logger.warning(
-        "Unknown scoring_weights.yaml version: %s. Assuming v0.1 format.", version
+        "Unknown scoring_weights.yaml version: %s. Assuming v0.1 format.",
+        version
     )
     return _convert_v1_to_v2(config)
 
@@ -152,26 +152,30 @@ def _convert_v1_to_v2(v1_config: Dict[str, Any]) -> Dict[str, Any]:
                     "latency_pred": False,  # Disable for v0.1
                 },
                 "generate_explanations": v1_scoring.get("generate_explanations", True),
-                "explanation_verbosity": v1_scoring.get(
-                    "explanation_verbosity", "brief"
-                ),
-            },
+                "explanation_verbosity": v1_scoring.get("explanation_verbosity", "brief")
+            }
         },
-        "overrides": {"modality": {}, "operator": {}, "environment": {}},
+        "overrides": {
+            "modality": {},
+            "operator": {},
+            "environment": {}
+        },
         "strategy": {
             "default": "top1",
-            "diverse_topk": {"k": 3, "diversity_penalty": 0.1},
+            "diverse_topk": {"k": 3, "diversity_penalty": 0.1}
         },
-        "experiments": {"selection_policy": {"type": "weighted", "arms": []}},
+        "experiments": {
+            "selection_policy": {"type": "weighted", "arms": []}
+        },
         "telemetry": {
             "log_features": False,  # Disabled for v0.1 compat
             "log_selected_candidates": "top-3",
             "tag": "planner-v0.1-compat",
-            "log_dir": "data/planner_logs",
+            "log_dir": "data/planner_logs"
         },
         "resource_fit": v1_resource_fit,
         "metadata": v1_metadata,
-        "explanations": v1_explanations,
+        "explanations": v1_explanations
     }
 
     return v2_config
@@ -212,8 +216,8 @@ def _get_default_v2_config() -> Dict[str, Any]:
                     "latency_pred": True,
                 },
                 "generate_explanations": True,
-                "explanation_verbosity": "brief",
-            },
+                "explanation_verbosity": "brief"
+            }
         },
         "overrides": {"modality": {}, "operator": {}, "environment": {}},
         "strategy": {"default": "top1"},
@@ -222,6 +226,6 @@ def _get_default_v2_config() -> Dict[str, Any]:
             "log_features": True,
             "log_selected_candidates": "top-3",
             "tag": "planner-v0.2",
-            "log_dir": "data/planner_logs",
-        },
+            "log_dir": "data/planner_logs"
+        }
     }

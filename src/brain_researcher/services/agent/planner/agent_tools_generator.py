@@ -31,12 +31,7 @@ class PythonCapability:
             "capabilities": [],
             "consumes": [],
             "produces": [],
-            "resources": {
-                "cpu_min": 1,
-                "mem_mb_min": 512,
-                "gpu": False,
-                "time_min_default": 5.0,
-            },
+            "resources": {"cpu_min": 1, "mem_mb_min": 512, "gpu": False, "time_min_default": 5.0},
             "python": {
                 "module": self.python_module,
                 "function": self.python_function,
@@ -55,11 +50,7 @@ def _find_tool_class(source: str) -> str | None:
     except SyntaxError:
         return None
     for node in tree.body:
-        if (
-            isinstance(node, ast.ClassDef)
-            and node.name.endswith("Tool")
-            and not node.name.startswith("_")
-        ):
+        if isinstance(node, ast.ClassDef) and node.name.endswith("Tool") and not node.name.startswith("_"):
             return node.name
     return None
 

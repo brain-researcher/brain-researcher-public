@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
 from brain_researcher.core.literature.gfs_store import search_gfs_auto
 from brain_researcher.services.br_kg import query_service
 
+
 FULLTEXT_K = 60
 VECTOR_K = 60
 FILTERED_CAP = 500
@@ -158,9 +159,7 @@ def _vector_search_fallback(
     if not vector_search_fn:
         return []
     try:
-        results = vector_search_fn(
-            query=query, node_types=list(node_types) if node_types else None, k=k
-        )
+        results = vector_search_fn(query=query, node_types=list(node_types) if node_types else None, k=k)
     except Exception:
         return []
 
@@ -169,12 +168,7 @@ def _vector_search_fallback(
         node_id = getattr(res, "node_id", None) or res.get("node_id")
         node_type = getattr(res, "node_type", None) or res.get("node_type")
         score = getattr(res, "score", None) or res.get("score", 0.0)
-        props = (
-            getattr(res, "metadata", None)
-            or res.get("properties")
-            or res.get("metadata")
-            or {}
-        )
+        props = getattr(res, "metadata", None) or res.get("properties") or res.get("metadata") or {}
         label = props.get("label") or props.get("name") or props.get("title") or ""
         output.append(
             {
@@ -273,16 +267,7 @@ def _alias_in_text(text_norm: str, alias_norm: str) -> bool:
 
 def _extract_aliases(properties: Dict[str, Any], label: str | None) -> List[str]:
     aliases: List[str] = []
-    for key in (
-        "aliases",
-        "alias",
-        "synonyms",
-        "keywords",
-        "name",
-        "label",
-        "title",
-        "id",
-    ):
+    for key in ("aliases", "alias", "synonyms", "keywords", "name", "label", "title", "id"):
         value = properties.get(key)
         if isinstance(value, list):
             aliases.extend([str(v) for v in value if v])
@@ -337,11 +322,7 @@ def _detect_evidence_conflicts(evidence: List[Dict[str, Any]]) -> List[Dict[str,
         return []
 
     severity = _conflict_severity(negative_texts)
-    scope = (
-        "tooling_spec"
-        if any(r in {"tooling_spec", "guideline"} for r in doc_roles)
-        else "general"
-    )
+    scope = "tooling_spec" if any(r in {"tooling_spec", "guideline"} for r in doc_roles) else "general"
     affects_confidence = scope in {"tooling_spec", "guideline"}
     discount = _CONFLICT_DISCOUNT.get(severity, 0.9) if affects_confidence else None
 
@@ -351,11 +332,7 @@ def _detect_evidence_conflicts(evidence: List[Dict[str, Any]]) -> List[Dict[str,
         conflict_type = "evidence_negative_only"
 
     details = {
-        "rule": (
-            "positive+negative evidence co-occur"
-            if conflict_type == "evidence_semantic_conflict"
-            else "negative evidence only"
-        ),
+        "rule": "positive+negative evidence co-occur" if conflict_type == "evidence_semantic_conflict" else "negative evidence only",
         "negative_markers": list(_NEGATIVE_MARKERS),
         "confidence_discount": discount,
     }
@@ -373,11 +350,7 @@ def _detect_evidence_conflicts(evidence: List[Dict[str, Any]]) -> List[Dict[str,
 
 
 def _detect_mapsto_ambiguity(properties: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    candidates = (
-        properties.get("mapsto_candidates")
-        or properties.get("mapsto_alternatives")
-        or []
-    )
+    candidates = properties.get("mapsto_candidates") or properties.get("mapsto_alternatives") or []
     if not isinstance(candidates, list) or len(candidates) < 2:
         return None
 
@@ -444,9 +417,7 @@ def _bind_gfs_evidence(
             combined = _normalize_text(f"{hit['title']} {hit['text']}")
             if any(_alias_in_text(combined, alias_norm) for alias_norm in alias_norms):
                 evidence_id = hashlib.sha256(
-                    f"{cand.get('node_id')}|{hit.get('doc_id')}|{hit.get('snippet')}".encode(
-                        "utf-8"
-                    )
+                    f"{cand.get('node_id')}|{hit.get('doc_id')}|{hit.get('snippet')}".encode("utf-8")
                 ).hexdigest()[:16]
                 matched.append(
                     {
@@ -454,8 +425,7 @@ def _bind_gfs_evidence(
                         "doc_id": hit.get("doc_id"),
                         "title": hit.get("title"),
                         "snippet": hit.get("snippet"),
-                        "doc_role": hit.get("doc_role")
-                        or _infer_doc_role(hit.get("snippet") or ""),
+                        "doc_role": hit.get("doc_role") or _infer_doc_role(hit.get("snippet") or ""),
                         "year": hit.get("year") or _extract_year(hit.get("text") or ""),
                         "polarity": _polarity_from_text(hit.get("snippet") or ""),
                         "score": float(hit.get("score") or 0.0),
@@ -471,9 +441,7 @@ def _bind_gfs_evidence(
                 grouped.setdefault(doc_id, []).append(ev)
             capped: List[Dict[str, Any]] = []
             for doc_id, evs in grouped.items():
-                evs_sorted = sorted(
-                    evs, key=lambda e: e.get("score") or 0.0, reverse=True
-                )
+                evs_sorted = sorted(evs, key=lambda e: e.get("score") or 0.0, reverse=True)
                 capped.extend(evs_sorted[:max_snippets_per_doc])
             key = f"{cand.get('node_type')}:{cand.get('node_id')}"
             evidence_by_key[key] = capped[:max_per_result]
@@ -517,12 +485,7 @@ def hybrid_search_v1(
     )
     cached = _get_cache(cache_key)
     if cached is not None:
-        return {
-            "results": cached["results"],
-            "mode": "hybrid_v1",
-            "degraded": cached["degraded"],
-            "cache": {"hit": True},
-        }
+        return {"results": cached["results"], "mode": "hybrid_v1", "degraded": cached["degraded"], "cache": {"hit": True}}
 
     degraded: List[str] = []
     filters_matched: List[str] = []
@@ -533,9 +496,7 @@ def hybrid_search_v1(
         search_nodes_fn = query_service.search_nodes
     if query:
         try:
-            ft_nodes = search_nodes_fn(
-                query, node_types=node_types_list, limit=config.fulltext_k, db=db
-            )
+            ft_nodes = search_nodes_fn(query, node_types=node_types_list, limit=config.fulltext_k, db=db)
             for node in ft_nodes:
                 props = node.properties or {}
                 fulltext_results.append(
@@ -554,9 +515,7 @@ def hybrid_search_v1(
     filtered_candidates: Optional[Dict[str, Dict[str, Any]]] = None
     filter_is_active = bool(filters)
     if filter_is_active:
-        dataset_only = not node_types_list or all(
-            nt.lower() == "dataset" for nt in node_types_list
-        )
+        dataset_only = not node_types_list or all(nt.lower() == "dataset" for nt in node_types_list)
         if dataset_only:
             if search_datasets_fn is None:
                 search_datasets_fn = query_service.search_datasets
@@ -694,9 +653,9 @@ def hybrid_search_v1(
         }
 
     # Bind evidence for top N candidates only
-    top_indices = sorted(
-        range(len(base_scores)), key=lambda i: base_scores[i], reverse=True
-    )[: config.evidence_bind_limit]
+    top_indices = sorted(range(len(base_scores)), key=lambda i: base_scores[i], reverse=True)[
+        : config.evidence_bind_limit
+    ]
     candidates_for_binding = [combined_items[i] for i in top_indices]
     evidence_map = _bind_gfs_evidence(
         gfs_hits,
@@ -712,10 +671,7 @@ def hybrid_search_v1(
         key = f"{rec.get('node_type')}:{rec.get('node_id')}"
         evidence_for_candidate = evidence_map.get(key, [])
         gfs_scores.append(
-            max(
-                (float(ev.get("score") or 0.0) for ev in evidence_for_candidate),
-                default=0.0,
-            )
+            max((float(ev.get("score") or 0.0) for ev in evidence_for_candidate), default=0.0)
         )
     gfs_norms = (
         _normalize_scores(gfs_scores)
@@ -754,11 +710,7 @@ def hybrid_search_v1(
                     confidence_before = confidence_val
                     confidence_val = confidence_val * discount
                     for flag in conflict_flags:
-                        if (
-                            flag.get("affects_confidence")
-                            and flag.get("details", {}).get("confidence_discount")
-                            == discount
-                        ):
+                        if flag.get("affects_confidence") and flag.get("details", {}).get("confidence_discount") == discount:
                             flag["details"]["confidence_before"] = confidence_before
                             flag["details"]["confidence_after"] = confidence_val
                 confidence = confidence_val
@@ -797,11 +749,7 @@ def hybrid_search_v1(
             "evidence_status": (
                 "ok"
                 if evidence
-                else (
-                    "partial"
-                    if gfs_meta.get("status") == "ok"
-                    else gfs_meta.get("status", "none")
-                )
+                else ("partial" if gfs_meta.get("status") == "ok" else gfs_meta.get("status", "none"))
             ),
             "evidence": evidence,
             "explain_min": explain_min,

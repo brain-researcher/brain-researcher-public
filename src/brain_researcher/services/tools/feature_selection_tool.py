@@ -24,16 +24,12 @@ class FeatureSelectionArgs(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     data_file: str = Field(description="Input feature matrix")
-    labels_file: Optional[str] = Field(
-        default=None, description="Labels for supervised methods"
-    )
+    labels_file: Optional[str] = Field(default=None, description="Labels for supervised methods")
     output_dir: Optional[str] = Field(default=None, description="Output directory")
 
     method: str = Field(default="univariate", description="Feature selection method")
     task_type: str = Field(default="classification", description="Task type")
-    n_features: Optional[int] = Field(
-        default=None, description="Number of features to select"
-    )
+    n_features: Optional[int] = Field(default=None, description="Number of features to select")
     percentile: Optional[int] = Field(default=None, description="Percentile to select")
     random_state: Optional[int] = Field(default=42, description="Random seed")
     save_indices: bool = Field(default=True, description="Persist selected indices")

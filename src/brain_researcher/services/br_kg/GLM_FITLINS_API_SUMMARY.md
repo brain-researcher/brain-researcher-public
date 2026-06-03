@@ -89,9 +89,6 @@ emotion regulation: 80.5% confidence
 
 Run the test scripts:
 ```bash
-# Basic API test
-python br-kg/examples/glmfitlins_client.py
-
 # Test with known good datasets
 python test_glm_working.py
 ```

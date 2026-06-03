@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List
 
-
 def default_session_id(cwd: Path | None = None) -> str:
     """Generate a stable session id based on the current working directory."""
     cwd = cwd or Path.cwd()
@@ -17,10 +16,7 @@ def default_session_id(cwd: Path | None = None) -> str:
     except ValueError:  # cwd not under home
         pass
     raw = str(resolved).replace(os.sep, "-").replace(" ", "-")
-    return (
-        "".join(ch for ch in raw if ch.isalnum() or ch in "-_.").strip("-_.")
-        or "session"
-    )
+    return "".join(ch for ch in raw if ch.isalnum() or ch in "-_.").strip("-_.") or "session"
 
 
 @dataclass
@@ -43,7 +39,6 @@ class ConversationStore:
 
     def append(self, message: Dict[str, Any]) -> None:
         """Append a message and persist it."""
-
         def _jsonable(obj: Any) -> Any:
             if obj is None or isinstance(obj, (str, int, float, bool)):
                 return obj

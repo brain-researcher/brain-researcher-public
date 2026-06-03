@@ -76,9 +76,7 @@ def _normalize_notebook_title(path: str, explicit_title: str | None = None) -> s
     return Path(path).stem.replace("_", " ").strip() or "Studio notebook"
 
 
-def _summarize_command(
-    value: str | None, *, max_lines: int = 3, max_chars: int = 240
-) -> str:
+def _summarize_command(value: str | None, *, max_lines: int = 3, max_chars: int = 240) -> str:
     text = str(value or "").strip()
     if not text:
         return ""
@@ -270,7 +268,9 @@ class StudioNotebookRuntime:
             or _default_studio_db_path()
         )
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._busy_timeout_ms = int(os.getenv("BR_SQLITE_BUSY_TIMEOUT_MS", "5000"))
+        self._busy_timeout_ms = int(
+            os.getenv("BR_SQLITE_BUSY_TIMEOUT_MS", "5000")
+        )
         self._lock = threading.Lock()
 
     def _connect(self) -> sqlite3.Connection:
@@ -314,9 +314,7 @@ class StudioNotebookRuntime:
         owner_user_id: str,
         session_id: str,
     ) -> StudioNotebook | None:
-        session, runtime = await self._resolve_session_and_runtime(
-            owner_user_id, session_id
-        )
+        session, runtime = await self._resolve_session_and_runtime(owner_user_id, session_id)
         with self._lock:
             with self._connect() as conn:
                 row = conn.execute(
@@ -356,14 +354,10 @@ class StudioNotebookRuntime:
         self,
         owner_user_id: str,
         session_id: str,
-        request: (
-            OpenOrCreateStudioNotebookRequest | StudioNotebookDocumentInput | None
-        ) = None,
+        request: OpenOrCreateStudioNotebookRequest | StudioNotebookDocumentInput | None = None,
     ) -> StudioNotebook:
         payload, initial_cells, metadata_updates = self._normalize_open_request(request)
-        session, runtime = await self._resolve_session_and_runtime(
-            owner_user_id, session_id
-        )
+        session, runtime = await self._resolve_session_and_runtime(owner_user_id, session_id)
         with self._lock:
             with self._connect() as conn:
                 row = conn.execute(
@@ -377,23 +371,18 @@ class StudioNotebookRuntime:
                     runtime,
                     raw_path=payload.path or (existing.path if existing else None),
                 )
-                absolute_path = self._resolve_absolute_notebook_path(
-                    runtime, notebook_path
-                )
+                absolute_path = self._resolve_absolute_notebook_path(runtime, notebook_path)
 
                 if absolute_path.exists():
                     notebook = self._load_notebook_from_path(
                         session=session,
                         runtime=runtime,
-                        notebook_id=(
-                            existing.id if existing else self._new_notebook_id()
-                        ),
+                        notebook_id=existing.id if existing else self._new_notebook_id(),
                         notebook_path=notebook_path,
                         absolute_path=absolute_path,
                         created_at=existing.created_at if existing else _utc_now(),
                         revision=existing.revision if existing else 1,
-                        title_override=payload.title
-                        or (existing.title if existing else None),
+                        title_override=payload.title or (existing.title if existing else None),
                     )
                 else:
                     if not payload.create_if_missing:
@@ -401,9 +390,7 @@ class StudioNotebookRuntime:
                     notebook = self._build_default_notebook(
                         session=session,
                         runtime=runtime,
-                        notebook_id=(
-                            existing.id if existing else self._new_notebook_id()
-                        ),
+                        notebook_id=existing.id if existing else self._new_notebook_id(),
                         notebook_path=notebook_path,
                         title=payload.title or (existing.title if existing else None),
                         created_at=existing.created_at if existing else _utc_now(),
@@ -432,10 +419,7 @@ class StudioNotebookRuntime:
         request: UpdateStudioNotebookRequest,
     ) -> StudioNotebook:
         notebook = await self.open_or_create_notebook(owner_user_id, session_id)
-        if (
-            request.expected_revision is not None
-            and notebook.revision != request.expected_revision
-        ):
+        if request.expected_revision is not None and notebook.revision != request.expected_revision:
             raise ValueError("Notebook revision conflict")
         updated = notebook.model_copy(
             update={
@@ -455,9 +439,7 @@ class StudioNotebookRuntime:
                 "revision": notebook.revision + 1,
             }
         )
-        session, runtime = await self._resolve_session_and_runtime(
-            owner_user_id, session_id
-        )
+        session, runtime = await self._resolve_session_and_runtime(owner_user_id, session_id)
         self._write_notebook_file(updated, runtime)
         with self._lock:
             with self._connect() as conn:
@@ -475,13 +457,10 @@ class StudioNotebookRuntime:
                 title=request.notebook.title,
                 metadata=request.notebook.metadata,
                 cells=[
-                    StudioNotebookCellInput.model_validate(
-                        cell.model_dump(mode="python")
-                    )
+                    StudioNotebookCellInput.model_validate(cell.model_dump(mode="python"))
                     for cell in request.notebook.cells
                 ],
-                expected_revision=request.expected_revision
-                or request.notebook.revision,
+                expected_revision=request.expected_revision or request.notebook.revision,
             )
         else:
             payload = UpdateStudioNotebookRequest(
@@ -499,10 +478,7 @@ class StudioNotebookRuntime:
         request: StudioNotebookOpsRequest,
     ) -> StudioNotebook:
         notebook = await self.open_or_create_notebook(owner_user_id, session_id)
-        if (
-            request.expected_revision is not None
-            and notebook.revision != request.expected_revision
-        ):
+        if request.expected_revision is not None and notebook.revision != request.expected_revision:
             raise ValueError("Notebook revision conflict")
         cells = [cell.model_copy(deep=True) for cell in notebook.cells]
         for operation in request.operations:
@@ -554,22 +530,16 @@ class StudioNotebookRuntime:
         owner_user_id: str,
         session_id: str,
         cell_id: str,
-        request: (
-            StudioNotebookExecuteCellRequest | StudioNotebookExecutionRequest | None
-        ) = None,
+        request: StudioNotebookExecuteCellRequest | StudioNotebookExecutionRequest | None = None,
     ) -> StudioNotebookCellExecution:
         payload = request or StudioNotebookExecuteCellRequest()
         notebook = await self.open_or_create_notebook(owner_user_id, session_id)
-        target_cell = next(
-            (cell for cell in notebook.cells if cell.id == cell_id), None
-        )
+        target_cell = next((cell for cell in notebook.cells if cell.id == cell_id), None)
         if target_cell is None:
             raise KeyError(cell_id)
         if target_cell.type != StudioNotebookCellType.CODE:
             raise ValueError("Only code cells can be executed")
-        session, runtime = await self._resolve_session_and_runtime(
-            owner_user_id, session_id
-        )
+        session, runtime = await self._resolve_session_and_runtime(owner_user_id, session_id)
         execution = await self._run_cell_execution(
             owner_user_id=owner_user_id,
             session=session,
@@ -649,9 +619,7 @@ class StudioNotebookRuntime:
         notebook_path: str,
     ) -> str | None:
         notebook_dir = str(Path(notebook_path).parent).strip("/")
-        workspace_root = str(
-            runtime.metadata.get("workspace_relative_root") or ""
-        ).strip("/")
+        workspace_root = str(runtime.metadata.get("workspace_relative_root") or "").strip("/")
         if workspace_root and notebook_dir.startswith(f"{workspace_root}/"):
             trimmed = notebook_dir[len(workspace_root) + 1 :]
             return trimmed or None
@@ -720,16 +688,12 @@ class StudioNotebookRuntime:
         runtime: StudioRuntimeSession,
         notebook_path: str,
     ) -> Path:
-        workspace_root = str(
-            runtime.metadata.get("workspace_relative_root") or ""
-        ).strip("/")
+        workspace_root = str(runtime.metadata.get("workspace_relative_root") or "").strip("/")
         absolute_root = str(
             resolve_runtime_absolute_working_directory(runtime) or ""
         ).strip()
         if not absolute_root:
-            raise RuntimeError(
-                "Studio runtime does not expose a project working directory"
-            )
+            raise RuntimeError("Studio runtime does not expose a project working directory")
         relative = notebook_path
         if workspace_root and notebook_path.startswith(f"{workspace_root}/"):
             relative = notebook_path[len(workspace_root) + 1 :]
@@ -869,11 +833,9 @@ class StudioNotebookRuntime:
             )
         return StudioNotebookCell(
             id=cell_id,
-            type=(
-                StudioNotebookCellType.CODE
-                if cell.get("cell_type") == "code"
-                else StudioNotebookCellType.MARKDOWN
-            ),
+            type=StudioNotebookCellType.CODE
+            if cell.get("cell_type") == "code"
+            else StudioNotebookCellType.MARKDOWN,
             source=_normalize_source(cell.get("source")),
             metadata=metadata,
             outputs=outputs,
@@ -935,9 +897,7 @@ class StudioNotebookRuntime:
             }
         )
 
-    def _upsert_notebook_locked(
-        self, conn: sqlite3.Connection, notebook: StudioNotebook
-    ) -> None:
+    def _upsert_notebook_locked(self, conn: sqlite3.Connection, notebook: StudioNotebook) -> None:
         payload = {
             "id": notebook.id,
             "session_id": notebook.session_id,
@@ -1086,11 +1046,7 @@ class StudioNotebookRuntime:
                 metadata.update(operation.metadata)
             next_cells[idx] = current.model_copy(
                 update={
-                    "source": (
-                        operation.source
-                        if operation.source is not None
-                        else current.source
-                    ),
+                    "source": operation.source if operation.source is not None else current.source,
                     "metadata": metadata,
                 }
             )
@@ -1212,9 +1168,7 @@ class StudioNotebookRuntime:
                 )
             )
         for artifact in result.artifacts:
-            artifact_type = str(
-                artifact.get("type") or artifact.get("output_type") or ""
-            )
+            artifact_type = str(artifact.get("type") or artifact.get("output_type") or "")
             if artifact_type in {"execute_result", "display_data"}:
                 outputs.append(
                     StudioNotebookOutput(
@@ -1279,9 +1233,7 @@ class StudioNotebookRuntime:
         _append_unique(backend_error if backend_error != primary_message else None)
 
         resolved_working_directory = str(
-            metadata.get("resolved_working_directory")
-            or execution.working_directory
-            or ""
+            metadata.get("resolved_working_directory") or execution.working_directory or ""
         ).strip()
         if resolved_working_directory:
             _append_unique(f"Working directory: {resolved_working_directory}")

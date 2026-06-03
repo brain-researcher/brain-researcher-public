@@ -24,8 +24,7 @@ except ImportError:  # pragma: no cover
         from langchain_core.tools import StructuredTool
     except ImportError:
         from langchain.tools import StructuredTool  # type: ignore
-
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, create_model, Field
 
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
@@ -101,13 +100,13 @@ class StructuredToolAdapter(NeuroToolWrapper):
             # Call the underlying tool's function
             if self._tool.func is not None:
                 result = self._tool.func(**kwargs)
-            elif hasattr(self._tool, "invoke"):
+            elif hasattr(self._tool, 'invoke'):
                 result = self._tool.invoke(kwargs)
             else:
                 return ToolResult(
                     status="error",
                     error="Tool has no callable function",
-                    metadata={"tool_name": self._tool.name},
+                    metadata={"tool_name": self._tool.name}
                 )
 
             # Handle different result types
@@ -130,7 +129,7 @@ class StructuredToolAdapter(NeuroToolWrapper):
                 metadata={
                     "tool_name": self._tool.name,
                     "error_type": type(e).__name__,
-                },
+                }
             )
 
     def as_langchain_tool(self) -> StructuredTool:
@@ -156,9 +155,7 @@ def wrap_structured_tools(tools: list[StructuredTool]) -> list[NeuroToolWrapper]
         try:
             wrapped.append(StructuredToolAdapter(tool))
         except Exception as e:
-            logger.warning(
-                f"Failed to wrap tool {getattr(tool, 'name', 'unknown')}: {e}"
-            )
+            logger.warning(f"Failed to wrap tool {getattr(tool, 'name', 'unknown')}: {e}")
     return wrapped
 
 

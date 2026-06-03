@@ -9,9 +9,7 @@ class NeuroscoutAdapter(EvidenceAdapter):
     """Adapter retrieving Neuroscout feature annotations for contrasts."""
 
     def __init__(self, *, data_path: Optional[str] = None) -> None:
-        super().__init__(
-            data_path=data_path, default_source="neuroscout", default_score_key="value"
-        )
+        super().__init__(data_path=data_path, default_source="neuroscout", default_score_key="value")
 
     def fetch(
         self,

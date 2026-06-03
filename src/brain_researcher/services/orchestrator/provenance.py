@@ -10,14 +10,13 @@ Extracts and provides structured metadata about:
 Schema is versioned to support historical record evolution.
 """
 
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+from datetime import datetime
+from pydantic import BaseModel, Field, ConfigDict
 import json
 import logging
-from datetime import datetime
 from functools import lru_cache
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
-from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +26,6 @@ PROVENANCE_SCHEMA_VERSION = "1.0.0"
 
 class ToolInfo(BaseModel):
     """Information about analysis tools used"""
-
     name: str = Field(..., description="Tool name (e.g., 'fitlins', 'fsl-bet')")
     version: Optional[str] = Field(None, description="Tool version")
     container: Optional[str] = Field(None, description="Container image if used")
@@ -35,34 +33,25 @@ class ToolInfo(BaseModel):
 
 class DatasetMetadata(BaseModel):
     """Source dataset information"""
-
     dataset_id: str = Field(..., description="Dataset identifier (e.g., 'ds000009')")
     task: str = Field(..., description="Task name")
     subjects: List[str] = Field(..., description="Subject IDs analyzed")
     sessions: List[str] = Field(default_factory=list, description="Session IDs if any")
     bold_volumes: Optional[int] = Field(None, description="BOLD volumes per run")
-    citation_links: List[str] = Field(
-        default_factory=list, description="Dataset citations"
-    )
+    citation_links: List[str] = Field(default_factory=list, description="Dataset citations")
 
 
 class BIDSModelSpec(BaseModel):
     """BIDS statistical model specification"""
-
     model_version: str = Field(..., description="BIDS model version")
-    transformations: Dict[str, Any] = Field(
-        default_factory=dict, description="Data transformations"
-    )
+    transformations: Dict[str, Any] = Field(default_factory=dict, description="Data transformations")
     model_type: str = Field("glm", description="Statistical model type")
-    design_matrix: List[str] = Field(
-        default_factory=list, description="Design matrix columns"
-    )
+    design_matrix: List[str] = Field(default_factory=list, description="Design matrix columns")
     hrf_model: Optional[str] = Field(None, description="HRF convolution model")
 
 
 class AnalysisNode(BaseModel):
     """Analysis workflow node information"""
-
     name: str = Field(..., description="Node name (e.g., 'runLevel', 'groupLevel')")
     level: str = Field(..., description="Analysis level (Run, Subject, Dataset)")
     group_by: List[str] = Field(default_factory=list, description="Grouping variables")
@@ -71,10 +60,10 @@ class AnalysisNode(BaseModel):
 
 class ProvenanceRecord(BaseModel):
     """Complete provenance record for an analysis output"""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
     schema_version: str = Field(
-        PROVENANCE_SCHEMA_VERSION, description="Provenance schema version"
+        PROVENANCE_SCHEMA_VERSION,
+        description="Provenance schema version"
     )
     demo_id: str = Field(..., description="Demo/analysis identifier")
     dataset: DatasetMetadata
@@ -82,11 +71,10 @@ class ProvenanceRecord(BaseModel):
     model: Optional[BIDSModelSpec] = None
     nodes: List[AnalysisNode] = Field(default_factory=list)
     output_path: Path = Field(..., description="Path to analysis outputs")
-    generated_at: Optional[datetime] = Field(
-        None, description="When analysis completed"
-    )
+    generated_at: Optional[datetime] = Field(None, description="When analysis completed")
     metadata_extracted_at: datetime = Field(
-        default_factory=datetime.now, description="When provenance was extracted"
+        default_factory=datetime.now,
+        description="When provenance was extracted"
     )
 
 
@@ -101,13 +89,15 @@ class ProvenanceExtractor:
             data_root: Root directory for analysis data
         """
         self.data_root = Path(data_root)
-        self.metadata_root = (
-            self.data_root / "openneuro_glmfitlins" / "statsmodel_specs"
-        )
+        self.metadata_root = self.data_root / "openneuro_glmfitlins" / "statsmodel_specs"
 
     @lru_cache(maxsize=32)
     def extract_provenance(
-        self, demo_id: str, dataset_id: str, task: str, output_path: Path
+        self,
+        demo_id: str,
+        dataset_id: str,
+        task: str,
+        output_path: Path
     ) -> ProvenanceRecord:
         """
         Extract complete provenance record for an analysis
@@ -121,9 +111,7 @@ class ProvenanceExtractor:
         Returns:
             ProvenanceRecord with all extracted metadata
         """
-        logger.info(
-            f"Extracting provenance for {demo_id} (dataset={dataset_id}, task={task})"
-        )
+        logger.info(f"Extracting provenance for {demo_id} (dataset={dataset_id}, task={task})")
 
         try:
             # Extract dataset metadata
@@ -151,7 +139,7 @@ class ProvenanceExtractor:
                 model=model,
                 nodes=nodes,
                 output_path=output_path,
-                generated_at=generated_at,
+                generated_at=generated_at
             )
 
         except Exception as e:
@@ -159,19 +147,25 @@ class ProvenanceExtractor:
             # Return minimal record on failure
             return ProvenanceRecord(
                 demo_id=demo_id,
-                dataset=DatasetMetadata(dataset_id=dataset_id, task=task, subjects=[]),
-                output_path=output_path,
+                dataset=DatasetMetadata(
+                    dataset_id=dataset_id,
+                    task=task,
+                    subjects=[]
+                ),
+                output_path=output_path
             )
 
     def _extract_dataset_metadata(self, dataset_id: str, task: str) -> DatasetMetadata:
         """Extract dataset metadata from basic-details.json"""
-        details_file = (
-            self.metadata_root / dataset_id / f"{dataset_id}_basic-details.json"
-        )
+        details_file = self.metadata_root / dataset_id / f"{dataset_id}_basic-details.json"
 
         if not details_file.exists():
             logger.warning(f"Dataset details not found: {details_file}")
-            return DatasetMetadata(dataset_id=dataset_id, task=task, subjects=[])
+            return DatasetMetadata(
+                dataset_id=dataset_id,
+                task=task,
+                subjects=[]
+            )
 
         try:
             with open(details_file) as f:
@@ -185,16 +179,18 @@ class ProvenanceExtractor:
                 subjects=data.get("Subjects", []),
                 sessions=data.get("Sessions", []),
                 bold_volumes=task_info.get("bold_volumes"),
-                citation_links=task_info.get("cite_links", []),
+                citation_links=task_info.get("cite_links", [])
             )
 
         except Exception as e:
             logger.error(f"Failed to parse dataset details: {e}")
-            return DatasetMetadata(dataset_id=dataset_id, task=task, subjects=[])
+            return DatasetMetadata(
+                dataset_id=dataset_id,
+                task=task,
+                subjects=[]
+            )
 
-    def _extract_model_spec(
-        self, dataset_id: str, task: str
-    ) -> Optional[BIDSModelSpec]:
+    def _extract_model_spec(self, dataset_id: str, task: str) -> Optional[BIDSModelSpec]:
         """Extract BIDS model specification"""
         specs_file = self.metadata_root / dataset_id / f"{dataset_id}-{task}_specs.json"
 
@@ -235,7 +231,7 @@ class ProvenanceExtractor:
                 transformations=transformations,
                 model_type=model_def.get("Type", "glm"),
                 design_matrix=[str(col) for col in design_matrix],
-                hrf_model=hrf_model,
+                hrf_model=hrf_model
             )
 
         except Exception as e:
@@ -243,7 +239,10 @@ class ProvenanceExtractor:
             return None
 
     def _extract_analysis_nodes(
-        self, dataset_id: str, task: str, output_path: Path
+        self,
+        dataset_id: str,
+        task: str,
+        output_path: Path
     ) -> List[AnalysisNode]:
         """Extract analysis node information from output directory structure"""
         nodes = []
@@ -258,17 +257,16 @@ class ProvenanceExtractor:
                 for node_def in spec_data.get("Nodes", []):
                     # Extract contrasts
                     contrast_names = [
-                        c.get("Name", "") for c in node_def.get("Contrasts", [])
+                        c.get("Name", "")
+                        for c in node_def.get("Contrasts", [])
                     ]
 
-                    nodes.append(
-                        AnalysisNode(
-                            name=node_def.get("Name", "unknown"),
-                            level=node_def.get("Level", "Unknown"),
-                            group_by=node_def.get("GroupBy", []),
-                            contrasts=contrast_names,
-                        )
-                    )
+                    nodes.append(AnalysisNode(
+                        name=node_def.get("Name", "unknown"),
+                        level=node_def.get("Level", "Unknown"),
+                        group_by=node_def.get("GroupBy", []),
+                        contrasts=contrast_names
+                    ))
 
             except Exception as e:
                 logger.error(f"Failed to extract nodes from specs: {e}")
@@ -280,14 +278,12 @@ class ProvenanceExtractor:
                     node_name = node_dir.name.replace("node-", "")
                     # Check if already in list
                     if not any(n.name == node_name for n in nodes):
-                        nodes.append(
-                            AnalysisNode(
-                                name=node_name,
-                                level="Unknown",
-                                group_by=[],
-                                contrasts=[],
-                            )
-                        )
+                        nodes.append(AnalysisNode(
+                            name=node_name,
+                            level="Unknown",
+                            group_by=[],
+                            contrasts=[]
+                        ))
 
         return nodes
 

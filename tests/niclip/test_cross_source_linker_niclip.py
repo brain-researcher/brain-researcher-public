@@ -19,27 +19,11 @@ def test_niclip_cross_source_linking():
     class MockDB:
         def __init__(self):
             self.nodes = {
-                "1": {
-                    "name": "n-back task",
-                    "label": "Task",
-                    "source": "cognitive_atlas",
-                },
+                "1": {"name": "n-back task", "label": "Task", "source": "cognitive_atlas"},
                 "2": {"name": "n-back", "label": "Task", "source": "openneuro"},
-                "3": {
-                    "name": "working memory",
-                    "label": "Concept",
-                    "source": "cognitive_atlas",
-                },
-                "4": {
-                    "name": "working memory",
-                    "label": "Concept",
-                    "source": "neurosynth",
-                },
-                "5": {
-                    "name": "language processing fMRI task paradigm",
-                    "label": "Task",
-                    "source": "niclip",
-                },
+                "3": {"name": "working memory", "label": "Concept", "source": "cognitive_atlas"},
+                "4": {"name": "working memory", "label": "Concept", "source": "neurosynth"},
+                "5": {"name": "language processing fMRI task paradigm", "label": "Task", "source": "niclip"},
                 "6": {"name": "language task", "label": "Task", "source": "neurovault"},
             }
             self.edges = []
@@ -61,24 +45,20 @@ def test_niclip_cross_source_linking():
                 "source": source_id,
                 "target": target_id,
                 "type": rel_type,
-                "properties": properties or {},
+                "properties": properties or {}
             }
             self.edges.append(edge)
             return True
 
     # Test linking strategies
-    from brain_researcher.services.br_kg.etl.mappers.cross_source_linker import (
-        CrossSourceLinker,
-    )
+    from brain_researcher.services.br_kg.etl.mappers.cross_source_linker import CrossSourceLinker
 
     db = MockDB()
     linker = CrossSourceLinker(db, auto_link=True, dry_run=False)
 
     print("\n1️⃣ Initial Nodes:")
     for node_id, node in db.nodes.items():
-        print(
-            f"   {node_id}: {node['name']} ({node['label']}) - source: {node['source']}"
-        )
+        print(f"   {node_id}: {node['name']} ({node['label']}) - source: {node['source']}")
 
     # Test NiCLIP linking
     print("\n2️⃣ Running NiCLIP Cross-Source Linking...")
@@ -91,9 +71,9 @@ def test_niclip_cross_source_linking():
     # Show created edges
     print("\n3️⃣ Created Relationships:")
     for edge in db.edges:
-        source = db.nodes[edge["source"]]
-        target = db.nodes[edge["target"]]
-        props = edge["properties"]
+        source = db.nodes[edge['source']]
+        target = db.nodes[edge['target']]
+        props = edge['properties']
         print(f"   {source['name']} → {target['name']}")
         print(f"      Method: {props.get('method', 'standard')}")
         print(f"      Confidence: {props.get('confidence', 'N/A')}")
@@ -112,23 +92,23 @@ def compare_with_without_niclip():
             "targets": [
                 {"name": "n-back", "label": "Task"},
                 {"name": "2-back task", "label": "Task"},
-                {"name": "working memory task", "label": "Task"},
-            ],
+                {"name": "working memory task", "label": "Task"}
+            ]
         },
         {
             "source": {"name": "working memory", "label": "Concept"},
             "targets": [
                 {"name": "executive function", "label": "Concept"},
                 {"name": "attention", "label": "Concept"},
-                {"name": "memory", "label": "Concept"},
-            ],
-        },
+                {"name": "memory", "label": "Concept"}
+            ]
+        }
     ]
 
     for case in test_cases:
         print(f"\n📋 Source: {case['source']['name']} ({case['source']['label']})")
         print("Potential targets:")
-        for target in case["targets"]:
+        for target in case['targets']:
             print(f"   - {target['name']}")
 
         # Standard linking would use fuzzy matching
@@ -168,8 +148,7 @@ def show_integration_example():
     print("\n\n🔧 Integration Example")
     print("=" * 60)
 
-    print(
-        """
+    print("""
 # In your ETL pipeline:
 
 from brain_researcher.services.br_kg.etl.mappers.cross_source_linker import CrossSourceLinker
@@ -194,8 +173,7 @@ strategy = {
     "use_niclip": True  # Enable NiCLIP enhancement
 }
 linker._execute_strategy(strategy, "my_source")
-"""
-    )
+""")
 
 
 if __name__ == "__main__":
@@ -203,9 +181,7 @@ if __name__ == "__main__":
         test_niclip_cross_source_linking()
     except ImportError as e:
         print(f"\n⚠️  Mock test completed (actual CrossSourceLinker not available: {e})")
-        print(
-            "   In production, CrossSourceLinker would create actual graph relationships"
-        )
+        print("   In production, CrossSourceLinker would create actual graph relationships")
 
     compare_with_without_niclip()
     demonstrate_benefits()

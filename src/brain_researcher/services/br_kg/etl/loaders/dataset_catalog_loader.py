@@ -67,9 +67,9 @@ class DatasetCatalogNeo4jLoader:
         for rec in records:
             stats["datasets_upserted"] += 1
             self._upsert_dataset(rec)
-            stats[
-                "resource_aliases_canonicalized"
-            ] += self._canonicalize_legacy_data_resource_alias(rec.dataset_id)
+            stats["resource_aliases_canonicalized"] += self._canonicalize_legacy_data_resource_alias(
+                rec.dataset_id
+            )
 
             stats["repositories_upserted"] += self._upsert_repository(rec, stats)
             stats["consortia_upserted"] += self._upsert_consortium(rec, stats)
@@ -109,9 +109,7 @@ class DatasetCatalogNeo4jLoader:
             "consortium": rec.consortium,
             "source_repo": rec.source_repo,
             "source_repo_id": rec.source_repo_id,
-            "source_repo_bucket": (
-                "OpenNeuro" if rec.source_repo == "OpenNeuro" else "Non-OpenNeuro"
-            ),
+            "source_repo_bucket": "OpenNeuro" if rec.source_repo == "OpenNeuro" else "Non-OpenNeuro",
             "is_openneuro": rec.source_repo == "OpenNeuro",
             "primary_url": str(rec.primary_url),
             "access_type": rec.access_type,
@@ -131,9 +129,7 @@ class DatasetCatalogNeo4jLoader:
             "search_blob": rec.search_blob,
         }
 
-        node_id = self.db.create_node(
-            self._dataset_labels(), props, node_id=rec.dataset_id
-        )
+        node_id = self.db.create_node(self._dataset_labels(), props, node_id=rec.dataset_id)
         return node_id
 
     def _canonicalize_legacy_data_resource_alias(self, dataset_id: str) -> int:
@@ -273,18 +269,14 @@ def main() -> None:
         default=DEFAULT_CATALOG_PATH,
         help="Path to dataset catalog JSONL (default: configs/datasets/catalog.v1.jsonl)",
     )
-    parser.add_argument(
-        "--neo4j-uri", required=True, help="Neo4j bolt URI, e.g., bolt://localhost:7687"
-    )
+    parser.add_argument("--neo4j-uri", required=True, help="Neo4j bolt URI, e.g., bolt://localhost:7687")
     parser.add_argument("--neo4j-user", required=True, help="Neo4j username")
     parser.add_argument("--neo4j-password", required=True, help="Neo4j password")
+    parser.add_argument("--neo4j-database", default=None, help="Neo4j database name (optional)")
+    parser.add_argument("--limit", type=int, default=None, help="Optional limit on rows for testing")
     parser.add_argument(
-        "--neo4j-database", default=None, help="Neo4j database name (optional)"
+        "--verbose", action="store_true", help="Enable debug logging"
     )
-    parser.add_argument(
-        "--limit", type=int, default=None, help="Optional limit on rows for testing"
-    )
-    parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)

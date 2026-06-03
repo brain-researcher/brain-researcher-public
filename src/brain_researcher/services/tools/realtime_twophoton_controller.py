@@ -65,9 +65,7 @@ class WebSocketController:
 
     def __init__(self, target: str):
         if not target:
-            raise ValueError(
-                "controller_target is required when controller_backend='websocket'"
-            )
+            raise ValueError("controller_target is required when controller_backend='websocket'")
         try:
             from websockets.sync.client import connect
         except ImportError as exc:  # pragma: no cover
@@ -81,9 +79,7 @@ class WebSocketController:
         try:
             self.connection = self._connect(target, open_timeout=2.0)
         except Exception as exc:
-            raise ConnectionError(
-                f"Unable to connect to websocket controller target {target!r}: {exc}"
-            ) from exc
+            raise ConnectionError(f"Unable to connect to websocket controller target {target!r}: {exc}") from exc
 
     def emit(self, payload: dict[str, Any]) -> ControllerEvent:
         try:
@@ -111,9 +107,7 @@ def build_controller(
         return NullController()
     if normalized == "udp":
         if host is None or port is None:
-            raise ValueError(
-                "controller_host and controller_port are required for UDP control"
-            )
+            raise ValueError("controller_host and controller_port are required for UDP control")
         return UDPController(host=host, port=port)
     if normalized == "websocket":
         return WebSocketController(target=target or "")

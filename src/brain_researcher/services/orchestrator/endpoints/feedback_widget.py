@@ -15,14 +15,14 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     File,
-    Form,
     HTTPException,
     Request,
     UploadFile,
     status,
+    Form,
 )
 from fastapi.responses import FileResponse
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, AnyHttpUrl, ConfigDict
 
 from ...telemetry.models import EventType, PrivacyLevel, ServiceType
 from ..feedback_repository import FeedbackRecord, FeedbackRepository
@@ -79,9 +79,7 @@ def _hash_identifier(value: Optional[str]) -> Optional[str]:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-@router.post(
-    "", response_model=FeedbackSubmissionResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=FeedbackSubmissionResponse, status_code=status.HTTP_201_CREATED)
 async def submit_feedback(
     submission: FeedbackSubmissionRequest,
     background_tasks: BackgroundTasks,
@@ -138,9 +136,7 @@ async def get_feedback(feedback_id: str):
     record = feedback_repo.get_submission(feedback_id)
     if not record:
         raise HTTPException(status_code=404, detail="Feedback not found")
-    return FeedbackSubmissionResponse(
-        id=record.id, stored_at=record.updated_at, message=record.description[:280]
-    )
+    return FeedbackSubmissionResponse(id=record.id, stored_at=record.updated_at, message=record.description[:280])
 
 
 @router.post("/screenshot", response_model=ScreenshotUploadResponse)

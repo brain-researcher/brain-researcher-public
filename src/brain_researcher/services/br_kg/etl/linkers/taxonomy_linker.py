@@ -53,12 +53,8 @@ class TaxonomyLinker:
     ) -> None:
         repo_root = Path(__file__).resolve().parents[5]
         taxonomy_dir = repo_root / "semantics" / "taxonomy"
-        legacy_cao_map = (
-            repo_root / "services" / "br_kg" / "mappings" / "cao_to_trm.yaml"
-        )
-        self.entities_path = (
-            Path(entities_path) if entities_path else taxonomy_dir / "entities.json"
-        )
+        legacy_cao_map = repo_root / "services" / "br_kg" / "mappings" / "cao_to_trm.yaml"
+        self.entities_path = Path(entities_path) if entities_path else taxonomy_dir / "entities.json"
         self.cao_map_path = resolve_mapping_path(
             "cao_to_trm",
             requested_path=cao_map_path,
@@ -185,9 +181,7 @@ class TaxonomyLinker:
     def _load_cao_to_trm_map(self) -> Dict[str, str]:
         try:
             if self.cao_map_path.exists():
-                rows = (
-                    yaml.safe_load(self.cao_map_path.read_text(encoding="utf-8")) or []
-                )
+                rows = yaml.safe_load(self.cao_map_path.read_text(encoding="utf-8")) or []
                 mapping: Dict[str, str] = {}
                 for row in rows:
                     cao_id = str(row.get("cao_id", "")).upper()

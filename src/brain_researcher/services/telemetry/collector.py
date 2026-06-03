@@ -5,22 +5,17 @@ TelemetryCollector - Real-time event collection with privacy controls.
 import asyncio
 import hashlib
 import json
-import logging
-import threading
 import time
 import uuid
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Any, Callable, Set
+from dataclasses import dataclass, field
+import threading
+import logging
 
-from .models import (
-    EventType,
-    PrivacyLevel,
-    ServiceType,
-    TelemetryConfiguration,
-    TelemetryEvent,
-)
+from .models import TelemetryEvent, EventType, ServiceType, PrivacyLevel, TelemetryConfiguration
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +23,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CollectorStats:
     """Statistics for the telemetry collector."""
-
     events_collected: int = 0
     events_processed: int = 0
     events_dropped: int = 0
@@ -93,20 +87,9 @@ class TelemetryCollector:
 
         # Privacy and anonymization
         self._pii_patterns: Set[str] = {
-            "email",
-            "phone",
-            "ssn",
-            "address",
-            "name",
-            "ip_address",
-            "user_name",
-            "full_name",
-            "real_name",
-            "password",
-            "token",
-            "user_agent",
-            "api_key",
-            "real_user_id",
+            'email', 'phone', 'ssn', 'address', 'name', 'ip_address',
+            'user_name', 'full_name', 'real_name', 'password', 'token',
+            'user_agent', 'api_key', 'real_user_id'
         }
         self._user_hash_cache: Dict[str, str] = {}
 
@@ -150,23 +133,21 @@ class TelemetryCollector:
         await self._flush_events(force=True)
         logger.info("TelemetryCollector stopped")
 
-    def collect(
-        self,
-        event_type: EventType,
-        service: ServiceType,
-        feature_name: Optional[str] = None,
-        action: Optional[str] = None,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        duration_ms: Optional[int] = None,
-        success: bool = True,
-        error_message: Optional[str] = None,
-        privacy_level: PrivacyLevel = PrivacyLevel.AGGREGATE_ONLY,
-        **kwargs,
-    ) -> Optional[str]:
+    def collect(self,
+                event_type: EventType,
+                service: ServiceType,
+                feature_name: Optional[str] = None,
+                action: Optional[str] = None,
+                user_id: Optional[str] = None,
+                session_id: Optional[str] = None,
+                context: Optional[Dict[str, Any]] = None,
+                parameters: Optional[Dict[str, Any]] = None,
+                metadata: Optional[Dict[str, Any]] = None,
+                duration_ms: Optional[int] = None,
+                success: bool = True,
+                error_message: Optional[str] = None,
+                privacy_level: PrivacyLevel = PrivacyLevel.AGGREGATE_ONLY,
+                **kwargs) -> Optional[str]:
         """
         Collect a telemetry event with automatic privacy controls.
 
@@ -197,21 +178,15 @@ class TelemetryCollector:
             metadata = metadata or {}
 
             # Capture fields that will be anonymized before validation
-            ip_address = (
-                metadata.get("ip_address") if isinstance(metadata, dict) else None
-            )
-            user_agent = (
-                metadata.get("user_agent") if isinstance(metadata, dict) else None
-            )
+            ip_address = metadata.get("ip_address") if isinstance(metadata, dict) else None
+            user_agent = metadata.get("user_agent") if isinstance(metadata, dict) else None
             ip_hash = None
             user_agent_hash = None
             if self.config.anonymization_enabled:
                 if ip_address and self.config.ip_anonymization:
                     ip_hash = hashlib.sha256(ip_address.encode()).hexdigest()[:16]
                 if user_agent:
-                    user_agent_hash = hashlib.sha256(user_agent.encode()).hexdigest()[
-                        :16
-                    ]
+                    user_agent_hash = hashlib.sha256(user_agent.encode()).hexdigest()[:16]
 
             # Sanitize PII before model validation to avoid hard failures
             if self.config.pii_detection_enabled:
@@ -244,7 +219,7 @@ class TelemetryCollector:
                 privacy_level=privacy_level,
                 ip_hash=ip_hash,
                 user_agent_hash=user_agent_hash,
-                **kwargs,
+                **kwargs
             )
 
             # Apply privacy controls
@@ -262,9 +237,7 @@ class TelemetryCollector:
                 # Update processing time stats
                 processing_time = (time.time() - start_time) * 1000
                 self._processing_times.append(processing_time)
-                self.stats.avg_processing_time_ms = sum(self._processing_times) / len(
-                    self._processing_times
-                )
+                self.stats.avg_processing_time_ms = sum(self._processing_times) / len(self._processing_times)
 
                 logger.debug(f"Collected event {event_id}: {event_type} from {service}")
                 return event_id
@@ -278,17 +251,15 @@ class TelemetryCollector:
             logger.error(f"Error collecting event: {e}", exc_info=True)
             return None
 
-    def collect_tool_usage(
-        self,
-        tool_name: str,
-        action: str,
-        service: ServiceType = ServiceType.AGENT,
-        user_id: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        duration_ms: Optional[int] = None,
-        success: bool = True,
-        error_message: Optional[str] = None,
-    ) -> Optional[str]:
+    def collect_tool_usage(self,
+                          tool_name: str,
+                          action: str,
+                          service: ServiceType = ServiceType.AGENT,
+                          user_id: Optional[str] = None,
+                          parameters: Optional[Dict[str, Any]] = None,
+                          duration_ms: Optional[int] = None,
+                          success: bool = True,
+                          error_message: Optional[str] = None) -> Optional[str]:
         """Convenience method for tool usage events."""
         return self.collect(
             event_type=EventType.TOOL_INVOCATION,
@@ -300,18 +271,16 @@ class TelemetryCollector:
             duration_ms=duration_ms,
             success=success,
             error_message=error_message,
-            privacy_level=PrivacyLevel.AGGREGATE_ONLY,
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
         )
 
-    def collect_feature_usage(
-        self,
-        feature_name: str,
-        action: str,
-        service: ServiceType,
-        user_id: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
-        success: bool = True,
-    ) -> Optional[str]:
+    def collect_feature_usage(self,
+                            feature_name: str,
+                            action: str,
+                            service: ServiceType,
+                            user_id: Optional[str] = None,
+                            context: Optional[Dict[str, Any]] = None,
+                            success: bool = True) -> Optional[str]:
         """Convenience method for feature usage events."""
         return self.collect(
             event_type=EventType.FEATURE_ACCESS,
@@ -321,29 +290,23 @@ class TelemetryCollector:
             user_id=user_id,
             context=context,
             success=success,
-            privacy_level=PrivacyLevel.AGGREGATE_ONLY,
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
         )
 
-    def collect_page_view(
-        self,
-        page_path: str,
-        service: ServiceType = ServiceType.WEB_UI,
-        user_id: Optional[str] = None,
-        referrer: Optional[str] = None,
-        user_agent: Optional[str] = None,
-    ) -> Optional[str]:
+    def collect_page_view(self,
+                         page_path: str,
+                         service: ServiceType = ServiceType.WEB_UI,
+                         user_id: Optional[str] = None,
+                         referrer: Optional[str] = None,
+                         user_agent: Optional[str] = None) -> Optional[str]:
         """Convenience method for page view events."""
         context = {"page_path": page_path}
         if referrer:
-            context["referrer_hash"] = hashlib.sha256(referrer.encode()).hexdigest()[
-                :16
-            ]
+            context["referrer_hash"] = hashlib.sha256(referrer.encode()).hexdigest()[:16]
 
         metadata = {}
         if user_agent:
-            metadata["user_agent_hash"] = hashlib.sha256(
-                user_agent.encode()
-            ).hexdigest()[:16]
+            metadata["user_agent_hash"] = hashlib.sha256(user_agent.encode()).hexdigest()[:16]
 
         return self.collect(
             event_type=EventType.PAGE_VIEW,
@@ -353,7 +316,7 @@ class TelemetryCollector:
             user_id=user_id,
             context=context,
             metadata=metadata,
-            privacy_level=PrivacyLevel.AGGREGATE_ONLY,
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
         )
 
     def add_processing_handler(self, handler: Callable[[List[TelemetryEvent]], None]):
@@ -372,18 +335,14 @@ class TelemetryCollector:
             "buffer_dropped": self._event_buffer.dropped_count(),
             "processing_errors": self.stats.processing_errors,
             "avg_processing_time_ms": self.stats.avg_processing_time_ms,
-            "last_flush_time": (
-                self.stats.last_flush_time.isoformat()
-                if self.stats.last_flush_time
-                else None
-            ),
+            "last_flush_time": self.stats.last_flush_time.isoformat() if self.stats.last_flush_time else None,
             "active_sessions": len(self._active_sessions),
             "config": {
                 "collection_enabled": self.config.collection_enabled,
                 "sampling_rate": self.config.sampling_rate,
                 "batch_size": self.config.batch_size,
-                "anonymization_enabled": self.config.anonymization_enabled,
-            },
+                "anonymization_enabled": self.config.anonymization_enabled
+            }
         }
 
     async def _background_flush(self):
@@ -416,9 +375,7 @@ class TelemetryCollector:
             if not force and buffer_size < self.config.batch_size:
                 return
 
-            events = self._event_buffer.flush(
-                self.config.batch_size if not force else None
-            )
+            events = self._event_buffer.flush(self.config.batch_size if not force else None)
 
             if events:
                 for handler in self._processing_handlers:
@@ -428,10 +385,7 @@ class TelemetryCollector:
                         else:
                             handler(events)
                     except Exception as e:
-                        logger.error(
-                            f"Error in processing handler {handler.__name__}: {e}",
-                            exc_info=True,
-                        )
+                        logger.error(f"Error in processing handler {handler.__name__}: {e}", exc_info=True)
 
                 self.stats.events_processed += len(events)
                 self.stats.last_flush_time = datetime.utcnow()
@@ -453,7 +407,6 @@ class TelemetryCollector:
             return True
 
         import random
-
         return random.random() < self.config.sampling_rate
 
     def _check_rate_limit(self, service: ServiceType) -> bool:
@@ -472,34 +425,26 @@ class TelemetryCollector:
         service_rates.append(now)
         return True
 
-    def _anonymize_event(
-        self, event: TelemetryEvent, original_user_id: Optional[str]
-    ) -> TelemetryEvent:
+    def _anonymize_event(self, event: TelemetryEvent, original_user_id: Optional[str]) -> TelemetryEvent:
         """Apply privacy controls to anonymize event data."""
         # Hash user ID if provided
         if original_user_id:
             if original_user_id not in self._user_hash_cache:
-                self._user_hash_cache[original_user_id] = self._hash_user_id(
-                    original_user_id
-                )
+                self._user_hash_cache[original_user_id] = self._hash_user_id(original_user_id)
             event.user_id = self._user_hash_cache[original_user_id]
             event.anonymized = True
             self.stats.events_anonymized += 1
 
         # Remove or hash IP information if present
-        if "ip_address" in event.metadata:
+        if 'ip_address' in event.metadata:
             if self.config.ip_anonymization:
-                event.ip_hash = hashlib.sha256(
-                    event.metadata["ip_address"].encode()
-                ).hexdigest()[:16]
-            del event.metadata["ip_address"]
+                event.ip_hash = hashlib.sha256(event.metadata['ip_address'].encode()).hexdigest()[:16]
+            del event.metadata['ip_address']
 
         # Hash user agent if present
-        if "user_agent" in event.metadata:
-            event.user_agent_hash = hashlib.sha256(
-                event.metadata["user_agent"].encode()
-            ).hexdigest()[:16]
-            del event.metadata["user_agent"]
+        if 'user_agent' in event.metadata:
+            event.user_agent_hash = hashlib.sha256(event.metadata['user_agent'].encode()).hexdigest()[:16]
+            del event.metadata['user_agent']
 
         return event
 
@@ -518,7 +463,7 @@ class TelemetryCollector:
         for field_name, field_data in [
             ("context", event.context),
             ("parameters", event.parameters),
-            ("metadata", event.metadata),
+            ("metadata", event.metadata)
         ]:
             if isinstance(field_data, dict):
                 sanitized = self._sanitize_dict(field_data)
@@ -542,9 +487,7 @@ class TelemetryCollector:
             if any(pii_pattern in key_lower for pii_pattern in self._pii_patterns):
                 if isinstance(value, str) and len(value) > 3:
                     # Hash the value instead of removing it
-                    sanitized[f"{key}_hash"] = hashlib.sha256(
-                        value.encode()
-                    ).hexdigest()[:16]
+                    sanitized[f"{key}_hash"] = hashlib.sha256(value.encode()).hexdigest()[:16]
                 continue
 
             # Recursively sanitize nested dictionaries
@@ -568,8 +511,7 @@ class TelemetryCollector:
         # Clean up old sessions first
         now = datetime.utcnow()
         expired_sessions = [
-            session_id
-            for session_id, last_seen in self._active_sessions.items()
+            session_id for session_id, last_seen in self._active_sessions.items()
             if now - last_seen > timedelta(hours=1)
         ]
         for session_id in expired_sessions:
@@ -601,8 +543,7 @@ class TelemetryCollector:
         """Clean up expired sessions and associated data."""
         now = datetime.utcnow()
         expired_sessions = [
-            session_id
-            for session_id, last_seen in self._active_sessions.items()
+            session_id for session_id, last_seen in self._active_sessions.items()
             if now - last_seen > timedelta(hours=2)
         ]
 

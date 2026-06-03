@@ -5,21 +5,14 @@ Store and show Agent bearer token for CLI commands.
 import typer
 from rich.console import Console
 
-from brain_researcher.cli.utils.auth import (
-    TOKEN_PATH,
-    clear_token,
-    get_token,
-    save_token,
-)
+from brain_researcher.cli.utils.auth import save_token, clear_token, TOKEN_PATH, get_token
 
 console = Console()
 app = typer.Typer(help="Auth helpers for Agent API (Bearer token)")
 
 
 @app.command("login")
-def login(
-    token: str = typer.Argument(..., help="JWT or bearer token for Agent")
-) -> None:
+def login(token: str = typer.Argument(..., help="JWT or bearer token for Agent")) -> None:
     path = save_token(token)
     console.print(f"[green]Token saved[/green] to {path}")
     console.print("CLI will also read AGENT_TOKEN env if set.")

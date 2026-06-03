@@ -88,9 +88,7 @@ class NIDMResultsLoader:
         entries: Optional[Iterable[Dict[str, Any]]] = None,
         **load_kwargs: Any,
     ) -> Dict[str, Any]:
-        records = (
-            list(entries) if entries is not None else self.load_entries(**load_kwargs)
-        )
+        records = list(entries) if entries is not None else self.load_entries(**load_kwargs)
         stats = {
             "stat_maps_upserted": 0,
             "derived_from_edges": 0,
@@ -103,12 +101,8 @@ class NIDMResultsLoader:
             try:
                 self._ingest_single(db, record, stats)
             except Exception as exc:  # pragma: no cover - defensive logging
-                logger.exception(
-                    "Failed to ingest NIDM record %s", record.get("stat_map_id")
-                )
-                stats["errors"].append(
-                    {"stat_map_id": record.get("stat_map_id"), "error": str(exc)}
-                )
+                logger.exception("Failed to ingest NIDM record %s", record.get("stat_map_id"))
+                stats["errors"].append({"stat_map_id": record.get("stat_map_id"), "error": str(exc)})
 
         return stats
 
@@ -151,11 +145,7 @@ class NIDMResultsLoader:
         contrast_id = derived.get("contrast_id")
 
         if derived_doi:
-            pub_props = {
-                "id": derived_doi,
-                "doi": derived_doi,
-                "source": "scholarly_metadata_stub",
-            }
+            pub_props = {"id": derived_doi, "doi": derived_doi, "source": "scholarly_metadata_stub"}
             pub_id = db.create_node("Publication", pub_props, node_id=derived_doi)
             rel_props = {"source": "nidm_results"}
             db.create_relationship(stat_map_id, pub_id, "DERIVED_FROM", rel_props)
@@ -163,13 +153,9 @@ class NIDMResultsLoader:
 
         if contrast_id:
             contrast_props = {"id": contrast_id, "source": "nidm_results_stub"}
-            contrast_node = db.create_node(
-                "Contrast", contrast_props, node_id=contrast_id
-            )
+            contrast_node = db.create_node("Contrast", contrast_props, node_id=contrast_id)
             rel_props = {"source": "nidm_results"}
-            db.create_relationship(
-                stat_map_id, contrast_node, "DERIVED_FROM_CONTRAST", rel_props
-            )
+            db.create_relationship(stat_map_id, contrast_node, "DERIVED_FROM_CONTRAST", rel_props)
 
         software = record.get("software") or {}
         software_name = software.get("name")
@@ -184,9 +170,7 @@ class NIDMResultsLoader:
             }
             db.create_node("AnalysisSoftware", software_props, node_id=software_id)
             rel_props = {"source": "nidm_results"}
-            db.create_relationship(
-                stat_map_id, software_id, "PROCESSED_WITH", rel_props
-            )
+            db.create_relationship(stat_map_id, software_id, "PROCESSED_WITH", rel_props)
             stats["software_edges"] += 1
 
         for overlap in record.get("atlas_overlaps", []) or []:

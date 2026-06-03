@@ -35,7 +35,7 @@ Add an entry to `_MCP_SURFACE_METADATA_BY_NAME` in `src/brain_researcher/service
 2. Add the tool name to `configs/catalog/exposed_tools.yaml`.
 3. Add an example invocation in `configs/catalog/chat_tool_schemas.yaml`.
 4. Add a unit test under `tests/unit/tools/`.
-5. Document inputs/outputs in `docs/api/mcp-tools.md`.
+5. Document public MCP-facing behavior in `docs/mcp.md` or the relevant `contracts/` entry.
 
 ## 4. (Optional) Add to the OSS stable tier
 
@@ -69,7 +69,9 @@ python scripts/analyze_code_import_graph.py \
   --boundary core:services --boundary llmcore:services
 ```
 
-PRs must not introduce new cross-boundary violations beyond `docs/architecture/codegraph_baseline.md`.
+PRs must not introduce new cross-boundary violations beyond the ratchet in
+`tests/architecture/test_import_boundaries.py` and
+`tests/architecture/services_layer_baseline.txt`.
 
 ## 7. Verify before pushing
 

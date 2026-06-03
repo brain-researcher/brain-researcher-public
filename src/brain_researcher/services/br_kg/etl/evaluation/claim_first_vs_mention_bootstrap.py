@@ -156,10 +156,7 @@ def ensure_database(driver: Any, db_name: str, *, timeout_s: float = 30.0) -> No
                     "WHERE name = $name RETURN currentStatus",
                     {"name": db_name},
                 ).single()
-                if (
-                    record
-                    and str(record.get("currentStatus") or "").lower() == "online"
-                ):
+                if record and str(record.get("currentStatus") or "").lower() == "online":
                     return
                 time.sleep(0.5)
     except Exception as exc:  # pragma: no cover - depends on server privileges
@@ -313,14 +310,7 @@ def validate_control_cleanup(
     before: dict[str, int],
     after: dict[str, int],
 ) -> None:
-    for key in (
-        "Claim",
-        "EvidenceSpan",
-        "MeasurementRun",
-        "REPORTS_CLAIM",
-        "SUPPORTS",
-        "GENERATED",
-    ):
+    for key in ("Claim", "EvidenceSpan", "MeasurementRun", "REPORTS_CLAIM", "SUPPORTS", "GENERATED"):
         if after.get(key, -1) != 0:
             raise RuntimeError(f"Control cleanup failed to remove {key}")
     for key in ("MENTIONS", "MENTIONS_REGION"):
@@ -445,41 +435,28 @@ def compute_condition_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
         }
 
     n = len(results)
-    accuracy = (
-        sum(
-            1
-            for row in results
-            if str((row.get("result") or {}).get("verdict") or "").strip()
-            == str(row.get("expected_verdict") or "").strip()
-        )
-        / n
-    )
-    supporting_nonempty = (
-        sum(
-            1 for row in results if (row.get("result") or {}).get("supporting_evidence")
-        )
-        / n
-    )
-    conflicting_nonempty = (
-        sum(
-            1
-            for row in results
-            if (row.get("result") or {}).get("conflicting_evidence")
-        )
-        / n
-    )
-    top_paths_nonempty = (
-        sum(1 for row in results if (row.get("result") or {}).get("top_paths")) / n
-    )
+    accuracy = sum(
+        1
+        for row in results
+        if str((row.get("result") or {}).get("verdict") or "").strip()
+        == str(row.get("expected_verdict") or "").strip()
+    ) / n
+    supporting_nonempty = sum(
+        1 for row in results if (row.get("result") or {}).get("supporting_evidence")
+    ) / n
+    conflicting_nonempty = sum(
+        1 for row in results if (row.get("result") or {}).get("conflicting_evidence")
+    ) / n
+    top_paths_nonempty = sum(
+        1 for row in results if (row.get("result") or {}).get("top_paths")
+    ) / n
 
-    auditability = (
-        sum(1 for row in results if auditability_pass(row.get("result") or {})) / n
-    )
+    auditability = sum(
+        1 for row in results if auditability_pass(row.get("result") or {})
+    ) / n
 
     query_times = [
-        float(
-            ((row.get("result") or {}).get("summary") or {}).get("query_time_s") or 0.0
-        )
+        float(((row.get("result") or {}).get("summary") or {}).get("query_time_s") or 0.0)
         for row in results
     ]
     evidence_mode_counts = Counter(
@@ -505,11 +482,7 @@ def compute_condition_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
         "mean_query_time_s": round(sum(query_times) / len(query_times), 3),
         "evidence_mode_counts": dict(evidence_mode_counts),
         "evidence_source_scope_counts": dict(evidence_source_scope_counts),
-        "verdict_counts": {
-            label: verdict_counts.get(label, 0)
-            for label in VERDICT_ORDER
-            if verdict_counts.get(label, 0)
-        },
+        "verdict_counts": {label: verdict_counts.get(label, 0) for label in VERDICT_ORDER if verdict_counts.get(label, 0)},
     }
 
 
@@ -671,25 +644,11 @@ def render_markdown_report(report: dict[str, Any]) -> str:
 
     lines.extend(["", "## Calibration Smoke", ""])
     for name in ordered_names:
-        lines.extend(
-            [
-                f"### {name}",
-                "",
-                _result_rows(conditions[name]["calibration_results"]),
-                "",
-            ]
-        )
+        lines.extend([f"### {name}", "", _result_rows(conditions[name]["calibration_results"]), ""])
 
     lines.extend(["## Held-Out Comparison", "", _metrics_table(), ""])
     for name in ordered_names:
-        lines.extend(
-            [
-                f"### {name} held-out",
-                "",
-                _result_rows(conditions[name]["heldout_results"]),
-                "",
-            ]
-        )
+        lines.extend([f"### {name} held-out", "", _result_rows(conditions[name]["heldout_results"]), ""])
 
     lines.extend(["## Interpretation", ""])
     for name in ordered_names:

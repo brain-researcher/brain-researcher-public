@@ -22,15 +22,15 @@ from brain_researcher.core.contracts import (
     ObservationFiles,
     ObservationSpecV1,
 )
-from brain_researcher.core.contracts.native_review_contract import (
-    build_native_review_context,
-)
 from brain_researcher.research._legacy_project_loader import (
     legacy_project_script_path,
     load_legacy_project_module,
     run_legacy_main,
 )
 from brain_researcher.research.predictive.gates.common import term_index_of
+from brain_researcher.core.contracts.native_review_contract import (
+    build_native_review_context,
+)
 
 LEGACY_SCRIPT = Path("scripts/analysis/fc_benchmarking/meta_controller.py")
 WEAK_TARGET_PHASE = "phase9_weak_target_term_discovery"
@@ -262,9 +262,9 @@ def _build_analysis_bundle(
         files=AnalysisBundleFiles(
             observation_json="observation.json",
             execution_manifest_json="execution_manifest.json",
-            provenance_json=(
-                "provenance.json" if payload.get("provenance") is not None else None
-            ),
+            provenance_json="provenance.json"
+            if payload.get("provenance") is not None
+            else None,
         ),
         observation=observation.model_dump(exclude_none=True),
         execution_manifest=execution_manifest,

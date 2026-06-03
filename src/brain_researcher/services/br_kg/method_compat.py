@@ -134,15 +134,7 @@ def _method_compatibility_node_texts(node: Any) -> set[str]:
                 _add(item)
         elif value is not None:
             _add(value)
-        if key_norm in {
-            "label",
-            "labels",
-            "name",
-            "id",
-            "canonical_id",
-            "type",
-            "kind",
-        }:
+        if key_norm in {"label", "labels", "name", "id", "canonical_id", "type", "kind"}:
             _add(value)
 
     for attr in ("labels", "name", "label", "id", "canonical_id", "type", "kind"):
@@ -188,26 +180,10 @@ def _method_compatibility_rule_id(
     compatible: bool,
 ) -> str:
     rule_map = {
-        (
-            "repeated_measures",
-            "paired_t_test",
-            True,
-        ): "repeated_measures_requires_paired_t_test",
-        (
-            "repeated_measures",
-            "independent_t_test",
-            False,
-        ): "repeated_measures_blocks_independent_t_test",
-        (
-            "independent_groups",
-            "independent_t_test",
-            True,
-        ): "independent_groups_supports_independent_t_test",
-        (
-            "independent_groups",
-            "paired_t_test",
-            False,
-        ): "independent_groups_blocks_paired_t_test",
+        ("repeated_measures", "paired_t_test", True): "repeated_measures_requires_paired_t_test",
+        ("repeated_measures", "independent_t_test", False): "repeated_measures_blocks_independent_t_test",
+        ("independent_groups", "independent_t_test", True): "independent_groups_supports_independent_t_test",
+        ("independent_groups", "paired_t_test", False): "independent_groups_blocks_paired_t_test",
     }
     return rule_map.get(
         (canonical_design, canonical_method, compatible),
@@ -287,9 +263,7 @@ def _method_compatibility_graph_lookup(
             edges_iter = graph.edges(data=True, keys=True)
         except Exception:
             try:
-                edges_iter = (
-                    (u, v, None, data) for u, v, data in graph.edges(data=True)
-                )
+                edges_iter = ((u, v, None, data) for u, v, data in graph.edges(data=True))
             except Exception:
                 edges_iter = ()
         for source_id, target_id, rel_key, rel_data in edges_iter:
@@ -316,9 +290,9 @@ def _method_compatibility_graph_lookup(
             )
             evidence = {
                 "relationship_type": rel_type,
-                "relationship_direction": (
-                    "design_to_method" if forward_matches else "method_to_design"
-                ),
+                "relationship_direction": "design_to_method"
+                if forward_matches
+                else "method_to_design",
                 "source_node_id": source_id,
                 "target_node_id": target_id,
             }
@@ -332,12 +306,8 @@ def _method_compatibility_graph_lookup(
                 rationale=rationale,
                 evidence=evidence,
                 graph_labels={
-                    "design_labels": sorted(
-                        _method_compatibility_node_texts(source_node)
-                    ),
-                    "method_labels": sorted(
-                        _method_compatibility_node_texts(target_node)
-                    ),
+                    "design_labels": sorted(_method_compatibility_node_texts(source_node)),
+                    "method_labels": sorted(_method_compatibility_node_texts(target_node)),
                 },
             )
 
@@ -372,9 +342,7 @@ def _method_compatibility_graph_lookup(
         )
         rel = _rec_get(record, "rel") or _rec_get(record, "r")
         rel_type = _normalize_method_compatibility_text(
-            _rec_get(rel, "type")
-            or _rec_get(record, "rel_type")
-            or _rec_get(record, "type")
+            _rec_get(rel, "type") or _rec_get(record, "rel_type") or _rec_get(record, "type")
         ).upper()
         if rel_type not in _METHOD_COMPATIBILITY_REL_TYPES:
             continue
@@ -396,9 +364,9 @@ def _method_compatibility_graph_lookup(
         )
         evidence = {
             "relationship_type": rel_type,
-            "relationship_direction": (
-                "design_to_method" if forward_matches else "method_to_design"
-            ),
+            "relationship_direction": "design_to_method"
+            if forward_matches
+            else "method_to_design",
         }
         source_labels = sorted(_method_compatibility_node_texts(source_node))
         target_labels = sorted(_method_compatibility_node_texts(target_node))
@@ -429,10 +397,9 @@ def _load_method_compatibility_seed() -> dict[str, Any]:
 
         if not _METHOD_COMPATIBILITY_SEED_PATH.exists():
             return {}
-        payload = (
-            yaml.safe_load(_METHOD_COMPATIBILITY_SEED_PATH.read_text(encoding="utf-8"))
-            or {}
-        )
+        payload = yaml.safe_load(
+            _METHOD_COMPATIBILITY_SEED_PATH.read_text(encoding="utf-8")
+        ) or {}
         return payload if isinstance(payload, dict) else {}
     except Exception as exc:  # pragma: no cover - best effort
         logger.debug(

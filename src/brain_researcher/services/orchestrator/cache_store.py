@@ -8,14 +8,13 @@ Provides SQLite and in-memory implementations of cache storage with:
 """
 
 from __future__ import annotations
-
+import time
 import json
 import logging
-import time
 from abc import ABC, abstractmethod
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheEntry:
     """Represents a cache entry."""
-
     cache_key: str
     run_id: str
     run_dir: str
@@ -54,7 +52,6 @@ class CacheEntry:
 @dataclass
 class CacheStats:
     """Cache statistics."""
-
     total_entries: int
     pending_entries: int
     completed_entries: int
@@ -357,8 +354,7 @@ class MemoryCacheStore(CacheStore):
     async def clear_by_tool(self, tool_version: str) -> int:
         """Clear entries by tool version from memory."""
         to_delete = [
-            key
-            for key, entry in self._cache.items()
+            key for key, entry in self._cache.items()
             if entry.tool_version == tool_version
         ]
         for key in to_delete:
@@ -368,7 +364,8 @@ class MemoryCacheStore(CacheStore):
     async def clear_by_git(self, git_sha: str) -> int:
         """Clear entries by git SHA from memory."""
         to_delete = [
-            key for key, entry in self._cache.items() if entry.git_sha == git_sha
+            key for key, entry in self._cache.items()
+            if entry.git_sha == git_sha
         ]
         for key in to_delete:
             del self._cache[key]
@@ -380,15 +377,17 @@ class MemoryCacheStore(CacheStore):
             return 0
 
         # Sort by last_accessed_at (oldest first)
-        entries = sorted(self._cache.items(), key=lambda item: item[1].last_accessed_at)
+        entries = sorted(
+            self._cache.items(),
+            key=lambda item: item[1].last_accessed_at
+        )
 
         # Delete oldest until we're under limit
-        to_delete = entries[: len(entries) - max_entries]
+        to_delete = entries[:len(entries) - max_entries]
         for key, _ in to_delete:
             del self._cache[key]
 
         return len(to_delete)
-
 
 # Phase 3: Global cache store accessor
 _global_cache_store: Optional[CacheStore] = None

@@ -28,7 +28,7 @@ variable "cloudflare_zone_id" {
 }
 
 variable "domain" {
-  description = "Your domain name (e.g., brain-researcher.com)"
+  description = "Your domain name (e.g., ${PUBLIC_HOSTNAME})"
   type        = string
 }
 

@@ -47,9 +47,7 @@ class MNEFOOOFTool(NeuroToolWrapper):
             self.fooof_available = True
         except ImportError:
             self.fooof_available = False
-            logger.warning(
-                "FOOOF package not installed; using lightweight spectral parameterization"
-            )
+            logger.warning("FOOOF package not installed; using lightweight spectral parameterization")
 
     def get_tool_name(self) -> str:
         return "mne_fooof"

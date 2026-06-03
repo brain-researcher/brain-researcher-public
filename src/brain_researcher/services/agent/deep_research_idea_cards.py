@@ -366,9 +366,7 @@ def _is_query_echo_object(label: str, query_context: str) -> bool:
         return True
     label_base = _semantic_key(label, strip_parenthetical=True)
     query_base = _semantic_key(query_context, strip_parenthetical=True)
-    return (
-        len(label_base.split()) >= 2 and bool(label_base) and label_base in query_base
-    )
+    return len(label_base.split()) >= 2 and bool(label_base) and label_base in query_base
 
 
 def _looks_like_source_artifact(label: str) -> bool:
@@ -456,8 +454,7 @@ def _query_relevance_score(
 
     specificity = _object_specificity_score(cluster.object_label)
     left_match = min(
-        1.0,
-        len((object_tokens | context_tokens) & left_tokens) / max(1, len(left_tokens)),
+        1.0, len((object_tokens | context_tokens) & left_tokens) / max(1, len(left_tokens))
     )
     right_match = min(
         1.0,
@@ -465,15 +462,9 @@ def _query_relevance_score(
     )
     anchor_match = 1.0 if anchor_tokens and (context_tokens & anchor_tokens) else 0.0
     bio_query = bool(query_tokens & _BIOENERGETIC_QUERY_TOKENS)
-    bio_specific = (
-        1.0 if bio_query and (object_tokens & _SPECIFIC_MECHANISM_TOKENS) else 0.0
-    )
+    bio_specific = 1.0 if bio_query and (object_tokens & _SPECIFIC_MECHANISM_TOKENS) else 0.0
     generic_only_penalty = (
-        0.15
-        if object_tokens
-        and not (object_tokens & _SPECIFIC_MECHANISM_TOKENS)
-        and (object_tokens & _GENERIC_MECHANISM_TOKENS)
-        else 0.0
+        0.15 if object_tokens and not (object_tokens & _SPECIFIC_MECHANISM_TOKENS) and (object_tokens & _GENERIC_MECHANISM_TOKENS) else 0.0
     )
     score = (
         0.45 * specificity
@@ -674,7 +665,9 @@ def _build_clusters(rows: Iterable[FlatRelation]) -> list[ObjectCluster]:
     clusters: dict[str, ObjectCluster] = {}
     for row in rows:
         key = _normalize_key(row.object_label)
-        cluster = clusters.setdefault(key, ObjectCluster(object_label=row.object_label))
+        cluster = clusters.setdefault(
+            key, ObjectCluster(object_label=row.object_label)
+        )
         cluster.paper_ids.add(row.paper_id)
         cluster.paper_titles[row.paper_id] = row.paper_title
         if row.paper_journal:
@@ -718,9 +711,7 @@ def _candidate_sort_key(candidate: Mapping[str, Any]) -> tuple[Any, ...]:
 def _query_relevance_floor(candidates: list[dict[str, Any]], *, top_n: int) -> float:
     if not candidates:
         return 0.0
-    top_score = max(
-        _safe_float(item.get("query_relevance_score"), 0.0) for item in candidates
-    )
+    top_score = max(_safe_float(item.get("query_relevance_score"), 0.0) for item in candidates)
     if top_score < 0.20:
         return 0.0
     return round(max(0.06, min(0.12, top_score * 0.12)), 6)
@@ -740,7 +731,9 @@ def _apply_query_relevance_floor(
         if _safe_float(item.get("query_relevance_score"), 0.0) >= floor
     ]
     minimum_survivors = (
-        1 if len(candidates) <= 2 else min(len(candidates), max(2, min(top_n, 3)))
+        1
+        if len(candidates) <= 2
+        else min(len(candidates), max(2, min(top_n, 3)))
     )
     if len(filtered) < minimum_survivors:
         return candidates
@@ -748,9 +741,7 @@ def _apply_query_relevance_floor(
 
 
 def _stable_id(prefix: str, *parts: Any) -> str:
-    joined = "|".join(
-        _normalize_space(part) for part in parts if _normalize_space(part)
-    )
+    joined = "|".join(_normalize_space(part) for part in parts if _normalize_space(part))
     digest = sha1(joined.encode("utf-8")).hexdigest()[:12]
     return f"{prefix}_{digest}"
 
@@ -767,9 +758,7 @@ def _infer_query_context(
     )
     if report_title:
         return report_title
-    summary = _normalize_space(
-        result.get("summary") or result.get("synthesis_full_text")
-    )
+    summary = _normalize_space(result.get("summary") or result.get("synthesis_full_text"))
     if not summary:
         return "the deep-research problem"
     first_line = summary.split(".")[0].split(":")[0].strip(" #")
@@ -839,9 +828,7 @@ def _build_raw_candidate(
         )
         taste_axis = "deep_research_method_signal"
     else:
-        supporting_nodes.append(
-            {"node_type": "Behavior", "label": cluster.object_label}
-        )
+        supporting_nodes.append({"node_type": "Behavior", "label": cluster.object_label})
         title = _build_mechanism_title(cluster.object_label, query_context)
         hypothesis = _build_mechanism_hypothesis(
             cluster.object_label,
@@ -883,9 +870,7 @@ def _build_raw_candidate(
         "query_relevance_score": query_relevance_score,
         "deep_research_status": "ok",
         "grounding_status": "grounded",
-        "evidence_source_scope": (
-            "cross_source" if publication_count > 1 else "single_source"
-        ),
+        "evidence_source_scope": "cross_source" if publication_count > 1 else "single_source",
         "selection_reason": (
             f"Selected because {cluster.object_label} appears in {publication_count} sources "
             f"with {len(cluster.subjects)} subject contexts, {len(cluster.predicates)} predicate patterns, "
@@ -899,12 +884,8 @@ def _build_raw_candidate(
             "supporting_paper_titles": _curated_supporting_paper_titles(cluster),
             "top_subjects": subject_labels,
             "top_predicates": predicate_labels,
-            "example_quotes": [
-                _truncate(item, limit=220) for item in cluster.quotes[:3]
-            ],
-            "example_claims": [
-                _truncate(item, limit=220) for item in cluster.claim_texts[:3]
-            ],
+            "example_quotes": [_truncate(item, limit=220) for item in cluster.quotes[:3]],
+            "example_claims": [_truncate(item, limit=220) for item in cluster.claim_texts[:3]],
             "journals": journals,
             "cluster_score": cluster_score,
             "query_relevance_score": query_relevance_score,
@@ -919,17 +900,10 @@ def _compute_novelty_signals(card: Mapping[str, Any]) -> dict[str, float]:
     support_score = _clip01(publication_count / 4.0)
     bridge_gain = round(
         _clip01(
-            (
-                0.40
-                * min(
-                    1.0, len(card.get("provenance", {}).get("top_subjects", [])) / 3.0
-                )
-            )
+            (0.40 * min(1.0, len(card.get("provenance", {}).get("top_subjects", [])) / 3.0))
             + (
                 0.30
-                * min(
-                    1.0, len(card.get("provenance", {}).get("top_predicates", [])) / 3.0
-                )
+                * min(1.0, len(card.get("provenance", {}).get("top_predicates", [])) / 3.0)
             )
             + (0.30 * support_score)
         ),
@@ -1003,9 +977,7 @@ def _rank_deep_research_candidates(
             -_safe_float(item.get("query_relevance_score"), 0.0),
             -_safe_float(item.get("cluster_score"), 0.0),
             -_safe_float(item.get("publication_count"), 0.0),
-            str(
-                item.get("title") or item.get("candidate_label") or item.get("id") or ""
-            ),
+            str(item.get("title") or item.get("candidate_label") or item.get("id") or ""),
         )
     )
     for idx, item in enumerate(ranked, start=1):
@@ -1059,9 +1031,7 @@ def _build_ephemeral_weighted_subgraph(
             )
             if attrs:
                 merged_attrs = dict(existing.get("attrs") or {})
-                merged_attrs.update(
-                    {k: v for k, v in attrs.items() if v not in (None, [], {})}
-                )
+                merged_attrs.update({k: v for k, v in attrs.items() if v not in (None, [], {})})
                 existing["attrs"] = merged_attrs
         return node_id
 
@@ -1109,9 +1079,7 @@ def _build_ephemeral_weighted_subgraph(
                 6,
             )
             existing["feasibility"] = round(
-                max(
-                    _safe_float(existing.get("feasibility"), 0.0), _clip01(feasibility)
-                ),
+                max(_safe_float(existing.get("feasibility"), 0.0), _clip01(feasibility)),
                 6,
             )
         return edge_id
@@ -1155,10 +1123,7 @@ def _build_ephemeral_weighted_subgraph(
             "Hypothesis",
             _normalize_space(card.get("title")) or object_label,
             weight=_safe_float(card.get("wow_score"), 0.0),
-            attrs={
-                "card_id": card.get("card_id"),
-                "taste_axis": card.get("taste_axis"),
-            },
+            attrs={"card_id": card.get("card_id"), "taste_axis": card.get("taste_axis")},
         )
 
         node_ids = {focus_node_id, hypothesis_node_id}
@@ -1188,9 +1153,7 @@ def _build_ephemeral_weighted_subgraph(
         edge_ids.add(concept_to_hypothesis_edge)
 
         subject_labels = [
-            _normalize_space(value)
-            for value in (provenance.get("top_subjects") or [])
-            if _normalize_space(value)
+            _normalize_space(value) for value in (provenance.get("top_subjects") or []) if _normalize_space(value)
         ]
         for subject_label in subject_labels:
             subject_rows = [
@@ -1210,9 +1173,7 @@ def _build_ephemeral_weighted_subgraph(
                 weight=max(avg_confidence, avg_evidence_quality),
                 attrs={
                     "predicate_labels": predicate_labels[:3],
-                    "supporting_paper_count": len(
-                        {row.paper_id for row in subject_rows}
-                    ),
+                    "supporting_paper_count": len({row.paper_id for row in subject_rows}),
                 },
             )
             node_ids.add(subject_node_id)
@@ -1231,9 +1192,7 @@ def _build_ephemeral_weighted_subgraph(
                 conditional_validity={
                     "predicate_labels": predicate_labels[:3],
                     "source_scope": card.get("evidence_source_scope"),
-                    "supporting_paper_count": len(
-                        {row.paper_id for row in subject_rows}
-                    ),
+                    "supporting_paper_count": len({row.paper_id for row in subject_rows}),
                 },
                 provenance={
                     "paper_ids": sorted({row.paper_id for row in subject_rows})[:5],
@@ -1465,11 +1424,8 @@ def build_deep_research_idea_cards(
             "status": "ok",
             "interaction_id": interaction_id,
             "report_title": _clean_report_title(
-                (
-                    normalized_result.get("summary")
-                    or normalized_result.get("synthesis_full_text")
-                    or ""
-                ).splitlines()[0]
+                (normalized_result.get("summary") or normalized_result.get("synthesis_full_text") or "")
+                .splitlines()[0]
             )
             or None,
             "documents_total": len(normalized_result.get("documents") or []),

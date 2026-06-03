@@ -771,11 +771,9 @@ def find_local_destrieux_atlas(
     lateralized: bool = False,
 ) -> Path | None:
     candidate_filenames = [
-        (
-            "destrieux2009_rois_lateralized.nii.gz"
-            if lateralized
-            else "destrieux2009_rois.nii.gz"
-        )
+        "destrieux2009_rois_lateralized.nii.gz"
+        if lateralized
+        else "destrieux2009_rois.nii.gz"
     ]
     relative_candidates = [
         Path(""),

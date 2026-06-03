@@ -36,9 +36,7 @@ def _resolve_probe_dir(data_dir: str | None, probe_label: str | None) -> Path | 
         return None
     if root.is_file():
         return root.parent
-    if list(root.glob(_SPIKEGLX_AP_BIN_GLOB)) and list(
-        root.glob(_SPIKEGLX_AP_META_GLOB)
-    ):
+    if list(root.glob(_SPIKEGLX_AP_BIN_GLOB)) and list(root.glob(_SPIKEGLX_AP_META_GLOB)):
         return root
     if probe_label:
         candidate = root / probe_label
@@ -50,17 +48,14 @@ def _resolve_probe_dir(data_dir: str | None, probe_label: str | None) -> Path | 
     candidates = [
         child
         for child in _sorted_child_dirs(root)
-        if list(child.glob(_SPIKEGLX_AP_BIN_GLOB))
-        and list(child.glob(_SPIKEGLX_AP_META_GLOB))
+        if list(child.glob(_SPIKEGLX_AP_BIN_GLOB)) and list(child.glob(_SPIKEGLX_AP_META_GLOB))
     ]
     if len(candidates) == 1:
         return candidates[0]
     return None
 
 
-def _build_spikeglx_normalized_view(
-    probe_dir: Path, output_dir: Path
-) -> dict[str, str]:
+def _build_spikeglx_normalized_view(probe_dir: Path, output_dir: Path) -> dict[str, str]:
     output_dir.mkdir(parents=True, exist_ok=True)
     cbin_candidates = sorted(probe_dir.glob(_SPIKEGLX_AP_BIN_GLOB))
     meta_candidates = sorted(probe_dir.glob(_SPIKEGLX_AP_META_GLOB))
@@ -123,9 +118,7 @@ def _load_spikeglx_recording(
     if hasattr(recording, "_kwargs") and isinstance(recording._kwargs, dict):
         recording._kwargs["folder_path"] = normalized["normalized_input_dir"]
         recording._kwargs["cbin_file_path"] = normalized["normalized_cbin_path"]
-    original_duration_s = float(
-        recording.get_num_frames() / recording.get_sampling_frequency()
-    )
+    original_duration_s = float(recording.get_num_frames() / recording.get_sampling_frequency())
     return recording, normalized, original_duration_s
 
 

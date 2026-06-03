@@ -1,4 +1,4 @@
-export const DEFAULT_MCP_CLOUD_URL = 'https://brain-researcher.com/mcp'
+export const DEFAULT_MCP_CLOUD_URL = 'https://${PUBLIC_HOSTNAME}/mcp'
 export const MCP_TOKEN_PLACEHOLDER = 'brk_<kid>.<secret>'
 
 export type HostedMcpClient = 'cursor' | 'codex' | 'claude'

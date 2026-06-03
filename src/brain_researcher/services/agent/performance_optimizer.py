@@ -7,21 +7,13 @@ distributed processing, caching, and GPU acceleration.
 import asyncio
 import logging
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Callable
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
 
+from brain_researcher.services.agent.tool_optimizer import ToolOptimizer, ToolCategory, ExecutionMode
+from brain_researcher.services.agent.distributed_processor import DistributedProcessor, DistributedConfig, DistributedBackend
 from brain_researcher.services.agent.cache_manager import CacheManager, CachePolicy
-from brain_researcher.services.agent.distributed_processor import (
-    DistributedBackend,
-    DistributedConfig,
-    DistributedProcessor,
-)
 from brain_researcher.services.agent.performance_benchmark import PerformanceBenchmark
-from brain_researcher.services.agent.tool_optimizer import (
-    ExecutionMode,
-    ToolCategory,
-    ToolOptimizer,
-)
 from brain_researcher.services.tools.tool_registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -29,18 +21,16 @@ logger = logging.getLogger(__name__)
 
 class OptimizationLevel(Enum):
     """Optimization levels for performance tuning."""
-
-    NONE = "none"  # No optimizations
-    BASIC = "basic"  # Basic parallelization only
-    STANDARD = "standard"  # Parallelization + caching
-    ADVANCED = "advanced"  # All optimizations including distributed
-    ADAPTIVE = "adaptive"  # Auto-tune based on workload
+    NONE = "none"           # No optimizations
+    BASIC = "basic"         # Basic parallelization only
+    STANDARD = "standard"   # Parallelization + caching
+    ADVANCED = "advanced"   # All optimizations including distributed
+    ADAPTIVE = "adaptive"   # Auto-tune based on workload
 
 
 @dataclass
 class PerformanceConfig:
     """Configuration for performance optimizations."""
-
     optimization_level: OptimizationLevel = OptimizationLevel.STANDARD
     max_parallel_tools: int = 10
     enable_caching: bool = True
@@ -56,11 +46,9 @@ class PerformanceConfig:
 class PerformanceOptimizer:
     """Main coordinator for all performance optimizations."""
 
-    def __init__(
-        self,
-        config: Optional[PerformanceConfig] = None,
-        tool_registry: Optional[ToolRegistry] = None,
-    ):
+    def __init__(self,
+                 config: Optional[PerformanceConfig] = None,
+                 tool_registry: Optional[ToolRegistry] = None):
         """Initialize performance optimizer.
 
         Args:
@@ -80,7 +68,7 @@ class PerformanceOptimizer:
             "cache_hits": 0,
             "distributed_executions": 0,
             "gpu_executions": 0,
-            "avg_speedup": 1.0,
+            "avg_speedup": 1.0
         }
 
         # Auto-tuning state
@@ -93,15 +81,17 @@ class PerformanceOptimizer:
         self.tool_optimizer = ToolOptimizer(
             max_workers=self.config.max_parallel_tools,
             enable_gpu=self.config.enable_gpu,
-            cache_manager=None,  # Will set after cache init
+            cache_manager=None  # Will set after cache init
         )
 
         # Cache manager
         if self.config.enable_caching:
             self.cache_manager = CacheManager(
                 cache_policy=self.config.cache_policy,
-                enable_multi_level=self.config.optimization_level
-                in [OptimizationLevel.ADVANCED, OptimizationLevel.ADAPTIVE],
+                enable_multi_level=self.config.optimization_level in [
+                    OptimizationLevel.ADVANCED,
+                    OptimizationLevel.ADAPTIVE
+                ]
             )
             self.tool_optimizer.cache_manager = self.cache_manager
         else:
@@ -111,7 +101,7 @@ class PerformanceOptimizer:
         if self.config.enable_distributed:
             dist_config = DistributedConfig(
                 backend=self.config.distributed_backend,
-                num_workers=self.config.max_parallel_tools,
+                num_workers=self.config.max_parallel_tools
             )
             self.distributed_processor = DistributedProcessor(dist_config)
         else:
@@ -123,9 +113,7 @@ class PerformanceOptimizer:
         else:
             self.benchmark = None
 
-        logger.info(
-            f"Performance optimizer initialized with level: {self.config.optimization_level.value}"
-        )
+        logger.info(f"Performance optimizer initialized with level: {self.config.optimization_level.value}")
 
     async def initialize(self):
         """Initialize async components."""
@@ -147,21 +135,17 @@ class PerformanceOptimizer:
 
         for tool in self.tool_registry.get_all_tools():
             profile = self.tool_optimizer.profile_tool(tool)
-            logger.debug(
-                f"Profiled {tool.get_tool_name()}: "
-                f"GPU={profile.gpu_capable}, "
-                f"Parallel={profile.parallelizable}, "
-                f"Cache={profile.cacheable}"
-            )
+            logger.debug(f"Profiled {tool.get_tool_name()}: "
+                        f"GPU={profile.gpu_capable}, "
+                        f"Parallel={profile.parallelizable}, "
+                        f"Cache={profile.cacheable}")
 
         logger.info(f"Profiled {len(self.tool_optimizer.tool_profiles)} tools")
 
-    async def execute_tool(
-        self,
-        tool_name: str,
-        args: Dict[str, Any],
-        force_mode: Optional[ExecutionMode] = None,
-    ) -> Any:
+    async def execute_tool(self,
+                          tool_name: str,
+                          args: Dict[str, Any],
+                          force_mode: Optional[ExecutionMode] = None) -> Any:
         """Execute a tool with optimizations.
 
         Args:
@@ -200,20 +184,15 @@ class PerformanceOptimizer:
             self.stats["cache_hits"] = cache_stats.total_hits
 
         # Periodic benchmarking
-        if (
-            self.benchmark
-            and self.stats["total_executions"] % self.config.benchmark_interval == 0
-        ):
+        if self.benchmark and self.stats["total_executions"] % self.config.benchmark_interval == 0:
             await self._run_benchmark()
 
         return result
 
-    async def execute_batch(
-        self,
-        tool_name: str,
-        batch_args: List[Dict[str, Any]],
-        max_parallel: Optional[int] = None,
-    ) -> List[Any]:
+    async def execute_batch(self,
+                          tool_name: str,
+                          batch_args: List[Dict[str, Any]],
+                          max_parallel: Optional[int] = None) -> List[Any]:
         """Execute a tool on multiple inputs in batch.
 
         Args:
@@ -229,14 +208,14 @@ class PerformanceOptimizer:
         batch_request = BatchRequest(
             tool_name=tool_name,
             requests=batch_args,
-            max_parallel=max_parallel or self.config.max_parallel_tools,
+            max_parallel=max_parallel or self.config.max_parallel_tools
         )
 
         return await self.tool_optimizer.execute_batch(batch_request)
 
-    async def execute_workflow(
-        self, workflow: List[Dict[str, Any]], initial_input: Any
-    ) -> Any:
+    async def execute_workflow(self,
+                              workflow: List[Dict[str, Any]],
+                              initial_input: Any) -> Any:
         """Execute a workflow of tools.
 
         Args:
@@ -260,19 +239,13 @@ class PerformanceOptimizer:
             result = await self.execute_tool(tool_name, args)
 
             # Check for early termination
-            if (
-                step.get("stop_on_error")
-                and isinstance(result, dict)
-                and "error" in result
-            ):
+            if step.get("stop_on_error") and isinstance(result, dict) and "error" in result:
                 logger.warning(f"Workflow stopped at {tool_name} due to error")
                 break
 
         return result
 
-    def _select_execution_mode(
-        self, tool_name: str, args: Dict[str, Any]
-    ) -> ExecutionMode:
+    def _select_execution_mode(self, tool_name: str, args: Dict[str, Any]) -> ExecutionMode:
         """Select optimal execution mode based on config and tool profile."""
         # Check optimization level
         if self.config.optimization_level == OptimizationLevel.NONE:
@@ -312,7 +285,6 @@ class PerformanceOptimizer:
         """Adaptively select execution mode based on historical performance."""
         # Estimate data size
         import sys
-
         data_size = sys.getsizeof(args) / (1024 * 1024)  # MB
 
         # Use heuristics based on profile and data size
@@ -322,9 +294,7 @@ class PerformanceOptimizer:
         if data_size > 100 and self.config.enable_distributed:
             return ExecutionMode.DISTRIBUTED
 
-        if profile.parallelizable and (
-            data_size > 1 or profile.avg_execution_time > 0.5
-        ):
+        if profile.parallelizable and (data_size > 1 or profile.avg_execution_time > 0.5):
             return ExecutionMode.PARALLEL
 
         return ExecutionMode.SEQUENTIAL
@@ -340,7 +310,8 @@ class PerformanceOptimizer:
 
         # Execute distributed
         results = await self.distributed_processor.execute_distributed(
-            tool_wrapper, [args]
+            tool_wrapper,
+            [args]
         )
 
         return results[0] if results else None
@@ -367,14 +338,16 @@ class PerformanceOptimizer:
             try:
                 # Baseline
                 baseline = await self.benchmark.benchmark_tool(
-                    tool.run, test_inputs, execution_mode="sequential"
+                    tool.run,
+                    test_inputs,
+                    execution_mode="sequential"
                 )
 
                 # Optimized
                 optimized = await self.benchmark.benchmark_tool(
                     lambda args: self.execute_tool(tool_name, args),
                     test_inputs,
-                    execution_mode="optimized",
+                    execution_mode="optimized"
                 )
 
                 # Calculate speedup
@@ -413,7 +386,7 @@ class PerformanceOptimizer:
         return [
             {
                 "data": np.random.randn(100, 100).tolist(),
-                "params": {"test": True, "iteration": i},
+                "params": {"test": True, "iteration": i}
             }
             for i in range(5)
         ]
@@ -449,39 +422,25 @@ class PerformanceOptimizer:
 
         # Analyze parallelization efficiency
         if self.stats["optimized_executions"] > 0:
-            optimization_rate = (
-                self.stats["optimized_executions"] / self.stats["total_executions"]
-            )
+            optimization_rate = self.stats["optimized_executions"] / self.stats["total_executions"]
 
             # Adjust parallel workers based on efficiency
             if self.stats["avg_speedup"] < 1.2 and self.config.max_parallel_tools > 4:
-                self.config.max_parallel_tools = max(
-                    4, self.config.max_parallel_tools - 2
-                )
-                logger.info(
-                    f"Reduced parallel workers to {self.config.max_parallel_tools}"
-                )
-            elif (
-                self.stats["avg_speedup"] > 2.0 and self.config.max_parallel_tools < 20
-            ):
-                self.config.max_parallel_tools = min(
-                    20, self.config.max_parallel_tools + 2
-                )
-                logger.info(
-                    f"Increased parallel workers to {self.config.max_parallel_tools}"
-                )
+                self.config.max_parallel_tools = max(4, self.config.max_parallel_tools - 2)
+                logger.info(f"Reduced parallel workers to {self.config.max_parallel_tools}")
+            elif self.stats["avg_speedup"] > 2.0 and self.config.max_parallel_tools < 20:
+                self.config.max_parallel_tools = min(20, self.config.max_parallel_tools + 2)
+                logger.info(f"Increased parallel workers to {self.config.max_parallel_tools}")
 
         # Record tuning history
-        self.auto_tune_history.append(
-            {
-                "timestamp": asyncio.get_event_loop().time(),
-                "stats": self.stats.copy(),
-                "settings": {
-                    "cache_policy": self.config.cache_policy.value,
-                    "max_parallel": self.config.max_parallel_tools,
-                },
+        self.auto_tune_history.append({
+            "timestamp": asyncio.get_event_loop().time(),
+            "stats": self.stats.copy(),
+            "settings": {
+                "cache_policy": self.config.cache_policy.value,
+                "max_parallel": self.config.max_parallel_tools
             }
-        )
+        })
 
     def get_performance_report(self) -> Dict[str, Any]:
         """Get comprehensive performance report.
@@ -495,7 +454,7 @@ class PerformanceOptimizer:
                 "max_parallel_tools": self.config.max_parallel_tools,
                 "caching_enabled": self.config.enable_caching,
                 "distributed_enabled": self.config.enable_distributed,
-                "gpu_enabled": self.config.enable_gpu,
+                "gpu_enabled": self.config.enable_gpu
             },
             "statistics": self.stats.copy(),
             "tool_profiles": {
@@ -504,10 +463,10 @@ class PerformanceOptimizer:
                     "avg_execution_time": profile.avg_execution_time,
                     "gpu_capable": profile.gpu_capable,
                     "cache_hit_rate": profile.cache_hit_rate,
-                    "execution_count": profile.execution_count,
+                    "execution_count": profile.execution_count
                 }
                 for name, profile in self.tool_optimizer.tool_profiles.items()
-            },
+            }
         }
 
         # Add cache statistics
@@ -515,7 +474,7 @@ class PerformanceOptimizer:
             report["cache_stats"] = {
                 "hit_rate": self.cache_manager.metrics.hit_rate,
                 "total_hits": self.cache_manager.metrics.total_hits,
-                "total_misses": self.cache_manager.metrics.total_misses,
+                "total_misses": self.cache_manager.metrics.total_misses
             }
 
         # Add distributed statistics
@@ -537,31 +496,21 @@ class PerformanceOptimizer:
 
         # Check cache efficiency
         if self.cache_manager and self.cache_manager.metrics.hit_rate < 0.3:
-            recommendations.append(
-                "Consider adjusting cache policy or TTL settings for better hit rate"
-            )
+            recommendations.append("Consider adjusting cache policy or TTL settings for better hit rate")
 
         # Check parallelization usage
         if self.stats["total_executions"] > 0:
-            opt_rate = (
-                self.stats["optimized_executions"] / self.stats["total_executions"]
-            )
+            opt_rate = self.stats["optimized_executions"] / self.stats["total_executions"]
             if opt_rate < 0.5:
-                recommendations.append(
-                    "Many executions are not optimized - consider profiling more tools"
-                )
+                recommendations.append("Many executions are not optimized - consider profiling more tools")
 
         # Check speedup
         if self.stats["avg_speedup"] < 1.5:
-            recommendations.append(
-                "Low average speedup - consider enabling GPU or distributed processing"
-            )
+            recommendations.append("Low average speedup - consider enabling GPU or distributed processing")
 
         # Check GPU usage
         if self.config.enable_gpu and self.stats["gpu_executions"] == 0:
-            recommendations.append(
-                "GPU is enabled but not being used - check GPU availability"
-            )
+            recommendations.append("GPU is enabled but not being used - check GPU availability")
 
         return recommendations
 

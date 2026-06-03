@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, Sequence
+from typing import Sequence, Optional
 
-from brain_researcher.services.br_kg.evidence.connectors.neurostore import (
-    NeuroStoreConnector,
-)
-
-from ..models import KnowledgeItem
+from brain_researcher.services.br_kg.evidence.connectors.neurostore import NeuroStoreConnector
 from .base import BaseEvidenceSource, SourceCapabilities
+from ..models import KnowledgeItem
+
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +45,7 @@ class NeuroStoreEvidenceSource(BaseEvidenceSource):
         limit: int = 20,
         filters: Optional[dict] = None,
     ) -> Sequence["KnowledgeItem"]:
-        studies = await self._connector.search(
-            query, limit=limit, filters=filters or {}
-        )
+        studies = await self._connector.search(query, limit=limit, filters=filters or {})
         items: list[KnowledgeItem] = []
         for s in studies:
             items.append(

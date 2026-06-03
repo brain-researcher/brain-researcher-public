@@ -58,7 +58,9 @@ def load_studio_scaffold_registry() -> dict[str, Any]:
 
         raw_preferences = raw_spec.get("derivative_preferences") or []
         derivative_preferences = [
-            str(item).strip() for item in raw_preferences if str(item or "").strip()
+            str(item).strip()
+            for item in raw_preferences
+            if str(item or "").strip()
         ]
 
         families[family_name] = {

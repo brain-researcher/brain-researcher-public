@@ -833,7 +833,7 @@ test('Tier3: MCP settings panel renders client-specific config snippets', async 
   await page.getByRole('button', { name: 'Copy TOML' }).click()
   const codexClipboard = await page.evaluate(async () => navigator.clipboard.readText())
   expect(codexClipboard).toContain('[mcp_servers.brain-researcher]')
-  expect(codexClipboard).toContain('url = "https://brain-researcher.com/mcp"')
+  expect(codexClipboard).toContain('url = "https://${PUBLIC_HOSTNAME}/mcp"')
   expect(codexClipboard).toContain('bearer_token_env_var = "BR_MCP_TOKEN"')
   expect(codexClipboard).toContain('[mcp_servers.brain-researcher.http_headers]')
   expect(codexClipboard).toContain('Accept = "application/json, text/event-stream"')

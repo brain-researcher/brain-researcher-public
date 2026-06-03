@@ -6,27 +6,25 @@ job dependency tracking, and batch job submission capabilities.
 import asyncio
 import json
 import logging
-import math
 import random
 import time
 import uuid
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Set, Tuple, Callable
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+import math
 
-import httpx
 from pydantic import BaseModel, Field
 
 from brain_researcher.services.shared.retry_timeout import (
     RetryConfig as SharedRetryConfig,
-)
-from brain_researcher.services.shared.retry_timeout import (
     load_retry_config,
 )
+import httpx
 
+from .websocket_endpoints import broadcast_job_update, JobUpdateMessage
 from .models import JobStatus, StepStatus
-from .websocket_endpoints import JobUpdateMessage, broadcast_job_update
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +33,8 @@ logger = logging.getLogger(__name__)
 # Enhanced Models
 # ============================================================================
 
-
 class RetryStrategy(str, Enum):
     """Retry strategy types."""
-
     EXPONENTIAL_BACKOFF = "exponential_backoff"
     LINEAR_BACKOFF = "linear_backoff"
     FIXED_INTERVAL = "fixed_interval"
@@ -47,7 +43,6 @@ class RetryStrategy(str, Enum):
 
 class JobCleanupAction(str, Enum):
     """Actions to perform when cleaning up cancelled jobs."""
-
     REMOVE_FILES = "remove_files"
     CLEANUP_RESOURCES = "cleanup_resources"
     NOTIFY_DEPENDENCIES = "notify_dependencies"
@@ -56,7 +51,6 @@ class JobCleanupAction(str, Enum):
 
 class BatchJobRequest(BaseModel):
     """Batch job submission request."""
-
     jobs: List[Dict[str, Any]] = Field(..., min_length=1, max_length=100)
     batch_name: Optional[str] = None
     batch_priority: str = "normal"
@@ -67,7 +61,6 @@ class BatchJobRequest(BaseModel):
 
 class RetryConfig(BaseModel):
     """Retry configuration with exponential backoff."""
-
     max_attempts: int = Field(default=3, ge=1, le=10)
     base_delay_seconds: float = Field(default=1.0, ge=0.1)
     max_delay_seconds: float = Field(default=300.0, le=3600)
@@ -90,7 +83,6 @@ class RetryConfig(BaseModel):
 
 class DependencyRule(BaseModel):
     """Job dependency rule."""
-
     depends_on_job_id: str
     dependency_type: str = "completion"  # "completion", "start", "artifact"
     required_status: JobStatus = JobStatus.COMPLETED
@@ -101,7 +93,6 @@ class DependencyRule(BaseModel):
 
 class JobCancellationRequest(BaseModel):
     """Job cancellation request with cleanup options."""
-
     job_id: str
     reason: str
     force: bool = False
@@ -113,7 +104,6 @@ class JobCancellationRequest(BaseModel):
 # Enhanced Job Manager
 # ============================================================================
 
-
 class EnhancedJobManager:
     """Enhanced job manager with advanced features."""
 
@@ -121,9 +111,7 @@ class EnhancedJobManager:
         # Job storage
         self.jobs: Dict[str, Dict[str, Any]] = {}
         self.job_dependencies: Dict[str, List[DependencyRule]] = defaultdict(list)
-        self.dependent_jobs: Dict[str, Set[str]] = defaultdict(
-            set
-        )  # job_id -> dependents
+        self.dependent_jobs: Dict[str, Set[str]] = defaultdict(set)  # job_id -> dependents
 
         # Batch processing
         self.batch_jobs: Dict[str, List[str]] = {}  # batch_id -> job_ids
@@ -150,16 +138,14 @@ class EnhancedJobManager:
             "jobs_cancelled": 0,
             "jobs_retried": 0,
             "batch_jobs_processed": 0,
-            "dependency_violations": 0,
+            "dependency_violations": 0
         }
 
         logger.info("Enhanced Job Manager initialized")
 
     async def start(self):
         """Start background tasks."""
-        self.dependency_checker_task = asyncio.create_task(
-            self._dependency_checker_loop()
-        )
+        self.dependency_checker_task = asyncio.create_task(self._dependency_checker_loop())
         self.retry_processor_task = asyncio.create_task(self._retry_processor_loop())
         self.cleanup_task = asyncio.create_task(self._cleanup_loop())
 
@@ -167,11 +153,7 @@ class EnhancedJobManager:
 
     async def stop(self):
         """Stop background tasks and cleanup."""
-        for task in [
-            self.dependency_checker_task,
-            self.retry_processor_task,
-            self.cleanup_task,
-        ]:
+        for task in [self.dependency_checker_task, self.retry_processor_task, self.cleanup_task]:
             if task:
                 task.cancel()
                 try:
@@ -197,7 +179,7 @@ class EnhancedJobManager:
         self,
         job_data: Dict[str, Any],
         dependencies: Optional[List[DependencyRule]] = None,
-        retry_config: Optional[RetryConfig] = None,
+        retry_config: Optional[RetryConfig] = None
     ) -> str:
         """Create a job with optional dependencies and retry configuration."""
         job_id = job_data.get("id") or f"job_{uuid.uuid4().hex[:12]}"
@@ -208,7 +190,7 @@ class EnhancedJobManager:
             "id": job_id,
             "status": JobStatus.PENDING,
             "created_at": datetime.utcnow(),
-            "retry_count": 0,
+            "retry_count": 0
         }
 
         # Store dependencies
@@ -222,9 +204,7 @@ class EnhancedJobManager:
             self.retry_configs[job_id] = retry_config
 
         self.stats["jobs_created"] += 1
-        logger.info(
-            f"Job created: {job_id} with {len(dependencies or [])} dependencies"
-        )
+        logger.info(f"Job created: {job_id} with {len(dependencies or [])} dependencies")
 
         # Check if job can be started immediately
         if await self._check_dependencies_satisfied(job_id):
@@ -254,7 +234,7 @@ class EnhancedJobManager:
                 "total_jobs": len(job_ids),
                 "dependency_mode": batch_request.dependency_mode,
                 "failure_policy": batch_request.failure_policy,
-                "max_concurrent_jobs": batch_request.max_concurrent_jobs,
+                "max_concurrent_jobs": batch_request.max_concurrent_jobs
             }
 
             self.stats["batch_jobs_processed"] += 1
@@ -264,7 +244,7 @@ class EnhancedJobManager:
                 "batch_id": batch_id,
                 "job_ids": job_ids,
                 "total_jobs": len(job_ids),
-                "dependency_mode": batch_request.dependency_mode,
+                "dependency_mode": batch_request.dependency_mode
             }
 
         except Exception as e:
@@ -285,11 +265,7 @@ class EnhancedJobManager:
         for i, job_data in enumerate(batch_request.jobs):
             job_id = await self.create_job(
                 job_data,
-                dependencies=(
-                    [DependencyRule(depends_on_job_id=previous_job_id)]
-                    if previous_job_id
-                    else None
-                ),
+                dependencies=[DependencyRule(depends_on_job_id=previous_job_id)] if previous_job_id else None
             )
             job_ids.append(job_id)
             previous_job_id = job_id
@@ -345,7 +321,8 @@ class EnhancedJobManager:
     # ========================================================================
 
     async def cancel_job(
-        self, cancellation_request: JobCancellationRequest
+        self,
+        cancellation_request: JobCancellationRequest
     ) -> Dict[str, Any]:
         """Cancel a job with proper cleanup and dependency handling."""
         job_id = cancellation_request.job_id
@@ -356,10 +333,7 @@ class EnhancedJobManager:
         job = self.jobs[job_id]
 
         # Check if job can be cancelled
-        if not cancellation_request.force and job["status"] in [
-            JobStatus.COMPLETED,
-            JobStatus.CANCELLED,
-        ]:
+        if not cancellation_request.force and job["status"] in [JobStatus.COMPLETED, JobStatus.CANCELLED]:
             return {"status": "already_finished", "job_id": job_id}
 
         logger.info(f"Cancelling job {job_id}: {cancellation_request.reason}")
@@ -378,23 +352,19 @@ class EnhancedJobManager:
                 status=JobStatus.CANCELLED,
                 progress=job.get("progress", 0),
                 message=f"Job cancelled: {cancellation_request.reason}",
-                timestamp=datetime.utcnow(),
-            ),
+                timestamp=datetime.utcnow()
+            )
         )
 
         # Handle dependent jobs
         cancelled_dependents = []
         if cancellation_request.cancel_dependent_jobs:
-            cancelled_dependents = await self._cancel_dependent_jobs(
-                job_id, cancellation_request.reason
-            )
+            cancelled_dependents = await self._cancel_dependent_jobs(job_id, cancellation_request.reason)
 
         # Start cleanup process
         if cancellation_request.cleanup_actions:
             cleanup_task = asyncio.create_task(
-                self._perform_cleanup_actions(
-                    job_id, cancellation_request.cleanup_actions
-                )
+                self._perform_cleanup_actions(job_id, cancellation_request.cleanup_actions)
             )
             self.cleanup_tasks[job_id] = cleanup_task
 
@@ -404,7 +374,7 @@ class EnhancedJobManager:
             "status": "cancelled",
             "job_id": job_id,
             "cancelled_dependents": cancelled_dependents,
-            "cleanup_actions_scheduled": len(cancellation_request.cleanup_actions),
+            "cleanup_actions_scheduled": len(cancellation_request.cleanup_actions)
         }
 
     async def _cancel_dependent_jobs(self, job_id: str, reason: str) -> List[str]:
@@ -415,17 +385,12 @@ class EnhancedJobManager:
             if dependent_job_id in self.jobs:
                 dependent_job = self.jobs[dependent_job_id]
 
-                if dependent_job["status"] not in [
-                    JobStatus.COMPLETED,
-                    JobStatus.CANCELLED,
-                ]:
-                    await self.cancel_job(
-                        JobCancellationRequest(
-                            job_id=dependent_job_id,
-                            reason=f"Dependency {job_id} cancelled: {reason}",
-                            cancel_dependent_jobs=True,
-                        )
-                    )
+                if dependent_job["status"] not in [JobStatus.COMPLETED, JobStatus.CANCELLED]:
+                    await self.cancel_job(JobCancellationRequest(
+                        job_id=dependent_job_id,
+                        reason=f"Dependency {job_id} cancelled: {reason}",
+                        cancel_dependent_jobs=True
+                    ))
                     cancelled_jobs.append(dependent_job_id)
 
         return cancelled_jobs
@@ -479,8 +444,8 @@ class EnhancedJobManager:
                     status=self.jobs[dependent_job_id]["status"],
                     progress=self.jobs[dependent_job_id].get("progress", 0),
                     message=f"Dependency {job_id} was cancelled",
-                    timestamp=datetime.utcnow(),
-                ),
+                    timestamp=datetime.utcnow()
+                )
             )
 
     async def _rollback_job_changes(self, job_id: str):
@@ -522,9 +487,7 @@ class EnhancedJobManager:
         job["status"] = JobStatus.RETRYING
         job["error"] = None  # Clear previous error
 
-        logger.info(
-            f"Job {job_id} scheduled for retry in {delay:.2f} seconds (attempt {job['retry_count']})"
-        )
+        logger.info(f"Job {job_id} scheduled for retry in {delay:.2f} seconds (attempt {job['retry_count']})")
 
         # Notify via WebSocket
         await broadcast_job_update(
@@ -534,8 +497,8 @@ class EnhancedJobManager:
                 status=JobStatus.RETRYING,
                 progress=0,
                 message=f"Retry scheduled in {delay:.2f} seconds (attempt {job['retry_count']})",
-                timestamp=datetime.utcnow(),
-            ),
+                timestamp=datetime.utcnow()
+            )
         )
 
         self.stats["jobs_retried"] += 1
@@ -545,13 +508,13 @@ class EnhancedJobManager:
             "job_id": job_id,
             "retry_attempt": job["retry_count"],
             "next_retry_at": next_retry_time.isoformat(),
-            "delay_seconds": delay,
+            "delay_seconds": delay
         }
 
     def _calculate_retry_delay(self, retry_count: int, config: RetryConfig) -> float:
         """Calculate retry delay based on strategy."""
         if config.strategy == RetryStrategy.EXPONENTIAL_BACKOFF:
-            delay = config.base_delay_seconds * (config.backoff_multiplier**retry_count)
+            delay = config.base_delay_seconds * (config.backoff_multiplier ** retry_count)
         elif config.strategy == RetryStrategy.LINEAR_BACKOFF:
             delay = config.base_delay_seconds * (1 + retry_count)
         elif config.strategy == RetryStrategy.FIXED_INTERVAL:
@@ -601,9 +564,7 @@ class EnhancedJobManager:
             if dep_job.get("created_at"):
                 elapsed = (datetime.utcnow() - dep_job["created_at"]).total_seconds()
                 if elapsed > dependency.timeout_seconds:
-                    logger.warning(
-                        f"Dependency {dep_job_id} timed out after {elapsed:.2f}s"
-                    )
+                    logger.warning(f"Dependency {dep_job_id} timed out after {elapsed:.2f}s")
                     self.stats["dependency_violations"] += 1
                     return False
 
@@ -636,8 +597,7 @@ class EnhancedJobManager:
 
                 # Check pending jobs for satisfied dependencies
                 pending_jobs = [
-                    job_id
-                    for job_id, job in self.jobs.items()
+                    job_id for job_id, job in self.jobs.items()
                     if job["status"] == JobStatus.PENDING
                 ]
 
@@ -656,16 +616,12 @@ class EnhancedJobManager:
 
                 current_time = datetime.utcnow()
                 ready_retries = [
-                    job_id
-                    for job_id, retry_time in self.retry_schedules.items()
+                    job_id for job_id, retry_time in self.retry_schedules.items()
                     if current_time >= retry_time
                 ]
 
                 for job_id in ready_retries:
-                    if (
-                        job_id in self.jobs
-                        and self.jobs[job_id]["status"] == JobStatus.RETRYING
-                    ):
+                    if job_id in self.jobs and self.jobs[job_id]["status"] == JobStatus.RETRYING:
                         await self._queue_job(job_id)
                         del self.retry_schedules[job_id]
 
@@ -680,7 +636,8 @@ class EnhancedJobManager:
 
                 # Clean up finished cleanup tasks
                 finished_tasks = [
-                    job_id for job_id, task in self.cleanup_tasks.items() if task.done()
+                    job_id for job_id, task in self.cleanup_tasks.items()
+                    if task.done()
                 ]
 
                 for job_id in finished_tasks:
@@ -712,8 +669,8 @@ class EnhancedJobManager:
                     status=JobStatus.QUEUED,
                     progress=0,
                     message="Job queued for execution",
-                    timestamp=datetime.utcnow(),
-                ),
+                    timestamp=datetime.utcnow()
+                )
             )
 
     # ========================================================================
@@ -745,27 +702,20 @@ class EnhancedJobManager:
             "total_jobs": len(job_ids),
             "completion_percentage": (
                 (status_counts[JobStatus.COMPLETED] / len(job_ids)) * 100
-                if job_ids
-                else 0
-            ),
+                if job_ids else 0
+            )
         }
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get job manager statistics."""
         return {
             **self.stats,
-            "active_jobs": len(
-                [
-                    j
-                    for j in self.jobs.values()
-                    if j["status"] in [JobStatus.RUNNING, JobStatus.QUEUED]
-                ]
-            ),
+            "active_jobs": len([j for j in self.jobs.values() if j["status"] in [JobStatus.RUNNING, JobStatus.QUEUED]]),
             "total_jobs": len(self.jobs),
             "jobs_with_dependencies": len(self.job_dependencies),
             "active_batches": len(self.batch_jobs),
             "scheduled_retries": len(self.retry_schedules),
-            "active_cleanup_tasks": len(self.cleanup_tasks),
+            "active_cleanup_tasks": len(self.cleanup_tasks)
         }
 
 

@@ -2,7 +2,7 @@
 
 This appendix has two parts.
 
-- **Part 1 — BR Dataset / Resource System Catalog.** System-level reference for the dataset and resource substrate that Brain Researcher draws on. Covers the resource-type contract, source ingestion modes, the curated public-dataset catalog, the on-disk layout, access classes, license patterns, mount conventions, and the readiness vocabulary used in per-episode cards. Re-issue when `configs/tool_resources.yaml`, `configs/neurokg/ingestion_modes.yaml`, or `configs/datasets/public_datasets_manual_annotation.csv` changes materially.
+- **Part 1 — BR Dataset / Resource System Catalog.** System-level reference for the dataset and resource substrate that Brain Researcher draws on. Covers the resource-type contract, source ingestion modes, the curated public-dataset catalog, the on-disk layout, access classes, license patterns, mount conventions, and the readiness vocabulary used in per-episode cards. Re-issue when `configs/tool_resources.yaml`, `configs/br-kg/ingestion_modes.yaml`, or `configs/datasets/public_datasets_manual_annotation.csv` changes materially.
 - **Part 2 — Per-episode dataset/resource card template.** Fillable card recording the resources used or ruled out in one episode.
 
 ---
@@ -15,9 +15,9 @@ This appendix has two parts.
 |--------|--------------------|
 | `configs/tool_resources.yaml` | Canonical resource-type vocabulary (volume_3d, surface_mesh, timeseries, connectivity_matrix, stat_map, BIDS roots, etc.) |
 | `configs/schemas/resources.schema.json` | JSON schema enforcing the resource-type contract |
-| `configs/neurokg/ingestion_modes.yaml` | Source list with ingestion mode (`full` / `spine` / `on_demand`) and spine whitelists |
+| `configs/br-kg/ingestion_modes.yaml` | Source list with ingestion mode (`full` / `spine` / `on_demand`) and spine whitelists |
 | `configs/datasets/public_datasets_manual_annotation.csv` | 107-row curated catalog of public neuroimaging datasets (5 categories) |
-| `configs/neurokg/config.yml` | Schema definitions referenced by ingestion_modes |
+| `configs/br-kg/config.yml` | Schema definitions referenced by ingestion_modes |
 | `data/` | On-disk layout for ingested raw and derivative artifacts |
 
 ## C.S2 Resource type contract
@@ -61,7 +61,7 @@ The graph is built from a fixed set of upstream sources, each labelled with one 
 | `spine` | Whitelisted fields only; bulky/free-text payloads omitted | Large datasets, frequently updated sources, or data where details are fetched on-demand | neurosynth, pubmed, neurovault, openneuro, wikidata, niclip, brainmap, bids, neuromaps, neurostore, allen_hba, virtual_brain |
 | `on_demand` | Nothing written to Neo4j during ingestion; adapters fetch at query time | Extremely large, fast-changing, or licensed data | scholarly_metadata, nidm_results, neuroquery, nimare, neuroscout |
 
-### Full source ↔ mode assignment (from `configs/neurokg/ingestion_modes.yaml`)
+### Full source ↔ mode assignment (from `configs/br-kg/ingestion_modes.yaml`)
 
 | Source | Mode |
 |--------|------|
@@ -146,7 +146,7 @@ The `data/` tree mirrors the source-vs-derivative split:
 | `data/atlases/` | Atlas caches (nilearn, neuromaps, niclip) | |
 | `data/brainmap/` | BrainMap raw data when licensed | |
 | `data/bids/` | Local BIDS datasets | |
-| `data/neurokg/`, `data/neurokg_exports/` | NeuroKG NDJSON shards and exports | |
+| `data/br-kg/`, `data/br-kg_exports/` | BR-KG NDJSON shards and exports | |
 | `data/BR-KG/raw/<source>/` | Raw ingestion artifacts (`neurobagel_public`, `gabriel`, `kggen`, `evidence`, etc.) | per-source subfolders with manifests |
 | `data/BR-KG/benchmarks/` | Structural-quality benchmark runs | one folder per run |
 | `data/runs/mcp_runs/` | MCP run store (default) | per-episode run records |

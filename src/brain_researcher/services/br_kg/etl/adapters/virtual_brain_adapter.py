@@ -14,11 +14,7 @@ class VirtualBrainAdapter:
     def _iter_reports(self) -> Iterable[Path]:
         if not self.cache_dir.exists():
             return []
-        return sorted(
-            self.cache_dir.glob("*/report.json"),
-            key=lambda path: path.stat().st_mtime,
-            reverse=True,
-        )
+        return sorted(self.cache_dir.glob("*/report.json"), key=lambda path: path.stat().st_mtime, reverse=True)
 
     def _load_report(self, sim_id: str) -> Optional[dict]:
         report_path = self.cache_dir / sim_id.replace(":", "_") / "report.json"
@@ -45,10 +41,7 @@ class VirtualBrainAdapter:
                 report = self._load_report(sim_id)
                 if not report:
                     continue
-                if (
-                    task_id
-                    and report.get("simulation", {}).get("seeded_task_id") != task_id
-                ):
+                if task_id and report.get("simulation", {}).get("seeded_task_id") != task_id:
                     continue
                 results.append(report)
             return results
@@ -62,10 +55,7 @@ class VirtualBrainAdapter:
                 report["_report_path"] = str(report_path)
             except (OSError, json.JSONDecodeError):
                 continue
-            if (
-                task_id
-                and report.get("simulation", {}).get("seeded_task_id") != task_id
-            ):
+            if task_id and report.get("simulation", {}).get("seeded_task_id") != task_id:
                 continue
             results.append(report)
             count += 1

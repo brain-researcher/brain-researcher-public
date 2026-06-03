@@ -123,15 +123,7 @@ class BIDSParser:
         "anat": ["T1w", "T2w", "FLAIR", "T1rho", "T1map", "T2map"],
         "func": ["bold", "sbref", "events", "physio", "stim"],
         "dwi": ["dwi", "bvec", "bval"],
-        "fmap": [
-            "phasediff",
-            "phase1",
-            "phase2",
-            "magnitude",
-            "magnitude1",
-            "magnitude2",
-            "epi",
-        ],
+        "fmap": ["phasediff", "phase1", "phase2", "magnitude", "magnitude1", "magnitude2", "epi"],
         "perf": ["asl", "m0scan"],
     }
 
@@ -235,9 +227,7 @@ class BIDSParser:
 
         # Look for physio data
         if entity.suffix in ["bold", "perf"]:
-            physio_pattern = base_path.stem.replace(
-                f"_{entity.suffix}", "_physio.tsv.gz"
-            )
+            physio_pattern = base_path.stem.replace(f"_{entity.suffix}", "_physio.tsv.gz")
             physio_path = parent_dir / physio_pattern
             if physio_path.exists():
                 associated["physio"] = physio_path
@@ -289,15 +279,10 @@ class ContextAnalyzer:
                     "motion_correction": "aggressive",
                 },
             },
+
             # Analysis type patterns
             "group_analysis": {
-                "keywords": [
-                    "group-level",
-                    "group analysis",
-                    "across all subjects",
-                    "population",
-                    "cohort",
-                ],
+                "keywords": ["group-level", "group analysis", "across all subjects", "population", "cohort"],
                 "inferred_params": {
                     "analysis_level": "group",
                     "normalization_space": "MNI152",
@@ -311,6 +296,7 @@ class ContextAnalyzer:
                     "normalization_space": "native",
                 },
             },
+
             # Quality patterns
             "high_resolution": {
                 "keywords": ["high-res", "highres", "7T", "submillimeter"],
@@ -376,9 +362,7 @@ class ContextAnalyzer:
                 if frequency > 0.5:
                     # Convert back from string if needed
                     try:
-                        if isinstance(
-                            most_common_value, str
-                        ) and most_common_value.startswith(("[", "{")):
+                        if isinstance(most_common_value, str) and most_common_value.startswith(("[", "{")):
                             most_common_value = json.loads(most_common_value)
                     except:
                         pass
@@ -570,9 +554,7 @@ class ParameterInferenceEngine:
 
         # Analyze previous results
         if previous_results:
-            history_params = self.context_analyzer.analyze_previous_results(
-                previous_results
-            )
+            history_params = self.context_analyzer.analyze_previous_results(previous_results)
             inferred.merge(history_params)
 
         # Infer from BIDS files if provided

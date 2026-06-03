@@ -4,23 +4,23 @@ Manages various types of breakpoints for workflow debugging including
 conditional breakpoints, data breakpoints, and hit count breakpoints.
 """
 
-import ast
 import asyncio
+import ast
 import logging
-import re
 import time
-import uuid
-from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from typing import Dict, List, Optional, Any, Set, Union, Callable
+from dataclasses import dataclass, asdict, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+import uuid
+import re
+
 
 logger = logging.getLogger(__name__)
 
 
 class BreakpointType(str, Enum):
     """Types of breakpoints"""
-
     NODE = "node"  # Break at specific node
     CONDITION = "condition"  # Break when condition is true
     DATA = "data"  # Break on variable change
@@ -31,7 +31,6 @@ class BreakpointType(str, Enum):
 
 class BreakpointState(str, Enum):
     """Breakpoint states"""
-
     ACTIVE = "active"
     DISABLED = "disabled"
     HIT = "hit"
@@ -40,7 +39,6 @@ class BreakpointState(str, Enum):
 
 class DataChangeType(str, Enum):
     """Types of data changes to watch"""
-
     READ = "read"
     WRITE = "write"
     CHANGE = "change"
@@ -50,7 +48,6 @@ class DataChangeType(str, Enum):
 @dataclass
 class BreakpointHit:
     """Records when a breakpoint was hit"""
-
     hit_id: str
     breakpoint_id: str
     timestamp: datetime
@@ -61,14 +58,13 @@ class BreakpointHit:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        data["timestamp"] = self.timestamp.isoformat()
+        data['timestamp'] = self.timestamp.isoformat()
         return data
 
 
 @dataclass
 class Breakpoint:
     """Represents a breakpoint with its configuration"""
-
     breakpoint_id: str
     breakpoint_type: BreakpointType
     enabled: bool = True
@@ -106,27 +102,25 @@ class Breakpoint:
     def to_dict(self) -> Dict:
         """Convert to dictionary for serialization"""
         data = asdict(self)
-        data["created_at"] = self.created_at.isoformat()
-        data["hits"] = [hit.to_dict() for hit in self.hits]
+        data['created_at'] = self.created_at.isoformat()
+        data['hits'] = [hit.to_dict() for hit in self.hits]
         # Remove function from serialization
-        data.pop("condition_function", None)
+        data.pop('condition_function', None)
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "Breakpoint":
+    def from_dict(cls, data: Dict) -> 'Breakpoint':
         """Create from dictionary"""
-        if "created_at" in data:
-            data["created_at"] = datetime.fromisoformat(data["created_at"])
+        if 'created_at' in data:
+            data['created_at'] = datetime.fromisoformat(data['created_at'])
 
-        if "hits" in data:
+        if 'hits' in data:
             hits = []
-            for hit_data in data["hits"]:
-                if "timestamp" in hit_data:
-                    hit_data["timestamp"] = datetime.fromisoformat(
-                        hit_data["timestamp"]
-                    )
+            for hit_data in data['hits']:
+                if 'timestamp' in hit_data:
+                    hit_data['timestamp'] = datetime.fromisoformat(hit_data['timestamp'])
                 hits.append(BreakpointHit(**hit_data))
-            data["hits"] = hits
+            data['hits'] = hits
 
         return cls(**data)
 
@@ -137,48 +131,35 @@ class ConditionEvaluator:
     def __init__(self):
         # Safe functions available in conditions
         self.safe_functions = {
-            "len": len,
-            "str": str,
-            "int": int,
-            "float": float,
-            "bool": bool,
-            "abs": abs,
-            "min": min,
-            "max": max,
-            "sum": sum,
-            "any": any,
-            "all": all,
-            "isinstance": isinstance,
-            "hasattr": hasattr,
-            "getattr": getattr,
+            'len': len,
+            'str': str,
+            'int': int,
+            'float': float,
+            'bool': bool,
+            'abs': abs,
+            'min': min,
+            'max': max,
+            'sum': sum,
+            'any': any,
+            'all': all,
+            'isinstance': isinstance,
+            'hasattr': hasattr,
+            'getattr': getattr,
         }
 
         # Safe nodes for AST validation
         self.safe_nodes = {
-            ast.Expression,
-            ast.BinOp,
-            ast.UnaryOp,
-            ast.Compare,
-            ast.BoolOp,
-            ast.Constant,
-            ast.Name,
-            ast.Call,
-            ast.Attribute,
-            ast.Subscript,
-            ast.List,
-            ast.Dict,
-            ast.Tuple,
-            ast.Set,
-            ast.ListComp,
-            ast.DictComp,
-            ast.SetComp,
-            ast.GeneratorExp,
+            ast.Expression, ast.BinOp, ast.UnaryOp, ast.Compare,
+            ast.BoolOp, ast.Constant, ast.Name, ast.Call,
+            ast.Attribute, ast.Subscript, ast.List, ast.Dict,
+            ast.Tuple, ast.Set, ast.ListComp, ast.DictComp,
+            ast.SetComp, ast.GeneratorExp
         }
 
     def validate_condition(self, condition: str) -> bool:
         """Validate that condition is safe to execute"""
         try:
-            tree = ast.parse(condition, mode="eval")
+            tree = ast.parse(condition, mode='eval')
 
             for node in ast.walk(tree):
                 if type(node) not in self.safe_nodes:
@@ -191,7 +172,7 @@ class ConditionEvaluator:
                             return False
                     elif isinstance(node.func, ast.Attribute):
                         # Allow basic method calls on safe objects
-                        if node.func.attr.startswith("_"):
+                        if node.func.attr.startswith('_'):
                             return False
 
             return True
@@ -212,7 +193,7 @@ class ConditionEvaluator:
 
             # Remove potentially dangerous items
             for key in list(safe_context.keys()):
-                if key.startswith("_"):
+                if key.startswith('_'):
                     del safe_context[key]
 
             return eval(condition, {"__builtins__": {}}, safe_context)
@@ -226,7 +207,7 @@ class ConditionEvaluator:
         if not self.validate_condition(condition):
             raise ValueError(f"Unsafe condition: {condition}")
 
-        code = compile(condition, "<condition>", "eval")
+        code = compile(condition, '<condition>', 'eval')
 
         def condition_func(context: Dict[str, Any]) -> Any:
             try:
@@ -236,7 +217,7 @@ class ConditionEvaluator:
 
                 # Remove potentially dangerous items
                 for key in list(safe_context.keys()):
-                    if key.startswith("_"):
+                    if key.startswith('_'):
                         del safe_context[key]
 
                 return eval(code, {"__builtins__": {}}, safe_context)
@@ -266,9 +247,10 @@ class DataWatcher:
         self.watched_variables.pop(name, None)
         self.variable_history.pop(name, None)
 
-    def check_variable_change(
-        self, name: str, current_value: Any, change_type: DataChangeType
-    ) -> bool:
+    def check_variable_change(self,
+                            name: str,
+                            current_value: Any,
+                            change_type: DataChangeType) -> bool:
         """Check if variable has changed according to change type"""
         if name not in self.watched_variables:
             return False
@@ -319,19 +301,17 @@ class BreakpointManager:
 
         logger.info("Breakpoint manager initialized")
 
-    async def add_breakpoint(
-        self,
-        node_id: Optional[str] = None,
-        breakpoint_type: BreakpointType = BreakpointType.NODE,
-        condition: Optional[str] = None,
-        variable_name: Optional[str] = None,
-        change_type: DataChangeType = DataChangeType.CHANGE,
-        hit_count: Optional[int] = None,
-        time_condition: Optional[str] = None,
-        description: str = "",
-        tags: List[str] = None,
-        **kwargs,
-    ) -> Breakpoint:
+    async def add_breakpoint(self,
+                           node_id: Optional[str] = None,
+                           breakpoint_type: BreakpointType = BreakpointType.NODE,
+                           condition: Optional[str] = None,
+                           variable_name: Optional[str] = None,
+                           change_type: DataChangeType = DataChangeType.CHANGE,
+                           hit_count: Optional[int] = None,
+                           time_condition: Optional[str] = None,
+                           description: str = "",
+                           tags: List[str] = None,
+                           **kwargs) -> Breakpoint:
         """Add a new breakpoint"""
 
         breakpoint_id = f"bp_{int(time.time())}_{uuid.uuid4().hex[:8]}"
@@ -348,15 +328,13 @@ class BreakpointManager:
             time_condition=time_condition,
             description=description,
             tags=tags or [],
-            **kwargs,
+            **kwargs
         )
 
         # Validate and compile condition if provided
         if condition:
             try:
-                breakpoint.condition_function = (
-                    self.condition_evaluator.create_condition_function(condition)
-                )
+                breakpoint.condition_function = self.condition_evaluator.create_condition_function(condition)
             except ValueError as e:
                 raise ValueError(f"Invalid condition: {e}")
 
@@ -378,10 +356,8 @@ class BreakpointManager:
         breakpoint = self.breakpoints[breakpoint_id]
 
         # Stop data watching if needed
-        if (
-            breakpoint.breakpoint_type == BreakpointType.DATA
-            and breakpoint.variable_name
-        ):
+        if (breakpoint.breakpoint_type == BreakpointType.DATA and
+            breakpoint.variable_name):
             self.data_watcher.unwatch_variable(breakpoint.variable_name)
 
         # Remove breakpoint
@@ -408,9 +384,9 @@ class BreakpointManager:
         self.breakpoints[breakpoint_id].state = BreakpointState.DISABLED
         return True
 
-    async def should_break(
-        self, node_id: Optional[str] = None, context: Dict[str, Any] = None
-    ) -> bool:
+    async def should_break(self,
+                         node_id: Optional[str] = None,
+                         context: Dict[str, Any] = None) -> bool:
         """Check if execution should break at current point"""
         if not context:
             context = {}
@@ -425,38 +401,30 @@ class BreakpointManager:
 
             try:
                 # Check node breakpoint
-                if (
-                    breakpoint.breakpoint_type == BreakpointType.NODE
-                    and breakpoint.node_id == node_id
-                ):
+                if (breakpoint.breakpoint_type == BreakpointType.NODE and
+                    breakpoint.node_id == node_id):
                     should_break = True
 
                 # Check condition breakpoint
-                elif (
-                    breakpoint.breakpoint_type == BreakpointType.CONDITION
-                    and breakpoint.condition_function
-                ):
+                elif (breakpoint.breakpoint_type == BreakpointType.CONDITION and
+                      breakpoint.condition_function):
                     should_break = bool(breakpoint.condition_function(context))
 
                 # Check data breakpoint
-                elif (
-                    breakpoint.breakpoint_type == BreakpointType.DATA
-                    and breakpoint.variable_name
-                    and breakpoint.variable_name in context
-                ):
+                elif (breakpoint.breakpoint_type == BreakpointType.DATA and
+                      breakpoint.variable_name and
+                      breakpoint.variable_name in context):
                     should_break = self.data_watcher.check_variable_change(
                         breakpoint.variable_name,
                         context[breakpoint.variable_name],
-                        breakpoint.change_type,
+                        breakpoint.change_type
                     )
 
                 # Check hit count breakpoint
                 elif breakpoint.breakpoint_type == BreakpointType.HIT_COUNT:
                     breakpoint.current_hit_count += 1
-                    if (
-                        breakpoint.hit_count_target
-                        and breakpoint.current_hit_count >= breakpoint.hit_count_target
-                    ):
+                    if (breakpoint.hit_count_target and
+                        breakpoint.current_hit_count >= breakpoint.hit_count_target):
                         should_break = True
                         breakpoint.state = BreakpointState.EXPIRED
 
@@ -473,15 +441,14 @@ class BreakpointManager:
                     return True
 
             except Exception as e:
-                logger.error(
-                    f"Error evaluating breakpoint {breakpoint.breakpoint_id}: {e}"
-                )
+                logger.error(f"Error evaluating breakpoint {breakpoint.breakpoint_id}: {e}")
 
         return False
 
-    async def _record_breakpoint_hit(
-        self, breakpoint: Breakpoint, node_id: Optional[str], context: Dict[str, Any]
-    ):
+    async def _record_breakpoint_hit(self,
+                                   breakpoint: Breakpoint,
+                                   node_id: Optional[str],
+                                   context: Dict[str, Any]):
         """Record a breakpoint hit"""
         hit_id = f"hit_{int(time.time())}_{uuid.uuid4().hex[:8]}"
 
@@ -491,7 +458,7 @@ class BreakpointManager:
             timestamp=datetime.utcnow(),
             node_id=node_id,
             context=context.copy(),  # Make a copy to avoid mutations
-            hit_count=len(breakpoint.hits) + 1,
+            hit_count=len(breakpoint.hits) + 1
         )
 
         breakpoint.hits.append(hit)
@@ -511,15 +478,15 @@ class BreakpointManager:
             now = datetime.utcnow()
 
             # Parse "after Xs" format
-            if condition.startswith("after "):
+            if condition.startswith('after '):
                 duration_str = condition[6:].strip()
 
                 # Parse duration (e.g., "5s", "2m", "1h")
-                if duration_str.endswith("s"):
+                if duration_str.endswith('s'):
                     seconds = float(duration_str[:-1])
-                elif duration_str.endswith("m"):
+                elif duration_str.endswith('m'):
                     seconds = float(duration_str[:-1]) * 60
-                elif duration_str.endswith("h"):
+                elif duration_str.endswith('h'):
                     seconds = float(duration_str[:-1]) * 3600
                 else:
                     seconds = float(duration_str)
@@ -528,15 +495,15 @@ class BreakpointManager:
                 return elapsed >= seconds
 
             # Parse "at HH:MM" format
-            elif condition.startswith("at "):
+            elif condition.startswith('at '):
                 time_str = condition[3:].strip()
-                target_time = datetime.strptime(time_str, "%H:%M").time()
+                target_time = datetime.strptime(time_str, '%H:%M').time()
                 current_time = now.time()
 
                 return current_time >= target_time
 
             # Parse "every Xs" format (periodic)
-            elif condition.startswith("every "):
+            elif condition.startswith('every '):
                 # This would need additional state tracking
                 # For now, just return False
                 return False
@@ -556,23 +523,22 @@ class BreakpointManager:
 
     def get_breakpoints_by_node(self, node_id: str) -> List[Breakpoint]:
         """Get all breakpoints for a specific node"""
-        return [bp for bp in self.breakpoints.values() if bp.node_id == node_id]
+        return [
+            bp for bp in self.breakpoints.values()
+            if bp.node_id == node_id
+        ]
 
-    def get_breakpoints_by_type(
-        self, breakpoint_type: BreakpointType
-    ) -> List[Breakpoint]:
+    def get_breakpoints_by_type(self, breakpoint_type: BreakpointType) -> List[Breakpoint]:
         """Get all breakpoints of a specific type"""
         return [
-            bp
-            for bp in self.breakpoints.values()
+            bp for bp in self.breakpoints.values()
             if bp.breakpoint_type == breakpoint_type
         ]
 
     def get_active_breakpoints(self) -> List[Breakpoint]:
         """Get all active breakpoints"""
         return [
-            bp
-            for bp in self.breakpoints.values()
+            bp for bp in self.breakpoints.values()
             if bp.enabled and bp.state == BreakpointState.ACTIVE
         ]
 
@@ -580,10 +546,8 @@ class BreakpointManager:
         """Clear all breakpoints"""
         # Stop all data watching
         for breakpoint in self.breakpoints.values():
-            if (
-                breakpoint.breakpoint_type == BreakpointType.DATA
-                and breakpoint.variable_name
-            ):
+            if (breakpoint.breakpoint_type == BreakpointType.DATA and
+                breakpoint.variable_name):
                 self.data_watcher.unwatch_variable(breakpoint.variable_name)
 
         self.breakpoints.clear()
@@ -599,15 +563,11 @@ class BreakpointManager:
             type_counts[bp_type.value] = len(self.get_breakpoints_by_type(bp_type))
 
         return {
-            "total_breakpoints": len(self.breakpoints),
-            "active_breakpoints": active_count,
-            "disabled_breakpoints": disabled_count,
-            "breakpoints_by_type": type_counts,
-            "total_hits": self.total_hits,
-            "total_evaluations": self.total_evaluations,
-            "hit_rate": (
-                self.total_hits / self.total_evaluations
-                if self.total_evaluations > 0
-                else 0
-            ),
+            'total_breakpoints': len(self.breakpoints),
+            'active_breakpoints': active_count,
+            'disabled_breakpoints': disabled_count,
+            'breakpoints_by_type': type_counts,
+            'total_hits': self.total_hits,
+            'total_evaluations': self.total_evaluations,
+            'hit_rate': self.total_hits / self.total_evaluations if self.total_evaluations > 0 else 0
         }

@@ -8,7 +8,7 @@ metadata:
   namespace: {{ include "brain-researcher.coreNamespace" . }}
   labels:
     {{- include "brain-researcher.labels" . | nindent 4 }}
-    {{- include "brain-researcher.componentLabels" "orchestrator" | nindent 4 }}
+    {{- include "${PUBLIC_HOSTNAME}ponentLabels" "orchestrator" | nindent 4 }}
   annotations:
     {{- if .Values.orchestrator.podAnnotations }}
     {{- toYaml .Values.orchestrator.podAnnotations | nindent 4 }}
@@ -34,7 +34,7 @@ spec:
     {{- end }}
   selector:
     {{- include "brain-researcher.selectorLabels" . | nindent 4 }}
-    {{- include "brain-researcher.componentLabels" "orchestrator" | nindent 4 }}
+    {{- include "${PUBLIC_HOSTNAME}ponentLabels" "orchestrator" | nindent 4 }}
   {{- if .Values.orchestrator.service.sessionAffinity }}
   sessionAffinity: {{ .Values.orchestrator.service.sessionAffinity }}
   {{- if .Values.orchestrator.service.sessionAffinityConfig }}

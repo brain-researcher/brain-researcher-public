@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import logging
 import os
-import shutil
 import time
+from functools import lru_cache
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+import shutil
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -18,11 +18,6 @@ from brain_researcher.services.agent.domain_knowledge import get_domain_knowledg
 from brain_researcher.services.agent.kg_resolution import (
     QueryUnderstandingResult,
     build_query_understanding_result,
-)
-from brain_researcher.services.agent.query_understanding import (
-    ParsedQuery,
-    QueryIntent,
-    create_advanced_parser,
 )
 from brain_researcher.services.agent.resolution_memory import (
     add_pending_decision,
@@ -42,9 +37,13 @@ from brain_researcher.services.agent.resolution_memory import (
     set_session_entry,
     set_step_status,
 )
+from brain_researcher.services.agent.query_understanding import (
+    ParsedQuery,
+    QueryIntent,
+    create_advanced_parser,
+)
 
 logger = logging.getLogger(__name__)
-
 
 def _env_flag(name: str, default: bool = True) -> bool:
     raw = os.getenv(name)
@@ -104,7 +103,9 @@ def _store_tool_candidate_diagnostics(
     diagnostics["candidate_source"] = (
         next(iter(source_counts.keys()))
         if len(source_counts) == 1
-        else "mixed" if source_counts else None
+        else "mixed"
+        if source_counts
+        else None
     )
     if isinstance(ctx, dict):
         ctx["tool_candidate_diagnostics"] = diagnostics
@@ -703,16 +704,12 @@ def ensure_tool_candidates(
             {
                 "tool_id": raw_tool_id,
                 "tool_id_raw": raw_tool_id,
-                "score": (
-                    getattr(match, "score", None)
-                    if not isinstance(match, dict)
-                    else match.get("score")
-                ),
-                "source": (
-                    getattr(match, "source", None)
-                    if not isinstance(match, dict)
-                    else match.get("source")
-                ),
+                "score": getattr(match, "score", None)
+                if not isinstance(match, dict)
+                else match.get("score"),
+                "source": getattr(match, "source", None)
+                if not isinstance(match, dict)
+                else match.get("source"),
                 "rank": idx + 1,
             },
             registry=registry,
@@ -756,9 +753,9 @@ def ensure_tool_candidates(
                     runtime_surface,
                     status="resolved",
                     resolved_id_or_path=str(top_tool),
-                    source_run_id=(
-                        (ctx or {}).get("run_id") if isinstance(ctx, dict) else None
-                    ),
+                    source_run_id=(ctx or {}).get("run_id")
+                    if isinstance(ctx, dict)
+                    else None,
                 )
                 clear_pending_decisions(ctx, capability_intent)
     else:
@@ -769,9 +766,9 @@ def ensure_tool_candidates(
                 runtime_surface,
                 status="negative",
                 resolved_id_or_path=None,
-                source_run_id=(
-                    (ctx or {}).get("run_id") if isinstance(ctx, dict) else None
-                ),
+                source_run_id=(ctx or {}).get("run_id")
+                if isinstance(ctx, dict)
+                else None,
             )
             decision = build_pending_decision(capability_intent)
             if decision:

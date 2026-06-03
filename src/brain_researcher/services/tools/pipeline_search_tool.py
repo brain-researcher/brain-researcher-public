@@ -18,12 +18,8 @@ from brain_researcher.services.tools.tool_base import BRKGToolWrapper, ToolResul
 
 
 class PipelineSearchArgs(BaseModel):
-    task: str = Field(
-        ..., description="Task description, e.g., 't1 preprocessing to MNI'."
-    )
-    modalities: Optional[List[str]] = Field(
-        None, description="Optional modalities filter, e.g., ['smri']"
-    )
+    task: str = Field(..., description="Task description, e.g., 't1 preprocessing to MNI'.")
+    modalities: Optional[List[str]] = Field(None, description="Optional modalities filter, e.g., ['smri']")
     limit: int = Field(3, description="Max pipelines to return")
 
 
@@ -45,9 +41,7 @@ class PipelineSearchTool(BRKGToolWrapper):
     def get_args_schema(self):
         return PipelineSearchArgs
 
-    def _run(
-        self, task: str, modalities: Optional[List[str]] = None, limit: int = 3
-    ) -> ToolResult:
+    def _run(self, task: str, modalities: Optional[List[str]] = None, limit: int = 3) -> ToolResult:
         pipelines = search_pipelines(task=task, modalities=modalities, limit=limit)
         return ToolResult(status="success", data={"pipelines": pipelines})
 

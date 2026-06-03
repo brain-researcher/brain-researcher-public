@@ -8,7 +8,7 @@ REQUIRED_SUBSTRINGS = {
     "apps/web-ui/README.md": (
         "cd apps/web-ui",
         "[Main Documentation](../../README.md)",
-        "[CLI Documentation](../../docs/user-guide/cli.md)",
+        "[Operations Guide](../../docs/OPERATIONS.md)",
     ),
     "apps/web-ui/README-real-pipeline.md": ("cd apps/web-ui",),
     "apps/web-ui/INTEGRATION.md": (

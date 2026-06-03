@@ -353,11 +353,9 @@ def _inventory_assets() -> list[dict[str, Any]]:
                     "canonical_runtime_name": asset_name,
                     "title": asset_name,
                     "summary": str(entry.get("why_it_matters") or "").strip(),
-                    "spaces": (
-                        [metadata["space_or_density"]]
-                        if metadata["space_or_density"]
-                        else []
-                    ),
+                    "spaces": [metadata["space_or_density"]]
+                    if metadata["space_or_density"]
+                    else [],
                     "resolution": "",
                     "density": "",
                     "current_state": str(entry.get("current_state") or "").strip(),

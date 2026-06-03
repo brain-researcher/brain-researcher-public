@@ -106,6 +106,5 @@ Run the test suite:
 python tests/unit/br-kg/test_create_activation_edges.py
 ```
 
-## Integration Example
-
-See `examples/br-kg/activation_edges_example.py` for a complete example of setting up test data and running the helpers programmatically.
+The unit test above is the maintained executable example for setting up test
+data and running the helpers programmatically.

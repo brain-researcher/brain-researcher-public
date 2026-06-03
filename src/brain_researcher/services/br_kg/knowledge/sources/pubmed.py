@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, Sequence
+from typing import Sequence, Optional
 
 from brain_researcher.services.br_kg.evidence.connectors.pubmed import PubMedConnector
-
-from ..models import KnowledgeItem
 from .base import BaseEvidenceSource, SourceCapabilities
+from ..models import KnowledgeItem
 
 logger = logging.getLogger(__name__)
 

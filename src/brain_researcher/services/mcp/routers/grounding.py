@@ -172,9 +172,7 @@ def _build_alignment_judge():
     except Exception:
         return None
 
-    client = genai.Client(
-        api_key=api_key, http_options=types.HttpOptions(timeout=30000)
-    )
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=30000))
 
     def judge(claim: str, support_text: str) -> str:
         import json as _json
@@ -185,14 +183,12 @@ def _build_alignment_judge():
             '{"label":"yes|partial|no_unrelated"}.\n\n'
             f"CLAIM: {claim}\n\nPASSAGE: {support_text[:4000]}\n\nJSON:"
         )
-        cfg = types.GenerateContentConfig(
-            temperature=0, response_mime_type="application/json"
-        )
+        cfg = types.GenerateContentConfig(temperature=0, response_mime_type="application/json")
         resp = client.models.generate_content(
             model=_ALIGNMENT_JUDGE_MODEL, contents=prompt, config=cfg
         )
         txt = (resp.text or "").strip()
-        data = _json.loads(txt[txt.find("{") : txt.rfind("}") + 1])
+        data = _json.loads(txt[txt.find("{"): txt.rfind("}") + 1])
         return str(data.get("label", "")).strip().lower()
 
     return judge
@@ -220,16 +216,12 @@ def grounding_gate_evidence_basis(
     alignment_mode='judge' uses a semantic LLM check (spam-resistant) instead of the lexical
     'judge_parity'/'strict' overlap heuristic; falls back to lexical if no LLM is available.
     """
-    alignment_mode = coerce_enum(
-        alignment_mode, _ALIGNMENT_MODE_ALIASES, "judge_parity"
-    )
+    alignment_mode = coerce_enum(alignment_mode, _ALIGNMENT_MODE_ALIASES, "judge_parity")
     partial_action = coerce_enum(partial_action, _PARTIAL_ACTION_ALIASES, "downgrade")
     try:
         from brain_researcher.core.grounding_references import gate_evidence_basis
 
-        alignment_judge = (
-            _build_alignment_judge() if alignment_mode == "judge" else None
-        )
+        alignment_judge = _build_alignment_judge() if alignment_mode == "judge" else None
         result = gate_evidence_basis(
             evidence_basis,
             anchors=anchors,

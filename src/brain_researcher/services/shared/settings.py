@@ -49,9 +49,10 @@ def get_settings() -> Settings:
     raw_allowlist = os.getenv("AGENT_TOOL_ALLOWLIST", "*")
     tool_allowlist = _parse_allowlist(raw_allowlist)
 
-    enable_code_agent_tool = os.getenv(
-        "BR_ENABLE_CODE_AGENT_TOOL", "0"
-    ).strip().lower() in {"1", "true", "yes", "on"}
+    enable_code_agent_tool = (
+        os.getenv("BR_ENABLE_CODE_AGENT_TOOL", "0").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
 
     sandbox_enabled = os.getenv("BR_SANDBOX_ENABLED", "true").strip().lower() == "true"
 

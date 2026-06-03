@@ -13,9 +13,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 
 @dataclass
@@ -66,7 +66,9 @@ class ToolIndex:
         self.synonyms = synonyms or {}
 
         # Build corpus: concatenate name, description, tags, and aliases
-        self.corpus = [self._build_document(entry) for entry in entries]
+        self.corpus = [
+            self._build_document(entry) for entry in entries
+        ]
 
         # Create TF-IDF vectorizer with bigrams for better phrase matching
         self.vectorizer = TfidfVectorizer(
@@ -120,7 +122,7 @@ class ToolIndex:
         query = query.lower().strip()
 
         # Split into tokens and expand each
-        tokens = re.split(r"\s+", query)
+        tokens = re.split(r'\s+', query)
         expanded = [query]  # Include original query
 
         for token in tokens:
@@ -194,8 +196,7 @@ class ToolIndex:
             List of tools in that category
         """
         return [
-            entry
-            for entry in self.entries
+            entry for entry in self.entries
             if entry.category and entry.category.lower() == category.lower()
         ]
 

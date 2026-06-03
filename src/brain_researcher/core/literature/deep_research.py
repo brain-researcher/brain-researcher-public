@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+
 DEFAULT_RECENCY_DAYS = 180
 DEFAULT_TOP_K = 10
 DEFAULT_LANGUAGE = "en"
@@ -463,11 +464,7 @@ def _append_trail(
     next_trails = list(trails)
     next_trails.append(
         {
-            "stage": (
-                stage
-                if stage in {"start", "poll", "sync_fallback", "sync_deepxiv"}
-                else "poll"
-            ),
+            "stage": stage if stage in {"start", "poll", "sync_fallback", "sync_deepxiv"} else "poll",
             "tool": tool or "deep_research",
             "status": status or "unknown",
             "detail": detail,
@@ -670,9 +667,9 @@ def _extract_url_documents(raw_payload: Any) -> List[Dict[str, Any]]:
                 "doc_id": f"doc_{len(documents) + 1}",
                 "title": title,
                 "url": canonical,
-                "raw_url": (
-                    url.strip() if isinstance(url, str) and url.strip() else canonical
-                ),
+                "raw_url": url.strip()
+                if isinstance(url, str) and url.strip()
+                else canonical,
                 "source_host": _source_host(canonical),
                 "display_url": _display_url(canonical),
                 "source_type": _infer_source_type(canonical, title),
@@ -1020,9 +1017,9 @@ def _provider_sync_deepxiv(
     if recency_days is not None and int(recency_days) > 0:
         from datetime import timedelta
 
-        cutoff = (
-            datetime.now(timezone.utc) - timedelta(days=int(recency_days))
-        ).strftime("%Y-%m-%d")
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=int(recency_days))).strftime(
+            "%Y-%m-%d"
+        )
         search_kwargs.setdefault("date_from", cutoff)
 
     try:
@@ -1372,13 +1369,13 @@ def deep_research_sync(request: Dict[str, Any]) -> Dict[str, Any]:
     cached = load_cached_result(idempotency_key)
     if cached:
         cache_stage = "sync_deepxiv" if provider == "deepxiv" else "sync_fallback"
-        cache_tool = (
-            "deepxiv_search" if provider == "deepxiv" else "google_deep_research_sync"
-        )
+        cache_tool = "deepxiv_search" if provider == "deepxiv" else "google_deep_research_sync"
         return {
             "status": "cached",
             "idempotency_key": idempotency_key,
-            "result": _with_cache_hit_trail(cached, stage=cache_stage, tool=cache_tool),
+            "result": _with_cache_hit_trail(
+                cached, stage=cache_stage, tool=cache_tool
+            ),
         }
 
     if provider == "deepxiv":

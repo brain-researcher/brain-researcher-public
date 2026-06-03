@@ -1948,9 +1948,9 @@ def test_verify_hypothesis_uses_external_literature_when_kg_evidence_missing(
     monkeypatch.setattr(
         query_service,
         "_resolve_exact_hint_entity",
-        lambda hint, *, client, allowed_node_types=None: (
-            concept if hint == concept.kg_id else None
-        ),
+        lambda hint, *, client, allowed_node_types=None: concept
+        if hint == concept.kg_id
+        else None,
     )
     monkeypatch.setattr(
         query_service,

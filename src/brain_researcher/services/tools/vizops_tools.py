@@ -29,7 +29,9 @@ from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResu
 
 class PlotBrainMapArgs(BaseModel):
     stat_map: str = Field(description="Path to statistical map")
-    output_file: str | None = Field(default=None, description="Output image path (png)")
+    output_file: str | None = Field(
+        default=None, description="Output image path (png)"
+    )
     threshold: float | str | None = Field(
         default="auto", description="Threshold or 'auto'"
     )

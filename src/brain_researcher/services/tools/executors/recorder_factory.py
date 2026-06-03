@@ -160,7 +160,9 @@ class DefaultRecorderFactory:
         )
 
 
-def create_recorder_factory(config: Optional[RecorderConfig] = None) -> RecorderFactory:
+def create_recorder_factory(
+    config: Optional[RecorderConfig] = None
+) -> RecorderFactory:
     """Factory function for creating RecorderFactory instances.
 
     This follows the existing pattern in the codebase for component creation

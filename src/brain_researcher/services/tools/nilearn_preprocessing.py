@@ -28,32 +28,21 @@ logger = logging.getLogger(__name__)
 # 1. NiftiMasker Tool
 # =============================================================================
 
-
 class NiftiMaskerArgs(BaseModel):
     """Arguments for NiftiMasker brain extraction and signal processing."""
 
     img: str = Field(description="Path to 4D fMRI image")
-    mask_img: Optional[str] = Field(
-        None, description="Path to mask image or 'compute' to generate"
-    )
-    mask_strategy: str = Field(
-        default="epi", description="Strategy: 'epi', 'template', 'whole-brain-template'"
-    )
+    mask_img: Optional[str] = Field(None, description="Path to mask image or 'compute' to generate")
+    mask_strategy: str = Field(default="epi", description="Strategy: 'epi', 'template', 'whole-brain-template'")
     standardize: bool = Field(default=True, description="Z-score standardization")
     detrend: bool = Field(default=True, description="Detrend signals")
     smoothing_fwhm: Optional[float] = Field(None, description="Smoothing kernel in mm")
     low_pass: Optional[float] = Field(None, description="Low-pass filter cutoff in Hz")
-    high_pass: Optional[float] = Field(
-        None, description="High-pass filter cutoff in Hz"
-    )
-    t_r: Optional[float] = Field(
-        None, description="TR for filtering (required if filters used)"
-    )
+    high_pass: Optional[float] = Field(None, description="High-pass filter cutoff in Hz")
+    t_r: Optional[float] = Field(None, description="TR for filtering (required if filters used)")
     confounds: Optional[str] = Field(None, description="Path to confounds file")
-    confound_strategy: List[str] = Field(
-        default=["motion", "high_pass", "wm_csf"],
-        description="Confound selection strategy",
-    )
+    confound_strategy: List[str] = Field(default=["motion", "high_pass", "wm_csf"],
+                                         description="Confound selection strategy")
     output_file: Optional[str] = Field(None, description="Save extracted signals")
 
 
@@ -69,7 +58,7 @@ class NiftiMaskerTool(NeuroToolWrapper):
         "smoothing_fwhm": ["fwhm", "smooth", "kernel"],
         "low_pass": ["lp", "lowpass"],
         "high_pass": ["hp", "highpass"],
-        "t_r": ["TR", "repetition_time", "tr"],
+        "t_r": ["TR", "repetition_time", "tr"]
     }
 
     EXAMPLES = [
@@ -81,9 +70,9 @@ class NiftiMaskerTool(NeuroToolWrapper):
                 "standardize": True,
                 "high_pass": 0.01,
                 "t_r": 2.0,
-                "confounds": "sub-01_task-rest_confounds.tsv",
+                "confounds": "sub-01_task-rest_confounds.tsv"
             },
-            notes="Automatic masking with filtering and confounds",
+            notes="Automatic masking with filtering and confounds"
         ),
         ToolExample(
             user_query="Apply smoothing and extract signals",
@@ -91,10 +80,10 @@ class NiftiMaskerTool(NeuroToolWrapper):
                 "img": "bold.nii.gz",
                 "smoothing_fwhm": 6.0,
                 "mask_strategy": "template",
-                "detrend": True,
+                "detrend": True
             },
-            notes="Template-based masking with smoothing",
-        ),
+            notes="Template-based masking with smoothing"
+        )
     ]
 
     args_model = NiftiMaskerArgs
@@ -127,20 +116,13 @@ class NiftiMaskerTool(NeuroToolWrapper):
 # 2. ROI Extraction Tool
 # =============================================================================
 
-
 class ROIExtractionArgs(BaseModel):
     """Arguments for ROI-based signal extraction."""
 
     img: str = Field(description="Path to 4D fMRI data")
-    atlas: str = Field(
-        description="Atlas name or path: 'AAL', 'Harvard-Oxford', 'Schaefer2018', 'Yeo', custom path"
-    )
-    n_parcels: Optional[int] = Field(
-        None, description="Number of parcels (for parametric atlases)"
-    )
-    extract_type: str = Field(
-        default="mean", description="Extraction: 'mean', 'median', 'sum', 'min', 'max'"
-    )
+    atlas: str = Field(description="Atlas name or path: 'AAL', 'Harvard-Oxford', 'Schaefer2018', 'Yeo', custom path")
+    n_parcels: Optional[int] = Field(None, description="Number of parcels (for parametric atlases)")
+    extract_type: str = Field(default="mean", description="Extraction: 'mean', 'median', 'sum', 'min', 'max'")
     confounds: Optional[str] = Field(None, description="Confounds file path")
     standardize: bool = Field(default=True, description="Standardize signals")
     detrend: bool = Field(default=True, description="Detrend signals")
@@ -161,7 +143,7 @@ class ROIExtractionTool(NeuroToolWrapper):
     ARG_SYNONYMS = {
         "atlas": ["parcellation", "roi_atlas", "template"],
         "extract_type": ["aggregation", "summary_method", "extraction_method"],
-        "n_parcels": ["n_rois", "n_regions", "resolution"],
+        "n_parcels": ["n_rois", "n_regions", "resolution"]
     }
 
     EXAMPLES = [
@@ -172,9 +154,9 @@ class ROIExtractionTool(NeuroToolWrapper):
                 "atlas": "Schaefer2018",
                 "n_parcels": 400,
                 "extract_type": "mean",
-                "standardize": True,
+                "standardize": True
             },
-            notes="400-parcel Schaefer atlas extraction",
+            notes="400-parcel Schaefer atlas extraction"
         ),
         ToolExample(
             user_query="Get AAL region time series",
@@ -183,10 +165,10 @@ class ROIExtractionTool(NeuroToolWrapper):
                 "atlas": "AAL",
                 "confounds": "confounds.tsv",
                 "high_pass": 0.01,
-                "t_r": 2.0,
+                "t_r": 2.0
             },
-            notes="AAL atlas with confound regression",
-        ),
+            notes="AAL atlas with confound regression"
+        )
     ]
 
     args_model = ROIExtractionArgs
@@ -219,7 +201,6 @@ class ROIExtractionTool(NeuroToolWrapper):
 # 3. Confounds Cleaning Tool
 # =============================================================================
 
-
 class ConfoundsCleanArgs(BaseModel):
     """Arguments for comprehensive confound removal."""
 
@@ -227,21 +208,17 @@ class ConfoundsCleanArgs(BaseModel):
     confounds: str = Field(description="Path to confounds file (TSV or CSV)")
     strategy: Union[str, List[str]] = Field(
         default="minimal",
-        description="Strategy: 'minimal', 'motion', 'compcor', 'scrubbing', 'ica-aroma', or list of column patterns",
+        description="Strategy: 'minimal', 'motion', 'compcor', 'scrubbing', 'ica-aroma', or list of column patterns"
     )
     motion_params: bool = Field(default=True, description="Include motion parameters")
     wm_csf: bool = Field(default=True, description="Include WM/CSF signals")
     global_signal: bool = Field(default=False, description="Include global signal")
-    compcor: Optional[str] = Field(
-        None, description="CompCor type: 'anat', 'temp', 'combined'"
-    )
+    compcor: Optional[str] = Field(None, description="CompCor type: 'anat', 'temp', 'combined'")
     n_compcor: int = Field(default=5, description="Number of CompCor components")
     high_pass: float = Field(default=0.01, description="High-pass filter cutoff")
     low_pass: Optional[float] = Field(None, description="Low-pass filter cutoff")
     t_r: Optional[float] = Field(None, description="TR in seconds")
-    scrub_threshold: float = Field(
-        default=0.5, description="FD threshold for scrubbing"
-    )
+    scrub_threshold: float = Field(default=0.5, description="FD threshold for scrubbing")
     output_file: Optional[str] = Field(None, description="Save cleaned image")
     save_confounds: Optional[str] = Field(None, description="Save selected confounds")
 
@@ -257,7 +234,7 @@ class ConfoundsCleanTool(NeuroToolWrapper):
         "strategy": ["cleaning_strategy", "confound_strategy", "pipeline"],
         "motion_params": ["motion", "movement", "realignment_params"],
         "wm_csf": ["white_matter_csf", "tissue_signals"],
-        "global_signal": ["global", "gs", "global_mean"],
+        "global_signal": ["global", "gs", "global_mean"]
     }
 
     EXAMPLES = [
@@ -268,9 +245,9 @@ class ConfoundsCleanTool(NeuroToolWrapper):
                 "confounds": "sub-01_confounds.tsv",
                 "strategy": "minimal",
                 "high_pass": 0.008,
-                "t_r": 2.0,
+                "t_r": 2.0
             },
-            notes="Minimal cleaning strategy",
+            notes="Minimal cleaning strategy"
         ),
         ToolExample(
             user_query="Apply CompCor and scrubbing",
@@ -280,10 +257,10 @@ class ConfoundsCleanTool(NeuroToolWrapper):
                 "compcor": "anat",
                 "n_compcor": 10,
                 "scrub_threshold": 0.3,
-                "motion_params": True,
+                "motion_params": True
             },
-            notes="Advanced cleaning with aCompCor",
-        ),
+            notes="Advanced cleaning with aCompCor"
+        )
     ]
 
     args_model = ConfoundsCleanArgs
@@ -309,7 +286,7 @@ class ConfoundsCleanTool(NeuroToolWrapper):
         args = ConfoundsCleanArgs(**kwargs)
 
         # Load confounds
-        confounds_df = pd.read_csv(args.confounds, sep="\t")
+        confounds_df = pd.read_csv(args.confounds, sep='\t')
 
         # Select confounds based on strategy
         selected_confounds = []
@@ -317,37 +294,28 @@ class ConfoundsCleanTool(NeuroToolWrapper):
         if isinstance(args.strategy, str):
             if args.strategy == "minimal":
                 # Basic motion parameters
-                motion_cols = [
-                    c
-                    for c in confounds_df.columns
-                    if any(x in c for x in ["trans", "rot"])
-                ]
+                motion_cols = [c for c in confounds_df.columns
+                             if any(x in c for x in ['trans', 'rot'])]
                 selected_confounds.extend(motion_cols[:6])  # Basic 6 params
 
             elif args.strategy == "motion":
                 # Motion + derivatives
-                motion_cols = [
-                    c
-                    for c in confounds_df.columns
-                    if any(x in c for x in ["trans", "rot"])
-                ]
+                motion_cols = [c for c in confounds_df.columns
+                             if any(x in c for x in ['trans', 'rot'])]
                 selected_confounds.extend(motion_cols)
 
             elif args.strategy == "compcor":
                 # CompCor components
                 if args.compcor == "anat":
-                    compcor_cols = [
-                        c for c in confounds_df.columns if "a_comp_cor" in c.lower()
-                    ]
+                    compcor_cols = [c for c in confounds_df.columns
+                                  if 'a_comp_cor' in c.lower()]
                 elif args.compcor == "temp":
-                    compcor_cols = [
-                        c for c in confounds_df.columns if "t_comp_cor" in c.lower()
-                    ]
+                    compcor_cols = [c for c in confounds_df.columns
+                                  if 't_comp_cor' in c.lower()]
                 else:
-                    compcor_cols = [
-                        c for c in confounds_df.columns if "comp_cor" in c.lower()
-                    ]
-                selected_confounds.extend(compcor_cols[: args.n_compcor])
+                    compcor_cols = [c for c in confounds_df.columns
+                                  if 'comp_cor' in c.lower()]
+                selected_confounds.extend(compcor_cols[:args.n_compcor])
 
         else:
             # Custom list of patterns
@@ -357,28 +325,19 @@ class ConfoundsCleanTool(NeuroToolWrapper):
 
         # Add additional confounds
         if args.motion_params:
-            motion_cols = [
-                c for c in confounds_df.columns if any(x in c for x in ["trans", "rot"])
-            ]
-            selected_confounds.extend(
-                [c for c in motion_cols if c not in selected_confounds]
-            )
+            motion_cols = [c for c in confounds_df.columns
+                         if any(x in c for x in ['trans', 'rot'])]
+            selected_confounds.extend([c for c in motion_cols if c not in selected_confounds])
 
         if args.wm_csf:
-            tissue_cols = [
-                c
-                for c in confounds_df.columns
-                if any(x in c.lower() for x in ["white_matter", "csf", "wm", "cerebro"])
-            ]
-            selected_confounds.extend(
-                [c for c in tissue_cols if c not in selected_confounds]
-            )
+            tissue_cols = [c for c in confounds_df.columns
+                         if any(x in c.lower() for x in ['white_matter', 'csf', 'wm', 'cerebro'])]
+            selected_confounds.extend([c for c in tissue_cols if c not in selected_confounds])
 
         if args.global_signal:
-            global_cols = [c for c in confounds_df.columns if "global" in c.lower()]
-            selected_confounds.extend(
-                [c for c in global_cols if c not in selected_confounds]
-            )
+            global_cols = [c for c in confounds_df.columns
+                         if 'global' in c.lower()]
+            selected_confounds.extend([c for c in global_cols if c not in selected_confounds])
 
         # Keep confound selection order stable for reproducible runs and logs.
         selected_confounds = list(dict.fromkeys(selected_confounds))
@@ -427,12 +386,12 @@ class ConfoundsCleanTool(NeuroToolWrapper):
             t_r=t_r,
             standardize="zscore_sample",
             clean__standardize_confounds=False,
-            detrend=True,
+            detrend=True
         )
 
         # Apply scrubbing if requested
-        if args.scrub_threshold and "framewise_displacement" in confounds_df.columns:
-            fd = confounds_df["framewise_displacement"].values
+        if args.scrub_threshold and 'framewise_displacement' in confounds_df.columns:
+            fd = confounds_df['framewise_displacement'].values
             fd[np.isnan(fd)] = 0
             good_volumes = fd < args.scrub_threshold
 
@@ -441,7 +400,9 @@ class ConfoundsCleanTool(NeuroToolWrapper):
                 data = cleaned_img.get_fdata()
                 data_scrubbed = data[..., good_volumes]
                 cleaned_img = nib.Nifti1Image(
-                    data_scrubbed, cleaned_img.affine, cleaned_img.header
+                    data_scrubbed,
+                    cleaned_img.affine,
+                    cleaned_img.header
                 )
                 logger.info(f"Scrubbed {(~good_volumes).sum()} volumes")
 
@@ -450,7 +411,7 @@ class ConfoundsCleanTool(NeuroToolWrapper):
             cleaned_img.to_filename(args.output_file)
 
         if args.save_confounds and selected_confounds_df is not None:
-            selected_confounds_df.to_csv(args.save_confounds, sep="\t", index=False)
+            selected_confounds_df.to_csv(args.save_confounds, sep='\t', index=False)
 
         return {
             "status": "success",
@@ -458,14 +419,13 @@ class ConfoundsCleanTool(NeuroToolWrapper):
             "confounds_used": selected_confounds,
             "n_sanitized_values": n_sanitized_values,
             "sanitized_confounds": sanitized_confounds,
-            "output_file": args.output_file,
+            "output_file": args.output_file
         }
 
 
 # =============================================================================
 # Tool Registration
 # =============================================================================
-
 
 def register_preprocessing_tools(registry):
     """Register all preprocessing tools."""

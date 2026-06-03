@@ -12,18 +12,18 @@ This module provides execution of complex DAG workflows with support for:
 """
 
 import asyncio
-import copy
 import logging
-import traceback
-import uuid
+from typing import Dict, List, Optional, Any, Set, Tuple, Union
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from datetime import datetime, timedelta
+import uuid
+import copy
+import traceback
 
+from .dag_language import DAGDefinition, DAGNode, NodeType, LoopType, ParameterResolver
 from .checkpoint_manager import CheckpointManager, ExecutionState
 from .conditional_logic import ConditionalExecutor, LoopManager
-from .dag_language import DAGDefinition, DAGNode, LoopType, NodeType, ParameterResolver
 from .parallel_executor import AdaptiveParallelExecutionOrchestrator as ParallelExecutor
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 
 class ExecutionStatus(Enum):
     """Execution status for nodes and DAGs"""
-
     PENDING = "pending"
     RUNNING = "running"
     SUCCESS = "success"
@@ -43,16 +42,14 @@ class ExecutionStatus(Enum):
 
 class SchedulingStrategy(Enum):
     """Node scheduling strategies"""
-
     EAGER = "eager"  # Schedule as soon as dependencies are met
-    LAZY = "lazy"  # Schedule only when explicitly triggered
+    LAZY = "lazy"    # Schedule only when explicitly triggered
     BATCH = "batch"  # Batch similar nodes together
 
 
 @dataclass
 class NodeExecution:
     """State of a single node execution"""
-
     node_id: str
     status: ExecutionStatus = ExecutionStatus.PENDING
     start_time: Optional[datetime] = None
@@ -69,7 +66,6 @@ class NodeExecution:
 @dataclass
 class DAGExecution:
     """State of a complete DAG execution"""
-
     execution_id: str
     dag: DAGDefinition
     status: ExecutionStatus = ExecutionStatus.PENDING
@@ -87,28 +83,18 @@ class DAGExecution:
 class ComplexDAGExecutor:
     """Executes complex DAG workflows with advanced features"""
 
-    def __init__(
-        self,
-        parallel_executor: Optional[ParallelExecutor] = None,
-        checkpoint_manager: Optional[CheckpointManager] = None,
-    ):
+    def __init__(self, parallel_executor: Optional[ParallelExecutor] = None, checkpoint_manager: Optional[CheckpointManager] = None):
         self.parallel_executor = parallel_executor or ParallelExecutor()
         self.conditional_executor = ConditionalExecutor()
         self.loop_manager = LoopManager()
         self.active_executions: Dict[str, DAGExecution] = {}
         self.scheduling_strategy = SchedulingStrategy.EAGER
         self.max_concurrent_nodes = 10
-        self.checkpoint_manager = checkpoint_manager or CheckpointManager(
-            storage_backend="memory"
-        )
+        self.checkpoint_manager = checkpoint_manager or CheckpointManager(storage_backend="memory")
 
-    async def execute_dag(
-        self,
-        dag: DAGDefinition,
-        initial_params: Dict[str, Any] = None,
-        execution_id: Optional[str] = None,
-        resume_checkpoint_id: Optional[str] = None,
-    ) -> DAGExecution:
+    async def execute_dag(self, dag: DAGDefinition, initial_params: Dict[str, Any] = None,
+                         execution_id: Optional[str] = None,
+                         resume_checkpoint_id: Optional[str] = None) -> DAGExecution:
         """Execute a complete DAG workflow"""
         if execution_id is None:
             execution_id = str(uuid.uuid4())
@@ -118,7 +104,7 @@ class ComplexDAGExecutor:
             execution_id=execution_id,
             dag=dag,
             start_time=datetime.now(),
-            global_context=initial_params or {},
+            global_context=initial_params or {}
         )
 
         # Validate DAG before execution
@@ -135,36 +121,24 @@ class ComplexDAGExecutor:
         # Apply resume checkpoint if provided
         if resume_checkpoint_id and self.checkpoint_manager:
             try:
-                state = self.checkpoint_manager.restore_from_checkpoint(
-                    resume_checkpoint_id
-                )
+                state = self.checkpoint_manager.restore_from_checkpoint(resume_checkpoint_id)
                 if state:
                     self._apply_checkpoint_state(execution, state)
-                    logger.info(
-                        "Resumed DAG %s from checkpoint %s",
-                        execution_id,
-                        resume_checkpoint_id,
-                    )
+                    logger.info("Resumed DAG %s from checkpoint %s", execution_id, resume_checkpoint_id)
             except Exception as exc:
-                logger.warning(
-                    "Failed to apply checkpoint %s: %s", resume_checkpoint_id, exc
-                )
+                logger.warning("Failed to apply checkpoint %s: %s", resume_checkpoint_id, exc)
 
         try:
             # Resolve global parameters
             execution.global_context.update(
-                ParameterResolver.resolve_parameters(
-                    dag.parameters, execution.global_context
-                )
+                ParameterResolver.resolve_parameters(dag.parameters, execution.global_context)
             )
 
             # Initialize node executions
             for node_id, node in dag.nodes.items():
                 execution.node_executions[node_id] = NodeExecution(
                     node_id=node_id,
-                    max_attempts=(
-                        node.retry_policy.max_attempts if node.retry_policy else 3
-                    ),
+                    max_attempts=node.retry_policy.max_attempts if node.retry_policy else 3
                 )
 
             # Execute DAG
@@ -216,13 +190,9 @@ class ComplexDAGExecutor:
 
             # Check for deadlock
             if not ready_nodes and not execution.active_executions:
-                remaining_nodes = (
-                    set(execution.node_executions.keys()) - execution.completed_nodes
-                )
+                remaining_nodes = set(execution.node_executions.keys()) - execution.completed_nodes
                 if remaining_nodes:
-                    logger.warning(
-                        f"Deadlock detected. Remaining nodes: {remaining_nodes}"
-                    )
+                    logger.warning(f"Deadlock detected. Remaining nodes: {remaining_nodes}")
                 break
 
     async def _expand_loop_nodes(self, execution: DAGExecution) -> None:
@@ -238,17 +208,13 @@ class ComplexDAGExecutor:
                 execution.node_executions[node_id].status = ExecutionStatus.SUCCESS
                 execution.completed_nodes.add(node_id)
 
-    async def _expand_single_loop(
-        self, execution: DAGExecution, loop_node: DAGNode
-    ) -> List[str]:
+    async def _expand_single_loop(self, execution: DAGExecution, loop_node: DAGNode) -> List[str]:
         """Expand a single loop node into iterations"""
         loop_config = loop_node.loop_config
         context = execution.global_context.copy()
 
         # Resolve loop parameters
-        context.update(
-            ParameterResolver.resolve_parameters(loop_node.parameters, context)
-        )
+        context.update(ParameterResolver.resolve_parameters(loop_node.parameters, context))
 
         expanded_nodes = []
 
@@ -259,7 +225,7 @@ class ComplexDAGExecutor:
                 logger.error(f"For loop items '{loop_config.items}' is not iterable")
                 return []
 
-            for i, item in enumerate(items[: loop_config.max_iterations]):
+            for i, item in enumerate(items[:loop_config.max_iterations]):
                 iteration_nodes = self._create_loop_iteration_nodes(
                     execution, loop_node, i, item, context
                 )
@@ -268,16 +234,13 @@ class ComplexDAGExecutor:
         elif loop_config.loop_type == LoopType.FOREACH:
             # Foreach loop
             loop_results = self.loop_manager.execute_foreach_loop(
-                loop_config.items,
-                loop_config.body,
-                loop_config.max_iterations,
-                context,
-                loop_config.break_condition,
+                loop_config.items, loop_config.body, loop_config.max_iterations,
+                context, loop_config.break_condition
             )
 
             for i, loop_result in enumerate(loop_results):
                 iteration_nodes = self._create_loop_iteration_nodes(
-                    execution, loop_node, i, loop_result["item"], loop_result["context"]
+                    execution, loop_node, i, loop_result['item'], loop_result['context']
                 )
                 expanded_nodes.extend(iteration_nodes)
 
@@ -305,14 +268,8 @@ class ComplexDAGExecutor:
 
         return expanded_nodes
 
-    def _create_loop_iteration_nodes(
-        self,
-        execution: DAGExecution,
-        loop_node: DAGNode,
-        iteration: int,
-        item: Any,
-        context: Dict[str, Any],
-    ) -> List[str]:
+    def _create_loop_iteration_nodes(self, execution: DAGExecution, loop_node: DAGNode,
+                                   iteration: int, item: Any, context: Dict[str, Any]) -> List[str]:
         """Create nodes for a single loop iteration"""
         iteration_nodes = []
 
@@ -331,13 +288,11 @@ class ComplexDAGExecutor:
 
             # Update context with loop variables
             iteration_context = context.copy()
-            iteration_context.update(
-                {
-                    "loop_iteration": iteration,
-                    "loop_item": item,
-                    "loop_node_id": loop_node.id,
-                }
-            )
+            iteration_context.update({
+                'loop_iteration': iteration,
+                'loop_item': item,
+                'loop_node_id': loop_node.id
+            })
 
             # Resolve parameters for this iteration
             iteration_node.parameters = ParameterResolver.resolve_parameters(
@@ -348,11 +303,7 @@ class ComplexDAGExecutor:
             execution.node_executions[iteration_node_id] = NodeExecution(
                 node_id=iteration_node_id,
                 context=iteration_context,
-                max_attempts=(
-                    iteration_node.retry_policy.max_attempts
-                    if iteration_node.retry_policy
-                    else 3
-                ),
+                max_attempts=iteration_node.retry_policy.max_attempts if iteration_node.retry_policy else 3
             )
 
             # Add to DAG (temporarily)
@@ -362,13 +313,9 @@ class ComplexDAGExecutor:
         # Handle dependencies between iterations
         if iteration > 0:
             for i, node_id in enumerate(iteration_nodes):
-                prev_iteration_node_id = (
-                    f"{loop_node.loop_config.body[i]}_iter_{iteration-1}"
-                )
+                prev_iteration_node_id = f"{loop_node.loop_config.body[i]}_iter_{iteration-1}"
                 if prev_iteration_node_id in execution.node_executions:
-                    execution.dag.nodes[node_id].dependencies.append(
-                        prev_iteration_node_id
-                    )
+                    execution.dag.nodes[node_id].dependencies.append(prev_iteration_node_id)
 
         return iteration_nodes
 
@@ -377,11 +324,9 @@ class ComplexDAGExecutor:
         ready_nodes = []
 
         for node_id, node_exec in execution.node_executions.items():
-            if (
-                node_exec.status == ExecutionStatus.PENDING
-                and node_id not in execution.active_executions
-                and node_id not in execution.completed_nodes
-            ):
+            if (node_exec.status == ExecutionStatus.PENDING and
+                node_id not in execution.active_executions and
+                node_id not in execution.completed_nodes):
 
                 # Check if all dependencies are completed
                 node = execution.dag.nodes.get(node_id)
@@ -448,9 +393,8 @@ class ComplexDAGExecutor:
             elif node_exec.status == ExecutionStatus.FAILED:
                 execution.failed_nodes.add(node_id)
 
-    async def _execute_tool_node(
-        self, execution: DAGExecution, node: DAGNode, node_exec: NodeExecution
-    ) -> None:
+    async def _execute_tool_node(self, execution: DAGExecution, node: DAGNode,
+                                node_exec: NodeExecution) -> None:
         """Execute a tool node"""
         # Prepare execution context
         context = execution.global_context.copy()
@@ -461,9 +405,9 @@ class ComplexDAGExecutor:
 
         # Execute tool using parallel executor
         tool_spec = {
-            "tool": node.tool,
-            "parameters": resolved_params,
-            "timeout": node.timeout,
+            'tool': node.tool,
+            'parameters': resolved_params,
+            'timeout': node.timeout
         }
 
         try:
@@ -484,9 +428,8 @@ class ComplexDAGExecutor:
                 node_exec.status = ExecutionStatus.FAILED
                 node_exec.error = str(e)
 
-    async def _execute_conditional_node(
-        self, execution: DAGExecution, node: DAGNode, node_exec: NodeExecution
-    ) -> None:
+    async def _execute_conditional_node(self, execution: DAGExecution, node: DAGNode,
+                                       node_exec: NodeExecution) -> None:
         """Execute a conditional node"""
         context = execution.global_context.copy()
         context.update(node_exec.context)
@@ -499,9 +442,7 @@ class ComplexDAGExecutor:
                 )
             elif node.switch_branches:
                 # Switch-case logic
-                switch_value = context.get(
-                    "switch_value"
-                )  # Should be set by previous node
+                switch_value = context.get('switch_value')  # Should be set by previous node
                 branch_nodes = self.conditional_executor.execute_switch(
                     switch_value, node.switch_branches, node.default_branch
                 )
@@ -515,7 +456,7 @@ class ComplexDAGExecutor:
                     # Add conditional dependency
                     execution.dag.nodes[branch_node_id].dependencies.append(node.id)
 
-            node_exec.result = {"executed_branch": branch_nodes}
+            node_exec.result = {'executed_branch': branch_nodes}
             node_exec.status = ExecutionStatus.SUCCESS
 
         except Exception as e:
@@ -523,9 +464,8 @@ class ComplexDAGExecutor:
             node_exec.status = ExecutionStatus.FAILED
             node_exec.error = str(e)
 
-    async def _execute_subdag_node(
-        self, execution: DAGExecution, node: DAGNode, node_exec: NodeExecution
-    ) -> None:
+    async def _execute_subdag_node(self, execution: DAGExecution, node: DAGNode,
+                                  node_exec: NodeExecution) -> None:
         """Execute a sub-DAG node"""
         try:
             # Load sub-DAG
@@ -543,12 +483,11 @@ class ComplexDAGExecutor:
             if subdag_execution.status == ExecutionStatus.SUCCESS:
                 node_exec.status = ExecutionStatus.SUCCESS
                 node_exec.result = {
-                    "subdag_execution_id": subdag_execution.execution_id,
-                    "subdag_results": {
-                        node_id: exec.result
-                        for node_id, exec in subdag_execution.node_executions.items()
+                    'subdag_execution_id': subdag_execution.execution_id,
+                    'subdag_results': {
+                        node_id: exec.result for node_id, exec in subdag_execution.node_executions.items()
                         if exec.status == ExecutionStatus.SUCCESS
-                    },
+                    }
                 }
 
                 # Merge sub-DAG context back
@@ -556,18 +495,15 @@ class ComplexDAGExecutor:
 
             else:
                 node_exec.status = ExecutionStatus.FAILED
-                node_exec.error = (
-                    f"Sub-DAG execution failed: {subdag_execution.execution_id}"
-                )
+                node_exec.error = f"Sub-DAG execution failed: {subdag_execution.execution_id}"
 
         except Exception as e:
             logger.error(f"Sub-DAG execution failed for node {node.id}: {e}")
             node_exec.status = ExecutionStatus.FAILED
             node_exec.error = str(e)
 
-    async def _execute_parallel_node(
-        self, execution: DAGExecution, node: DAGNode, node_exec: NodeExecution
-    ) -> None:
+    async def _execute_parallel_node(self, execution: DAGExecution, node: DAGNode,
+                                    node_exec: NodeExecution) -> None:
         """Execute a parallel node"""
         try:
             # Prepare parallel tasks
@@ -577,10 +513,10 @@ class ComplexDAGExecutor:
                     parallel_node = execution.dag.nodes[parallel_node_id]
                     if parallel_node.type == NodeType.TOOL:
                         task_spec = {
-                            "tool": parallel_node.tool,
-                            "parameters": ParameterResolver.resolve_parameters(
+                            'tool': parallel_node.tool,
+                            'parameters': ParameterResolver.resolve_parameters(
                                 parallel_node.parameters, execution.global_context
-                            ),
+                            )
                         }
                         parallel_tasks.append(task_spec)
 
@@ -590,19 +526,19 @@ class ComplexDAGExecutor:
 
                 # Process results based on strategy
                 if node.parallel_strategy == "all_success":
-                    if all(result.get("status") == "success" for result in results):
+                    if all(result.get('status') == 'success' for result in results):
                         node_exec.status = ExecutionStatus.SUCCESS
                     else:
                         node_exec.status = ExecutionStatus.FAILED
                 elif node.parallel_strategy == "any_success":
-                    if any(result.get("status") == "success" for result in results):
+                    if any(result.get('status') == 'success' for result in results):
                         node_exec.status = ExecutionStatus.SUCCESS
                     else:
                         node_exec.status = ExecutionStatus.FAILED
                 elif node.parallel_strategy == "continue_on_failure":
                     node_exec.status = ExecutionStatus.SUCCESS  # Always succeed
 
-                node_exec.result = {"parallel_results": results}
+                node_exec.result = {'parallel_results': results}
             else:
                 node_exec.status = ExecutionStatus.SKIPPED
 
@@ -623,9 +559,8 @@ class ComplexDAGExecutor:
 
         return False
 
-    async def _schedule_retry(
-        self, execution: DAGExecution, node: DAGNode, node_exec: NodeExecution
-    ) -> None:
+    async def _schedule_retry(self, execution: DAGExecution, node: DAGNode,
+                             node_exec: NodeExecution) -> None:
         """Schedule a node retry"""
         node_exec.attempt += 1
         node_exec.status = ExecutionStatus.RETRYING
@@ -634,14 +569,12 @@ class ComplexDAGExecutor:
         if node.retry_policy:
             delay = min(
                 node.retry_policy.backoff_multiplier ** (node_exec.attempt - 1),
-                node.retry_policy.max_delay,
+                node.retry_policy.max_delay
             )
         else:
             delay = 2.0 ** (node_exec.attempt - 1)  # Default exponential backoff
 
-        logger.info(
-            f"Retrying node {node.id} in {delay} seconds (attempt {node_exec.attempt})"
-        )
+        logger.info(f"Retrying node {node.id} in {delay} seconds (attempt {node_exec.attempt})")
 
         # Schedule retry after delay
         await asyncio.sleep(delay)
@@ -660,10 +593,7 @@ class ComplexDAGExecutor:
             completed = []
             for node_id in execution.active_executions:
                 node_exec = execution.node_executions.get(node_id)
-                if node_exec and node_exec.status not in [
-                    ExecutionStatus.RUNNING,
-                    ExecutionStatus.RETRYING,
-                ]:
+                if node_exec and node_exec.status not in [ExecutionStatus.RUNNING, ExecutionStatus.RETRYING]:
                     completed.append(node_id)
 
             # Remove completed executions
@@ -671,9 +601,7 @@ class ComplexDAGExecutor:
                 execution.active_executions.discard(node_id)
                 if execution.node_executions[node_id].status == ExecutionStatus.SUCCESS:
                     execution.completed_nodes.add(node_id)
-                elif (
-                    execution.node_executions[node_id].status == ExecutionStatus.FAILED
-                ):
+                elif execution.node_executions[node_id].status == ExecutionStatus.FAILED:
                     execution.failed_nodes.add(node_id)
 
             if completed:
@@ -718,9 +646,7 @@ class ComplexDAGExecutor:
             logger.debug("Failed to persist checkpoint: %s", exc)
             return None
 
-    def _apply_checkpoint_state(
-        self, execution: DAGExecution, state: ExecutionState
-    ) -> None:
+    def _apply_checkpoint_state(self, execution: DAGExecution, state: ExecutionState) -> None:
         completed = set(state.completed_steps or [])
         execution.completed_nodes.update(completed)
         # Rehydrate node executions
@@ -775,22 +701,18 @@ class ComplexDAGExecutor:
             duration = (end_time - execution.start_time).total_seconds()
 
         summary = {
-            "execution_id": execution_id,
-            "dag_name": execution.dag.name,
-            "status": execution.status.value,
-            "start_time": (
-                execution.start_time.isoformat() if execution.start_time else None
-            ),
-            "end_time": execution.end_time.isoformat() if execution.end_time else None,
-            "duration_seconds": duration,
-            "total_nodes": total_nodes,
-            "completed_nodes": completed_nodes,
-            "failed_nodes": failed_nodes,
-            "active_nodes": active_nodes,
-            "progress_percentage": (
-                (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0
-            ),
-            "checkpoint_id": getattr(execution, "last_checkpoint_id", None),
+            'execution_id': execution_id,
+            'dag_name': execution.dag.name,
+            'status': execution.status.value,
+            'start_time': execution.start_time.isoformat() if execution.start_time else None,
+            'end_time': execution.end_time.isoformat() if execution.end_time else None,
+            'duration_seconds': duration,
+            'total_nodes': total_nodes,
+            'completed_nodes': completed_nodes,
+            'failed_nodes': failed_nodes,
+            'active_nodes': active_nodes,
+            'progress_percentage': (completed_nodes / total_nodes * 100) if total_nodes > 0 else 0,
+            'checkpoint_id': getattr(execution, 'last_checkpoint_id', None),
         }
         return summary
 
@@ -798,7 +720,6 @@ class ComplexDAGExecutor:
 # Example usage
 if __name__ == "__main__":
     import yaml
-
     from .dag_language import EXAMPLE_DAG_YAML
 
     async def test_dag_executor():
@@ -810,8 +731,8 @@ if __name__ == "__main__":
 
         # Execute DAG
         initial_params = {
-            "SUBJECT_ID": "sub-001",
-            "subjects": ["sub-001", "sub-002", "sub-003"],
+            'SUBJECT_ID': 'sub-001',
+            'subjects': ['sub-001', 'sub-002', 'sub-003']
         }
 
         execution = await executor.execute_dag(dag, initial_params)

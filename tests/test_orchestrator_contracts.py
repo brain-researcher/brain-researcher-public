@@ -6,13 +6,11 @@ This tests the main endpoints for the 5 UI components.
 
 import asyncio
 import json
+import requests
 import time
 from datetime import datetime
 
-import requests
-
 BASE_URL = "http://localhost:3001"
-
 
 def test_health_endpoint():
     """Test health endpoint (UI-013)."""
@@ -24,7 +22,6 @@ def test_health_endpoint():
     assert "services" in data
     assert "timestamp" in data
     print("✓ Health endpoint working")
-
 
 def test_ui_configuration():
     """Test UI configuration endpoint (UI-015)."""
@@ -38,7 +35,6 @@ def test_ui_configuration():
     assert "limits" in data
     print("✓ UI configuration endpoint working")
 
-
 def test_authentication_signup():
     """Test authentication signup (UI-011)."""
     print("Testing authentication signup...")
@@ -47,7 +43,7 @@ def test_authentication_signup():
         "email": "test@example.com",
         "password": "testpass123",
         "full_name": "Test User",
-        "accept_terms": True,
+        "accept_terms": True
     }
     response = requests.post(f"{BASE_URL}/auth/signup", json=signup_data)
     if response.status_code == 200:
@@ -60,11 +56,14 @@ def test_authentication_signup():
         print(f"! Signup failed: {response.status_code} - {response.text}")
         return None
 
-
 def test_authentication_login():
     """Test authentication login (UI-011)."""
     print("Testing authentication login...")
-    login_data = {"username": "demo", "password": "demo123", "remember_me": False}
+    login_data = {
+        "username": "demo",
+        "password": "demo123",
+        "remember_me": False
+    }
     response = requests.post(f"{BASE_URL}/auth/login", json=login_data)
     if response.status_code == 200:
         data = response.json()
@@ -75,7 +74,6 @@ def test_authentication_login():
     else:
         print(f"! Login failed: {response.status_code} - {response.text}")
         return None
-
 
 def test_notifications_with_auth(token):
     """Test notifications endpoint (UI-026)."""
@@ -89,7 +87,6 @@ def test_notifications_with_auth(token):
     assert "total_count" in data
     print("✓ Notifications endpoint working")
 
-
 def test_job_creation_with_progress():
     """Test job creation with progress tracking (UI-014)."""
     print("Testing job creation with progress...")
@@ -97,7 +94,7 @@ def test_job_creation_with_progress():
         "prompt": "Test GLM analysis for contract testing",
         "pipeline": "glm",
         "dataset_id": "motor-task-sample",
-        "parameters": {"smoothing": 6, "threshold": 0.001},
+        "parameters": {"smoothing": 6, "threshold": 0.001}
     }
     response = requests.post(f"{BASE_URL}/run", json=job_data)
     assert response.status_code == 200
@@ -122,7 +119,6 @@ def test_job_creation_with_progress():
 
     return job_id
 
-
 def test_error_response_format():
     """Test enhanced error response format (UI-013)."""
     print("Testing error response format...")
@@ -135,7 +131,6 @@ def test_error_response_format():
     assert "message" in data["error"]
     assert "timestamp" in data["error"]
     print("✓ Enhanced error responses working")
-
 
 def main():
     """Run all tests."""
@@ -184,7 +179,6 @@ def main():
         return 1
 
     return 0
-
 
 if __name__ == "__main__":
     exit(main())

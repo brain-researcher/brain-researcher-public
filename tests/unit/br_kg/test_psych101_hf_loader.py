@@ -203,12 +203,9 @@ def test_aggregate_psych101_experiments_emits_cohort_metadata() -> None:
 
 
 def test_summarize_psych101_from_metadata_reuses_parquet_urls() -> None:
-    assert (
-        summarize_psych101_from_metadata(
-            Psych101DatasetMetadata(dataset_id=DEFAULT_DATASET_ID)
-        )
-        == []
-    )
+    assert summarize_psych101_from_metadata(
+        Psych101DatasetMetadata(dataset_id=DEFAULT_DATASET_ID)
+    ) == []
 
 
 def test_psych101_hf_snapshot_to_graph_inputs_preserves_experiment_paths(
@@ -265,14 +262,10 @@ def test_psych101_hf_snapshot_to_graph_inputs_preserves_experiment_paths(
     assert row["n_trials"] == 2
 
 
-def test_psych101_hf_snapshot_to_graph_inputs_preserves_cohort_metadata(
-    monkeypatch,
-) -> None:
+def test_psych101_hf_snapshot_to_graph_inputs_preserves_cohort_metadata(monkeypatch) -> None:
     metadata = Psych101DatasetMetadata(
         dataset_id=DEFAULT_DATASET_ID,
-        parquet_files=(
-            Psych101ParquetFile(split="train", url="https://example.org/train.parquet"),
-        ),
+        parquet_files=(Psych101ParquetFile(split="train", url="https://example.org/train.parquet"),),
     )
     summaries = [
         Psych101ExperimentSummary(
@@ -312,13 +305,10 @@ def test_psych101_hf_snapshot_to_graph_inputs_preserves_cohort_metadata(
     )
 
     assert snapshot["dataset_metadata"]["audit_group_keys"] == ["site"]
-    assert (
-        snapshot["dataset_metadata"]["cohort_metadata"]["schema_version"]
-        == "br-cohort-metadata-v1"
-    )
-    assert snapshot["experiment_rows"][0]["cohort_metadata"]["group_audit"][
-        "group_counts"
-    ]["site"]["participant_counts"] == {"site_a": 2}
+    assert snapshot["dataset_metadata"]["cohort_metadata"]["schema_version"] == "br-cohort-metadata-v1"
+    assert snapshot["experiment_rows"][0]["cohort_metadata"]["group_audit"]["group_counts"]["site"][
+        "participant_counts"
+    ] == {"site_a": 2}
 
 
 class StubNeo4jDB:
@@ -440,7 +430,5 @@ def test_ingest_psych101_hf_snapshot_writes_direct_graph_records() -> None:
     assert result["ingest_result"]["stats"]["experiment_nodes"] == 2
     assert result["ingest_result"]["stats"]["relationships"] >= 3
     assert any(labels == ["Dataset", "Psych101Dataset"] for labels, _, _ in db.nodes)
-    assert any(
-        labels == ["Experiment", "Psych101Experiment"] for labels, _, _ in db.nodes
-    )
+    assert any(labels == ["Experiment", "Psych101Experiment"] for labels, _, _ in db.nodes)
     assert any(rel_type == "HAS_EXPERIMENT" for _, _, rel_type, _ in db.relationships)

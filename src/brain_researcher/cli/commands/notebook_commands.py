@@ -19,8 +19,8 @@ console = Console()
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _TEMPLATES_DIR = _REPO_ROOT / "notebooks" / "templates"
-_MARIMO_AGENT_GUIDE = _REPO_ROOT / "docs" / "marimo" / "MARIMO_AGENT.md"
-_MARIMO_USER_GUIDE = _REPO_ROOT / "docs" / "user-guide" / "marimo.md"
+_MCP_GUIDE = _REPO_ROOT / "docs" / "mcp.md"
+_OPERATIONS_GUIDE = _REPO_ROOT / "docs" / "OPERATIONS.md"
 
 
 def _find_template(name: str) -> Path:
@@ -111,13 +111,13 @@ def agent_setup(
     console.print(f"  4. Claude Code: [bold]{claude_cmd}[/bold]")
     console.print(f"  5. Codex: [bold]{codex_cmd}[/bold]")
     console.print(
-        f"  6. Once paired, also point the agent at [bold]{_MARIMO_AGENT_GUIDE}[/bold]"
+        f"  6. Once paired, also point the agent at [bold]{_MCP_GUIDE}[/bold]"
     )
     console.print(
         "  7. Ask the agent to edit the notebook .py file directly and use the BR sdk"
     )
-    if _MARIMO_USER_GUIDE.exists():
-        console.print(f"  8. Full guide: [bold]{_MARIMO_USER_GUIDE}[/bold]")
+    if _OPERATIONS_GUIDE.exists():
+        console.print(f"  8. Operations guide: [bold]{_OPERATIONS_GUIDE}[/bold]")
 
     console.print("\n[bold]Codex troubleshooting:[/bold]")
     console.print(
@@ -135,7 +135,7 @@ def agent_setup(
         "  Local default: [bold]BR_MCP_SERVER_COMMAND=brain-researcher-mcp[/bold]"
     )
     console.print(
-        "  Hosted / prod: [bold]BR_MCP_HTTP_URL=https://brain-researcher.com/mcp[/bold]"
+        "  Hosted / prod: [bold]BR_MCP_HTTP_URL=https://${PUBLIC_HOSTNAME}/mcp[/bold]"
     )
     console.print('                 [bold]BR_MCP_AUTH_HEADER="Bearer <token>"[/bold]')
     console.print("                 or [bold]BR_MCP_TOKEN=<token>[/bold]")

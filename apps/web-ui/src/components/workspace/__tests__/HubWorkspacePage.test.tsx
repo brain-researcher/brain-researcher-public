@@ -68,7 +68,7 @@ const readyEnvelope = (sessionId: string) => ({
   runtime: { id: `rt_${sessionId}` },
   handoff: {
     workspace_url: `/hub?session_id=${sessionId}`,
-    runtime_target_url: `https://brain-researcher.com/hub/br-marimo-${sessionId}`,
+    runtime_target_url: `https://${PUBLIC_HOSTNAME}/hub/br-marimo-${sessionId}`,
     runtime_target_ready: true,
     runtime_connection_mode: 'iframe',
     runtime_target_reason: 'ready',
@@ -100,7 +100,7 @@ describe('HubWorkspacePage', () => {
       runtime: { id: 'rt_fresh456' },
       handoff: {
         workspace_url: '/hub?session_id=studio_fresh456',
-        runtime_target_url: 'https://brain-researcher.com/hub/br-marimo-rt-fresh456',
+        runtime_target_url: 'https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-fresh456',
         runtime_target_ready: true,
         runtime_connection_mode: 'iframe',
         runtime_target_reason: 'ready',

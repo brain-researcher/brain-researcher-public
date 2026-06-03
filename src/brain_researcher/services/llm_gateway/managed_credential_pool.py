@@ -13,10 +13,10 @@ import logging
 import os
 import threading
 import uuid
+from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,6 @@ _shared_managed_pool_lock = threading.Lock()
 
 class CredentialStatus(Enum):
     """Managed credential status"""
-
     AVAILABLE = "available"
     ALLOCATED = "allocated"
     SUSPENDED = "suspended"
@@ -37,15 +36,12 @@ class CredentialStatus(Enum):
 @dataclass
 class ManagedCredential:
     """Managed credential with budget association"""
-
     credential_id: str
     provider: str  # "gemini", "openai", "anthropic"
     api_key: str
 
     # Budget association
-    budget_ids: List[str] = field(
-        default_factory=list
-    )  # Budgets allowed to use this credential
+    budget_ids: List[str] = field(default_factory=list)  # Budgets allowed to use this credential
 
     # Status
     status: CredentialStatus = CredentialStatus.AVAILABLE
@@ -74,7 +70,6 @@ class ManagedCredential:
 @dataclass
 class CredentialAllocation:
     """Tracks an active allocation of a managed credential"""
-
     allocation_id: str
     credential_id: str
     budget_id: str
@@ -110,7 +105,7 @@ class ManagedCredentialPool:
         max_concurrent_allocations: int = 10,
         rate_limit_rpm: Optional[int] = None,
         rate_limit_rpd: Optional[int] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Dict[str, str]] = None
     ) -> bool:
         """
         Register a managed credential in the pool.
@@ -132,9 +127,7 @@ class ManagedCredentialPool:
         try:
             with self._lock:
                 if credential_id in self._credentials:
-                    logger.warning(
-                        f"Credential {credential_id} already registered, updating"
-                    )
+                    logger.warning(f"Credential {credential_id} already registered, updating")
 
                 credential = ManagedCredential(
                     credential_id=credential_id,
@@ -145,7 +138,7 @@ class ManagedCredentialPool:
                     max_concurrent_allocations=max_concurrent_allocations,
                     rate_limit_rpm=rate_limit_rpm,
                     rate_limit_rpd=rate_limit_rpd,
-                    tags=tags or {},
+                    tags=tags or {}
                 )
 
                 self._credentials[credential_id] = credential
@@ -200,7 +193,7 @@ class ManagedCredentialPool:
         self,
         budget_id: str,
         model_hint: Optional[str] = None,
-        provider_hint: Optional[str] = None,
+        provider_hint: Optional[str] = None
     ) -> Optional[ManagedCredential]:
         """
         Allocate a managed credential for a budget.
@@ -257,7 +250,7 @@ class ManagedCredentialPool:
                     allocation_id=allocation_id,
                     credential_id=selected.credential_id,
                     budget_id=budget_id,
-                    model=model_hint or "unknown",
+                    model=model_hint or "unknown"
                 )
 
                 # Update credential state
@@ -282,7 +275,7 @@ class ManagedCredentialPool:
                     budget_ids=selected.budget_ids,
                     status=selected.status,
                     name=selected.name,
-                    tags={**selected.tags, "allocation_id": allocation_id},
+                    tags={**selected.tags, "allocation_id": allocation_id}
                 )
 
                 return result
@@ -323,9 +316,7 @@ class ManagedCredentialPool:
                     return False
 
                 # Update credential state
-                credential.current_allocations = max(
-                    0, credential.current_allocations - 1
-                )
+                credential.current_allocations = max(0, credential.current_allocations - 1)
                 credential.last_released_at = datetime.now(timezone.utc)
 
                 # Mark allocation as released
@@ -354,14 +345,14 @@ class ManagedCredentialPool:
         with self._lock:
             total_credentials = len(self._credentials)
             available_credentials = sum(
-                1
-                for c in self._credentials.values()
+                1 for c in self._credentials.values()
                 if c.status == CredentialStatus.AVAILABLE
                 and c.current_allocations < c.max_concurrent_allocations
             )
 
             active_allocations = sum(
-                1 for a in self._allocations.values() if not a.released
+                1 for a in self._allocations.values()
+                if not a.released
             )
 
             by_provider = {}
@@ -370,14 +361,12 @@ class ManagedCredentialPool:
                     by_provider[cred.provider] = {
                         "total": 0,
                         "available": 0,
-                        "allocations": 0,
+                        "allocations": 0
                     }
 
                 by_provider[cred.provider]["total"] += 1
-                if (
-                    cred.status == CredentialStatus.AVAILABLE
-                    and cred.current_allocations < cred.max_concurrent_allocations
-                ):
+                if (cred.status == CredentialStatus.AVAILABLE
+                    and cred.current_allocations < cred.max_concurrent_allocations):
                     by_provider[cred.provider]["available"] += 1
                 by_provider[cred.provider]["allocations"] += cred.current_allocations
 
@@ -386,7 +375,7 @@ class ManagedCredentialPool:
                 "available_credentials": available_credentials,
                 "active_allocations": active_allocations,
                 "total_allocations": len(self._allocations),
-                "by_provider": by_provider,
+                "by_provider": by_provider
             }
 
     def get_credential_status(self, credential_id: str) -> Optional[Dict[str, Any]]:
@@ -415,19 +404,19 @@ class ManagedCredentialPool:
                 "name": credential.name,
                 "last_allocated_at": (
                     credential.last_allocated_at.isoformat()
-                    if credential.last_allocated_at
-                    else None
+                    if credential.last_allocated_at else None
                 ),
                 "last_released_at": (
                     credential.last_released_at.isoformat()
-                    if credential.last_released_at
-                    else None
+                    if credential.last_released_at else None
                 ),
                 "tags": credential.tags,
             }
 
     def update_credential_budgets(
-        self, credential_id: str, budget_ids: List[str]
+        self,
+        credential_id: str,
+        budget_ids: List[str]
     ) -> bool:
         """
         Update which budgets can use a credential.
@@ -455,9 +444,7 @@ class ManagedCredentialPool:
                 return True
 
         except Exception as e:
-            logger.error(
-                f"Failed to update credential budgets for {credential_id}: {e}"
-            )
+            logger.error(f"Failed to update credential budgets for {credential_id}: {e}")
             return False
 
     def suspend_credential(self, credential_id: str) -> bool:
@@ -558,11 +545,7 @@ def get_shared_managed_pool() -> "ManagedCredentialPool":
         pool = ManagedCredentialPool()
 
         budget_ids_env = os.getenv("MANAGED_BUDGET_IDS", "").strip()
-        budget_ids = (
-            [b.strip() for b in budget_ids_env.split(",") if b.strip()]
-            if budget_ids_env
-            else []
-        )
+        budget_ids = [b.strip() for b in budget_ids_env.split(",") if b.strip()] if budget_ids_env else []
 
         gem_key = os.getenv("MANAGED_GEMINI_API_KEY")
         if gem_key:

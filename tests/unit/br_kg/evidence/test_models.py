@@ -1,8 +1,7 @@
 """Tests for evidence models."""
 
-from datetime import datetime
-
 import pytest
+from datetime import datetime
 
 from brain_researcher.services.br_kg.evidence.models import (
     EvidenceBundle,

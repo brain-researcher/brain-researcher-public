@@ -204,10 +204,7 @@ def _claim_entries(bundle: CodeReviewBundle) -> list[dict[str, str]]:
                 }
             )
 
-    _append_many(
-        bundle.observed_artifacts.get("quote_grounded_claims"),
-        source="quote_grounded_claims",
-    )
+    _append_many(bundle.observed_artifacts.get("quote_grounded_claims"), source="quote_grounded_claims")
 
     claim_report = _artifact_dict(bundle, "claim_report")
     _append_many(claim_report.get("claims"), source="claim_report")
@@ -277,9 +274,7 @@ def _sensitivity_text(context: Mapping[str, object]) -> str:
 
 
 def _choice_present(choice: str, text: str, sensitivity: Mapping[str, object]) -> bool:
-    declared = [
-        item.lower() for item in _string_list(sensitivity.get("controversial_choices"))
-    ]
+    declared = [item.lower() for item in _string_list(sensitivity.get("controversial_choices"))]
     if choice in declared:
         return True
     if choice == "gsr":
@@ -336,9 +331,7 @@ def gsr_sensitivity_package_check(bundle: CodeReviewBundle) -> ReviewFinding | N
     )
 
 
-def dynamic_fc_sensitivity_package_check(
-    bundle: CodeReviewBundle,
-) -> ReviewFinding | None:
+def dynamic_fc_sensitivity_package_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
     """Warn when dynamic FC claims lack null-model and window/parameter sensitivity."""
 
     context = _review_context(bundle)
@@ -381,8 +374,7 @@ def dynamic_fc_sensitivity_package_check(
             f"has_window_parameter_sensitivity={has_window_parameter_sensitivity}",
             f"sensitivity_text={sensitivity_text or 'none'}",
         ],
-        reason_tags=["controversial_choice", "dynamic_fc"]
-        + [
+        reason_tags=["controversial_choice", "dynamic_fc"] + [
             tag
             for tag, present in (
                 ("null_mismatch", not has_null_model),
@@ -393,9 +385,7 @@ def dynamic_fc_sensitivity_package_check(
     )
 
 
-def graph_atlas_hrf_sensitivity_package_check(
-    bundle: CodeReviewBundle,
-) -> ReviewFinding | None:
+def graph_atlas_hrf_sensitivity_package_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
     """Warn when graph-threshold, atlas, or HRF choices lack sensitivity support."""
 
     context = _review_context(bundle)
@@ -426,9 +416,7 @@ def graph_atlas_hrf_sensitivity_package_check(
             sensitivity_text, _ATLAS_SENSITIVITY_TOKENS
         ):
             missing.append(choice)
-        elif choice == "hrf" and not _has_requirement(
-            sensitivity_text, _HRF_SENSITIVITY_TOKENS
-        ):
+        elif choice == "hrf" and not _has_requirement(sensitivity_text, _HRF_SENSITIVITY_TOKENS):
             missing.append(choice)
 
     if not missing:

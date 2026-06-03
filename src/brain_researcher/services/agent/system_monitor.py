@@ -8,20 +8,18 @@ I/O, and network metrics for dynamic execution strategy adaptation.
 import asyncio
 import logging
 import platform
-import time
-from collections import deque
-from dataclasses import dataclass
-from enum import Enum
-from typing import Dict, List, Optional, Tuple
-
 import psutil
+import time
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+from collections import deque
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
 
 class SystemHealth(str, Enum):
     """System health status levels."""
-
     HEALTHY = "healthy"
     MODERATE = "moderate"
     STRESSED = "stressed"
@@ -31,7 +29,6 @@ class SystemHealth(str, Enum):
 @dataclass
 class SystemMetrics:
     """System metrics snapshot."""
-
     timestamp: float
     cpu_usage: float  # Percentage
     memory_usage: float  # Percentage
@@ -50,7 +47,6 @@ class SystemMetrics:
 @dataclass
 class PerformanceAnalysis:
     """Performance analysis results."""
-
     overall_health: SystemHealth
     bottlenecks: List[str]
     recommendations: List[str]
@@ -93,7 +89,7 @@ class MetricsCollector:
             memory_available = memory.available / (1024**3)  # Convert to GB
 
             # Load average (Unix-like systems)
-            if hasattr(psutil, "getloadavg"):
+            if hasattr(psutil, 'getloadavg'):
                 load_avg = psutil.getloadavg()
             else:
                 # Windows fallback
@@ -121,7 +117,7 @@ class MetricsCollector:
                 load_average=load_avg,
                 active_processes=active_processes,
                 gpu_usage=gpu_usage,
-                gpu_memory=gpu_memory,
+                gpu_memory=gpu_memory
             )
 
         except Exception as e:
@@ -137,18 +133,14 @@ class MetricsCollector:
                 network_sent=0.0,
                 network_recv=0.0,
                 load_average=(0.0, 0.0, 0.0),
-                active_processes=0,
+                active_processes=0
             )
 
     def _calculate_disk_io_rates(self, current_time: float) -> Tuple[float, float]:
         """Calculate disk I/O rates in MB/s."""
         try:
             current_disk = psutil.disk_io_counters()
-            if (
-                not current_disk
-                or not self._last_disk_stats
-                or not self._last_timestamp
-            ):
+            if not current_disk or not self._last_disk_stats or not self._last_timestamp:
                 self._last_disk_stats = current_disk
                 self._last_timestamp = current_time
                 return 0.0, 0.0
@@ -203,7 +195,6 @@ class MetricsCollector:
         try:
             # Try to import nvidia-ml-py for NVIDIA GPUs
             import pynvml
-
             pynvml.nvmlInit()
 
             device_count = pynvml.nvmlDeviceGetCount()
@@ -257,7 +248,8 @@ class LoadTracker:
 
         # Filter metrics within window
         window_metrics = [
-            m for m in self.metrics_history if m.timestamp >= window_start
+            m for m in self.metrics_history
+            if m.timestamp >= window_start
         ]
 
         if not window_metrics:
@@ -266,34 +258,18 @@ class LoadTracker:
         # Calculate averages
         avg_cpu = sum(m.cpu_usage for m in window_metrics) / len(window_metrics)
         avg_memory = sum(m.memory_usage for m in window_metrics) / len(window_metrics)
-        avg_mem_avail = sum(m.memory_available for m in window_metrics) / len(
-            window_metrics
-        )
-        avg_disk_read = sum(m.disk_io_read for m in window_metrics) / len(
-            window_metrics
-        )
-        avg_disk_write = sum(m.disk_io_write for m in window_metrics) / len(
-            window_metrics
-        )
+        avg_mem_avail = sum(m.memory_available for m in window_metrics) / len(window_metrics)
+        avg_disk_read = sum(m.disk_io_read for m in window_metrics) / len(window_metrics)
+        avg_disk_write = sum(m.disk_io_write for m in window_metrics) / len(window_metrics)
         avg_net_sent = sum(m.network_sent for m in window_metrics) / len(window_metrics)
         avg_net_recv = sum(m.network_recv for m in window_metrics) / len(window_metrics)
-        avg_processes = sum(m.active_processes for m in window_metrics) / len(
-            window_metrics
-        )
+        avg_processes = sum(m.active_processes for m in window_metrics) / len(window_metrics)
         avg_queue = sum(m.queue_depth for m in window_metrics) / len(window_metrics)
 
         # GPU averages (if available)
         gpu_metrics = [m for m in window_metrics if m.gpu_usage is not None]
-        avg_gpu = (
-            sum(m.gpu_usage for m in gpu_metrics) / len(gpu_metrics)
-            if gpu_metrics
-            else None
-        )
-        avg_gpu_mem = (
-            sum(m.gpu_memory for m in gpu_metrics) / len(gpu_metrics)
-            if gpu_metrics
-            else None
-        )
+        avg_gpu = sum(m.gpu_usage for m in gpu_metrics) / len(gpu_metrics) if gpu_metrics else None
+        avg_gpu_mem = sum(m.gpu_memory for m in gpu_metrics) / len(gpu_metrics) if gpu_metrics else None
 
         return SystemMetrics(
             timestamp=current_time,
@@ -308,7 +284,7 @@ class LoadTracker:
             active_processes=int(avg_processes),
             queue_depth=int(avg_queue),
             gpu_usage=avg_gpu,
-            gpu_memory=avg_gpu_mem,
+            gpu_memory=avg_gpu_mem
         )
 
     def get_trend(self, metric_name: str, window_seconds: int = 300) -> str:
@@ -321,7 +297,8 @@ class LoadTracker:
 
         # Get recent metrics
         recent_metrics = [
-            m for m in self.metrics_history if m.timestamp >= window_start
+            m for m in self.metrics_history
+            if m.timestamp >= window_start
         ]
 
         if len(recent_metrics) < 5:
@@ -337,15 +314,13 @@ class LoadTracker:
             return "stable"
 
         # Simple trend analysis
-        first_half = values[: len(values) // 2]
-        second_half = values[len(values) // 2 :]
+        first_half = values[:len(values)//2]
+        second_half = values[len(values)//2:]
 
         first_avg = sum(first_half) / len(first_half)
         second_avg = sum(second_half) / len(second_half)
 
-        diff_percent = (
-            ((second_avg - first_avg) / first_avg) * 100 if first_avg > 0 else 0
-        )
+        diff_percent = ((second_avg - first_avg) / first_avg) * 100 if first_avg > 0 else 0
 
         if diff_percent > 10:
             return "increasing"
@@ -370,11 +345,13 @@ class PerformanceAnalyzer:
             "disk_io_high": 100.0,  # MB/s
             "network_high": 100.0,  # MB/s
             "gpu_high": 90.0,
-            "gpu_memory_high": 90.0,
+            "gpu_memory_high": 90.0
         }
 
     def analyze_performance(
-        self, current_metrics: SystemMetrics, load_tracker: LoadTracker
+        self,
+        current_metrics: SystemMetrics,
+        load_tracker: LoadTracker
     ) -> PerformanceAnalysis:
         """Analyze current performance and provide recommendations."""
 
@@ -468,12 +445,10 @@ class PerformanceAnalyzer:
             bottlenecks=bottlenecks,
             recommendations=recommendations,
             trend_direction=trend_direction,
-            predicted_capacity=predicted_capacity,
+            predicted_capacity=predicted_capacity
         )
 
-    def _predict_capacity(
-        self, current_metrics: SystemMetrics, load_tracker: LoadTracker
-    ) -> float:
+    def _predict_capacity(self, current_metrics: SystemMetrics, load_tracker: LoadTracker) -> float:
         """Predict system capacity in next 5 minutes."""
         # Simple linear extrapolation based on trends
         cpu_trend = load_tracker.get_trend("cpu_usage", 300)
@@ -551,9 +526,7 @@ class SystemMonitor:
             while self._monitoring:
                 # Collect metrics
                 metrics = self.metrics_collector.collect_metrics()
-                metrics.queue_depth = (
-                    self._queue_depth
-                )  # Update with external queue depth
+                metrics.queue_depth = self._queue_depth  # Update with external queue depth
 
                 # Store current metrics
                 self._current_metrics = metrics
@@ -583,7 +556,8 @@ class SystemMonitor:
             return None
 
         return self.performance_analyzer.analyze_performance(
-            self._current_metrics, self.load_tracker
+            self._current_metrics,
+            self.load_tracker
         )
 
     def get_average_metrics(self, window_seconds: int = 60) -> Optional[SystemMetrics]:
@@ -601,10 +575,7 @@ class SystemMonitor:
         """Check if system is currently overloaded."""
         analysis = self.get_performance_analysis()
         if analysis:
-            return analysis.overall_health in [
-                SystemHealth.STRESSED,
-                SystemHealth.CRITICAL,
-            ]
+            return analysis.overall_health in [SystemHealth.STRESSED, SystemHealth.CRITICAL]
         return False
 
     def get_resource_utilization(self) -> Dict[str, float]:
@@ -615,8 +586,7 @@ class SystemMonitor:
         utilization = {
             "cpu": self._current_metrics.cpu_usage,
             "memory": self._current_metrics.memory_usage,
-            "load_1min": self._current_metrics.load_average[0]
-            * 25,  # Normalize to percentage
+            "load_1min": self._current_metrics.load_average[0] * 25,  # Normalize to percentage
         }
 
         if self._current_metrics.gpu_usage is not None:

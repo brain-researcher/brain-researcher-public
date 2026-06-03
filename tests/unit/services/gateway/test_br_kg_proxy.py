@@ -1,18 +1,12 @@
 """Legacy gateway compatibility tests for the retired BR-KG proxy routes."""
 
 import os
-
 import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-if os.getenv("BR_ENABLE_LEGACY_GATEWAY_TESTS", "0").lower() not in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}:
+if os.getenv("BR_ENABLE_LEGACY_GATEWAY_TESTS", "0").lower() not in {"1", "true", "yes", "on"}:
     pytest.skip(
         "Legacy gateway compatibility coverage is disabled by default. Set BR_ENABLE_LEGACY_GATEWAY_TESTS=1 to run it.",
         allow_module_level=True,
@@ -102,9 +96,7 @@ def test_kg_concepts_is_proxied_to_api_kg(monkeypatch):
     resp = client.get("/api/kg/concepts?limit=1")
 
     assert resp.status_code == 200
-    assert (
-        _RecordingAsyncClient.last_request["url"] == "http://br_kg:5000/api/kg/concepts"
-    )
+    assert _RecordingAsyncClient.last_request["url"] == "http://br_kg:5000/api/kg/concepts"
     assert _RecordingAsyncClient.last_request["params"] == [("limit", "1")]
 
 

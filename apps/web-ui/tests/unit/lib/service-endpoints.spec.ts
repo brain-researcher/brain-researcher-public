@@ -77,11 +77,11 @@ describe('serviceEndpoints BR-KG proxy defaults', () => {
   })
 
   it('respects an explicit websocket override even in local browser proxy mode', async () => {
-    vi.stubEnv('NEXT_PUBLIC_WS_URL', 'wss://brain-researcher.com/ws')
+    vi.stubEnv('NEXT_PUBLIC_WS_URL', 'wss://${PUBLIC_HOSTNAME}/ws')
 
     const { resolveDashboardWsUrl, resolveRealtimeWsBaseUrl } = await import('@/lib/service-endpoints')
 
-    expect(resolveRealtimeWsBaseUrl()).toBe('wss://brain-researcher.com/ws')
-    expect(resolveDashboardWsUrl()).toBe('wss://brain-researcher.com/ws/dashboard')
+    expect(resolveRealtimeWsBaseUrl()).toBe('wss://${PUBLIC_HOSTNAME}/ws')
+    expect(resolveDashboardWsUrl()).toBe('wss://${PUBLIC_HOSTNAME}/ws/dashboard')
   })
 })

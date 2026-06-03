@@ -1240,11 +1240,9 @@ class PPIAnalyzerTool(NeuroToolWrapper):
         conf_list = (
             args.confounds
             if isinstance(args.confounds, list)
-            else (
-                [args.confounds] * len(imgs)
-                if args.confounds is not None
-                else [None] * len(imgs)
-            )
+            else [args.confounds] * len(imgs)
+            if args.confounds is not None
+            else [None] * len(imgs)
         )
 
         if len(events_list) != len(imgs):
@@ -1815,11 +1813,9 @@ class HarmonizeDataTool(NeuroToolWrapper):
                 "generated_at": datetime.now(timezone.utc).isoformat(),
                 "inputs": {
                     "features": str(features_path),
-                    "batch": (
-                        args.batch
-                        if isinstance(args.batch, list)
-                        else str(Path(args.batch).expanduser().resolve())
-                    ),
+                    "batch": args.batch
+                    if isinstance(args.batch, list)
+                    else str(Path(args.batch).expanduser().resolve()),
                     "covars": (
                         str(Path(args.covars).expanduser().resolve())
                         if args.covars
@@ -2250,11 +2246,9 @@ class DecodeBrainMapTool(NeuroToolWrapper):
                     details = [msg for msg in [neurovlm_error, peak_error] if msg]
                     return ToolResult(
                         status="error",
-                        error=(
-                            "; ".join(details)
-                            if details
-                            else "Provide stat_map or coordinates"
-                        ),
+                        error="; ".join(details)
+                        if details
+                        else "Provide stat_map or coordinates",
                         data={"stat_map": stat_map},
                     )
                 return ToolResult(
@@ -2898,11 +2892,9 @@ class AnalyzeLongitudinalLMETool(NeuroToolWrapper):
             out_dir = (
                 Path(output_dir).expanduser().resolve()
                 if output_dir
-                else (
-                    Path(output_file).expanduser().resolve().parent
-                    if output_file
-                    else Path.cwd() / "lme_output"
-                )
+                else Path(output_file).expanduser().resolve().parent
+                if output_file
+                else Path.cwd() / "lme_output"
             )
             payload = {
                 "data_file": data_file,

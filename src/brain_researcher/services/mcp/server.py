@@ -1249,6 +1249,23 @@ def _tool_search_domain_adjustment(query: str, card: dict[str, Any]) -> int:
         if identifier == "fmriprep_preprocessing":
             score -= 40
 
+    is_realtime_query = (
+        "real-time" in q
+        or "realtime" in tokens
+        or "online" in tokens
+        or "streaming" in tokens
+        or "neurofeedback" in tokens
+        or "incremental" in tokens
+        or "prospective" in tokens
+        or "navigator" in tokens
+        or "navigators" in tokens
+    )
+    if is_realtime_query:
+        if identifier == "realtime_fmri":
+            score += 520
+        if "real-time" in text or "realtime" in text:
+            score += 160
+
     is_ica_denoising_query = "ica" in tokens and any(
         tok.startswith("denois") or tok == "noise" for tok in tokens
     )
@@ -1286,7 +1303,359 @@ def _tool_search_domain_adjustment(query: str, card: dict[str, Any]) -> int:
         if identifier == "mvpa":
             score -= 60
 
+    is_seed_connectivity_query = "connectivity" in tokens and (
+        "seed" in tokens or "seed-based" in q or "seed based" in q
+    )
+    if is_seed_connectivity_query:
+        if identifier in {"workflow_seed_based_connectivity", "seed_based_fc"}:
+            score += 220
+        if identifier == "connectivity_matrix":
+            score += 180
+
+    explicit_meeg_query = bool({"meg", "eeg", "meeg", "ieeg"} & tokens or "m/eeg" in q)
+    explicit_fmri_query = bool({"fmri", "bold", "rsfmri"} & tokens)
+    meeg_connectivity_operation = (
+        {"phase", "locking"} <= tokens
+        or {"phase", "lag"} <= tokens
+        or "sensor-space" in q
+        or "sensor space" in q
+    )
+    is_meeg_connectivity_query = "connectivity" in tokens and (
+        explicit_meeg_query or (meeg_connectivity_operation and not explicit_fmri_query)
+    )
+    if is_meeg_connectivity_query:
+        if identifier == "mne_connectivity":
+            score += 560
+        if identifier == "connectivity_measures":
+            score += 360
+        if identifier in {
+            "connectivity_matrix",
+            "seed_based_fc",
+            "compute_connectivity",
+            "nilearn_connectivity_matrix",
+        }:
+            score -= 560
+
+    is_cortical_reconstruction_query = (
+        {"cortical", "reconstruction"} <= tokens
+        or "recon all" in _expand_search_compounds(q)
+        or "recon-all" in q
+    )
+    if is_cortical_reconstruction_query:
+        if identifier == "freesurfer_recon_all":
+            score += 420
+        if identifier in {"workflow_fastsurfer", "freesurfer_qc"}:
+            score += 180
+        if identifier == "fsl_fast":
+            score -= 260
+
+    is_structure_specific_segmentation_query = "segmentation" in tokens and (
+        "subfield" in tokens
+        or "subfields" in tokens
+        or "hippocampus" in tokens
+        or "hippocampal" in tokens
+        or "amygdala" in tokens
+        or "subnuclei" in tokens
+    )
+    if is_structure_specific_segmentation_query:
+        if identifier == "freesurfer_recon_all":
+            score += 560
+        if identifier == "workflow_fastsurfer":
+            score += 420
+        if identifier == "freesurfer_qc":
+            score -= 120
+        if identifier in {"fsl_fast", "spm12_vbm"}:
+            score -= 280
+
+    is_deep_segmentation_query = (
+        {"monai", "segmentation"} <= tokens
+        or {"swinunetr", "segmentation"} <= tokens
+        or {"deep", "learning", "segmentation"} <= tokens
+    )
+    if is_deep_segmentation_query:
+        if identifier in {
+            "python.monai_tool.run",
+            "python.dl_pytorch_tool.run",
+            "monai_tool",
+            "dl_pytorch_tool",
+            "advanced_deep_learning",
+        }:
+            score += 520
+        if identifier == "spm12_vbm":
+            score += 220
+        if identifier in {"fsl_fast", "workflow_fastsurfer", "lesion_detection"}:
+            score -= 260
+
+    is_harmonization_query = (
+        any(tok.startswith("harmon") for tok in tokens)
+        or {"scanner", "effects"} <= tokens
+        or {"batch", "effects"} <= tokens
+        or "sva" in tokens
+        or "combat" in tokens
+        or "neurocombat" in tokens
+        or "gam" in tokens
+        or {"reference", "site"} <= tokens
+    )
+    if is_harmonization_query:
+        if identifier == "data_harmonization":
+            score += 520
+        if identifier == "workflow_data_harmonization":
+            score += 360
+        if identifier in {
+            "mne_source_localization",
+            "mne_timefreq",
+            "mne_ica",
+            "fsl_fix",
+        }:
+            score -= 320
+        if identifier in {"spm12_vbm", "freesurfer_qc"}:
+            score -= 260
+        if identifier in {
+            "datasets.describe_resources",
+            "br_kg.search_datasets",
+            "openneuro.search",
+            "prefetch.openneuro_cache",
+        }:
+            score -= 240
+
+    is_coordinate_literature_query = (
+        {"extract", "coordinates"} <= tokens
+        or {"pubmed", "abstracts"} <= tokens
+        or {"literature", "coordinates"} <= tokens
+    )
+    if is_coordinate_literature_query:
+        if identifier == "literature_mining":
+            score += 560
+        if identifier in {"coordinate_meta_analysis", "meta_analysis"}:
+            score += 180
+        if identifier in {"workflow_group_ica", "fsl_fix", "fsl_melodic_ica"}:
+            score -= 260
+
+    is_publication_figure_query = "figure" in tokens and (
+        "panel" in tokens or "views" in tokens or "publication" in tokens
+    )
+    if is_publication_figure_query:
+        if identifier in {"viz_stat_maps", "advanced_visualization", "plot_brain_map"}:
+            score += 480
+        if identifier == "multiple_comparison_correction":
+            score -= 320
+
     return score
+
+
+_FAMILY_CARD_RERANK_BASE_BOOST = 2_600
+_FAMILY_CARD_RERANK_STEP = 20
+_FAMILY_CARD_RERANK_MIN_BOOST = 700
+_FAMILY_CARD_RERANK_OFF_DOMAIN_PENALTY = -2_400
+_FAMILY_CARD_RERANK_RELEVANCE_WINDOW = 300
+
+_EXPLICIT_MEEG_QUERY_HINTS = {
+    "eeg",
+    "meg",
+    "meeg",
+    "m/eeg",
+    "ieeg",
+}
+_INFERRED_MEEG_QUERY_HINTS = {
+    "epochs",
+    "sensor-space",
+    "sensor space",
+    "pli",
+    "wpli",
+    "plv",
+    "phase-locking",
+    "phase locking",
+    "phase-lag",
+    "phase lag",
+    "coherence",
+}
+_MEEG_QUERY_HINTS = _EXPLICIT_MEEG_QUERY_HINTS | _INFERRED_MEEG_QUERY_HINTS
+_EXPLICIT_FMRI_QUERY_HINTS = {
+    "fmri",
+    "bold",
+    "rsfmri",
+}
+_FMRI_QUERY_HINTS = _EXPLICIT_FMRI_QUERY_HINTS | {
+    "resting-state",
+    "resting",
+    "ica-aroma",
+    "aroma",
+    "fix",
+}
+_REALTIME_QUERY_HINTS = {
+    "real-time",
+    "realtime",
+    "online",
+    "streaming",
+    "neurofeedback",
+    "incremental",
+    "prospective",
+    "navigator",
+    "navigators",
+}
+_NON_MEEG_QUERY_HINTS = {
+    "gene",
+    "genes",
+    "genetic",
+    "genetics",
+    "genomic",
+    "genomics",
+    "expression",
+    "batch",
+    "sva",
+    "harmonization",
+    "harmonise",
+    "harmonize",
+    "literature",
+    "meta-analysis",
+    "meta",
+}
+
+
+def _tool_search_query_has_hint(
+    q: str,
+    expanded: str,
+    tokens: set[str],
+    hints: set[str],
+) -> bool:
+    for hint in hints:
+        hint_text = str(hint or "").strip().lower()
+        if not hint_text:
+            continue
+        hint_tokens = set(_tokenize_search_query(hint_text))
+        if len(hint_tokens) == 1 and next(iter(hint_tokens)) in tokens:
+            return True
+        if len(hint_tokens) > 1:
+            normalized_hint = _expand_search_compounds(hint_text)
+            padded_expanded = f" {expanded} "
+            if (
+                f" {normalized_hint} " in padded_expanded
+                or f" {hint_text} " in padded_expanded
+            ):
+                return True
+        if not hint_tokens and hint_text in q:
+            return True
+    return False
+
+
+def _tool_search_explicit_modality_domains(query: str) -> set[str]:
+    q = (query or "").strip().lower()
+    if not q:
+        return set()
+    tokens = set(_tokenize_search_query(q))
+    expanded = _expand_search_compounds(q)
+    domains: set[str] = set()
+
+    if _tool_search_query_has_hint(q, expanded, tokens, _EXPLICIT_MEEG_QUERY_HINTS):
+        domains.add("meeg")
+    if _tool_search_query_has_hint(q, expanded, tokens, _EXPLICIT_FMRI_QUERY_HINTS):
+        domains.add("fmri")
+    return domains
+
+
+def _tool_search_query_domains(query: str) -> set[str]:
+    q = (query or "").strip().lower()
+    if not q:
+        return set()
+    tokens = set(_tokenize_search_query(q))
+    expanded = _expand_search_compounds(q)
+    domains: set[str] = set()
+
+    if _tool_search_query_has_hint(q, expanded, tokens, _MEEG_QUERY_HINTS):
+        domains.add("meeg")
+    if _tool_search_query_has_hint(q, expanded, tokens, _FMRI_QUERY_HINTS):
+        domains.add("fmri")
+    if _tool_search_query_has_hint(q, expanded, tokens, _REALTIME_QUERY_HINTS):
+        domains.add("realtime")
+    if _tool_search_query_has_hint(q, expanded, tokens, _NON_MEEG_QUERY_HINTS):
+        domains.add("non_meeg")
+
+    if {"phase", "lag", "index"} <= tokens or {"phase", "locking", "value"} <= tokens:
+        domains.add("meeg")
+    if "sensor space" in expanded or "sensor-space" in q:
+        domains.add("meeg")
+    return domains
+
+
+def _tool_search_card_domains(card: dict[str, Any]) -> set[str]:
+    identifier = str(card.get("name") or "").strip().lower()
+    text = _tool_search_card_text(card)
+    modalities = _normalize_tool_search_modalities(card.get("modalities") or [])
+    domains: set[str] = set()
+
+    if modalities & {"meg", "eeg", "ieeg"}:
+        domains.add("meeg")
+    if modalities & {"fmri", "bold"}:
+        domains.add("fmri")
+    if modalities & {"smri", "dmri", "dti", "pet"}:
+        domains.add("imaging")
+
+    if identifier.startswith("mne_") or identifier in {
+        "connectivity_measures",
+        "timefreq_tfr",
+        "localize_source",
+    }:
+        domains.add("meeg")
+    if "electrophysiology" in text or "eeg" in text or "meg" in text:
+        domains.add("meeg")
+    if (
+        "fmri" in text
+        or "bold" in text
+        or identifier
+        in {
+            "fsl_fix",
+            "fsl_melodic",
+            "fsl_melodic_ica",
+            "fmriprep_preprocessing",
+            "connectivity_matrix",
+            "seed_based_fc",
+            "compute_connectivity",
+            "nilearn_connectivity_matrix",
+        }
+    ):
+        domains.add("fmri")
+    if (
+        identifier.startswith("realtime_")
+        or "realtime" in identifier
+        or "real-time" in text
+    ):
+        domains.add("realtime")
+    return domains
+
+
+def _tool_search_family_rerank_boost(
+    query: str,
+    card: dict[str, Any],
+    *,
+    family_rank: int | None,
+    base_score: int,
+    top_base_score: int,
+) -> int:
+    if family_rank is None:
+        return 0
+
+    query_domains = _tool_search_query_domains(query)
+    explicit_modality_domains = _tool_search_explicit_modality_domains(query)
+    card_domains = _tool_search_card_domains(card)
+    explicit_meeg = "meeg" in explicit_modality_domains
+    explicit_fmri = "fmri" in explicit_modality_domains
+
+    if explicit_meeg and "fmri" in card_domains and "meeg" not in card_domains:
+        return _FAMILY_CARD_RERANK_OFF_DOMAIN_PENALTY
+    if explicit_fmri and "meeg" in card_domains and "fmri" not in card_domains:
+        return _FAMILY_CARD_RERANK_OFF_DOMAIN_PENALTY
+    if "realtime" in query_domains and "realtime" not in card_domains:
+        return 0
+    if "non_meeg" in query_domains and "meeg" in card_domains and not explicit_meeg:
+        return 0
+
+    if base_score < top_base_score - _FAMILY_CARD_RERANK_RELEVANCE_WINDOW:
+        return 0
+
+    return max(
+        _FAMILY_CARD_RERANK_MIN_BOOST,
+        _FAMILY_CARD_RERANK_BASE_BOOST - (family_rank * _FAMILY_CARD_RERANK_STEP),
+    )
 
 
 def _tool_search_family_routing_mode() -> str:
@@ -11706,29 +12075,36 @@ def tool_search(
 
     if q:
         family_rank = {tool_id: rank for rank, tool_id in enumerate(family_ranked_ids)}
-        ranked_cards: list[tuple[int, int, dict[str, Any]]] = []
+        scored_cards: list[tuple[int, int, dict[str, Any]]] = []
         for index, card in enumerate(cards):
             identifier = str(card.get("name") or "").strip()
             text_parts = [_tool_search_card_text(card)]
             workflow_row = workflow_rows_by_id.get(identifier)
             if workflow_row is not None:
                 text_parts.append(_workflow_search_text(workflow_row))
+            base_score = _search_match_score(
+                query,
+                " ".join(part for part in text_parts if part),
+                identifier=identifier,
+            ) + _tool_search_domain_adjustment(query, card)
+            scored_cards.append((base_score, index, card))
+
+        top_base_score = max(
+            (score for score, _index, _card in scored_cards), default=0
+        )
+        ranked_cards: list[tuple[int, int, dict[str, Any]]] = []
+        for base_score, index, card in scored_cards:
+            identifier = str(card.get("name") or "").strip()
             rerank_boost = 0
             if identifier in family_rank:
-                rerank_boost = 20_000 - (family_rank[identifier] * 250)
-            ranked_cards.append(
-                (
-                    _search_match_score(
-                        query,
-                        " ".join(part for part in text_parts if part),
-                        identifier=identifier,
-                    )
-                    + _tool_search_domain_adjustment(query, card)
-                    + rerank_boost,
-                    index,
+                rerank_boost = _tool_search_family_rerank_boost(
+                    query,
                     card,
+                    family_rank=family_rank[identifier],
+                    base_score=base_score,
+                    top_base_score=top_base_score,
                 )
-            )
+            ranked_cards.append((base_score + rerank_boost, index, card))
         ranked_cards.sort(key=lambda item: (-item[0], item[1]))
         cards = [card for _score, _index, card in ranked_cards]
 

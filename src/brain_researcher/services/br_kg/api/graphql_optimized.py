@@ -10,19 +10,19 @@ import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Any, Optional, Union
 
 import redis
 from graphql import (
-    GraphQLArgument,
-    GraphQLBoolean,
-    GraphQLField,
-    GraphQLFloat,
-    GraphQLInt,
-    GraphQLList,
-    GraphQLObjectType,
     GraphQLSchema,
+    GraphQLObjectType,
+    GraphQLField,
     GraphQLString,
+    GraphQLList,
+    GraphQLInt,
+    GraphQLFloat,
+    GraphQLBoolean,
+    GraphQLArgument,
     graphql_sync,
 )
 from promise import Promise
@@ -45,9 +45,7 @@ class QueryMetrics:
 class QueryCache:
     """Redis-based query result cache."""
 
-    def __init__(
-        self, redis_client: Optional[redis.Redis] = None, ttl_seconds: int = 3600
-    ):
+    def __init__(self, redis_client: Optional[redis.Redis] = None, ttl_seconds: int = 3600):
         """Initialize query cache.
 
         Args:
@@ -61,13 +59,16 @@ class QueryCache:
     def _create_redis_client(self) -> redis.Redis:
         """Create Redis client with fallback."""
         try:
-            client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+            client = redis.Redis(
+                host='localhost',
+                port=6379,
+                decode_responses=True
+            )
             client.ping()
             return client
         except:
             # Use fakeredis for testing
             import fakeredis
-
             return fakeredis.FakeRedis(decode_responses=True)
 
     def get(self, query: str, variables: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -103,7 +104,11 @@ class QueryCache:
         cache_key = self._generate_key(query, variables)
 
         try:
-            self.redis.setex(cache_key, self.ttl, json.dumps(result))
+            self.redis.setex(
+                cache_key,
+                self.ttl,
+                json.dumps(result)
+            )
             logger.debug(f"Cached query result: {cache_key[:20]}...")
         except Exception as e:
             logger.warning(f"Cache set error: {e}")
@@ -149,15 +154,13 @@ class QueryCache:
         self.redis.setex(
             metric_key,
             86400,  # Keep metrics for 24 hours
-            json.dumps(
-                {
-                    "query_hash": metric.query_hash,
-                    "execution_time_ms": metric.execution_time_ms,
-                    "cache_hit": metric.cache_hit,
-                    "result_size": metric.result_size,
-                    "timestamp": metric.timestamp.isoformat(),
-                }
-            ),
+            json.dumps({
+                "query_hash": metric.query_hash,
+                "execution_time_ms": metric.execution_time_ms,
+                "cache_hit": metric.cache_hit,
+                "result_size": metric.result_size,
+                "timestamp": metric.timestamp.isoformat()
+            })
         )
 
 
@@ -233,7 +236,9 @@ class TaskLoader(DataLoader):
         with self.db.session() as session:
             result = session.run(query, ids=task_ids)
             tasks_dict = {
-                ((props := dict(record["t"])).get("task_id") or props.get("id")): props
+                (
+                    (props := dict(record["t"])).get("task_id") or props.get("id")
+                ): props
                 for record in result
             }
 
@@ -310,115 +315,119 @@ class OptimizedGraphQLAPI:
         """
         # Define types
         concept_type = GraphQLObjectType(
-            "Concept",
+            'Concept',
             lambda: {
-                "id": GraphQLField(GraphQLString),
-                "name": GraphQLField(GraphQLString),
-                "definition": GraphQLField(GraphQLString),
-                "ontology_id": GraphQLField(GraphQLString),
-                "confidence_score": GraphQLField(GraphQLFloat),
-                "tasks": GraphQLField(
-                    GraphQLList(task_type), resolve=self._resolve_concept_tasks
+                'id': GraphQLField(GraphQLString),
+                'name': GraphQLField(GraphQLString),
+                'definition': GraphQLField(GraphQLString),
+                'ontology_id': GraphQLField(GraphQLString),
+                'confidence_score': GraphQLField(GraphQLFloat),
+                'tasks': GraphQLField(
+                    GraphQLList(task_type),
+                    resolve=self._resolve_concept_tasks
                 ),
-                "regions": GraphQLField(
-                    GraphQLList(region_type), resolve=self._resolve_concept_regions
-                ),
-            },
+                'regions': GraphQLField(
+                    GraphQLList(region_type),
+                    resolve=self._resolve_concept_regions
+                )
+            }
         )
 
         task_type = GraphQLObjectType(
-            "Task",
+            'Task',
             lambda: {
-                "id": GraphQLField(GraphQLString),
-                "name": GraphQLField(GraphQLString),
-                "dataset_id": GraphQLField(GraphQLString),
-                "description": GraphQLField(GraphQLString),
-                "concepts": GraphQLField(
-                    GraphQLList(concept_type), resolve=self._resolve_task_concepts
-                ),
-            },
+                'id': GraphQLField(GraphQLString),
+                'name': GraphQLField(GraphQLString),
+                'dataset_id': GraphQLField(GraphQLString),
+                'description': GraphQLField(GraphQLString),
+                'concepts': GraphQLField(
+                    GraphQLList(concept_type),
+                    resolve=self._resolve_task_concepts
+                )
+            }
         )
 
         region_type = GraphQLObjectType(
-            "Region",
+            'Region',
             lambda: {
-                "id": GraphQLField(GraphQLString),
-                "name": GraphQLField(GraphQLString),
-                "mni_coordinates": GraphQLField(GraphQLString),
-                "atlas": GraphQLField(GraphQLString),
-                "concepts": GraphQLField(
-                    GraphQLList(concept_type), resolve=self._resolve_region_concepts
-                ),
-            },
+                'id': GraphQLField(GraphQLString),
+                'name': GraphQLField(GraphQLString),
+                'mni_coordinates': GraphQLField(GraphQLString),
+                'atlas': GraphQLField(GraphQLString),
+                'concepts': GraphQLField(
+                    GraphQLList(concept_type),
+                    resolve=self._resolve_region_concepts
+                )
+            }
         )
 
         publication_type = GraphQLObjectType(
-            "Publication",
+            'Publication',
             fields={
-                "pmid": GraphQLField(GraphQLString),
-                "title": GraphQLField(GraphQLString),
-                "authors": GraphQLField(GraphQLList(GraphQLString)),
-                "year": GraphQLField(GraphQLInt),
-                "journal": GraphQLField(GraphQLString),
-                "doi": GraphQLField(GraphQLString),
-            },
+                'pmid': GraphQLField(GraphQLString),
+                'title': GraphQLField(GraphQLString),
+                'authors': GraphQLField(GraphQLList(GraphQLString)),
+                'year': GraphQLField(GraphQLInt),
+                'journal': GraphQLField(GraphQLString),
+                'doi': GraphQLField(GraphQLString)
+            }
         )
 
         # Define queries
         query_type = GraphQLObjectType(
-            "Query",
+            'Query',
             fields={
-                "concept": GraphQLField(
+                'concept': GraphQLField(
                     concept_type,
                     args={
-                        "id": GraphQLArgument(GraphQLString),
-                        "name": GraphQLArgument(GraphQLString),
+                        'id': GraphQLArgument(GraphQLString),
+                        'name': GraphQLArgument(GraphQLString)
                     },
-                    resolve=self._resolve_concept,
+                    resolve=self._resolve_concept
                 ),
-                "concepts": GraphQLField(
+                'concepts': GraphQLField(
                     GraphQLList(concept_type),
                     args={
-                        "limit": GraphQLArgument(GraphQLInt),
-                        "offset": GraphQLArgument(GraphQLInt),
-                        "ontology_id": GraphQLArgument(GraphQLString),
+                        'limit': GraphQLArgument(GraphQLInt),
+                        'offset': GraphQLArgument(GraphQLInt),
+                        'ontology_id': GraphQLArgument(GraphQLString)
                     },
-                    resolve=self._resolve_concepts,
+                    resolve=self._resolve_concepts
                 ),
-                "task": GraphQLField(
+                'task': GraphQLField(
                     task_type,
                     args={
-                        "id": GraphQLArgument(GraphQLString),
-                        "name": GraphQLArgument(GraphQLString),
+                        'id': GraphQLArgument(GraphQLString),
+                        'name': GraphQLArgument(GraphQLString)
                     },
-                    resolve=self._resolve_task,
+                    resolve=self._resolve_task
                 ),
-                "tasks": GraphQLField(
+                'tasks': GraphQLField(
                     GraphQLList(task_type),
                     args={
-                        "dataset_id": GraphQLArgument(GraphQLString),
-                        "limit": GraphQLArgument(GraphQLInt),
+                        'dataset_id': GraphQLArgument(GraphQLString),
+                        'limit': GraphQLArgument(GraphQLInt)
                     },
-                    resolve=self._resolve_tasks,
+                    resolve=self._resolve_tasks
                 ),
-                "region": GraphQLField(
+                'region': GraphQLField(
                     region_type,
                     args={
-                        "id": GraphQLArgument(GraphQLString),
-                        "name": GraphQLArgument(GraphQLString),
+                        'id': GraphQLArgument(GraphQLString),
+                        'name': GraphQLArgument(GraphQLString)
                     },
-                    resolve=self._resolve_region,
+                    resolve=self._resolve_region
                 ),
-                "searchPublications": GraphQLField(
+                'searchPublications': GraphQLField(
                     GraphQLList(publication_type),
                     args={
-                        "keyword": GraphQLArgument(GraphQLString),
-                        "year": GraphQLArgument(GraphQLInt),
-                        "limit": GraphQLArgument(GraphQLInt),
+                        'keyword': GraphQLArgument(GraphQLString),
+                        'year': GraphQLArgument(GraphQLInt),
+                        'limit': GraphQLArgument(GraphQLInt)
                     },
-                    resolve=self._resolve_search_publications,
-                ),
-            },
+                    resolve=self._resolve_search_publications
+                )
+            }
         )
 
         return GraphQLSchema(query=query_type)
@@ -434,11 +443,11 @@ class OptimizedGraphQLAPI:
         Returns:
             Concept data
         """
-        concept_id = kwargs.get("id")
+        concept_id = kwargs.get('id')
         if concept_id:
             return self.concept_loader.load(concept_id).get()
 
-        name = kwargs.get("name")
+        name = kwargs.get('name')
         if name:
             query = "MATCH (c:Concept {name: $name}) RETURN c LIMIT 1"
             with self.db.session() as session:
@@ -459,9 +468,9 @@ class OptimizedGraphQLAPI:
         Returns:
             List of concepts
         """
-        limit = kwargs.get("limit", 100)
-        offset = kwargs.get("offset", 0)
-        ontology_id = kwargs.get("ontology_id")
+        limit = kwargs.get('limit', 100)
+        offset = kwargs.get('offset', 0)
+        ontology_id = kwargs.get('ontology_id')
 
         query = "MATCH (c:Concept)"
         if ontology_id:
@@ -469,7 +478,7 @@ class OptimizedGraphQLAPI:
         query += f" RETURN c SKIP {offset} LIMIT {limit}"
 
         with self.db.session() as session:
-            params = {"ontology_id": ontology_id} if ontology_id else {}
+            params = {'ontology_id': ontology_id} if ontology_id else {}
             result = session.run(query, **params)
             return [record["c"] for record in result]
 
@@ -484,11 +493,11 @@ class OptimizedGraphQLAPI:
         Returns:
             Task data
         """
-        task_id = kwargs.get("id")
+        task_id = kwargs.get('id')
         if task_id:
             return self.task_loader.load(task_id).get()
 
-        name = kwargs.get("name")
+        name = kwargs.get('name')
         if name:
             query = "MATCH (t:Task {name: $name}) RETURN t LIMIT 1"
             with self.db.session() as session:
@@ -509,8 +518,8 @@ class OptimizedGraphQLAPI:
         Returns:
             List of tasks
         """
-        dataset_id = kwargs.get("dataset_id")
-        limit = kwargs.get("limit", 100)
+        dataset_id = kwargs.get('dataset_id')
+        limit = kwargs.get('limit', 100)
 
         query = "MATCH (t:Task)"
         if dataset_id:
@@ -518,7 +527,7 @@ class OptimizedGraphQLAPI:
         query += f" RETURN t LIMIT {limit}"
 
         with self.db.session() as session:
-            params = {"dataset_id": dataset_id} if dataset_id else {}
+            params = {'dataset_id': dataset_id} if dataset_id else {}
             result = session.run(query, **params)
             return [record["t"] for record in result]
 
@@ -533,11 +542,11 @@ class OptimizedGraphQLAPI:
         Returns:
             Region data
         """
-        region_id = kwargs.get("id")
+        region_id = kwargs.get('id')
         if region_id:
             return self.region_loader.load(region_id).get()
 
-        name = kwargs.get("name")
+        name = kwargs.get('name')
         if name:
             query = "MATCH (r:Region {name: $name}) RETURN r LIMIT 1"
             with self.db.session() as session:
@@ -558,17 +567,15 @@ class OptimizedGraphQLAPI:
         Returns:
             List of publications
         """
-        keyword = kwargs.get("keyword", "")
-        year = kwargs.get("year")
-        limit = kwargs.get("limit", 50)
+        keyword = kwargs.get('keyword', '')
+        year = kwargs.get('year')
+        limit = kwargs.get('limit', 50)
 
         query = "MATCH (p:Publication)"
         conditions = []
 
         if keyword:
-            conditions.append(
-                "(p.title CONTAINS $keyword OR p.abstract CONTAINS $keyword)"
-            )
+            conditions.append("(p.title CONTAINS $keyword OR p.abstract CONTAINS $keyword)")
         if year:
             conditions.append("p.year = $year")
 
@@ -579,9 +586,9 @@ class OptimizedGraphQLAPI:
         with self.db.session() as session:
             params = {}
             if keyword:
-                params["keyword"] = keyword
+                params['keyword'] = keyword
             if year:
-                params["year"] = year
+                params['year'] = year
 
             result = session.run(query, **params)
             return [record["p"] for record in result]
@@ -602,7 +609,7 @@ class OptimizedGraphQLAPI:
         """
 
         with self.db.session() as session:
-            result = session.run(query, concept_id=concept["id"])
+            result = session.run(query, concept_id=concept['id'])
             return [record["t"] for record in result]
 
     def _resolve_concept_regions(self, concept, info):
@@ -621,7 +628,7 @@ class OptimizedGraphQLAPI:
         """
 
         with self.db.session() as session:
-            result = session.run(query, concept_id=concept["id"])
+            result = session.run(query, concept_id=concept['id'])
             return [record["r"] for record in result]
 
     def _resolve_task_concepts(self, task, info):
@@ -640,7 +647,7 @@ class OptimizedGraphQLAPI:
         """
 
         with self.db.session() as session:
-            result = session.run(query, task_id=task["id"])
+            result = session.run(query, task_id=task['id'])
             return [record["c"] for record in result]
 
     def _resolve_region_concepts(self, region, info):
@@ -659,12 +666,10 @@ class OptimizedGraphQLAPI:
         """
 
         with self.db.session() as session:
-            result = session.run(query, region_id=region["id"])
+            result = session.run(query, region_id=region['id'])
             return [record["c"] for record in result]
 
-    def execute_query(
-        self, query: str, variables: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def execute_query(self, query: str, variables: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Execute GraphQL query with caching.
 
         Args:
@@ -685,7 +690,7 @@ class OptimizedGraphQLAPI:
                 execution_time_ms=0,
                 cache_hit=True,
                 result_size=len(json.dumps(cached_result)),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.utcnow()
             )
             self.cache.record_metric(metric)
             return cached_result
@@ -697,18 +702,18 @@ class OptimizedGraphQLAPI:
             query,
             variable_values=variables,
             context_value={
-                "concept_loader": self.concept_loader,
-                "task_loader": self.task_loader,
-                "region_loader": self.region_loader,
-            },
+                'concept_loader': self.concept_loader,
+                'task_loader': self.task_loader,
+                'region_loader': self.region_loader
+            }
         )
 
         execution_time = (time.time() - start_time) * 1000
 
         # Convert result to dict
         result_dict = {
-            "data": result.data,
-            "errors": [str(e) for e in result.errors] if result.errors else None,
+            'data': result.data,
+            'errors': [str(e) for e in result.errors] if result.errors else None
         }
 
         # Cache successful results
@@ -721,7 +726,7 @@ class OptimizedGraphQLAPI:
             execution_time_ms=execution_time,
             cache_hit=False,
             result_size=len(json.dumps(result_dict)),
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.utcnow()
         )
         self.cache.record_metric(metric)
 
@@ -760,26 +765,20 @@ class OptimizedGraphQLAPI:
                 "total_queries": 0,
                 "cache_hit_rate": 0,
                 "avg_execution_time_ms": 0,
-                "p95_execution_time_ms": 0,
+                "p95_execution_time_ms": 0
             }
 
         # Calculate statistics
         total_queries = len(recent_metrics)
-        cache_hits = sum(1 for m in recent_metrics if m["cache_hit"])
+        cache_hits = sum(1 for m in recent_metrics if m['cache_hit'])
         cache_hit_rate = cache_hits / total_queries if total_queries > 0 else 0
 
-        execution_times = [
-            m["execution_time_ms"] for m in recent_metrics if not m["cache_hit"]
-        ]
+        execution_times = [m['execution_time_ms'] for m in recent_metrics if not m['cache_hit']]
         if execution_times:
             avg_execution_time = sum(execution_times) / len(execution_times)
             execution_times.sort()
             p95_index = int(len(execution_times) * 0.95)
-            p95_execution_time = (
-                execution_times[p95_index]
-                if p95_index < len(execution_times)
-                else execution_times[-1]
-            )
+            p95_execution_time = execution_times[p95_index] if p95_index < len(execution_times) else execution_times[-1]
         else:
             avg_execution_time = 0
             p95_execution_time = 0
@@ -789,5 +788,5 @@ class OptimizedGraphQLAPI:
             "cache_hit_rate": cache_hit_rate,
             "avg_execution_time_ms": avg_execution_time,
             "p95_execution_time_ms": p95_execution_time,
-            "recent_queries": recent_metrics[-10:],  # Last 10 queries
+            "recent_queries": recent_metrics[-10:]  # Last 10 queries
         }

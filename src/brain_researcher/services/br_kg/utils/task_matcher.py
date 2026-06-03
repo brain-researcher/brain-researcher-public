@@ -85,7 +85,6 @@ class TaskMatcher:
         # Try loading from database first (primary source)
         try:
             from ..graph.graph_database import BRKGGraphDB
-
             db = BRKGGraphDB()
             tasks = db.find_nodes(labels="Task")
 
@@ -236,9 +235,9 @@ class TaskMatcher:
         niclip_index = None
         if _NICLIP_AVAILABLE:  # pragma: no cover - heavy optional dependency
             niclip_encoder = NiCLIPEncoder()
-            niclip_embs = niclip_encoder.encode(self.labels, batch_size=32).astype(
-                "float32"
-            )
+            niclip_embs = niclip_encoder.encode(
+                self.labels, batch_size=32
+            ).astype("float32")
             dim_n = niclip_embs.shape[1]
             niclip_index = faiss.IndexHNSWFlat(dim_n, 32)
             niclip_index.hnsw.efConstruction = 40
@@ -316,11 +315,7 @@ class TaskMatcher:
             self._ensure_indices()
 
         # Try NiCLIP first if available
-        if (
-            self.enable_semantic
-            and self.niclip_encoder
-            and self.niclip_index is not None
-        ):
+        if self.enable_semantic and self.niclip_encoder and self.niclip_index is not None:
             try:
                 q = self._encode_niclip(query)
                 D, I = self.niclip_index.search(q, min(top_k, len(self.labels)))
@@ -341,11 +336,7 @@ class TaskMatcher:
 
         # Try SBERT
         try:
-            if (
-                not self.enable_semantic
-                or self.sbert_model is None
-                or self.sbert_index is None
-            ):
+            if not self.enable_semantic or self.sbert_model is None or self.sbert_index is None:
                 raise RuntimeError("semantic_disabled")
             q = self._encode_sbert(query)
             D, I = self.sbert_index.search(q, min(top_k, len(self.labels)))

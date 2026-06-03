@@ -87,17 +87,13 @@ def _coerce_marimo_codegen_result(
     return True
 
 
-def _preferred_credential_name(
-    model_hint: str | None, credential_name: str | None
-) -> str | None:
+def _preferred_credential_name(model_hint: str | None, credential_name: str | None) -> str | None:
     if credential_name:
         return credential_name
     model_name = (model_hint or os.environ.get("DEFAULT_CODING_MODEL") or "").lower()
     if "gemini" in model_name and os.environ.get("GEMINI_API_KEY"):
         return "env_gemini"
-    if ("gpt" in model_name or "openai" in model_name) and os.environ.get(
-        "OPENAI_API_KEY"
-    ):
+    if ("gpt" in model_name or "openai" in model_name) and os.environ.get("OPENAI_API_KEY"):
         return "env_openai"
     return None
 
@@ -128,9 +124,7 @@ def chat(
 
     agent_url = os.environ.get("BR_AGENT_URL")
     if agent_url:
-        return _chat_remote(
-            message, notebook_path, apply, model_hint, credential_name, agent_url
-        )
+        return _chat_remote(message, notebook_path, apply, model_hint, credential_name, agent_url)
     return _chat_local(message, notebook_path, apply, model_hint, credential_name)
 
 

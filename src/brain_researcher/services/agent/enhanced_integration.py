@@ -22,23 +22,23 @@ from uuid import uuid4
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from brain_researcher.services.agent.advanced_error_recovery import (
-    AdvancedErrorRecoverySystem,
-    create_error_recovery_system,
-)
-from brain_researcher.services.agent.enhanced_evidence import (
-    EnhancedEvidenceCollector,
-    EvidenceVisualizationAPI,
-    ProvenanceTracker,
-)
-from brain_researcher.services.agent.graph import AgentState, CoreStateMachine
+from brain_researcher.services.agent.graph import CoreStateMachine, AgentState
+from brain_researcher.services.tools.enhanced_registry import EnhancedToolRegistry
 from brain_researcher.services.agent.logging.run_recorder import RunRecorder
 from brain_researcher.services.agent.workflow_composer import (
     WorkflowComposer,
     WorkflowExecutor,
     create_workflow_system,
 )
-from brain_researcher.services.tools.enhanced_registry import EnhancedToolRegistry
+from brain_researcher.services.agent.enhanced_evidence import (
+    EnhancedEvidenceCollector,
+    ProvenanceTracker,
+    EvidenceVisualizationAPI,
+)
+from brain_researcher.services.agent.advanced_error_recovery import (
+    AdvancedErrorRecoverySystem,
+    create_error_recovery_system,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -313,11 +313,9 @@ class EnhancedAgentOrchestrator:
         base_result = self.base_state_machine.run(
             query=query,
             thread_id=session.thread_id,
-            resume_checkpoint_id=(
-                execution_options.get("resume_checkpoint_id")
-                if execution_options
-                else None
-            ),
+            resume_checkpoint_id=execution_options.get("resume_checkpoint_id")
+            if execution_options
+            else None,
             **(execution_options or {}),
         )
 
@@ -540,11 +538,9 @@ class EnhancedAgentOrchestrator:
             checks.append(
                 {
                     "item": "execution_metrics",
-                    "result": (
-                        "OK"
-                        if session.execution_metrics["tools_failed"] == 0
-                        else "FAILED"
-                    ),
+                    "result": "OK"
+                    if session.execution_metrics["tools_failed"] == 0
+                    else "FAILED",
                     "note": f"Executed: {session.execution_metrics['tools_executed']}, Failed: {session.execution_metrics['tools_failed']}",
                 }
             )
@@ -615,9 +611,7 @@ Processing time: {time.time() - session.start_time:.2f} seconds
         # Export evidence if requested or for important sessions
         if quality_score["quality_score"] > 0.7 or len(successful_tools) > 2:
             try:
-                export_path = (
-                    session.evidence_collector.visualization_api.export_comprehensive_report()
-                )
+                export_path = session.evidence_collector.visualization_api.export_comprehensive_report()
                 result["evidence_export_path"] = str(export_path)
             except Exception as e:
                 logger.warning(f"Failed to export evidence report: {e}")

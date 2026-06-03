@@ -26,9 +26,7 @@ class DecisionPoint:
     weights: Optional[Dict[str, float]] = None
 
 
-def _ordered_options(
-    options: List[str], weights: Optional[Dict[str, float]]
-) -> List[str]:
+def _ordered_options(options: List[str], weights: Optional[Dict[str, float]]) -> List[str]:
     if not weights:
         return options
     ordered = sorted(weights.items(), key=lambda kv: kv[1], reverse=True)
@@ -52,9 +50,7 @@ def _normalize_presence(dist: dict[str, Any] | None) -> dict[str, float] | None:
     return {"present": present / total, "absent": absent / total}
 
 
-def _extract_confounds_family_priors(
-    pri: Dict[str, Any],
-) -> Dict[str, Dict[str, float]]:
+def _extract_confounds_family_priors(pri: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
     family_priors: Dict[str, Dict[str, float]] = {}
     for axis in CONF_FAMILY_AXES:
         normalized = _normalize_presence(pri.get(axis))
@@ -152,9 +148,7 @@ def generate_variants(
         conf = decision_points.get("confounds")
         hp = decision_points.get("high_pass")
         if hrf:
-            rationale.append(
-                f"HRF basis choices commonly varied across GLM analyses: {hrf}"
-            )
+            rationale.append(f"HRF basis choices commonly varied across GLM analyses: {hrf}")
         if conf:
             rationale.append(f"Motion + aCompCor strategies: {conf}")
         if hp is not None:

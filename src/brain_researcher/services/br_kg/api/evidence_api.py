@@ -28,9 +28,7 @@ def _ensure_neo4j() -> Neo4jGraphDB:
     """Return a Neo4jGraphDB or raise if fallback would be SQLite."""
     db = get_db()
     if not isinstance(db, Neo4jGraphDB):
-        raise RuntimeError(
-            "Evidence API requires Neo4j backend; SQLite mock not supported."
-        )
+        raise RuntimeError("Evidence API requires Neo4j backend; SQLite mock not supported.")
     return db
 
 
@@ -41,10 +39,7 @@ def _serialize_node(node: Any) -> Dict[str, Any]:
     data = dict(node)
     labels = list(node.labels) if hasattr(node, "labels") else []
     data["labels"] = labels
-    data.setdefault(
-        "id",
-        getattr(node, "id", None) or (node.get("id") if hasattr(node, "get") else None),
-    )
+    data.setdefault("id", getattr(node, "id", None) or (node.get("id") if hasattr(node, "get") else None))
     data.setdefault("element_id", getattr(node, "element_id", None))
     return data
 

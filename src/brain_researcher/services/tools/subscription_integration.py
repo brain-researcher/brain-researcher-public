@@ -80,7 +80,7 @@ class AgentSubscriptionManager:
             "subscriptions_created": 0,
             "notifications_sent": 0,
             "notifications_failed": 0,
-            "active_threads": 0,
+            "active_threads": 0
         }
 
         # Register default event handlers
@@ -92,7 +92,7 @@ class AgentSubscriptionManager:
         event_types: list[EventType],
         entity_types: list[str] | None = None,
         filters: dict[str, Any] | None = None,
-        notification_handler: Callable | None = None,
+        notification_handler: Callable | None = None
     ) -> str:
         """Subscribe an agent thread to events.
 
@@ -110,7 +110,7 @@ class AgentSubscriptionManager:
         subscription_filter = SubscriptionFilter(
             event_types=event_types,
             entity_types=entity_types,
-            metadata_filters=filters or {},
+            metadata_filters=filters or {}
         )
 
         # Create subscription query (simplified GraphQL)
@@ -134,17 +134,16 @@ class AgentSubscriptionManager:
         connection_id = await self.subscription_system.connect(
             mock_websocket,
             user_id=f"agent_{thread_id}",
-            metadata={"thread_id": thread_id, "type": "agent"},
+            metadata={"thread_id": thread_id, "type": "agent"}
         )
 
         subscription_id = await self.subscription_system.subscribe(
             connection_id,
             query,
-            variables=(
-                {"entityTypes": entity_types, **filters}
-                if entity_types or filters
-                else None
-            ),
+            variables={
+                "entityTypes": entity_types,
+                **filters
+            } if entity_types or filters else None
         )
 
         # Track subscription
@@ -163,9 +162,7 @@ class AgentSubscriptionManager:
         self.stats["subscriptions_created"] += 1
         self.stats["active_threads"] = len(self.agent_subscriptions)
 
-        logger.info(
-            f"Subscribed agent thread {thread_id} to {len(event_types)} event types"
-        )
+        logger.info(f"Subscribed agent thread {thread_id} to {len(event_types)} event types")
 
         return subscription_id
 
@@ -191,7 +188,11 @@ class AgentSubscriptionManager:
 
         logger.info(f"Unsubscribed agent thread {thread_id} from all events")
 
-    async def send_notification(self, thread_id: str, notification: AgentNotification):
+    async def send_notification(
+        self,
+        thread_id: str,
+        notification: AgentNotification
+    ):
         """Send notification to an agent thread.
 
         Args:
@@ -218,7 +219,7 @@ class AgentSubscriptionManager:
                     "message": notification.message,
                     "data": notification.data,
                     "priority": notification.priority,
-                    "timestamp": notification.timestamp.isoformat(),
+                    "timestamp": notification.timestamp.isoformat()
                 }
 
                 await self.redis.lpush(key, json.dumps(notification_data))
@@ -226,18 +227,16 @@ class AgentSubscriptionManager:
 
             self.stats["notifications_sent"] += 1
 
-            logger.debug(
-                f"Sent notification to thread {thread_id}: {notification.title}"
-            )
+            logger.debug(f"Sent notification to thread {thread_id}: {notification.title}")
 
         except Exception as e:
-            logger.error(
-                f"Failed to send notification to thread {thread_id}: {e}", exc_info=True
-            )
+            logger.error(f"Failed to send notification to thread {thread_id}: {e}", exc_info=True)
             self.stats["notifications_failed"] += 1
 
     async def get_notifications(
-        self, thread_id: str, limit: int = 10
+        self,
+        thread_id: str,
+        limit: int = 10
     ) -> list[AgentNotification]:
         """Get recent notifications for a thread.
 
@@ -266,7 +265,7 @@ class AgentSubscriptionManager:
                         message=data["message"],
                         data=data["data"],
                         priority=data["priority"],
-                        timestamp=datetime.fromisoformat(data["timestamp"]),
+                        timestamp=datetime.fromisoformat(data["timestamp"])
                     )
                     notifications.append(notification)
                 except Exception as e:
@@ -278,16 +277,19 @@ class AgentSubscriptionManager:
         """Register handlers for subscription system events."""
         # Register handler for analysis completion events
         self.subscription_system.register_handler(
-            "analysisCompleted", self._handle_analysis_completed
+            "analysisCompleted",
+            self._handle_analysis_completed
         )
 
         # Register handler for node events
         self.subscription_system.register_handler(
-            "nodeCreated", self._handle_node_event
+            "nodeCreated",
+            self._handle_node_event
         )
 
         self.subscription_system.register_handler(
-            "nodeUpdated", self._handle_node_event
+            "nodeUpdated",
+            self._handle_node_event
         )
 
     async def _handle_analysis_completed(self, subscription):
@@ -302,7 +304,7 @@ class AgentSubscriptionManager:
                 title="Analysis Completed",
                 message="Your requested analysis has been completed.",
                 data={"analysis_id": "mock_analysis"},
-                priority=1,
+                priority=1
             )
 
             await self.send_notification(thread_id, notification)
@@ -318,13 +320,16 @@ class AgentSubscriptionManager:
                 title="Knowledge Graph Updated",
                 message="New data has been added to the knowledge graph.",
                 data={"event_type": "node_created"},
-                priority=0,
+                priority=0
             )
 
             await self.send_notification(thread_id, notification)
 
     async def notify_analysis_started(
-        self, thread_id: str, analysis_id: str, analysis_type: str
+        self,
+        thread_id: str,
+        analysis_id: str,
+        analysis_type: str
     ):
         """Notify that an analysis has started.
 
@@ -342,9 +347,9 @@ class AgentSubscriptionManager:
             data={
                 "analysis_id": analysis_id,
                 "analysis_type": analysis_type,
-                "status": "started",
+                "status": "started"
             },
-            priority=1,
+            priority=1
         )
 
         await self.send_notification(thread_id, notification)
@@ -354,7 +359,7 @@ class AgentSubscriptionManager:
         thread_id: str,
         analysis_id: str,
         analysis_type: str,
-        results: dict[str, Any],
+        results: dict[str, Any]
     ):
         """Notify that an analysis has completed.
 
@@ -374,9 +379,9 @@ class AgentSubscriptionManager:
                 "analysis_id": analysis_id,
                 "analysis_type": analysis_type,
                 "status": "completed",
-                "results": results,
+                "results": results
             },
-            priority=2,
+            priority=2
         )
 
         await self.send_notification(thread_id, notification)
@@ -386,7 +391,7 @@ class AgentSubscriptionManager:
         thread_id: str,
         error_id: str,
         error_message: str,
-        error_context: dict[str, Any],
+        error_context: dict[str, Any]
     ):
         """Notify about an error.
 
@@ -403,7 +408,7 @@ class AgentSubscriptionManager:
             title="Error Occurred",
             message=error_message,
             data={"error_context": error_context},
-            priority=2,
+            priority=2
         )
 
         await self.send_notification(thread_id, notification)
@@ -417,7 +422,7 @@ class AgentSubscriptionManager:
             "active_threads": self.stats["active_threads"],
             "total_subscriptions": sum(
                 len(subs) for subs in self.agent_subscriptions.values()
-            ),
+            )
         }
 
 
@@ -440,7 +445,9 @@ class MockWebSocket:
 
 # Integration helper functions
 async def setup_agent_subscriptions(
-    agent_state_machine, subscription_system: SubscriptionSystem, redis_client=None
+    agent_state_machine,
+    subscription_system: SubscriptionSystem,
+    redis_client=None
 ) -> AgentSubscriptionManager:
     """Set up agent subscription integration.
 
@@ -461,7 +468,7 @@ async def setup_agent_subscriptions(
     common_events = [
         EventType.ANALYSIS_COMPLETED,
         EventType.CURATION_STATUS_CHANGED,
-        EventType.GRAPH_CHANGED,
+        EventType.GRAPH_CHANGED
     ]
 
     logger.info("Agent subscription integration setup completed")
@@ -470,7 +477,8 @@ async def setup_agent_subscriptions(
 
 
 async def subscribe_agent_to_analysis_events(
-    subscription_manager: AgentSubscriptionManager, thread_id: str
+    subscription_manager: AgentSubscriptionManager,
+    thread_id: str
 ):
     """Subscribe an agent thread to analysis events.
 
@@ -482,7 +490,7 @@ async def subscribe_agent_to_analysis_events(
         thread_id,
         [EventType.ANALYSIS_COMPLETED],
         entity_types=["analysis", "result"],
-        filters={"status": "completed"},
+        filters={"status": "completed"}
     )
 
     logger.info(f"Subscribed thread {thread_id} to analysis events")

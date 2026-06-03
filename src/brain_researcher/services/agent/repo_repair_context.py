@@ -132,9 +132,7 @@ def _collect_absorbed_upstream_candidates(
         candidate_payload = _read_json(child / "candidate_fix.json")
         if not isinstance(candidate_payload, dict):
             continue
-        validation_payload = (
-            _read_json(validation_root / child.name / "validation_report.json") or {}
-        )
+        validation_payload = _read_json(validation_root / child.name / "validation_report.json") or {}
         status = str(candidate_payload.get("status") or "").strip()
         verdict = str(validation_payload.get("gate_verdict") or "").strip()
         if status != "absorbed_upstream" and verdict != "absorbed_upstream":
@@ -147,12 +145,8 @@ def _collect_absorbed_upstream_candidates(
         rows.append(
             {
                 "candidate_id": child.name,
-                "motif_family": str(
-                    candidate_payload.get("motif_family") or ""
-                ).strip(),
-                "target_surface": str(
-                    candidate_payload.get("target_surface") or ""
-                ).strip(),
+                "motif_family": str(candidate_payload.get("motif_family") or "").strip(),
+                "target_surface": str(candidate_payload.get("target_surface") or "").strip(),
                 "allowed_paths": [
                     str(value).strip()
                     for value in list(candidate_payload.get("allowed_paths") or [])
@@ -164,8 +158,12 @@ def _collect_absorbed_upstream_candidates(
                 "recommended_action": str(
                     validation_payload.get("recommended_action") or ""
                 ).strip(),
-                "patch_legibility_score": float(patch_legibility.get("score") or 0.0),
-                "patch_legibility_band": str(patch_legibility.get("band") or "unknown"),
+                "patch_legibility_score": float(
+                    patch_legibility.get("score") or 0.0
+                ),
+                "patch_legibility_band": str(
+                    patch_legibility.get("band") or "unknown"
+                ),
                 "touched_paths": [
                     str(value).strip()
                     for value in list(validation_payload.get("touched_paths") or [])
@@ -347,11 +345,10 @@ def _render_repo_repair_context_markdown(payload: dict[str, Any]) -> str:
     lines.append(
         f"- Native HARNESS motifs: `{len(harness.get('motifs_with_native_harness') or [])}`"
     )
+    lines.append(f"- Native HARNESS tasks: `{', '.join(harness.get('all_harness_tasks') or []) or 'none'}`")
     lines.append(
-        f"- Native HARNESS tasks: `{', '.join(harness.get('all_harness_tasks') or []) or 'none'}`"
-    )
-    lines.append(
-        f"- Draft scaffold HARNESS tasks: " f"`{', '.join(draft_scaffolds) or 'none'}`"
+        f"- Draft scaffold HARNESS tasks: "
+        f"`{', '.join(draft_scaffolds) or 'none'}`"
     )
     lines.append(
         f"- Motifs still without native HARNESS: "

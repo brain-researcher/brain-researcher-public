@@ -118,7 +118,7 @@ def get_package_version(package_name: str) -> Optional[str]:
         Version string or None if not found
     """
     try:
-        from importlib.metadata import PackageNotFoundError, version
+        from importlib.metadata import version, PackageNotFoundError
 
         return version(package_name)
     except (ImportError, PackageNotFoundError):

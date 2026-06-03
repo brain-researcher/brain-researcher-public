@@ -79,9 +79,7 @@ def run_brain_simulation(params: BrainSimulationParameters) -> Dict[str, Any]:
         "connectivity_strength": params.connectivity_strength,
         "mean_activity": float(np.mean(activity)),
         "std_activity": float(np.std(activity)),
-        "peak_frequency": float(
-            np.abs(np.fft.rfft(activity)).argmax() / params.duration
-        ),
+        "peak_frequency": float(np.abs(np.fft.rfft(activity)).argmax() / params.duration),
         "used_full_backend": False,
     }
 

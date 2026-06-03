@@ -22,9 +22,7 @@ class IstioServiceRegistry:
         self.services[name] = dict(service_info)
         return True
 
-    def discover_services(
-        self, label_selector: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def discover_services(self, label_selector: Optional[str] = None) -> List[Dict[str, Any]]:
         if not label_selector:
             return list(self.services.values())
 
@@ -58,9 +56,7 @@ class IstioServiceRegistry:
                 payload = response.json()
             except Exception:
                 payload = {}
-            status = payload.get(
-                "status", "healthy" if response.status_code == 200 else "unhealthy"
-            )
+            status = payload.get("status", "healthy" if response.status_code == 200 else "unhealthy")
             return {"status": status, "healthy": response.status_code == 200}
         except Exception:
             return {"status": "unreachable", "healthy": False}

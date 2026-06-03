@@ -87,15 +87,7 @@ def _row_to_trial(
 
     rt = pick(
         custom_map.get("rt_sec", [])
-        + [
-            "rt",
-            "rt_sec",
-            "response_time",
-            "rt_seconds",
-            "key_resp.rt",
-            "resp.rt",
-            "RT",
-        ]
+        + ["rt", "rt_sec", "response_time", "rt_seconds", "key_resp.rt", "resp.rt", "RT"]
     )
     if rt is None:
         rt_ms = pick(
@@ -118,8 +110,7 @@ def _row_to_trial(
         + ["trial_type", "condition", "condition_label", "trialType", "trial_type_text"]
     )
     condition_label = pick(
-        custom_map.get("condition_label", [])
-        + ["condition_label", "conditionName", "block"]
+        custom_map.get("condition_label", []) + ["condition_label", "conditionName", "block"]
     )
     session = pick(custom_map.get("session", []) + ["session", "sess"])
     run = pick(custom_map.get("run", []) + ["run", "run_id", "run_number"])
@@ -128,8 +119,7 @@ def _row_to_trial(
         + ["subject_id", "participant", "sub", "participant_id", "Participant"]
     )
     stimulus_id = pick(
-        custom_map.get("stimulus_id", [])
-        + ["stimulus", "stim_id", "stimulus_id", "stimFile"]
+        custom_map.get("stimulus_id", []) + ["stimulus", "stim_id", "stimulus_id", "stimFile"]
     )
 
     known_cols = {
@@ -251,9 +241,7 @@ def parse_taps_directory(
     if config_file:
         cfg_path: Path | None = Path(config_file).expanduser()
     else:
-        cfg_path = _first_existing(
-            [task_path / "config.yaml", task_path / "config.yml"]
-        )
+        cfg_path = _first_existing([task_path / "config.yaml", task_path / "config.yml"])
     if cfg_path and cfg_path.exists():
         config = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
 

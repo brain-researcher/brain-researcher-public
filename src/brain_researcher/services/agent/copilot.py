@@ -259,9 +259,7 @@ class CopilotAssistant:
 
         return completed
 
-    def learn_selection(
-        self, tool_name: str, accepted_params: Optional[Dict[str, Any]] = None
-    ):
+    def learn_selection(self, tool_name: str, accepted_params: Optional[Dict[str, Any]] = None):
         """Record user selection and accepted parameters to improve ranking."""
         self.memory.record_tool_selection(tool_name)
         if accepted_params:

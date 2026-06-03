@@ -10,10 +10,9 @@ Usage:
 """
 
 import argparse
-import json
-from urllib.parse import parse_qs, urlparse
-
 import requests
+import json
+from urllib.parse import urlparse, parse_qs
 
 # Configuration
 ORCHESTRATOR_URL = "http://localhost:3004"
@@ -34,7 +33,7 @@ def test_oauth_authorize(provider: str):
         response = requests.get(url, allow_redirects=False)
 
         if response.status_code == 307 or response.status_code == 302:
-            redirect_url = response.headers.get("Location")
+            redirect_url = response.headers.get('Location')
             print(f"✅ Got redirect (status {response.status_code})")
             print(f"   Redirect URL: {redirect_url[:100]}...")
 
@@ -79,7 +78,9 @@ def test_magic_link_send(email: str):
 
     try:
         response = requests.post(
-            url, json={"email": email}, headers={"Content-Type": "application/json"}
+            url,
+            json={"email": email},
+            headers={"Content-Type": "application/json"}
         )
 
         if response.status_code == 200:
@@ -108,26 +109,17 @@ def check_environment_variables(provider: str):
     print("-" * 60)
 
     required_vars = {
-        "google": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
-        "microsoft": [
-            "AZURE_AD_CLIENT_ID",
-            "AZURE_AD_CLIENT_SECRET",
-            "AZURE_AD_TENANT_ID",
-        ],
-        "github": ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
-        "magic_link": [
-            "EMAIL_SERVER_HOST",
-            "EMAIL_SERVER_USER",
-            "EMAIL_SERVER_PASSWORD",
-        ],
+        'google': ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
+        'microsoft': ['AZURE_AD_CLIENT_ID', 'AZURE_AD_CLIENT_SECRET', 'AZURE_AD_TENANT_ID'],
+        'github': ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'],
+        'magic_link': ['EMAIL_SERVER_HOST', 'EMAIL_SERVER_USER', 'EMAIL_SERVER_PASSWORD']
     }
 
-    common_vars = ["JWT_SECRET_KEY", "FRONTEND_URL"]
+    common_vars = ['JWT_SECRET_KEY', 'FRONTEND_URL']
 
     vars_to_check = required_vars.get(provider, []) + common_vars
 
     import os
-
     all_set = True
     for var in vars_to_check:
         value = os.getenv(var)
@@ -171,23 +163,30 @@ def test_health():
 def main():
     parser = argparse.ArgumentParser(description="Test OAuth authentication flow")
     parser.add_argument(
-        "--provider",
-        choices=["google", "microsoft", "github"],
-        help="OAuth provider to test",
+        '--provider',
+        choices=['google', 'microsoft', 'github'],
+        help='OAuth provider to test'
     )
     parser.add_argument(
-        "--test-magic-link", action="store_true", help="Test magic link authentication"
+        '--test-magic-link',
+        action='store_true',
+        help='Test magic link authentication'
     )
-    parser.add_argument("--email", help="Email address for magic link test")
     parser.add_argument(
-        "--skip-health-check", action="store_true", help="Skip health check"
+        '--email',
+        help='Email address for magic link test'
+    )
+    parser.add_argument(
+        '--skip-health-check',
+        action='store_true',
+        help='Skip health check'
     )
 
     args = parser.parse_args()
 
-    print("\n" + "=" * 60)
+    print("\n" + "="*60)
     print("Brain Researcher OAuth Authentication Test")
-    print("=" * 60)
+    print("="*60)
 
     # Health check
     if not args.skip_health_check:
@@ -200,7 +199,7 @@ def main():
             print("❌ --email is required for magic link test")
             return 1
 
-        check_environment_variables("magic_link")
+        check_environment_variables('magic_link')
         success = test_magic_link_send(args.email)
         return 0 if success else 1
 

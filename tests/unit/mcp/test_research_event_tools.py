@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import TypedDict
-
 from brain_researcher.services.mcp import runstore
 
 
@@ -2128,7 +2127,9 @@ def test_log_research_event_schema_advertises_kind_and_source_enums():
     from brain_researcher.services.mcp import server as srv
 
     tools = srv._run_async_sync(srv.mcp.list_tools())
-    schema = next(t.inputSchema for t in tools if t.name == "log_research_event")
+    schema = next(
+        t.inputSchema for t in tools if t.name == "log_research_event"
+    )
     props = schema["properties"]
     assert props["kind"]["enum"] == ["start", "note"]
     assert props["source"]["enum"] == ["agent", "user"]

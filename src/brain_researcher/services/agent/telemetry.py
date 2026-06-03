@@ -35,33 +35,22 @@ def _init_otlp_tracer():
     try:
         from opentelemetry import trace
         from opentelemetry.sdk.resources import Resource
-        from opentelemetry.sdk.trace import (  # type: ignore
-            Status,
-            StatusCode,
-            TracerProvider,
-        )
+        from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
+        from opentelemetry.sdk.trace import Status, StatusCode  # type: ignore
 
         if endpoint_grpc:
-            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-                OTLPSpanExporter,  # type: ignore
-            )
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter  # type: ignore
 
-            insecure = (
-                os.getenv("BRAIN_RESEARCHER_OTLP_INSECURE", "true").lower() == "true"
-            )
+            insecure = os.getenv("BRAIN_RESEARCHER_OTLP_INSECURE", "true").lower() == "true"
             exporter = OTLPSpanExporter(endpoint=endpoint_grpc, insecure=insecure)
         else:
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-                OTLPSpanExporter,  # type: ignore
-            )
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter  # type: ignore
 
             exporter = OTLPSpanExporter(endpoint=endpoint_http)
 
         service_name = os.getenv("BRAIN_RESEARCHER_SERVICE_NAME", "brain-researcher")
-        provider = TracerProvider(
-            resource=Resource.create({"service.name": service_name})
-        )
+        provider = TracerProvider(resource=Resource.create({"service.name": service_name}))
         processor = BatchSpanProcessor(exporter)
         provider.add_span_processor(processor)
         trace.set_tracer_provider(provider)
@@ -163,11 +152,7 @@ class TelemetrySpan:
             if _OTEL_STATUS:
                 status_cls, status_code_cls = _OTEL_STATUS
                 if status_cls and status_code_cls:
-                    status_val = (
-                        status_code_cls.ERROR
-                        if extra.get("status") == "error" or extra.get("error")
-                        else status_code_cls.OK
-                    )
+                    status_val = status_code_cls.ERROR if extra.get("status") == "error" or extra.get("error") else status_code_cls.OK
                     self._otel_span.set_status(status_cls(status_val))
         if self._otel_cm:
             try:
@@ -206,9 +191,7 @@ def start_span(name: str, attributes: Optional[Dict[str, Any]] = None) -> Teleme
 
 
 @contextlib.contextmanager
-def span_context(
-    name: str, attributes: Optional[Dict[str, Any]] = None
-) -> Iterator[TelemetrySpan]:
+def span_context(name: str, attributes: Optional[Dict[str, Any]] = None) -> Iterator[TelemetrySpan]:
     """
     Context-manager wrapper over start_span for convenience.
 

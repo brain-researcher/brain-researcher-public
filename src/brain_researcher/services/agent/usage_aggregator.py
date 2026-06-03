@@ -7,10 +7,10 @@ utilities for billing/usage reporting.
 
 import json
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, Any, Optional, List
 
 from brain_researcher.config.paths import get_data_root
 from brain_researcher.services.agent.router import LLMRouteMetadata
@@ -138,9 +138,7 @@ class UsageTracker:
             start_dt = datetime.fromisoformat(start_date.replace("Z", ""))
         if end_date:
             # End of day
-            end_dt = datetime.fromisoformat(end_date.replace("Z", "")) + timedelta(
-                days=1
-            )
+            end_dt = datetime.fromisoformat(end_date.replace("Z", "")) + timedelta(days=1)
 
         # Scan NDJSON and filter
         matching_records = []
@@ -152,9 +150,7 @@ class UsageTracker:
                     record = json.loads(line)
 
                     # Date filter
-                    record_dt = datetime.fromisoformat(
-                        record["timestamp"].replace("Z", "")
-                    )
+                    record_dt = datetime.fromisoformat(record["timestamp"].replace("Z", ""))
                     if start_dt and record_dt < start_dt:
                         continue
                     if end_dt and record_dt >= end_dt:

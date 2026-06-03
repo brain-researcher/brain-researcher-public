@@ -160,9 +160,7 @@ class EmbeddingMetricsCollector:
                     {"timestamp": q.timestamp, "query": q.query_text, "error": q.error}
                     for q in recent_queries
                     if q.error
-                ][
-                    -10:
-                ],  # Last 10 errors
+                ][-10:],  # Last 10 errors
             }
 
     def get_prometheus_metrics(self) -> str:

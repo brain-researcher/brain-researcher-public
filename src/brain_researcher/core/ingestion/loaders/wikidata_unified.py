@@ -16,15 +16,14 @@ Features:
 Author: Brain Researcher Team
 """
 
-import hashlib
 import json
 import logging
-from datetime import datetime, timedelta
+import hashlib
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime, timedelta
 import requests
-from SPARQLWrapper import JSON, SPARQLWrapper
+from SPARQLWrapper import SPARQLWrapper, JSON
 
 logger = logging.getLogger(__name__)
 
@@ -45,14 +44,14 @@ PROPERTIES = {
     "MeSH_ID": "P486",
     "UBERON_ID": "P1554",
     "image": "P18",
-    "adjacent_to": "P47",
+    "adjacent_to": "P47"
 }
 
 # Common brain region classes in WikiData
 BRAIN_REGION_CLASSES = [
     "Q101405097",  # brain region
-    "Q4936952",  # anatomical structure
-    "Q10376724",  # neuroanatomical structure
+    "Q4936952",    # anatomical structure
+    "Q10376724",   # neuroanatomical structure
 ]
 
 
@@ -76,7 +75,7 @@ class WikiDataUnifiedLoader:
         cache_dir: Optional[str] = None,
         cache_duration: timedelta = DEFAULT_CACHE_DURATION,
         language: str = "en",
-        endpoint: str = WIKIDATA_SPARQL_ENDPOINT,
+        endpoint: str = WIKIDATA_SPARQL_ENDPOINT
     ):
         """
         Initialize the unified WikiData loader.
@@ -88,9 +87,7 @@ class WikiDataUnifiedLoader:
             endpoint: SPARQL endpoint URL
         """
         # Set cache directory
-        self.cache_dir = (
-            Path(cache_dir) if cache_dir else Path.home() / ".br_kg_cache" / "wikidata"
-        )
+        self.cache_dir = Path(cache_dir) if cache_dir else Path.home() / ".br_kg_cache" / "wikidata"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_duration = cache_duration
 
@@ -107,7 +104,7 @@ class WikiDataUnifiedLoader:
             "coordinates_found": 0,
             "cross_references": 0,
             "cache_hits": 0,
-            "sparql_queries": 0,
+            "sparql_queries": 0
         }
 
         logger.info(f"Initialized WikiDataUnifiedLoader (language: {language})")
@@ -117,7 +114,7 @@ class WikiDataUnifiedLoader:
         include_hierarchy: bool = True,
         include_coordinates: bool = True,
         include_cross_refs: bool = True,
-        limit: int = None,
+        limit: int = None
     ) -> List[Dict[str, Any]]:
         """
         Load brain regions from WikiData.
@@ -133,7 +130,10 @@ class WikiDataUnifiedLoader:
         """
         # Build SPARQL query
         query = self._build_brain_regions_query(
-            include_hierarchy, include_coordinates, include_cross_refs, limit
+            include_hierarchy,
+            include_coordinates,
+            include_cross_refs,
+            limit
         )
 
         # Check cache
@@ -174,7 +174,7 @@ class WikiDataUnifiedLoader:
         include_hierarchy: bool,
         include_coordinates: bool,
         include_cross_refs: bool,
-        limit: Optional[int],
+        limit: Optional[int]
     ) -> str:
         """Build SPARQL query for brain regions."""
         # Base query structure
@@ -183,7 +183,7 @@ class WikiDataUnifiedLoader:
             "PREFIX wdt: <http://www.wikidata.org/prop/direct/>",
             "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>",
             "",
-            "SELECT DISTINCT ?item ?itemLabel ?itemDescription",
+            "SELECT DISTINCT ?item ?itemLabel ?itemDescription"
         ]
 
         # Add optional fields
@@ -192,55 +192,47 @@ class WikiDataUnifiedLoader:
 
         if include_hierarchy:
             optional_fields.extend(["?partOf", "?partOfLabel"])
-            optional_patterns.append("OPTIONAL { ?item wdt:P361 ?partOf . }")
+            optional_patterns.append(
+                "OPTIONAL { ?item wdt:P361 ?partOf . }"
+            )
 
         if include_coordinates:
             optional_fields.extend(["?mniCoords", "?coords"])
-            optional_patterns.extend(
-                [
-                    "OPTIONAL { ?item wdt:P6758 ?mniCoords . }",
-                    "OPTIONAL { ?item wdt:P625 ?coords . }",
-                ]
-            )
+            optional_patterns.extend([
+                "OPTIONAL { ?item wdt:P6758 ?mniCoords . }",
+                "OPTIONAL { ?item wdt:P625 ?coords . }"
+            ])
 
         if include_cross_refs:
-            optional_fields.extend(
-                ["?ta98", "?neurolexId", "?fmaId", "?meshId", "?uberonId"]
-            )
-            optional_patterns.extend(
-                [
-                    "OPTIONAL { ?item wdt:P1323 ?ta98 . }",
-                    "OPTIONAL { ?item wdt:P696 ?neurolexId . }",
-                    "OPTIONAL { ?item wdt:P1402 ?fmaId . }",
-                    "OPTIONAL { ?item wdt:P486 ?meshId . }",
-                    "OPTIONAL { ?item wdt:P1554 ?uberonId . }",
-                ]
-            )
+            optional_fields.extend([
+                "?ta98", "?neurolexId", "?fmaId", "?meshId", "?uberonId"
+            ])
+            optional_patterns.extend([
+                "OPTIONAL { ?item wdt:P1323 ?ta98 . }",
+                "OPTIONAL { ?item wdt:P696 ?neurolexId . }",
+                "OPTIONAL { ?item wdt:P1402 ?fmaId . }",
+                "OPTIONAL { ?item wdt:P486 ?meshId . }",
+                "OPTIONAL { ?item wdt:P1554 ?uberonId . }"
+            ])
 
         if optional_fields:
             query_parts[4] += " " + " ".join(optional_fields)
 
         # Add WHERE clause
-        query_parts.extend(
-            [
-                "WHERE {",
-                "  VALUES ?brainClass { "
-                + " ".join(f"wd:{c}" for c in BRAIN_REGION_CLASSES)
-                + " }",
-                "  ?item wdt:P31/wdt:P279* ?brainClass .",
-            ]
-        )
+        query_parts.extend([
+            "WHERE {",
+            "  VALUES ?brainClass { " + " ".join(f"wd:{c}" for c in BRAIN_REGION_CLASSES) + " }",
+            "  ?item wdt:P31/wdt:P279* ?brainClass .",
+        ])
 
         # Add optional patterns
         query_parts.extend(optional_patterns)
 
         # Add language service
-        query_parts.extend(
-            [
-                f"  SERVICE wikibase:label {{ bd:serviceParam wikibase:language '{self.language},en' . }}",
-                "}",
-            ]
-        )
+        query_parts.extend([
+            f"  SERVICE wikibase:label {{ bd:serviceParam wikibase:language '{self.language},en' . }}",
+            "}"
+        ])
 
         # Add limit if specified
         if limit:
@@ -263,9 +255,7 @@ class WikiDataUnifiedLoader:
             logger.error(f"SPARQL query failed: {e}")
             return []
 
-    def _process_brain_regions(
-        self, raw_regions: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _process_brain_regions(self, raw_regions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Process raw SPARQL results into structured brain region data."""
         processed = []
 
@@ -276,35 +266,36 @@ class WikiDataUnifiedLoader:
                     "wikidata_id": self._extract_value(region, "item", "uri"),
                     "name": self._extract_value(region, "itemLabel"),
                     "description": self._extract_value(region, "itemDescription"),
-                    "source": "wikidata",
+                    "source": "wikidata"
                 }
 
                 # Extract hierarchy
                 if "partOf" in region:
                     processed_region["part_of"] = {
                         "id": self._extract_value(region, "partOf", "uri"),
-                        "name": self._extract_value(region, "partOfLabel"),
+                        "name": self._extract_value(region, "partOfLabel")
                     }
 
                 # Extract coordinates
                 coordinates = []
                 if "mniCoords" in region:
-                    mni = self._parse_coordinates(
-                        self._extract_value(region, "mniCoords")
-                    )
+                    mni = self._parse_coordinates(self._extract_value(region, "mniCoords"))
                     if mni:
-                        coordinates.append(
-                            {"type": "MNI", "x": mni[0], "y": mni[1], "z": mni[2]}
-                        )
+                        coordinates.append({
+                            "type": "MNI",
+                            "x": mni[0],
+                            "y": mni[1],
+                            "z": mni[2]
+                        })
 
                 if "coords" in region:
-                    coords = self._parse_coordinates(
-                        self._extract_value(region, "coords")
-                    )
+                    coords = self._parse_coordinates(self._extract_value(region, "coords"))
                     if coords:
-                        coordinates.append(
-                            {"type": "geographic", "lat": coords[0], "lon": coords[1]}
-                        )
+                        coordinates.append({
+                            "type": "geographic",
+                            "lat": coords[0],
+                            "lon": coords[1]
+                        })
 
                 if coordinates:
                     processed_region["coordinates"] = coordinates
@@ -316,7 +307,7 @@ class WikiDataUnifiedLoader:
                     ("neurolexId", "NeuroLex"),
                     ("fmaId", "FMA"),
                     ("meshId", "MeSH"),
-                    ("uberonId", "UBERON"),
+                    ("uberonId", "UBERON")
                 ]
 
                 for field, name in ref_fields:
@@ -337,7 +328,10 @@ class WikiDataUnifiedLoader:
         return processed
 
     def _extract_value(
-        self, binding: Dict[str, Any], key: str, value_type: str = "value"
+        self,
+        binding: Dict[str, Any],
+        key: str,
+        value_type: str = "value"
     ) -> Optional[str]:
         """Extract value from SPARQL binding."""
         if key not in binding:
@@ -382,7 +376,9 @@ class WikiDataUnifiedLoader:
         return None
 
     def load_hierarchy(
-        self, root_id: str = "Q1073", max_depth: int = 5  # Q1073 = brain
+        self,
+        root_id: str = "Q1073",  # Q1073 = brain
+        max_depth: int = 5
     ) -> Dict[str, Any]:
         """
         Load anatomical hierarchy starting from a root region.
@@ -394,7 +390,11 @@ class WikiDataUnifiedLoader:
         Returns:
             Hierarchical structure of brain regions
         """
-        hierarchy = {"id": root_id, "name": None, "children": []}
+        hierarchy = {
+            "id": root_id,
+            "name": None,
+            "children": []
+        }
 
         # Build recursive query
         query = self._build_hierarchy_query(root_id, max_depth)
@@ -424,7 +424,9 @@ class WikiDataUnifiedLoader:
         return query
 
     def _build_hierarchy_tree(
-        self, results: List[Dict[str, Any]], root_id: str
+        self,
+        results: List[Dict[str, Any]],
+        root_id: str
     ) -> Dict[str, Any]:
         """Build tree structure from flat results."""
         # Create lookup of all items
@@ -436,7 +438,7 @@ class WikiDataUnifiedLoader:
                     "id": item_id,
                     "name": self._extract_value(result, "itemLabel"),
                     "parent": self._extract_value(result, "parent", "uri"),
-                    "children": [],
+                    "children": []
                 }
 
         # Build tree
@@ -449,7 +451,11 @@ class WikiDataUnifiedLoader:
 
         return root
 
-    def search_regions(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
+    def search_regions(
+        self,
+        query: str,
+        limit: int = 50
+    ) -> List[Dict[str, Any]]:
         """
         Search for brain regions by name or description.
 
@@ -507,13 +513,14 @@ class WikiDataUnifiedLoader:
             return None
 
         # Process into structured format
-        details = {"id": wikidata_id, "properties": {}}
+        details = {
+            "id": wikidata_id,
+            "properties": {}
+        }
 
         for result in results:
             prop = self._extract_value(result, "propertyLabel")
-            value = self._extract_value(result, "valueLabel") or self._extract_value(
-                result, "value"
-            )
+            value = self._extract_value(result, "valueLabel") or self._extract_value(result, "value")
 
             if prop and value:
                 if prop not in details["properties"]:
@@ -541,9 +548,7 @@ class WikiDataUnifiedLoader:
 
         try:
             # Check if cache is expired
-            file_age = datetime.now() - datetime.fromtimestamp(
-                cache_file.stat().st_mtime
-            )
+            file_age = datetime.now() - datetime.fromtimestamp(cache_file.stat().st_mtime)
             if file_age > self.cache_duration:
                 return None
 
@@ -606,9 +611,7 @@ if __name__ == "__main__":
 
     # Get hierarchy
     hierarchy = loader.load_hierarchy("Q1073", max_depth=2)
-    print(
-        f"\nBrain hierarchy: {hierarchy.get('name')} with {len(hierarchy.get('children', []))} direct children"
-    )
+    print(f"\nBrain hierarchy: {hierarchy.get('name')} with {len(hierarchy.get('children', []))} direct children")
 
     # Print statistics
     print(f"\nStatistics: {loader.get_statistics()}")

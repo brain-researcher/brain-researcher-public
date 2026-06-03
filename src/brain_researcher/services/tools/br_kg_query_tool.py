@@ -13,8 +13,8 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.br_kg import query_service
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
+from brain_researcher.services.br_kg import query_service
 
 
 class SearchNodesArgs(BaseModel):
@@ -29,15 +29,9 @@ class SearchNodesArgs(BaseModel):
 class SearchDatasetsArgs(BaseModel):
     text: Optional[str] = Field(default=None, description="Optional free-text match")
     task_ids: Optional[List[str]] = Field(default=None, description="Task names/ids")
-    modality: Optional[str] = Field(
-        default=None, description="Modalities filter (fmri/eeg/...)"
-    )
-    min_subjects: Optional[int] = Field(
-        default=None, ge=1, description="Minimum sample size"
-    )
-    species: Optional[str] = Field(
-        default=None, description="Species filter (e.g., human)"
-    )
+    modality: Optional[str] = Field(default=None, description="Modalities filter (fmri/eeg/...)")
+    min_subjects: Optional[int] = Field(default=None, ge=1, description="Minimum sample size")
+    species: Optional[str] = Field(default=None, description="Species filter (e.g., human)")
     limit: int = Field(default=20, ge=1, le=50, description="Max results to return")
 
 
@@ -81,13 +75,9 @@ class SearchNodesTool(NeuroToolWrapper):
     def get_args_schema(self):
         return SearchNodesArgs
 
-    def _run(
-        self, query: str, node_types: Optional[list[str]] = None, limit: int = 10
-    ) -> ToolResult:
+    def _run(self, query: str, node_types: Optional[list[str]] = None, limit: int = 10) -> ToolResult:
         try:
-            nodes = query_service.search_nodes(
-                query, node_types=node_types, limit=limit
-            )
+            nodes = query_service.search_nodes(query, node_types=node_types, limit=limit)
             data = {
                 "items": [
                     {
@@ -111,9 +101,7 @@ class SearchDatasetsTool(NeuroToolWrapper):
         return "br_kg.search_datasets"
 
     def get_tool_description(self) -> str:
-        return (
-            "Search BR-KG dataset subgraph by text/task/modality/species/sample size."
-        )
+        return "Search BR-KG dataset subgraph by text/task/modality/species/sample size."
 
     def get_args_schema(self):
         return SearchDatasetsArgs
@@ -170,9 +158,7 @@ class DatasetResourcesTool(NeuroToolWrapper):
     def _run(self, dataset_ref: str) -> ToolResult:
         resources = query_service.dataset_resources(dataset_ref)
         if resources is None:
-            return ToolResult(
-                status="error", error=f"Dataset '{dataset_ref}' not found"
-            )
+            return ToolResult(status="error", error=f"Dataset '{dataset_ref}' not found")
 
         data = {
             "dataset_id": resources.dataset_id,

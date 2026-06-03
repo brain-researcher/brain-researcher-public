@@ -7,35 +7,33 @@ This module tests the Change Data Capture functionality including:
 - Error conditions and edge cases
 """
 
+import pytest
 import asyncio
 import json
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from typing import Dict, Any, List
 
 # Import the modules to test
 try:
     from brain_researcher.services.br_kg.streaming.cdc_processor import (
-        CDCError,
         CDCProcessor,
-        ChangeType,
         GraphChangeEvent,
-        integrate_cdc_with_subscriptions,
+        ChangeType,
+        CDCError,
+        integrate_cdc_with_subscriptions
     )
 except ImportError:
     # Fallback if absolute imports don't work
-    import os
     import sys
-
-    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
     from brain_researcher.services.br_kg.streaming.cdc_processor import (
-        CDCError,
         CDCProcessor,
-        ChangeType,
         GraphChangeEvent,
-        integrate_cdc_with_subscriptions,
+        ChangeType,
+        CDCError,
+        integrate_cdc_with_subscriptions
     )
 
 
@@ -52,7 +50,7 @@ class TestGraphChangeEvent:
             entity_id="node-456",
             entity_type="node",
             labels=["Person", "User"],
-            new_properties={"name": "John", "age": 30},
+            new_properties={"name": "John", "age": 30}
         )
 
         assert event.event_id == "test-123"
@@ -78,7 +76,7 @@ class TestGraphChangeEvent:
             property_changes={"weight": {"old": 0.5, "new": 0.8}},
             start_node_id="node-1",
             end_node_id="node-2",
-            relationship_type="KNOWS",
+            relationship_type="KNOWS"
         )
 
         event_dict = event.to_dict()
@@ -107,7 +105,7 @@ class TestGraphChangeEvent:
             "labels": ["Document"],
             "old_properties": {"title": "Test Doc"},
             "user_id": "user-123",
-            "metadata": {"source": "test"},
+            "metadata": {"source": "test"}
         }
 
         event = GraphChangeEvent.from_dict(event_dict)
@@ -138,16 +136,14 @@ class TestCDCProcessor:
     @pytest.fixture
     def cdc_processor(self, mock_driver):
         """Create CDCProcessor instance with mocked dependencies."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase"
-        ) as mock_graphdb:
+        with patch('brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase') as mock_graphdb:
             mock_graphdb.driver.return_value = mock_driver
             processor = CDCProcessor(
                 neo4j_uri="neo4j://localhost:7687",
                 neo4j_user="neo4j",
                 neo4j_password="password",
                 buffer_size=10,
-                batch_interval=0.1,
+                batch_interval=0.1
             )
             return processor
 
@@ -189,9 +185,7 @@ class TestCDCProcessor:
     @pytest.mark.asyncio
     async def test_connection_failure(self):
         """Test handling of connection failures."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase"
-        ) as mock_graphdb:
+        with patch('brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase') as mock_graphdb:
             # Mock driver that fails connection test
             mock_driver = Mock()
             mock_session = Mock()
@@ -202,7 +196,7 @@ class TestCDCProcessor:
             processor = CDCProcessor(
                 neo4j_uri="neo4j://localhost:7687",
                 neo4j_user="neo4j",
-                neo4j_password="password",
+                neo4j_password="password"
             )
 
             with pytest.raises(CDCError, match="Failed to start CDC processor"):
@@ -211,7 +205,6 @@ class TestCDCProcessor:
     @pytest.mark.asyncio
     async def test_event_handler_registration(self, cdc_processor):
         """Test event handler registration and removal."""
-
         def test_handler(event):
             pass
 
@@ -250,7 +243,7 @@ class TestCDCProcessor:
             change_type=ChangeType.NODE_CREATED,
             timestamp=datetime.now(),
             entity_id="node-123",
-            entity_type="node",
+            entity_type="node"
         )
 
         # Add event to buffer
@@ -278,7 +271,7 @@ class TestCDCProcessor:
                 change_type=ChangeType.NODE_CREATED,
                 timestamp=datetime.now(),
                 entity_id=f"node-{i}",
-                entity_type="node",
+                entity_type="node"
             )
             await cdc_processor._add_event(event)
 
@@ -297,15 +290,9 @@ class TestCDCProcessor:
         mock_session.run.side_effect = [
             [],  # Initial nodes query
             [],  # Initial relationships query
-            [  # Current nodes query
-                Mock(
-                    values={
-                        "id": "node-1",
-                        "labels": ["Person"],
-                        "props": {"name": "John", "age": 30},
-                    }
-                )
-            ],
+            [   # Current nodes query
+                Mock(values={"id": "node-1", "labels": ["Person"], "props": {"name": "John", "age": 30}})
+            ]
         ]
 
         mock_driver.session.return_value.__enter__.return_value = mock_session
@@ -334,19 +321,13 @@ class TestCDCProcessor:
         # Set up initial state
         cdc_processor.node_states["node-1"] = {
             "labels": ["Person"],
-            "properties": {"name": "John", "age": 30},
+            "properties": {"name": "John", "age": 30}
         }
 
         # Mock updated state
         mock_session = Mock()
         mock_session.run.return_value = [
-            Mock(
-                values={
-                    "id": "node-1",
-                    "labels": ["Person"],
-                    "props": {"name": "John", "age": 31},
-                }
-            )
+            Mock(values={"id": "node-1", "labels": ["Person"], "props": {"name": "John", "age": 31}})
         ]
 
         events_captured = []
@@ -370,19 +351,13 @@ class TestCDCProcessor:
         # Set up initial state
         cdc_processor.node_states["node-1"] = {
             "labels": ["Person"],
-            "properties": {"name": "John"},
+            "properties": {"name": "John"}
         }
 
         # Mock updated state with new label
         mock_session = Mock()
         mock_session.run.return_value = [
-            Mock(
-                values={
-                    "id": "node-1",
-                    "labels": ["Person", "Employee"],
-                    "props": {"name": "John"},
-                }
-            )
+            Mock(values={"id": "node-1", "labels": ["Person", "Employee"], "props": {"name": "John"}})
         ]
 
         events_captured = []
@@ -395,9 +370,7 @@ class TestCDCProcessor:
         await cdc_processor._capture_node_changes(mock_session, "session-1", "user-1")
 
         # Should detect label addition
-        label_events = [
-            e for e in events_captured if e.change_type == ChangeType.LABEL_ADDED
-        ]
+        label_events = [e for e in events_captured if e.change_type == ChangeType.LABEL_ADDED]
         assert len(label_events) == 1
         assert label_events[0].labels == ["Employee"]
         assert label_events[0].metadata["added_label"] == "Employee"
@@ -408,7 +381,7 @@ class TestCDCProcessor:
         # Set up initial state
         cdc_processor.node_states["node-1"] = {
             "labels": ["Person"],
-            "properties": {"name": "John"},
+            "properties": {"name": "John"}
         }
 
         # Mock empty current state (node was deleted)
@@ -436,15 +409,13 @@ class TestCDCProcessor:
         # Mock session with new relationship
         mock_session = Mock()
         mock_session.run.return_value = [
-            Mock(
-                values={
-                    "rel_id": "rel-1",
-                    "start_id": "node-1",
-                    "end_id": "node-2",
-                    "rel_type": "KNOWS",
-                    "props": {"since": "2023"},
-                }
-            )
+            Mock(values={
+                "rel_id": "rel-1",
+                "start_id": "node-1",
+                "end_id": "node-2",
+                "rel_type": "KNOWS",
+                "props": {"since": "2023"}
+            })
         ]
 
         events_captured = []
@@ -454,9 +425,7 @@ class TestCDCProcessor:
 
         cdc_processor.add_event_handler(capture_event)
 
-        await cdc_processor._capture_relationship_changes(
-            mock_session, "session-1", "user-1"
-        )
+        await cdc_processor._capture_relationship_changes(mock_session, "session-1", "user-1")
 
         # Should detect new relationship
         assert len(events_captured) == 1
@@ -469,7 +438,6 @@ class TestCDCProcessor:
     @pytest.mark.asyncio
     async def test_error_handling(self, cdc_processor):
         """Test error handling in event processing."""
-
         def failing_handler(event):
             raise Exception("Handler failed")
 
@@ -481,7 +449,7 @@ class TestCDCProcessor:
             change_type=ChangeType.NODE_CREATED,
             timestamp=datetime.now(),
             entity_id="node-123",
-            entity_type="node",
+            entity_type="node"
         )
 
         # Should not raise exception, but increment error count
@@ -540,15 +508,12 @@ class TestCDCProcessor:
     @pytest.mark.asyncio
     async def test_import_error_handling(self):
         """Test handling when Neo4j driver is not available."""
-        with patch(
-            "brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase",
-            None,
-        ):
+        with patch('brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase', None):
             with pytest.raises(ImportError, match="neo4j driver is required"):
                 CDCProcessor(
                     neo4j_uri="neo4j://localhost:7687",
                     neo4j_user="neo4j",
-                    neo4j_password="password",
+                    neo4j_password="password"
                 )
 
 
@@ -567,9 +532,7 @@ class TestCDCIntegration:
         mock_cdc_processor.add_event_handler = Mock()
 
         # Test integration
-        await integrate_cdc_with_subscriptions(
-            mock_cdc_processor, mock_subscription_system
-        )
+        await integrate_cdc_with_subscriptions(mock_cdc_processor, mock_subscription_system)
 
         # Verify handler was registered
         mock_cdc_processor.add_event_handler.assert_called_once()
@@ -585,11 +548,11 @@ class TestCDCIntegration:
             entity_id="node-456",
             entity_type="node",
             user_id="user-123",
-            metadata={"source": "test"},
+            metadata={"source": "test"}
         )
 
         # Simulate event handling
-        with patch("asyncio.create_task") as mock_create_task:
+        with patch('asyncio.create_task') as mock_create_task:
             handler(cdc_event)
             mock_create_task.assert_called_once()
 
@@ -597,9 +560,7 @@ class TestCDCIntegration:
 @pytest.mark.asyncio
 async def test_concurrent_event_processing():
     """Test concurrent event processing under load."""
-    with patch(
-        "brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase"
-    ) as mock_graphdb:
+    with patch('brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase') as mock_graphdb:
         mock_driver = Mock()
         mock_session = Mock()
         mock_session.run.return_value = []
@@ -611,7 +572,7 @@ async def test_concurrent_event_processing():
             neo4j_user="neo4j",
             neo4j_password="password",
             buffer_size=100,
-            batch_interval=0.01,
+            batch_interval=0.01
         )
 
         events_processed = []
@@ -630,7 +591,7 @@ async def test_concurrent_event_processing():
                     change_type=ChangeType.NODE_CREATED,
                     timestamp=datetime.now(),
                     entity_id=f"node-{i}",
-                    entity_type="node",
+                    entity_type="node"
                 )
                 tasks.append(processor._add_event(event))
 
@@ -647,9 +608,7 @@ async def test_concurrent_event_processing():
 @pytest.mark.asyncio
 async def test_memory_cleanup():
     """Test memory cleanup and resource management."""
-    with patch(
-        "brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase"
-    ) as mock_graphdb:
+    with patch('brain_researcher.services.br_kg.streaming.cdc_processor.GraphDatabase') as mock_graphdb:
         mock_driver = Mock()
         mock_session = Mock()
         mock_session.run.return_value = []
@@ -659,7 +618,7 @@ async def test_memory_cleanup():
         processor = CDCProcessor(
             neo4j_uri="neo4j://localhost:7687",
             neo4j_user="neo4j",
-            neo4j_password="password",
+            neo4j_password="password"
         )
 
         # Start processor

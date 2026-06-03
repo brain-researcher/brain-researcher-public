@@ -382,9 +382,7 @@ class TestAgentIntegration:
 
     def test_glm_to_concepts_workflow(self):
         """Test workflow from GLM analysis to concept mapping."""
-        with patch(
-            "brain_researcher.services.agent.agents.neuro_agent.ToolRegistry"
-        ) as mock_registry:
+        with patch("brain_researcher.services.agent.agents.neuro_agent.ToolRegistry") as mock_registry:
             # Setup mock tools
             glm_tool = Mock()
             glm_tool.get_tool_name.return_value = "glm_analysis"
@@ -429,9 +427,7 @@ class TestAgentIntegration:
 
     def test_error_recovery_workflow(self):
         """Test agent handles errors gracefully."""
-        with patch(
-            "brain_researcher.services.agent.agents.neuro_agent.ToolRegistry"
-        ) as mock_registry:
+        with patch("brain_researcher.services.agent.agents.neuro_agent.ToolRegistry") as mock_registry:
             # Setup failing tool
             failing_tool = Mock()
             failing_tool.get_tool_name.return_value = "failing_tool"

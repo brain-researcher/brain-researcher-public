@@ -72,7 +72,9 @@ class TestPreprocessingFitScopeCheck:
         assert finding.rule_id == "REVIEW_LEAKAGE_PREPROCESSING_FIT_SCOPE"
 
     def test_error_severity_for_variance_mask_only(self):
-        bundle = _bundle({"fit_scope_by_step": {"variance_mask": "full_dataset"}})
+        bundle = _bundle(
+            {"fit_scope_by_step": {"variance_mask": "full_dataset"}}
+        )
         finding = leakage_preprocessing_fit_scope_check(bundle)
         assert finding is not None
         assert finding.severity == "error"

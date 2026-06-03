@@ -117,12 +117,8 @@ def _ensure_tool_universe(repo_root: Path, tool_universe_path: Path) -> None:
 def _ensure_family_suggestions(repo_root: Path, suggestions_path: Path) -> None:
     if suggestions_path.exists():
         return
-    logger.info(
-        "Generating %s via scripts/tools/suggest_tool_families.py", suggestions_path
-    )
-    stdout = _run_script(
-        repo_root, ["python", "scripts/tools/suggest_tool_families.py"]
-    )
+    logger.info("Generating %s via scripts/tools/suggest_tool_families.py", suggestions_path)
+    stdout = _run_script(repo_root, ["python", "scripts/tools/suggest_tool_families.py"])
     suggestions_path.write_text(stdout, encoding="utf-8")
 
 
@@ -290,9 +286,7 @@ def build_audit_outputs(
     )
 
 
-def _write_tsv(
-    path: Path, fieldnames: list[str], rows: Iterable[Mapping[str, Any]]
-) -> None:
+def _write_tsv(path: Path, fieldnames: list[str], rows: Iterable[Mapping[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
@@ -341,9 +335,7 @@ def write_audit_reports(output_dir: Path, outputs: ToolAuditOutputs) -> dict[str
                 "runtime_kind": r.runtime_kind or "",
                 "source": r.source or "",
                 "op_key": r.op_key or "",
-                "is_default": (
-                    "" if r.is_default is None else str(bool(r.is_default)).lower()
-                ),
+                "is_default": "" if r.is_default is None else str(bool(r.is_default)).lower(),
                 "exposed": "" if r.exposed is None else str(bool(r.exposed)).lower(),
                 "primary_intent": r.primary_intent or "",
             }
@@ -384,9 +376,7 @@ def generate_tool_audit_reports(
     repo_root = _find_repo_root()
     output_dir = output_dir or (repo_root / "artifacts" / "tool_audit")
     tool_universe_path = tool_universe_path or (repo_root / "tool_universe.tsv")
-    family_suggestions_path = family_suggestions_path or (
-        repo_root / "tool_family_suggestions.tsv"
-    )
+    family_suggestions_path = family_suggestions_path or (repo_root / "tool_family_suggestions.tsv")
 
     _ensure_tool_universe(repo_root, tool_universe_path)
     _ensure_family_suggestions(repo_root, family_suggestions_path)

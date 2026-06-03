@@ -23,10 +23,9 @@ try:
 except ImportError:
     # For running as a script from brain_researcher.services.br_kg directory
     sys.path.insert(0, str(Path(__file__).parent.parent))
+    from brain_researcher.services.br_kg.etl.loaders.ca_task_concept_loader import load_task_concept_weights
+
     from brain_researcher.core.utils.task_matcher import TaskMatcher
-    from brain_researcher.services.br_kg.etl.loaders.ca_task_concept_loader import (
-        load_task_concept_weights,
-    )
 
 logger = logging.getLogger(__name__)
 

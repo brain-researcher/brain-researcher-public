@@ -49,7 +49,7 @@ class NICLIPEmbeddingLoader:
         "BrainGPT-7B-v0.1",
         "BrainGPT-7B-v0.2",
         "Llama-2-7b-chat-hf",
-        "Mistral-7B-v0.1",
+        "Mistral-7B-v0.1"
     ]
 
     # Available text sections
@@ -97,7 +97,7 @@ class NICLIPEmbeddingLoader:
         self.stats = {
             "embeddings_loaded": 0,
             "models_loaded": 0,
-            "vocabularies_loaded": 0,
+            "vocabularies_loaded": 0
         }
 
         # Validate installation
@@ -136,9 +136,7 @@ class NICLIPEmbeddingLoader:
 
         mapping_file = self.data_dir / "text" / "pmid_mapping.txt"
         if not mapping_file.exists():
-            logger.warning(
-                "NICLIP PMID mapping file not found; placeholder IDs will be used"
-            )
+            logger.warning("NICLIP PMID mapping file not found; placeholder IDs will be used")
             self._pmid_mapping = []
             return self._pmid_mapping
 
@@ -149,6 +147,7 @@ class NICLIPEmbeddingLoader:
             len(self._pmid_mapping),
         )
         return self._pmid_mapping
+
 
     def _align_study_ids(self, count: int) -> List[str]:
         mapping = self._load_study_id_mapping()
@@ -177,9 +176,7 @@ class NICLIPEmbeddingLoader:
         if not mapping:
             return None
         if self._study_index_lookup is None:
-            self._study_index_lookup = {
-                val: idx for idx, val in enumerate(mapping) if val
-            }
+            self._study_index_lookup = {val: idx for idx, val in enumerate(mapping) if val}
         if sid in self._study_index_lookup:
             return self._study_index_lookup[sid]
         return None
@@ -195,12 +192,13 @@ class NICLIPEmbeddingLoader:
             return None, norm, dimension
         return vector, norm, dimension
 
+
     def get_text_embeddings(
         self,
         *,
         model: str = "BrainGPT-7B-v0.2",
         section: str = "abstract",
-        normalization: str = "normalized",
+        normalization: str = "normalized"
     ) -> Optional[EmbeddingBatch]:
         """Load NICLIP text embeddings and study identifiers."""
 
@@ -297,11 +295,7 @@ class NICLIPEmbeddingLoader:
         )
         self._cache[cache_key] = batch
         self.stats["embeddings_loaded"] += 1
-        logger.info(
-            "Loaded coordinate embeddings %s (summary=%s)",
-            embeddings.shape,
-            resolved_summary,
-        )
+        logger.info("Loaded coordinate embeddings %s (summary=%s)", embeddings.shape, resolved_summary)
         return batch
 
     def _resolve_coordinate_file(
@@ -321,22 +315,16 @@ class NICLIPEmbeddingLoader:
         candidates: List[Path] = []
         if summary:
             candidates.append(
-                self.data_dir
-                / "image"
-                / f"coords_method-{method}_summary-{summary}_embedding-{model}.npy"
+                self.data_dir / "image" / f"coords_method-{method}_summary-{summary}_embedding-{model}.npy"
             )
         candidates.append(
             self.data_dir / "image" / f"coords_method-{method}_embedding-{model}.npy"
         )
         candidates.append(
-            self.data_dir
-            / "image"
-            / f"image-{normalization}_coord-{method}_embedding-{model}.npy"
+            self.data_dir / "image" / f"image-{normalization}_coord-{method}_embedding-{model}.npy"
         )
         candidates.append(
-            self.data_dir
-            / "image"
-            / f"image-{normalization}_coord-{method}_embedding-DiFuMo.npy"
+            self.data_dir / "image" / f"image-{normalization}_coord-{method}_embedding-DiFuMo.npy"
         )
         for candidate in candidates:
             if candidate.exists():
@@ -385,9 +373,7 @@ class NICLIPEmbeddingLoader:
                 "storage_index": index,
                 "dimension": dimension,
                 "vector_norm": norm,
-                "vector": (
-                    vector.tolist() if (include_vector and vector is not None) else None
-                ),
+                "vector": vector.tolist() if (include_vector and vector is not None) else None,
             }
 
         if kind == "activation":
@@ -420,19 +406,16 @@ class NICLIPEmbeddingLoader:
                 "storage_index": index,
                 "dimension": dimension,
                 "vector_norm": norm,
-                "vector": (
-                    vector.tolist() if (include_vector and vector is not None) else None
-                ),
+                "vector": vector.tolist() if (include_vector and vector is not None) else None,
             }
 
         logger.warning("Unsupported NICLIP embedding kind %s", kind)
         return None
-
     def get_vocabulary_embeddings(
         self,
         task_type: str = "cogatlas",
         embedding_type: str = "combined",
-        model: str = "BrainGPT-7B-v0.2",
+        model: str = "BrainGPT-7B-v0.2"
     ) -> Optional[np.ndarray]:
         """
         Load vocabulary embeddings for tasks/concepts.
@@ -505,7 +488,7 @@ class NICLIPEmbeddingLoader:
         self,
         task_type: str = "cogatlas",
         model: str = "BrainGPT-7B-v0.2",
-        section: str = "abstract",
+        section: str = "abstract"
     ) -> Optional[Union[np.ndarray, pd.DataFrame]]:
         """
         Load prior distributions for Bayesian inference.
@@ -519,11 +502,8 @@ class NICLIPEmbeddingLoader:
             Prior distributions as numpy array or pandas DataFrame
         """
         # Try numpy format first
-        npy_file = (
-            self.data_dir
-            / "vocabulary"
-            / f"vocabulary-{task_type}_task-combined_embedding-{model}_section-{section}_prior.npy"
-        )
+        npy_file = (self.data_dir / "vocabulary" /
+                   f"vocabulary-{task_type}_task-combined_embedding-{model}_section-{section}_prior.npy")
 
         if npy_file.exists():
             try:
@@ -534,11 +514,8 @@ class NICLIPEmbeddingLoader:
                 logger.warning(f"Could not load numpy priors: {e}")
 
         # Try CSV format
-        csv_file = (
-            self.data_dir
-            / "vocabulary"
-            / f"vocabulary-{task_type}_task-combined_embedding-{model}_section-{section}_prior.csv"
-        )
+        csv_file = (self.data_dir / "vocabulary" /
+                   f"vocabulary-{task_type}_task-combined_embedding-{model}_section-{section}_prior.csv")
 
         if csv_file.exists():
             try:
@@ -552,7 +529,9 @@ class NICLIPEmbeddingLoader:
         return None
 
     def get_trained_models(
-        self, dataset: str = "neurosynth", model_type: str = "gclda"
+        self,
+        dataset: str = "neurosynth",
+        model_type: str = "gclda"
     ) -> Dict[str, Any]:
         """
         Load pre-trained NICLIP models.
@@ -588,17 +567,17 @@ class NICLIPEmbeddingLoader:
             try:
                 # Try gzip-compressed pickle first (NICLIP files are often compressed)
                 try:
-                    with gzip.open(model_file, "rb") as f:
+                    with gzip.open(model_file, 'rb') as f:
                         model = pickle.load(f)
                 except (OSError, gzip.BadGzipFile):
                     # Fallback to raw pickle
-                    with open(model_file, "rb") as f:
+                    with open(model_file, 'rb') as f:
                         model = pickle.load(f)
 
                 models[model_file.stem] = {
                     "model": model,
                     "path": str(model_file),
-                    "type": "gclda",
+                    "type": "gclda"
                 }
                 logger.info(f"Loaded GCLDA model: {model_file.name}")
 
@@ -619,17 +598,17 @@ class NICLIPEmbeddingLoader:
             try:
                 # Try gzip-compressed pickle first (NICLIP files are often compressed)
                 try:
-                    with gzip.open(model_file, "rb") as f:
+                    with gzip.open(model_file, 'rb') as f:
                         model = pickle.load(f)
                 except (OSError, gzip.BadGzipFile):
                     # Fallback to raw pickle
-                    with open(model_file, "rb") as f:
+                    with open(model_file, 'rb') as f:
                         model = pickle.load(f)
 
                 models[model_file.stem] = {
                     "model": model,
                     "path": str(model_file),
-                    "type": "baseline",
+                    "type": "baseline"
                 }
                 logger.info(f"Loaded baseline model: {model_file.name}")
 
@@ -650,15 +629,15 @@ class NICLIPEmbeddingLoader:
         for model_file in pubmed_dir.glob("model-clip_*_best.pth"):
             try:
                 # Extract model info from filename
-                parts = model_file.stem.split("_")
-                section = parts[1].split("-")[1] if len(parts) > 1 else "unknown"
-                embedding = parts[2].split("-")[1] if len(parts) > 2 else "unknown"
+                parts = model_file.stem.split('_')
+                section = parts[1].split('-')[1] if len(parts) > 1 else "unknown"
+                embedding = parts[2].split('-')[1] if len(parts) > 2 else "unknown"
 
                 model_info = {
                     "path": str(model_file),
                     "type": "clip",
                     "section": section,
-                    "embedding": embedding,
+                    "embedding": embedding
                 }
 
                 # Check for indices file
@@ -668,9 +647,7 @@ class NICLIPEmbeddingLoader:
                     model_info["indices"] = indices
 
                 # Check for metrics
-                metrics_file = model_file.parent / model_file.name.replace(
-                    "_best.pth", "_metrics.csv"
-                )
+                metrics_file = model_file.parent / model_file.name.replace("_best.pth", "_metrics.csv")
                 if metrics_file.exists():
                     metrics = pd.read_csv(metrics_file)
                     model_info["metrics"] = metrics
@@ -703,9 +680,7 @@ class NICLIPEmbeddingLoader:
             try:
                 with open(concept_task_file) as f:
                     mappings["concept_to_task"] = json.load(f)
-                logger.info(
-                    f"Loaded {len(mappings['concept_to_task'])} concept-task mappings"
-                )
+                logger.info(f"Loaded {len(mappings['concept_to_task'])} concept-task mappings")
             except Exception as e:
                 logger.warning(f"Could not load concept-task mappings: {e}")
 
@@ -715,9 +690,7 @@ class NICLIPEmbeddingLoader:
             try:
                 with open(concept_process_file) as f:
                     mappings["concept_to_process"] = json.load(f)
-                logger.info(
-                    f"Loaded {len(mappings['concept_to_process'])} concept-process mappings"
-                )
+                logger.info(f"Loaded {len(mappings['concept_to_process'])} concept-process mappings")
             except Exception as e:
                 logger.warning(f"Could not load concept-process mappings: {e}")
 
@@ -726,9 +699,7 @@ class NICLIPEmbeddingLoader:
         if reduced_tasks_file.exists():
             try:
                 mappings["reduced_tasks"] = pd.read_csv(reduced_tasks_file)
-                logger.info(
-                    f"Loaded {len(mappings['reduced_tasks'])} reduced task mappings"
-                )
+                logger.info(f"Loaded {len(mappings['reduced_tasks'])} reduced task mappings")
             except Exception as e:
                 logger.warning(f"Could not load reduced tasks: {e}")
 
@@ -738,7 +709,7 @@ class NICLIPEmbeddingLoader:
         self,
         query_embedding: np.ndarray,
         target_embeddings: np.ndarray,
-        method: str = "cosine",
+        method: str = "cosine"
     ) -> np.ndarray:
         """
         Compute similarity between query and target embeddings.
@@ -754,9 +725,7 @@ class NICLIPEmbeddingLoader:
         if method == "cosine":
             # Normalize embeddings
             query_norm = query_embedding / np.linalg.norm(query_embedding)
-            target_norms = target_embeddings / np.linalg.norm(
-                target_embeddings, axis=1, keepdims=True
-            )
+            target_norms = target_embeddings / np.linalg.norm(target_embeddings, axis=1, keepdims=True)
             # Compute cosine similarity
             similarities = np.dot(target_norms, query_norm)
 
@@ -780,7 +749,7 @@ class NICLIPEmbeddingLoader:
         target_embeddings: np.ndarray,
         vocabulary: List[str],
         top_k: int = 10,
-        method: str = "cosine",
+        method: str = "cosine"
     ) -> List[Tuple[str, float]]:
         """
         Find most similar items to a query embedding.
@@ -796,9 +765,7 @@ class NICLIPEmbeddingLoader:
             List of (item_name, similarity_score) tuples
         """
         # Compute similarities
-        similarities = self.compute_similarity(
-            query_embedding, target_embeddings, method
-        )
+        similarities = self.compute_similarity(query_embedding, target_embeddings, method)
 
         # Get top-k indices
         top_indices = np.argsort(similarities)[-top_k:][::-1]
@@ -830,7 +797,8 @@ class NICLIPEmbeddingLoader:
 
 # Convenience functions
 def load_niclip_embeddings(
-    model: str = "BrainGPT-7B-v0.2", section: str = "abstract"
+    model: str = "BrainGPT-7B-v0.2",
+    section: str = "abstract"
 ) -> Optional[np.ndarray]:
     """
     Quick function to load NICLIP text embeddings.
@@ -871,14 +839,16 @@ if __name__ == "__main__":
 
     # Load text embeddings
     text_embeddings = loader.get_text_embeddings(
-        model="BrainGPT-7B-v0.2", section="abstract"
+        model="BrainGPT-7B-v0.2",
+        section="abstract"
     )
     if text_embeddings is not None:
         print(f"Text embeddings shape: {text_embeddings.embeddings.shape}")
 
     # Load coordinate embeddings
     coord_embeddings = loader.get_coordinate_embeddings(
-        method="MKDA", normalization="standardized"
+        method="MKDA",
+        normalization="standardized"
     )
     if coord_embeddings is not None:
         print(f"Coordinate embeddings shape: {coord_embeddings.embeddings.shape}")

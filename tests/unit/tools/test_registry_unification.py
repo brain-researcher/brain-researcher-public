@@ -6,16 +6,14 @@ These tests verify that:
 3. Tool names and descriptions are preserved through the adapter
 """
 
-from unittest.mock import Mock, patch
-
 import pytest
+from unittest.mock import Mock, patch
 from pydantic import BaseModel, Field
 
 
 # Minimal args schema for test tools
 class EmptyArgs(BaseModel):
     """Empty args schema for testing."""
-
     pass
 
 
@@ -28,14 +26,12 @@ class TestStructuredToolAdapter:
             StructuredToolAdapter,
             wrap_structured_tools,
         )
-
         assert StructuredToolAdapter is not None
         assert wrap_structured_tools is not None
 
     def test_adapter_preserves_name(self):
         """Test that adapter preserves tool name."""
         from langchain.tools import StructuredTool
-
         from brain_researcher.services.tools.adapter import StructuredToolAdapter
 
         mock_tool = StructuredTool(
@@ -50,7 +46,6 @@ class TestStructuredToolAdapter:
     def test_adapter_preserves_description(self):
         """Test that adapter preserves tool description."""
         from langchain.tools import StructuredTool
-
         from brain_researcher.services.tools.adapter import StructuredToolAdapter
 
         mock_tool = StructuredTool(
@@ -65,7 +60,6 @@ class TestStructuredToolAdapter:
     def test_adapter_returns_original_tool(self):
         """Test that as_langchain_tool returns the original tool (no double-wrap)."""
         from langchain.tools import StructuredTool
-
         from brain_researcher.services.tools.adapter import StructuredToolAdapter
 
         mock_tool = StructuredTool(
@@ -81,7 +75,6 @@ class TestStructuredToolAdapter:
     def test_adapter_run_success(self):
         """Test that adapter correctly executes tool and returns ToolResult."""
         from langchain.tools import StructuredTool
-
         from brain_researcher.services.tools.adapter import StructuredToolAdapter
 
         mock_tool = StructuredTool(
@@ -98,7 +91,6 @@ class TestStructuredToolAdapter:
     def test_adapter_run_error(self):
         """Test that adapter correctly handles tool errors."""
         from langchain.tools import StructuredTool
-
         from brain_researcher.services.tools.adapter import StructuredToolAdapter
 
         def failing_func():
@@ -118,7 +110,6 @@ class TestStructuredToolAdapter:
     def test_adapter_with_args_schema(self):
         """Test that adapter preserves args_schema."""
         from langchain.tools import StructuredTool
-
         from brain_researcher.services.tools.adapter import StructuredToolAdapter
 
         class TestArgs(BaseModel):
@@ -138,28 +129,12 @@ class TestStructuredToolAdapter:
     def test_wrap_structured_tools(self):
         """Test batch wrapping of StructuredTools."""
         from langchain.tools import StructuredTool
-
         from brain_researcher.services.tools.adapter import wrap_structured_tools
 
         tools = [
-            StructuredTool(
-                name="tool1",
-                description="Tool 1",
-                func=lambda: "1",
-                args_schema=EmptyArgs,
-            ),
-            StructuredTool(
-                name="tool2",
-                description="Tool 2",
-                func=lambda: "2",
-                args_schema=EmptyArgs,
-            ),
-            StructuredTool(
-                name="tool3",
-                description="Tool 3",
-                func=lambda: "3",
-                args_schema=EmptyArgs,
-            ),
+            StructuredTool(name="tool1", description="Tool 1", func=lambda: "1", args_schema=EmptyArgs),
+            StructuredTool(name="tool2", description="Tool 2", func=lambda: "2", args_schema=EmptyArgs),
+            StructuredTool(name="tool3", description="Tool 3", func=lambda: "3", args_schema=EmptyArgs),
         ]
         wrapped = wrap_structured_tools(tools)
         assert len(wrapped) == 3
@@ -172,13 +147,11 @@ class TestRegistryUnification:
     def test_unified_registry_import(self):
         """Test UnifiedToolRegistry imports correctly."""
         from brain_researcher.services.tools import UnifiedToolRegistry
-
         assert UnifiedToolRegistry is not None
 
     def test_agent_registry_import(self):
         """Test Agent ToolRegistry imports correctly."""
         from brain_researcher.services.tools.tool_registry import ToolRegistry
-
         assert ToolRegistry is not None
 
     def test_unified_tools_in_agent_registry(self):
@@ -194,7 +167,7 @@ class TestRegistryUnification:
         agent = ToolRegistry(light_mode=True)
 
         # Get tool names from both
-        unified_names = {getattr(t, "name", None) for t in unified_tools}
+        unified_names = {getattr(t, 'name', None) for t in unified_tools}
         unified_names.discard(None)
 
         agent_names = {t.get_tool_name() for t in agent.get_all_tools()}
@@ -208,8 +181,8 @@ class TestRegistryUnification:
 
     def test_adapter_in_agent_registry(self):
         """Test that Agent ToolRegistry uses StructuredToolAdapter for unified tools."""
-        from brain_researcher.services.tools.adapter import StructuredToolAdapter
         from brain_researcher.services.tools.tool_registry import ToolRegistry
+        from brain_researcher.services.tools.adapter import StructuredToolAdapter
 
         # Use light mode for faster testing
         registry = ToolRegistry(light_mode=True)

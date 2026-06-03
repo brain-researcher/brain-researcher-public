@@ -414,11 +414,9 @@ def _discover_review_sidecars(run_dir: Path) -> dict[str, Any]:
         entries = (
             payload
             if isinstance(payload, list)
-            else (
-                payload.get("value_domain_diagnostics")
-                if isinstance(payload, dict)
-                else None
-            )
+            else payload.get("value_domain_diagnostics")
+            if isinstance(payload, dict)
+            else None
         )
         if isinstance(entries, list):
             value_domain_diagnostics.extend(

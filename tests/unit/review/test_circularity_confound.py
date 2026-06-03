@@ -46,12 +46,12 @@ class TestDoubleDippingCheck:
         assert finding.rule_id == "REVIEW_CIRCULARITY_DOUBLE_DIPPING"
 
     def test_fires_on_explicit_independence_false(self):
-        bundle = _bundle({"roi_provenance": {"selection_test_independence": False}})
+        bundle = _bundle(
+            {"roi_provenance": {"selection_test_independence": False}}
+        )
         finding = double_dipping_check(bundle)
         assert finding is not None
-        assert any(
-            "selection_test_independence=False" in e for e in finding.kg_evidence
-        )
+        assert any("selection_test_independence=False" in e for e in finding.kg_evidence)
 
     def test_fires_on_explicit_circular_flag(self):
         bundle = _bundle({"selection": {"roi_provenance": {"circular": True}}})
@@ -168,7 +168,9 @@ class TestDemographicConfoundCheck:
     def test_no_fire_when_not_significant(self):
         bundle = _bundle(
             {
-                "demographic_balance": {"age": {"significant": False, "p": 0.42}},
+                "demographic_balance": {
+                    "age": {"significant": False, "p": 0.42}
+                },
                 "model_covariates": ["motion"],
             }
         )

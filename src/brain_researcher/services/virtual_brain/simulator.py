@@ -9,16 +9,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import (
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -29,11 +20,11 @@ from .models import (
     FitRequest,
     FitResponse,
     RegionPrior,
-    SimulateRequest,
-    SimulateResponse,
     SimulationArtifact,
     SimulationMetrics,
     SimulationReport,
+    SimulateRequest,
+    SimulateResponse,
     SuggestParamsRequest,
     SuggestParamsResponse,
     WhatIfRequest,
@@ -163,9 +154,7 @@ class VirtualBrainSimulator:
         params = (
             request.parameters
             if request.parameters.i_ext is not None
-            else request.parameters.model_copy(
-                update={"i_ext": i_ext.tolist() if i_ext is not None else None}
-            )
+            else request.parameters.model_copy(update={"i_ext": i_ext.tolist() if i_ext is not None else None})
         )
 
         sim_id = f"sim:{request.parcellation}:{uuid.uuid4().hex[:12]}"
@@ -312,9 +301,7 @@ class VirtualBrainSimulator:
                 )
             )
 
-        return FitResponse(
-            simulation=best_response, evaluations=evaluations, best_score=best_score
-        )
+        return FitResponse(simulation=best_response, evaluations=evaluations, best_score=best_score)
 
     def report(self, simulation_id: str) -> SimulationReport:
         node = self.db.get_node(simulation_id)  # type: ignore[attr-defined]
@@ -333,16 +320,10 @@ class VirtualBrainSimulator:
         status = props.get("status", "completed")
         parcellation = props.get("parcellation", self.config.parcellation)
         sc_id = props.get("sc_matrix_id") or self.config.sc_matrix_id
-        parameters = (
-            self._decode_json_field(props.get("parameters"), WilsonCowanParameters)
-            or WilsonCowanParameters()
-        )
+        parameters = self._decode_json_field(props.get("parameters"), WilsonCowanParameters) or WilsonCowanParameters()
         priors = self._decode_json_field(props.get("priors"), list) or []
         priors_models = [RegionPrior.model_validate(p) for p in priors]
-        metrics = (
-            self._decode_json_field(props.get("metrics"), SimulationMetrics)
-            or SimulationMetrics()
-        )
+        metrics = self._decode_json_field(props.get("metrics"), SimulationMetrics) or SimulationMetrics()
         artifacts = self._decode_json_field(props.get("artifacts"), list) or []
         artifact_models = [SimulationArtifact.model_validate(a) for a in artifacts]
 
@@ -403,8 +384,7 @@ class VirtualBrainSimulator:
             )
             perturbed_reports.append(
                 SimulationReport(
-                    simulation_id=response.simulation_id
-                    or f"whatif:{uuid.uuid4().hex[:8]}",
+                    simulation_id=response.simulation_id or f"whatif:{uuid.uuid4().hex[:8]}",
                     status="completed",
                     model=baseline.model,
                     parcellation=baseline.parcellation,
@@ -414,10 +394,7 @@ class VirtualBrainSimulator:
                     metrics=response.metrics,
                     created_at=response.created_at,
                     artifacts=response.artifacts,
-                    provenance={
-                        "baseline": baseline.simulation_id,
-                        "delta_pct": str(delta),
-                    },
+                    provenance={"baseline": baseline.simulation_id, "delta_pct": str(delta)},
                 )
             )
 
@@ -445,9 +422,7 @@ class VirtualBrainSimulator:
             return np.loadtxt(path, delimiter=delimiter)
         raise ValueError(f"Unsupported matrix format: {path}")
 
-    def _load_sc_matrix(
-        self, parcellation: str, sc_matrix_id: Optional[str]
-    ) -> SCMatrices:
+    def _load_sc_matrix(self, parcellation: str, sc_matrix_id: Optional[str]) -> SCMatrices:
         sc_id = sc_matrix_id or self.config.sc_matrix_id
         if not sc_id:
             raise ValueError("SC matrix id must be provided in config or request")
@@ -467,11 +442,7 @@ class VirtualBrainSimulator:
         )
         if not weights_uri:
             raise ValueError(f"SCMatrix node {sc_id} missing weights_uri")
-        delays_uri = (
-            node.get("delays_uri")
-            or node.get("lengths_uri")
-            or node.get("distance_uri")
-        )
+        delays_uri = node.get("delays_uri") or node.get("lengths_uri") or node.get("distance_uri")
         regions = node.get("regions") or node.get("region_ids") or []
         if isinstance(regions, str):
             try:
@@ -561,13 +532,8 @@ class VirtualBrainSimulator:
             except (TypeError, ValueError):
                 continue
             region_props = self._get_node_by_id(region_id) or {}
-            region_parcellation = region_props.get("parcellation") or region_props.get(
-                "atlas"
-            )
-            if (
-                region_parcellation
-                and region_parcellation.lower() != request.parcellation.lower()
-            ):
+            region_parcellation = region_props.get("parcellation") or region_props.get("atlas")
+            if region_parcellation and region_parcellation.lower() != request.parcellation.lower():
                 continue
             if sc_regions and region_id not in sc_regions:
                 continue
@@ -588,9 +554,7 @@ class VirtualBrainSimulator:
             sorted_priors = sorted_priors[:top_k]
         if region_filter:
             region_filter_set = {rid for rid in region_filter}
-            sorted_priors = [
-                row for row in sorted_priors if row[0] in region_filter_set
-            ]
+            sorted_priors = [row for row in sorted_priors if row[0] in region_filter_set]
 
         strengths = np.array([row[1] for row in sorted_priors], dtype=float)
         if strengths.size == 0:
@@ -626,9 +590,7 @@ class VirtualBrainSimulator:
             idx = region_index.get(prior.region_id)
             if idx is None:
                 continue
-            ext[idx] = (
-                prior.weight if prior.weight is not None else float(prior.strength)
-            )
+            ext[idx] = prior.weight if prior.weight is not None else float(prior.strength)
         return ext
 
     def _run_wilson_cowan(
@@ -664,16 +626,8 @@ class VirtualBrainSimulator:
             noise_e = rng.normal(0.0, params.sigma, size=n_regions)
             noise_i = rng.normal(0.0, params.sigma, size=n_regions)
 
-            drive_e = (
-                params.w_ee * e_state
-                - params.w_ei * i_state
-                + coupled_e
-                + ext
-                + noise_e
-            )
-            drive_i = (
-                params.w_ie * e_state - params.w_ii * i_state + coupled_i + noise_i
-            )
+            drive_e = params.w_ee * e_state - params.w_ei * i_state + coupled_e + ext + noise_e
+            drive_i = params.w_ie * e_state - params.w_ii * i_state + coupled_i + noise_i
 
             dE = (-e_state + sigmoid(drive_e)) / params.tau_e
             dI = (-i_state + sigmoid(drive_i)) / params.tau_i
@@ -683,9 +637,7 @@ class VirtualBrainSimulator:
 
             if step % sample_stride == 0:
                 samples[sample_idx] = e_state
-                bold[sample_idx] = self._balloon_windkessel(
-                    e_state, sample_idx, dt * sample_stride
-                )
+                bold[sample_idx] = self._balloon_windkessel(e_state, sample_idx, dt * sample_stride)
                 sample_idx += 1
 
         return samples[:sample_idx], bold[:sample_idx]
@@ -772,26 +724,10 @@ class VirtualBrainSimulator:
             json.dump(region_activity, handle, indent=2, sort_keys=True)
 
         artifacts = [
-            SimulationArtifact(
-                uri=str(bold_path),
-                media_type="application/x-npy",
-                description="BOLD samples",
-            ),
-            SimulationArtifact(
-                uri=str(act_path),
-                media_type="application/x-npy",
-                description="Excitatory activity",
-            ),
-            SimulationArtifact(
-                uri=str(metrics_path),
-                media_type="application/json",
-                description="Simulation metrics",
-            ),
-            SimulationArtifact(
-                uri=str(region_path),
-                media_type="application/json",
-                description="Region mean activity",
-            ),
+            SimulationArtifact(uri=str(bold_path), media_type="application/x-npy", description="BOLD samples"),
+            SimulationArtifact(uri=str(act_path), media_type="application/x-npy", description="Excitatory activity"),
+            SimulationArtifact(uri=str(metrics_path), media_type="application/json", description="Simulation metrics"),
+            SimulationArtifact(uri=str(region_path), media_type="application/json", description="Region mean activity"),
         ]
         return artifacts, sim_dir, region_activity
 

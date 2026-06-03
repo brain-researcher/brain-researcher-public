@@ -28,7 +28,6 @@ def tool_detail(name):
         get_agent,
         logger,
     )
-
     agent = get_agent()
     registry = agent.tool_registry
 
@@ -89,7 +88,6 @@ def direct_tool_run():
         _execute_tool_request,
         create_error_response,
     )
-
     data = request.get_json(silent=True) or {}
     tool_id = data.get("tool")
     params = data.get("args")
@@ -208,11 +206,9 @@ def safe_tool_execute_async():
             work_dir=work_dir,
             output_dir=output_dir,
             origin=str(origin) if isinstance(origin, str) and origin.strip() else None,
-            run_id=(
-                requested_run_id.strip()
-                if isinstance(requested_run_id, str) and requested_run_id.strip()
-                else None
-            ),
+            run_id=requested_run_id.strip()
+            if isinstance(requested_run_id, str) and requested_run_id.strip()
+            else None,
         )
     except ValueError as exc:
         return create_error_response("INVALID_PARAMETER", str(exc), 400)
@@ -252,7 +248,6 @@ def list_tools():
         get_agent,
         logger,
     )
-
     agent = get_agent()
     registry = agent.tool_registry
 
@@ -276,11 +271,9 @@ def list_tools():
 
         row = {
             "name": tool.get_tool_name(),
-            "description": (
-                tool.get_tool_description()
-                if hasattr(tool, "get_tool_description")
-                else getattr(tool, "description", "")
-            ),
+            "description": tool.get_tool_description()
+            if hasattr(tool, "get_tool_description")
+            else getattr(tool, "description", ""),
             "category": getattr(tool, "category", "unknown"),
             "status": "available" if avail else "unavailable",
             "timeout_ms": getattr(tool, "timeout_ms", 30000),
@@ -326,26 +319,9 @@ def list_tools():
 def register(app):
     """Register the /tools/* routes on the Flask app (called each import)."""
     from brain_researcher.services.agent.web_service import rate_limit, ttl_cache
-
-    app.add_url_rule("/tools/<name>", methods=["GET"], view_func=tool_detail)
-    app.add_url_rule(
-        "/tools/run",
-        methods=["POST"],
-        view_func=rate_limit(max_per_minute=20)(direct_tool_run),
-    )
-    app.add_url_rule(
-        "/tools/execute",
-        methods=["POST"],
-        view_func=rate_limit(max_per_minute=20)(safe_tool_execute),
-    )
-    app.add_url_rule(
-        "/tools/execute_async",
-        methods=["POST"],
-        view_func=rate_limit(max_per_minute=20)(safe_tool_execute_async),
-    )
-    app.add_url_rule(
-        "/tools/execute_async/<run_id>",
-        methods=["GET"],
-        view_func=safe_tool_execute_async_status,
-    )
-    app.add_url_rule("/tools", methods=["GET"], view_func=ttl_cache(300)(list_tools))
+    app.add_url_rule('/tools/<name>', methods=['GET'], view_func=tool_detail)
+    app.add_url_rule('/tools/run', methods=['POST'], view_func=rate_limit(max_per_minute=20)(direct_tool_run))
+    app.add_url_rule('/tools/execute', methods=['POST'], view_func=rate_limit(max_per_minute=20)(safe_tool_execute))
+    app.add_url_rule('/tools/execute_async', methods=['POST'], view_func=rate_limit(max_per_minute=20)(safe_tool_execute_async))
+    app.add_url_rule('/tools/execute_async/<run_id>', methods=['GET'], view_func=safe_tool_execute_async_status)
+    app.add_url_rule('/tools', methods=['GET'], view_func=ttl_cache(300)(list_tools))

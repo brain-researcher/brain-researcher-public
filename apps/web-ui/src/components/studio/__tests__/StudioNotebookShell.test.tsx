@@ -91,7 +91,7 @@ describe('StudioNotebookShell', () => {
       runtime_session_id: 'runtime_123',
       runtime_profile_id: 'standard',
       launch_mode: 'reuse_active_runtime',
-      workspace_url: 'https://hub.brain-researcher.com/user/demo/lab',
+      workspace_url: 'https://hub.${PUBLIC_HOSTNAME}/user/demo/lab',
       target_path: 'projects/proj_studio_demo/notebooks/studio/studio_session_1.ipynb',
       notebook_path: 'projects/proj_studio_demo/notebooks/studio/studio_session_1.ipynb',
       open_artifact_id: null,
@@ -160,7 +160,7 @@ describe('StudioNotebookShell', () => {
       expect(createOrAttachStudioSession).toHaveBeenCalledTimes(1)
       expect(buildWorkspaceHandoff).toHaveBeenCalledTimes(1)
       expect(openSpy).toHaveBeenCalledWith(
-        'https://hub.brain-researcher.com/user/demo/lab',
+        'https://hub.${PUBLIC_HOSTNAME}/user/demo/lab',
         '_blank',
         'noopener,noreferrer',
       )

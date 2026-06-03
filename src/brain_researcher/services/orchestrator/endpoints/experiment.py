@@ -2,15 +2,15 @@
 Backend endpoints for A/B testing and experiment management.
 """
 
+from fastapi import APIRouter, HTTPException, WebSocket, Query, Depends
+from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
+from datetime import datetime, timedelta
 import hashlib
 import math
 import random
-from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/experiments", tags=["experiments"])
 
@@ -126,7 +126,7 @@ def calculate_statistical_significance(
     control_conversions: int,
     control_impressions: int,
     variant_conversions: int,
-    variant_impressions: int,
+    variant_impressions: int
 ) -> Dict[str, float]:
     """Calculate statistical significance between control and variant."""
     p1 = control_conversions / control_impressions if control_impressions > 0 else 0
@@ -138,7 +138,8 @@ def calculate_statistical_significance(
     # Calculate standard error
     if control_impressions > 0 and variant_impressions > 0:
         se = math.sqrt(
-            p1 * (1 - p1) / control_impressions + p2 * (1 - p2) / variant_impressions
+            p1 * (1 - p1) / control_impressions +
+            p2 * (1 - p2) / variant_impressions
         )
 
         # Calculate z-score
@@ -152,7 +153,7 @@ def calculate_statistical_significance(
     return {
         "uplift": uplift,
         "confidence": confidence,
-        "is_significant": confidence >= 95,
+        "is_significant": confidence >= 95
     }
 
 
@@ -160,9 +161,7 @@ def allocate_variant(user_id: str, experiment: Experiment) -> Variant:
     """Allocate a variant to a user based on experiment configuration."""
     if experiment.config.allocation == AllocationMethod.DETERMINISTIC:
         # Use consistent hashing for deterministic allocation
-        hash_val = int(
-            hashlib.md5(f"{user_id}:{experiment.id}".encode()).hexdigest()[:8], 16
-        )
+        hash_val = int(hashlib.md5(f"{user_id}:{experiment.id}".encode()).hexdigest()[:8], 16)
         position = hash_val % 100
     else:
         # Random allocation
@@ -180,7 +179,8 @@ def allocate_variant(user_id: str, experiment: Experiment) -> Variant:
 def check_sample_size(experiment: Experiment) -> bool:
     """Check if experiment has reached minimum sample size."""
     total_impressions = sum(
-        v.metrics.impressions if v.metrics else 0 for v in experiment.variants
+        v.metrics.impressions if v.metrics else 0
+        for v in experiment.variants
     )
     return total_impressions >= experiment.config.min_sample_size
 
@@ -190,7 +190,8 @@ def check_sample_size(experiment: Experiment) -> bool:
 async def get_active_experiments():
     """Get all active experiments."""
     return [
-        exp for exp in experiments_db.values() if exp.status == ExperimentStatus.RUNNING
+        exp for exp in experiments_db.values()
+        if exp.status == ExperimentStatus.RUNNING
     ]
 
 
@@ -213,7 +214,7 @@ async def create_experiment(experiment: Experiment):
     if abs(total_weight - 100) > 0.01:
         raise HTTPException(
             status_code=400,
-            detail=f"Variant weights must sum to 100, got {total_weight}",
+            detail=f"Variant weights must sum to 100, got {total_weight}"
         )
 
     experiments_db[experiment.id] = experiment
@@ -221,7 +222,10 @@ async def create_experiment(experiment: Experiment):
 
 
 @router.put("/{experiment_id}/status")
-async def update_experiment_status(experiment_id: str, status: ExperimentStatus):
+async def update_experiment_status(
+    experiment_id: str,
+    status: ExperimentStatus
+):
     """Update experiment status."""
     if experiment_id not in experiments_db:
         raise HTTPException(status_code=404, detail="Experiment not found")
@@ -234,13 +238,13 @@ async def update_experiment_status(experiment_id: str, status: ExperimentStatus)
         ExperimentStatus.DRAFT: [ExperimentStatus.RUNNING],
         ExperimentStatus.RUNNING: [ExperimentStatus.PAUSED, ExperimentStatus.COMPLETED],
         ExperimentStatus.PAUSED: [ExperimentStatus.RUNNING, ExperimentStatus.COMPLETED],
-        ExperimentStatus.COMPLETED: [],
+        ExperimentStatus.COMPLETED: []
     }
 
     if status not in valid_transitions.get(old_status, []):
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid status transition from {old_status} to {status}",
+            detail=f"Invalid status transition from {old_status} to {status}"
         )
 
     experiment.status = status
@@ -267,15 +271,14 @@ async def get_user_assignments(user_id: str):
         if assignment.experiment_id in experiments_db:
             experiment = experiments_db[assignment.experiment_id]
             variant = next(
-                (v for v in experiment.variants if v.id == assignment.variant_id), None
+                (v for v in experiment.variants if v.id == assignment.variant_id),
+                None
             )
             if variant:
-                result.append(
-                    {
-                        "experiment_id": assignment.experiment_id,
-                        "variant": variant.model_dump(),
-                    }
-                )
+                result.append({
+                    "experiment_id": assignment.experiment_id,
+                    "variant": variant.model_dump()
+                })
 
     return result
 
@@ -290,20 +293,22 @@ async def assign_variant(user_id: str, experiment_id: str):
 
     if experiment.status != ExperimentStatus.RUNNING:
         raise HTTPException(
-            status_code=400, detail="Can only assign variants for running experiments"
+            status_code=400,
+            detail="Can only assign variants for running experiments"
         )
 
     # Check if user already has assignment
     user_assignments = assignments_db.get(user_id, [])
     existing = next(
-        (a for a in user_assignments if a.experiment_id == experiment_id), None
+        (a for a in user_assignments if a.experiment_id == experiment_id),
+        None
     )
 
     if existing:
         return {
             "experiment_id": experiment_id,
             "variant_id": existing.variant_id,
-            "assigned": False,
+            "assigned": False
         }
 
     # Allocate variant
@@ -314,14 +319,18 @@ async def assign_variant(user_id: str, experiment_id: str):
         experiment_id=experiment_id,
         variant_id=variant.id,
         user_id=user_id,
-        assigned_at=datetime.now(),
+        assigned_at=datetime.now()
     )
 
     if user_id not in assignments_db:
         assignments_db[user_id] = []
     assignments_db[user_id].append(assignment)
 
-    return {"experiment_id": experiment_id, "variant_id": variant.id, "assigned": True}
+    return {
+        "experiment_id": experiment_id,
+        "variant_id": variant.id,
+        "assigned": True
+    }
 
 
 @router.post("/track")
@@ -336,12 +345,17 @@ async def track_event(event: EventTrack):
 
         if experiment_id in experiments_db:
             experiment = experiments_db[experiment_id]
-            variant = next((v for v in experiment.variants if v.id == variant_id), None)
+            variant = next(
+                (v for v in experiment.variants if v.id == variant_id),
+                None
+            )
 
             if variant:
                 if not variant.metrics:
                     variant.metrics = VariantMetrics(
-                        impressions=0, conversions=0, conversion_rate=0.0
+                        impressions=0,
+                        conversions=0,
+                        conversion_rate=0.0
                     )
 
                 # Update metrics based on event type
@@ -374,13 +388,13 @@ async def get_experiment_results(experiment_id: str):
         return {
             "experiment_id": experiment_id,
             "status": experiment.status,
-            "message": "Insufficient data",
+            "message": "Insufficient data"
         }
 
     results = {
         "experiment_id": experiment_id,
         "status": experiment.status,
-        "variants": [],
+        "variants": []
     }
 
     for variant in experiment.variants:
@@ -390,7 +404,7 @@ async def get_experiment_results(experiment_id: str):
         variant_result = {
             "id": variant.id,
             "name": variant.name,
-            "metrics": variant.metrics.model_dump(),
+            "metrics": variant.metrics.model_dump()
         }
 
         if variant.id != control.id:
@@ -399,7 +413,7 @@ async def get_experiment_results(experiment_id: str):
                 control.metrics.conversions,
                 control.metrics.impressions,
                 variant.metrics.conversions,
-                variant.metrics.impressions,
+                variant.metrics.impressions
             )
 
             variant.metrics.uplift = significance["uplift"]
@@ -441,13 +455,11 @@ def determine_winner(experiment: Experiment) -> Optional[str]:
             control.metrics.conversions,
             control.metrics.impressions,
             variant.metrics.conversions,
-            variant.metrics.impressions,
+            variant.metrics.impressions
         )
 
-        if (
-            significance["confidence"] >= experiment.config.confidence_level
-            and variant.metrics.conversion_rate > best_rate
-        ):
+        if (significance["confidence"] >= experiment.config.confidence_level and
+            variant.metrics.conversion_rate > best_rate):
             best_variant = variant
             best_rate = variant.metrics.conversion_rate
 
@@ -456,7 +468,8 @@ def determine_winner(experiment: Experiment) -> Optional[str]:
 
 @router.post("/{experiment_id}/simulate")
 async def simulate_experiment_data(
-    experiment_id: str, impressions_per_variant: int = 1000
+    experiment_id: str,
+    impressions_per_variant: int = 1000
 ):
     """Simulate data for testing purposes."""
     if experiment_id not in experiments_db:
@@ -475,7 +488,7 @@ async def simulate_experiment_data(
         variant.metrics = VariantMetrics(
             impressions=impressions_per_variant,
             conversions=conversions,
-            conversion_rate=conversion_rate * 100,
+            conversion_rate=conversion_rate * 100
         )
 
     return {"status": "simulated", "experiment_id": experiment_id}
@@ -492,9 +505,10 @@ async def experiment_websocket(websocket: WebSocket, experiment_id: str):
             # Send experiment updates every 5 seconds
             if experiment_id in experiments_db:
                 experiment = experiments_db[experiment_id]
-                await websocket.send_json(
-                    {"type": "update", "data": experiment.model_dump()}
-                )
+                await websocket.send_json({
+                    "type": "update",
+                    "data": experiment.model_dump()
+                })
 
             # Wait for client messages or timeout
             await websocket.receive_text()

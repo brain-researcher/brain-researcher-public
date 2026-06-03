@@ -27,10 +27,10 @@ def test_notebook_bridge_settings_from_env(monkeypatch):
     monkeypatch.setenv("BR_MCP_TRANSPORT", "streamable-http")
     monkeypatch.setenv(
         "BR_MCP_HTTP_URL",
-        "https://user:secret@hub.brain-researcher.com/mcp?token=secret",
+        "https://user:secret@hub.${PUBLIC_HOSTNAME}/mcp?token=secret",
     )
     monkeypatch.setenv("BR_NOTEBOOK_BRIDGE_BASE_PATH", "brain-researcher/api")
-    monkeypatch.setenv("BR_PUBLIC_WORKSPACE_URL", "https://hub.brain-researcher.com")
+    monkeypatch.setenv("BR_PUBLIC_WORKSPACE_URL", "https://hub.${PUBLIC_HOSTNAME}")
     monkeypatch.setenv("BR_NOTEBOOK_BRIDGE_TIMEOUT_SECONDS", "45")
 
     settings = NotebookAssistantBridgeSettings.from_env()
@@ -39,7 +39,7 @@ def test_notebook_bridge_settings_from_env(monkeypatch):
     assert settings.api_base_path == "/brain-researcher/api"
     assert settings.proxy_enabled is True
     assert settings.request_timeout_seconds == 45.0
-    assert settings.redacted_mcp_http_url == "https://hub.brain-researcher.com/mcp"
+    assert settings.redacted_mcp_http_url == "https://hub.${PUBLIC_HOSTNAME}/mcp"
     assert settings.session_header_name == "X-Brain-Researcher-Bridge-Session"
     assert settings.session_query_param == "bridge_session"
 
@@ -52,11 +52,11 @@ def test_bootstrap_payload_and_proxy_headers():
         assistant_mode="mcp",
         mcp_mode="hosted_notebook_v1",
         mcp_transport="streamable-http",
-        mcp_http_url="https://hub.brain-researcher.com/mcp",
+        mcp_http_url="https://hub.${PUBLIC_HOSTNAME}/mcp",
         mcp_bearer_token="secret-token",
         api_base_path="/brain-researcher/api",
         docs_path="/docs",
-        public_workspace_url="https://hub.brain-researcher.com",
+        public_workspace_url="https://hub.${PUBLIC_HOSTNAME}",
         request_timeout_seconds=30.0,
         session_ttl_seconds=3600.0,
         session_header_name="X-Brain-Researcher-Bridge-Session",
@@ -85,7 +85,7 @@ def test_bootstrap_payload_and_proxy_headers():
         "mode": "hosted_notebook_v1",
         "transport": "streamable-http",
         "proxy_enabled": True,
-        "upstream_url": "https://hub.brain-researcher.com/mcp",
+        "upstream_url": "https://hub.${PUBLIC_HOSTNAME}/mcp",
     }
     assert payload["routes"] == {
         "health": "/brain-researcher/api/health",
@@ -113,7 +113,7 @@ def test_register_handlers_uses_base_url():
         assistant_mode="mcp",
         mcp_mode="hosted_notebook_v1",
         mcp_transport="streamable-http",
-        mcp_http_url="https://hub.brain-researcher.com/mcp",
+        mcp_http_url="https://hub.${PUBLIC_HOSTNAME}/mcp",
         mcp_bearer_token=None,
         api_base_path="/brain-researcher/api",
         docs_path="/docs",
@@ -164,7 +164,7 @@ def test_issue_bridge_session_reuses_existing_state():
         assistant_mode="mcp",
         mcp_mode="hosted_notebook_v1",
         mcp_transport="streamable-http",
-        mcp_http_url="https://hub.brain-researcher.com/mcp",
+        mcp_http_url="https://hub.${PUBLIC_HOSTNAME}/mcp",
         mcp_bearer_token=None,
         api_base_path="/brain-researcher/api",
         docs_path="/docs",
@@ -192,7 +192,7 @@ async def test_proxy_mcp_request_binds_upstream_session(monkeypatch):
         assistant_mode="mcp",
         mcp_mode="hosted_notebook_v1",
         mcp_transport="streamable-http",
-        mcp_http_url="https://hub.brain-researcher.com/mcp",
+        mcp_http_url="https://hub.${PUBLIC_HOSTNAME}/mcp",
         mcp_bearer_token=None,
         api_base_path="/brain-researcher/api",
         docs_path="/docs",

@@ -12,12 +12,13 @@ import hashlib
 import json
 import logging
 import os
-import sqlite3
 import threading
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
+
+import sqlite3
 
 try:
     import aiosqlite
@@ -479,9 +480,7 @@ class SqliteStateStore:
         created_at = _parse_epoch_seconds(notification.get("created_at")) or now
         expires_at = _parse_epoch_seconds(notification.get("expires_at"))
         read = 1 if notification.get("read") else 0
-        notification_json = json.dumps(
-            notification, separators=(",", ":"), ensure_ascii=False
-        )
+        notification_json = json.dumps(notification, separators=(",", ":"), ensure_ascii=False)
         async with self._connect() as db:
             await self._configure_connection(db)
             await db.execute(
@@ -579,9 +578,7 @@ class SqliteStateStore:
                 row = await cursor.fetchone()
                 return int(row[0] if row else 0)
 
-    async def mark_notifications_read(
-        self, user_id: str, notification_ids: list[str]
-    ) -> int:
+    async def mark_notifications_read(self, user_id: str, notification_ids: list[str]) -> int:
         if not notification_ids:
             return 0
         now = int(time.time())
@@ -941,14 +938,7 @@ class SqliteStateStore:
                 )
                 VALUES (?, ?, ?, ?, ?, NULL, ?)
                 """,
-                (
-                    token_hash,
-                    demo_id,
-                    1 if is_public else 0,
-                    now,
-                    expires_at_ts,
-                    created_by,
-                ),
+                (token_hash, demo_id, 1 if is_public else 0, now, expires_at_ts, created_by),
             )
             await db.commit()
 

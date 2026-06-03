@@ -4,29 +4,28 @@ service status caching, and alert mechanisms.
 """
 
 import asyncio
-import json
-import logging
-import socket
-import time
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
-
 import aiohttp
+import logging
+import time
+from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, List, Callable, Union
+from enum import Enum
+import json
+from dataclasses import dataclass, asdict
+from concurrent.futures import ThreadPoolExecutor
+import socket
 import psutil
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel, Field
+from .models import ServiceHealth, HealthResponse
 from .error_handler import ServiceType, error_registry
-from .models import HealthResponse, ServiceHealth
+
 
 logger = logging.getLogger(__name__)
 
 
 class HealthStatus(str, Enum):
     """Health status levels."""
-
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -36,7 +35,6 @@ class HealthStatus(str, Enum):
 
 class AlertSeverity(str, Enum):
     """Alert severity levels."""
-
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -46,7 +44,6 @@ class AlertSeverity(str, Enum):
 @dataclass
 class ServiceEndpoint:
     """Service endpoint configuration."""
-
     name: str
     url: str
     service_type: ServiceType
@@ -68,7 +65,6 @@ class ServiceEndpoint:
 @dataclass
 class HealthCheck:
     """Individual health check result."""
-
     service_name: str
     status: HealthStatus
     response_time_ms: float
@@ -81,7 +77,6 @@ class HealthCheck:
 @dataclass
 class Alert:
     """Health monitoring alert."""
-
     id: str
     service_name: str
     severity: AlertSeverity
@@ -99,7 +94,6 @@ class Alert:
 
 class HealthMetrics(BaseModel):
     """Aggregated health metrics."""
-
     total_services: int = 0
     healthy_services: int = 0
     degraded_services: int = 0
@@ -121,7 +115,7 @@ class ServiceHealthMonitor:
         check_interval_seconds: int = 30,
         alert_cooldown_seconds: int = 300,
         health_history_hours: int = 24,
-        max_concurrent_checks: int = 10,
+        max_concurrent_checks: int = 10
     ):
         self.check_interval_seconds = check_interval_seconds
         self.alert_cooldown_seconds = alert_cooldown_seconds
@@ -143,7 +137,7 @@ class ServiceHealthMonitor:
         self.resource_thresholds = {
             "cpu_percent": 80,
             "memory_percent": 85,
-            "disk_percent": 90,
+            "disk_percent": 90
         }
 
         logger.info("Health monitor initialized")
@@ -242,10 +236,10 @@ class ServiceHealthMonitor:
                 result = HealthCheck(
                     service_name=endpoint.name,
                     status=HealthStatus.UNAVAILABLE,
-                    response_time_ms=float("inf"),
+                    response_time_ms=float('inf'),
                     timestamp=datetime.utcnow(),
                     details={"error": str(result)},
-                    error_message=str(result),
+                    error_message=str(result)
                 )
 
             # Update cache and history
@@ -284,7 +278,10 @@ class ServiceHealthMonitor:
                         response_time_ms=response_time_ms,
                         timestamp=datetime.utcnow(),
                         details=response_data,
-                        metadata={"status_code": response.status, "url": health_url},
+                        metadata={
+                            "status_code": response.status,
+                            "url": health_url
+                        }
                     )
 
         except asyncio.TimeoutError:
@@ -295,7 +292,7 @@ class ServiceHealthMonitor:
                 response_time_ms=response_time_ms,
                 timestamp=datetime.utcnow(),
                 details={"error": "timeout"},
-                error_message=f"Health check timeout after {endpoint.timeout_seconds}s",
+                error_message=f"Health check timeout after {endpoint.timeout_seconds}s"
             )
 
         except Exception as e:
@@ -306,7 +303,7 @@ class ServiceHealthMonitor:
                 response_time_ms=response_time_ms,
                 timestamp=datetime.utcnow(),
                 details={"error": str(e)},
-                error_message=str(e),
+                error_message=str(e)
             )
 
     def _validate_health_response(
@@ -314,7 +311,7 @@ class ServiceHealthMonitor:
         endpoint: ServiceEndpoint,
         response: aiohttp.ClientResponse,
         response_data: Dict[str, Any],
-        response_time_ms: float,
+        response_time_ms: float
     ) -> HealthStatus:
         """Validate health check response and determine status."""
 
@@ -355,18 +352,16 @@ class ServiceHealthMonitor:
         try:
             cpu_percent = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
-            disk = psutil.disk_usage("/")
+            disk = psutil.disk_usage('/')
 
             self.system_metrics = {
                 "cpu_percent": cpu_percent,
                 "memory_percent": memory.percent,
                 "disk_percent": disk.percent,
-                "memory_available_gb": memory.available / (1024**3),
-                "disk_free_gb": disk.free / (1024**3),
-                "load_average": (
-                    psutil.getloadavg()[0] if hasattr(psutil, "getloadavg") else 0
-                ),
-                "timestamp": datetime.utcnow().isoformat(),
+                "memory_available_gb": memory.available / (1024 ** 3),
+                "disk_free_gb": disk.free / (1024 ** 3),
+                "load_average": psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0,
+                "timestamp": datetime.utcnow().isoformat()
             }
 
         except Exception as e:
@@ -381,9 +376,7 @@ class ServiceHealthMonitor:
 
             # Get previous status
             history = self.health_history.get(service_name, [])
-            previous_status = (
-                history[-2].status if len(history) >= 2 else HealthStatus.HEALTHY
-            )
+            previous_status = history[-2].status if len(history) >= 2 else HealthStatus.HEALTHY
 
             # Check for status changes
             if current_check.status != previous_status:
@@ -393,9 +386,7 @@ class ServiceHealthMonitor:
 
             # Check for performance alerts
             if current_check.status == HealthStatus.HEALTHY:
-                await self._check_performance_alerts(
-                    endpoint, current_check, current_time
-                )
+                await self._check_performance_alerts(endpoint, current_check, current_time)
 
             # Check system resource alerts
             await self._check_system_resource_alerts(current_time)
@@ -405,7 +396,7 @@ class ServiceHealthMonitor:
         endpoint: ServiceEndpoint,
         previous_status: HealthStatus,
         current_check: HealthCheck,
-        current_time: datetime,
+        current_time: datetime
     ):
         """Generate alert for service status change."""
 
@@ -458,8 +449,8 @@ class ServiceHealthMonitor:
                 "current_status": current_check.status.value,
                 "response_time_ms": current_check.response_time_ms,
                 "endpoint_priority": endpoint.priority,
-                "service_type": endpoint.service_type.value,
-            },
+                "service_type": endpoint.service_type.value
+            }
         )
 
         await self._emit_alert(alert)
@@ -468,7 +459,7 @@ class ServiceHealthMonitor:
         self,
         endpoint: ServiceEndpoint,
         current_check: HealthCheck,
-        current_time: datetime,
+        current_time: datetime
     ):
         """Check for performance-related alerts."""
 
@@ -478,15 +469,11 @@ class ServiceHealthMonitor:
 
             # Check if we already alerted recently
             recent_alerts = [
-                alert
-                for alert in self.alerts.values()
-                if (
-                    alert.service_name == endpoint.name
-                    and "slow_response" in alert.id
-                    and not alert.resolved
-                    and (current_time - alert.timestamp).total_seconds()
-                    < self.alert_cooldown_seconds
-                )
+                alert for alert in self.alerts.values()
+                if (alert.service_name == endpoint.name and
+                    "slow_response" in alert.id and
+                    not alert.resolved and
+                    (current_time - alert.timestamp).total_seconds() < self.alert_cooldown_seconds)
             ]
 
             if not recent_alerts:
@@ -499,8 +486,8 @@ class ServiceHealthMonitor:
                     timestamp=current_time,
                     metadata={
                         "response_time_ms": current_check.response_time_ms,
-                        "threshold_ms": 10000,
-                    },
+                        "threshold_ms": 10000
+                    }
                 )
 
                 await self._emit_alert(alert)
@@ -516,23 +503,15 @@ class ServiceHealthMonitor:
 
                 # Check cooldown
                 recent_alerts = [
-                    alert
-                    for alert in self.alerts.values()
-                    if (
-                        alert.service_name == "system"
-                        and resource in alert.id
-                        and not alert.resolved
-                        and (current_time - alert.timestamp).total_seconds()
-                        < self.alert_cooldown_seconds
-                    )
+                    alert for alert in self.alerts.values()
+                    if (alert.service_name == "system" and
+                        resource in alert.id and
+                        not alert.resolved and
+                        (current_time - alert.timestamp).total_seconds() < self.alert_cooldown_seconds)
                 ]
 
                 if not recent_alerts:
-                    severity = (
-                        AlertSeverity.CRITICAL
-                        if current_value > threshold * 1.1
-                        else AlertSeverity.ERROR
-                    )
+                    severity = AlertSeverity.CRITICAL if current_value > threshold * 1.1 else AlertSeverity.ERROR
 
                     alert = Alert(
                         id=alert_id,
@@ -544,8 +523,8 @@ class ServiceHealthMonitor:
                         metadata={
                             "resource": resource,
                             "current_value": current_value,
-                            "threshold": threshold,
-                        },
+                            "threshold": threshold
+                        }
                     )
 
                     await self._emit_alert(alert)
@@ -573,16 +552,14 @@ class ServiceHealthMonitor:
         # Clean up health history
         for service_name in self.health_history:
             self.health_history[service_name] = [
-                check
-                for check in self.health_history[service_name]
+                check for check in self.health_history[service_name]
                 if check.timestamp > cutoff_time
             ]
 
         # Clean up resolved alerts older than 24 hours
         alert_cutoff = datetime.utcnow() - timedelta(hours=24)
         expired_alerts = [
-            alert_id
-            for alert_id, alert in self.alerts.items()
+            alert_id for alert_id, alert in self.alerts.items()
             if alert.resolved and alert.resolved_at and alert.resolved_at < alert_cutoff
         ]
 
@@ -603,7 +580,7 @@ class ServiceHealthMonitor:
             return HealthResponse(
                 status=HealthStatus.HEALTHY.value,
                 services={},
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.utcnow()
             )
 
         # Convert to ServiceHealth format
@@ -616,23 +593,16 @@ class ServiceHealthMonitor:
             services[service_name] = ServiceHealth(
                 name=service_name,
                 status=check.status.value,
-                latency_ms=(
-                    int(check.response_time_ms)
-                    if check.response_time_ms != float("inf")
-                    else None
-                ),
+                latency_ms=int(check.response_time_ms) if check.response_time_ms != float('inf') else None,
                 last_check=check.timestamp,
-                error=check.error_message,
+                error=check.error_message
             )
 
         # Determine overall status
         total_services = len(self.health_cache)
         if status_counts[HealthStatus.UNAVAILABLE] > total_services * 0.5:
             overall_status = HealthStatus.UNHEALTHY.value
-        elif (
-            status_counts[HealthStatus.UNHEALTHY] > 0
-            or status_counts[HealthStatus.UNAVAILABLE] > 0
-        ):
+        elif status_counts[HealthStatus.UNHEALTHY] > 0 or status_counts[HealthStatus.UNAVAILABLE] > 0:
             overall_status = HealthStatus.DEGRADED.value
         elif status_counts[HealthStatus.DEGRADED] > total_services * 0.3:
             overall_status = HealthStatus.DEGRADED.value
@@ -643,7 +613,7 @@ class ServiceHealthMonitor:
             status=overall_status,
             services=services,
             timestamp=datetime.utcnow(),
-            uptime_seconds=self._calculate_uptime_seconds(),
+            uptime_seconds=self._calculate_uptime_seconds()
         )
 
     def _calculate_uptime_seconds(self) -> int:
@@ -666,20 +636,19 @@ class ServiceHealthMonitor:
         for check in self.health_cache.values():
             status_counts[check.status] += 1
 
-            if check.response_time_ms != float("inf"):
+            if check.response_time_ms != float('inf'):
                 total_response_time += check.response_time_ms
                 valid_response_times += 1
 
         avg_response_time = (
             total_response_time / valid_response_times
-            if valid_response_times > 0
-            else 0
+            if valid_response_times > 0 else 0
         )
 
         health_percentage = (
-            status_counts[HealthStatus.HEALTHY] * 100
-            + status_counts[HealthStatus.DEGRADED] * 50
-        ) / total_services
+            (status_counts[HealthStatus.HEALTHY] * 100 +
+             status_counts[HealthStatus.DEGRADED] * 50) / total_services
+        )
 
         # Calculate 24h uptime
         uptime_24h = self._calculate_uptime_percentage_24h()
@@ -687,7 +656,8 @@ class ServiceHealthMonitor:
         # Get alert counts
         active_alerts = [alert for alert in self.alerts.values() if not alert.resolved]
         critical_alerts = [
-            alert for alert in active_alerts if alert.severity == AlertSeverity.CRITICAL
+            alert for alert in active_alerts
+            if alert.severity == AlertSeverity.CRITICAL
         ]
 
         return HealthMetrics(
@@ -700,7 +670,7 @@ class ServiceHealthMonitor:
             avg_response_time_ms=avg_response_time,
             uptime_percentage_24h=uptime_24h,
             alerts_count=len(active_alerts),
-            critical_alerts_count=len(critical_alerts),
+            critical_alerts_count=len(critical_alerts)
         )
 
     def _calculate_uptime_percentage_24h(self) -> float:
@@ -729,9 +699,7 @@ class ServiceHealthMonitor:
             self.alerts[alert_id].resolved_at = datetime.utcnow()
             logger.info(f"Alert resolved: {alert_id}")
 
-    async def force_health_check(
-        self, service_name: Optional[str] = None
-    ) -> Dict[str, HealthCheck]:
+    async def force_health_check(self, service_name: Optional[str] = None) -> Dict[str, HealthCheck]:
         """Force immediate health check for service(s)."""
         if service_name:
             if service_name in self.endpoints:
@@ -760,22 +728,22 @@ def get_default_service_endpoints() -> List[ServiceEndpoint]:
             url="http://localhost:8000",
             service_type=ServiceType.AGENT,
             priority=1,
-            expected_response_keys=["status", "uptime"],
+            expected_response_keys=["status", "uptime"]
         ),
         ServiceEndpoint(
             name="br_kg",
             url="http://localhost:5000",
             service_type=ServiceType.BR_KG,
             priority=1,
-            expected_response_keys=["status", "database"],
+            expected_response_keys=["status", "database"]
         ),
         ServiceEndpoint(
             name="web_ui",
             url="http://localhost:3000",
             service_type=ServiceType.EXTERNAL_API,
             priority=2,
-            health_check_path="/api/health",
-        ),
+            health_check_path="/api/health"
+        )
     ]
 
 
@@ -786,7 +754,7 @@ async def log_alert_handler(alert: Alert):
         AlertSeverity.INFO: logging.INFO,
         AlertSeverity.WARNING: logging.WARNING,
         AlertSeverity.ERROR: logging.ERROR,
-        AlertSeverity.CRITICAL: logging.CRITICAL,
+        AlertSeverity.CRITICAL: logging.CRITICAL
     }
 
     level = level_map.get(alert.severity, logging.WARNING)
@@ -807,7 +775,7 @@ def console_alert_handler(alert: Alert):
 # Convenience functions
 async def initialize_health_monitoring(
     endpoints: Optional[List[ServiceEndpoint]] = None,
-    custom_alert_handlers: Optional[List[Callable]] = None,
+    custom_alert_handlers: Optional[List[Callable]] = None
 ):
     """Initialize and start health monitoring."""
 
@@ -841,8 +809,7 @@ async def get_system_health_status() -> Dict[str, Any]:
         "metrics": health_metrics.model_dump(),
         "system_resources": health_monitor.system_metrics,
         "active_alerts": [
-            asdict(alert)
-            for alert in health_monitor.alerts.values()
+            asdict(alert) for alert in health_monitor.alerts.values()
             if not alert.resolved
-        ],
+        ]
     }

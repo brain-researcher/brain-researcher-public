@@ -41,9 +41,7 @@ def detect_unexpected_winners(
 
     ranked = sorted(
         rows,
-        key=lambda record: (
-            score_of(record) if score_of(record) is not None else float("-inf")
-        ),
+        key=lambda record: score_of(record) if score_of(record) is not None else float("-inf"),
         reverse=True,
     )
     min_score = float(defaults["unexpected_winner_min_r2"])

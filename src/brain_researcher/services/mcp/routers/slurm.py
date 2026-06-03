@@ -31,9 +31,11 @@ from brain_researcher.services.mcp.server import (
 from brain_researcher.services.mcp.slurm_tools import (
     CLUSTER_PROFILES,
     DEFAULT_PROFILE,
+    sherlock_guide as _sherlock_guide,
 )
-from brain_researcher.services.mcp.slurm_tools import sherlock_guide as _sherlock_guide
-from brain_researcher.services.mcp.slurm_tools import sherlock_slurm as _sherlock_slurm
+from brain_researcher.services.mcp.slurm_tools import (
+    sherlock_slurm as _sherlock_slurm,
+)
 
 # --- Categorical-arg contract: enum advertising + synonym coercion ----------
 # Guide tools (slurm_guide / sherlock_guide) dispatch on {guide, command};
@@ -166,9 +168,7 @@ def _normalize_mail_type(value: str | None) -> str | None:
 
 @mcp.tool()
 def slurm_guide(
-    action: enum_str(
-        _GUIDE_ACTIONS, "what to return: a workflow guide or a rendered command"
-    ) = "guide",
+    action: enum_str(_GUIDE_ACTIONS, "what to return: a workflow guide or a rendered command") = "guide",
     topic: str | None = None,
     intent: str | None = None,
     sunet: str | None = None,
@@ -225,9 +225,7 @@ def slurm_guide(
 
 @mcp.tool()
 def sherlock_guide(
-    action: enum_str(
-        _GUIDE_ACTIONS, "what to return: a workflow guide or a rendered command"
-    ) = "guide",
+    action: enum_str(_GUIDE_ACTIONS, "what to return: a workflow guide or a rendered command") = "guide",
     topic: str | None = None,
     intent: str | None = None,
     sunet: str | None = None,
@@ -272,15 +270,9 @@ def sherlock_guide(
 
 @mcp.tool()
 def slurm_submit(
-    action: enum_str(
-        _SLURM_ACTIONS, "which sbatch authoring / job-debugging operation to run"
-    ),
-    cluster_profile: enum_str(
-        _CLUSTER_PROFILE_KEYS, "SLURM cluster profile (partition/qos/account/modules)"
-    ) = "sherlock_russpold",
-    template_kind: enum_str(
-        _TEMPLATE_KINDS, "sbatch template to render (required for render_script)"
-    ) = None,
+    action: enum_str(_SLURM_ACTIONS, "which sbatch authoring / job-debugging operation to run"),
+    cluster_profile: enum_str(_CLUSTER_PROFILE_KEYS, "SLURM cluster profile (partition/qos/account/modules)") = "sherlock_russpold",
+    template_kind: enum_str(_TEMPLATE_KINDS, "sbatch template to render (required for render_script)") = None,
     job_name: str = "brain-researcher-job",
     time: str = "24:00:00",
     partition: str | None = None,
@@ -297,9 +289,7 @@ def slurm_submit(
     output: str | None = None,
     error: str | None = None,
     mail_user: str | None = None,
-    mail_type: enum_str(
-        _MAIL_TYPES, "SLURM --mail-type (comma-separated allowed)"
-    ) = None,
+    mail_type: enum_str(_MAIL_TYPES, "SLURM --mail-type (comma-separated allowed)") = None,
     workdir: str | None = None,
     module_lines: list[str] | None = None,
     env_lines: list[str] | None = None,
@@ -320,9 +310,7 @@ def slurm_submit(
     grep: str | None = None,
     stdout_text: str | None = None,
     stderr_text: str | None = None,
-    sacct_state: enum_str(
-        _SACCT_STATES, "SLURM job state hint for diagnose_failure"
-    ) = None,
+    sacct_state: enum_str(_SACCT_STATES, "SLURM job state hint for diagnose_failure") = None,
 ) -> dict[str, Any]:
     """Render / validate / patch sbatch scripts, inspect jobs, read logs, and diagnose failures.
 
@@ -340,7 +328,9 @@ def slurm_submit(
         cluster_profile, _CLUSTER_PROFILE_ALIASES, DEFAULT_PROFILE
     )
     if template_kind is not None and str(template_kind).strip():
-        template_kind = coerce_enum(template_kind, _TEMPLATE_KIND_ALIASES, "cpu_single")
+        template_kind = coerce_enum(
+            template_kind, _TEMPLATE_KIND_ALIASES, "cpu_single"
+        )
     stream = coerce_enum(stream, _STREAM_ALIASES, "both")
     mail_type = _normalize_mail_type(mail_type)
     if sacct_state is not None and str(sacct_state).strip():
@@ -405,15 +395,9 @@ def slurm_submit(
 
 @mcp.tool()
 def sherlock_slurm(
-    action: enum_str(
-        _SLURM_ACTIONS, "which sbatch authoring / job-debugging operation to run"
-    ),
-    cluster_profile: enum_str(
-        _CLUSTER_PROFILE_KEYS, "SLURM cluster profile (partition/qos/account/modules)"
-    ) = "sherlock_russpold",
-    template_kind: enum_str(
-        _TEMPLATE_KINDS, "sbatch template to render (required for render_script)"
-    ) = None,
+    action: enum_str(_SLURM_ACTIONS, "which sbatch authoring / job-debugging operation to run"),
+    cluster_profile: enum_str(_CLUSTER_PROFILE_KEYS, "SLURM cluster profile (partition/qos/account/modules)") = "sherlock_russpold",
+    template_kind: enum_str(_TEMPLATE_KINDS, "sbatch template to render (required for render_script)") = None,
     job_name: str = "brain-researcher-job",
     time: str = "24:00:00",
     partition: str | None = None,
@@ -430,9 +414,7 @@ def sherlock_slurm(
     output: str | None = None,
     error: str | None = None,
     mail_user: str | None = None,
-    mail_type: enum_str(
-        _MAIL_TYPES, "SLURM --mail-type (comma-separated allowed)"
-    ) = None,
+    mail_type: enum_str(_MAIL_TYPES, "SLURM --mail-type (comma-separated allowed)") = None,
     workdir: str | None = None,
     module_lines: list[str] | None = None,
     env_lines: list[str] | None = None,
@@ -453,9 +435,7 @@ def sherlock_slurm(
     grep: str | None = None,
     stdout_text: str | None = None,
     stderr_text: str | None = None,
-    sacct_state: enum_str(
-        _SACCT_STATES, "SLURM job state hint for diagnose_failure"
-    ) = None,
+    sacct_state: enum_str(_SACCT_STATES, "SLURM job state hint for diagnose_failure") = None,
 ) -> dict[str, Any]:
     """[DEPRECATED — use ``slurm_submit``] Sherlock-specific alias kept for back-compat."""
     action, action_err = resolve_enum_or_error(
@@ -467,7 +447,9 @@ def sherlock_slurm(
         cluster_profile, _CLUSTER_PROFILE_ALIASES, DEFAULT_PROFILE
     )
     if template_kind is not None and str(template_kind).strip():
-        template_kind = coerce_enum(template_kind, _TEMPLATE_KIND_ALIASES, "cpu_single")
+        template_kind = coerce_enum(
+            template_kind, _TEMPLATE_KIND_ALIASES, "cpu_single"
+        )
     stream = coerce_enum(stream, _STREAM_ALIASES, "both")
     mail_type = _normalize_mail_type(mail_type)
     if sacct_state is not None and str(sacct_state).strip():

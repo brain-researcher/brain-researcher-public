@@ -3,17 +3,17 @@ Advanced Analytics Dashboard Backend Endpoints.
 Provides comprehensive analytics data for usage, performance, research, and system metrics.
 """
 
-import asyncio
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Request, Query
+from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Dict, Any, Optional, Union
+from datetime import datetime, timedelta
+from collections import defaultdict
 import hashlib
 import json
 import random
-from collections import defaultdict
-from datetime import datetime, timedelta
+import asyncio
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
-from pydantic import BaseModel, ConfigDict, Field
 
 router = APIRouter(prefix="/api", tags=["analytics"])
 
@@ -115,10 +115,8 @@ def calculate_session_metrics(session_id: str) -> Dict[str, Any]:
         "start_time": session_events[0].timestamp,
         "end_time": session_events[-1].timestamp,
         "page_views": sum(1 for e in session_events if e.name == "page_view"),
-        "interactions": sum(
-            1 for e in session_events if e.category == EventCategory.INTERACTION
-        ),
-        "errors": sum(1 for e in session_events if e.category == EventCategory.ERROR),
+        "interactions": sum(1 for e in session_events if e.category == EventCategory.INTERACTION),
+        "errors": sum(1 for e in session_events if e.category == EventCategory.ERROR)
     }
 
 
@@ -129,23 +127,18 @@ def calculate_funnel_metrics(funnel_name: str) -> Dict[str, Any]:
     if not funnel:
         return {}
 
-    completed_steps = sum(
-        1 for step in funnel.get("steps", []) if step.get("completed")
-    )
+    completed_steps = sum(1 for step in funnel.get("steps", []) if step.get("completed"))
     total_steps = len(funnel.get("steps", []))
 
     return {
         "funnel_name": funnel_name,
-        "completion_rate": (
-            (completed_steps / total_steps * 100) if total_steps > 0 else 0
-        ),
+        "completion_rate": (completed_steps / total_steps * 100) if total_steps > 0 else 0,
         "completed_steps": completed_steps,
         "total_steps": total_steps,
         "drop_off_points": [
-            step["name"]
-            for step in funnel.get("steps", [])
+            step["name"] for step in funnel.get("steps", [])
             if not step.get("completed")
-        ],
+        ]
     }
 
 
@@ -160,7 +153,9 @@ def aggregate_events_by_name() -> Dict[str, int]:
 # API Endpoints
 @router.post("/events")
 async def track_events(
-    batch: EventBatch, background_tasks: BackgroundTasks, request: Request
+    batch: EventBatch,
+    background_tasks: BackgroundTasks,
+    request: Request
 ):
     """Track a batch of analytics events."""
     tracking_id = request.headers.get("X-Tracking-Id")
@@ -178,7 +173,7 @@ async def track_events(
                 "start_time": event.timestamp,
                 "last_activity": event.timestamp,
                 "event_count": 0,
-                "user_id": event.user_id,
+                "user_id": event.user_id
             }
 
         session_data[event.session_id]["last_activity"] = event.timestamp
@@ -193,7 +188,7 @@ async def track_events(
                     {"name": step, "completed": False}
                     for step in event.properties.get("steps", [])
                 ],
-                "start_time": event.timestamp,
+                "start_time": event.timestamp
             }
         elif event.name == "funnel_step_completed":
             funnel_name = event.properties.get("funnel")
@@ -210,12 +205,15 @@ async def track_events(
     return {
         "status": "success",
         "events_received": len(batch.events),
-        "tracking_id": tracking_id,
+        "tracking_id": tracking_id
     }
 
 
 @router.post("/errors/report")
-async def report_error(error: ErrorReport, background_tasks: BackgroundTasks):
+async def report_error(
+    error: ErrorReport,
+    background_tasks: BackgroundTasks
+):
     """Report an error from the frontend."""
     # Store error
     errors_storage.append(error)
@@ -229,13 +227,16 @@ async def report_error(error: ErrorReport, background_tasks: BackgroundTasks):
 
     return {
         "status": "reported",
-        "error_id": hashlib.md5(f"{error.code}:{error.timestamp}".encode()).hexdigest(),
+        "error_id": hashlib.md5(
+            f"{error.code}:{error.timestamp}".encode()
+        ).hexdigest()
     }
 
 
 @router.get("/analytics/metrics", response_model=AnalyticsMetrics)
 async def get_analytics_metrics(
-    start_time: Optional[int] = None, end_time: Optional[int] = None
+    start_time: Optional[int] = None,
+    end_time: Optional[int] = None
 ):
     """Get aggregated analytics metrics."""
     # Filter events by time range
@@ -255,7 +256,7 @@ async def get_analytics_metrics(
     top_events = sorted(
         [{"name": k, "count": v} for k, v in event_counts.items()],
         key=lambda x: x["count"],
-        reverse=True,
+        reverse=True
     )[:10]
 
     # Calculate unique sessions and users
@@ -270,7 +271,8 @@ async def get_analytics_metrics(
             session_durations.append(metrics["duration"])
 
     avg_session_duration = (
-        sum(session_durations) / len(session_durations) if session_durations else 0
+        sum(session_durations) / len(session_durations)
+        if session_durations else 0
     )
 
     # Calculate conversion rate (simplified)
@@ -291,14 +293,17 @@ async def get_analytics_metrics(
         unique_users=unique_users,
         avg_session_duration=avg_session_duration,
         conversion_rate=conversion_rate,
-        error_rate=error_rate,
+        error_rate=error_rate
     )
 
 
 @router.get("/analytics/sessions/{session_id}")
 async def get_session_details(session_id: str):
     """Get detailed information about a specific session."""
-    session_events = [e for e in events_storage if e.session_id == session_id]
+    session_events = [
+        e for e in events_storage
+        if e.session_id == session_id
+    ]
 
     if not session_events:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -309,7 +314,7 @@ async def get_session_details(session_id: str):
         "session_id": session_id,
         "metrics": metrics,
         "events": [e.model_dump() for e in session_events],
-        "user_id": session_data.get(session_id, {}).get("user_id"),
+        "user_id": session_data.get(session_id, {}).get("user_id")
     }
 
 
@@ -321,11 +326,17 @@ async def get_funnel_metrics(funnel_name: str):
 
     metrics = calculate_funnel_metrics(funnel_name)
 
-    return {"funnel": funnel_data[funnel_name], "metrics": metrics}
+    return {
+        "funnel": funnel_data[funnel_name],
+        "metrics": metrics
+    }
 
 
 @router.get("/errors/recent")
-async def get_recent_errors(limit: int = 100, severity: Optional[ErrorSeverity] = None):
+async def get_recent_errors(
+    limit: int = 100,
+    severity: Optional[ErrorSeverity] = None
+):
     """Get recent error reports."""
     filtered_errors = errors_storage
 
@@ -337,7 +348,7 @@ async def get_recent_errors(limit: int = 100, severity: Optional[ErrorSeverity] 
 
     return {
         "errors": [e.model_dump() for e in filtered_errors[:limit]],
-        "total_count": len(filtered_errors),
+        "total_count": len(filtered_errors)
     }
 
 
@@ -356,10 +367,9 @@ async def get_error_summary():
         "by_code": dict(error_counts_by_code),
         "by_severity": dict(error_counts_by_severity),
         "recent_critical": [
-            e.model_dump()
-            for e in errors_storage
+            e.model_dump() for e in errors_storage
             if e.severity == ErrorSeverity.CRITICAL
-        ][-5:],
+        ][-5:]
     }
 
 
@@ -406,7 +416,6 @@ class UsageMetrics(BaseModel):
     userGrowth: List[Dict[str, Any]]
     hourlyActivity: List[Dict[str, Any]]
 
-
 class PerformanceMetrics(BaseModel):
     avgResponseTime: float
     p50ResponseTime: float
@@ -420,7 +429,6 @@ class PerformanceMetrics(BaseModel):
     errorBreakdown: List[Dict[str, Any]]
     endpointPerformance: List[Dict[str, Any]]
 
-
 class ResearchMetrics(BaseModel):
     analysesRun: int
     datasetsUsed: Dict[str, int]
@@ -429,7 +437,6 @@ class ResearchMetrics(BaseModel):
     publicationMetrics: Dict[str, Any]
     datasetStats: Dict[str, Any]
     toolUsageTrends: List[Dict[str, Any]]
-
 
 class SystemMetrics(BaseModel):
     cpuUsage: float
@@ -443,7 +450,6 @@ class SystemMetrics(BaseModel):
     resourceHistory: List[Dict[str, Any]]
     jobQueue: List[Dict[str, Any]]
 
-
 class EngagementMetrics(BaseModel):
     dailyActiveUsers: int
     weeklyActiveUsers: int
@@ -455,7 +461,6 @@ class EngagementMetrics(BaseModel):
     featureAdoption: List[Dict[str, Any]]
     userSegments: List[Dict[str, Any]]
 
-
 class CustomReport(BaseModel):
     id: str
     name: str
@@ -465,7 +470,6 @@ class CustomReport(BaseModel):
     schedule: Optional[Dict[str, Any]] = None
     createdAt: datetime
     updatedAt: datetime
-
 
 class AlertConfig(BaseModel):
     id: str
@@ -477,7 +481,6 @@ class AlertConfig(BaseModel):
     enabled: bool
     recipients: List[str]
     lastTriggered: Optional[datetime] = None
-
 
 # Mock data generators
 def generate_usage_metrics(start_date: datetime, end_date: datetime) -> UsageMetrics:
@@ -494,13 +497,11 @@ def generate_usage_metrics(start_date: datetime, end_date: datetime) -> UsageMet
     user_growth = []
     for i in range(min(days, 30)):
         date = start_date + timedelta(days=i)
-        user_growth.append(
-            {
-                "date": date.isoformat(),
-                "newUsers": random.randint(10, 50),
-                "activeUsers": random.randint(150, 400),
-            }
-        )
+        user_growth.append({
+            'date': date.isoformat(),
+            'newUsers': random.randint(10, 50),
+            'activeUsers': random.randint(150, 400)
+        })
 
     # Hourly activity
     hourly_activity = []
@@ -513,26 +514,22 @@ def generate_usage_metrics(start_date: datetime, end_date: datetime) -> UsageMet
         else:
             base_activity = random.randint(5, 40)
 
-        hourly_activity.append(
-            {
-                "hour": hour,
-                "users": base_activity,
-                "sessions": int(base_activity * random.uniform(1.2, 1.8)),
-            }
-        )
+        hourly_activity.append({
+            'hour': hour,
+            'users': base_activity,
+            'sessions': int(base_activity * random.uniform(1.2, 1.8))
+        })
 
     # Top pages
-    pages = ["/dashboard", "/datasets", "/analytics", "/chat", "/knowledge-graph"]
+    pages = ['/dashboard', '/datasets', '/analytics', '/chat', '/knowledge-graph']
     top_pages = []
     for page in pages:
         views = random.randint(500, 2000)
-        top_pages.append(
-            {
-                "page": page,
-                "views": views,
-                "uniqueUsers": int(views * random.uniform(0.6, 0.9)),
-            }
-        )
+        top_pages.append({
+            'page': page,
+            'views': views,
+            'uniqueUsers': int(views * random.uniform(0.6, 0.9))
+        })
 
     return UsageMetrics(
         totalUsers=total_users,
@@ -544,13 +541,10 @@ def generate_usage_metrics(start_date: datetime, end_date: datetime) -> UsageMet
         bounceRate=round(random.uniform(25.0, 45.0), 1),
         topPages=top_pages,
         userGrowth=user_growth,
-        hourlyActivity=hourly_activity,
+        hourlyActivity=hourly_activity
     )
 
-
-def generate_performance_metrics(
-    start_date: datetime, end_date: datetime
-) -> PerformanceMetrics:
+def generate_performance_metrics(start_date: datetime, end_date: datetime) -> PerformanceMetrics:
     """Generate realistic performance metrics."""
     # Base response times with variation
     base_avg_time = random.uniform(180, 350)
@@ -561,41 +555,27 @@ def generate_performance_metrics(
     for i in range(hours):
         timestamp = start_date + timedelta(hours=i)
         avg_time = base_avg_time + random.uniform(-50, 100)
-        history.append(
-            {
-                "timestamp": timestamp.isoformat(),
-                "avgTime": round(avg_time, 1),
-                "p95Time": round(avg_time * random.uniform(1.5, 2.2), 1),
-            }
-        )
+        history.append({
+            'timestamp': timestamp.isoformat(),
+            'avgTime': round(avg_time, 1),
+            'p95Time': round(avg_time * random.uniform(1.5, 2.2), 1)
+        })
 
     # Error breakdown
-    error_types = [
-        "timeout",
-        "500_internal",
-        "404_not_found",
-        "auth_failed",
-        "validation",
-    ]
+    error_types = ['timeout', '500_internal', '404_not_found', 'auth_failed', 'validation']
     error_breakdown = []
     total_errors = random.randint(50, 200)
     for error_type in error_types:
         count = random.randint(5, 50)
-        error_breakdown.append(
-            {
-                "type": error_type,
-                "count": count,
-                "percentage": round(count / total_errors * 100, 1),
-            }
-        )
+        error_breakdown.append({
+            'type': error_type,
+            'count': count,
+            'percentage': round(count / total_errors * 100, 1)
+        })
 
     # Endpoint performance
     endpoints = [
-        "/api/datasets",
-        "/api/analyses",
-        "/api/chat",
-        "/api/kg/query",
-        "/api/auth",
+        '/api/datasets', '/api/analyses', '/api/chat', '/api/kg/query', '/api/auth'
     ]
     endpoint_performance = []
     for endpoint in endpoints:
@@ -603,14 +583,12 @@ def generate_performance_metrics(
         avg_time = base_avg_time + random.uniform(-100, 200)
         errors = random.randint(10, 100)
 
-        endpoint_performance.append(
-            {
-                "endpoint": endpoint,
-                "avgTime": round(avg_time, 1),
-                "calls": calls,
-                "errors": errors,
-            }
-        )
+        endpoint_performance.append({
+            'endpoint': endpoint,
+            'avgTime': round(avg_time, 1),
+            'calls': calls,
+            'errors': errors
+        })
 
     success_rate = random.uniform(97.5, 99.8)
 
@@ -625,61 +603,38 @@ def generate_performance_metrics(
         uptime=round(random.uniform(99.2, 99.98), 2),
         responseTimeHistory=history,
         errorBreakdown=error_breakdown,
-        endpointPerformance=endpoint_performance,
+        endpointPerformance=endpoint_performance
     )
 
-
-def generate_research_metrics(
-    start_date: datetime, end_date: datetime
-) -> ResearchMetrics:
+def generate_research_metrics(start_date: datetime, end_date: datetime) -> ResearchMetrics:
     """Generate realistic research metrics."""
 
     # Datasets used
     datasets = {
-        "OpenNeuro ds000001": random.randint(50, 200),
-        "HCP Young Adult": random.randint(30, 150),
-        "ABCD Study": random.randint(25, 100),
-        "UK Biobank": random.randint(15, 80),
-        "OASIS-3": random.randint(20, 90),
+        'OpenNeuro ds000001': random.randint(50, 200),
+        'HCP Young Adult': random.randint(30, 150),
+        'ABCD Study': random.randint(25, 100),
+        'UK Biobank': random.randint(15, 80),
+        'OASIS-3': random.randint(20, 90)
     }
 
     # Tools used
     tools = {
-        "FSL": random.randint(100, 300),
-        "FreeSurfer": random.randint(80, 250),
-        "AFNI": random.randint(60, 180),
-        "ANTs": random.randint(40, 120),
-        "SPM": random.randint(50, 150),
-        "Nilearn": random.randint(70, 200),
+        'FSL': random.randint(100, 300),
+        'FreeSurfer': random.randint(80, 250),
+        'AFNI': random.randint(60, 180),
+        'ANTs': random.randint(40, 120),
+        'SPM': random.randint(50, 150),
+        'Nilearn': random.randint(70, 200)
     }
 
     # Popular workflows
     workflows = [
-        {
-            "workflow": "fMRI Preprocessing",
-            "usage": random.randint(80, 200),
-            "successRate": random.uniform(85, 98),
-        },
-        {
-            "workflow": "Structural Analysis",
-            "usage": random.randint(60, 150),
-            "successRate": random.uniform(90, 99),
-        },
-        {
-            "workflow": "GLM Analysis",
-            "usage": random.randint(50, 120),
-            "successRate": random.uniform(88, 96),
-        },
-        {
-            "workflow": "Connectivity Analysis",
-            "usage": random.randint(30, 80),
-            "successRate": random.uniform(82, 94),
-        },
-        {
-            "workflow": "Group Comparison",
-            "usage": random.randint(40, 100),
-            "successRate": random.uniform(87, 97),
-        },
+        {'workflow': 'fMRI Preprocessing', 'usage': random.randint(80, 200), 'successRate': random.uniform(85, 98)},
+        {'workflow': 'Structural Analysis', 'usage': random.randint(60, 150), 'successRate': random.uniform(90, 99)},
+        {'workflow': 'GLM Analysis', 'usage': random.randint(50, 120), 'successRate': random.uniform(88, 96)},
+        {'workflow': 'Connectivity Analysis', 'usage': random.randint(30, 80), 'successRate': random.uniform(82, 94)},
+        {'workflow': 'Group Comparison', 'usage': random.randint(40, 100), 'successRate': random.uniform(87, 97)}
     ]
 
     # Tool usage trends
@@ -691,7 +646,10 @@ def generate_research_metrics(
         for tool in list(tools.keys())[:5]:  # Top 5 tools
             tool_usage[tool] = random.randint(5, 25)
 
-        trends.append({"date": date.isoformat(), "toolUsage": tool_usage})
+        trends.append({
+            'date': date.isoformat(),
+            'toolUsage': tool_usage
+        })
 
     return ResearchMetrics(
         analysesRun=random.randint(450, 800),
@@ -699,23 +657,22 @@ def generate_research_metrics(
         toolsUsed=tools,
         popularWorkflows=workflows,
         publicationMetrics={
-            "totalCitations": random.randint(500, 2000),
-            "hIndex": random.randint(25, 60),
-            "recentPublications": random.randint(5, 20),
+            'totalCitations': random.randint(500, 2000),
+            'hIndex': random.randint(25, 60),
+            'recentPublications': random.randint(5, 20)
         },
         datasetStats={
-            "totalDatasets": random.randint(50, 150),
-            "totalSubjects": random.randint(10000, 50000),
-            "modalityBreakdown": {
-                "fmri": random.randint(15, 40),
-                "smri": random.randint(20, 50),
-                "dwi": random.randint(10, 25),
-                "pet": random.randint(5, 15),
-            },
+            'totalDatasets': random.randint(50, 150),
+            'totalSubjects': random.randint(10000, 50000),
+            'modalityBreakdown': {
+                'fmri': random.randint(15, 40),
+                'smri': random.randint(20, 50),
+                'dwi': random.randint(10, 25),
+                'pet': random.randint(5, 15)
+            }
         },
-        toolUsageTrends=trends,
+        toolUsageTrends=trends
     )
-
 
 def generate_system_metrics(start_date: datetime, end_date: datetime) -> SystemMetrics:
     """Generate realistic system metrics."""
@@ -732,43 +689,37 @@ def generate_system_metrics(start_date: datetime, end_date: datetime) -> SystemM
     for i in range(hours):
         timestamp = start_date + timedelta(hours=i)
         # Add some variation but keep it realistic
-        history.append(
-            {
-                "timestamp": timestamp.isoformat(),
-                "cpu": round(cpu_usage + random.uniform(-15, 15), 1),
-                "memory": round(memory_usage + random.uniform(-10, 10), 1),
-                "gpu": round(gpu_usage + random.uniform(-20, 20), 1),
-                "storage": round(storage_usage + random.uniform(-5, 5), 1),
-            }
-        )
+        history.append({
+            'timestamp': timestamp.isoformat(),
+            'cpu': round(cpu_usage + random.uniform(-15, 15), 1),
+            'memory': round(memory_usage + random.uniform(-10, 10), 1),
+            'gpu': round(gpu_usage + random.uniform(-20, 20), 1),
+            'storage': round(storage_usage + random.uniform(-5, 5), 1)
+        })
 
     # Job queue
     job_queue = []
-    job_types = ["fmri_preproc", "structural_analysis", "group_stats", "connectivity"]
-    statuses = ["running", "queued", "completed", "failed"]
+    job_types = ['fmri_preproc', 'structural_analysis', 'group_stats', 'connectivity']
+    statuses = ['running', 'queued', 'completed', 'failed']
 
     for i in range(random.randint(20, 50)):
         status = random.choice(statuses)
         start_time = start_date + timedelta(hours=random.randint(-24, 0))
-        duration = (
-            random.randint(300, 7200) if status in ["completed", "failed"] else None
-        )
+        duration = random.randint(300, 7200) if status in ['completed', 'failed'] else None
 
-        job_queue.append(
-            {
-                "id": f"job_{i:04d}",
-                "type": random.choice(job_types),
-                "status": status,
-                "startTime": start_time.isoformat() if status != "queued" else None,
-                "duration": duration,
-                "user": f"user_{random.randint(1, 20):02d}",
-            }
-        )
+        job_queue.append({
+            'id': f'job_{i:04d}',
+            'type': random.choice(job_types),
+            'status': status,
+            'startTime': start_time.isoformat() if status != 'queued' else None,
+            'duration': duration,
+            'user': f'user_{random.randint(1, 20):02d}'
+        })
 
-    queue_length = len([j for j in job_queue if j["status"] == "queued"])
-    active_jobs = len([j for j in job_queue if j["status"] == "running"])
-    completed_jobs = len([j for j in job_queue if j["status"] == "completed"])
-    failed_jobs = len([j for j in job_queue if j["status"] == "failed"])
+    queue_length = len([j for j in job_queue if j['status'] == 'queued'])
+    active_jobs = len([j for j in job_queue if j['status'] == 'running'])
+    completed_jobs = len([j for j in job_queue if j['status'] == 'completed'])
+    failed_jobs = len([j for j in job_queue if j['status'] == 'failed'])
 
     return SystemMetrics(
         cpuUsage=cpu_usage,
@@ -780,13 +731,10 @@ def generate_system_metrics(start_date: datetime, end_date: datetime) -> SystemM
         completedJobs=completed_jobs,
         failedJobs=failed_jobs,
         resourceHistory=history,
-        jobQueue=job_queue,
+        jobQueue=job_queue
     )
 
-
-def generate_engagement_metrics(
-    start_date: datetime, end_date: datetime
-) -> EngagementMetrics:
+def generate_engagement_metrics(start_date: datetime, end_date: datetime) -> EngagementMetrics:
     """Generate realistic engagement metrics."""
 
     dau = random.randint(200, 500)
@@ -796,58 +744,34 @@ def generate_engagement_metrics(
     # Conversion funnels
     funnels = [
         {
-            "name": "User Onboarding",
-            "steps": [
-                {"step": "Sign Up", "users": 1000, "conversionRate": 100.0},
-                {"step": "First Login", "users": 850, "conversionRate": 85.0},
-                {"step": "Tutorial Complete", "users": 680, "conversionRate": 68.0},
-                {"step": "First Analysis", "users": 520, "conversionRate": 52.0},
-            ],
+            'name': 'User Onboarding',
+            'steps': [
+                {'step': 'Sign Up', 'users': 1000, 'conversionRate': 100.0},
+                {'step': 'First Login', 'users': 850, 'conversionRate': 85.0},
+                {'step': 'Tutorial Complete', 'users': 680, 'conversionRate': 68.0},
+                {'step': 'First Analysis', 'users': 520, 'conversionRate': 52.0}
+            ]
         }
     ]
 
     # Feature adoption
-    features = [
-        "Dashboard",
-        "Dataset Explorer",
-        "Chat Interface",
-        "Analytics",
-        "Knowledge Graph",
-    ]
+    features = ['Dashboard', 'Dataset Explorer', 'Chat Interface', 'Analytics', 'Knowledge Graph']
     feature_adoption = []
     for feature in features:
         adoption_rate = random.uniform(25.0, 85.0)
         active_users = int(dau * adoption_rate / 100)
-        feature_adoption.append(
-            {
-                "feature": feature,
-                "adoptionRate": round(adoption_rate, 1),
-                "activeUsers": active_users,
-            }
-        )
+        feature_adoption.append({
+            'feature': feature,
+            'adoptionRate': round(adoption_rate, 1),
+            'activeUsers': active_users
+        })
 
     # User segments
     segments = [
-        {
-            "segment": "New Users",
-            "users": random.randint(200, 400),
-            "engagement": random.uniform(60, 80),
-        },
-        {
-            "segment": "Active Researchers",
-            "users": random.randint(150, 300),
-            "engagement": random.uniform(85, 95),
-        },
-        {
-            "segment": "Casual Users",
-            "users": random.randint(100, 250),
-            "engagement": random.uniform(40, 65),
-        },
-        {
-            "segment": "Power Users",
-            "users": random.randint(50, 150),
-            "engagement": random.uniform(90, 98),
-        },
+        {'segment': 'New Users', 'users': random.randint(200, 400), 'engagement': random.uniform(60, 80)},
+        {'segment': 'Active Researchers', 'users': random.randint(150, 300), 'engagement': random.uniform(85, 95)},
+        {'segment': 'Casual Users', 'users': random.randint(100, 250), 'engagement': random.uniform(40, 65)},
+        {'segment': 'Power Users', 'users': random.randint(50, 150), 'engagement': random.uniform(90, 98)}
     ]
 
     return EngagementMetrics(
@@ -859,106 +783,99 @@ def generate_engagement_metrics(
         avgTimeOnSite=round(random.uniform(15.5, 32.0), 1),
         conversionFunnels=funnels,
         featureAdoption=feature_adoption,
-        userSegments=segments,
+        userSegments=segments
     )
-
 
 # Storage for custom reports and alerts
 custom_reports_storage: List[CustomReport] = []
 alerts_storage: List[AlertConfig] = []
-
 
 # Enhanced Analytics Endpoints
 @router.get("/analytics/usage", response_model=UsageMetrics)
 async def get_usage_metrics(
     start: str = Query(..., description="Start date in ISO format"),
     end: str = Query(..., description="End date in ISO format"),
-    segment: Optional[str] = Query(None, description="User segment filter"),
+    segment: Optional[str] = Query(None, description="User segment filter")
 ):
     """Get comprehensive usage analytics metrics."""
     try:
-        start_date = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        end_date = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_date = datetime.fromisoformat(start.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(end.replace('Z', '+00:00'))
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
     return generate_usage_metrics(start_date, end_date)
 
-
 @router.get("/analytics/performance", response_model=PerformanceMetrics)
 async def get_performance_metrics(
     start: str = Query(..., description="Start date in ISO format"),
-    end: str = Query(..., description="End date in ISO format"),
+    end: str = Query(..., description="End date in ISO format")
 ):
     """Get comprehensive performance analytics metrics."""
     try:
-        start_date = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        end_date = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_date = datetime.fromisoformat(start.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(end.replace('Z', '+00:00'))
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
     return generate_performance_metrics(start_date, end_date)
 
-
 @router.get("/analytics/research", response_model=ResearchMetrics)
 async def get_research_metrics(
     start: str = Query(..., description="Start date in ISO format"),
-    end: str = Query(..., description="End date in ISO format"),
+    end: str = Query(..., description="End date in ISO format")
 ):
     """Get comprehensive research analytics metrics."""
     try:
-        start_date = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        end_date = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_date = datetime.fromisoformat(start.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(end.replace('Z', '+00:00'))
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
     return generate_research_metrics(start_date, end_date)
 
-
 @router.get("/analytics/system", response_model=SystemMetrics)
 async def get_system_metrics(
     start: str = Query(..., description="Start date in ISO format"),
-    end: str = Query(..., description="End date in ISO format"),
+    end: str = Query(..., description="End date in ISO format")
 ):
     """Get comprehensive system health metrics."""
     try:
-        start_date = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        end_date = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_date = datetime.fromisoformat(start.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(end.replace('Z', '+00:00'))
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
     return generate_system_metrics(start_date, end_date)
 
-
 @router.get("/analytics/engagement", response_model=EngagementMetrics)
 async def get_engagement_metrics(
     start: str = Query(..., description="Start date in ISO format"),
-    end: str = Query(..., description="End date in ISO format"),
+    end: str = Query(..., description="End date in ISO format")
 ):
     """Get comprehensive user engagement metrics."""
     try:
-        start_date = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        end_date = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_date = datetime.fromisoformat(start.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(end.replace('Z', '+00:00'))
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
     return generate_engagement_metrics(start_date, end_date)
-
 
 # Export endpoints
 @router.get("/analytics/export")
 async def export_analytics_data(
     format: str = Query(..., description="Export format: csv, pdf, json"),
     start: str = Query(..., description="Start date in ISO format"),
-    end: str = Query(..., description="End date in ISO format"),
+    end: str = Query(..., description="End date in ISO format")
 ):
     """Export analytics data in various formats."""
-    if format not in ["csv", "pdf", "json"]:
+    if format not in ['csv', 'pdf', 'json']:
         raise HTTPException(status_code=400, detail="Invalid export format")
 
     try:
-        start_date = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        end_date = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_date = datetime.fromisoformat(start.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(end.replace('Z', '+00:00'))
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
@@ -970,54 +887,45 @@ async def export_analytics_data(
     engagement = generate_engagement_metrics(start_date, end_date)
 
     export_data = {
-        "usage": usage.model_dump(),
-        "performance": performance.model_dump(),
-        "research": research.model_dump(),
-        "system": system.model_dump(),
-        "engagement": engagement.model_dump(),
-        "metadata": {
-            "exportTime": datetime.now().isoformat(),
-            "dateRange": {"start": start, "end": end},
-            "format": format,
-        },
+        'usage': usage.model_dump(),
+        'performance': performance.model_dump(),
+        'research': research.model_dump(),
+        'system': system.model_dump(),
+        'engagement': engagement.model_dump(),
+        'metadata': {
+            'exportTime': datetime.now().isoformat(),
+            'dateRange': {'start': start, 'end': end},
+            'format': format
+        }
     }
 
-    if format == "json":
+    if format == 'json':
         from fastapi.responses import JSONResponse
-
         return JSONResponse(
             content=export_data,
-            headers={
-                "Content-Disposition": f'attachment; filename=analytics-{start_date.strftime("%Y%m%d")}-{end_date.strftime("%Y%m%d")}.json'
-            },
+            headers={'Content-Disposition': f'attachment; filename=analytics-{start_date.strftime("%Y%m%d")}-{end_date.strftime("%Y%m%d")}.json'}
         )
-    elif format == "csv":
+    elif format == 'csv':
         # For demo purposes, return a simple CSV structure
         csv_content = "metric,category,value,timestamp\n"
         csv_content += f"totalUsers,usage,{usage.totalUsers},{start_date.isoformat()}\n"
-        csv_content += (
-            f"activeUsers,usage,{usage.activeUsers},{start_date.isoformat()}\n"
-        )
+        csv_content += f"activeUsers,usage,{usage.activeUsers},{start_date.isoformat()}\n"
         csv_content += f"avgResponseTime,performance,{performance.avgResponseTime},{start_date.isoformat()}\n"
         csv_content += f"successRate,performance,{performance.successRate},{start_date.isoformat()}\n"
 
         from fastapi.responses import Response
-
         return Response(
             content=csv_content,
-            media_type="text/csv",
-            headers={
-                "Content-Disposition": f'attachment; filename=analytics-{start_date.strftime("%Y%m%d")}-{end_date.strftime("%Y%m%d")}.csv'
-            },
+            media_type='text/csv',
+            headers={'Content-Disposition': f'attachment; filename=analytics-{start_date.strftime("%Y%m%d")}-{end_date.strftime("%Y%m%d")}.csv'}
         )
     else:  # PDF
         # For demo purposes, return JSON with PDF instructions
         return {
             "message": "PDF export would be generated here",
             "data": export_data,
-            "filename": f"analytics-{start_date.strftime('%Y%m%d')}-{end_date.strftime('%Y%m%d')}.pdf",
+            "filename": f"analytics-{start_date.strftime('%Y%m%d')}-{end_date.strftime('%Y%m%d')}.pdf"
         }
-
 
 # Custom Reports endpoints
 @router.get("/analytics/reports", response_model=List[CustomReport])
@@ -1025,24 +933,22 @@ async def get_custom_reports():
     """Get all custom reports."""
     return custom_reports_storage
 
-
 @router.post("/analytics/reports", response_model=CustomReport)
 async def create_custom_report(report_data: Dict[str, Any]):
     """Create a new custom report."""
     report = CustomReport(
         id=f"report_{len(custom_reports_storage) + 1:04d}",
-        name=report_data["name"],
-        description=report_data.get("description"),
-        charts=report_data["charts"],
-        filters=report_data["filters"],
-        schedule=report_data.get("schedule"),
+        name=report_data['name'],
+        description=report_data.get('description'),
+        charts=report_data['charts'],
+        filters=report_data['filters'],
+        schedule=report_data.get('schedule'),
         createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        updatedAt=datetime.now()
     )
 
     custom_reports_storage.append(report)
     return report
-
 
 @router.patch("/analytics/reports/{report_id}", response_model=CustomReport)
 async def update_custom_report(report_id: str, updates: Dict[str, Any]):
@@ -1059,7 +965,6 @@ async def update_custom_report(report_id: str, updates: Dict[str, Any]):
 
     raise HTTPException(status_code=404, detail="Report not found")
 
-
 @router.delete("/analytics/reports/{report_id}")
 async def delete_custom_report(report_id: str):
     """Delete a custom report."""
@@ -1070,31 +975,28 @@ async def delete_custom_report(report_id: str):
 
     raise HTTPException(status_code=404, detail="Report not found")
 
-
 # Alerts endpoints
 @router.get("/analytics/alerts", response_model=List[AlertConfig])
 async def get_alerts():
     """Get all alert configurations."""
     return alerts_storage
 
-
 @router.post("/analytics/alerts", response_model=AlertConfig)
 async def create_alert(alert_data: Dict[str, Any]):
     """Create a new alert configuration."""
     alert = AlertConfig(
         id=f"alert_{len(alerts_storage) + 1:04d}",
-        name=alert_data["name"],
-        metric=alert_data["metric"],
-        threshold=alert_data["threshold"],
-        condition=alert_data["condition"],
-        severity=alert_data["severity"],
-        enabled=alert_data.get("enabled", True),
-        recipients=alert_data["recipients"],
+        name=alert_data['name'],
+        metric=alert_data['metric'],
+        threshold=alert_data['threshold'],
+        condition=alert_data['condition'],
+        severity=alert_data['severity'],
+        enabled=alert_data.get('enabled', True),
+        recipients=alert_data['recipients']
     )
 
     alerts_storage.append(alert)
     return alert
-
 
 @router.patch("/analytics/alerts/{alert_id}", response_model=AlertConfig)
 async def update_alert(alert_id: str, updates: Dict[str, Any]):
@@ -1108,7 +1010,6 @@ async def update_alert(alert_id: str, updates: Dict[str, Any]):
             return alert
 
     raise HTTPException(status_code=404, detail="Alert not found")
-
 
 @router.delete("/analytics/clear")
 async def clear_analytics_data():

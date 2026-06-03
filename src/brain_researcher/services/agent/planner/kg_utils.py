@@ -86,9 +86,7 @@ def extract_dataset_from_context(context: Optional[Dict[str, Any]]) -> Optional[
     return None
 
 
-def extract_task_family(
-    context: Optional[Dict[str, Any]], pipeline: Optional[str]
-) -> Optional[str]:
+def extract_task_family(context: Optional[Dict[str, Any]], pipeline: Optional[str]) -> Optional[str]:
     """
     Derive task_family for failure/evidence records.
     Preference: query_understanding.intent[0] -> pipeline -> None

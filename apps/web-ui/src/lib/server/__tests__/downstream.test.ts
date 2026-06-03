@@ -58,14 +58,14 @@ describe('server downstream resolvers', () => {
   it('prefers internal agent host over NEXT_PUBLIC agent url', () => {
     process.env.AGENT_HOST = 'brain-researcher-agent'
     process.env.AGENT_PORT = '8000'
-    process.env.NEXT_PUBLIC_AGENT_URL = 'https://brain-researcher.com'
+    process.env.NEXT_PUBLIC_AGENT_URL = 'https://${PUBLIC_HOSTNAME}'
 
     expect(resolveAgentBaseUrl()).toBe('http://brain-researcher-agent:8000')
   })
 
   it('ignores NEXT_PUBLIC agent urls on the server', () => {
-    process.env.NEXT_PUBLIC_AGENT_URL = 'https://brain-researcher.com'
-    process.env.NEXT_PUBLIC_AGENT_API = 'https://brain-researcher.com/internal-agent'
+    process.env.NEXT_PUBLIC_AGENT_URL = 'https://${PUBLIC_HOSTNAME}'
+    process.env.NEXT_PUBLIC_AGENT_API = 'https://${PUBLIC_HOSTNAME}/internal-agent'
 
     expect(resolveAgentBaseUrl()).toBe('http://localhost:8000')
   })
@@ -73,7 +73,7 @@ describe('server downstream resolvers', () => {
   it('prefers internal orchestrator host over NEXT_PUBLIC orchestrator url', () => {
     process.env.ORCHESTRATOR_HOST = 'brain-researcher-orchestrator'
     process.env.ORCHESTRATOR_PORT = '3001'
-    process.env.NEXT_PUBLIC_ORCHESTRATOR_URL = 'https://brain-researcher.com'
+    process.env.NEXT_PUBLIC_ORCHESTRATOR_URL = 'https://${PUBLIC_HOSTNAME}'
 
     expect(resolveOrchestratorBaseUrl()).toBe('http://brain-researcher-orchestrator:3001')
   })
@@ -86,14 +86,14 @@ describe('server downstream resolvers', () => {
 
   it('prefers explicit internal BR-KG base over public BR-KG url', () => {
     process.env.BR_KG_URL = 'http://brain-researcher-kg:5000'
-    process.env.NEXT_PUBLIC_BR_KG_API = 'https://brain-researcher.com/kg'
+    process.env.NEXT_PUBLIC_BR_KG_API = 'https://${PUBLIC_HOSTNAME}/kg'
 
     expect(resolveKgBaseUrl()).toBe('http://brain-researcher-kg:5000')
   })
 
   it('ignores public BR-KG urls on the server', () => {
-    process.env.NEXT_PUBLIC_BR_KG_API = 'https://brain-researcher.com/kg'
-    process.env.NEXT_PUBLIC_BR_KG_URL = 'https://brain-researcher.com/kg'
+    process.env.NEXT_PUBLIC_BR_KG_API = 'https://${PUBLIC_HOSTNAME}/kg'
+    process.env.NEXT_PUBLIC_BR_KG_URL = 'https://${PUBLIC_HOSTNAME}/kg'
 
     expect(resolveKgBaseUrl()).toBe('http://localhost:5000')
   })

@@ -2,8 +2,7 @@
 
 import math
 import random
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Dict, List, Optional, Tuple, Any
 import networkx as nx
 
 
@@ -14,9 +13,10 @@ class LayoutEngine:
         self.viewport_width = viewport_width
         self.viewport_height = viewport_height
 
-    def force_directed(
-        self, graph: nx.Graph, iterations: int = 100, k: Optional[float] = None
-    ) -> Dict[str, Tuple[float, float]]:
+    def force_directed(self,
+                       graph: nx.Graph,
+                       iterations: int = 100,
+                       k: Optional[float] = None) -> Dict[str, Tuple[float, float]]:
         """Compute force-directed layout using Fruchterman-Reingold algorithm.
 
         Args:
@@ -33,13 +33,9 @@ class LayoutEngine:
             return {}
 
         # Initialize positions randomly
-        pos = {
-            node: (
-                random.uniform(0, self.viewport_width),
-                random.uniform(0, self.viewport_height),
-            )
-            for node in nodes
-        }
+        pos = {node: (random.uniform(0, self.viewport_width),
+                     random.uniform(0, self.viewport_height))
+               for node in nodes}
 
         # Optimal distance between nodes
         if k is None:
@@ -62,10 +58,8 @@ class LayoutEngine:
                         if dist > 0:
                             # Repulsive force
                             f = k * k / dist
-                            disp[v] = (
-                                disp[v][0] + dx / dist * f,
-                                disp[v][1] + dy / dist * f,
-                            )
+                            disp[v] = (disp[v][0] + dx / dist * f,
+                                     disp[v][1] + dy / dist * f)
 
             # Calculate attractive forces for edges
             for edge in graph.edges():
@@ -76,8 +70,10 @@ class LayoutEngine:
                 if dist > 0:
                     # Attractive force
                     f = dist * dist / k
-                    disp[v] = (disp[v][0] - dx / dist * f, disp[v][1] - dy / dist * f)
-                    disp[u] = (disp[u][0] + dx / dist * f, disp[u][1] + dy / dist * f)
+                    disp[v] = (disp[v][0] - dx / dist * f,
+                             disp[v][1] - dy / dist * f)
+                    disp[u] = (disp[u][0] + dx / dist * f,
+                             disp[u][1] + dy / dist * f)
 
             # Update positions
             for node in nodes:
@@ -87,13 +83,13 @@ class LayoutEngine:
                     # Limit displacement by temperature
                     pos[node] = (
                         pos[node][0] + dx / dist * min(dist, temp),
-                        pos[node][1] + dy / dist * min(dist, temp),
+                        pos[node][1] + dy / dist * min(dist, temp)
                     )
 
                     # Keep within viewport
                     pos[node] = (
                         max(0, min(self.viewport_width, pos[node][0])),
-                        max(0, min(self.viewport_height, pos[node][1])),
+                        max(0, min(self.viewport_height, pos[node][1]))
                     )
 
             # Cool down temperature
@@ -101,9 +97,9 @@ class LayoutEngine:
 
         return pos
 
-    def hierarchical(
-        self, graph: nx.Graph, root: Optional[str] = None
-    ) -> Dict[str, Tuple[float, float]]:
+    def hierarchical(self,
+                    graph: nx.Graph,
+                    root: Optional[str] = None) -> Dict[str, Tuple[float, float]]:
         """Compute hierarchical layout for tree-like structures.
 
         Args:
@@ -178,9 +174,9 @@ class LayoutEngine:
 
         return positions
 
-    def circular(
-        self, graph: nx.Graph, ordering: str = "degree"
-    ) -> Dict[str, Tuple[float, float]]:
+    def circular(self,
+                graph: nx.Graph,
+                ordering: str = 'degree') -> Dict[str, Tuple[float, float]]:
         """Compute circular layout.
 
         Args:
@@ -196,9 +192,9 @@ class LayoutEngine:
             return {}
 
         # Order nodes
-        if ordering == "degree":
+        if ordering == 'degree':
             nodes = sorted(nodes, key=lambda x: graph.degree(x), reverse=True)
-        elif ordering == "alphabetical":
+        elif ordering == 'alphabetical':
             nodes = sorted(nodes)
         else:  # random
             random.shuffle(nodes)

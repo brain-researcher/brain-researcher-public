@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict
-
 import yaml
 
 
@@ -21,9 +20,7 @@ def _read_yaml(path: Path) -> Dict[str, Any]:
     return data
 
 
-def compose_data_paths(
-    project_root: Path | None = None, env: str = "dev"
-) -> Dict[str, Any]:
+def compose_data_paths(project_root: Path | None = None, env: str = "dev") -> Dict[str, Any]:
     """Compose the legacy data_paths-style config from new sources.
 
     Args:

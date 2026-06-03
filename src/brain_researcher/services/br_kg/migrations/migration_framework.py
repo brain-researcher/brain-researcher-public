@@ -3,18 +3,18 @@ Database migration framework for BR-KG.
 Implements KG-004: Version-controlled schema migrations with rollback capability.
 """
 
+import os
+import json
+import sqlite3
 import hashlib
 import importlib.util
-import json
-import logging
-import os
-import sqlite3
-import traceback
-from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from typing import Dict, List, Optional, Callable, Any, Tuple
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+import logging
+from abc import ABC, abstractmethod
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MigrationRecord:
     """Record of an applied migration."""
-
     version: str
     name: str
     checksum: str
@@ -54,10 +53,10 @@ class Migration(ABC):
         self.version = version
         self.description = description
         self.hooks = {
-            "before_up": [],
-            "after_up": [],
-            "before_down": [],
-            "after_down": [],
+            'before_up': [],
+            'after_up': [],
+            'before_down': [],
+            'after_down': []
         }
 
     @abstractmethod
@@ -103,7 +102,6 @@ class Migration(ABC):
         """Calculate checksum of migration code."""
         # Get source code of up and down methods
         import inspect
-
         up_source = inspect.getsource(self.up)
         down_source = inspect.getsource(self.down)
         combined = f"{up_source}{down_source}"
@@ -129,8 +127,7 @@ class MigrationRunner:
     def _init_migration_table(self):
         """Create migration history table if it doesn't exist."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS _migrations (
                     version TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -140,16 +137,13 @@ class MigrationRunner:
                     status TEXT NOT NULL,
                     error_message TEXT
                 )
-            """
-            )
+            """)
 
             # Add index for faster queries
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_migrations_status
                 ON _migrations(status)
-            """
-            )
+            """)
 
             conn.commit()
 
@@ -169,29 +163,25 @@ class MigrationRunner:
     def get_applied_migrations(self) -> List[MigrationRecord]:
         """Get list of applied migrations."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute(
-                """
+            cursor = conn.execute("""
                 SELECT version, name, checksum, applied_at,
                        execution_time, status, error_message
                 FROM _migrations
                 WHERE status = 'applied'
                 ORDER BY version
-            """
-            )
+            """)
 
             migrations = []
             for row in cursor.fetchall():
-                migrations.append(
-                    MigrationRecord(
-                        version=row[0],
-                        name=row[1],
-                        checksum=row[2],
-                        applied_at=row[3],
-                        execution_time=row[4],
-                        status=row[5],
-                        error_message=row[6],
-                    )
-                )
+                migrations.append(MigrationRecord(
+                    version=row[0],
+                    name=row[1],
+                    checksum=row[2],
+                    applied_at=row[3],
+                    execution_time=row[4],
+                    status=row[5],
+                    error_message=row[6]
+                ))
 
             return migrations
 
@@ -200,7 +190,7 @@ class MigrationRunner:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
                 "SELECT 1 FROM _migrations WHERE version = ? AND status = 'applied'",
-                (version,),
+                (version,)
             )
             return cursor.fetchone() is not None
 
@@ -225,27 +215,27 @@ class MigrationRunner:
 
         try:
             # Run pre-hook
-            migration.run_hooks("before_up", db)
+            migration.run_hooks('before_up', db)
 
             # Apply migration
             migration.up(db)
 
             # Run post-hook
-            migration.run_hooks("after_up", db)
+            migration.run_hooks('after_up', db)
 
             # Record success
             execution_time = (datetime.now() - start_time).total_seconds()
             self._record_migration(
-                migration=migration, status="applied", execution_time=execution_time
+                migration=migration,
+                status='applied',
+                execution_time=execution_time
             )
 
             # Close database connection
-            if hasattr(db, "close"):
+            if hasattr(db, 'close'):
                 db.close()
 
-            logger.info(
-                f"Migration {migration.version} applied successfully in {execution_time:.2f}s"
-            )
+            logger.info(f"Migration {migration.version} applied successfully in {execution_time:.2f}s")
             return True
 
         except Exception as e:
@@ -255,13 +245,13 @@ class MigrationRunner:
             execution_time = (datetime.now() - start_time).total_seconds()
             self._record_migration(
                 migration=migration,
-                status="failed",
+                status='failed',
                 execution_time=execution_time,
-                error_message=str(e),
+                error_message=str(e)
             )
 
             # Try to close database connection
-            if hasattr(db, "close"):
+            if hasattr(db, 'close'):
                 db.close()
 
             return False
@@ -280,38 +270,34 @@ class MigrationRunner:
             logger.info(f"Migration {migration.version} not applied, skipping rollback")
             return True
 
-        logger.info(
-            f"Rolling back migration {migration.version}: {migration.description}"
-        )
+        logger.info(f"Rolling back migration {migration.version}: {migration.description}")
 
         start_time = datetime.now()
         db = self.get_db_connection()
 
         try:
             # Run pre-hook
-            migration.run_hooks("before_down", db)
+            migration.run_hooks('before_down', db)
 
             # Rollback migration
             migration.down(db)
 
             # Run post-hook
-            migration.run_hooks("after_down", db)
+            migration.run_hooks('after_down', db)
 
             # Update status
             execution_time = (datetime.now() - start_time).total_seconds()
             self._update_migration_status(
                 version=migration.version,
-                status="rolled_back",
-                execution_time=execution_time,
+                status='rolled_back',
+                execution_time=execution_time
             )
 
             # Close database connection
-            if hasattr(db, "close"):
+            if hasattr(db, 'close'):
                 db.close()
 
-            logger.info(
-                f"Migration {migration.version} rolled back successfully in {execution_time:.2f}s"
-            )
+            logger.info(f"Migration {migration.version} rolled back successfully in {execution_time:.2f}s")
             return True
 
         except Exception as e:
@@ -320,12 +306,12 @@ class MigrationRunner:
             # Record failure
             self._update_migration_status(
                 version=migration.version,
-                status="rollback_failed",
-                error_message=str(e),
+                status='rollback_failed',
+                error_message=str(e)
             )
 
             # Try to close database connection
-            if hasattr(db, "close"):
+            if hasattr(db, 'close'):
                 db.close()
 
             return False
@@ -335,26 +321,23 @@ class MigrationRunner:
         migration: Migration,
         status: str,
         execution_time: float,
-        error_message: Optional[str] = None,
+        error_message: Optional[str] = None
     ):
         """Record migration in history table."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                """
+            conn.execute("""
                 INSERT OR REPLACE INTO _migrations
                 (version, name, checksum, applied_at, execution_time, status, error_message)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    migration.version,
-                    migration.description,
-                    migration.get_checksum(),
-                    datetime.now().isoformat(),
-                    execution_time,
-                    status,
-                    error_message,
-                ),
-            )
+            """, (
+                migration.version,
+                migration.description,
+                migration.get_checksum(),
+                datetime.now().isoformat(),
+                execution_time,
+                status,
+                error_message
+            ))
             conn.commit()
 
     def _update_migration_status(
@@ -362,28 +345,22 @@ class MigrationRunner:
         version: str,
         status: str,
         execution_time: Optional[float] = None,
-        error_message: Optional[str] = None,
+        error_message: Optional[str] = None
     ):
         """Update migration status in history table."""
         with sqlite3.connect(self.db_path) as conn:
             if execution_time is not None:
-                conn.execute(
-                    """
+                conn.execute("""
                     UPDATE _migrations
                     SET status = ?, execution_time = ?, error_message = ?
                     WHERE version = ?
-                """,
-                    (status, execution_time, error_message, version),
-                )
+                """, (status, execution_time, error_message, version))
             else:
-                conn.execute(
-                    """
+                conn.execute("""
                     UPDATE _migrations
                     SET status = ?, error_message = ?
                     WHERE version = ?
-                """,
-                    (status, error_message, version),
-                )
+                """, (status, error_message, version))
             conn.commit()
 
     def verify_checksums(self, migrations: List[Migration]) -> List[Tuple[str, bool]]:
@@ -417,7 +394,9 @@ class MigrationManager:
     """
 
     def __init__(
-        self, migrations_dir: str = "migrations", db_path: str = "br_kg_graph.db"
+        self,
+        migrations_dir: str = "migrations",
+        db_path: str = "br_kg_graph.db"
     ):
         """
         Initialize migration manager.
@@ -445,18 +424,19 @@ class MigrationManager:
 
             try:
                 # Load module dynamically
-                spec = importlib.util.spec_from_file_location(file_path.stem, file_path)
+                spec = importlib.util.spec_from_file_location(
+                    file_path.stem,
+                    file_path
+                )
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
 
                 # Find Migration subclass
                 for attr_name in dir(module):
                     attr = getattr(module, attr_name)
-                    if (
-                        isinstance(attr, type)
-                        and issubclass(attr, Migration)
-                        and attr != Migration
-                    ):
+                    if (isinstance(attr, type) and
+                        issubclass(attr, Migration) and
+                        attr != Migration):
                         # Instantiate migration
                         migration = attr()
                         migrations.append(migration)
@@ -603,9 +583,7 @@ class Migration_{timestamp}(Migration):
                     success = False
                     break
             else:
-                logger.error(
-                    f"Migration {record.version} not found in migrations directory"
-                )
+                logger.error(f"Migration {record.version} not found in migrations directory")
                 success = False
                 break
 
@@ -630,8 +608,9 @@ class Migration_{timestamp}(Migration):
             "total": len(self.migrations),
             "applied_migrations": [m.to_dict() for m in applied],
             "pending_migrations": [
-                {"version": m.version, "description": m.description} for m in pending
-            ],
+                {"version": m.version, "description": m.description}
+                for m in pending
+            ]
         }
 
     def reset(self) -> bool:

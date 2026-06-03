@@ -199,7 +199,9 @@ def _step_role_from_metadata(metadata: Optional[Dict[str, Any]]) -> Optional[str
     if not isinstance(metadata, dict):
         return None
     return (
-        metadata.get("step_role") or metadata.get("role") or metadata.get("step_type")
+        metadata.get("step_role")
+        or metadata.get("role")
+        or metadata.get("step_type")
     )
 
 
@@ -267,11 +269,7 @@ def _safe_adjust_params(params: Dict[str, Any]) -> Dict[str, Any]:
             tuned["timeout"] = int(tuned["timeout"] or 0) * 2 or 600
         except Exception:
             tuned["timeout"] = 600
-    if "low_mem" in tuned or os.getenv("BR_RECOVERY_FORCE_LOW_MEM", "").lower() in {
-        "1",
-        "true",
-        "yes",
-    }:
+    if "low_mem" in tuned or os.getenv("BR_RECOVERY_FORCE_LOW_MEM", "").lower() in {"1", "true", "yes"}:
         tuned["low_mem"] = True
     return tuned
 
@@ -389,17 +387,11 @@ def select_recovery_decision(
                 fallbacks.append(str(runtime_id))
 
     fallbacks = _dedupe_preserve_order(
-        [
-            resolved
-            for resolved in (_canonical_runtime_tool_id(tool) for tool in fallbacks)
-            if resolved
-        ]
+        [resolved for resolved in (_canonical_runtime_tool_id(tool) for tool in fallbacks) if resolved]
     )
     failed = {
         resolved
-        for resolved in (
-            _canonical_runtime_tool_id(tool) for tool in (failed_tools or set())
-        )
+        for resolved in (_canonical_runtime_tool_id(tool) for tool in (failed_tools or set()))
         if resolved
     }
     current_tool = _canonical_runtime_tool_id(tool_id) or tool_id
@@ -475,9 +467,7 @@ def _apply_multiagent_recovery_overlay(
             if resolved
         }
         current_tool = _canonical_runtime_tool_id(tool_id) or tool_id
-        merged = [
-            tool for tool in merged if tool != current_tool and tool not in failed
-        ]
+        merged = [tool for tool in merged if tool != current_tool and tool not in failed]
         try:
             limit = int(os.getenv("BR_FALLBACK_TOOL_LIMIT", "2"))
         except Exception:
@@ -496,8 +486,7 @@ def _apply_multiagent_recovery_overlay(
     if (
         mapped_action is not None
         and decision.action == RecoveryAction.RETRY_BACKOFF
-        and mapped_action
-        in {
+        and mapped_action in {
             RecoveryAction.TOOL_SUBSTITUTE,
             RecoveryAction.RELAX_CONSTRAINT,
             RecoveryAction.ASK_USER,

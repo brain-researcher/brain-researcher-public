@@ -16,15 +16,15 @@ The `coordinate_to_concept` tool was returning mock data with generic concepts l
 
 ### 1. Environment Variable Configuration
 
-Added `NICLIP_DATA_PATH` and normalized `NEUROKG_API_URL` in 3 `.env` files:
+Added `NICLIP_DATA_PATH` and normalized `BR_KG_API_URL` in 3 `.env` files:
 
 #### `<repo>/.env`
 ```bash
 # BR-KG Service Configuration
-NEUROKG_API_BASE=http://localhost:5000
-NEUROKG_API_URL=http://localhost:5000
-NEUROKG_URL=http://localhost:5000
-NEUROKG_PORT=5000
+BR_KG_API_BASE=http://localhost:5000
+BR_KG_API_URL=http://localhost:5000
+BR_KG_URL=http://localhost:5000
+BR_KG_PORT=5000
 
 # NiCLIP Data Configuration
 NICLIP_DATA_PATH=<repo>/data/niclip/data
@@ -33,19 +33,19 @@ NICLIP_DATA_PATH=<repo>/data/niclip/data
 #### `<repo>/src/brain_researcher/services/agent/.env`
 ```bash
 # BR-KG API Configuration
-NEUROKG_API_URL=http://localhost:5000
-NEUROKG_URL=http://localhost:5000
+BR_KG_API_URL=http://localhost:5000
+BR_KG_URL=http://localhost:5000
 
 # NiCLIP Data Configuration
 NICLIP_DATA_PATH=<repo>/data/niclip/data
 ```
 
-#### `<repo>/src/brain_researcher/services/neurokg/.env`
+#### `<repo>/src/brain_researcher/services/br_kg/.env`
 ```bash
 # API Configuration
 PORT=5000
-NEUROKG_API_URL=http://localhost:5000
-NEUROKG_URL=http://localhost:5000
+BR_KG_API_URL=http://localhost:5000
+BR_KG_URL=http://localhost:5000
 
 # NiCLIP Data Configuration
 NICLIP_DATA_PATH=<repo>/data/niclip/data
@@ -252,7 +252,7 @@ curl http://localhost:5000/health
    ```bash
    pkill -f "brain_researcher.services.agent"
    pkill -f "brain_researcher.services.orchestrator"
-   pkill -f "brain_researcher.services.neurokg"
+   pkill -f "brain_researcher.services.br_kg"
    ```
 
 2. **Use restart script:**
@@ -289,7 +289,7 @@ After configuration:
 
 ## References
 
-- **Mapper Implementation**: `src/brain_researcher/services/neurokg/etl/mappers/niclip_spatial_mapper_improved.py`
-- **Tool Implementation**: `src/brain_researcher/services/tools/neurokg_tools.py`
+- **Mapper Implementation**: `src/brain_researcher/services/br_kg/etl/mappers/niclip_spatial_mapper_improved.py`
+- **Tool Implementation**: `src/brain_researcher/services/tools/br_kg_tools.py`
 - **Environment Setup**: `docs/ENVIRONMENT_SETUP.md`
 - **Test Results**: `tests/tool_calling/TEST_RESULTS.md`

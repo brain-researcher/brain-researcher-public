@@ -2,21 +2,20 @@
 
 from __future__ import annotations
 
-import logging
-import os
 import secrets
+import os
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import (
     BaseModel,
     Field,
-    GetCoreSchemaHandler,
     field_validator,
+    GetCoreSchemaHandler,
     model_validator,
 )
 from pydantic_core import core_schema
-
 from brain_researcher.core.contracts import Violation
 
 from .por_tokens import (
@@ -192,7 +191,6 @@ class ResourceType:
     def load_from_yaml(cls, path: Optional[Path] = None) -> None:
         if path is None:
             from brain_researcher.config.paths import get_config_root
-
             path = get_config_root() / "tool_resources.yaml"
         try:
             exists = path.exists()

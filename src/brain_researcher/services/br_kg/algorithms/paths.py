@@ -1,8 +1,7 @@
 """Path finding algorithms for graph traversal."""
 
 import heapq
-from typing import Any, Dict, List, Optional, Set, Tuple
-
+from typing import List, Dict, Optional, Tuple, Set, Any
 import networkx as nx
 
 
@@ -10,9 +9,10 @@ class PathFinder:
     """Algorithms for finding paths in graphs."""
 
     @staticmethod
-    def dijkstra(
-        graph: nx.Graph, start: str, end: str, weight: str = "weight"
-    ) -> Tuple[List[str], float]:
+    def dijkstra(graph: nx.Graph,
+                start: str,
+                end: str,
+                weight: str = 'weight') -> Tuple[List[str], float]:
         """Find shortest path using Dijkstra's algorithm.
 
         Args:
@@ -25,7 +25,7 @@ class PathFinder:
             Tuple of (path, total_weight)
         """
         if start not in graph or end not in graph:
-            return [], float("inf")
+            return [], float('inf')
 
         # Priority queue: (distance, node, path)
         pq = [(0, start, [start])]
@@ -49,16 +49,14 @@ class PathFinder:
                     new_path = path + [neighbor]
                     heapq.heappush(pq, (new_dist, neighbor, new_path))
 
-        return [], float("inf")
+        return [], float('inf')
 
     @staticmethod
-    def a_star(
-        graph: nx.Graph,
-        start: str,
-        end: str,
-        heuristic: Optional[Dict[str, float]] = None,
-        weight: str = "weight",
-    ) -> Tuple[List[str], float]:
+    def a_star(graph: nx.Graph,
+              start: str,
+              end: str,
+              heuristic: Optional[Dict[str, float]] = None,
+              weight: str = 'weight') -> Tuple[List[str], float]:
         """Find shortest path using A* algorithm.
 
         Args:
@@ -72,7 +70,7 @@ class PathFinder:
             Tuple of (path, total_weight)
         """
         if start not in graph or end not in graph:
-            return [], float("inf")
+            return [], float('inf')
 
         # Default heuristic (0 for all nodes - reduces to Dijkstra)
         if heuristic is None:
@@ -101,12 +99,13 @@ class PathFinder:
                     new_path = path + [neighbor]
                     heapq.heappush(pq, (new_f_score, new_g_score, neighbor, new_path))
 
-        return [], float("inf")
+        return [], float('inf')
 
     @staticmethod
-    def all_shortest_paths(
-        graph: nx.Graph, start: str, end: str, weight: str = "weight"
-    ) -> List[List[str]]:
+    def all_shortest_paths(graph: nx.Graph,
+                          start: str,
+                          end: str,
+                          weight: str = 'weight') -> List[List[str]]:
         """Find all shortest paths between two nodes.
 
         Args:
@@ -124,7 +123,7 @@ class PathFinder:
         # First find shortest distance
         _, shortest_dist = PathFinder.dijkstra(graph, start, end, weight)
 
-        if shortest_dist == float("inf"):
+        if shortest_dist == float('inf'):
             return []
 
         # BFS to find all paths with this distance
@@ -153,14 +152,12 @@ class PathFinder:
         return paths
 
     @staticmethod
-    def find_paths_with_length(
-        graph: nx.Graph,
-        start: str,
-        end: str,
-        min_length: int = 1,
-        max_length: int = 5,
-        max_paths: int = 10,
-    ) -> List[List[str]]:
+    def find_paths_with_length(graph: nx.Graph,
+                              start: str,
+                              end: str,
+                              min_length: int = 1,
+                              max_length: int = 5,
+                              max_paths: int = 10) -> List[List[str]]:
         """Find paths within a specified length range.
 
         Args:

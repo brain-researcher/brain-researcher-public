@@ -61,11 +61,7 @@ def compute_diversity(evidence_items: Iterable[Dict[str, Any]]) -> Tuple[int, in
     sources: set[str] = set()
     types: set[str] = set()
     for ev in evidence_items:
-        src = (
-            ev.get("source")
-            or ev.get("prov_source")
-            or ev.get("provenance", {}).get("source")
-        )
+        src = ev.get("source") or ev.get("prov_source") or ev.get("provenance", {}).get("source")
         if src:
             sources.add(str(src))
         etype = ev.get("evidence_type") or ev.get("type")
@@ -94,9 +90,7 @@ def compute_support_factor(support_unique: int, k: int = DEFAULT_K) -> float:
     return 1.0 - math.exp(-float(support_unique) / float(k))
 
 
-def compute_diversity_factor(
-    source_diversity: int, evidence_type_diversity: int
-) -> float:
+def compute_diversity_factor(source_diversity: int, evidence_type_diversity: int) -> float:
     factor = 0.6 + 0.2 * float(source_diversity) + 0.2 * float(evidence_type_diversity)
     return max(0.0, min(1.0, factor))
 
@@ -111,9 +105,7 @@ def compute_confidence(
     k: int = DEFAULT_K,
 ) -> Tuple[float, Dict[str, float]]:
     support_factor = compute_support_factor(support_unique, k=k)
-    diversity_factor = compute_diversity_factor(
-        source_diversity, evidence_type_diversity
-    )
+    diversity_factor = compute_diversity_factor(source_diversity, evidence_type_diversity)
     base = prov_base_conf
     if match_score is not None:
         base *= float(match_score)
@@ -148,16 +140,10 @@ def compute_confidence_from_props(
     source_diversity = rel_props.get("source_diversity")
     evidence_type_diversity = rel_props.get("evidence_type_diversity")
     if source_diversity is None or evidence_type_diversity is None:
-        source_diversity_calc, evidence_type_diversity_calc = compute_diversity(
-            evidence_items
-        )
-        source_diversity = (
-            source_diversity if source_diversity is not None else source_diversity_calc
-        )
+        source_diversity_calc, evidence_type_diversity_calc = compute_diversity(evidence_items)
+        source_diversity = source_diversity if source_diversity is not None else source_diversity_calc
         evidence_type_diversity = (
-            evidence_type_diversity
-            if evidence_type_diversity is not None
-            else evidence_type_diversity_calc
+            evidence_type_diversity if evidence_type_diversity is not None else evidence_type_diversity_calc
         )
 
     provenance = rel_props.get("provenance")

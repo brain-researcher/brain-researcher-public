@@ -10,6 +10,7 @@ import yaml
 
 from brain_researcher.services.br_kg.utils.onvoc_tree import OnvocTree
 
+
 SUPPORTED_RULE_VERSIONS = {"0.2.0", "0.3.0"}
 
 # TODO CMD: wire this scorer into the ingestion CLI/service once mapping_rules.yaml and lexica are curated.
@@ -90,7 +91,8 @@ class MappingRules:
             )
 
         self.lambda_by_channel: Dict[str, float] = {
-            channel: float(lambda_section[channel]) for channel in required_channels
+            channel: float(lambda_section[channel])
+            for channel in required_channels
         }
         self.channel_caps: Dict[str, float] = {
             channel: float(cap_section.get(channel, 1.0))
@@ -171,12 +173,7 @@ class Scorer:
                 family = self._value_to_family_bins(float(value), bins)
                 if family:
                     evidences.append(
-                        Evidence(
-                            family,
-                            "phenotype",
-                            boost,
-                            {"source": source, "value": value},
-                        )
+                        Evidence(family, "phenotype", boost, {"source": source, "value": value})
                     )
                     continue
             mapping = rule.get("mapping")
@@ -184,12 +181,7 @@ class Scorer:
                 family = mapping.get(str(value))
                 if family:
                     evidences.append(
-                        Evidence(
-                            family,
-                            "phenotype",
-                            boost,
-                            {"source": source, "value": value},
-                        )
+                        Evidence(family, "phenotype", boost, {"source": source, "value": value})
                     )
                     continue
             for entry in rule.get("patterns", []) or []:
@@ -199,12 +191,7 @@ class Scorer:
                     continue
                 if re.search(str(pattern), str(value)):
                     evidences.append(
-                        Evidence(
-                            family,
-                            "phenotype",
-                            boost,
-                            {"source": source, "value": value},
-                        )
+                        Evidence(family, "phenotype", boost, {"source": source, "value": value})
                     )
                     break
         return evidences
@@ -267,9 +254,7 @@ class Scorer:
                 )
         return evidences
 
-    def evidence_from_modality(
-        self, modalities: Sequence[Dict[str, object]]
-    ) -> List[Evidence]:
+    def evidence_from_modality(self, modalities: Sequence[Dict[str, object]]) -> List[Evidence]:
         evidences: List[Evidence] = []
         entries = modalities or []
         for rule in self.rules.modality_rules:
@@ -287,6 +272,7 @@ class Scorer:
                     )
                 )
         return evidences
+
 
     def evidence_from_hed(self, hed_tags: Sequence[str]) -> List[Evidence]:
         tag_set = {str(tag).lower() for tag in (hed_tags or [])}
@@ -308,11 +294,7 @@ class Scorer:
                     str(family),
                     "hed",
                     float(rule.get("prior_boost", 0.25)),
-                    {
-                        "tags": (
-                            sorted(tag_set & tags_any) if tags_any else sorted(tag_set)
-                        )
-                    },
+                    {"tags": sorted(tag_set & tags_any) if tags_any else sorted(tag_set)},
                 )
             )
         return evidences
@@ -352,9 +334,7 @@ class Scorer:
         return weights
 
     @staticmethod
-    def _value_to_family_bins(
-        value: float, bins: Sequence[Dict[str, object]]
-    ) -> Optional[str]:
+    def _value_to_family_bins(value: float, bins: Sequence[Dict[str, object]]) -> Optional[str]:
         for entry in bins:
             lt = entry.get("lt")
             gte = entry.get("gte")
@@ -419,9 +399,7 @@ def dump_scores(scores: Dict[str, float], path: Path) -> None:
             "onvoc_uri": family,
             "score": score,
         }
-        for family, score in sorted(
-            scores.items(), key=lambda item: item[1], reverse=True
-        )
+        for family, score in sorted(scores.items(), key=lambda item: item[1], reverse=True)
         if score > 0
     ]
     path.write_text(json.dumps(rows, indent=2, sort_keys=False), encoding="utf-8")

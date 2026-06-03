@@ -8,7 +8,7 @@ import logging
 import subprocess
 import sys
 import traceback
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 from multiprocessing import Process, Queue
 from typing import Any, Dict
 
@@ -23,11 +23,7 @@ MAX_OUTPUT_SIZE = 50000
 def _truncate(text: str, limit: int) -> str:
     if text is None:
         return ""
-    return (
-        text
-        if len(text) <= limit
-        else text[:limit] + f"\n... (truncated at {limit} chars)"
-    )
+    return text if len(text) <= limit else text[:limit] + f"\n... (truncated at {limit} chars)"
 
 
 def _run_code_in_subprocess(code: str, capture_output: bool) -> Dict[str, Any]:
@@ -46,9 +42,7 @@ def _run_code_in_subprocess(code: str, capture_output: bool) -> Dict[str, Any]:
                         exec(compile(code_str, "<sandbox>", "exec"), namespace)
                         result_value = None
                     except SyntaxError:
-                        result_value = eval(
-                            compile(code_str, "<sandbox>", "eval"), namespace
-                        )
+                        result_value = eval(compile(code_str, "<sandbox>", "eval"), namespace)
                 stdout = stdout_capture.getvalue()
                 stderr = stderr_capture.getvalue()
             else:
@@ -64,14 +58,12 @@ def _run_code_in_subprocess(code: str, capture_output: bool) -> Dict[str, Any]:
                 except Exception:
                     result_str = f"<unprintable: {type(result_value).__name__}>"
 
-            queue.put(
-                {
-                    "status": "success",
-                    "stdout": stdout,
-                    "stderr": stderr,
-                    "result": result_str,
-                }
-            )
+            queue.put({
+                "status": "success",
+                "stdout": stdout,
+                "stderr": stderr,
+                "result": result_str,
+            })
         except Exception as exc:  # pragma: no cover - captured for parent
             tb = traceback.format_exc()
             queue.put({"status": "error", "error": str(exc), "traceback": tb})
@@ -271,42 +263,39 @@ class SandboxRunTool(CodeTool):
     def _add_safe_imports(namespace: Dict[str, Any]) -> None:
         """Add commonly used safe imports to namespace."""
         try:
-            import base64
-            import collections
-            import datetime
-            import functools
-            import hashlib
-            import itertools
-            import json
             import math
-            import operator
-            import random
+            import json
             import re
+            import datetime
+            import collections
+            import itertools
+            import functools
+            import operator
             import statistics
+            import random
+            import hashlib
+            import base64
 
-            namespace.update(
-                {
-                    "math": math,
-                    "json": json,
-                    "re": re,
-                    "datetime": datetime,
-                    "collections": collections,
-                    "itertools": itertools,
-                    "functools": functools,
-                    "operator": operator,
-                    "statistics": statistics,
-                    "random": random,
-                    "hashlib": hashlib,
-                    "base64": base64,
-                }
-            )
+            namespace.update({
+                "math": math,
+                "json": json,
+                "re": re,
+                "datetime": datetime,
+                "collections": collections,
+                "itertools": itertools,
+                "functools": functools,
+                "operator": operator,
+                "statistics": statistics,
+                "random": random,
+                "hashlib": hashlib,
+                "base64": base64,
+            })
         except ImportError:
             pass
 
         # Try to add numpy/pandas if available (common for data work)
         try:
             import numpy as np
-
             namespace["np"] = np
             namespace["numpy"] = np
         except ImportError:
@@ -314,7 +303,6 @@ class SandboxRunTool(CodeTool):
 
         try:
             import pandas as pd
-
             namespace["pd"] = pd
             namespace["pandas"] = pd
         except ImportError:

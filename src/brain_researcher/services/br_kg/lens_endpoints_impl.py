@@ -40,7 +40,6 @@ def _collect_live_task_evidence(
         _utc_iso_now,
         logger,
     )
-
     now_ts = _utc_iso_now()
     groups: dict[str, list[dict[str, Any]]] = {
         "papers": [],
@@ -253,7 +252,6 @@ def _kg_lens_disease_entity_dataset_id_sets(
         STATMAP_DATASET_REL_TYPES,
         neo4j_db,
     )
-
     dedup_entity_ids = list(
         dict.fromkeys(
             str(entity_id).strip() for entity_id in entity_ids if str(entity_id).strip()
@@ -344,7 +342,6 @@ def _kg_lens_generic_entities(lens: str, q: str, limit: int):
         _make_entity_row,
         neo4j_db,
     )
-
     seed_labels = _lens_seed_labels(lens)
     scheme_filter = _lens_scheme_filter(lens)
 
@@ -554,7 +551,6 @@ def _kg_lens_disease_dataset_evidence(
         _enrich_lens_evidence_items,
         neo4j_db,
     )
-
     params = {
         "id": entity_id,
         "seed_labels": seed_labels,
@@ -783,7 +779,6 @@ def _kg_lens_generic_summary(lens: str, entity_id: str):
         _lens_seed_labels,
         neo4j_db,
     )
-
     seed_labels = _lens_seed_labels(lens)
     scheme_filter = _lens_scheme_filter(lens)
     head_rows = neo4j_db.execute_query(
@@ -1022,7 +1017,6 @@ def _kg_lens_generic_evidence(
         logger,
         neo4j_db,
     )
-
     seed_labels = _lens_seed_labels(lens)
     scheme_filter = _lens_scheme_filter(lens)
     exists_rows = neo4j_db.execute_query(
@@ -1506,7 +1500,6 @@ def _collect_evidence_paths(
         _serialize_evidence_path_record,
         neo4j_db,
     )
-
     exists_rows = neo4j_db.execute_query(
         """
         MATCH (n)

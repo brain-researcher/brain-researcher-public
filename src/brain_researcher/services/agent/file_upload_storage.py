@@ -47,7 +47,6 @@ MAX_RESUMABLE_FILE_SIZE = int(os.getenv("AGENT_RESUMABLE_MAX_BYTES", str(50 * 10
 # Upload directory helper
 # ---------------------------------------------------------------------------
 
-
 def _compute_upload_dir() -> Path:
     """Return upload base directory, creating it if necessary."""
     env_dir = os.getenv("AGENT_UPLOAD_DIR")
@@ -75,7 +74,6 @@ UPLOAD_DIR = _compute_upload_dir()
 # Filename helpers
 # ---------------------------------------------------------------------------
 
-
 def _get_file_extension(filename: str) -> str:
     """Get normalized file extension, handling .nii.gz specially."""
     if filename.lower().endswith(".nii.gz"):
@@ -92,7 +90,6 @@ def _is_allowed_file(filename: str) -> bool:
 # ---------------------------------------------------------------------------
 # Content-Range parser
 # ---------------------------------------------------------------------------
-
 
 def _parse_content_range(value: str) -> tuple[int, int, int]:
     """Parse ``Content-Range: bytes start-end/total``."""
@@ -112,7 +109,6 @@ def _parse_content_range(value: str) -> tuple[int, int, int]:
 # ---------------------------------------------------------------------------
 # Storage classes
 # ---------------------------------------------------------------------------
-
 
 class FileStorage:
     """Simple file storage for uploaded files."""

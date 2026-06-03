@@ -226,16 +226,16 @@ def validate_bids(
         False, "--strict", "-s", help="Treat warnings as errors"
     ),
     format: str = typer.Option(
-        "markdown", "--format", "-f", help="Report format: markdown, json, html"
+        "markdown", "--format", "-f",
+        help="Report format: markdown, json, html"
     ),
     output: Optional[Path] = typer.Option(
-        None,
-        "--output",
-        "-o",
-        help="Output file for report (prints to console if not specified)",
+        None, "--output", "-o",
+        help="Output file for report (prints to console if not specified)"
     ),
     batch: bool = typer.Option(
-        False, "--batch", "-b", help="Process multiple datasets and generate summary"
+        False, "--batch", "-b",
+        help="Process multiple datasets and generate summary"
     ),
 ):
     """Validate BIDS dataset(s) for compliance and quality."""
@@ -262,9 +262,7 @@ def validate_bids(
                     console.print(f"[red]Dataset not found: {dataset_path}[/red]")
                     continue
 
-                task = progress.add_task(
-                    f"Validating {dataset_path.name}...", total=None
-                )
+                task = progress.add_task(f"Validating {dataset_path.name}...", total=None)
 
                 try:
                     result = loader.load_dataset(str(dataset_path))
@@ -272,16 +270,10 @@ def validate_bids(
 
                     # Display inline summary
                     if result.get("is_valid"):
-                        progress.update(
-                            task,
-                            description=f"[green]✓[/green] {dataset_path.name} - Valid",
-                        )
+                        progress.update(task, description=f"[green]✓[/green] {dataset_path.name} - Valid")
                     else:
                         n_errors = result.get("summary", {}).get("n_errors", 0)
-                        progress.update(
-                            task,
-                            description=f"[red]✗[/red] {dataset_path.name} - {n_errors} errors",
-                        )
+                        progress.update(task, description=f"[red]✗[/red] {dataset_path.name} - {n_errors} errors")
 
                 except Exception as e:
                     console.print(f"[red]Error validating {dataset_path}: {e}[/red]")
@@ -299,20 +291,20 @@ def validate_bids(
 
             for path, result in all_results.items():
                 if "error" in result:
-                    table.add_row(Path(path).name, "[red]Error[/red]", "-", "-", "-")
-                else:
-                    status = (
-                        "[green]Valid[/green]"
-                        if result.get("is_valid")
-                        else "[red]Invalid[/red]"
+                    table.add_row(
+                        Path(path).name,
+                        "[red]Error[/red]",
+                        "-", "-", "-"
                     )
+                else:
+                    status = "[green]Valid[/green]" if result.get("is_valid") else "[red]Invalid[/red]"
                     summary = result.get("summary", {})
                     table.add_row(
                         Path(path).name,
                         status,
                         str(summary.get("n_errors", 0)),
                         str(summary.get("n_warnings", 0)),
-                        f"{summary.get('quality_score', 0):.1f}",
+                        f"{summary.get('quality_score', 0):.1f}"
                     )
 
             console.print(table)
@@ -320,7 +312,6 @@ def validate_bids(
             # Save batch report if output specified
             if output:
                 import json
-
                 with output.open("w") as f:
                     json.dump(all_results, f, indent=2)
                 console.print(f"[green]Report saved to {output}[/green]")
@@ -345,25 +336,15 @@ def validate_bids(
         if stats["datasets_processed"] > 0:
             console.print(f"\n[bold]Overall Statistics:[/bold]")
             console.print(f"  Datasets processed: {stats['datasets_processed']}")
-            console.print(
-                f"  Valid datasets: {stats['valid_datasets']} ({stats.get('valid_rate', 0):.1%})"
-            )
+            console.print(f"  Valid datasets: {stats['valid_datasets']} ({stats.get('valid_rate', 0):.1%})")
             console.print(f"  Invalid datasets: {stats['invalid_datasets']}")
 
-            if stats["datasets_processed"] > 0:
-                console.print(
-                    f"  Avg errors/dataset: {stats.get('avg_errors_per_dataset', 0):.1f}"
-                )
-                console.print(
-                    f"  Avg warnings/dataset: {stats.get('avg_warnings_per_dataset', 0):.1f}"
-                )
+            if stats['datasets_processed'] > 0:
+                console.print(f"  Avg errors/dataset: {stats.get('avg_errors_per_dataset', 0):.1f}")
+                console.print(f"  Avg warnings/dataset: {stats.get('avg_warnings_per_dataset', 0):.1f}")
 
         # Exit with error if any datasets are invalid
-        if any(
-            not r.get("is_valid", False)
-            for r in all_results.values()
-            if "error" not in r
-        ):
+        if any(not r.get("is_valid", False) for r in all_results.values() if "error" not in r):
             raise typer.Exit(1)
 
     except ImportError as e:
@@ -378,10 +359,8 @@ def validate_bids(
 @app.command()
 def expand(
     sources: Optional[List[str]] = typer.Option(
-        None,
-        "--source",
-        "-s",
-        help="Data sources to expand: pubmed, neurosynth, neurovault, all",
+        None, "--source", "-s",
+        help="Data sources to expand: pubmed, neurosynth, neurovault, all"
     ),
     pubmed_limit: int = typer.Option(
         200000, "--pubmed-limit", help="Max PubMed publications to load"
@@ -390,14 +369,11 @@ def expand(
         16000, "--neurovault-limit", help="Max NeuroVault collections to load"
     ),
     link_contrasts: bool = typer.Option(
-        True,
-        "--link-contrasts/--no-link-contrasts",
-        help="Link NeuroVault StatMaps to existing Contrasts (requires populated graph)",
+        True, "--link-contrasts/--no-link-contrasts",
+        help="Link NeuroVault StatMaps to existing Contrasts (requires populated graph)"
     ),
     confidence_threshold: float = typer.Option(
-        0.5,
-        "--confidence-threshold",
-        help="Min confidence for contrast linking (0.0-1.0)",
+        0.5, "--confidence-threshold", help="Min confidence for contrast linking (0.0-1.0)"
     ),
     db_path: Optional[Path] = typer.Option(
         None,
@@ -423,6 +399,7 @@ def expand(
     import logging
     from datetime import datetime
 
+
     # Default sources
     if not sources or "all" in sources:
         sources = ["neurosynth", "pubmed", "neurovault"]
@@ -431,8 +408,11 @@ def expand(
     log_file = f"expansion_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
     )
 
     if db_path:
@@ -455,9 +435,7 @@ def expand(
         baseline_stats = loader.db.get_stats() if loader.db else {}
         console.print(f"[cyan]Current database:[/cyan]")
         console.print(f"  Nodes: {baseline_stats.get('total_nodes', 0):,}")
-        console.print(
-            f"  Relationships: {baseline_stats.get('total_relationships', 0):,}\n"
-        )
+        console.print(f"  Relationships: {baseline_stats.get('total_relationships', 0):,}\n")
 
         # Process each source
         with Progress(
@@ -477,33 +455,22 @@ def expand(
                     "load_vocabulary": True,
                 }
                 stats = loader.load_neurosynth(config)
-                progress.update(
-                    task,
-                    description=f"[green]✓[/green] NeuroSynth: {stats.get('studies', 0):,} studies",
-                )
+                progress.update(task, description=f"[green]✓[/green] NeuroSynth: {stats.get('studies', 0):,} studies")
 
             # PubMed
             if "pubmed" in sources:
-                task = progress.add_task(
-                    f"Loading PubMed ({pubmed_limit:,} publications)...", total=None
-                )
+                task = progress.add_task(f"Loading PubMed ({pubmed_limit:,} publications)...", total=None)
                 config = {
                     "use_niclip": use_niclip,
                     "search_query": "fMRI neuroimaging",
                     "max_results": pubmed_limit,
                 }
                 stats = loader.load_pubmed(config)
-                progress.update(
-                    task,
-                    description=f"[green]✓[/green] PubMed: {stats.get('publications', 0):,} publications",
-                )
+                progress.update(task, description=f"[green]✓[/green] PubMed: {stats.get('publications', 0):,} publications")
 
             # NeuroVault
             if "neurovault" in sources:
-                task = progress.add_task(
-                    f"Loading NeuroVault ({neurovault_limit:,} collections)...",
-                    total=None,
-                )
+                task = progress.add_task(f"Loading NeuroVault ({neurovault_limit:,} collections)...", total=None)
                 config = {
                     "limit": neurovault_limit,
                     "load_images": True,
@@ -511,14 +478,14 @@ def expand(
                     "confidence_threshold": confidence_threshold,
                 }
                 stats = loader.load_neurovault(config)
-                collections_count = stats.get("collections", 0)
-                images_count = stats.get("images", 0)
+                collections_count = stats.get('collections', 0)
+                images_count = stats.get('images', 0)
 
                 # Enhanced reporting for contrast linking
-                if link_contrasts and "contrast_linking" in stats:
-                    linking = stats["contrast_linking"]
-                    matched = linking.get("contrasts_matched", 0)
-                    total = linking.get("maps_processed", 0)
+                if link_contrasts and 'contrast_linking' in stats:
+                    linking = stats['contrast_linking']
+                    matched = linking.get('contrasts_matched', 0)
+                    total = linking.get('maps_processed', 0)
                     match_rate = (matched / total * 100) if total > 0 else 0
                     description = f"[green]✓[/green] NeuroVault: {collections_count:,} collections, {images_count:,} images, {matched:,}/{total:,} linked ({match_rate:.1f}%)"
                 else:
@@ -529,19 +496,14 @@ def expand(
         # Final stats
         final_stats = loader.db.get_stats() if loader.db else {}
         console.print(f"\n[bold green]Expansion Complete![/bold green]")
-        console.print(
-            f"  Nodes: {baseline_stats.get('total_nodes', 0):,} → {final_stats.get('total_nodes', 0):,} (+{final_stats.get('total_nodes', 0) - baseline_stats.get('total_nodes', 0):,})"
-        )
-        console.print(
-            f"  Relationships: {baseline_stats.get('total_relationships', 0):,} → {final_stats.get('total_relationships', 0):,} (+{final_stats.get('total_relationships', 0) - baseline_stats.get('total_relationships', 0):,})"
-        )
+        console.print(f"  Nodes: {baseline_stats.get('total_nodes', 0):,} → {final_stats.get('total_nodes', 0):,} (+{final_stats.get('total_nodes', 0) - baseline_stats.get('total_nodes', 0):,})")
+        console.print(f"  Relationships: {baseline_stats.get('total_relationships', 0):,} → {final_stats.get('total_relationships', 0):,} (+{final_stats.get('total_relationships', 0) - baseline_stats.get('total_relationships', 0):,})")
 
         loader.close()
 
     except Exception as e:
         console.print(f"[red]Expansion error: {e}[/red]")
         import traceback
-
         console.print(traceback.format_exc())
         raise typer.Exit(1)
 

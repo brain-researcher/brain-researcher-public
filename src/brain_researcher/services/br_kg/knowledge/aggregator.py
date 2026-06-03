@@ -12,13 +12,13 @@ import logging
 import time
 from dataclasses import dataclass, field
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
     List,
     Optional,
     Sequence,
+    TYPE_CHECKING,
 )
 
 from .models import AggregatedEvidence, EvidenceConfidence, KnowledgeItem
@@ -146,12 +146,7 @@ class KnowledgeAggregator:
 
         self._initialized = True
 
-    def _get_cache_key(
-        self,
-        query: str,
-        entities: Sequence[str] | None = None,
-        intent: str | None = None,
-    ) -> str:
+    def _get_cache_key(self, query: str, entities: Sequence[str] | None = None, intent: str | None = None) -> str:
         """Generate cache key from normalized query + entities + intent."""
         norm_q = query.strip().lower()
         ent_part = "|".join(sorted(e.lower() for e in entities or []))
@@ -169,7 +164,9 @@ class KnowledgeAggregator:
             return None
 
         # Check TTL
-        age_seconds = time.time() - cached.aggregated_at.timestamp()
+        age_seconds = (
+            time.time() - cached.aggregated_at.timestamp()
+        )
         if age_seconds > self.config.cache_ttl_seconds:
             del self._cache[cache_key]
             return None
@@ -249,10 +246,7 @@ class KnowledgeAggregator:
         entities = []
         intent = None
         if query_understanding is not None:
-            entities = [
-                getattr(e, "text", "") or str(e)
-                for e in getattr(query_understanding, "entities", [])
-            ]
+            entities = [getattr(e, "text", "") or str(e) for e in getattr(query_understanding, "entities", [])]
             intent = getattr(query_understanding, "intent", None)
 
         cache_key = self._get_cache_key(query, entities, intent)

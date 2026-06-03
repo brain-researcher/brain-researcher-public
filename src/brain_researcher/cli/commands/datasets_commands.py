@@ -3,7 +3,7 @@ Friendly dataset search/detail commands hitting Agent datasets API.
 """
 
 import os
-from typing import List, Optional
+from typing import Optional, List
 
 import httpx
 import typer
@@ -50,11 +50,7 @@ def search(
     table.add_column("name")
     table.add_column("modalities")
     for item in results:
-        table.add_row(
-            item.get("id", ""),
-            item.get("name", ""),
-            ", ".join(item.get("modalities", [])),
-        )
+        table.add_row(item.get("id", ""), item.get("name", ""), ", ".join(item.get("modalities", [])))
     console.print(table)
 
 

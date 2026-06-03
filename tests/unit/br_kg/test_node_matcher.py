@@ -1,10 +1,9 @@
 """Tests for UnifiedNodeMatcher"""
 
 import pytest
-
 from brain_researcher.services.br_kg.matching.node_matcher import (
-    MatchResult,
     UnifiedNodeMatcher,
+    MatchResult
 )
 
 
@@ -15,11 +14,14 @@ class TestUnifiedNodeMatcher:
         """Test exact matching for Task nodes."""
         matcher = UnifiedNodeMatcher()
 
-        candidate = {"id": "test:nback", "label": "n-back task"}
+        candidate = {
+            "id": "test:nback",
+            "label": "n-back task"
+        }
 
         existing = [
             {"id": "cogat:nback", "label": "n-back task"},
-            {"id": "other:task", "label": "stroop task"},
+            {"id": "other:task", "label": "stroop task"}
         ]
 
         matches = matcher.match_node(candidate, "Task", existing)
@@ -33,11 +35,14 @@ class TestUnifiedNodeMatcher:
         """Exact label matches should remain valid even when source IDs differ."""
         matcher = UnifiedNodeMatcher()
 
-        candidate = {"id": "test:wm", "label": "working memory"}
+        candidate = {
+            "id": "test:wm",
+            "label": "working memory"
+        }
 
         existing = [
             {"id": "mesh:D008570", "label": "Working Memory"},  # Capitalization diff
-            {"id": "other:concept", "label": "episodic memory"},
+            {"id": "other:concept", "label": "episodic memory"}
         ]
 
         matches = matcher.match_node(candidate, "Concept", existing)
@@ -51,16 +56,17 @@ class TestUnifiedNodeMatcher:
         """Test spatial matching for Coordinate nodes."""
         matcher = UnifiedNodeMatcher()
 
-        candidate = {"id": "coord:1", "x": 10.0, "y": 20.0, "z": 30.0, "space": "MNI"}
+        candidate = {
+            "id": "coord:1",
+            "x": 10.0,
+            "y": 20.0,
+            "z": 30.0,
+            "space": "MNI"
+        }
 
         existing = [
-            {
-                "id": "coord:2",
-                "x": 10.5,
-                "y": 20.0,
-                "z": 30.0,
-            },  # Close enough for >=0.90 confidence
-            {"id": "coord:3", "x": 50.0, "y": 50.0, "z": 50.0},  # Too far
+            {"id": "coord:2", "x": 10.5, "y": 20.0, "z": 30.0},  # Close enough for >=0.90 confidence
+            {"id": "coord:3", "x": 50.0, "y": 50.0, "z": 50.0}   # Too far
         ]
 
         matches = matcher.match_node(candidate, "Coordinate", existing)
@@ -74,9 +80,14 @@ class TestUnifiedNodeMatcher:
         """Test that low-confidence matches are filtered out."""
         matcher = UnifiedNodeMatcher()
 
-        candidate = {"id": "test:task", "label": "completely different task"}
+        candidate = {
+            "id": "test:task",
+            "label": "completely different task"
+        }
 
-        existing = [{"id": "cogat:other", "label": "unrelated paradigm"}]
+        existing = [
+            {"id": "cogat:other", "label": "unrelated paradigm"}
+        ]
 
         matches = matcher.match_node(candidate, "Task", existing)
 
@@ -90,7 +101,7 @@ class TestUnifiedNodeMatcher:
         # Mock graph DB
         class MockDB:
             def __init__(self):
-                self.graph = type("obj", (object,), {"degree": lambda x: 5})()
+                self.graph = type('obj', (object,), {'degree': lambda x: 5})()
 
             def get_node(self, nid):
                 return {"id": nid, "label": "test"}

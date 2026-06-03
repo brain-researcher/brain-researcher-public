@@ -8,13 +8,13 @@ MVP implementation with 5 essential metrics to support operational observability
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict
+from typing import Dict, Any, TYPE_CHECKING
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse
 
 if TYPE_CHECKING:
-    from prometheus_client import Counter, Gauge, Histogram
+    from prometheus_client import Counter, Histogram, Gauge
 
 logger = logging.getLogger(__name__)
 
@@ -53,46 +53,43 @@ class MetricsCollector:
     def _init_prometheus_metrics(self):
         """Initialize Prometheus metric objects."""
         try:
-            from prometheus_client import REGISTRY, Counter, Gauge, Histogram
+            from prometheus_client import Counter, Histogram, Gauge, REGISTRY
 
             # Metric 1: Job enqueue counter
             self.prom_jobs_enqueued = Counter(
-                "brain_researcher_orchestrator_jobs_enqueued_total",
-                "Total number of jobs submitted to orchestrator",
-                ["kind"],  # kind = tool, dag, pipeline, etc.
+                'brain_researcher_orchestrator_jobs_enqueued_total',
+                'Total number of jobs submitted to orchestrator',
+                ['kind']  # kind = tool, dag, pipeline, etc.
             )
 
             # Metric 2: Job completion counter
             self.prom_jobs_completed = Counter(
-                "brain_researcher_orchestrator_jobs_completed_total",
-                "Total number of jobs completed by final state",
-                ["kind", "state"],  # state = succeeded, failed, cancelled, timeout
+                'brain_researcher_orchestrator_jobs_completed_total',
+                'Total number of jobs completed by final state',
+                ['kind', 'state']  # state = succeeded, failed, cancelled, timeout
             )
 
             # Metric 3: Job duration histogram
             # Buckets from 1s to 1 hour to capture typical job durations
             self.prom_jobs_duration = Histogram(
-                "brain_researcher_orchestrator_jobs_duration_seconds",
-                "Job execution duration in seconds",
-                ["kind", "state"],
-                buckets=[1, 5, 10, 30, 60, 300, 600, 1800, 3600],
+                'brain_researcher_orchestrator_jobs_duration_seconds',
+                'Job execution duration in seconds',
+                ['kind', 'state'],
+                buckets=[1, 5, 10, 30, 60, 300, 600, 1800, 3600]
             )
 
             # Metric 4: Cache operations counter
             self.prom_cache_ops = Counter(
-                "brain_researcher_orchestrator_cache_operations_total",
-                "Cache operations (hits/misses)",
-                [
-                    "operation",
-                    "result",
-                ],  # operation=lookup/store, result=hit/miss/error
+                'brain_researcher_orchestrator_cache_operations_total',
+                'Cache operations (hits/misses)',
+                ['operation', 'result']  # operation=lookup/store, result=hit/miss/error
             )
 
             # Metric 5: Queue depth gauge
             self.prom_queue_depth = Gauge(
-                "brain_researcher_orchestrator_queue_depth",
-                "Current number of jobs in queue by state",
-                ["state"],  # state = pending, running, claimed, etc.
+                'brain_researcher_orchestrator_queue_depth',
+                'Current number of jobs in queue by state',
+                ['state']  # state = pending, running, claimed, etc.
             )
 
             logger.info("Prometheus metrics initialized for orchestrator")
@@ -169,16 +166,16 @@ class MetricsCollector:
             if not self.enabled:
                 raise HTTPException(
                     status_code=404,
-                    detail="Metrics disabled (set BR_METRICS_ENABLED=true to enable)",
+                    detail="Metrics disabled (set BR_METRICS_ENABLED=true to enable)"
                 )
 
             try:
-                from prometheus_client import REGISTRY, generate_latest
-
+                from prometheus_client import generate_latest, REGISTRY
                 return generate_latest(REGISTRY)
             except ImportError:
                 raise HTTPException(
-                    status_code=500, detail="prometheus-client not installed"
+                    status_code=500,
+                    detail="prometheus-client not installed"
                 )
 
         return router
@@ -199,9 +196,7 @@ def get_metrics_collector() -> MetricsCollector:
         RuntimeError: If collector not initialized
     """
     if _metrics_collector is None:
-        raise RuntimeError(
-            "MetricsCollector not initialized. Call init_metrics() first."
-        )
+        raise RuntimeError("MetricsCollector not initialized. Call init_metrics() first.")
     return _metrics_collector
 
 

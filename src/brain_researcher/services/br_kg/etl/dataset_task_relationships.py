@@ -31,9 +31,7 @@ from brain_researcher.services.br_kg.etl.dataset_task_linker import (
 )
 from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 __all__ = [
@@ -113,9 +111,7 @@ def _iter_task_rows(db, *, include_all_tasks: bool) -> list[dict[str, object]]:
     return [dict(row) for row in db._run(cypher)]
 
 
-def _load_task_index(
-    db, config: TaskMappingConfig, *, include_all_tasks: bool
-) -> TaskIndex:
+def _load_task_index(db, config: TaskMappingConfig, *, include_all_tasks: bool) -> TaskIndex:
     rows = _iter_task_rows(db, include_all_tasks=include_all_tasks)
     if include_all_tasks:
         logger.info("Loaded %s Task nodes (all)", len(rows))
@@ -176,9 +172,7 @@ def _method_to_prov_method(method: str) -> str:
     return "string_match"
 
 
-def _infer_dataset_task_source(
-    *, dataset_id: str, created_from: str | None
-) -> tuple[str, str]:
+def _infer_dataset_task_source(*, dataset_id: str, created_from: str | None) -> tuple[str, str]:
     created_from_lower = (created_from or "").lower()
     dataset_id_lower = dataset_id.lower()
     if "openneuro" in dataset_id_lower or "openneuro" in created_from_lower:
@@ -252,9 +246,7 @@ def _iter_bids_task_labels(dataset_root: Path) -> set[str]:
 
     skip_dirs = {".git", ".datalad", ".github", "__pycache__", "derivatives"}
     for dirpath, dirnames, filenames in os.walk(dataset_root, topdown=True):
-        dirnames[:] = [
-            d for d in dirnames if d not in skip_dirs and not d.startswith(".")
-        ]
+        dirnames[:] = [d for d in dirnames if d not in skip_dirs and not d.startswith(".")]
         for name in filenames:
             lower = name.lower()
             if "task-" not in lower:
@@ -388,12 +380,8 @@ def main() -> None:
         default="HAS_TASK",
         help="Relationship types to create (comma or space separated)",
     )
-    parser.add_argument(
-        "--limit", type=int, default=None, help="Limit records per catalog"
-    )
-    parser.add_argument(
-        "--batch-size", type=int, default=500, help="Batch size for writes"
-    )
+    parser.add_argument("--limit", type=int, default=None, help="Limit records per catalog")
+    parser.add_argument("--batch-size", type=int, default=500, help="Batch size for writes")
     parser.add_argument("--dry-run", action="store_true", help="Do not write updates")
     parser.add_argument(
         "--disable-fuzzy",
@@ -445,9 +433,7 @@ def main() -> None:
 
     db = require_neo4j_db(preload_cache=False)
     try:
-        task_index = _load_task_index(
-            db, config, include_all_tasks=args.include_all_tasks
-        )
+        task_index = _load_task_index(db, config, include_all_tasks=args.include_all_tasks)
         dataset_ids = _load_dataset_ids(db)
         logger.info("Loaded %s Dataset ids from graph", len(dataset_ids))
 
@@ -517,9 +503,7 @@ def main() -> None:
 
         if args.use_dataset_node_tasks:
             dataset_rows = _iter_dataset_task_props(db)
-            logger.info(
-                "Processing %s Dataset nodes with task properties", len(dataset_rows)
-            )
+            logger.info("Processing %s Dataset nodes with task properties", len(dataset_rows))
             for row in dataset_rows:
                 dataset_id = row.get("id")
                 if not dataset_id or dataset_id not in dataset_ids:
@@ -528,9 +512,7 @@ def main() -> None:
                 raw_tasks: list[str] = []
                 tasks_prop = row.get("tasks")
                 if isinstance(tasks_prop, list):
-                    raw_tasks.extend(
-                        [t for t in tasks_prop if isinstance(t, str) and t.strip()]
-                    )
+                    raw_tasks.extend([t for t in tasks_prop if isinstance(t, str) and t.strip()])
                 elif isinstance(tasks_prop, str) and tasks_prop.strip():
                     raw_tasks.append(tasks_prop)
 
@@ -544,10 +526,7 @@ def main() -> None:
 
                 created_from = row.get("created_from")
                 source_key, source_detail = _infer_dataset_task_source(
-                    dataset_id=dataset_id,
-                    created_from=(
-                        created_from if isinstance(created_from, str) else None
-                    ),
+                    dataset_id=dataset_id, created_from=created_from if isinstance(created_from, str) else None
                 )
 
                 for raw_task in sorted(set(raw_tasks)):
@@ -618,11 +597,7 @@ def main() -> None:
             for row in targets:
                 dataset_id = row.get("id")
                 created_from = row.get("created_from")
-                if (
-                    not dataset_id
-                    or not isinstance(created_from, str)
-                    or not created_from
-                ):
+                if not dataset_id or not isinstance(created_from, str) or not created_from:
                     continue
                 dataset_desc = Path(created_from)
                 dataset_root = dataset_desc.parent

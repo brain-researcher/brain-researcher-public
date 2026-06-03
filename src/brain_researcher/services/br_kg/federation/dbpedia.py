@@ -4,14 +4,14 @@ DBpedia Connector for External Graph Federation
 Provides integration with DBpedia SPARQL endpoint for neuroimaging-related entities.
 """
 
-import hashlib
 import logging
 import time
-from typing import Any, Dict, List, Optional, Set
+import hashlib
+from typing import Dict, Any, List, Optional, Set
 from urllib.parse import quote
-
 import requests
-from SPARQLWrapper import JSON, SPARQLWrapper
+
+from SPARQLWrapper import SPARQLWrapper, JSON
 
 logger = logging.getLogger(__name__)
 
@@ -53,21 +53,38 @@ class DBpediaConnector:
 
         # Neuroimaging-specific categories and classes
         self.neuro_categories = {
-            "brain_anatomy": ["dbo:AnatomicalStructure", "dbo:Brain"],
-            "diseases": ["dbo:Disease", "dbo:MentalDisorder"],
-            "institutions": [
-                "dbo:University",
-                "dbo:ResearchInstitution",
-                "dbo:Hospital",
+            'brain_anatomy': [
+                'dbo:AnatomicalStructure',
+                'dbo:Brain'
             ],
-            "publications": ["dbo:AcademicJournal", "dbo:Book", "dbo:Article"],
-            "people": ["dbo:Scientist", "dbo:Physician", "dbo:Academic"],
+            'diseases': [
+                'dbo:Disease',
+                'dbo:MentalDisorder'
+            ],
+            'institutions': [
+                'dbo:University',
+                'dbo:ResearchInstitution',
+                'dbo:Hospital'
+            ],
+            'publications': [
+                'dbo:AcademicJournal',
+                'dbo:Book',
+                'dbo:Article'
+            ],
+            'people': [
+                'dbo:Scientist',
+                'dbo:Physician',
+                'dbo:Academic'
+            ]
         }
 
         logger.info("DBpedia connector initialized")
 
     def search_brain_anatomy(
-        self, query: str, limit: int = 50, include_description: bool = True
+        self,
+        query: str,
+        limit: int = 50,
+        include_description: bool = True
     ) -> List[Dict[str, Any]]:
         """Search for brain anatomy and anatomical structures"""
 
@@ -99,7 +116,9 @@ class DBpediaConnector:
         return self._execute_query(sparql_query, "brain_anatomy")
 
     def search_neurological_conditions(
-        self, query: str, limit: int = 50
+        self,
+        query: str,
+        limit: int = 50
     ) -> List[Dict[str, Any]]:
         """Search for neurological conditions and mental disorders"""
 
@@ -138,7 +157,10 @@ class DBpediaConnector:
         return self._execute_query(sparql_query, "neurological_conditions")
 
     def search_research_institutions(
-        self, query: str, focus_area: str = "neuroscience", limit: int = 30
+        self,
+        query: str,
+        focus_area: str = "neuroscience",
+        limit: int = 30
     ) -> List[Dict[str, Any]]:
         """Search for universities and research institutions"""
 
@@ -184,7 +206,10 @@ class DBpediaConnector:
         return self._execute_query(sparql_query, f"institutions_{focus_area}")
 
     def search_scientific_journals(
-        self, query: str, subject_area: str = "neuroscience", limit: int = 20
+        self,
+        query: str,
+        subject_area: str = "neuroscience",
+        limit: int = 20
     ) -> List[Dict[str, Any]]:
         """Search for scientific journals and publications"""
 
@@ -221,7 +246,9 @@ class DBpediaConnector:
         return self._execute_query(sparql_query, f"journals_{subject_area}")
 
     def search_neuroscientists(
-        self, query: str, limit: int = 30
+        self,
+        query: str,
+        limit: int = 30
     ) -> List[Dict[str, Any]]:
         """Search for neuroscientists and researchers"""
 
@@ -268,25 +295,19 @@ class DBpediaConnector:
         self,
         entity_uri: str,
         relationship_types: Optional[List[str]] = None,
-        limit: int = 50,
+        limit: int = 50
     ) -> List[Dict[str, Any]]:
         """Get relationships for a specific entity"""
 
         if not relationship_types:
             relationship_types = [
-                "dbo:isPartOf",
-                "dbo:hasPart",
-                "dbo:related",
-                "dbo:associatedWith",
-                "dbo:influences",
-                "dbo:influenced",
-                "dbo:treatment",
-                "dbo:symptoms",
-                "dbo:cause",
+                'dbo:isPartOf', 'dbo:hasPart', 'dbo:related',
+                'dbo:associatedWith', 'dbo:influences', 'dbo:influenced',
+                'dbo:treatment', 'dbo:symptoms', 'dbo:cause'
             ]
 
         # Build relationship filter
-        rel_filter = " || ".join([f"?relation = {rel}" for rel in relationship_types])
+        rel_filter = ' || '.join([f'?relation = {rel}' for rel in relationship_types])
 
         sparql_query = f"""
         {self.prefixes}
@@ -310,7 +331,10 @@ class DBpediaConnector:
         return self._execute_query(sparql_query, f"relationships_{entity_uri}")
 
     def search_by_category(
-        self, category_name: str, query: str = "", limit: int = 50
+        self,
+        category_name: str,
+        query: str = "",
+        limit: int = 50
     ) -> List[Dict[str, Any]]:
         """Search entities within a specific category"""
 
@@ -366,7 +390,10 @@ class DBpediaConnector:
         return self._structure_entity_details(results)
 
     def find_similar_entities(
-        self, entity_uri: str, similarity_threshold: float = 0.3, limit: int = 20
+        self,
+        entity_uri: str,
+        similarity_threshold: float = 0.3,
+        limit: int = 20
     ) -> List[Dict[str, Any]]:
         """Find entities similar to the given entity"""
 
@@ -375,16 +402,14 @@ class DBpediaConnector:
 
         # Extract categories for similarity matching
         categories = []
-        if "dct:subject" in entity_info.get("properties", {}):
-            categories = entity_info["properties"]["dct:subject"]
+        if 'dct:subject' in entity_info.get('properties', {}):
+            categories = entity_info['properties']['dct:subject']
 
         if not categories:
             return []
 
         # Build query to find similar entities
-        category_filter = " || ".join(
-            [f"?category = <{cat}>" for cat in categories[:5]]
-        )
+        category_filter = ' || '.join([f'?category = <{cat}>' for cat in categories[:5]])
 
         sparql_query = f"""
         {self.prefixes}
@@ -413,7 +438,10 @@ class DBpediaConnector:
         return self._execute_query(sparql_query, f"similar_{entity_uri}")
 
     def _execute_query(
-        self, query: str, cache_key: str, timeout: int = 30
+        self,
+        query: str,
+        cache_key: str,
+        timeout: int = 30
     ) -> List[Dict[str, Any]]:
         """Execute SPARQL query with caching and rate limiting"""
 
@@ -437,7 +465,7 @@ class DBpediaConnector:
             result = sparql.query().convert()
 
             # Extract bindings
-            bindings = result.get("results", {}).get("bindings", [])
+            bindings = result.get('results', {}).get('bindings', [])
 
             # Process results
             processed_results = self._process_dbpedia_results(bindings)
@@ -452,9 +480,7 @@ class DBpediaConnector:
             logger.error("DBpedia query failed: %s", str(e))
             return []
 
-    def _process_dbpedia_results(
-        self, bindings: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _process_dbpedia_results(self, bindings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Process DBpedia SPARQL results"""
 
         processed = []
@@ -463,24 +489,27 @@ class DBpediaConnector:
             result = {}
 
             for var, value in binding.items():
-                if value.get("type") == "uri":
+                if value.get('type') == 'uri':
                     # Extract resource name from URI
-                    uri = value["value"]
-                    if "dbpedia.org/resource/" in uri:
-                        resource_name = uri.split("/")[-1]
+                    uri = value['value']
+                    if 'dbpedia.org/resource/' in uri:
+                        resource_name = uri.split('/')[-1]
                         result[var] = {
-                            "name": resource_name,
-                            "uri": uri,
-                            "type": "resource",
+                            'name': resource_name,
+                            'uri': uri,
+                            'type': 'resource'
                         }
                     else:
-                        result[var] = {"uri": uri, "type": "uri"}
-                elif value.get("type") == "literal":
+                        result[var] = {
+                            'uri': uri,
+                            'type': 'uri'
+                        }
+                elif value.get('type') == 'literal':
                     result[var] = {
-                        "value": value["value"],
-                        "type": "literal",
-                        "datatype": value.get("datatype", "string"),
-                        "lang": value.get("xml:lang"),
+                        'value': value['value'],
+                        'type': 'literal',
+                        'datatype': value.get('datatype', 'string'),
+                        'lang': value.get('xml:lang')
                     }
                 else:
                     result[var] = value
@@ -489,41 +518,40 @@ class DBpediaConnector:
 
         return processed
 
-    def _structure_entity_details(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _structure_entity_details(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Structure entity details into organized format"""
 
         details = {
-            "properties": {},
-            "basic_info": {},
-            "relationships": {},
-            "categories": [],
+            'properties': {},
+            'basic_info': {},
+            'relationships': {},
+            'categories': []
         }
 
         for result in results:
-            prop_data = result.get("property", {})
-            value_data = result.get("value", {})
+            prop_data = result.get('property', {})
+            value_data = result.get('value', {})
 
-            if prop_data and "uri" in prop_data:
-                prop_uri = prop_data["uri"]
-                prop_name = prop_uri.split("/")[-1] if "/" in prop_uri else prop_uri
+            if prop_data and 'uri' in prop_data:
+                prop_uri = prop_data['uri']
+                prop_name = prop_uri.split('/')[-1] if '/' in prop_uri else prop_uri
 
                 # Categorize properties
-                if prop_name in ["label", "abstract", "type"]:
-                    details["basic_info"][prop_name] = value_data
-                elif prop_name in ["subject"]:
-                    details["categories"].append(value_data)
-                elif prop_name in ["isPartOf", "hasPart", "related", "associatedWith"]:
-                    if "structural" not in details["relationships"]:
-                        details["relationships"]["structural"] = []
-                    details["relationships"]["structural"].append(
-                        {"property": prop_name, "value": value_data}
-                    )
+                if prop_name in ['label', 'abstract', 'type']:
+                    details['basic_info'][prop_name] = value_data
+                elif prop_name in ['subject']:
+                    details['categories'].append(value_data)
+                elif prop_name in ['isPartOf', 'hasPart', 'related', 'associatedWith']:
+                    if 'structural' not in details['relationships']:
+                        details['relationships']['structural'] = []
+                    details['relationships']['structural'].append({
+                        'property': prop_name,
+                        'value': value_data
+                    })
                 else:
-                    if prop_name not in details["properties"]:
-                        details["properties"][prop_name] = []
-                    details["properties"][prop_name].append(value_data)
+                    if prop_name not in details['properties']:
+                        details['properties'][prop_name] = []
+                    details['properties'][prop_name].append(value_data)
 
         return details
 
@@ -546,21 +574,25 @@ class DBpediaConnector:
         """Get cached query result"""
         if cache_key in self.query_cache:
             cached = self.query_cache[cache_key]
-            if time.time() - cached["timestamp"] < self.cache_ttl:
-                return cached["results"]
+            if time.time() - cached['timestamp'] < self.cache_ttl:
+                return cached['results']
             else:
                 del self.query_cache[cache_key]
         return None
 
     def _cache_result(self, cache_key: str, results: List[Dict[str, Any]]):
         """Cache query results"""
-        self.query_cache[cache_key] = {"results": results, "timestamp": time.time()}
+        self.query_cache[cache_key] = {
+            'results': results,
+            'timestamp': time.time()
+        }
 
         # Limit cache size
         if len(self.query_cache) > 1000:
             # Remove oldest entries
             oldest_keys = sorted(
-                self.query_cache.keys(), key=lambda k: self.query_cache[k]["timestamp"]
+                self.query_cache.keys(),
+                key=lambda k: self.query_cache[k]['timestamp']
             )[:100]
             for key in oldest_keys:
                 del self.query_cache[key]

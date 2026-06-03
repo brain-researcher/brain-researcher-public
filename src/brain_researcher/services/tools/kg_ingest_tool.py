@@ -16,12 +16,8 @@ from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResu
 class KGIngestArgs(BaseModel):
     """Arguments for BR-KG batch ingestion."""
 
-    nodes_file: str = Field(
-        description="Path to CSV/JSON file containing nodes to ingest"
-    )
-    edges_file: str = Field(
-        description="Path to CSV/JSON file containing edges to ingest"
-    )
+    nodes_file: str = Field(description="Path to CSV/JSON file containing nodes to ingest")
+    edges_file: str = Field(description="Path to CSV/JSON file containing edges to ingest")
     batch_size: int = Field(
         default=1000,
         description="Number of nodes/edges to process in each batch",

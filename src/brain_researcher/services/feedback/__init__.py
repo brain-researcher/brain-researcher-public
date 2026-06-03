@@ -9,5 +9,5 @@ __all__ = [
     "ABTestingFramework",
     "ExperimentManager",
     "MetricsCollector",
-    "RewardTracker",
+    "RewardTracker"
 ]

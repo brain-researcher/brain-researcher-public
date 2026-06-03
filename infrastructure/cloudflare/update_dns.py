@@ -26,7 +26,7 @@ _load_dotenv_if_available()
 
 # Configuration — supplied via environment, never hardcoded.
 API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
-DOMAIN = os.environ.get("CLOUDFLARE_DOMAIN", "brain-researcher.com")
+DOMAIN = os.environ.get("CLOUDFLARE_DOMAIN", "${PUBLIC_HOSTNAME}")
 CORRECT_IP = os.environ["CLOUDFLARE_SERVER_IP"]  # target origin IP
 
 # Cloudflare API endpoint
@@ -199,7 +199,7 @@ def main():
     print("\n✅ DNS Update Complete!")
     print("\n📝 Next Steps:")
     print("1. DNS propagation may take 1-5 minutes")
-    print("2. Test with: dig brain-researcher.com @1.1.1.1")
+    print("2. Test with: dig ${PUBLIC_HOSTNAME} @1.1.1.1")
     print("3. Configure your server's nginx/reverse proxy")
     print("4. Set up SSL certificates")
 

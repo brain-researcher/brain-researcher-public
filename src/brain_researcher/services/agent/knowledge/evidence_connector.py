@@ -15,32 +15,20 @@ import re
 import sys
 import time
 from difflib import SequenceMatcher
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Protocol,
-    Sequence,
-    Set,
-    Tuple,
-    runtime_checkable,
-)
+from typing import Any, Dict, List, Optional, Protocol, Sequence, Set, Tuple, runtime_checkable
 
-from brain_researcher.services.agent.cache_manager import (
-    CacheKeyType,
-    QueryCacheManager,
-    get_global_cache_manager,
-)
 from brain_researcher.services.agent.knowledge.evidence_models import (
     EvidenceBundle,
     EvidenceItem,
     EvidenceSourceType,
 )
-from brain_researcher.services.agent.knowledge.memory_store import KnowledgeMemoryStore
-from brain_researcher.services.agent.monitoring_integration import (
-    get_monitoring_integration,
+from brain_researcher.services.agent.cache_manager import (
+    CacheKeyType,
+    QueryCacheManager,
+    get_global_cache_manager,
 )
+from brain_researcher.services.agent.knowledge.memory_store import KnowledgeMemoryStore
+from brain_researcher.services.agent.monitoring_integration import get_monitoring_integration
 
 logger = logging.getLogger(__name__)
 
@@ -66,11 +54,7 @@ def _dataset_hint_to_evidence_item(hint: Any) -> Optional[EvidenceItem]:
         hint_meta = getattr(hint, "metadata", None) or hint.get("metadata", {})
         if isinstance(hint_meta, dict):
             metadata.update(hint_meta)
-        url = (
-            getattr(hint, "remote_url", None)
-            or hint.get("remote_url")
-            or hint.get("primary_url")
-        )
+        url = getattr(hint, "remote_url", None) or hint.get("remote_url") or hint.get("primary_url")
         # Record provenance to distinguish KG hint from catalog/connector matches.
         metadata.setdefault("source", "kg_hint")
         return EvidenceItem(
@@ -234,9 +218,7 @@ class LiteratureConnector:
 
                 if self._rate_limiter:
                     self._rate_limiter.wait_if_needed()
-                resp = await client.get(
-                    f"{base_url}/esearch.fcgi", params=search_params
-                )
+                resp = await client.get(f"{base_url}/esearch.fcgi", params=search_params)
                 resp.raise_for_status()
                 data = resp.json()
                 if self._rate_limiter:
@@ -257,9 +239,7 @@ class LiteratureConnector:
 
                 if self._rate_limiter:
                     self._rate_limiter.wait_if_needed()
-                resp = await client.get(
-                    f"{base_url}/esummary.fcgi", params=summary_params
-                )
+                resp = await client.get(f"{base_url}/esummary.fcgi", params=summary_params)
                 resp.raise_for_status()
                 summaries = resp.json().get("result", {})
                 if self._rate_limiter:
@@ -288,11 +268,7 @@ class LiteratureConnector:
         except Exception as e:
             logger.warning(f"EDirect search failed: {e}")
             if self._rate_limiter:
-                self._rate_limiter.request_failure(
-                    getattr(e, "response", None).status_code
-                    if hasattr(e, "response")
-                    else None
-                )
+                self._rate_limiter.request_failure(getattr(e, "response", None).status_code if hasattr(e, "response") else None)
             return []
 
     def _build_pubmed_url(self, kg_id: str) -> Optional[str]:
@@ -440,11 +416,7 @@ class DatasetCatalogConnector:
         def _tokenize(text: str) -> Set[str]:
             return {t for t in re.findall(r"[a-z0-9]+", text.lower()) if len(t) > 2}
 
-        fields = [
-            ds.title or "",
-            " ".join(ds.tasks or []),
-            " ".join(ds.modalities or []),
-        ]
+        fields = [ds.title or "", " ".join(ds.tasks or []), " ".join(ds.modalities or [])]
         haystack = " ".join(part for part in fields if part)
         if not haystack.strip():
             return 0.0
@@ -583,11 +555,7 @@ class ToolCatalogConnector:
                     exposed_only=True,
                     k_candidates=max(20, limit),
                 )
-                candidates = (
-                    (kg_data or {}).get("candidates", [])
-                    if isinstance(kg_data, dict)
-                    else []
-                )
+                candidates = (kg_data or {}).get("candidates", []) if isinstance(kg_data, dict) else []
 
                 for idx, cand in enumerate(candidates[:limit]):
                     tool_id = str(cand.get("tool_id") or "")
@@ -910,24 +878,10 @@ class EvidenceAggregator:
         labels = {"account_id": account_id or self._account_id or "unknown"}
         mc = metrics_collector
         try:
-            mc.increment(
-                "cache_hits_total",
-                self._metrics.get("l1_hits", 0),
-                labels={**labels, "layer": "l1"},
-            )
-            mc.increment(
-                "cache_hits_total",
-                self._metrics.get("shared_hits", 0),
-                labels={**labels, "layer": "shared"},
-            )
-            mc.increment(
-                "cache_misses_total",
-                self._metrics.get("l1_misses", 0),
-                labels={**labels, "layer": "l1"},
-            )
-            mc.set_gauge(
-                "cache_size_bytes", len(self._cache), labels={**labels, "layer": "l1"}
-            )
+            mc.increment("cache_hits_total", self._metrics.get("l1_hits", 0), labels={**labels, "layer": "l1"})
+            mc.increment("cache_hits_total", self._metrics.get("shared_hits", 0), labels={**labels, "layer": "shared"})
+            mc.increment("cache_misses_total", self._metrics.get("l1_misses", 0), labels={**labels, "layer": "l1"})
+            mc.set_gauge("cache_size_bytes", len(self._cache), labels={**labels, "layer": "l1"})
         except Exception:  # pragma: no cover - defensive
             logger.debug("Failed to export cache metrics", exc_info=True)
 
@@ -973,9 +927,7 @@ class EvidenceAggregator:
         bundle = EvidenceBundle(query=query)
 
         # Use per-call timeouts if provided, otherwise fall back to instance settings
-        effective_source_timeout = (
-            source_timeout if source_timeout is not None else self._source_timeout
-        )
+        effective_source_timeout = source_timeout if source_timeout is not None else self._source_timeout
 
         cache_key = self._make_cache_key(
             query, sources, limit, effective_source_timeout, dataset_hints
@@ -1020,9 +972,7 @@ class EvidenceAggregator:
         tasks = []
         for connector in connectors:
             task = asyncio.create_task(
-                self._search_with_timeout(
-                    connector, query, limit, effective_source_timeout
-                )
+                self._search_with_timeout(connector, query, limit, effective_source_timeout)
             )
             tasks.append(task)
 
@@ -1088,9 +1038,7 @@ class EvidenceAggregator:
                 # Export memory size to monitoring integration if available
                 try:
                     mi = get_monitoring_integration()
-                    mi.metrics_collector.record_knowledge_memory_size(
-                        self._account_id, size
-                    )
+                    mi.metrics_collector.record_knowledge_memory_size(self._account_id, size)
                 except Exception:  # pragma: no cover - best effort
                     logger.debug("knowledge memory size export failed", exc_info=True)
             except Exception as exc:  # pragma: no cover - defensive

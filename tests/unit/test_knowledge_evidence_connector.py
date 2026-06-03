@@ -41,13 +41,11 @@ async def test_dataset_hints_injected_into_bundle():
         limit=5,
         dataset_hints=hints,
     )
-    ids = [
-        item.source_id
-        for item in bundle.items
-        if item.source_type == EvidenceSourceType.DATASET_CATALOG
-    ]
+    ids = [item.source_id for item in bundle.items if item.source_type == EvidenceSourceType.DATASET_CATALOG]
     assert "ds000001" in ids
-    hint_item = next(item for item in bundle.items if item.source_id == "ds000001")
+    hint_item = next(
+        item for item in bundle.items if item.source_id == "ds000001"
+    )
     assert hint_item.metadata.get("source") == "kg_hint"
 
 
@@ -85,7 +83,9 @@ def test_tool_evidence_source_kg_query(monkeypatch):
     )
 
     source = ToolEvidenceSource(registry=StubRegistry(), use_kg=True)
-    results = source.query_sync(type("Q", (), {"text": "skull strip", "limit": 5}))
+    results = source.query_sync(
+        type("Q", (), {"text": "skull strip", "limit": 5})
+    )
 
     assert results
     top = results[0]

@@ -2,22 +2,18 @@
 
 from __future__ import annotations
 
-import logging
 import os
+import logging
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 import yaml
 
 from brain_researcher.config.paths import resolve_from_config
-
-from .catalog_loader import ToolCapability, search_by_intent
+from .catalog_loader import search_by_intent, ToolCapability
 from .intents import Operation
-from .kg_bridge import (
-    get_family_stats_for_operation,
-    get_preferred_families_for_pipeline,
-)
+from .kg_bridge import get_preferred_families_for_pipeline, get_family_stats_for_operation
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +25,7 @@ if TYPE_CHECKING:
 class EnvContext:
     """Environment and preference context for implementation selection."""
 
-    available_runtimes: List[str] = field(
-        default_factory=lambda: ["python", "container", "mcp"]
-    )
+    available_runtimes: List[str] = field(default_factory=lambda: ["python", "container", "mcp"])
     constraints: Dict[str, Any] = field(default_factory=dict)
     preferences: Dict[str, Any] = field(default_factory=dict)
     tool_retriever: "ToolRetriever | None" = None
@@ -44,10 +38,7 @@ def _runtime_preference_score(runtime_kind: str, prefs: Dict[str, Any]) -> float
     if prefer and runtime_kind == prefer:
         return 1.0
     # NIWRAP prioritization flag (boost container when requested)
-    prefer_niwrap = (
-        prefs.get("prefer_niwrap")
-        or os.environ.get("BR_PLANNER_PREFER_NIWRAP", "").lower() == "true"
-    )
+    prefer_niwrap = prefs.get("prefer_niwrap") or os.environ.get("BR_PLANNER_PREFER_NIWRAP", "").lower() == "true"
     if prefer_niwrap and runtime_kind == "container":
         return 0.95
     # default ordering: python > container > mcp
@@ -117,22 +108,14 @@ def _score_tools_for_operation(op: Operation, env: EnvContext):
         return None, []
 
     # Filter by available runtimes
-    tools = [
-        t for t in tools if getattr(t, "runtime_kind", None) in env.available_runtimes
-    ]
+    tools = [t for t in tools if getattr(t, "runtime_kind", None) in env.available_runtimes]
     if not tools:
         return None, []
 
     # KG hints (preferred families for this op or pipeline)
-    kg_use = os.environ.get(
-        "BR_PLANNER_USE_KG_HINTS", ""
-    ).lower() == "true" or env.preferences.get("use_kg_hints")
+    kg_use = os.environ.get("BR_PLANNER_USE_KG_HINTS", "").lower() == "true" or env.preferences.get("use_kg_hints")
     try:
-        kg_weight = float(
-            env.preferences.get(
-                "kg_hint_weight", os.environ.get("BR_PLANNER_KG_HINT_WEIGHT", 1.0)
-            )
-        )
+        kg_weight = float(env.preferences.get("kg_hint_weight", os.environ.get("BR_PLANNER_KG_HINT_WEIGHT", 1.0)))
     except Exception:
         kg_weight = 1.0
     kg_weight = max(0.0, min(kg_weight, 5.0))
@@ -151,9 +134,7 @@ def _score_tools_for_operation(op: Operation, env: EnvContext):
     kg_tool_scores: Dict[str, float] = {}
     kg_retriever_pref = env.preferences.get("use_kg_retriever")
     if kg_retriever_pref is None:
-        kg_retriever_use = os.environ.get(
-            "BR_PLANNER_USE_KG_RETRIEVER", ""
-        ).lower() in {
+        kg_retriever_use = os.environ.get("BR_PLANNER_USE_KG_RETRIEVER", "").lower() in {
             "1",
             "true",
             "yes",
@@ -167,9 +148,7 @@ def _score_tools_for_operation(op: Operation, env: EnvContext):
     if env.tool_retriever and kg_retriever_use:
         try:
             kg_query_parts = [op.intent.name, op.intent.description, op.intent.id]
-            kg_query = (
-                " ".join([p for p in kg_query_parts if p]).strip() or op.intent.id
-            )
+            kg_query = " ".join([p for p in kg_query_parts if p]).strip() or op.intent.id
             matches = env.tool_retriever.retrieve_tools(
                 query=kg_query, family_ids=None, top_k=20
             )
@@ -182,11 +161,7 @@ def _score_tools_for_operation(op: Operation, env: EnvContext):
                     score = getattr(match, "score", None)
                     if score is None and isinstance(match, dict):
                         score = match.get("score")
-                    if (
-                        isinstance(tool_id, str)
-                        and tool_id
-                        and isinstance(score, (int, float))
-                    ):
+                    if isinstance(tool_id, str) and tool_id and isinstance(score, (int, float)):
                         raw_scores[tool_id] = float(score)
                 if raw_scores:
                     max_score = max(raw_scores.values()) or 1.0
@@ -236,10 +211,7 @@ def _score_tools_for_operation(op: Operation, env: EnvContext):
 
     scored.sort(key=lambda x: -x[0])
     best = scored[0][1] if scored else None
-    if (
-        env.preferences.get("log_selection_reason")
-        or os.environ.get("BR_PLANNER_LOG_SELECTION", "").lower() == "true"
-    ):
+    if env.preferences.get("log_selection_reason") or os.environ.get("BR_PLANNER_LOG_SELECTION", "").lower() == "true":
         top_rows = sorted(debug_rows, key=lambda x: -x[0])[:5]
         logger.info(
             "planner_selection intent=%s pipeline=%s kg_use=%s kg_weight=%.2f choice=%s top=%s",
@@ -260,9 +232,7 @@ def _score_tools_for_operation(op: Operation, env: EnvContext):
     return best, debug_rows
 
 
-def choose_tool_for_operation(
-    op: Operation, env: EnvContext
-) -> Optional[ToolCapability]:
+def choose_tool_for_operation(op: Operation, env: EnvContext) -> Optional[ToolCapability]:
     """Pick a ToolCapability that implements the Operation's intent."""
     best, _ = _score_tools_for_operation(op, env)
     return best

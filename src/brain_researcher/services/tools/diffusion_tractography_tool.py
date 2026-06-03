@@ -30,25 +30,13 @@ class DiffusionTractographyArgs(BaseModel):
     mask_file: Optional[str] = Field(default=None, description="Optional brain mask")
     output_dir: Optional[str] = Field(default=None, description="Directory for outputs")
     model_type: str = Field(default="dti", description="Diffusion model type")
-    tracking_method: str = Field(
-        default="deterministic", description="Tracking algorithm"
-    )
+    tracking_method: str = Field(default="deterministic", description="Tracking algorithm")
     fa_threshold: float = Field(default=0.1, description="FA threshold for stopping")
-    min_length: float = Field(
-        default=10.0, description="Minimum streamline length (mm)"
-    )
-    max_length: float = Field(
-        default=250.0, description="Maximum streamline length (mm)"
-    )
-    compute_connectivity: bool = Field(
-        default=True, description="Emit connectivity matrix"
-    )
-    parcellation_file: Optional[str] = Field(
-        default=None, description="Optional parcellation map"
-    )
-    connectivity_metric: str = Field(
-        default="count", description="Connectivity metric to summarise"
-    )
+    min_length: float = Field(default=10.0, description="Minimum streamline length (mm)")
+    max_length: float = Field(default=250.0, description="Maximum streamline length (mm)")
+    compute_connectivity: bool = Field(default=True, description="Emit connectivity matrix")
+    parcellation_file: Optional[str] = Field(default=None, description="Optional parcellation map")
+    connectivity_metric: str = Field(default="count", description="Connectivity metric to summarise")
     compute_fa: bool = Field(default=True, description="Persist FA map")
     compute_md: bool = Field(default=True, description="Persist mean diffusivity map")
     compute_rd: bool = Field(default=True, description="Persist radial diffusivity map")
@@ -56,9 +44,7 @@ class DiffusionTractographyArgs(BaseModel):
     segment_bundles: bool = Field(default=False, description="Derive bundle summaries")
     save_streamlines: bool = Field(default=True, description="Persist streamline array")
     save_fa_map: bool = Field(default=True, description="Persist FA volume")
-    save_connectivity: bool = Field(
-        default=True, description="Persist connectivity matrix"
-    )
+    save_connectivity: bool = Field(default=True, description="Persist connectivity matrix")
     visualize: bool = Field(default=True, description="Generate preview visualisations")
     random_state: Optional[int] = Field(default=42, description="Optional RNG seed")
 
@@ -224,9 +210,7 @@ class DiffusionTractographyTool(NeuroToolWrapper):
             if "output_dir" not in payload:
                 payload["output_dir"] = str(Path.cwd() / "diffusion_tractography")
 
-            params: DiffusionTractographyParameters = (
-                diffusion_tractography_from_payload(payload)
-            )
+            params: DiffusionTractographyParameters = diffusion_tractography_from_payload(payload)
             results = run_diffusion_tractography(params)
             return ToolResult(status="success", data=results)
         except Exception as exc:  # pragma: no cover

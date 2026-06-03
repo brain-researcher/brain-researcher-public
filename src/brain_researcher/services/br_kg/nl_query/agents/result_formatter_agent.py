@@ -4,11 +4,11 @@ Result Formatter Agent for Natural Language Query Processing
 Formats query results for user consumption with natural language explanations.
 """
 
-import json
 import logging
+import json
+from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
 
 from .parser_agent import ParsedQuery
 
@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 class VisualizationType(str, Enum):
     """Types of visualizations for results"""
-
     TABLE = "table"
     GRAPH = "graph"
     BRAIN_MAP = "brain_map"
@@ -30,7 +29,6 @@ class VisualizationType(str, Enum):
 @dataclass
 class FormattedResult:
     """Formatted query result for user consumption"""
-
     summary: str
     data: List[Dict[str, Any]]
     visualization_hints: Dict[str, Any]
@@ -58,46 +56,46 @@ class ResultFormatterAgent:
     def _load_summary_templates(self) -> Dict[str, str]:
         """Load natural language summary templates"""
         return {
-            "single_result": "Found {entity_type}: {entity_name}",
-            "multiple_results": "Found {count} {entity_type}s matching your query",
-            "activation_results": "The {task} task activates {count} brain regions, primarily in {regions}",
-            "connectivity_results": "{region1} shows connectivity with {count} regions, strongest with {top_regions}",
-            "disorder_results": "{disorder} is associated with alterations in {count} brain regions",
-            "no_results": "No results found matching your query criteria",
-            "aggregation_result": "The {metric} is {value} across {count} items",
-            "comparison_result": "Comparing {entity1} and {entity2}: {comparison_summary}",
+            'single_result': "Found {entity_type}: {entity_name}",
+            'multiple_results': "Found {count} {entity_type}s matching your query",
+            'activation_results': "The {task} task activates {count} brain regions, primarily in {regions}",
+            'connectivity_results': "{region1} shows connectivity with {count} regions, strongest with {top_regions}",
+            'disorder_results': "{disorder} is associated with alterations in {count} brain regions",
+            'no_results': "No results found matching your query criteria",
+            'aggregation_result': "The {metric} is {value} across {count} items",
+            'comparison_result': "Comparing {entity1} and {entity2}: {comparison_summary}"
         }
 
     def _load_visualization_rules(self) -> Dict[str, Dict[str, Any]]:
         """Load rules for visualization selection"""
         return {
-            "brain_region": {
-                "primary": VisualizationType.BRAIN_MAP,
-                "secondary": VisualizationType.TABLE,
-                "requires": ["coordinates", "activation_values"],
+            'brain_region': {
+                'primary': VisualizationType.BRAIN_MAP,
+                'secondary': VisualizationType.TABLE,
+                'requires': ['coordinates', 'activation_values']
             },
-            "connectivity": {
-                "primary": VisualizationType.NETWORK,
-                "secondary": VisualizationType.HEATMAP,
-                "requires": ["source_regions", "target_regions", "weights"],
+            'connectivity': {
+                'primary': VisualizationType.NETWORK,
+                'secondary': VisualizationType.HEATMAP,
+                'requires': ['source_regions', 'target_regions', 'weights']
             },
-            "temporal": {
-                "primary": VisualizationType.TIMELINE,
-                "secondary": VisualizationType.CHART,
-                "requires": ["timestamps", "values"],
+            'temporal': {
+                'primary': VisualizationType.TIMELINE,
+                'secondary': VisualizationType.CHART,
+                'requires': ['timestamps', 'values']
             },
-            "comparison": {
-                "primary": VisualizationType.CHART,
-                "secondary": VisualizationType.TABLE,
-                "requires": ["entities", "values"],
-            },
+            'comparison': {
+                'primary': VisualizationType.CHART,
+                'secondary': VisualizationType.TABLE,
+                'requires': ['entities', 'values']
+            }
         }
 
     def format_results(
         self,
         raw_results: Dict[str, Any],
         parsed_query: Optional[ParsedQuery] = None,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[Dict[str, Any]] = None
     ) -> FormattedResult:
         """
         Format raw query results for user consumption
@@ -114,23 +112,38 @@ class ResultFormatterAgent:
         structured_data = self._structure_results(raw_results)
 
         # Generate natural language summary
-        summary = self._generate_summary(structured_data, parsed_query)
+        summary = self._generate_summary(
+            structured_data,
+            parsed_query
+        )
 
         # Determine visualization type and parameters
         visualization_hints = self._determine_visualization(
-            structured_data, parsed_query
+            structured_data,
+            parsed_query
         )
 
         # Generate explanation if needed
         explanation = None
-        if parsed_query and "explain" in parsed_query.intent.lower():
-            explanation = self._generate_explanation(structured_data, parsed_query)
+        if parsed_query and 'explain' in parsed_query.intent.lower():
+            explanation = self._generate_explanation(
+                structured_data,
+                parsed_query
+            )
 
         # Calculate formatting confidence
-        confidence = self._calculate_confidence(structured_data, summary, parsed_query)
+        confidence = self._calculate_confidence(
+            structured_data,
+            summary,
+            parsed_query
+        )
 
         # Add metadata
-        metadata = self._generate_metadata(raw_results, structured_data, parsed_query)
+        metadata = self._generate_metadata(
+            raw_results,
+            structured_data,
+            parsed_query
+        )
 
         return FormattedResult(
             summary=summary,
@@ -138,25 +151,28 @@ class ResultFormatterAgent:
             visualization_hints=visualization_hints,
             explanation=explanation,
             confidence_score=confidence,
-            metadata=metadata,
+            metadata=metadata
         )
 
-    def _structure_results(self, raw_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _structure_results(
+        self,
+        raw_results: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Structure raw results into consistent format"""
         structured = []
 
         # Handle different result formats
-        if "results" in raw_results:
-            if isinstance(raw_results["results"], list):
+        if 'results' in raw_results:
+            if isinstance(raw_results['results'], list):
                 # Cypher-style results
-                for item in raw_results["results"]:
+                for item in raw_results['results']:
                     structured_item = self._structure_cypher_result(item)
                     if structured_item:
                         structured.append(structured_item)
-            elif isinstance(raw_results["results"], dict):
+            elif isinstance(raw_results['results'], dict):
                 # SPARQL-style results
-                if "bindings" in raw_results["results"]:
-                    for binding in raw_results["results"]["bindings"]:
+                if 'bindings' in raw_results['results']:
+                    for binding in raw_results['results']['bindings']:
                         structured_item = self._structure_sparql_binding(binding)
                         if structured_item:
                             structured.append(structured_item)
@@ -170,22 +186,22 @@ class ResultFormatterAgent:
         for key, value in item.items():
             if isinstance(value, dict):
                 # Neo4j node or relationship
-                if "labels" in value:
+                if 'labels' in value:
                     # Node
                     structured[key] = {
-                        "type": "node",
-                        "labels": value.get("labels", []),
-                        "properties": value.get("properties", {}),
-                        "id": value.get("id"),
+                        'type': 'node',
+                        'labels': value.get('labels', []),
+                        'properties': value.get('properties', {}),
+                        'id': value.get('id')
                     }
-                elif "type" in value:
+                elif 'type' in value:
                     # Relationship
                     structured[key] = {
-                        "type": "relationship",
-                        "relationship_type": value.get("type"),
-                        "properties": value.get("properties", {}),
-                        "start": value.get("startNode"),
-                        "end": value.get("endNode"),
+                        'type': 'relationship',
+                        'relationship_type': value.get('type'),
+                        'properties': value.get('properties', {}),
+                        'start': value.get('startNode'),
+                        'end': value.get('endNode')
                     }
                 else:
                     structured[key] = value
@@ -201,15 +217,15 @@ class ResultFormatterAgent:
 
         for var, value_obj in binding.items():
             if isinstance(value_obj, dict):
-                value_type = value_obj.get("type", "literal")
-                value = value_obj.get("value", "")
+                value_type = value_obj.get('type', 'literal')
+                value = value_obj.get('value', '')
 
-                if value_type == "uri":
+                if value_type == 'uri':
                     # Extract meaningful part from URI
                     structured[var] = {
-                        "type": "uri",
-                        "value": value,
-                        "label": value.split("/")[-1].split("#")[-1],
+                        'type': 'uri',
+                        'value': value,
+                        'label': value.split('/')[-1].split('#')[-1]
                     }
                 else:
                     structured[var] = value
@@ -219,33 +235,35 @@ class ResultFormatterAgent:
         return structured
 
     def _generate_summary(
-        self, data: List[Dict[str, Any]], parsed_query: Optional[ParsedQuery]
+        self,
+        data: List[Dict[str, Any]],
+        parsed_query: Optional[ParsedQuery]
     ) -> str:
         """Generate natural language summary of results"""
         if not data:
-            return self.summary_templates["no_results"]
+            return self.summary_templates['no_results']
 
         # Analyze result structure
         result_count = len(data)
 
         # Determine primary entity type
         entity_types = self._extract_entity_types(data)
-        primary_type = entity_types[0] if entity_types else "result"
+        primary_type = entity_types[0] if entity_types else 'result'
 
         # Generate appropriate summary based on query intent
         if parsed_query:
             intent = parsed_query.intent.value
 
-            if "aggregate" in intent or "count" in intent:
+            if 'aggregate' in intent or 'count' in intent:
                 # Aggregation summary
-                if data and "count" in data[0]:
+                if data and 'count' in data[0]:
                     return f"Count: {data[0]['count']} items"
 
-            elif "compare" in intent:
+            elif 'compare' in intent:
                 # Comparison summary
                 return self._generate_comparison_summary(data, parsed_query)
 
-            elif "correlate" in intent or "activate" in intent:
+            elif 'correlate' in intent or 'activate' in intent:
                 # Activation/correlation summary
                 return self._generate_activation_summary(data, parsed_query)
 
@@ -253,17 +271,21 @@ class ResultFormatterAgent:
         if result_count == 1:
             # Single result
             main_entity = self._extract_main_entity(data[0])
-            return self.summary_templates["single_result"].format(
-                entity_type=primary_type, entity_name=main_entity
+            return self.summary_templates['single_result'].format(
+                entity_type=primary_type,
+                entity_name=main_entity
             )
         else:
             # Multiple results
-            return self.summary_templates["multiple_results"].format(
-                count=result_count, entity_type=primary_type
+            return self.summary_templates['multiple_results'].format(
+                count=result_count,
+                entity_type=primary_type
             )
 
     def _generate_comparison_summary(
-        self, data: List[Dict[str, Any]], parsed_query: ParsedQuery
+        self,
+        data: List[Dict[str, Any]],
+        parsed_query: ParsedQuery
     ) -> str:
         """Generate summary for comparison queries"""
         if len(data) < 2:
@@ -277,27 +299,27 @@ class ResultFormatterAgent:
 
         # Find differences
         differences = []
-        if all("properties" in item for item in data[:2]):
-            props1 = data[0].get("properties", {})
-            props2 = data[1].get("properties", {})
+        if all('properties' in item for item in data[:2]):
+            props1 = data[0].get('properties', {})
+            props2 = data[1].get('properties', {})
 
             for key in set(props1.keys()) | set(props2.keys()):
                 if key in props1 and key in props2:
                     if props1[key] != props2[key]:
                         differences.append(f"{key}: {props1[key]} vs {props2[key]}")
 
-        comparison_summary = (
-            "; ".join(differences[:3]) if differences else "similar profiles"
-        )
+        comparison_summary = "; ".join(differences[:3]) if differences else "similar profiles"
 
-        return self.summary_templates["comparison_result"].format(
+        return self.summary_templates['comparison_result'].format(
             entity1=entities[0],
             entity2=entities[1],
-            comparison_summary=comparison_summary,
+            comparison_summary=comparison_summary
         )
 
     def _generate_activation_summary(
-        self, data: List[Dict[str, Any]], parsed_query: ParsedQuery
+        self,
+        data: List[Dict[str, Any]],
+        parsed_query: ParsedQuery
     ) -> str:
         """Generate summary for activation/correlation queries"""
         # Extract task and regions
@@ -305,94 +327,105 @@ class ResultFormatterAgent:
         regions = []
 
         for entity in parsed_query.entities:
-            if entity.type.value == "cognitive_task":
+            if entity.type.value == 'cognitive_task':
                 task = entity.text
-            elif entity.type.value == "brain_region":
+            elif entity.type.value == 'brain_region':
                 regions.append(entity.text)
 
         # Extract regions from results
         result_regions = []
         for item in data:
-            if "region" in item:
-                if isinstance(item["region"], dict):
-                    region_name = item["region"].get("properties", {}).get("name", "")
+            if 'region' in item:
+                if isinstance(item['region'], dict):
+                    region_name = item['region'].get('properties', {}).get('name', '')
                 else:
-                    region_name = str(item["region"])
+                    region_name = str(item['region'])
                 if region_name:
                     result_regions.append(region_name)
 
         if task and result_regions:
-            top_regions = ", ".join(result_regions[:3])
-            return self.summary_templates["activation_results"].format(
-                task=task, count=len(result_regions), regions=top_regions
+            top_regions = ', '.join(result_regions[:3])
+            return self.summary_templates['activation_results'].format(
+                task=task,
+                count=len(result_regions),
+                regions=top_regions
             )
 
         return f"Found {len(data)} activation results"
 
     def _determine_visualization(
-        self, data: List[Dict[str, Any]], parsed_query: Optional[ParsedQuery]
+        self,
+        data: List[Dict[str, Any]],
+        parsed_query: Optional[ParsedQuery]
     ) -> Dict[str, Any]:
         """Determine appropriate visualization for results"""
-        viz_hints = {"type": VisualizationType.TABLE, "parameters": {}}  # Default
+        viz_hints = {
+            'type': VisualizationType.TABLE,  # Default
+            'parameters': {}
+        }
 
         # Analyze data structure
-        has_coordinates = any("coordinates" in str(item) for item in data)
-        has_connections = any("connected" in str(item).lower() for item in data)
-        has_temporal = any("year" in str(item) or "date" in str(item) for item in data)
+        has_coordinates = any('coordinates' in str(item) for item in data)
+        has_connections = any('connected' in str(item).lower() for item in data)
+        has_temporal = any('year' in str(item) or 'date' in str(item) for item in data)
 
         # Determine visualization based on data and query
         if has_coordinates:
-            viz_hints["type"] = VisualizationType.BRAIN_MAP
-            viz_hints["parameters"] = {
-                "coordinate_field": "coordinates",
-                "value_field": "activation_value",
-                "colormap": "hot",
+            viz_hints['type'] = VisualizationType.BRAIN_MAP
+            viz_hints['parameters'] = {
+                'coordinate_field': 'coordinates',
+                'value_field': 'activation_value',
+                'colormap': 'hot'
             }
 
         elif has_connections:
-            viz_hints["type"] = VisualizationType.NETWORK
-            viz_hints["parameters"] = {
-                "node_field": "region",
-                "edge_field": "connection",
-                "weight_field": "strength",
-                "layout": "force-directed",
+            viz_hints['type'] = VisualizationType.NETWORK
+            viz_hints['parameters'] = {
+                'node_field': 'region',
+                'edge_field': 'connection',
+                'weight_field': 'strength',
+                'layout': 'force-directed'
             }
 
         elif has_temporal:
-            viz_hints["type"] = VisualizationType.TIMELINE
-            viz_hints["parameters"] = {
-                "time_field": "year",
-                "value_field": "count",
-                "grouping": "category",
+            viz_hints['type'] = VisualizationType.TIMELINE
+            viz_hints['parameters'] = {
+                'time_field': 'year',
+                'value_field': 'count',
+                'grouping': 'category'
             }
 
-        elif parsed_query and "compare" in parsed_query.intent.value:
-            viz_hints["type"] = VisualizationType.CHART
-            viz_hints["parameters"] = {
-                "chart_type": "bar",
-                "x_axis": "entity",
-                "y_axis": "value",
+        elif parsed_query and 'compare' in parsed_query.intent.value:
+            viz_hints['type'] = VisualizationType.CHART
+            viz_hints['parameters'] = {
+                'chart_type': 'bar',
+                'x_axis': 'entity',
+                'y_axis': 'value'
             }
 
         elif len(data) > 10:
             # Large result set - suggest table with pagination
-            viz_hints["type"] = VisualizationType.TABLE
-            viz_hints["parameters"] = {
-                "paginate": True,
-                "page_size": 10,
-                "sortable": True,
+            viz_hints['type'] = VisualizationType.TABLE
+            viz_hints['parameters'] = {
+                'paginate': True,
+                'page_size': 10,
+                'sortable': True
             }
 
         return viz_hints
 
     def _generate_explanation(
-        self, data: List[Dict[str, Any]], parsed_query: ParsedQuery
+        self,
+        data: List[Dict[str, Any]],
+        parsed_query: ParsedQuery
     ) -> str:
         """Generate explanation of results"""
         explanation_parts = []
 
         # Explain what was searched
-        explanation_parts.append(f"Searched for: {parsed_query.original_query}")
+        explanation_parts.append(
+            f"Searched for: {parsed_query.original_query}"
+        )
 
         # Explain entities found
         entities_found = []
@@ -407,7 +440,9 @@ class ResultFormatterAgent:
         # Explain result structure
         if data:
             data_structure = self._analyze_data_structure(data[0])
-            explanation_parts.append(f"Result contains: {', '.join(data_structure)}")
+            explanation_parts.append(
+                f"Result contains: {', '.join(data_structure)}"
+            )
 
         # Explain relationships if present
         relationships = self._extract_relationships(data)
@@ -422,33 +457,32 @@ class ResultFormatterAgent:
         self,
         raw_results: Dict[str, Any],
         structured_data: List[Dict[str, Any]],
-        parsed_query: Optional[ParsedQuery],
+        parsed_query: Optional[ParsedQuery]
     ) -> Dict[str, Any]:
         """Generate metadata about the results"""
-        metadata = {"result_count": len(structured_data), "has_more_results": False}
+        metadata = {
+            'result_count': len(structured_data),
+            'has_more_results': False
+        }
 
         # Add query metadata
         if parsed_query:
-            metadata["query_intent"] = parsed_query.intent.value
-            metadata["entity_count"] = len(parsed_query.entities)
-            metadata["constraint_count"] = len(parsed_query.constraints)
+            metadata['query_intent'] = parsed_query.intent.value
+            metadata['entity_count'] = len(parsed_query.entities)
+            metadata['constraint_count'] = len(parsed_query.constraints)
 
         # Add data statistics
         if structured_data:
-            metadata["data_types"] = list(self._extract_entity_types(structured_data))
-            metadata["has_properties"] = any(
-                "properties" in item for item in structured_data
-            )
-            metadata["has_relationships"] = any(
-                "relationship" in str(item) for item in structured_data
-            )
+            metadata['data_types'] = list(self._extract_entity_types(structured_data))
+            metadata['has_properties'] = any('properties' in item for item in structured_data)
+            metadata['has_relationships'] = any('relationship' in str(item) for item in structured_data)
 
         # Check if results are truncated
-        if "count" in raw_results:
-            total_count = raw_results["count"]
+        if 'count' in raw_results:
+            total_count = raw_results['count']
             if total_count > len(structured_data):
-                metadata["has_more_results"] = True
-                metadata["total_count"] = total_count
+                metadata['has_more_results'] = True
+                metadata['total_count'] = total_count
 
         return metadata
 
@@ -459,10 +493,10 @@ class ResultFormatterAgent:
         for item in data:
             for value in item.values():
                 if isinstance(value, dict):
-                    if "type" in value:
-                        entity_types.add(value["type"])
-                    elif "labels" in value:
-                        entity_types.update(value["labels"])
+                    if 'type' in value:
+                        entity_types.add(value['type'])
+                    elif 'labels' in value:
+                        entity_types.update(value['labels'])
 
         return list(entity_types)
 
@@ -471,14 +505,14 @@ class ResultFormatterAgent:
         # Try to find a name property
         for key, value in item.items():
             if isinstance(value, dict):
-                props = value.get("properties", {})
-                if "name" in props:
-                    return props["name"]
-                elif "title" in props:
-                    return props["title"]
-                elif "label" in props:
-                    return props["label"]
-            elif isinstance(value, str) and key in ["name", "title", "label"]:
+                props = value.get('properties', {})
+                if 'name' in props:
+                    return props['name']
+                elif 'title' in props:
+                    return props['title']
+                elif 'label' in props:
+                    return props['label']
+            elif isinstance(value, str) and key in ['name', 'title', 'label']:
                 return value
 
         # Fallback to first string value
@@ -494,7 +528,7 @@ class ResultFormatterAgent:
 
         for key, value in item.items():
             if isinstance(value, dict):
-                if "type" in value:
+                if 'type' in value:
                     structure.append(f"{key} ({value['type']})")
                 else:
                     structure.append(key)
@@ -510,10 +544,10 @@ class ResultFormatterAgent:
         for item in data:
             for value in item.values():
                 if isinstance(value, dict):
-                    if "relationship_type" in value:
-                        relationships.add(value["relationship_type"])
-                    elif "type" in value and value.get("type") == "relationship":
-                        rel_type = value.get("relationship_type", "unknown")
+                    if 'relationship_type' in value:
+                        relationships.add(value['relationship_type'])
+                    elif 'type' in value and value.get('type') == 'relationship':
+                        rel_type = value.get('relationship_type', 'unknown')
                         relationships.add(rel_type)
 
         return list(relationships)
@@ -522,7 +556,7 @@ class ResultFormatterAgent:
         self,
         data: List[Dict[str, Any]],
         summary: str,
-        parsed_query: Optional[ParsedQuery],
+        parsed_query: Optional[ParsedQuery]
     ) -> float:
         """Calculate confidence in formatting"""
         confidence = 0.5  # Base confidence
@@ -532,7 +566,7 @@ class ResultFormatterAgent:
             confidence += 0.2
 
         # Increase confidence if summary is informative
-        if summary and summary != self.summary_templates["no_results"]:
+        if summary and summary != self.summary_templates['no_results']:
             confidence += 0.1
 
         # Increase confidence based on parsed query confidence

@@ -269,9 +269,7 @@ class ErrorHandler:
         error_msg = str(error).lower()
 
         # Check for Neurodesk/CVMFS specific errors first
-        if "module" in error_msg and (
-            "not found" in error_msg or "unknown" in error_msg
-        ):
+        if "module" in error_msg and ("not found" in error_msg or "unknown" in error_msg):
             return ErrorCategory.NEURODESK_MODULE_NOT_FOUND
         elif "module" in error_msg and ("load" in error_msg or "failed" in error_msg):
             return ErrorCategory.NEURODESK_MODULE_LOAD_FAILED
@@ -418,131 +416,101 @@ class ErrorHandler:
         suggestions = []
 
         if category == ErrorCategory.INVALID_INPUT:
-            suggestions.extend(
-                [
-                    "Check your input format and try again",
-                    "Ensure all required parameters are provided",
-                    "Verify that input values are within expected ranges",
-                ]
-            )
+            suggestions.extend([
+                "Check your input format and try again",
+                "Ensure all required parameters are provided",
+                "Verify that input values are within expected ranges",
+            ])
         elif category == ErrorCategory.TOOL_NOT_FOUND:
-            suggestions.extend(
-                [
-                    "Verify the tool name is correct",
-                    "Check if the tool is installed and available",
-                    "Try using a different tool for this task",
-                ]
-            )
+            suggestions.extend([
+                "Verify the tool name is correct",
+                "Check if the tool is installed and available",
+                "Try using a different tool for this task",
+            ])
         elif category == ErrorCategory.TOOL_EXECUTION_FAILED:
-            suggestions.extend(
-                [
-                    "Check the tool parameters and try again",
-                    "Verify that input data is in the correct format",
-                    "Try running the tool with simpler parameters first",
-                ]
-            )
+            suggestions.extend([
+                "Check the tool parameters and try again",
+                "Verify that input data is in the correct format",
+                "Try running the tool with simpler parameters first",
+            ])
         elif category == ErrorCategory.NEURODESK_MODULE_NOT_FOUND:
-            suggestions.extend(
-                [
-                    "Run 'module avail' to see available neuroimaging tools",
-                    "Check the exact module name and version",
-                    "Try 'module spider <tool>' to search for variations",
-                    "Example: 'module load fsl/6.0.7.16' for FSL",
-                ]
-            )
+            suggestions.extend([
+                "Run 'module avail' to see available neuroimaging tools",
+                "Check the exact module name and version",
+                "Try 'module spider <tool>' to search for variations",
+                "Example: 'module load fsl/6.0.7.16' for FSL",
+            ])
         elif category == ErrorCategory.NEURODESK_MODULE_LOAD_FAILED:
-            suggestions.extend(
-                [
-                    "Try 'module purge' then reload the module",
-                    "Check if CVMFS is properly mounted: 'ls /cvmfs/neurodesk.ardc.edu.au/'",
-                    "Verify the module path: 'module show <module-name>'",
-                    "Check for conflicting modules with 'module list'",
-                ]
-            )
+            suggestions.extend([
+                "Try 'module purge' then reload the module",
+                "Check if CVMFS is properly mounted: 'ls /cvmfs/neurodesk.ardc.edu.au/'",
+                "Verify the module path: 'module show <module-name>'",
+                "Check for conflicting modules with 'module list'",
+            ])
         elif category == ErrorCategory.CVMFS_NOT_MOUNTED:
-            suggestions.extend(
-                [
-                    "Check CVMFS status: 'cvmfs_config probe'",
-                    "Verify mount: 'ls /cvmfs/neurodesk.ardc.edu.au/'",
-                    "Try remounting: 'sudo cvmfs_config reload'",
-                    "Check network connectivity to CVMFS servers",
-                ]
-            )
+            suggestions.extend([
+                "Check CVMFS status: 'cvmfs_config probe'",
+                "Verify mount: 'ls /cvmfs/neurodesk.ardc.edu.au/'",
+                "Try remounting: 'sudo cvmfs_config reload'",
+                "Check network connectivity to CVMFS servers",
+            ])
         elif category == ErrorCategory.CVMFS_CACHE_FULL:
-            suggestions.extend(
-                [
-                    "Check cache usage: 'cvmfs_config stat neurodesk.ardc.edu.au'",
-                    "Clean cache: 'sudo cvmfs_config wipecache'",
-                    "Increase cache quota in /etc/cvmfs/default.local",
-                    "Current quota should be 300GB for optimal performance",
-                ]
-            )
+            suggestions.extend([
+                "Check cache usage: 'cvmfs_config stat neurodesk.ardc.edu.au'",
+                "Clean cache: 'sudo cvmfs_config wipecache'",
+                "Increase cache quota in /etc/cvmfs/default.local",
+                "Current quota should be 300GB for optimal performance",
+            ])
         elif category == ErrorCategory.CONTAINER_EXECUTION_FAILED:
-            suggestions.extend(
-                [
-                    "Check container path exists",
-                    "Verify input files are accessible",
-                    "Try running with simpler parameters",
-                    "Check available memory and disk space",
-                ]
-            )
+            suggestions.extend([
+                "Check container path exists",
+                "Verify input files are accessible",
+                "Try running with simpler parameters",
+                "Check available memory and disk space",
+            ])
         elif category == ErrorCategory.APPTAINER_ERROR:
-            suggestions.extend(
-                [
-                    "Check Apptainer cache: 'echo $APPTAINER_CACHEDIR'",
-                    "Clear cache if needed: 'rm -rf /var/tmp/.apptainer-cache/*'",
-                    "Verify Apptainer installation: 'apptainer --version'",
-                    "Check permissions on cache directory",
-                ]
-            )
+            suggestions.extend([
+                "Check Apptainer cache: 'echo $APPTAINER_CACHEDIR'",
+                "Clear cache if needed: 'rm -rf /var/tmp/.apptainer-cache/*'",
+                "Verify Apptainer installation: 'apptainer --version'",
+                "Check permissions on cache directory",
+            ])
         elif category == ErrorCategory.NETWORK_ERROR:
-            suggestions.extend(
-                [
-                    "Check your internet connection",
-                    "Verify that the service endpoint is correct",
-                    "Wait a moment and try again",
-                ]
-            )
+            suggestions.extend([
+                "Check your internet connection",
+                "Verify that the service endpoint is correct",
+                "Wait a moment and try again",
+            ])
         elif category == ErrorCategory.SERVICE_UNAVAILABLE:
-            suggestions.extend(
-                [
-                    "The service may be temporarily down, please try again later",
-                    "Check the service status page for updates",
-                    "Consider using an alternative service if available",
-                ]
-            )
+            suggestions.extend([
+                "The service may be temporarily down, please try again later",
+                "Check the service status page for updates",
+                "Consider using an alternative service if available",
+            ])
         elif category == ErrorCategory.RATE_LIMIT_EXCEEDED:
-            suggestions.extend(
-                [
-                    "You've exceeded the rate limit, please wait before trying again",
-                    "Consider batching your requests",
-                    "Upgrade your plan for higher rate limits",
-                ]
-            )
+            suggestions.extend([
+                "You've exceeded the rate limit, please wait before trying again",
+                "Consider batching your requests",
+                "Upgrade your plan for higher rate limits",
+            ])
         elif category == ErrorCategory.RESOURCE_EXHAUSTED:
-            suggestions.extend(
-                [
-                    "Free up system resources and try again",
-                    "Consider processing smaller batches of data",
-                    "Check system resource usage",
-                ]
-            )
+            suggestions.extend([
+                "Free up system resources and try again",
+                "Consider processing smaller batches of data",
+                "Check system resource usage",
+            ])
         elif category == ErrorCategory.DATA_NOT_FOUND:
-            suggestions.extend(
-                [
-                    "Verify the data path or identifier is correct",
-                    "Check if the data exists in the expected location",
-                    "Ensure you have access permissions to the data",
-                ]
-            )
+            suggestions.extend([
+                "Verify the data path or identifier is correct",
+                "Check if the data exists in the expected location",
+                "Ensure you have access permissions to the data",
+            ])
         elif category == ErrorCategory.AUTHENTICATION_FAILED:
-            suggestions.extend(
-                [
-                    "Check your credentials are correct",
-                    "Verify your API key or token is valid",
-                    "Ensure your account has the necessary permissions",
-                ]
-            )
+            suggestions.extend([
+                "Check your credentials are correct",
+                "Verify your API key or token is valid",
+                "Ensure your account has the necessary permissions",
+            ])
 
         return suggestions
 
@@ -563,9 +531,7 @@ class ErrorHandler:
         details: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Translate tool not found error to user-friendly message."""
-        tool_name = (
-            details.get("tool_name", "requested tool") if details else "requested tool"
-        )
+        tool_name = details.get("tool_name", "requested tool") if details else "requested tool"
         return (
             f"The {tool_name} could not be found. "
             "Please verify the tool name is correct and that it's available in your environment."
@@ -590,11 +556,7 @@ class ErrorHandler:
         details: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Translate Neurodesk module not found error."""
-        module_name = (
-            details.get("module_name", "neuroimaging tool")
-            if details
-            else "neuroimaging tool"
-        )
+        module_name = details.get("module_name", "neuroimaging tool") if details else "neuroimaging tool"
         return (
             f"The {module_name} module could not be found in Neurodesk. "
             "Run 'module avail' to see available tools, or 'module spider <tool>' to search. "
@@ -644,11 +606,7 @@ class ErrorHandler:
         details: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Translate container execution failed error."""
-        container_name = (
-            details.get("container", "neuroimaging container")
-            if details
-            else "neuroimaging container"
-        )
+        container_name = details.get("container", "neuroimaging container") if details else "neuroimaging container"
         return (
             f"The {container_name} failed to execute properly. "
             "This might be due to missing inputs, insufficient resources, or parameter issues. "
@@ -730,9 +688,7 @@ class ErrorHandler:
         details: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Translate data not found error to user-friendly message."""
-        data_id = (
-            details.get("data_id", "requested data") if details else "requested data"
-        )
+        data_id = details.get("data_id", "requested data") if details else "requested data"
         return (
             f"The {data_id} could not be found. "
             "Please verify the identifier is correct and that you have access to this data."
@@ -779,17 +735,11 @@ class ErrorHandler:
     def _log_error(self, context: ErrorContext):
         """Log an error based on its severity."""
         if context.severity == ErrorSeverity.LOW:
-            logger.debug(
-                f"Low severity error: {context.category.value} - {context.message}"
-            )
+            logger.debug(f"Low severity error: {context.category.value} - {context.message}")
         elif context.severity == ErrorSeverity.MEDIUM:
-            logger.info(
-                f"Medium severity error: {context.category.value} - {context.message}"
-            )
+            logger.info(f"Medium severity error: {context.category.value} - {context.message}")
         elif context.severity == ErrorSeverity.HIGH:
-            logger.warning(
-                f"High severity error: {context.category.value} - {context.message}"
-            )
+            logger.warning(f"High severity error: {context.category.value} - {context.message}")
         elif context.severity == ErrorSeverity.CRITICAL:
             logger.error(
                 f"Critical error: {context.category.value} - {context.message}\n"
@@ -815,7 +765,10 @@ class ErrorHandler:
         logger.info("Checking CVMFS status")
         try:
             result = subprocess.run(
-                ["cvmfs_config", "probe"], check=False, capture_output=True, text=True
+                ["cvmfs_config", "probe"],
+                check=False,
+                capture_output=True,
+                text=True
             )
             if result.returncode != 0:
                 logger.warning(f"CVMFS probe failed: {result.stderr}")
@@ -898,7 +851,7 @@ class ErrorHandler:
                 # Calculate retry delay with exponential backoff
                 delay = strategy.retry_delay
                 if strategy.exponential_backoff:
-                    delay *= 2**attempt
+                    delay *= (2 ** attempt)
 
                 # Wait before retry
                 if attempt > 0:
@@ -930,13 +883,9 @@ class ErrorHandler:
             try:
                 logger.info("Attempting fallback action")
                 if asyncio.iscoroutinefunction(strategy.fallback_action):
-                    result = await strategy.fallback_action(
-                        *operation_args, **operation_kwargs
-                    )
+                    result = await strategy.fallback_action(*operation_args, **operation_kwargs)
                 else:
-                    result = strategy.fallback_action(
-                        *operation_args, **operation_kwargs
-                    )
+                    result = strategy.fallback_action(*operation_args, **operation_kwargs)
                 return result
             except Exception as e:
                 logger.error(f"Fallback action failed: {str(e)}")
@@ -971,12 +920,8 @@ class ErrorHandler:
         severity_counts = {}
 
         for error in self.error_history:
-            category_counts[error.category.value] = (
-                category_counts.get(error.category.value, 0) + 1
-            )
-            severity_counts[error.severity.value] = (
-                severity_counts.get(error.severity.value, 0) + 1
-            )
+            category_counts[error.category.value] = category_counts.get(error.category.value, 0) + 1
+            severity_counts[error.severity.value] = severity_counts.get(error.severity.value, 0) + 1
 
         return {
             "total_errors": len(self.error_history),
@@ -1051,7 +996,6 @@ def with_error_handling(
         severity: Override error severity
         user_message: Custom user message
     """
-
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):

@@ -7,7 +7,6 @@ import types
 from pathlib import Path
 
 import pytest
-
 from brain_researcher.services.mcp import runstore
 
 

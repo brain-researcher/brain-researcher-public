@@ -5,7 +5,7 @@ Provides W3C SPARQL 1.1 compliant endpoint with integration to Neo4j backend.
 """
 
 from .endpoint import SPARQLEndpoint
-from .federation import FederationQueryHandler
 from .translator import SPARQLToCypherTranslator
+from .federation import FederationQueryHandler
 
-__all__ = ["SPARQLEndpoint", "SPARQLToCypherTranslator", "FederationQueryHandler"]
+__all__ = ['SPARQLEndpoint', 'SPARQLToCypherTranslator', 'FederationQueryHandler']

@@ -2,27 +2,25 @@
 Demo results API endpoints - serves real analysis data to web UI demos
 """
 
-import io
-import logging
-import os
-import secrets
-import zipfile
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
-import yaml
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
+from typing import List, Dict, Optional, Any
+from pathlib import Path
+import yaml
+import logging
+import os
+import io
+import zipfile
+import secrets
+from datetime import datetime, timedelta
 
 from brain_researcher.config.mapping_resolver import resolve_mapping_path
-
 from .artifact_index import ArtifactIndex, ArtifactMetadata
+from .nifti_renderer import render_nifti, extract_peaks, get_cache_path, ViewMode
+from .provenance import get_provenance_extractor, ProvenanceRecord
 from .config import config
 from .kg_evidence_service import KGEvidenceService
-from .nifti_renderer import ViewMode, extract_peaks, get_cache_path, render_nifti
-from .provenance import ProvenanceRecord, get_provenance_extractor
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +59,6 @@ async def _require_demo_share_token(demo_id: str, share_token: Optional[str]) ->
     if not record or record.get("demo_id") != demo_id:
         raise HTTPException(status_code=403, detail="invalid_or_expired_share_token")
 
-
 # Load demo configuration
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 CONFIG_PATH = resolve_mapping_path(
@@ -71,20 +68,17 @@ CONFIG_PATH = resolve_mapping_path(
 )
 DATA_ROOT = PROJECT_ROOT / "data"
 
-
 def load_demo_config() -> Dict[str, Any]:
     """Load demo configuration from YAML"""
     try:
-        with open(CONFIG_PATH, "r") as f:
+        with open(CONFIG_PATH, 'r') as f:
             config = yaml.safe_load(f)
-            return config.get("demos", {})
+            return config.get('demos', {})
     except Exception as e:
         logger.error(f"Failed to load demo config: {e}")
         return {}
 
-
 DEMO_CONFIG = load_demo_config()
-
 
 def validate_demo_paths() -> Dict[str, Dict[str, Any]]:
     """
@@ -104,13 +98,13 @@ def validate_demo_paths() -> Dict[str, Dict[str, Any]]:
     validation_results = {}
 
     for demo_id, demo_info in DEMO_CONFIG.items():
-        output_path = DATA_ROOT / demo_info.get("output_path", "")
+        output_path = DATA_ROOT / demo_info.get('output_path', '')
 
         result = {
             "exists": False,
             "readable": False,
             "path": str(output_path),
-            "error": None,
+            "error": None
         }
 
         try:
@@ -136,14 +130,11 @@ def validate_demo_paths() -> Dict[str, Dict[str, Any]]:
         validation_results[demo_id] = result
 
     # Log summary
-    valid_count = sum(
-        1 for r in validation_results.values() if r["exists"] and r["readable"]
-    )
+    valid_count = sum(1 for r in validation_results.values() if r["exists"] and r["readable"])
     total_count = len(validation_results)
     logger.info(f"Demo path validation: {valid_count}/{total_count} paths valid")
 
     return validation_results
-
 
 # Initialize artifact index (with symlink support)
 artifact_index = ArtifactIndex(PROJECT_ROOT)
@@ -157,12 +148,11 @@ PATH_VALIDATION_RESULTS = validate_demo_paths()
 # Build indexes for all configured demos on startup
 for demo_id, demo_info in DEMO_CONFIG.items():
     try:
-        output_path = Path(demo_info["output_path"])
+        output_path = Path(demo_info['output_path'])
         artifact_index.build_index(demo_id, output_path)
         logger.info(f"Built artifact index for {demo_id}")
     except Exception as e:
         logger.warning(f"Failed to build index for {demo_id}: {e}")
-
 
 # Response Models
 class RealDemoResult(BaseModel):
@@ -175,7 +165,6 @@ class RealDemoResult(BaseModel):
     artifacts_count: int
     key_findings: List[str]
 
-
 class RealDemoArtifact(BaseModel):
     id: str
     name: str
@@ -187,10 +176,8 @@ class RealDemoArtifact(BaseModel):
     download_url: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-
 class Citation(BaseModel):
     """Citation reference from knowledge graph"""
-
     id: str
     title: str
     authors: List[str]
@@ -199,10 +186,8 @@ class Citation(BaseModel):
     doi: Optional[str] = None
     url: Optional[str] = None
 
-
 class Evidence(BaseModel):
     """Evidence item from knowledge graph"""
-
     type: str  # 'paper', 'dataset', 'statmap', 'concept', 'coordinate'
     title: str
     description: str
@@ -210,25 +195,21 @@ class Evidence(BaseModel):
     url: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-
 class RealDemoEvidence(BaseModel):
     demo_id: str
     evidence: List[Evidence]
     total_count: int
-
 
 class DemoShareRequest(BaseModel):
     demo_id: str
     is_public: bool = True
     expires_in_hours: int = 24
 
-
 class DemoShareResponse(BaseModel):
     share_url: str
     share_token: str
     expires_at: str
     is_public: bool
-
 
 @router.get("/real-results/{demo_id}", response_model=RealDemoResult)
 async def get_demo_results(demo_id: str, share: Optional[str] = Query(None)):
@@ -240,20 +221,17 @@ async def get_demo_results(demo_id: str, share: Optional[str] = Query(None)):
     await _require_demo_share_token(demo_id, share)
 
     demo_info = DEMO_CONFIG[demo_id]
-    output_path = DATA_ROOT / demo_info["output_path"]
+    output_path = DATA_ROOT / demo_info['output_path']
 
     if not output_path.exists():
         raise HTTPException(
-            status_code=404, detail=f"Demo output path does not exist: {output_path}"
+            status_code=404,
+            detail=f"Demo output path does not exist: {output_path}"
         )
 
     # Count artifacts
-    artifacts = (
-        list(output_path.rglob("*.nii.gz"))
-        + list(output_path.rglob("*.html"))
-        + list(output_path.rglob("*.csv"))
-        + list(output_path.rglob("*.png"))
-    )
+    artifacts = list(output_path.rglob("*.nii.gz")) + list(output_path.rglob("*.html")) +\
+                list(output_path.rglob("*.csv")) + list(output_path.rglob("*.png"))
 
     # Calculate processing time from artifact timestamps
     processing_time_seconds = 60.0  # sensible default if no artifacts or missing times
@@ -280,15 +258,14 @@ async def get_demo_results(demo_id: str, share: Optional[str] = Query(None)):
 
     return RealDemoResult(
         demo_id=demo_id,
-        title=demo_info["title"],
-        description=demo_info["description"],
+        title=demo_info['title'],
+        description=demo_info['description'],
         completion_time=completion_time,
         processing_time_seconds=processing_time_seconds,
         success=True,
         artifacts_count=len(artifacts),
-        key_findings=key_findings,
+        key_findings=key_findings
     )
-
 
 @router.get("/real-artifacts/{demo_id}", response_model=List[RealDemoArtifact])
 async def get_demo_artifacts(
@@ -304,7 +281,7 @@ async def get_demo_artifacts(
     await _require_demo_share_token(demo_id, share)
 
     demo_info = DEMO_CONFIG[demo_id]
-    output_path = DATA_ROOT / demo_info["output_path"]
+    output_path = DATA_ROOT / demo_info['output_path']
 
     if not output_path.exists():
         raise HTTPException(status_code=404, detail="Output path does not exist")
@@ -320,18 +297,16 @@ async def get_demo_artifacts(
         if not nifti_file.exists():
             continue
 
-        artifacts.append(
-            RealDemoArtifact(
-                id=str(nifti_file.relative_to(output_path)),
-                name=nifti_file.name,
-                type="brain_map",
-                description=_describe_nifti(nifti_file.name),
-                file_path=str(nifti_file.relative_to(DATA_ROOT)),
-                file_size_bytes=nifti_file.stat().st_size,
-                download_url=f"/api/demo/download/{demo_id}/{nifti_file.relative_to(output_path)}",
-                metadata=_extract_nifti_metadata(nifti_file.name),
-            )
-        )
+        artifacts.append(RealDemoArtifact(
+            id=str(nifti_file.relative_to(output_path)),
+            name=nifti_file.name,
+            type='brain_map',
+            description=_describe_nifti(nifti_file.name),
+            file_path=str(nifti_file.relative_to(DATA_ROOT)),
+            file_size_bytes=nifti_file.stat().st_size,
+            download_url=f"/api/demo/download/{demo_id}/{nifti_file.relative_to(output_path)}",
+            metadata=_extract_nifti_metadata(nifti_file.name)
+        ))
 
     # Collect HTML reports
     for html_file in output_path.rglob("*.html"):
@@ -341,18 +316,16 @@ async def get_demo_artifacts(
         if not html_file.exists():
             continue
 
-        artifacts.append(
-            RealDemoArtifact(
-                id=str(html_file.relative_to(output_path)),
-                name=html_file.name,
-                type="report",
-                description="Interactive analysis report",
-                file_path=str(html_file.relative_to(DATA_ROOT)),
-                file_size_bytes=html_file.stat().st_size,
-                preview_url=f"/api/demo/preview/{demo_id}/{html_file.relative_to(output_path)}",
-                download_url=f"/api/demo/download/{demo_id}/{html_file.relative_to(output_path)}",
-            )
-        )
+        artifacts.append(RealDemoArtifact(
+            id=str(html_file.relative_to(output_path)),
+            name=html_file.name,
+            type='report',
+            description="Interactive analysis report",
+            file_path=str(html_file.relative_to(DATA_ROOT)),
+            file_size_bytes=html_file.stat().st_size,
+            preview_url=f"/api/demo/preview/{demo_id}/{html_file.relative_to(output_path)}",
+            download_url=f"/api/demo/download/{demo_id}/{html_file.relative_to(output_path)}"
+        ))
 
     # Collect CSV files (tables)
     for csv_file in output_path.rglob("*.csv"):
@@ -362,17 +335,15 @@ async def get_demo_artifacts(
         if not csv_file.exists():
             continue
 
-        artifacts.append(
-            RealDemoArtifact(
-                id=str(csv_file.relative_to(output_path)),
-                name=csv_file.name,
-                type="table",
-                description="Statistical results table",
-                file_path=str(csv_file.relative_to(DATA_ROOT)),
-                file_size_bytes=csv_file.stat().st_size,
-                download_url=f"/api/demo/download/{demo_id}/{csv_file.relative_to(output_path)}",
-            )
-        )
+        artifacts.append(RealDemoArtifact(
+            id=str(csv_file.relative_to(output_path)),
+            name=csv_file.name,
+            type='table',
+            description="Statistical results table",
+            file_path=str(csv_file.relative_to(DATA_ROOT)),
+            file_size_bytes=csv_file.stat().st_size,
+            download_url=f"/api/demo/download/{demo_id}/{csv_file.relative_to(output_path)}"
+        ))
 
     # Collect PNG images
     for png_file in output_path.rglob("*.png"):
@@ -382,21 +353,18 @@ async def get_demo_artifacts(
         if not png_file.exists():
             continue
 
-        artifacts.append(
-            RealDemoArtifact(
-                id=str(png_file.relative_to(output_path)),
-                name=png_file.name,
-                type="image",
-                description="Visualization image",
-                file_path=str(png_file.relative_to(DATA_ROOT)),
-                file_size_bytes=png_file.stat().st_size,
-                preview_url=f"/api/demo/preview/{demo_id}/{png_file.relative_to(output_path)}",
-                download_url=f"/api/demo/download/{demo_id}/{png_file.relative_to(output_path)}",
-            )
-        )
+        artifacts.append(RealDemoArtifact(
+            id=str(png_file.relative_to(output_path)),
+            name=png_file.name,
+            type='image',
+            description="Visualization image",
+            file_path=str(png_file.relative_to(DATA_ROOT)),
+            file_size_bytes=png_file.stat().st_size,
+            preview_url=f"/api/demo/preview/{demo_id}/{png_file.relative_to(output_path)}",
+            download_url=f"/api/demo/download/{demo_id}/{png_file.relative_to(output_path)}"
+        ))
 
     return artifacts
-
 
 @router.get("/real-evidence/{demo_id}", response_model=RealDemoEvidence)
 async def get_demo_evidence(
@@ -426,7 +394,9 @@ async def get_demo_evidence(
         async with KGEvidenceService(br_kg_url=config.BR_KG_URL) as kg_service:
             # Get evidence from knowledge graph
             kg_evidence = await kg_service.get_demo_evidence(
-                demo_id=demo_id, demo_config=demo_info, limit=limit
+                demo_id=demo_id,
+                demo_config=demo_info,
+                limit=limit
             )
 
             # Convert kg_evidence_service.Evidence to API Evidence models
@@ -437,14 +407,12 @@ async def get_demo_evidence(
                     description=e.description,
                     source=e.source,
                     url=e.url,
-                    metadata=e.metadata,
+                    metadata=e.metadata
                 )
                 for e in kg_evidence
             ]
 
-            logger.info(
-                f"Retrieved {len(evidence_items)} evidence items from BR-KG for demo '{demo_id}'"
-            )
+            logger.info(f"Retrieved {len(evidence_items)} evidence items from BR-KG for demo '{demo_id}'")
 
     except Exception as e:
         logger.warning(f"Failed to get evidence from BR-KG for demo '{demo_id}': {e}")
@@ -452,24 +420,19 @@ async def get_demo_evidence(
         evidence_items = []
 
     return RealDemoEvidence(
-        demo_id=demo_id, evidence=evidence_items, total_count=len(evidence_items)
+        demo_id=demo_id,
+        evidence=evidence_items,
+        total_count=len(evidence_items)
     )
-
 
 @router.get("/artifacts/{demo_id}")
 async def get_artifacts_metadata(
     demo_id: str,
     share: Optional[str] = Query(None, description="Demo share token"),
-    contrast: Optional[str] = Query(
-        None, description="Filter by contrast type (e.g., 'finger')"
-    ),
-    statistic: Optional[str] = Query(
-        None, description="Filter by statistic type (e.g., 'z')"
-    ),
-    subject_id: Optional[str] = Query(
-        None, description="Filter by subject ID (e.g., 'sub-01')"
-    ),
-    limit: Optional[int] = Query(None, description="Maximum number of results"),
+    contrast: Optional[str] = Query(None, description="Filter by contrast type (e.g., 'finger')"),
+    statistic: Optional[str] = Query(None, description="Filter by statistic type (e.g., 'z')"),
+    subject_id: Optional[str] = Query(None, description="Filter by subject ID (e.g., 'sub-01')"),
+    limit: Optional[int] = Query(None, description="Maximum number of results")
 ):
     """
     Get structured metadata for all artifacts in a demo
@@ -490,7 +453,7 @@ async def get_artifacts_metadata(
         contrast=contrast,
         statistic=statistic,
         subject_id=subject_id,
-        limit=limit,
+        limit=limit
     )
 
     # Get index statistics
@@ -531,24 +494,19 @@ async def get_artifacts_metadata(
         "available_filters": {
             "contrasts": artifact_index.get_contrasts(demo_id),
             "statistics": artifact_index.get_statistics(demo_id),
-            "subjects": artifact_index.get_subjects(demo_id),
-        },
+            "subjects": artifact_index.get_subjects(demo_id)
+        }
     }
-
 
 @router.get("/render/{demo_id}/{artifact_id:path}")
 async def render_artifact(
     demo_id: str,
     artifact_id: str,
     share: Optional[str] = Query(None, description="Demo share token"),
-    view: ViewMode = Query(
-        "axial", description="View mode: axial, sagittal, or coronal"
-    ),
-    slice_idx: Optional[int] = Query(
-        None, description="Specific slice index (None for auto)"
-    ),
+    view: ViewMode = Query("axial", description="View mode: axial, sagittal, or coronal"),
+    slice_idx: Optional[int] = Query(None, description="Specific slice index (None for auto)"),
     threshold: float = Query(2.3, description="Statistical threshold for display"),
-    dpi: int = Query(120, description="Output resolution"),
+    dpi: int = Query(120, description="Output resolution")
 ):
     """
     Render NIfTI brain map to PNG with on-demand rendering and disk caching
@@ -571,7 +529,7 @@ async def render_artifact(
     if not nifti_path:
         raise HTTPException(
             status_code=404,
-            detail=f"Artifact '{artifact_id}' not found in demo '{demo_id}'",
+            detail=f"Artifact '{artifact_id}' not found in demo '{demo_id}'"
         )
 
     # Get cache path
@@ -585,19 +543,18 @@ async def render_artifact(
             view=view,
             slice_idx=slice_idx,
             threshold=threshold,
-            dpi=dpi,
+            dpi=dpi
         )
 
         return FileResponse(
             path=str(rendered_path),
             media_type="image/png",
-            filename=f"{demo_id}_{artifact_id.replace('/', '_')}_{view}.png",
+            filename=f"{demo_id}_{artifact_id.replace('/', '_')}_{view}.png"
         )
 
     except Exception as e:
         logger.error(f"Failed to render artifact {artifact_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Rendering failed: {str(e)}")
-
 
 @router.get("/peaks/{demo_id}/{artifact_id:path}")
 async def get_artifact_peaks(
@@ -606,7 +563,7 @@ async def get_artifact_peaks(
     share: Optional[str] = Query(None, description="Demo share token"),
     threshold: float = Query(2.3, description="Statistical threshold"),
     min_distance: float = Query(8.0, description="Minimum distance between peaks (mm)"),
-    max_peaks: int = Query(10, description="Maximum number of peaks to return"),
+    max_peaks: int = Query(10, description="Maximum number of peaks to return")
 ):
     """
     Extract peak activation coordinates from NIfTI statistical map
@@ -629,7 +586,7 @@ async def get_artifact_peaks(
     if not nifti_path:
         raise HTTPException(
             status_code=404,
-            detail=f"Artifact '{artifact_id}' not found in demo '{demo_id}'",
+            detail=f"Artifact '{artifact_id}' not found in demo '{demo_id}'"
         )
 
     try:
@@ -637,7 +594,7 @@ async def get_artifact_peaks(
             nifti_path=nifti_path,
             threshold=threshold,
             min_distance=min_distance,
-            max_peaks=max_peaks,
+            max_peaks=max_peaks
         )
 
         return {
@@ -646,7 +603,7 @@ async def get_artifact_peaks(
             "threshold": threshold,
             "min_distance": min_distance,
             "peaks": peaks,
-            "peak_count": len(peaks),
+            "peak_count": len(peaks)
         }
 
     except Exception as e:
@@ -675,25 +632,26 @@ async def get_demo_provenance(demo_id: str, share: Optional[str] = Query(None)):
     demo_info = DEMO_CONFIG[demo_id]
 
     # Extract required metadata from config
-    dataset_id = demo_info.get("dataset_id")
-    task = demo_info.get("task")
-    output_path = DATA_ROOT / demo_info["output_path"]
+    dataset_id = demo_info.get('dataset_id')
+    task = demo_info.get('task')
+    output_path = DATA_ROOT / demo_info['output_path']
 
     if not dataset_id or not task:
         raise HTTPException(
             status_code=404,
-            detail=f"Provenance data not available for demo '{demo_id}'",
+            detail=f"Provenance data not available for demo '{demo_id}'"
         )
 
     try:
         # Extract complete provenance record
         provenance = provenance_extractor.extract_provenance(
-            demo_id=demo_id, dataset_id=dataset_id, task=task, output_path=output_path
+            demo_id=demo_id,
+            dataset_id=dataset_id,
+            task=task,
+            output_path=output_path
         )
         dataset_metadata = provenance.dataset.model_dump(mode="json")
-        model_spec = (
-            provenance.model.model_dump(mode="json") if provenance.model else None
-        )
+        model_spec = provenance.model.model_dump(mode="json") if provenance.model else None
 
         return {
             "demo_id": provenance.demo_id,
@@ -702,17 +660,11 @@ async def get_demo_provenance(demo_id: str, share: Optional[str] = Query(None)):
             "model_spec": model_spec,
             "bids_model": model_spec,
             "tools": [tool.model_dump(mode="json") for tool in provenance.tools],
-            "analysis_nodes": [
-                node.model_dump(mode="json") for node in provenance.nodes
-            ],
+            "analysis_nodes": [node.model_dump(mode="json") for node in provenance.nodes],
             "generation_metadata": {
                 "schema_version": provenance.schema_version,
                 "output_path": str(provenance.output_path),
-                "generated_at": (
-                    provenance.generated_at.isoformat()
-                    if provenance.generated_at
-                    else None
-                ),
+                "generated_at": provenance.generated_at.isoformat() if provenance.generated_at else None,
                 "metadata_extracted_at": provenance.metadata_extracted_at.isoformat(),
             },
         }
@@ -720,7 +672,8 @@ async def get_demo_provenance(demo_id: str, share: Optional[str] = Query(None)):
     except Exception as e:
         logger.error(f"Failed to extract provenance for {demo_id}: {e}")
         raise HTTPException(
-            status_code=500, detail=f"Provenance extraction failed: {str(e)}"
+            status_code=500,
+            detail=f"Provenance extraction failed: {str(e)}"
         )
 
 
@@ -745,14 +698,15 @@ async def share_demo(request: DemoShareRequest):
     # Validate demo exists
     if request.demo_id not in DEMO_CONFIG:
         raise HTTPException(
-            status_code=404, detail=f"Demo '{request.demo_id}' not found"
+            status_code=404,
+            detail=f"Demo '{request.demo_id}' not found"
         )
 
     # Validate expiration time
     if request.expires_in_hours < 1 or request.expires_in_hours > 168:  # Max 7 days
         raise HTTPException(
             status_code=400,
-            detail="Expiration time must be between 1 and 168 hours (7 days)",
+            detail="Expiration time must be between 1 and 168 hours (7 days)"
         )
 
     # Generate secure share token
@@ -791,7 +745,7 @@ async def share_demo(request: DemoShareRequest):
         share_url=share_url,
         share_token=share_token,
         expires_at=expires_at.isoformat(),
-        is_public=request.is_public,
+        is_public=request.is_public
     )
 
 
@@ -824,43 +778,38 @@ async def resolve_demo_share(share_token: str):
         expires_at=expires_at_iso,
     )
 
-
 # Helper functions
-def _generate_key_findings(
-    demo_id: str, demo_info: Dict, artifact_count: int
-) -> List[str]:
+def _generate_key_findings(demo_id: str, demo_info: Dict, artifact_count: int) -> List[str]:
     """Generate key findings based on demo type"""
 
     findings = [
         f"Successfully completed {demo_info.get('title', 'analysis')}",
-        f"Generated {artifact_count} output artifacts",
+        f"Generated {artifact_count} output artifacts"
     ]
 
-    if "task" in demo_info:
+    if 'task' in demo_info:
         findings.append(f"Analyzed task: {demo_info['task']}")
 
-    if "dataset_id" in demo_info:
+    if 'dataset_id' in demo_info:
         findings.append(f"Dataset: {demo_info['dataset_id']}")
 
     return findings
 
-
 def _describe_nifti(filename: str) -> str:
     """Generate description for NIfTI file based on filename"""
 
-    if "stat-z" in filename:
+    if 'stat-z' in filename:
         return "Z-statistic map"
-    elif "stat-t" in filename:
+    elif 'stat-t' in filename:
         return "T-statistic map"
-    elif "stat-p" in filename:
+    elif 'stat-p' in filename:
         return "P-value map"
-    elif "stat-effect" in filename:
+    elif 'stat-effect' in filename:
         return "Effect size map"
-    elif "stat-variance" in filename:
+    elif 'stat-variance' in filename:
         return "Variance map"
     else:
         return "Statistical brain map"
-
 
 def _extract_nifti_metadata(filename: str) -> Dict[str, Any]:
     """Extract metadata from NIfTI filename"""
@@ -868,23 +817,22 @@ def _extract_nifti_metadata(filename: str) -> Dict[str, Any]:
     metadata = {}
 
     # Extract contrast
-    if "contrast-" in filename:
-        start = filename.find("contrast-") + len("contrast-")
-        end = filename.find("_", start)
+    if 'contrast-' in filename:
+        start = filename.find('contrast-') + len('contrast-')
+        end = filename.find('_', start)
         if end == -1:
-            end = filename.find(".", start)
-        metadata["contrast"] = filename[start:end]
+            end = filename.find('.', start)
+        metadata['contrast'] = filename[start:end]
 
     # Extract statistic type
-    if "stat-" in filename:
-        start = filename.find("stat-") + len("stat-")
-        end = filename.find("_", start)
+    if 'stat-' in filename:
+        start = filename.find('stat-') + len('stat-')
+        end = filename.find('_', start)
         if end == -1:
-            end = filename.find(".", start)
-        metadata["statistic"] = filename[start:end]
+            end = filename.find('.', start)
+        metadata['statistic'] = filename[start:end]
 
     return metadata
-
 
 def _generate_evidence(demo_id: str, demo_info: Dict) -> List[Dict[str, Any]]:
     """Generate evidence items for a demo"""
@@ -892,40 +840,34 @@ def _generate_evidence(demo_id: str, demo_info: Dict) -> List[Dict[str, Any]]:
     evidence = []
 
     # Add method evidence
-    if "task" in demo_info:
-        task = demo_info["task"]
-        evidence.append(
-            {
-                "id": f"method_{demo_id}_1",
-                "type": "method",
-                "title": "FSL FEAT Pipeline",
-                "description": f"Standard GLM analysis pipeline for {task} task",
-                "relevance": 0.95,
-                "source": "FSL Documentation",
-                "metadata": {"tool": "FSL", "version": "6.0"},
-            }
-        )
+    if 'task' in demo_info:
+        task = demo_info['task']
+        evidence.append({
+            'id': f'method_{demo_id}_1',
+            'type': 'method',
+            'title': 'FSL FEAT Pipeline',
+            'description': f'Standard GLM analysis pipeline for {task} task',
+            'relevance': 0.95,
+            'source': 'FSL Documentation',
+            'metadata': {'tool': 'FSL', 'version': '6.0'}
+        })
 
     # Add dataset evidence
-    if "dataset_id" in demo_info:
-        dataset_id = demo_info["dataset_id"]
-        evidence.append(
-            {
-                "id": f"dataset_{demo_id}_1",
-                "type": "dataset",
-                "title": f"OpenNeuro {dataset_id}",
-                "description": f"Source dataset from OpenNeuro repository",
-                "relevance": 1.0,
-                "source": f"OpenNeuro",
-                "metadata": {"dataset_id": dataset_id},
-            }
-        )
+    if 'dataset_id' in demo_info:
+        dataset_id = demo_info['dataset_id']
+        evidence.append({
+            'id': f'dataset_{demo_id}_1',
+            'type': 'dataset',
+            'title': f'OpenNeuro {dataset_id}',
+            'description': f'Source dataset from OpenNeuro repository',
+            'relevance': 1.0,
+            'source': f'OpenNeuro',
+            'metadata': {'dataset_id': dataset_id}
+        })
 
     return evidence
 
-
 # ==================== DOWNLOAD ENDPOINTS ====================
-
 
 def _demo_root(demo_id: str) -> Path:
     """Get the root path for a demo, with validation"""
@@ -933,16 +875,15 @@ def _demo_root(demo_id: str) -> Path:
         raise HTTPException(status_code=404, detail=f"Demo '{demo_id}' not found")
 
     demo_info = DEMO_CONFIG[demo_id]
-    root = (DATA_ROOT / demo_info["output_path"]).resolve()
+    root = (DATA_ROOT / demo_info['output_path']).resolve()
 
     if not root.exists():
         raise HTTPException(
             status_code=404,
-            detail=f"Demo output path not found: {demo_info['output_path']}",
+            detail=f"Demo output path not found: {demo_info['output_path']}"
         )
 
     return root
-
 
 def _resolve_artifact(demo_id: str, artifact_id: str) -> Path:
     """
@@ -970,11 +911,11 @@ def _resolve_artifact(demo_id: str, artifact_id: str) -> Path:
 
     if not candidate.exists():
         raise HTTPException(
-            status_code=404, detail=f"Artifact not found: {artifact_id}"
+            status_code=404,
+            detail=f"Artifact not found: {artifact_id}"
         )
 
     return candidate
-
 
 @router.get("/artifacts/{demo_id}/{artifact_id:path}/download")
 async def download_single_artifact(
@@ -1001,32 +942,23 @@ async def download_single_artifact(
     fpath = _resolve_artifact(demo_id, artifact_id)
 
     # Security: Allowlist for neuroimaging files only
-    allowed_extensions = (
-        ".nii",
-        ".nii.gz",
-        ".json",
-        ".tsv",
-        ".csv",
-        ".html",
-        ".png",
-        ".jpg",
-    )
+    allowed_extensions = ('.nii', '.nii.gz', '.json', '.tsv', '.csv', '.html', '.png', '.jpg')
     if not any(str(fpath).endswith(ext) for ext in allowed_extensions):
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file type. Allowed: {allowed_extensions}",
+            detail=f"Unsupported file type. Allowed: {allowed_extensions}"
         )
 
     # Determine media type
-    if str(fpath).endswith(".nii.gz") or str(fpath).endswith(".nii"):
+    if str(fpath).endswith('.nii.gz') or str(fpath).endswith('.nii'):
         media_type = "application/octet-stream"
-    elif str(fpath).endswith(".json"):
+    elif str(fpath).endswith('.json'):
         media_type = "application/json"
-    elif str(fpath).endswith((".tsv", ".csv")):
+    elif str(fpath).endswith(('.tsv', '.csv')):
         media_type = "text/plain"
-    elif str(fpath).endswith(".html"):
+    elif str(fpath).endswith('.html'):
         media_type = "text/html"
-    elif str(fpath).endswith((".png", ".jpg")):
+    elif str(fpath).endswith(('.png', '.jpg')):
         media_type = f"image/{fpath.suffix[1:]}"
     else:
         media_type = "application/octet-stream"
@@ -1037,9 +969,8 @@ async def download_single_artifact(
         path=str(fpath),
         media_type=media_type,
         filename=fpath.name,
-        headers={"Content-Disposition": f'attachment; filename="{fpath.name}"'},
+        headers={"Content-Disposition": f'attachment; filename="{fpath.name}"'}
     )
-
 
 @router.get("/download")
 async def download_bulk_artifacts(
@@ -1071,7 +1002,7 @@ async def download_bulk_artifacts(
     if len(ids) > 100:
         raise HTTPException(
             status_code=400,
-            detail="Too many files requested. Maximum 100 files per bulk download.",
+            detail="Too many files requested. Maximum 100 files per bulk download."
         )
 
     await _require_demo_share_token(demo_id, share)
@@ -1105,10 +1036,15 @@ async def download_bulk_artifacts(
             "Content-Disposition": f'attachment; filename="{demo_id}_artifacts.zip"'
         }
 
-        return StreamingResponse(buf, headers=headers, media_type="application/zip")
+        return StreamingResponse(
+            buf,
+            headers=headers,
+            media_type="application/zip"
+        )
 
     except Exception as e:
         logger.error(f"Failed to create ZIP archive: {e}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to create archive: {str(e)}"
+            status_code=500,
+            detail=f"Failed to create archive: {str(e)}"
         )

@@ -8,7 +8,7 @@ command construction, and backend-specific quirks.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Dict, Any, List
 
 from .specs import SmoothParams
 

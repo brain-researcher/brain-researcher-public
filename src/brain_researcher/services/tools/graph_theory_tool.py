@@ -26,64 +26,27 @@ class GraphTheoryArgs(BaseModel):
     connectivity_file: str = Field(description="Connectivity matrix path")
     output_dir: Optional[str] = Field(default=None, description="Directory for outputs")
     graph_type: str = Field(default="weighted", description="Graph interpretation")
-    threshold_method: str = Field(
-        default="proportional", description="Threshold strategy"
-    )
-    threshold_value: Optional[float] = Field(
-        default=0.1, description="Threshold parameter"
-    )
-    compute_basic_metrics: bool = Field(
-        default=True, description="Compute basic metrics"
-    )
-    basic_metrics: list[str] = Field(
-        default_factory=lambda: ["degree", "strength", "clustering", "path_length"],
-        description="Basic metric list",
-    )
-    compute_centrality: bool = Field(
-        default=True, description="Compute centrality metrics"
-    )
-    centrality_metrics: list[str] = Field(
-        default_factory=lambda: ["betweenness", "eigenvector", "pagerank", "closeness"],
-        description="Centrality metric list",
-    )
-    detect_communities: bool = Field(
-        default=True, description="Identify community structure"
-    )
-    community_method: str = Field(
-        default="louvain", description="Community algorithm label"
-    )
+    threshold_method: str = Field(default="proportional", description="Threshold strategy")
+    threshold_value: Optional[float] = Field(default=0.1, description="Threshold parameter")
+    compute_basic_metrics: bool = Field(default=True, description="Compute basic metrics")
+    basic_metrics: list[str] = Field(default_factory=lambda: ["degree", "strength", "clustering", "path_length"], description="Basic metric list")
+    compute_centrality: bool = Field(default=True, description="Compute centrality metrics")
+    centrality_metrics: list[str] = Field(default_factory=lambda: ["betweenness", "eigenvector", "pagerank", "closeness"], description="Centrality metric list")
+    detect_communities: bool = Field(default=True, description="Identify community structure")
+    community_method: str = Field(default="louvain", description="Community algorithm label")
     detect_hubs: bool = Field(default=True, description="Identify hub nodes")
     hub_method: str = Field(default="degree", description="Hub metric")
-    compute_rich_club: bool = Field(
-        default=False, description="Compute rich-club coefficients"
-    )
-    compute_small_world: bool = Field(
-        default=True, description="Estimate small-worldness"
-    )
-    compute_efficiency: bool = Field(
-        default=True, description="Compute efficiency metrics"
-    )
-    efficiency_types: list[str] = Field(
-        default_factory=lambda: ["global", "local", "nodal"],
-        description="Efficiency flavours",
-    )
-    test_robustness: bool = Field(
-        default=False, description="Simulate robustness scenarios"
-    )
-    removal_fraction: float = Field(
-        default=0.5, description="Node removal fraction for robustness"
-    )
-    permutation_test: bool = Field(
-        default=False, description="Perform permutation testing"
-    )
+    compute_rich_club: bool = Field(default=False, description="Compute rich-club coefficients")
+    compute_small_world: bool = Field(default=True, description="Estimate small-worldness")
+    compute_efficiency: bool = Field(default=True, description="Compute efficiency metrics")
+    efficiency_types: list[str] = Field(default_factory=lambda: ["global", "local", "nodal"], description="Efficiency flavours")
+    test_robustness: bool = Field(default=False, description="Simulate robustness scenarios")
+    removal_fraction: float = Field(default=0.5, description="Node removal fraction for robustness")
+    permutation_test: bool = Field(default=False, description="Perform permutation testing")
     n_permutations: int = Field(default=1000, description="Permutation count")
     save_metrics: bool = Field(default=True, description="Persist metrics to disk")
-    save_communities: bool = Field(
-        default=True, description="Persist community assignments"
-    )
-    save_processed_graph: bool = Field(
-        default=True, description="Persist thresholded graph"
-    )
+    save_communities: bool = Field(default=True, description="Persist community assignments")
+    save_processed_graph: bool = Field(default=True, description="Persist thresholded graph")
     visualize: bool = Field(default=True, description="Generate static visualization")
     random_state: int = Field(default=42, description="Random seed")
 

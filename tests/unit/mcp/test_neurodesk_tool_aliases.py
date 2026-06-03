@@ -37,10 +37,7 @@ def test_get_execution_recipe_resolves_cat12_alias_with_module_metadata() -> Non
     # unsupported for it. Advertising "container" here would lie about what the recipe
     # generator can actually produce.
     assert resp["supported_recipe_targets"] == ["neurodesk", "slurm"]
-    assert (
-        resp["recipe"]["run_command"]
-        == "module load cat12/12.9 && python run_spm12_vbm.py"
-    )
+    assert resp["recipe"]["run_command"] == "module load cat12/12.9 && python run_spm12_vbm.py"
 
 
 def test_tool_search_exposed_surface_discovers_spm12_vbm() -> None:

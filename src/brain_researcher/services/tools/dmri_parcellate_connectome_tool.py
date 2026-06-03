@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.dwi_connectome_workflow import (

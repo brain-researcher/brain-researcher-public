@@ -412,7 +412,7 @@ export class ImagePreloader {
 export const imageConfig: ImageOptimizerConfig = {
   domains: [
     'localhost',
-    'brain-researcher.com',
+    '${PUBLIC_HOSTNAME}',
     'neurosynth.org',
     'neurovault.org',
     'openneuro.org',

@@ -98,9 +98,7 @@ class XCPDParameters:
         return {}
 
 
-def build_xcpd_command(
-    params: XCPDParameters, *, include_executable: bool = True
-) -> list[str]:
+def build_xcpd_command(params: XCPDParameters, *, include_executable: bool = True) -> list[str]:
     return params.command(include_executable=include_executable)
 
 

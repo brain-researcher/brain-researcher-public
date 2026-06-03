@@ -1,15 +1,14 @@
 """Drift detection for model performance and data distribution changes."""
 
+import numpy as np
 import logging
-import warnings
+from typing import Dict, List, Optional, Tuple, Any, Union
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import numpy as np
 from scipy import stats
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,6 @@ class DriftType(Enum):
 @dataclass
 class DriftDetection:
     """Result of drift detection."""
-
     drift_detected: bool
     drift_type: DriftType
     drift_score: float
@@ -50,7 +48,7 @@ class DriftDetector:
         window_size: int = 1000,
         reference_window_size: int = 1000,
         drift_threshold: float = 0.05,
-        warning_threshold: float = 0.1,
+        warning_threshold: float = 0.1
     ):
         self.window_size = window_size
         self.reference_window_size = reference_window_size
@@ -70,15 +68,11 @@ class DriftDetector:
         self.drift_count = 0
         self.warning_count = 0
 
-    def add_reference_data(
-        self, data: Union[float, np.ndarray, Dict[str, Any]]
-    ) -> None:
+    def add_reference_data(self, data: Union[float, np.ndarray, Dict[str, Any]]) -> None:
         """Add data to reference window (baseline)."""
         self.reference_data.append(data)
 
-    def add_data(
-        self, data: Union[float, np.ndarray, Dict[str, Any]]
-    ) -> DriftDetection:
+    def add_data(self, data: Union[float, np.ndarray, Dict[str, Any]]) -> DriftDetection:
         """Add new data and check for drift."""
         self.current_data.append(data)
         self.total_checks += 1
@@ -95,17 +89,13 @@ class DriftDetector:
                 # Reset current window after drift detection
                 self._reset_current_window()
 
-                logger.warning(
-                    f"Drift detected: {detection.drift_type.value} "
-                    f"(score: {detection.drift_score:.4f})"
-                )
+                logger.warning(f"Drift detected: {detection.drift_type.value} "
+                              f"(score: {detection.drift_score:.4f})")
 
             elif detection.drift_score > self.warning_threshold:
                 self.warning_count += 1
-                logger.info(
-                    f"Drift warning: {detection.drift_type.value} "
-                    f"(score: {detection.drift_score:.4f})"
-                )
+                logger.info(f"Drift warning: {detection.drift_type.value} "
+                           f"(score: {detection.drift_score:.4f})")
 
             return detection
 
@@ -117,7 +107,7 @@ class DriftDetector:
             confidence=0.0,
             timestamp=datetime.utcnow(),
             metadata={"insufficient_data": True},
-            recommended_action="collect_more_data",
+            recommended_action="collect_more_data"
         )
 
     def _detect_drift(self) -> DriftDetection:
@@ -145,18 +135,9 @@ class DriftDetector:
             "warning_rate": self.warning_count / max(1, self.total_checks),
             "reference_data_size": len(self.reference_data),
             "current_data_size": len(self.current_data),
-            "last_detection": (
-                self.last_detection.timestamp.isoformat()
-                if self.last_detection
-                else None
-            ),
-            "recent_detections": len(
-                [
-                    d
-                    for d in self.detections
-                    if (datetime.utcnow() - d.timestamp).days < 7
-                ]
-            ),
+            "last_detection": self.last_detection.timestamp.isoformat() if self.last_detection else None,
+            "recent_detections": len([d for d in self.detections
+                                    if (datetime.utcnow() - d.timestamp).days < 7])
         }
 
         return stats
@@ -183,11 +164,9 @@ class PerformanceDriftDetector(DriftDetector):
         reference_window_size: int = 200,
         drift_threshold: float = 0.1,
         warning_threshold: float = 0.05,
-        metric_name: str = "accuracy",
+        metric_name: str = "accuracy"
     ):
-        super().__init__(
-            window_size, reference_window_size, drift_threshold, warning_threshold
-        )
+        super().__init__(window_size, reference_window_size, drift_threshold, warning_threshold)
         self.metric_name = metric_name
 
     def add_performance(self, performance: float) -> DriftDetection:
@@ -215,7 +194,7 @@ class PerformanceDriftDetector(DriftDetector):
 
             # Mann-Whitney U test (non-parametric)
             u_statistic, u_p_value = stats.mannwhitneyu(
-                reference_values, current_values, alternative="greater"
+                reference_values, current_values, alternative='greater'
             )
 
             # Use more conservative p-value
@@ -227,7 +206,8 @@ class PerformanceDriftDetector(DriftDetector):
             statistic = 0.0
 
         # Determine drift
-        drift_detected = degradation > self.drift_threshold and final_p_value < 0.05
+        drift_detected = (degradation > self.drift_threshold and
+                         final_p_value < 0.05)
 
         # Calculate confidence
         confidence = 1.0 - final_p_value if final_p_value < 1.0 else 0.0
@@ -257,9 +237,9 @@ class PerformanceDriftDetector(DriftDetector):
                 "p_value": final_p_value,
                 "statistic": statistic,
                 "reference_std": np.std(reference_values),
-                "current_std": np.std(current_values),
+                "current_std": np.std(current_values)
             },
-            recommended_action=action,
+            recommended_action=action
         )
 
         return detection
@@ -274,11 +254,9 @@ class DataDistributionDriftDetector(DriftDetector):
         reference_window_size: int = 1000,
         drift_threshold: float = 0.05,
         warning_threshold: float = 0.1,
-        test_method: StatisticalTest = StatisticalTest.KOLMOGOROV_SMIRNOV,
+        test_method: StatisticalTest = StatisticalTest.KOLMOGOROV_SMIRNOV
     ):
-        super().__init__(
-            window_size, reference_window_size, drift_threshold, warning_threshold
-        )
+        super().__init__(window_size, reference_window_size, drift_threshold, warning_threshold)
         self.test_method = test_method
 
     def add_sample(self, sample: Union[np.ndarray, Dict[str, Any]]) -> DriftDetection:
@@ -298,13 +276,9 @@ class DataDistributionDriftDetector(DriftDetector):
         if self.test_method == StatisticalTest.KOLMOGOROV_SMIRNOV:
             drift_score, p_value = self._ks_test(reference_numeric, current_numeric)
         elif self.test_method == StatisticalTest.MANN_WHITNEY:
-            drift_score, p_value = self._mann_whitney_test(
-                reference_numeric, current_numeric
-            )
+            drift_score, p_value = self._mann_whitney_test(reference_numeric, current_numeric)
         elif self.test_method == StatisticalTest.ANDERSON_DARLING:
-            drift_score, p_value = self._anderson_darling_test(
-                reference_numeric, current_numeric
-            )
+            drift_score, p_value = self._anderson_darling_test(reference_numeric, current_numeric)
         else:
             # Fallback to KS test
             drift_score, p_value = self._ks_test(reference_numeric, current_numeric)
@@ -338,9 +312,9 @@ class DataDistributionDriftDetector(DriftDetector):
                 "reference_mean": float(np.mean(reference_numeric)),
                 "current_mean": float(np.mean(current_numeric)),
                 "reference_std": float(np.std(reference_numeric)),
-                "current_std": float(np.std(current_numeric)),
+                "current_std": float(np.std(current_numeric))
             },
-            recommended_action=action,
+            recommended_action=action
         )
 
         return detection
@@ -367,9 +341,7 @@ class DataDistributionDriftDetector(DriftDetector):
 
         return np.array(numeric_values)
 
-    def _ks_test(
-        self, ref_data: np.ndarray, cur_data: np.ndarray
-    ) -> Tuple[float, float]:
+    def _ks_test(self, ref_data: np.ndarray, cur_data: np.ndarray) -> Tuple[float, float]:
         """Kolmogorov-Smirnov test."""
         try:
             statistic, p_value = stats.ks_2samp(ref_data, cur_data)
@@ -378,14 +350,10 @@ class DataDistributionDriftDetector(DriftDetector):
             logger.warning(f"KS test failed: {e}")
             return 0.0, 1.0
 
-    def _mann_whitney_test(
-        self, ref_data: np.ndarray, cur_data: np.ndarray
-    ) -> Tuple[float, float]:
+    def _mann_whitney_test(self, ref_data: np.ndarray, cur_data: np.ndarray) -> Tuple[float, float]:
         """Mann-Whitney U test."""
         try:
-            statistic, p_value = stats.mannwhitneyu(
-                ref_data, cur_data, alternative="two-sided"
-            )
+            statistic, p_value = stats.mannwhitneyu(ref_data, cur_data, alternative='two-sided')
             # Normalize statistic
             n1, n2 = len(ref_data), len(cur_data)
             normalized_stat = statistic / (n1 * n2)
@@ -394,9 +362,7 @@ class DataDistributionDriftDetector(DriftDetector):
             logger.warning(f"Mann-Whitney test failed: {e}")
             return 0.0, 1.0
 
-    def _anderson_darling_test(
-        self, ref_data: np.ndarray, cur_data: np.ndarray
-    ) -> Tuple[float, float]:
+    def _anderson_darling_test(self, ref_data: np.ndarray, cur_data: np.ndarray) -> Tuple[float, float]:
         """Anderson-Darling test (simplified implementation)."""
         try:
             # Use KS test as approximation since scipy doesn't have 2-sample AD test
@@ -415,7 +381,7 @@ class DataDistributionDriftDetector(DriftDetector):
             confidence=0.0,
             timestamp=datetime.utcnow(),
             metadata={"reason": reason},
-            recommended_action="collect_more_data",
+            recommended_action="collect_more_data"
         )
 
 
@@ -427,11 +393,9 @@ class ConceptDriftDetector(DriftDetector):
         window_size: int = 500,
         reference_window_size: int = 1000,
         drift_threshold: float = 0.1,
-        warning_threshold: float = 0.05,
+        warning_threshold: float = 0.05
     ):
-        super().__init__(
-            window_size, reference_window_size, drift_threshold, warning_threshold
-        )
+        super().__init__(window_size, reference_window_size, drift_threshold, warning_threshold)
 
         # Store input-output pairs
         self.reference_pairs = deque(maxlen=reference_window_size)
@@ -453,9 +417,7 @@ class ConceptDriftDetector(DriftDetector):
                 self.detections.append(detection)
                 self._reset_current_pairs()
 
-                logger.warning(
-                    f"Concept drift detected (score: {detection.drift_score:.4f})"
-                )
+                logger.warning(f"Concept drift detected (score: {detection.drift_score:.4f})")
 
             return detection
 
@@ -466,7 +428,7 @@ class ConceptDriftDetector(DriftDetector):
             confidence=0.0,
             timestamp=datetime.utcnow(),
             metadata={"insufficient_data": True},
-            recommended_action="collect_more_data",
+            recommended_action="collect_more_data"
         )
 
     def add_reference_pair(self, input_data: Any, output_data: Any) -> None:
@@ -477,12 +439,8 @@ class ConceptDriftDetector(DriftDetector):
     def _detect_concept_drift(self) -> DriftDetection:
         """Detect concept drift by analyzing input-output relationships."""
         # Extract features and outputs
-        ref_features, ref_outputs = self._extract_features_outputs(
-            list(self.reference_pairs)
-        )
-        cur_features, cur_outputs = self._extract_features_outputs(
-            list(self.current_pairs)
-        )
+        ref_features, ref_outputs = self._extract_features_outputs(list(self.reference_pairs))
+        cur_features, cur_outputs = self._extract_features_outputs(list(self.current_pairs))
 
         if len(ref_features) == 0 or len(cur_features) == 0:
             return self._no_concept_drift_result("insufficient_data")
@@ -518,7 +476,7 @@ class ConceptDriftDetector(DriftDetector):
                 "reference_samples": len(ref_features),
                 "current_samples": len(cur_features),
             },
-            recommended_action=action,
+            recommended_action=action
         )
 
         return detection
@@ -543,8 +501,8 @@ class ConceptDriftDetector(DriftDetector):
             # Convert output to numeric
             if isinstance(output_data, (int, float)):
                 outputs.append(float(output_data))
-            elif isinstance(output_data, dict) and "reward" in output_data:
-                outputs.append(float(output_data["reward"]))
+            elif isinstance(output_data, dict) and 'reward' in output_data:
+                outputs.append(float(output_data['reward']))
 
         return features, outputs
 
@@ -553,7 +511,7 @@ class ConceptDriftDetector(DriftDetector):
         ref_features: List,
         ref_outputs: List,
         cur_features: List,
-        cur_outputs: List,
+        cur_outputs: List
     ) -> Tuple[float, float]:
         """Calculate concept drift score based on correlation changes."""
         try:
@@ -604,7 +562,7 @@ class ConceptDriftDetector(DriftDetector):
             confidence=0.0,
             timestamp=datetime.utcnow(),
             metadata={"reason": reason},
-            recommended_action="collect_more_data",
+            recommended_action="collect_more_data"
         )
 
 
@@ -615,18 +573,16 @@ class MultimodalDriftDetector:
         self,
         performance_detector: Optional[PerformanceDriftDetector] = None,
         distribution_detector: Optional[DataDistributionDriftDetector] = None,
-        concept_detector: Optional[ConceptDriftDetector] = None,
+        concept_detector: Optional[ConceptDriftDetector] = None
     ):
         self.performance_detector = performance_detector or PerformanceDriftDetector()
-        self.distribution_detector = (
-            distribution_detector or DataDistributionDriftDetector()
-        )
+        self.distribution_detector = distribution_detector or DataDistributionDriftDetector()
         self.concept_detector = concept_detector or ConceptDriftDetector()
 
         self.detectors = {
             DriftType.PERFORMANCE: self.performance_detector,
             DriftType.DATA_DISTRIBUTION: self.distribution_detector,
-            DriftType.CONCEPT: self.concept_detector,
+            DriftType.CONCEPT: self.concept_detector
         }
 
         self.detection_history = []
@@ -655,9 +611,7 @@ class MultimodalDriftDetector:
 
         return detections
 
-    def add_concept_sample(
-        self, input_data: Any, output_data: Any
-    ) -> List[DriftDetection]:
+    def add_concept_sample(self, input_data: Any, output_data: Any) -> List[DriftDetection]:
         """Add input-output pair and check for concept drift."""
         detections = []
 
@@ -672,16 +626,13 @@ class MultimodalDriftDetector:
     def get_overall_status(self) -> Dict[str, Any]:
         """Get overall drift detection status."""
         recent_detections = [
-            d
-            for d in self.detection_history
+            d for d in self.detection_history
             if (datetime.utcnow() - d.timestamp).hours < 24
         ]
 
         drift_by_type = {}
         for drift_type in DriftType:
-            type_detections = [
-                d for d in recent_detections if d.drift_type == drift_type
-            ]
+            type_detections = [d for d in recent_detections if d.drift_type == drift_type]
             drift_by_type[drift_type.value] = len(type_detections)
 
         # Overall risk assessment
@@ -705,7 +656,7 @@ class MultimodalDriftDetector:
             "detector_statistics": {
                 drift_type.value: detector.get_statistics()
                 for drift_type, detector in self.detectors.items()
-            },
+            }
         }
 
         return status

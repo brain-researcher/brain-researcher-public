@@ -910,7 +910,7 @@ def _marimo_runtime_env_values(spec: MarimoRuntimeSpec) -> dict[str, str]:
         "BR_MARIMO_RUNTIME_SESSION_ID": spec.runtime_session_id,
         "BR_MARIMO_RUNTIME_PROJECT_ID": spec.project_id,
         "BR_MCP_HTTP_URL": os.getenv(
-            "BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp"
+            "BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp"
         ),
         "FORWARDED_ALLOW_IPS": forwarded_allow_ips,
     }

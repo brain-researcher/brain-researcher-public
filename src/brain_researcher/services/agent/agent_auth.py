@@ -9,12 +9,12 @@ Design goals:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
 import threading
 import time
+import hashlib
 import uuid
 from dataclasses import dataclass
 from functools import lru_cache
@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CurrentUser:
     """Authenticated user information extracted from JWT or debug headers."""
-
     id: str
     email: Optional[str] = None
     name: Optional[str] = None
@@ -40,7 +39,6 @@ class CurrentUser:
 
 class AuthError(Exception):
     """Raised when authentication fails."""
-
     def __init__(self, code: str, detail: str = ""):
         self.code = code
         self.detail = detail
@@ -146,9 +144,7 @@ def issue_pat_jwt(subject: str, ttl_seconds: int = 3600) -> str:
 
     secret = get_jwt_secret()
     if not secret:
-        raise AuthError(
-            "missing_jwt_secret", "JWT_SECRET_KEY is required for PAT exchange"
-        )
+        raise AuthError("missing_jwt_secret", "JWT_SECRET_KEY is required for PAT exchange")
 
     now = int(time.time())
     payload = {
@@ -213,8 +209,9 @@ def _get_cached_jwks_keys_by_kid(jwks_url: str) -> dict[str, dict[str, Any]]:
     global _JWKS_CACHE_FETCHED_AT, _JWKS_CACHE_KEYS_BY_KID
     now = time.time()
     with _JWKS_CACHE_LOCK:
-        if _JWKS_CACHE_KEYS_BY_KID and now - _JWKS_CACHE_FETCHED_AT < max(
-            1, _JWKS_CACHE_TTL_SECONDS
+        if (
+            _JWKS_CACHE_KEYS_BY_KID
+            and now - _JWKS_CACHE_FETCHED_AT < max(1, _JWKS_CACHE_TTL_SECONDS)
         ):
             return _JWKS_CACHE_KEYS_BY_KID
         _JWKS_CACHE_KEYS_BY_KID = _fetch_jwks_keys_by_kid(jwks_url)
@@ -292,9 +289,7 @@ def _allow_missing_workspace_id(user: CurrentUser) -> bool:
     return role == "dev"
 
 
-def _supabase_preflight(
-    workspace_id: str, required_role: str, token: str
-) -> dict[str, Any]:
+def _supabase_preflight(workspace_id: str, required_role: str, token: str) -> dict[str, Any]:
     import urllib.error
     import urllib.request
 
@@ -337,9 +332,7 @@ def _supabase_preflight(
             detail or f"Supabase preflight failed (HTTP {status})",
         ) from exc
     except urllib.error.URLError as exc:
-        raise AuthError(
-            "workspace_preflight_failed", "Unable to reach Supabase"
-        ) from exc
+        raise AuthError("workspace_preflight_failed", "Unable to reach Supabase") from exc
 
     if isinstance(data, list):
         data = data[0] if data else {}
@@ -353,9 +346,7 @@ def _supabase_preflight(
     raise AuthError("workspace_forbidden", "Workspace membership/role check failed")
 
 
-def _apply_workspace_context(
-    req: Request, user: CurrentUser, token: Optional[str]
-) -> CurrentUser:
+def _apply_workspace_context(req: Request, user: CurrentUser, token: Optional[str]) -> CurrentUser:
     workspace_id = _extract_workspace_id(req)
     if workspace_id:
         user.tenant_id = workspace_id
@@ -377,9 +368,7 @@ def _apply_workspace_context(
             "x-workspace-id header or br_workspace_id cookie is required",
         )
 
-    required_role = (
-        str(os.getenv("BR_WORKSPACE_REQUIRED_ROLE") or "member").strip().lower()
-    )
+    required_role = str(os.getenv("BR_WORKSPACE_REQUIRED_ROLE") or "member").strip().lower()
     if not token:
         raise AuthError(
             "missing_bearer_token",
@@ -424,7 +413,7 @@ def _decode_jwt(
     Raises:
         AuthError: If token is invalid, expired, or verification fails
     """
-    from jose import ExpiredSignatureError, JWTError
+    from jose import JWTError, ExpiredSignatureError
     from jose import jwk as jose_jwk
     from jose import jwt as jose_jwt
 
@@ -545,9 +534,7 @@ def _decode_jwt(
     except JWTError as exc:
         message = str(exc).lower()
         if "signature verification failed" in message:
-            raise AuthError(
-                "invalid_signature", "JWT signature verification failed"
-            ) from exc
+            raise AuthError("invalid_signature", "JWT signature verification failed") from exc
         if "not enough segments" in message:
             raise AuthError("decode_error", "Failed to decode JWT") from exc
         raise AuthError("invalid_token", f"Invalid JWT token: {exc}") from exc
@@ -564,16 +551,14 @@ def _extract_user_from_jwt(payload: Dict[str, Any]) -> CurrentUser:
     - provider
     """
     user_id = (
-        payload.get("sub")
-        or payload.get("userId")
-        or payload.get("user_id")
-        or payload.get("id")
+        payload.get("sub") or
+        payload.get("userId") or
+        payload.get("user_id") or
+        payload.get("id")
     )
 
     if not user_id:
-        raise AuthError(
-            "missing_user_id", "JWT payload missing user identifier (sub/userId)"
-        )
+        raise AuthError("missing_user_id", "JWT payload missing user identifier (sub/userId)")
 
     return CurrentUser(
         id=str(user_id),
@@ -645,7 +630,10 @@ def get_jwt_secret_candidates() -> list[str]:
 
 def _is_test_env() -> bool:
     """Return True only for explicit test execution contexts."""
-    return bool(os.getenv("PYTEST_CURRENT_TEST") or os.getenv("BR_TESTING"))
+    return bool(
+        os.getenv("PYTEST_CURRENT_TEST")
+        or os.getenv("BR_TESTING")
+    )
 
 
 @lru_cache(maxsize=3)
@@ -685,8 +673,9 @@ def _get_repo_dotenv_value(key: str) -> Optional[str]:
                     continue
 
                 v = trimmed[eq + 1 :].strip()
-                if (v.startswith('"') and v.endswith('"')) or (
-                    v.startswith("'") and v.endswith("'")
+                if (
+                    (v.startswith('"') and v.endswith('"'))
+                    or (v.startswith("'") and v.endswith("'"))
                 ):
                     v = v[1:-1]
                 return v or None
@@ -726,10 +715,7 @@ def get_current_user(req: Request) -> CurrentUser:
     # Extract token
     token = _extract_bearer_token(req) or _extract_cookie_token(req)
     if not token:
-        raise AuthError(
-            "missing_bearer_token",
-            "Authorization header or NextAuth session cookie required",
-        )
+        raise AuthError("missing_bearer_token", "Authorization header or NextAuth session cookie required")
 
     # Resolve verification config (HS256 shared secret + optional JWKS for RS256)
     jwt_secret = get_jwt_secret()

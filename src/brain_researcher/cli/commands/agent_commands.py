@@ -61,9 +61,7 @@ def parse_key_value_pairs(params: list[str]) -> dict[str, Any]:
     result = {}
     for param in params:
         if "=" not in param:
-            console.print(
-                f"[yellow]Warning:[/yellow] Skipping invalid parameter: {param}"
-            )
+            console.print(f"[yellow]Warning:[/yellow] Skipping invalid parameter: {param}")
             console.print("[yellow]Expected format:[/yellow] key=value")
             continue
 
@@ -105,7 +103,9 @@ def display_plan_table(plan_data: dict[str, Any]) -> None:
 
         for idx, candidate in enumerate(candidates, start=1):
             preflight = "✓" if candidate.get("preflight_passed") else "✗"
-            preflight_style = "green" if candidate.get("preflight_passed") else "red"
+            preflight_style = (
+                "green" if candidate.get("preflight_passed") else "red"
+            )
 
             table.add_row(
                 str(idx),
@@ -126,7 +126,9 @@ def display_plan_table(plan_data: dict[str, Any]) -> None:
         if selection_reason:
             console.print(f"[bold]Reason:[/bold] {selection_reason}")
     elif not plan_data.get("resolvable", True):
-        console.print("\n[bold yellow]⚠ No suitable tool found[/bold yellow]")
+        console.print(
+            "\n[bold yellow]⚠ No suitable tool found[/bold yellow]"
+        )
         warnings = plan_data.get("warnings", [])
         if warnings:
             for warning in warnings:
@@ -147,7 +149,7 @@ def wait_for_job_completion(job_id: str, poll_interval: int = 2) -> dict[str, An
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
-        console=console,
+        console=console
     ) as progress:
         task = progress.add_task(description=f"Waiting for job {job_id}...", total=None)
 
@@ -193,9 +195,7 @@ def _extract_text_fragment(value: Any) -> str | None:
 def _normalize_candidate_cards(raw_cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
     normalized: list[dict[str, Any]] = []
     for idx, card in enumerate(raw_cards, start=1):
-        title = str(
-            card.get("title") or card.get("label") or f"Candidate {idx}"
-        ).strip()
+        title = str(card.get("title") or card.get("label") or f"Candidate {idx}").strip()
         hypothesis = str(
             card.get("hypothesis") or card.get("summary") or card.get("statement") or ""
         ).strip()
@@ -260,9 +260,7 @@ def _extract_candidate_cards_from_job(
     return _normalize_candidate_cards(generated)
 
 
-def _extract_novelty_calibration_from_job(
-    final_job: dict[str, Any],
-) -> dict[str, Any] | None:
+def _extract_novelty_calibration_from_job(final_job: dict[str, Any]) -> dict[str, Any] | None:
     return find_novelty_calibration_payload(final_job)
 
 
@@ -300,11 +298,7 @@ def _run_deep_research_sync(
 
 
 def _render_candidate_cards_table(cards: list[dict[str, Any]]) -> None:
-    table = Table(
-        title="Hypothesis Candidate Cards",
-        show_header=True,
-        header_style="bold magenta",
-    )
+    table = Table(title="Hypothesis Candidate Cards", show_header=True, header_style="bold magenta")
     table.add_column("Rank", justify="right", style="cyan")
     table.add_column("Title", style="green")
     table.add_column("Taste Axis", style="yellow")
@@ -399,9 +393,7 @@ def _render_validation_report(report: ValidationReport) -> None:
         console.print(f"[bold]Status Summary:[/bold] {report.status_explanation}")
     if report.recommended_action:
         console.print(f"[bold]Recommended Action:[/bold] {report.recommended_action}")
-    patch_legibility = (
-        report.patch_legibility if isinstance(report.patch_legibility, dict) else {}
-    )
+    patch_legibility = report.patch_legibility if isinstance(report.patch_legibility, dict) else {}
     if patch_legibility:
         score = patch_legibility.get("score")
         band = str(patch_legibility.get("band") or "unknown")
@@ -422,9 +414,7 @@ def _render_validation_report(report: ValidationReport) -> None:
             for finding in findings[:3]:
                 console.print(f"[dim]  - {finding}[/dim]")
 
-    table = Table(
-        title="Validation Summary", show_header=True, header_style="bold magenta"
-    )
+    table = Table(title="Validation Summary", show_header=True, header_style="bold magenta")
     table.add_column("Slice", style="green")
     table.add_column("Baseline Success", justify="right", style="yellow")
     table.add_column("Candidate Success", justify="right", style="yellow")
@@ -453,9 +443,7 @@ def _render_validation_report(report: ValidationReport) -> None:
     console.print(table)
 
     if report.fixed_failures:
-        console.print(
-            f"[green]Fixed failures:[/green] {', '.join(report.fixed_failures)}"
-        )
+        console.print(f"[green]Fixed failures:[/green] {', '.join(report.fixed_failures)}")
     if report.regressions:
         console.print(f"[red]Regressions:[/red] {', '.join(report.regressions)}")
     if report.warnings:
@@ -558,18 +546,10 @@ def _render_repo_repair_context_table(payload: dict[str, Any]) -> None:
 
 @app.command("run")
 def agent_run(
-    intent: str = typer.Argument(
-        ..., help="Natural language intent (e.g., 'skull strip')"
-    ),
-    tool: str | None = typer.Option(
-        None, "--tool", help="Force specific tool (bypasses planner)"
-    ),
-    param: list[str] = typer.Option(
-        [], "--param", "-p", help="Parameters as key=value (repeatable)"
-    ),
-    planner_mode: str = typer.Option(
-        "autorun", "--planner-mode", help="Planner mode: autorun, advisor, or disabled"
-    ),
+    intent: str = typer.Argument(..., help="Natural language intent (e.g., 'skull strip')"),
+    tool: str | None = typer.Option(None, "--tool", help="Force specific tool (bypasses planner)"),
+    param: list[str] = typer.Option([], "--param", "-p", help="Parameters as key=value (repeatable)"),
+    planner_mode: str = typer.Option("autorun", "--planner-mode", help="Planner mode: autorun, advisor, or disabled"),
     wait: bool = typer.Option(True, "--wait/--no-wait", help="Wait for job completion"),
 ):
     """
@@ -598,7 +578,7 @@ def agent_run(
                         "domain": "neuroimaging",
                         "modality": [],
                         "inputs": parameters,
-                    },
+                    }
                 )
 
                 display_plan_table(plan_data)
@@ -613,13 +593,14 @@ def agent_run(
             except typer.Exit:
                 raise
             except Exception as e:
-                console.print(
-                    f"\n[yellow]Warning:[/yellow] Could not generate plan preview: {e}"
-                )
+                console.print(f"\n[yellow]Warning:[/yellow] Could not generate plan preview: {e}")
                 console.print("[yellow]Proceeding with execution anyway...[/yellow]\n")
 
         # Build payload for POST /run
-        payload = {"prompt": intent, "parameters": parameters}
+        payload = {
+            "prompt": intent,
+            "parameters": parameters
+        }
 
         if tool:
             payload["tool"] = tool
@@ -641,9 +622,7 @@ def agent_run(
             if plan_data and isinstance(plan_data, dict):
                 chosen = plan_data.get("chosen")
                 if chosen:
-                    console.print(
-                        f"[green]  Tool:[/green] {chosen.get('tool_name')} ({chosen.get('tool_id')})"
-                    )
+                    console.print(f"[green]  Tool:[/green] {chosen.get('tool_name')} ({chosen.get('tool_id')})")
 
         # Wait for completion if requested
         if wait:
@@ -675,12 +654,8 @@ def agent_run(
 
 @app.command("plan")
 def agent_plan(
-    intent: str = typer.Argument(
-        ..., help="Natural language intent (e.g., 'skull strip')"
-    ),
-    param: list[str] = typer.Option(
-        [], "--param", "-p", help="Parameters as key=value (repeatable)"
-    ),
+    intent: str = typer.Argument(..., help="Natural language intent (e.g., 'skull strip')"),
+    param: list[str] = typer.Option([], "--param", "-p", help="Parameters as key=value (repeatable)"),
 ):
     """
     Preview tool selection without executing.
@@ -700,7 +675,8 @@ def agent_plan(
         # Call planner
         console.print("\n[bold]Generating plan...[/bold]")
         plan_data = api_post_sync(
-            "/api/agent/plan", json_data={"intent": intent, "constraints": parameters}
+            "/api/agent/plan",
+            json_data={"intent": intent, "constraints": parameters}
         )
 
         # Display plan
@@ -711,7 +687,7 @@ def agent_plan(
         if plan_id:
             console.print(f"\n[dim]Plan ID:[/dim] {plan_id}")
 
-        console.print(f'\n[dim]To execute:[/dim] br agent run "{intent}"')
+        console.print(f"\n[dim]To execute:[/dim] br agent run \"{intent}\"")
 
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}")
@@ -727,12 +703,8 @@ def agent_hypothesis(
     relation_type: list[str] = typer.Option(
         [], "--relation-type", help="Optional relation type filter (repeatable)"
     ),
-    top: int = typer.Option(
-        5, "--top", min=1, max=20, help="Number of candidate cards to return"
-    ),
-    top_k: int = typer.Option(
-        20, "--top-k", min=1, max=200, help="KG leverage search limit"
-    ),
+    top: int = typer.Option(5, "--top", min=1, max=20, help="Number of candidate cards to return"),
+    top_k: int = typer.Option(20, "--top-k", min=1, max=200, help="KG leverage search limit"),
     taste_mode: str = typer.Option(
         "novelty_first",
         "--taste-mode",
@@ -748,38 +720,18 @@ def agent_hypothesis(
         "--controller-mode",
         help="Controller mode: legacy | principle_v0",
     ),
-    wait: bool = typer.Option(
-        True, "--wait/--no-wait", help="Wait for workflow job completion"
-    ),
-    poll_interval: int = typer.Option(
-        2, "--poll-interval", min=1, help="Polling interval in seconds"
-    ),
-    output_format: str = typer.Option(
-        "table", "--format", help="Output format: table | json"
-    ),
+    wait: bool = typer.Option(True, "--wait/--no-wait", help="Wait for workflow job completion"),
+    poll_interval: int = typer.Option(2, "--poll-interval", min=1, help="Polling interval in seconds"),
+    output_format: str = typer.Option("table", "--format", help="Output format: table | json"),
     with_research: bool = typer.Option(
         False,
         "--with-research/--no-with-research",
         help="Run optional blocking google_deep_research enrichment after cards are generated",
     ),
-    research_top_k: int = typer.Option(
-        8,
-        "--research-top-k",
-        min=1,
-        max=30,
-        help="Reserved (unused) with google_deep_research",
-    ),
-    recency_days: int = typer.Option(
-        365,
-        "--recency-days",
-        min=0,
-        max=3650,
-        help="Recency window for google_deep_research",
-    ),
+    research_top_k: int = typer.Option(8, "--research-top-k", min=1, max=30, help="Reserved (unused) with google_deep_research"),
+    recency_days: int = typer.Option(365, "--recency-days", min=0, max=3650, help="Recency window for google_deep_research"),
     exclude_domain: list[str] = typer.Option(
-        [],
-        "--exclude-domain",
-        help="Domain exclusion for google_deep_research (repeatable)",
+        [], "--exclude-domain", help="Domain exclusion for google_deep_research (repeatable)"
     ),
 ):
     """Generate KG-backed hypothesis candidate cards via declarative workflow."""
@@ -848,9 +800,7 @@ def agent_hypothesis(
             raise typer.Exit(0)
 
         if with_research:
-            console.print(
-                "[bold]Running optional google_deep_research enrichment...[/bold]"
-            )
+            console.print("[bold]Running optional google_deep_research enrichment...[/bold]")
             summary, research_error = _run_deep_research_sync(
                 query=query,
                 top_k=research_top_k,
@@ -893,9 +843,7 @@ def agent_hypothesis(
 
 @app.command("mine-failure-motifs")
 def agent_mine_failure_motifs(
-    limit: int = typer.Option(
-        200, "--limit", min=1, help="Maximum number of real MCP runs to inspect"
-    ),
+    limit: int = typer.Option(200, "--limit", min=1, help="Maximum number of real MCP runs to inspect"),
     days: int = typer.Option(14, "--days", min=1, help="Lookback window in days"),
     profile_id: str = typer.Option(
         "external_coding_v1",
@@ -1010,9 +958,7 @@ def agent_repo_repair_context(
         8, "--top", min=1, max=50, help="Maximum motif/candidate rows to include"
     ),
     persist: bool = typer.Option(
-        True,
-        "--persist/--no-persist",
-        help="Persist the artifact under data/autoresearch",
+        True, "--persist/--no-persist", help="Persist the artifact under data/autoresearch"
     ),
     output_format: str = typer.Option(
         "table", "--format", help="Output format: table | json"

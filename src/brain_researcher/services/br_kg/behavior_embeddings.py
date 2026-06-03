@@ -170,7 +170,9 @@ def _encode_with_hf_hidden_state(
     from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
 
     if not config.model_name_or_path:
-        raise ValueError("model_name_or_path is required when backend=hf_hidden_state")
+        raise ValueError(
+            "model_name_or_path is required when backend=hf_hidden_state"
+        )
 
     tokenizer = AutoTokenizer.from_pretrained(
         config.model_name_or_path,
@@ -208,9 +210,7 @@ def _encode_with_hf_hidden_state(
         try:
             model = model.to(requested_device)
         except Exception as exc:
-            if not _is_cuda_oom_error(exc) or not str(requested_device).startswith(
-                "cuda"
-            ):
+            if not _is_cuda_oom_error(exc) or not str(requested_device).startswith("cuda"):
                 raise
             del model
             if hasattr(torch.cuda, "empty_cache"):
@@ -228,9 +228,7 @@ def _encode_with_hf_hidden_state(
                         auto_dispatch=True,
                     )
                     break
-                except (
-                    Exception
-                ) as retry_exc:  # pragma: no cover - best-effort fallback
+                except Exception as retry_exc:  # pragma: no cover - best-effort fallback
                     retry_errors.append(str(retry_exc))
             if model is None:
                 joined = "; ".join(retry_errors[-2:])
@@ -306,10 +304,7 @@ def _load_hf_model_with_optional_offload(
             **kwargs,
             **_hf_auto_dispatch_kwargs(torch_module),
         }
-        return (
-            model_cls.from_pretrained(config.model_name_or_path, **retry_kwargs),
-            True,
-        )
+        return model_cls.from_pretrained(config.model_name_or_path, **retry_kwargs), True
 
 
 def _hf_auto_dispatch_kwargs(torch_module: Any) -> dict[str, Any]:
@@ -317,10 +312,7 @@ def _hf_auto_dispatch_kwargs(torch_module: Any) -> dict[str, Any]:
         "device_map": "auto",
         "low_cpu_mem_usage": True,
     }
-    if (
-        getattr(torch_module, "cuda", None) is not None
-        and torch_module.cuda.is_available()
-    ):
+    if getattr(torch_module, "cuda", None) is not None and torch_module.cuda.is_available():
         kwargs["torch_dtype"] = _preferred_cuda_dtype(torch_module)
     return kwargs
 

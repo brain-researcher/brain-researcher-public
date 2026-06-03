@@ -38,17 +38,12 @@ try:
 except Exception:
     codegen_app = None  # optional subcommand
 
-_skip_heavy = os.environ.get("BR_SKIP_HEAVY_COMMANDS", "0").lower() in {
-    "1",
-    "true",
-    "yes",
-}
+_skip_heavy = os.environ.get("BR_SKIP_HEAVY_COMMANDS", "0").lower() in {"1", "true", "yes"}
 
 if not _skip_heavy:
     # Import sub-command groups only when needed to avoid heavy deps during chat boot.
     from .commands import (
         agent_commands,
-        br_kg_ingest,
         budget_commands,
         cache_commands,
         chat_commands,
@@ -60,6 +55,7 @@ if not _skip_heavy:
         gabriel_commands,
         line_commands,
         migration_commands,
+        br_kg_ingest,
         niclip_commands,
         query_commands,
         runs_commands,
@@ -72,41 +68,23 @@ if not _skip_heavy:
 
     # Add sub-command groups
     app.add_typer(agent_commands.app, name="agent", help="Agent planning and execution")
-    app.add_typer(
-        budget_commands.app, name="budget", help="LLM budget and usage tracking"
-    )
-    app.add_typer(
-        cache_commands.app, name="cache", help="Cache management commands (P2.5)"
-    )
-    app.add_typer(
-        chat_commands.app, name="chat", help="Chat with Agent (research & coding) P1 UX"
-    )
+    app.add_typer(budget_commands.app, name="budget", help="LLM budget and usage tracking")
+    app.add_typer(cache_commands.app, name="cache", help="Cache management commands (P2.5)")
+    app.add_typer(chat_commands.app, name="chat", help="Chat with Agent (research & coding) P1 UX")
     from .commands import files_commands
-
-    app.add_typer(
-        files_commands.app, name="files", help="Upload/list/download files via Agent"
-    )
-    app.add_typer(
-        datasets_commands.app, name="datasets", help="Dataset search/detail via Agent"
-    )
+    app.add_typer(files_commands.app, name="files", help="Upload/list/download files via Agent")
+    app.add_typer(datasets_commands.app, name="datasets", help="Dataset search/detail via Agent")
     app.add_typer(threads_commands.app, name="threads", help="Thread utilities")
     from .commands import auth_commands
-
-    app.add_typer(
-        auth_commands.app, name="auth", help="Store/show Agent bearer token for CLI"
-    )
+    app.add_typer(auth_commands.app, name="auth", help="Store/show Agent bearer token for CLI")
     app.add_typer(db_commands.app, name="db", help="Database management commands")
     app.add_typer(data_commands.app, name="data", help="Data ingestion commands")
-    app.add_typer(
-        gabriel_commands.app, name="gabriel", help="GABRIEL pipeline commands"
-    )
+    app.add_typer(gabriel_commands.app, name="gabriel", help="GABRIEL pipeline commands")
     app.add_typer(query_commands.app, name="query", help="Query and search commands")
     app.add_typer(
         niclip_commands.app, name="niclip", help="NICLIP neuroimaging analysis commands"
     )
-    app.add_typer(
-        br_kg_ingest.app, name="br-kg-ingest", help="BR-KG ingestion commands"
-    )
+    app.add_typer(br_kg_ingest.app, name="br-kg-ingest", help="BR-KG ingestion commands")
     app.add_typer(br_kg_ingest.br_kg_app, name="br-kg", help="BR-KG graph commands")
     app.add_typer(runs_commands.app, name="runs", help="Job and run inspection")
     app.add_typer(
@@ -114,31 +92,16 @@ if not _skip_heavy:
         name="sessions",
         help="Remote session and Slack bridge helpers",
     )
-    app.add_typer(
-        service_commands.app, name="service", help="Service management commands"
-    )
-    app.add_typer(
-        migration_commands.app, name="migrate", help="Database migration commands"
-    )
-    app.add_typer(
-        line_commands.app,
-        name="line",
-        help="Line-based autoresearch workspace commands",
-    )
-    app.add_typer(
-        copilot_commands.app, name="copilot", help="Copilot assistance commands"
-    )
+    app.add_typer(service_commands.app, name="service", help="Service management commands")
+    app.add_typer(migration_commands.app, name="migrate", help="Database migration commands")
+    app.add_typer(line_commands.app, name="line", help="Line-based autoresearch workspace commands")
+    app.add_typer(copilot_commands.app, name="copilot", help="Copilot assistance commands")
     app.add_typer(tool_commands.app, name="tools", help="Neuroimaging tools commands")
-    app.add_typer(
-        config_commands.app, name="config", help="Configuration management commands"
-    )
+    app.add_typer(config_commands.app, name="config", help="Configuration management commands")
     app.add_typer(traces_commands.app, name="traces", help="Trace export commands")
 
     from .commands import notebook_commands
-
-    app.add_typer(
-        notebook_commands.app, name="notebook", help="Marimo notebook launcher"
-    )
+    app.add_typer(notebook_commands.app, name="notebook", help="Marimo notebook launcher")
 
 
 # Global state for verbose mode
@@ -222,12 +185,15 @@ def _collect_workspace_info() -> dict[str, str | None]:
         "last_commit": None,
     }
     try:
-        root = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip()
+        root = (
+            subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            .stdout.strip()
+        )
         info["root"] = root or None
         status = subprocess.run(
             ["git", "status", "-sb"],
@@ -237,17 +203,17 @@ def _collect_workspace_info() -> dict[str, str | None]:
         ).stdout
         branch = status.splitlines()[0].replace("## ", "", 1)
         info["branch"] = branch
-        dirty = any(
-            line.startswith((" M", " M", "??", "A "))
-            for line in status.splitlines()[1:]
-        )
+        dirty = any(line.startswith((" M", " M", "??", "A ")) for line in status.splitlines()[1:])
         info["dirty"] = "yes" if dirty else "no"
-        commit = subprocess.run(
-            ["git", "log", "-1", "--pretty=%h %ar"],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip()
+        commit = (
+            subprocess.run(
+                ["git", "log", "-1", "--pretty=%h %ar"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            .stdout.strip()
+        )
         info["last_commit"] = commit or None
     except Exception:
         pass
@@ -297,22 +263,9 @@ def _run_shell_command(
             return result.returncode, result.stdout, result.stderr, duration
         except subprocess.TimeoutExpired as exc:
             duration = time.time() - start
-            stdout = (
-                exc.stdout.decode()
-                if isinstance(exc.stdout, bytes)
-                else exc.stdout or ""
-            )
-            stderr = (
-                exc.stderr.decode()
-                if isinstance(exc.stderr, bytes)
-                else exc.stderr or ""
-            )
-            return (
-                124,
-                stdout,
-                f"Command timed out after {timeout}s\n{stderr}",
-                duration,
-            )
+            stdout = exc.stdout.decode() if isinstance(exc.stdout, bytes) else exc.stdout or ""
+            stderr = exc.stderr.decode() if isinstance(exc.stderr, bytes) else exc.stderr or ""
+            return 124, stdout, f"Command timed out after {timeout}s\n{stderr}", duration
 
     proc = subprocess.Popen(
         command,
@@ -337,12 +290,8 @@ def _run_shell_command(
             pipe.close()
 
     threads = [
-        threading.Thread(
-            target=_reader, args=(proc.stdout, stdout_lines, "stdout"), daemon=True
-        ),
-        threading.Thread(
-            target=_reader, args=(proc.stderr, stderr_lines, "stderr"), daemon=True
-        ),
+        threading.Thread(target=_reader, args=(proc.stdout, stdout_lines, "stdout"), daemon=True),
+        threading.Thread(target=_reader, args=(proc.stderr, stderr_lines, "stderr"), daemon=True),
     ]
     for thread in threads:
         thread.start()
@@ -511,9 +460,7 @@ def chat(
         if profile_override in profiles:
             active_profile_name = profile_override
         else:
-            console.print(
-                f"[yellow]Unknown profile requested:[/yellow] {profile_override}"
-            )
+            console.print(f"[yellow]Unknown profile requested:[/yellow] {profile_override}")
     profile = profiles[active_profile_name]
     settings = profile.effective()
 
@@ -533,7 +480,10 @@ def chat(
 
         if tool_name == "code.apply_patch":
             content = (
-                params.get("content") or params.get("patch") or params.get("diff") or ""
+                params.get("content")
+                or params.get("patch")
+                or params.get("diff")
+                or ""
             )
             if isinstance(content, str):
                 if max_lines is not None and content.count("\n") > max_lines:
@@ -603,9 +553,7 @@ def chat(
                 return
             console.print("[dim]Running last plan...[/dim]")
             try:
-                execution = act_in_process(
-                    last_plan["query"], model=model, preview=False
-                )
+                execution = act_in_process(last_plan["query"], model=model, preview=False)
             except Exception as exc:
                 console.print(f"[red]Execution failed:[/red] {exc}")
                 return
@@ -699,16 +647,12 @@ def chat(
         if error:
             summary_lines.append(f"error: {error}")
         if data is not None:
-            preview_data = json.dumps(
-                _to_jsonable(data), ensure_ascii=False, default=str
-            )
+            preview_data = json.dumps(_to_jsonable(data), ensure_ascii=False, default=str)
             summary_lines.append(f"data: {preview_data[:400]}")
         # Add a clear success cue to help downstream evaluators detect completion
         if status == "success":
             summary_lines.append("successfully created artifacts")
-        execution_panel = Panel(
-            "\n".join(summary_lines), title="Execution", border_style="green"
-        )
+        execution_panel = Panel("\n".join(summary_lines), title="Execution", border_style="green")
         console.print(execution_panel)
         # Ensure tool_result is fully JSON-serializable before persisting
         tool_result_json = json.loads(
@@ -938,29 +882,21 @@ def code(
 
 @app.command()
 def act(
-    query: str = typer.Argument(
-        ..., help="Natural language instruction (auto tool selection)"
-    ),
-    model: str | None = typer.Option(
-        None, "--model", "-m", help="Model for selection (defaults from env)"
-    ),
+    query: str = typer.Argument(..., help="Natural language instruction (auto tool selection)"),
+    model: str | None = typer.Option(None, "--model", "-m", help="Model for selection (defaults from env)"),
     tool_mode: str = typer.Option(
         "auto",
         "--tool-mode",
         help="Tool selection mode: auto|force|off (force requires exactly one --tools)",
     ),
-    budget_ms: int = typer.Option(
-        90000, "--budget-ms", help="Global tool execution budget (ms)"
-    ),
+    budget_ms: int = typer.Option(90000, "--budget-ms", help="Global tool execution budget (ms)"),
     tools: list[str] = typer.Option(None, "--tools", help="Whitelist tool names"),
     tool_params_json: str | None = typer.Option(
         None,
         "--tool-params-json",
         help="JSON object of tool params (used with --tool-mode force)",
     ),
-    preview: bool = typer.Option(
-        False, "--preview", help="Preview selected tool and params without executing"
-    ),
+    preview: bool = typer.Option(False, "--preview", help="Preview selected tool and params without executing"),
     json_output: bool = typer.Option(False, "--json", help="Emit JSON result"),
 ):
     """Plan + execute tools and emit closed-loop bundles (benchmark-friendly)."""
@@ -1052,25 +988,16 @@ def act(
     )
 
     job_id = (
-        ids.get("job_id") or ids.get("run_id") or run_card.get("id")
-        if isinstance(run_card, dict)
-        else None
+        ids.get("job_id")
+        or ids.get("run_id")
+        or run_card.get("id") if isinstance(run_card, dict) else None
     )
-    run_id = (
-        ids.get("run_id") or run_card.get("run_id")
-        if isinstance(run_card, dict)
-        else None
-    )
+    run_id = ids.get("run_id") or run_card.get("run_id") if isinstance(run_card, dict) else None
     run_dir = provenance.get("run_dir") if isinstance(provenance, dict) else None
 
     files: dict[str, str] = {}
     if isinstance(run_dir, str) and run_dir.strip():
-        for key in (
-            "analysis_bundle_json",
-            "trajectory_json",
-            "trace_jsonl",
-            "observation_json",
-        ):
+        for key in ("analysis_bundle_json", "trajectory_json", "trace_jsonl", "observation_json"):
             path_value = provenance.get(key)
             if isinstance(path_value, str) and path_value.strip():
                 files[key] = Path(path_value).name
@@ -1112,9 +1039,7 @@ def act(
 
 @app.command()
 def ask(
-    model: str | None = typer.Option(
-        None, "--model", "-m", help="Model (e.g., gemini-2.5-pro)"
-    ),
+    model: str | None = typer.Option(None, "--model", "-m", help="Model (e.g., gemini-2.5-pro)"),
     prompt: str = typer.Option(..., "--prompt", "-p", help="Prompt text"),
     json_output: bool = typer.Option(False, "--json", help="Emit JSON result"),
 ):

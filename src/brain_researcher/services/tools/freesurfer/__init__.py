@@ -3,15 +3,14 @@
 This package provides FreeSurfer tools conforming to the NeuroTool interface.
 All tools delegate to existing agent tool implementations to avoid duplication.
 """
-
 from typing import List
 
 from brain_researcher.services.tools.base import NeuroTool
 from brain_researcher.services.tools.freesurfer.tools import (
-    FreeSurferParcellationPipeline,
-    FreeSurferQCPipeline,
     FreeSurferReconAllPipeline,
+    FreeSurferParcellationPipeline,
     FreeSurferVolumetricPipeline,
+    FreeSurferQCPipeline,
 )
 
 

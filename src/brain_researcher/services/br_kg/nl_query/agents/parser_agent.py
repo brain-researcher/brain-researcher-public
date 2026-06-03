@@ -6,16 +6,15 @@ Parses natural language queries to extract intent, entities, and constraints.
 
 import logging
 import re
+from typing import Dict, Any, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class QueryIntent(str, Enum):
     """Types of query intents"""
-
     SEARCH = "search"
     AGGREGATE = "aggregate"
     COMPARE = "compare"
@@ -28,7 +27,6 @@ class QueryIntent(str, Enum):
 
 class EntityType(str, Enum):
     """Types of entities in neuroimaging domain"""
-
     BRAIN_REGION = "brain_region"
     COGNITIVE_TASK = "cognitive_task"
     DATASET = "dataset"
@@ -46,7 +44,6 @@ class EntityType(str, Enum):
 @dataclass
 class ExtractedEntity:
     """An entity extracted from the query"""
-
     text: str
     type: EntityType
     normalized_form: str
@@ -57,7 +54,6 @@ class ExtractedEntity:
 @dataclass
 class QueryConstraint:
     """A constraint extracted from the query"""
-
     type: str  # 'temporal', 'spatial', 'numeric', 'categorical'
     field: str
     operator: str  # '>', '<', '=', 'contains', 'between'
@@ -68,7 +64,6 @@ class QueryConstraint:
 @dataclass
 class ParsedQuery:
     """Result of parsing a natural language query"""
-
     original_query: str
     intent: QueryIntent
     entities: List[ExtractedEntity]
@@ -92,91 +87,91 @@ class QueryParserAgent:
     # Intent patterns
     INTENT_PATTERNS = {
         QueryIntent.SEARCH: [
-            r"\b(find|search|get|show|list|retrieve)\b",
-            r"\b(what|which|where)\b.*\?",
+            r'\b(find|search|get|show|list|retrieve)\b',
+            r'\b(what|which|where)\b.*\?'
         ],
         QueryIntent.AGGREGATE: [
-            r"\b(count|sum|average|mean|median|total|how many)\b",
-            r"\b(statistics|stats)\b",
+            r'\b(count|sum|average|mean|median|total|how many)\b',
+            r'\b(statistics|stats)\b'
         ],
         QueryIntent.COMPARE: [
-            r"\b(compare|versus|vs|difference|contrast)\b",
-            r"\b(between|among)\b.*\band\b",
+            r'\b(compare|versus|vs|difference|contrast)\b',
+            r'\b(between|among)\b.*\band\b'
         ],
         QueryIntent.RELATE: [
-            r"\b(relate|connect|associate|link)\b",
-            r"\b(relationship|connection|association)\b",
+            r'\b(relate|connect|associate|link)\b',
+            r'\b(relationship|connection|association)\b'
         ],
         QueryIntent.EXPLAIN: [
-            r"\b(explain|why|how|describe)\b",
-            r"\b(meaning|significance)\b",
+            r'\b(explain|why|how|describe)\b',
+            r'\b(meaning|significance)\b'
         ],
         QueryIntent.VISUALIZE: [
-            r"\b(plot|graph|visualize|display|render|map)\b",
-            r"\b(heatmap|network|brain)\b",
+            r'\b(plot|graph|visualize|display|render|map)\b',
+            r'\b(heatmap|network|brain)\b'
         ],
         QueryIntent.CORRELATE: [
-            r"\b(correlate|correlation|coactivate|coactivation)\b",
-            r"\b(predict|associated with)\b",
-        ],
+            r'\b(correlate|correlation|coactivate|coactivation)\b',
+            r'\b(predict|associated with)\b'
+        ]
     }
 
     # Entity patterns for neuroimaging domain
     ENTITY_PATTERNS = {
         EntityType.BRAIN_REGION: [
             # Common brain regions
-            r"\b(hippocampus|amygdala|thalamus|cortex|cerebellum)\b",
-            r"\b(frontal|parietal|temporal|occipital)\s+\w+",
-            r"\b(PFC|ACC|OFC|DLPFC|VMPFC|IFG|STG|MTG|ITG)\b",
-            r"\b(BA\s?\d{1,2})\b",  # Brodmann areas
-            r"\b(left|right|bilateral)\s+\w+",
+            r'\b(hippocampus|amygdala|thalamus|cortex|cerebellum)\b',
+            r'\b(frontal|parietal|temporal|occipital)\s+\w+',
+            r'\b(PFC|ACC|OFC|DLPFC|VMPFC|IFG|STG|MTG|ITG)\b',
+            r'\b(BA\s?\d{1,2})\b',  # Brodmann areas
+            r'\b(left|right|bilateral)\s+\w+',
         ],
         EntityType.COGNITIVE_TASK: [
-            r"\b(working memory|attention|emotion|language|motor)\b",
-            r"\b(n-back|stroop|go/no-go|oddball|flanker)\b",
-            r"\b(face|word|object)\s+(processing|recognition)",
-            r"\b(decision making|reward|punishment)\b",
+            r'\b(working memory|attention|emotion|language|motor)\b',
+            r'\b(n-back|stroop|go/no-go|oddball|flanker)\b',
+            r'\b(face|word|object)\s+(processing|recognition)',
+            r'\b(decision making|reward|punishment)\b'
         ],
         EntityType.DATASET: [
-            r"\b(HCP|ABCD|ADNI|OpenNeuro|UK Biobank)\b",
-            r"\bds\d{6}\b",  # OpenNeuro dataset IDs
-            r"\b(dataset|study|cohort|sample)\b",
+            r'\b(HCP|ABCD|ADNI|OpenNeuro|UK Biobank)\b',
+            r'\bds\d{6}\b',  # OpenNeuro dataset IDs
+            r'\b(dataset|study|cohort|sample)\b'
         ],
         EntityType.DISORDER: [
-            r"\b(alzheimer|parkinson|schizophrenia|depression|autism)\b",
-            r"\b(AD|PD|MDD|ASD|ADHD|OCD|PTSD)\b",
-            r"\b(disorder|disease|syndrome|condition)\b",
+            r'\b(alzheimer|parkinson|schizophrenia|depression|autism)\b',
+            r'\b(AD|PD|MDD|ASD|ADHD|OCD|PTSD)\b',
+            r'\b(disorder|disease|syndrome|condition)\b'
         ],
         EntityType.MODALITY: [
-            r"\b(fMRI|MRI|PET|EEG|MEG|DTI|DWI)\b",
-            r"\b(BOLD|structural|functional|connectivity)\b",
-            r"\b(resting.?state|task.?based)\b",
+            r'\b(fMRI|MRI|PET|EEG|MEG|DTI|DWI)\b',
+            r'\b(BOLD|structural|functional|connectivity)\b',
+            r'\b(resting.?state|task.?based)\b'
         ],
         EntityType.COORDINATE: [
-            r"MNI:\s*\[?\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*\]?",
-            r"TAL:\s*\[?\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*\]?",
-            r"\[?\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*\]?\s*mm",
-        ],
+            r'MNI:\s*\[?\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*\]?',
+            r'TAL:\s*\[?\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*\]?',
+            r'\[?\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*\]?\s*mm'
+        ]
     }
 
     # Constraint patterns
     CONSTRAINT_PATTERNS = {
-        "temporal": [
-            r"(after|before|since|until|between)\s+(\d{4})",
-            r"(last|past|recent)\s+(\d+)\s+(year|month|day)s?",
-            r"(published|conducted)\s+(in|during)\s+(\d{4})",
+        'temporal': [
+            r'(after|before|since|until|between)\s+(\d{4})',
+            r'(last|past|recent)\s+(\d+)\s+(year|month|day)s?',
+            r'(published|conducted)\s+(in|during)\s+(\d{4})'
         ],
-        "numeric": [
-            r"(more than|greater than|>)\s+(\d+)",
-            r"(less than|fewer than|<)\s+(\d+)",
-            r"(between|from)\s+(\d+)\s+(to|and)\s+(\d+)",
-            r"(at least|minimum)\s+(\d+)",
-            r"(at most|maximum)\s+(\d+)",
+        'numeric': [
+            r'(more than|greater than|>)\s+(\d+)',
+            r'(less than|fewer than|<)\s+(\d+)',
+            r'(between|from)\s+(\d+)\s+(to|and)\s+(\d+)',
+            r'(at least|minimum)\s+(\d+)',
+            r'(at most|maximum)\s+(\d+)'
         ],
-        "spatial": [
-            r"within\s+(\d+)\s*mm\s+of",
-            r"(anterior|posterior|superior|inferior|medial|lateral)\s+to",
-        ],
+        'spatial': [
+            r'within\s+(\d+)\s*mm\s+of',
+            r'(anterior|posterior|superior|inferior|medial|lateral)\s+to'
+        ]
     }
 
     def __init__(self):
@@ -186,28 +181,34 @@ class QueryParserAgent:
 
     def _compile_patterns(self):
         """Compile regex patterns for efficiency"""
-        self._compiled_patterns = {"intent": {}, "entity": {}, "constraint": {}}
+        self._compiled_patterns = {
+            'intent': {},
+            'entity': {},
+            'constraint': {}
+        }
 
         # Compile intent patterns
         for intent, patterns in self.INTENT_PATTERNS.items():
-            self._compiled_patterns["intent"][intent] = [
+            self._compiled_patterns['intent'][intent] = [
                 re.compile(p, re.IGNORECASE) for p in patterns
             ]
 
         # Compile entity patterns
         for entity_type, patterns in self.ENTITY_PATTERNS.items():
-            self._compiled_patterns["entity"][entity_type] = [
+            self._compiled_patterns['entity'][entity_type] = [
                 re.compile(p, re.IGNORECASE) for p in patterns
             ]
 
         # Compile constraint patterns
         for constraint_type, patterns in self.CONSTRAINT_PATTERNS.items():
-            self._compiled_patterns["constraint"][constraint_type] = [
+            self._compiled_patterns['constraint'][constraint_type] = [
                 re.compile(p, re.IGNORECASE) for p in patterns
             ]
 
     def parse(
-        self, query: str, context: Optional[Dict[str, Any]] = None
+        self,
+        query: str,
+        context: Optional[Dict[str, Any]] = None
     ) -> ParsedQuery:
         """
         Parse a natural language query
@@ -239,7 +240,9 @@ class QueryParserAgent:
 
         # Calculate overall confidence
         confidence = self._calculate_confidence(
-            intent_confidence, entities, constraints
+            intent_confidence,
+            entities,
+            constraints
         )
 
         return ParsedQuery(
@@ -249,13 +252,13 @@ class QueryParserAgent:
             constraints=constraints,
             modifiers=modifiers,
             confidence_score=confidence,
-            ambiguities=ambiguities,
+            ambiguities=ambiguities
         )
 
     def _normalize_query(self, query: str) -> str:
         """Normalize the query text"""
         # Remove extra whitespace
-        query = " ".join(query.split())
+        query = ' '.join(query.split())
 
         # Expand common abbreviations
         abbreviations = {
@@ -264,11 +267,11 @@ class QueryParserAgent:
             "how's": "how is",
             "BA": "Brodmann area",
             "WM": "working memory",
-            "RS": "resting state",
+            "RS": "resting state"
         }
 
         for abbr, full in abbreviations.items():
-            query = re.sub(r"\b" + abbr + r"\b", full, query, flags=re.IGNORECASE)
+            query = re.sub(r'\b' + abbr + r'\b', full, query, flags=re.IGNORECASE)
 
         return query
 
@@ -276,7 +279,7 @@ class QueryParserAgent:
         """Extract the primary intent from the query"""
         intent_scores = {}
 
-        for intent, patterns in self._compiled_patterns["intent"].items():
+        for intent, patterns in self._compiled_patterns['intent'].items():
             score = 0.0
             for pattern in patterns:
                 if pattern.search(query):
@@ -301,7 +304,7 @@ class QueryParserAgent:
         """Extract entities from the query"""
         entities = []
 
-        for entity_type, patterns in self._compiled_patterns["entity"].items():
+        for entity_type, patterns in self._compiled_patterns['entity'].items():
             for pattern in patterns:
                 for match in pattern.finditer(query):
                     entity_text = match.group(0)
@@ -310,19 +313,13 @@ class QueryParserAgent:
                     if any(e.text == entity_text for e in entities):
                         continue
 
-                    entities.append(
-                        ExtractedEntity(
-                            text=entity_text,
-                            type=entity_type,
-                            normalized_form=self._normalize_entity(
-                                entity_text, entity_type
-                            ),
-                            position=match.start(),
-                            confidence=self._calculate_entity_confidence(
-                                entity_text, entity_type
-                            ),
-                        )
-                    )
+                    entities.append(ExtractedEntity(
+                        text=entity_text,
+                        type=entity_type,
+                        normalized_form=self._normalize_entity(entity_text, entity_type),
+                        position=match.start(),
+                        confidence=self._calculate_entity_confidence(entity_text, entity_type)
+                    ))
 
         # Sort by position in query
         entities.sort(key=lambda e: e.position)
@@ -333,10 +330,14 @@ class QueryParserAgent:
         """Extract constraints from the query"""
         constraints = []
 
-        for constraint_type, patterns in self._compiled_patterns["constraint"].items():
+        for constraint_type, patterns in self._compiled_patterns['constraint'].items():
             for pattern in patterns:
                 for match in pattern.finditer(query):
-                    constraint = self._parse_constraint(match, constraint_type, query)
+                    constraint = self._parse_constraint(
+                        match,
+                        constraint_type,
+                        query
+                    )
                     if constraint:
                         constraints.append(constraint)
 
@@ -347,39 +348,33 @@ class QueryParserAgent:
         modifiers = {}
 
         # Extract limit
-        limit_match = re.search(r"\b(top|first|last)\s+(\d+)\b", query, re.IGNORECASE)
+        limit_match = re.search(r'\b(top|first|last)\s+(\d+)\b', query, re.IGNORECASE)
         if limit_match:
-            modifiers["limit"] = int(limit_match.group(2))
-            modifiers["order"] = limit_match.group(1).lower()
+            modifiers['limit'] = int(limit_match.group(2))
+            modifiers['order'] = limit_match.group(1).lower()
 
         # Extract sorting
         sort_match = re.search(
-            r"\b(sort|order)\s+by\s+(\w+)(?:\s+(asc|desc|ascending|descending))?\b",
+            r'\b(sort|order)\s+by\s+(\w+)(?:\s+(asc|desc|ascending|descending))?\b',
             query,
-            re.IGNORECASE,
+            re.IGNORECASE
         )
         if sort_match:
-            modifiers["sort_by"] = sort_match.group(2)
-            modifiers["sort_order"] = (
-                "desc"
-                if sort_match.group(3) and "desc" in sort_match.group(3).lower()
-                else "asc"
-            )
+            modifiers['sort_by'] = sort_match.group(2)
+            modifiers['sort_order'] = 'desc' if sort_match.group(3) and 'desc' in sort_match.group(3).lower() else 'asc'
 
         # Extract grouping
-        group_match = re.search(
-            r"\b(group|grouped)\s+by\s+(\w+)\b", query, re.IGNORECASE
-        )
+        group_match = re.search(r'\b(group|grouped)\s+by\s+(\w+)\b', query, re.IGNORECASE)
         if group_match:
-            modifiers["group_by"] = group_match.group(2)
+            modifiers['group_by'] = group_match.group(2)
 
         # Extract output format preferences
-        if re.search(r"\b(table|list)\b", query, re.IGNORECASE):
-            modifiers["format"] = "table"
-        elif re.search(r"\b(graph|network|visualization)\b", query, re.IGNORECASE):
-            modifiers["format"] = "graph"
-        elif re.search(r"\b(summary|summarize)\b", query, re.IGNORECASE):
-            modifiers["format"] = "summary"
+        if re.search(r'\b(table|list)\b', query, re.IGNORECASE):
+            modifiers['format'] = 'table'
+        elif re.search(r'\b(graph|network|visualization)\b', query, re.IGNORECASE):
+            modifiers['format'] = 'graph'
+        elif re.search(r'\b(summary|summarize)\b', query, re.IGNORECASE):
+            modifiers['format'] = 'summary'
 
         return modifiers
 
@@ -391,32 +386,35 @@ class QueryParserAgent:
         if entity_type == EntityType.BRAIN_REGION:
             # Standardize brain region names
             region_map = {
-                "pfc": "prefrontal_cortex",
-                "acc": "anterior_cingulate_cortex",
-                "ofc": "orbitofrontal_cortex",
-                "dlpfc": "dorsolateral_prefrontal_cortex",
-                "vmpfc": "ventromedial_prefrontal_cortex",
+                'pfc': 'prefrontal_cortex',
+                'acc': 'anterior_cingulate_cortex',
+                'ofc': 'orbitofrontal_cortex',
+                'dlpfc': 'dorsolateral_prefrontal_cortex',
+                'vmpfc': 'ventromedial_prefrontal_cortex'
             }
             normalized = region_map.get(normalized, normalized)
 
         elif entity_type == EntityType.DISORDER:
             # Standardize disorder names
             disorder_map = {
-                "ad": "alzheimer_disease",
-                "pd": "parkinson_disease",
-                "mdd": "major_depressive_disorder",
-                "asd": "autism_spectrum_disorder",
+                'ad': 'alzheimer_disease',
+                'pd': 'parkinson_disease',
+                'mdd': 'major_depressive_disorder',
+                'asd': 'autism_spectrum_disorder'
             }
             normalized = disorder_map.get(normalized, normalized)
 
-        return normalized.replace(" ", "_")
+        return normalized.replace(' ', '_')
 
     def _parse_constraint(
-        self, match: re.Match, constraint_type: str, query: str
+        self,
+        match: re.Match,
+        constraint_type: str,
+        query: str
     ) -> Optional[QueryConstraint]:
         """Parse a constraint from a regex match"""
         try:
-            if constraint_type == "temporal":
+            if constraint_type == 'temporal':
                 # Parse temporal constraints
                 groups = match.groups()
                 if len(groups) >= 2:
@@ -424,60 +422,60 @@ class QueryParserAgent:
                     value = groups[1]
 
                     return QueryConstraint(
-                        type="temporal",
-                        field="date",
+                        type='temporal',
+                        field='date',
                         operator=operator,
                         value=value,
-                        confidence=0.8,
+                        confidence=0.8
                     )
 
-            elif constraint_type == "numeric":
+            elif constraint_type == 'numeric':
                 # Parse numeric constraints
                 text = match.group(0)
 
                 # Extract numbers
-                numbers = re.findall(r"\d+", text)
+                numbers = re.findall(r'\d+', text)
                 if not numbers:
                     return None
 
-                operator = "eq"
+                operator = 'eq'
                 value = int(numbers[0])
 
-                if "more than" in text or "greater than" in text or ">" in text:
-                    operator = "gt"
-                elif "less than" in text or "fewer than" in text or "<" in text:
-                    operator = "lt"
-                elif "between" in text and len(numbers) >= 2:
-                    operator = "between"
+                if 'more than' in text or 'greater than' in text or '>' in text:
+                    operator = 'gt'
+                elif 'less than' in text or 'fewer than' in text or '<' in text:
+                    operator = 'lt'
+                elif 'between' in text and len(numbers) >= 2:
+                    operator = 'between'
                     value = (int(numbers[0]), int(numbers[1]))
-                elif "at least" in text or "minimum" in text:
-                    operator = "gte"
-                elif "at most" in text or "maximum" in text:
-                    operator = "lte"
+                elif 'at least' in text or 'minimum' in text:
+                    operator = 'gte'
+                elif 'at most' in text or 'maximum' in text:
+                    operator = 'lte'
 
                 # Determine field based on context
                 field = self._infer_constraint_field(query, match.start())
 
                 return QueryConstraint(
-                    type="numeric",
+                    type='numeric',
                     field=field,
                     operator=operator,
                     value=value,
-                    confidence=0.7,
+                    confidence=0.7
                 )
 
-            elif constraint_type == "spatial":
+            elif constraint_type == 'spatial':
                 # Parse spatial constraints
                 text = match.group(0)
 
-                distance_match = re.search(r"(\d+)\s*mm", text)
+                distance_match = re.search(r'(\d+)\s*mm', text)
                 if distance_match:
                     return QueryConstraint(
-                        type="spatial",
-                        field="distance",
-                        operator="within",
+                        type='spatial',
+                        field='distance',
+                        operator='within',
                         value=int(distance_match.group(1)),
-                        confidence=0.8,
+                        confidence=0.8
                     )
 
         except Exception as e:
@@ -495,12 +493,12 @@ class QueryParserAgent:
 
         # Common field mappings
         field_keywords = {
-            "subjects": ["subject", "participant", "patient"],
-            "age": ["age", "years old"],
-            "voxels": ["voxel", "cluster"],
-            "activation": ["activation", "signal", "bold"],
-            "correlation": ["correlation", "r-value"],
-            "significance": ["p-value", "significance", "threshold"],
+            'subjects': ['subject', 'participant', 'patient'],
+            'age': ['age', 'years old'],
+            'voxels': ['voxel', 'cluster'],
+            'activation': ['activation', 'signal', 'bold'],
+            'correlation': ['correlation', 'r-value'],
+            'significance': ['p-value', 'significance', 'threshold']
         }
 
         for field, keywords in field_keywords.items():
@@ -508,16 +506,18 @@ class QueryParserAgent:
                 if keyword in context:
                     return field
 
-        return "value"  # Default field
+        return 'value'  # Default field
 
     def _detect_ambiguities(
-        self, query: str, entities: List[ExtractedEntity]
+        self,
+        query: str,
+        entities: List[ExtractedEntity]
     ) -> List[str]:
         """Detect potential ambiguities in the query"""
         ambiguities = []
 
         # Check for ambiguous pronouns
-        if re.search(r"\b(it|they|them|this|that|these|those)\b", query, re.IGNORECASE):
+        if re.search(r'\b(it|they|them|this|that|these|those)\b', query, re.IGNORECASE):
             ambiguities.append("Query contains pronouns that may be ambiguous")
 
         # Check for multiple entities of same type
@@ -534,7 +534,7 @@ class QueryParserAgent:
                 )
 
         # Check for missing context
-        question_words = ["what", "which", "where", "when", "why", "how"]
+        question_words = ['what', 'which', 'where', 'when', 'why', 'how']
         has_question = any(word in query.lower() for word in question_words)
 
         if has_question and not entities:
@@ -542,25 +542,25 @@ class QueryParserAgent:
 
         return ambiguities
 
-    def _calculate_entity_confidence(self, text: str, entity_type: EntityType) -> float:
+    def _calculate_entity_confidence(
+        self,
+        text: str,
+        entity_type: EntityType
+    ) -> float:
         """Calculate confidence score for an extracted entity"""
         confidence = 0.5  # Base confidence
 
         # Increase confidence for exact matches in known vocabularies
         known_entities = {
             EntityType.BRAIN_REGION: [
-                "hippocampus",
-                "amygdala",
-                "prefrontal_cortex",
-                "thalamus",
+                'hippocampus', 'amygdala', 'prefrontal_cortex', 'thalamus'
             ],
             EntityType.DISORDER: [
-                "alzheimer",
-                "parkinson",
-                "schizophrenia",
-                "depression",
+                'alzheimer', 'parkinson', 'schizophrenia', 'depression'
             ],
-            EntityType.MODALITY: ["fmri", "mri", "pet", "eeg", "meg"],
+            EntityType.MODALITY: [
+                'fmri', 'mri', 'pet', 'eeg', 'meg'
+            ]
         }
 
         if entity_type in known_entities:
@@ -579,11 +579,15 @@ class QueryParserAgent:
         self,
         intent_confidence: float,
         entities: List[ExtractedEntity],
-        constraints: List[QueryConstraint],
+        constraints: List[QueryConstraint]
     ) -> float:
         """Calculate overall parse confidence"""
         # Weighted average of component confidences
-        weights = {"intent": 0.3, "entities": 0.5, "constraints": 0.2}
+        weights = {
+            'intent': 0.3,
+            'entities': 0.5,
+            'constraints': 0.2
+        }
 
         # Calculate entity confidence
         entity_confidence = 0.5  # Default if no entities
@@ -593,14 +597,12 @@ class QueryParserAgent:
         # Calculate constraint confidence
         constraint_confidence = 0.7  # Default if no constraints
         if constraints:
-            constraint_confidence = sum(c.confidence for c in constraints) / len(
-                constraints
-            )
+            constraint_confidence = sum(c.confidence for c in constraints) / len(constraints)
 
         overall = (
-            weights["intent"] * intent_confidence
-            + weights["entities"] * entity_confidence
-            + weights["constraints"] * constraint_confidence
+            weights['intent'] * intent_confidence +
+            weights['entities'] * entity_confidence +
+            weights['constraints'] * constraint_confidence
         )
 
         return min(1.0, overall)

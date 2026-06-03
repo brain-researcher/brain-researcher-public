@@ -9,26 +9,24 @@ This module provides sophisticated aggregation capabilities for:
 - Cross-modal data fusion and correlation analysis
 """
 
-import asyncio
-import hashlib
 import json
 import logging
-import time
-from collections import Counter, defaultdict
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
 import numpy as np
 import pandas as pd
+import time
+from typing import Dict, List, Any, Optional, Tuple, Union, Callable
+from dataclasses import dataclass, asdict
+from enum import Enum
+from collections import defaultdict, Counter
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import hashlib
 
 logger = logging.getLogger(__name__)
 
 
 class AggregationFunction(str, Enum):
     """Supported aggregation functions."""
-
     COUNT = "count"
     SUM = "sum"
     AVG = "avg"
@@ -48,20 +46,18 @@ class AggregationFunction(str, Enum):
 
 class GroupByOperation(str, Enum):
     """Group by operations for multi-dimensional aggregation."""
-
-    SIMPLE = "simple"  # Single dimension grouping
-    ROLLUP = "rollup"  # Hierarchical rollup
-    CUBE = "cube"  # Multi-dimensional cube
+    SIMPLE = "simple"           # Single dimension grouping
+    ROLLUP = "rollup"          # Hierarchical rollup
+    CUBE = "cube"              # Multi-dimensional cube
     GROUPING_SETS = "grouping_sets"  # Custom grouping sets
 
 
 class AnalyticsScope(str, Enum):
     """Scope of analytics computation."""
-
-    GLOBAL = "global"  # Entire graph
-    LOCAL = "local"  # Node neighborhood
-    SUBGRAPH = "subgraph"  # Specific subgraph
-    TEMPORAL = "temporal"  # Time-based scope
+    GLOBAL = "global"           # Entire graph
+    LOCAL = "local"             # Node neighborhood
+    SUBGRAPH = "subgraph"       # Specific subgraph
+    TEMPORAL = "temporal"       # Time-based scope
 
 
 @dataclass
@@ -116,18 +112,16 @@ class GraphMetricsCalculator:
     """Calculate various graph analytics metrics."""
 
     @staticmethod
-    def calculate_centrality_metrics(
-        nodes: List[Dict], edges: List[Dict]
-    ) -> Dict[str, Dict[str, float]]:
+    def calculate_centrality_metrics(nodes: List[Dict], edges: List[Dict]) -> Dict[str, Dict[str, float]]:
         """Calculate centrality metrics for nodes."""
         # Build adjacency structure
         adjacency = defaultdict(set)
-        node_ids = [node.get("id", node.get("concept_id", "")) for node in nodes]
+        node_ids = [node.get('id', node.get('concept_id', '')) for node in nodes]
         node_lookup = {node_id: i for i, node_id in enumerate(node_ids)}
 
         for edge in edges:
-            source = edge.get("source_id", edge.get("start_node"))
-            target = edge.get("target_id", edge.get("end_node"))
+            source = edge.get('source_id', edge.get('start_node'))
+            target = edge.get('target_id', edge.get('end_node'))
 
             if source in node_lookup and target in node_lookup:
                 adjacency[source].add(target)
@@ -137,24 +131,21 @@ class GraphMetricsCalculator:
 
         for node_id in node_ids:
             metrics = {
-                "degree_centrality": len(adjacency[node_id])
-                / max(1, len(node_ids) - 1),
-                "closeness_centrality": GraphMetricsCalculator._calculate_closeness(
+                'degree_centrality': len(adjacency[node_id]) / max(1, len(node_ids) - 1),
+                'closeness_centrality': GraphMetricsCalculator._calculate_closeness(
                     node_id, adjacency, node_ids
                 ),
-                "betweenness_centrality": GraphMetricsCalculator._calculate_betweenness(
+                'betweenness_centrality': GraphMetricsCalculator._calculate_betweenness(
                     node_id, adjacency, node_ids
                 ),
-                "eigenvector_centrality": 0.1,  # Simplified placeholder
+                'eigenvector_centrality': 0.1  # Simplified placeholder
             }
             centrality_metrics[node_id] = metrics
 
         return centrality_metrics
 
     @staticmethod
-    def _calculate_closeness(
-        node_id: str, adjacency: Dict, all_nodes: List[str]
-    ) -> float:
+    def _calculate_closeness(node_id: str, adjacency: Dict, all_nodes: List[str]) -> float:
         """Calculate closeness centrality using BFS."""
         if not adjacency[node_id]:
             return 0.0
@@ -182,9 +173,7 @@ class GraphMetricsCalculator:
         return reachable_nodes / total_distance
 
     @staticmethod
-    def _calculate_betweenness(
-        node_id: str, adjacency: Dict, all_nodes: List[str]
-    ) -> float:
+    def _calculate_betweenness(node_id: str, adjacency: Dict, all_nodes: List[str]) -> float:
         """Calculate betweenness centrality (simplified)."""
         # Simplified betweenness calculation
         # In production, would use proper shortest path algorithms
@@ -201,7 +190,7 @@ class GraphMetricsCalculator:
         # Count edges between neighbors
         edges_between_neighbors = 0
         for i, neighbor1 in enumerate(neighbors):
-            for neighbor2 in neighbors[i + 1 :]:
+            for neighbor2 in neighbors[i+1:]:
                 if neighbor2 in adjacency[neighbor1]:
                     edges_between_neighbors += 1
 
@@ -215,9 +204,7 @@ class StatisticalAnalyzer:
     """Perform statistical analysis on aggregated data."""
 
     @staticmethod
-    def calculate_distribution_stats(
-        values: List[Union[int, float]],
-    ) -> Dict[str, float]:
+    def calculate_distribution_stats(values: List[Union[int, float]]) -> Dict[str, float]:
         """Calculate comprehensive distribution statistics."""
         if not values:
             return {}
@@ -229,17 +216,17 @@ class StatisticalAnalyzer:
         values_array = np.array(values)
 
         return {
-            "count": len(values),
-            "mean": float(np.mean(values_array)),
-            "median": float(np.median(values_array)),
-            "std": float(np.std(values_array)),
-            "variance": float(np.var(values_array)),
-            "min": float(np.min(values_array)),
-            "max": float(np.max(values_array)),
-            "q25": float(np.percentile(values_array, 25)),
-            "q75": float(np.percentile(values_array, 75)),
-            "skewness": StatisticalAnalyzer._calculate_skewness(values_array),
-            "kurtosis": StatisticalAnalyzer._calculate_kurtosis(values_array),
+            'count': len(values),
+            'mean': float(np.mean(values_array)),
+            'median': float(np.median(values_array)),
+            'std': float(np.std(values_array)),
+            'variance': float(np.var(values_array)),
+            'min': float(np.min(values_array)),
+            'max': float(np.max(values_array)),
+            'q25': float(np.percentile(values_array, 25)),
+            'q75': float(np.percentile(values_array, 75)),
+            'skewness': StatisticalAnalyzer._calculate_skewness(values_array),
+            'kurtosis': StatisticalAnalyzer._calculate_kurtosis(values_array)
         }
 
     @staticmethod
@@ -273,9 +260,7 @@ class StatisticalAnalyzer:
         return float(kurt)
 
     @staticmethod
-    def calculate_correlation_matrix(
-        data: Dict[str, List[float]],
-    ) -> Dict[str, Dict[str, float]]:
+    def calculate_correlation_matrix(data: Dict[str, List[float]]) -> Dict[str, Dict[str, float]]:
         """Calculate correlation matrix between variables."""
         variables = list(data.keys())
         correlation_matrix = {}
@@ -345,7 +330,7 @@ class AggregationPipeline:
             AggregationFunction.STDDEV: self._stddev_aggregation,
             AggregationFunction.MEDIAN: self._median_aggregation,
             AggregationFunction.DISTINCT_COUNT: self._distinct_count_aggregation,
-            AggregationFunction.ARRAY_AGG: self._array_agg_aggregation,
+            AggregationFunction.ARRAY_AGG: self._array_agg_aggregation
         }
 
         # Analytics calculators
@@ -354,21 +339,19 @@ class AggregationPipeline:
 
         # Performance tracking
         self.pipeline_stats = {
-            "pipelines_executed": 0,
-            "cache_hits": 0,
-            "avg_execution_time_ms": 0.0,
-            "total_results_generated": 0,
+            'pipelines_executed': 0,
+            'cache_hits': 0,
+            'avg_execution_time_ms': 0.0,
+            'total_results_generated': 0
         }
 
         logger.info("Initialized AggregationPipeline")
 
-    def execute_pipeline(
-        self,
-        pipeline_stages: List[PipelineStage],
-        pipeline_id: Optional[str] = None,
-        scope: AnalyticsScope = AnalyticsScope.GLOBAL,
-        scope_filters: Optional[Dict[str, Any]] = None,
-    ) -> AggregationResult:
+    def execute_pipeline(self,
+                        pipeline_stages: List[PipelineStage],
+                        pipeline_id: Optional[str] = None,
+                        scope: AnalyticsScope = AnalyticsScope.GLOBAL,
+                        scope_filters: Optional[Dict[str, Any]] = None) -> AggregationResult:
         """Execute a multi-stage aggregation pipeline.
 
         Args:
@@ -389,7 +372,7 @@ class AggregationPipeline:
         if self.enable_caching:
             cached_result = self._get_cached_result(pipeline_id)
             if cached_result:
-                self.pipeline_stats["cache_hits"] += 1
+                self.pipeline_stats['cache_hits'] += 1
                 return cached_result
 
         # Execute stages
@@ -409,11 +392,7 @@ class AggregationPipeline:
                     futures = []
                     for stage in stage_group:
                         future = self.executor.submit(
-                            self._execute_stage,
-                            stage,
-                            stage_results,
-                            scope,
-                            scope_filters,
+                            self._execute_stage, stage, stage_results, scope, scope_filters
                         )
                         futures.append((stage.name, future))
 
@@ -427,15 +406,14 @@ class AggregationPipeline:
             # Calculate metadata
             execution_time_ms = (time.time() - start_time) * 1000
             metadata = {
-                "pipeline_id": pipeline_id,
-                "stages_executed": len(pipeline_stages),
-                "execution_time_ms": execution_time_ms,
-                "scope": scope.value,
-                "data_points_processed": sum(
-                    result.get("data_points", 0)
-                    for result in stage_results.values()
+                'pipeline_id': pipeline_id,
+                'stages_executed': len(pipeline_stages),
+                'execution_time_ms': execution_time_ms,
+                'scope': scope.value,
+                'data_points_processed': sum(
+                    result.get('data_points', 0) for result in stage_results.values()
                     if isinstance(result, dict)
-                ),
+                )
             }
 
             # Create result
@@ -443,7 +421,7 @@ class AggregationPipeline:
                 pipeline_id=pipeline_id,
                 results=final_results,
                 metadata=metadata,
-                execution_time_ms=execution_time_ms,
+                execution_time_ms=execution_time_ms
             )
 
             # Cache result
@@ -461,13 +439,11 @@ class AggregationPipeline:
             logger.error(f"Pipeline execution failed: {e}")
             raise
 
-    def aggregate_node_properties(
-        self,
-        node_type: Optional[str] = None,
-        aggregations: List[AggregationSpec] = None,
-        group_by: Optional[GroupBySpec] = None,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    def aggregate_node_properties(self,
+                                 node_type: Optional[str] = None,
+                                 aggregations: List[AggregationSpec] = None,
+                                 group_by: Optional[GroupBySpec] = None,
+                                 filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Aggregate node properties with flexible grouping.
 
         Args:
@@ -518,33 +494,19 @@ class AggregationPipeline:
         # Add aggregations
         for agg_spec in aggregations:
             if agg_spec.function == AggregationFunction.COUNT:
-                return_parts.append(
-                    f"count(n.{agg_spec.field}) as {agg_spec.get_alias()}"
-                )
+                return_parts.append(f"count(n.{agg_spec.field}) as {agg_spec.get_alias()}")
             elif agg_spec.function == AggregationFunction.SUM:
-                return_parts.append(
-                    f"sum(n.{agg_spec.field}) as {agg_spec.get_alias()}"
-                )
+                return_parts.append(f"sum(n.{agg_spec.field}) as {agg_spec.get_alias()}")
             elif agg_spec.function == AggregationFunction.AVG:
-                return_parts.append(
-                    f"avg(n.{agg_spec.field}) as {agg_spec.get_alias()}"
-                )
+                return_parts.append(f"avg(n.{agg_spec.field}) as {agg_spec.get_alias()}")
             elif agg_spec.function == AggregationFunction.MIN:
-                return_parts.append(
-                    f"min(n.{agg_spec.field}) as {agg_spec.get_alias()}"
-                )
+                return_parts.append(f"min(n.{agg_spec.field}) as {agg_spec.get_alias()}")
             elif agg_spec.function == AggregationFunction.MAX:
-                return_parts.append(
-                    f"max(n.{agg_spec.field}) as {agg_spec.get_alias()}"
-                )
+                return_parts.append(f"max(n.{agg_spec.field}) as {agg_spec.get_alias()}")
             elif agg_spec.function == AggregationFunction.DISTINCT_COUNT:
-                return_parts.append(
-                    f"count(DISTINCT n.{agg_spec.field}) as {agg_spec.get_alias()}"
-                )
+                return_parts.append(f"count(DISTINCT n.{agg_spec.field}) as {agg_spec.get_alias()}")
             elif agg_spec.function == AggregationFunction.ARRAY_AGG:
-                return_parts.append(
-                    f"collect(n.{agg_spec.field}) as {agg_spec.get_alias()}"
-                )
+                return_parts.append(f"collect(n.{agg_spec.field}) as {agg_spec.get_alias()}")
 
         query_parts.append("RETURN " + ", ".join(return_parts))
 
@@ -565,23 +527,21 @@ class AggregationPipeline:
                     aggregated_data.append(row_data)
 
                 return {
-                    "data": aggregated_data,
-                    "query": query,
-                    "row_count": len(aggregated_data),
-                    "aggregations": [agg.get_alias() for agg in aggregations],
-                    "grouping_fields": group_by.fields if group_by else [],
+                    'data': aggregated_data,
+                    'query': query,
+                    'row_count': len(aggregated_data),
+                    'aggregations': [agg.get_alias() for agg in aggregations],
+                    'grouping_fields': group_by.fields if group_by else []
                 }
 
         except Exception as e:
             logger.error(f"Node property aggregation failed: {e}")
-            return {"data": [], "error": str(e)}
+            return {'data': [], 'error': str(e)}
 
-    def calculate_graph_analytics(
-        self,
-        node_types: Optional[List[str]] = None,
-        edge_types: Optional[List[str]] = None,
-        metrics: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+    def calculate_graph_analytics(self,
+                                 node_types: Optional[List[str]] = None,
+                                 edge_types: Optional[List[str]] = None,
+                                 metrics: Optional[List[str]] = None) -> Dict[str, Any]:
         """Calculate comprehensive graph analytics.
 
         Args:
@@ -593,7 +553,7 @@ class AggregationPipeline:
             Graph analytics results
         """
         if metrics is None:
-            metrics = ["centrality", "clustering", "connectivity", "distribution"]
+            metrics = ['centrality', 'clustering', 'connectivity', 'distribution']
 
         # Fetch graph data
         nodes_query = "MATCH (n) RETURN n, labels(n) as node_labels"
@@ -601,9 +561,7 @@ class AggregationPipeline:
 
         if node_types:
             node_filter = " OR ".join([f"'{nt}' IN labels(n)" for nt in node_types])
-            nodes_query = (
-                f"MATCH (n) WHERE {node_filter} RETURN n, labels(n) as node_labels"
-            )
+            nodes_query = f"MATCH (n) WHERE {node_filter} RETURN n, labels(n) as node_labels"
 
         if edge_types:
             edge_filter = " OR ".join([f"type(r) = '{et}'" for et in edge_types])
@@ -617,68 +575,58 @@ class AggregationPipeline:
                 node_result = session.run(nodes_query)
                 nodes = []
                 for record in node_result:
-                    node_data = dict(record["n"])
-                    node_data["labels"] = record["node_labels"]
+                    node_data = dict(record['n'])
+                    node_data['labels'] = record['node_labels']
                     nodes.append(node_data)
 
                 # Get edges
                 edge_result = session.run(edges_query)
                 edges = []
                 for record in edge_result:
-                    edge_data = dict(record["r"])
-                    edge_data["source_id"] = record["source_id"]
-                    edge_data["target_id"] = record["target_id"]
-                    edge_data["edge_type"] = record["edge_type"]
+                    edge_data = dict(record['r'])
+                    edge_data['source_id'] = record['source_id']
+                    edge_data['target_id'] = record['target_id']
+                    edge_data['edge_type'] = record['edge_type']
                     edges.append(edge_data)
 
                 # Calculate metrics
-                if "centrality" in metrics:
-                    centrality_metrics = (
-                        self.graph_calculator.calculate_centrality_metrics(nodes, edges)
-                    )
-                    analytics_results["centrality"] = centrality_metrics
+                if 'centrality' in metrics:
+                    centrality_metrics = self.graph_calculator.calculate_centrality_metrics(nodes, edges)
+                    analytics_results['centrality'] = centrality_metrics
 
-                if "clustering" in metrics:
-                    clustering_results = self._calculate_clustering_analytics(
-                        nodes, edges
-                    )
-                    analytics_results["clustering"] = clustering_results
+                if 'clustering' in metrics:
+                    clustering_results = self._calculate_clustering_analytics(nodes, edges)
+                    analytics_results['clustering'] = clustering_results
 
-                if "connectivity" in metrics:
-                    connectivity_results = self._calculate_connectivity_analytics(
-                        nodes, edges
-                    )
-                    analytics_results["connectivity"] = connectivity_results
+                if 'connectivity' in metrics:
+                    connectivity_results = self._calculate_connectivity_analytics(nodes, edges)
+                    analytics_results['connectivity'] = connectivity_results
 
-                if "distribution" in metrics:
-                    distribution_results = self._calculate_distribution_analytics(
-                        nodes, edges
-                    )
-                    analytics_results["distribution"] = distribution_results
+                if 'distribution' in metrics:
+                    distribution_results = self._calculate_distribution_analytics(nodes, edges)
+                    analytics_results['distribution'] = distribution_results
 
                 # Add summary statistics
-                analytics_results["summary"] = {
-                    "total_nodes": len(nodes),
-                    "total_edges": len(edges),
-                    "node_types": list(
-                        set(label for node in nodes for label in node.get("labels", []))
-                    ),
-                    "edge_types": list(set(edge["edge_type"] for edge in edges)),
-                    "density": len(edges) / max(1, len(nodes) * (len(nodes) - 1) / 2),
+                analytics_results['summary'] = {
+                    'total_nodes': len(nodes),
+                    'total_edges': len(edges),
+                    'node_types': list(set(
+                        label for node in nodes for label in node.get('labels', [])
+                    )),
+                    'edge_types': list(set(edge['edge_type'] for edge in edges)),
+                    'density': len(edges) / max(1, len(nodes) * (len(nodes) - 1) / 2)
                 }
 
                 return analytics_results
 
         except Exception as e:
             logger.error(f"Graph analytics calculation failed: {e}")
-            return {"error": str(e)}
+            return {'error': str(e)}
 
-    def create_correlation_analysis(
-        self,
-        variables: List[str],
-        entity_type: str = "Concept",
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    def create_correlation_analysis(self,
+                                   variables: List[str],
+                                   entity_type: str = "Concept",
+                                   filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Create correlation analysis between variables.
 
         Args:
@@ -732,123 +680,101 @@ class AggregationPipeline:
                     for var in variables:
                         value = record[var]
                         if value is not None:
-                            data[var].append(
-                                float(value)
-                                if isinstance(value, (int, float))
-                                else value
-                            )
+                            data[var].append(float(value) if isinstance(value, (int, float)) else value)
                         else:
                             data[var].append(None)
 
                 # Calculate correlations
-                correlation_matrix = self.stats_analyzer.calculate_correlation_matrix(
-                    data
-                )
+                correlation_matrix = self.stats_analyzer.calculate_correlation_matrix(data)
 
                 # Calculate distribution stats for each variable
                 distribution_stats = {}
                 for var, values in data.items():
                     numeric_values = [v for v in values if isinstance(v, (int, float))]
                     if numeric_values:
-                        distribution_stats[var] = (
-                            self.stats_analyzer.calculate_distribution_stats(
-                                numeric_values
-                            )
-                        )
+                        distribution_stats[var] = self.stats_analyzer.calculate_distribution_stats(numeric_values)
 
                 return {
-                    "correlation_matrix": correlation_matrix,
-                    "distribution_stats": distribution_stats,
-                    "sample_size": len(data[variables[0]]),
-                    "variables": variables,
-                    "entity_type": entity_type,
+                    'correlation_matrix': correlation_matrix,
+                    'distribution_stats': distribution_stats,
+                    'sample_size': len(data[variables[0]]),
+                    'variables': variables,
+                    'entity_type': entity_type
                 }
 
         except Exception as e:
             logger.error(f"Correlation analysis failed: {e}")
-            return {"error": str(e)}
+            return {'error': str(e)}
 
-    def _execute_stage(
-        self,
-        stage: PipelineStage,
-        previous_results: Dict[str, Any],
-        scope: AnalyticsScope,
-        scope_filters: Optional[Dict[str, Any]],
-    ) -> Any:
+    def _execute_stage(self,
+                      stage: PipelineStage,
+                      previous_results: Dict[str, Any],
+                      scope: AnalyticsScope,
+                      scope_filters: Optional[Dict[str, Any]]) -> Any:
         """Execute a single pipeline stage."""
 
-        if stage.operation_type == "node_aggregation":
+        if stage.operation_type == 'node_aggregation':
             return self._execute_node_aggregation_stage(stage, scope_filters)
-        elif stage.operation_type == "edge_aggregation":
+        elif stage.operation_type == 'edge_aggregation':
             return self._execute_edge_aggregation_stage(stage, scope_filters)
-        elif stage.operation_type == "graph_analytics":
+        elif stage.operation_type == 'graph_analytics':
             return self._execute_graph_analytics_stage(stage, scope_filters)
-        elif stage.operation_type == "statistical_analysis":
+        elif stage.operation_type == 'statistical_analysis':
             return self._execute_statistical_analysis_stage(stage, previous_results)
-        elif stage.operation_type == "correlation_analysis":
+        elif stage.operation_type == 'correlation_analysis':
             return self._execute_correlation_analysis_stage(stage, scope_filters)
         else:
             logger.warning(f"Unknown stage operation type: {stage.operation_type}")
             return {}
 
-    def _execute_node_aggregation_stage(
-        self, stage: PipelineStage, filters: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _execute_node_aggregation_stage(self, stage: PipelineStage, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Execute node aggregation stage."""
         params = stage.parameters
 
         aggregations = []
-        for agg_config in params.get("aggregations", []):
+        for agg_config in params.get('aggregations', []):
             agg_spec = AggregationSpec(
-                function=AggregationFunction(agg_config["function"]),
-                field=agg_config["field"],
-                alias=agg_config.get("alias"),
+                function=AggregationFunction(agg_config['function']),
+                field=agg_config['field'],
+                alias=agg_config.get('alias')
             )
             aggregations.append(agg_spec)
 
         group_by = None
-        if "group_by" in params:
+        if 'group_by' in params:
             group_by = GroupBySpec(
-                fields=params["group_by"]["fields"],
-                operation=GroupByOperation(
-                    params["group_by"].get("operation", "simple")
-                ),
+                fields=params['group_by']['fields'],
+                operation=GroupByOperation(params['group_by'].get('operation', 'simple'))
             )
 
         return self.aggregate_node_properties(
-            node_type=params.get("node_type"),
+            node_type=params.get('node_type'),
             aggregations=aggregations,
             group_by=group_by,
-            filters=filters,
+            filters=filters
         )
 
-    def _execute_graph_analytics_stage(
-        self, stage: PipelineStage, filters: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _execute_graph_analytics_stage(self, stage: PipelineStage, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Execute graph analytics stage."""
         params = stage.parameters
 
         return self.calculate_graph_analytics(
-            node_types=params.get("node_types"),
-            edge_types=params.get("edge_types"),
-            metrics=params.get("metrics", ["centrality", "clustering"]),
+            node_types=params.get('node_types'),
+            edge_types=params.get('edge_types'),
+            metrics=params.get('metrics', ['centrality', 'clustering'])
         )
 
-    def _execute_correlation_analysis_stage(
-        self, stage: PipelineStage, filters: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _execute_correlation_analysis_stage(self, stage: PipelineStage, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Execute correlation analysis stage."""
         params = stage.parameters
 
         return self.create_correlation_analysis(
-            variables=params["variables"],
-            entity_type=params.get("entity_type", "Concept"),
-            filters=filters,
+            variables=params['variables'],
+            entity_type=params.get('entity_type', 'Concept'),
+            filters=filters
         )
 
-    def _build_execution_plan(
-        self, stages: List[PipelineStage]
-    ) -> List[List[PipelineStage]]:
+    def _build_execution_plan(self, stages: List[PipelineStage]) -> List[List[PipelineStage]]:
         """Build execution plan considering dependencies."""
         # Simple topological sort for dependency resolution
         stage_map = {stage.name: stage for stage in stages}
@@ -863,9 +789,7 @@ class AggregationPipeline:
                     continue
 
                 # Check if dependencies are satisfied
-                if not stage.depends_on or all(
-                    dep in executed for dep in stage.depends_on
-                ):
+                if not stage.depends_on or all(dep in executed for dep in stage.depends_on):
                     ready_stages.append(stage)
 
             if not ready_stages:
@@ -888,9 +812,7 @@ class AggregationPipeline:
 
         return plan
 
-    def _combine_stage_results(
-        self, stage_results: Dict[str, Any], stages: List[PipelineStage]
-    ) -> Dict[str, Any]:
+    def _combine_stage_results(self, stage_results: Dict[str, Any], stages: List[PipelineStage]) -> Dict[str, Any]:
         """Combine results from all pipeline stages."""
         combined_results = {}
 
@@ -900,16 +822,14 @@ class AggregationPipeline:
 
         return combined_results
 
-    def _calculate_clustering_analytics(
-        self, nodes: List[Dict], edges: List[Dict]
-    ) -> Dict[str, Any]:
+    def _calculate_clustering_analytics(self, nodes: List[Dict], edges: List[Dict]) -> Dict[str, Any]:
         """Calculate clustering analytics."""
         # Build adjacency for clustering calculation
         adjacency = defaultdict(set)
 
         for edge in edges:
-            source = edge.get("source_id")
-            target = edge.get("target_id")
+            source = edge.get('source_id')
+            target = edge.get('target_id')
             if source and target:
                 adjacency[source].add(target)
                 adjacency[target].add(source)
@@ -917,36 +837,28 @@ class AggregationPipeline:
         # Calculate clustering coefficients
         clustering_coefficients = {}
         for node in nodes:
-            node_id = node.get("id", node.get("concept_id", ""))
-            clustering_coeff = self.graph_calculator.calculate_clustering_coefficient(
-                node_id, adjacency
-            )
+            node_id = node.get('id', node.get('concept_id', ''))
+            clustering_coeff = self.graph_calculator.calculate_clustering_coefficient(node_id, adjacency)
             clustering_coefficients[node_id] = clustering_coeff
 
         # Calculate global clustering
         local_coeffs = list(clustering_coefficients.values())
-        global_clustering = (
-            sum(local_coeffs) / len(local_coeffs) if local_coeffs else 0.0
-        )
+        global_clustering = sum(local_coeffs) / len(local_coeffs) if local_coeffs else 0.0
 
         return {
-            "local_clustering": clustering_coefficients,
-            "global_clustering": global_clustering,
-            "distribution_stats": self.stats_analyzer.calculate_distribution_stats(
-                local_coeffs
-            ),
+            'local_clustering': clustering_coefficients,
+            'global_clustering': global_clustering,
+            'distribution_stats': self.stats_analyzer.calculate_distribution_stats(local_coeffs)
         }
 
-    def _calculate_connectivity_analytics(
-        self, nodes: List[Dict], edges: List[Dict]
-    ) -> Dict[str, Any]:
+    def _calculate_connectivity_analytics(self, nodes: List[Dict], edges: List[Dict]) -> Dict[str, Any]:
         """Calculate connectivity analytics."""
         # Calculate degree distribution
         degree_count = defaultdict(int)
 
         for edge in edges:
-            source = edge.get("source_id")
-            target = edge.get("target_id")
+            source = edge.get('source_id')
+            target = edge.get('target_id')
             if source:
                 degree_count[source] += 1
             if target:
@@ -955,40 +867,32 @@ class AggregationPipeline:
         degrees = list(degree_count.values())
 
         return {
-            "degree_distribution": dict(Counter(degrees)),
-            "degree_stats": self.stats_analyzer.calculate_distribution_stats(degrees),
-            "max_degree": max(degrees) if degrees else 0,
-            "isolated_nodes": sum(
-                1 for node in nodes if degree_count.get(node.get("id", ""), 0) == 0
-            ),
+            'degree_distribution': dict(Counter(degrees)),
+            'degree_stats': self.stats_analyzer.calculate_distribution_stats(degrees),
+            'max_degree': max(degrees) if degrees else 0,
+            'isolated_nodes': sum(1 for node in nodes if degree_count.get(node.get('id', ''), 0) == 0)
         }
 
-    def _calculate_distribution_analytics(
-        self, nodes: List[Dict], edges: List[Dict]
-    ) -> Dict[str, Any]:
+    def _calculate_distribution_analytics(self, nodes: List[Dict], edges: List[Dict]) -> Dict[str, Any]:
         """Calculate distribution analytics."""
         # Node type distribution
         node_type_counts = defaultdict(int)
         for node in nodes:
-            labels = node.get("labels", ["Unknown"])
+            labels = node.get('labels', ['Unknown'])
             for label in labels:
                 node_type_counts[label] += 1
 
         # Edge type distribution
         edge_type_counts = defaultdict(int)
         for edge in edges:
-            edge_type = edge.get("edge_type", "Unknown")
+            edge_type = edge.get('edge_type', 'Unknown')
             edge_type_counts[edge_type] += 1
 
         return {
-            "node_type_distribution": dict(node_type_counts),
-            "edge_type_distribution": dict(edge_type_counts),
-            "node_type_entropy": self._calculate_entropy(
-                list(node_type_counts.values())
-            ),
-            "edge_type_entropy": self._calculate_entropy(
-                list(edge_type_counts.values())
-            ),
+            'node_type_distribution': dict(node_type_counts),
+            'edge_type_distribution': dict(edge_type_counts),
+            'node_type_entropy': self._calculate_entropy(list(node_type_counts.values())),
+            'edge_type_entropy': self._calculate_entropy(list(edge_type_counts.values()))
         }
 
     def _calculate_entropy(self, counts: List[int]) -> float:
@@ -1080,24 +984,23 @@ class AggregationPipeline:
 
     def _update_pipeline_stats(self, execution_time_ms: float):
         """Update pipeline performance statistics."""
-        self.pipeline_stats["pipelines_executed"] += 1
-        current_avg = self.pipeline_stats["avg_execution_time_ms"]
-        total_pipelines = self.pipeline_stats["pipelines_executed"]
+        self.pipeline_stats['pipelines_executed'] += 1
+        current_avg = self.pipeline_stats['avg_execution_time_ms']
+        total_pipelines = self.pipeline_stats['pipelines_executed']
 
-        self.pipeline_stats["avg_execution_time_ms"] = (
-            current_avg * (total_pipelines - 1) + execution_time_ms
-        ) / total_pipelines
+        self.pipeline_stats['avg_execution_time_ms'] = (
+            (current_avg * (total_pipelines - 1) + execution_time_ms) / total_pipelines
+        )
 
     def get_pipeline_statistics(self) -> Dict[str, Any]:
         """Get comprehensive pipeline statistics."""
         return {
             **self.pipeline_stats,
-            "cache_size": len(self.result_cache),
-            "cache_hit_rate": (
-                self.pipeline_stats["cache_hits"]
-                / max(1, self.pipeline_stats["pipelines_executed"])
+            'cache_size': len(self.result_cache),
+            'cache_hit_rate': (
+                self.pipeline_stats['cache_hits'] / max(1, self.pipeline_stats['pipelines_executed'])
             ),
-            "available_functions": list(self.aggregation_functions.keys()),
-            "max_workers": self.max_workers,
-            "caching_enabled": self.enable_caching,
+            'available_functions': list(self.aggregation_functions.keys()),
+            'max_workers': self.max_workers,
+            'caching_enabled': self.enable_caching
         }

@@ -438,9 +438,7 @@ def _extract_signals(bundle: Any) -> dict[str, Any]:
     }
 
 
-def _group_is_relevant(
-    group: CheckGroup, signals: Mapping[str, Any]
-) -> tuple[bool, str]:
+def _group_is_relevant(group: CheckGroup, signals: Mapping[str, Any]) -> tuple[bool, str]:
     """Decide whether a conditional group is relevant for the signals.
 
     Returns ``(relevant, reason)``. The reason explains the *negative* case
@@ -641,10 +639,7 @@ def _log_decision(bundle: Any, decision: RoutingDecision) -> None:
     signals = decision.signals
     if decision.skipped:
         skipped_groups = sorted(
-            {
-                reason.split(":", 1)[0].replace("group=", "")
-                for reason in decision.skipped.values()
-            }
+            {reason.split(":", 1)[0].replace("group=", "") for reason in decision.skipped.values()}
         )
         logger.info(
             "check_routing[run=%s]: selected=%d skipped=%d "

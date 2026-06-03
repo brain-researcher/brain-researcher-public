@@ -104,9 +104,7 @@ def fsl_melodic_from_payload(payload: Mapping[str, Any]) -> FSLMELODICParameters
         bg_threshold=float(payload.get("bg_threshold", 10.0)),
         var_norm=bool(payload.get("var_norm", True)),
         output_all=bool(payload.get("output_all", True)),
-        report=bool(
-            payload.get("report", True) or payload.get("generate_report", True)
-        ),
+        report=bool(payload.get("report", True) or payload.get("generate_report", True)),
         extra_args=_tuple(extra_args),
     )
 

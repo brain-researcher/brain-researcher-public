@@ -5,10 +5,10 @@ This module provides integration between NICLIP (Neuroimaging-Cognitive Language
 and the BR-KG knowledge graph system.
 """
 
-from .contrast_text_orchestrator import ContrastTextToPredictedMapOrchestrator
-from .coordinate_mapper import NiCLIPCoordinateMapper
 from .embedding_service import EmbeddingConfig, NICLIPEmbeddingService
 from .engine import NiclipEngine, NiclipEngineConfig
+from .coordinate_mapper import NiCLIPCoordinateMapper
+from .contrast_text_orchestrator import ContrastTextToPredictedMapOrchestrator
 
 __all__ = [
     "NICLIPEmbeddingService",

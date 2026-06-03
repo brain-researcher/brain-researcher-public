@@ -7,45 +7,27 @@ resource contention handling, deadlock detection, and adaptive execution strateg
 
 import asyncio
 import logging
-import threading
 import time
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 from uuid import uuid4
 
-from brain_researcher.services.agent.dependency_resolver import (
-    DependencyResolver,
-    ExecutionGraph,
-)
-from brain_researcher.services.agent.execution_status import (
-    ExecutionStatus,
-    ExecutionTracker,
-    StepStatus,
-)
-from brain_researcher.services.agent.system_monitor import (
-    SystemMonitor,
-    create_system_monitor,
-)
+from brain_researcher.services.agent.dependency_resolver import DependencyResolver, ExecutionGraph
+from brain_researcher.services.agent.execution_status import ExecutionTracker, ExecutionStatus, StepStatus
+from brain_researcher.services.agent.system_monitor import SystemMonitor, create_system_monitor
 
 if TYPE_CHECKING:
-    from brain_researcher.services.agent.adaptive_scheduler import (
-        AdaptiveScheduler,
-        TaskPriority,
-    )
-    from brain_researcher.services.agent.strategy_selector import (
-        ExecutionContext,
-        ExecutionStrategy,
-        StrategySelector,
-    )
+    from brain_researcher.services.agent.adaptive_scheduler import AdaptiveScheduler, TaskPriority
+    from brain_researcher.services.agent.strategy_selector import StrategySelector, ExecutionStrategy, ExecutionContext
 
 logger = logging.getLogger(__name__)
 
 
 class ResourceType(str, Enum):
     """Types of computational resources."""
-
     CPU = "cpu"
     GPU = "gpu"
     MEMORY = "memory"
@@ -66,7 +48,6 @@ __all__ = [
 
 class TaskStatus(str, Enum):
     """Status of individual tasks in parallel execution."""
-
     QUEUED = "queued"
     READY = "ready"
     RUNNING = "running"
@@ -79,7 +60,6 @@ class TaskStatus(str, Enum):
 @dataclass
 class ResourceRequirement:
     """Resource requirement specification."""
-
     resource_type: ResourceType
     amount: float
     unit: str = ""
@@ -89,7 +69,6 @@ class ResourceRequirement:
 @dataclass
 class Task:
     """Represents a single executable task."""
-
     task_id: str
     name: str
     tool_name: str
@@ -110,14 +89,11 @@ class Task:
 @dataclass
 class ResourceAllocation:
     """Resource allocation tracking."""
-
     resource_type: ResourceType
     total_capacity: float
     allocated: float = 0.0
     reserved: float = 0.0
-    waitlist: List[str] = field(
-        default_factory=list
-    )  # task_ids waiting for this resource
+    waitlist: List[str] = field(default_factory=list)  # task_ids waiting for this resource
 
 
 class ResourceManager:
@@ -156,11 +132,7 @@ class ResourceManager:
                 if not allocation:
                     continue
 
-                available = (
-                    allocation.total_capacity
-                    - allocation.allocated
-                    - allocation.reserved
-                )
+                available = allocation.total_capacity - allocation.allocated - allocation.reserved
                 if available < req.amount:
                     return False
 
@@ -175,11 +147,7 @@ class ResourceManager:
                 if not allocation:
                     continue
 
-                available = (
-                    allocation.total_capacity
-                    - allocation.allocated
-                    - allocation.reserved
-                )
+                available = allocation.total_capacity - allocation.allocated - allocation.reserved
                 if available < req.amount:
                     return False
 
@@ -226,10 +194,8 @@ class ResourceManager:
                 "total": allocation.total_capacity,
                 "allocated": allocation.allocated,
                 "reserved": allocation.reserved,
-                "available": allocation.total_capacity
-                - allocation.allocated
-                - allocation.reserved,
-                "utilization": (allocation.allocated / allocation.total_capacity) * 100,
+                "available": allocation.total_capacity - allocation.allocated - allocation.reserved,
+                "utilization": (allocation.allocated / allocation.total_capacity) * 100
             }
         return usage
 
@@ -239,12 +205,8 @@ class DeadlockDetector:
 
     def __init__(self):
         """Initialize deadlock detector."""
-        self.wait_for_graph: Dict[str, Set[str]] = (
-            {}
-        )  # task_id -> set of task_ids it waits for
-        self.resource_holders: Dict[ResourceType, Set[str]] = (
-            {}
-        )  # resource -> tasks holding it
+        self.wait_for_graph: Dict[str, Set[str]] = {}  # task_id -> set of task_ids it waits for
+        self.resource_holders: Dict[ResourceType, Set[str]] = {}  # resource -> tasks holding it
 
     def add_wait_relationship(self, waiting_task: str, blocking_tasks: Set[str]):
         """Add wait relationship for deadlock detection."""
@@ -310,7 +272,6 @@ class DeadlockDetector:
         Returns:
             Reordered tasks with deadlock prevention
         """
-
         # Simple prevention: sort by priority and resource requirements
         def task_priority(task: Task) -> Tuple[int, float]:
             # Higher resource requirements get higher priority
@@ -339,7 +300,7 @@ class AdaptiveParallelExecutionOrchestrator:
         max_workers: int = 4,
         resource_limits: Optional[Dict[ResourceType, float]] = None,
         enable_deadlock_detection: bool = True,
-        enable_adaptive_features: bool = True,
+        enable_adaptive_features: bool = True
     ):
         """
         Initialize adaptive parallel execution orchestrator.
@@ -357,22 +318,17 @@ class AdaptiveParallelExecutionOrchestrator:
         self.executor_pool = ThreadPoolExecutor(max_workers=max_workers)
         self.dependency_resolver = DependencyResolver()
         self.resource_manager = ResourceManager(resource_limits)
-        self.deadlock_detector = (
-            DeadlockDetector() if enable_deadlock_detection else None
-        )
+        self.deadlock_detector = DeadlockDetector() if enable_deadlock_detection else None
 
         # Adaptive components
         if self.enable_adaptive:
-            from brain_researcher.services.agent.adaptive_scheduler import (
-                create_adaptive_scheduler,
-            )
-            from brain_researcher.services.agent.strategy_selector import (
-                create_strategy_selector,
-            )
+            from brain_researcher.services.agent.adaptive_scheduler import create_adaptive_scheduler
+            from brain_researcher.services.agent.strategy_selector import create_strategy_selector
 
             self.system_monitor = create_system_monitor(collection_interval=1.0)
             self.adaptive_scheduler = create_adaptive_scheduler(
-                monitor=self.system_monitor, resource_limits=resource_limits
+                monitor=self.system_monitor,
+                resource_limits=resource_limits
             )
             self.strategy_selector = create_strategy_selector(self.system_monitor)
         else:
@@ -388,10 +344,7 @@ class AdaptiveParallelExecutionOrchestrator:
         # Performance tracking
         self.performance_history: List[Dict[str, Any]] = []
         if self.enable_adaptive:
-            from brain_researcher.services.agent.strategy_selector import (
-                ExecutionStrategy,
-            )
-
+            from brain_researcher.services.agent.strategy_selector import ExecutionStrategy
             self.current_strategy = ExecutionStrategy.BALANCED
         else:
             self.current_strategy = None
@@ -433,7 +386,7 @@ class AdaptiveParallelExecutionOrchestrator:
         execution_graph: ExecutionGraph,
         execution_tracker: Optional[ExecutionTracker] = None,
         timeout: Optional[float] = None,
-        priority: Optional[Any] = None,
+        priority: Optional[Any] = None
     ) -> Dict[str, Any]:
         """
         Execute tasks in parallel with adaptive strategy selection.
@@ -453,15 +406,12 @@ class AdaptiveParallelExecutionOrchestrator:
         # Set default priority if not provided
         if priority is None and self.enable_adaptive:
             from brain_researcher.services.agent.adaptive_scheduler import TaskPriority
-
             priority = TaskPriority.NORMAL
 
         execution_id = str(uuid4())
         start_time = time.time()
 
-        logger.info(
-            f"Starting parallel execution {execution_id} with {len(execution_graph.tasks)} tasks"
-        )
+        logger.info(f"Starting parallel execution {execution_id} with {len(execution_graph.tasks)} tasks")
 
         # Start adaptive components if needed
         if self.enable_adaptive and not self.system_monitor._monitoring:
@@ -471,9 +421,7 @@ class AdaptiveParallelExecutionOrchestrator:
         if self.enable_adaptive:
             context = await self._create_execution_context(execution_graph, priority)
             selected_strategy = self.strategy_selector.select_strategy(context)
-            strategy_config = self.strategy_selector.get_strategy_config(
-                selected_strategy
-            )
+            strategy_config = self.strategy_selector.get_strategy_config(selected_strategy)
 
             # Update orchestrator settings based on strategy
             self._apply_strategy_config(strategy_config)
@@ -489,7 +437,7 @@ class AdaptiveParallelExecutionOrchestrator:
                 execution_tracker.add_step(
                     name=task.name,
                     description=f"Execute {task.tool_name}",
-                    estimated_duration=task.estimated_duration,
+                    estimated_duration=task.estimated_duration
                 )
 
         try:
@@ -498,9 +446,7 @@ class AdaptiveParallelExecutionOrchestrator:
 
             # Detect and prevent potential deadlocks
             if self.deadlock_detector:
-                execution_graph.tasks = self.deadlock_detector.prevent_deadlock(
-                    execution_graph.tasks
-                )
+                execution_graph.tasks = self.deadlock_detector.prevent_deadlock(execution_graph.tasks)
 
             # Create task status tracking
             task_status = {task.task_id: task for task in execution_graph.tasks}
@@ -514,7 +460,7 @@ class AdaptiveParallelExecutionOrchestrator:
                 "results": results,
                 "errors": errors,
                 "started_at": start_time,
-                "tracker": execution_tracker,
+                "tracker": execution_tracker
             }
 
             # Execute tasks in batches respecting dependencies
@@ -530,33 +476,18 @@ class AdaptiveParallelExecutionOrchestrator:
 
             # Calculate performance metrics
             total_time = time.time() - start_time
-            sequential_time = sum(
-                task.estimated_duration for task in execution_graph.tasks
-            )
+            sequential_time = sum(task.estimated_duration for task in execution_graph.tasks)
             speedup = sequential_time / total_time if total_time > 0 else 1.0
 
             # Update strategy performance if adaptive
             if self.enable_adaptive and self.current_strategy:
                 throughput = len(results) / total_time if total_time > 0 else 0
-                avg_latency = (
-                    total_time / len(execution_graph.tasks)
-                    if execution_graph.tasks
-                    else 0
-                )
-                error_rate = (
-                    len(errors) / len(execution_graph.tasks)
-                    if execution_graph.tasks
-                    else 0
-                )
+                avg_latency = total_time / len(execution_graph.tasks) if execution_graph.tasks else 0
+                error_rate = len(errors) / len(execution_graph.tasks) if execution_graph.tasks else 0
                 resource_usage = self.resource_manager.get_resource_usage()
-                avg_utilization = (
-                    sum(
-                        usage.get("utilization", 0) for usage in resource_usage.values()
-                    )
-                    / len(resource_usage)
-                    if resource_usage
-                    else 0
-                )
+                avg_utilization = sum(
+                    usage.get("utilization", 0) for usage in resource_usage.values()
+                ) / len(resource_usage) if resource_usage else 0
                 resource_efficiency = min(100, avg_utilization) / 100.0
 
                 self.strategy_selector.update_strategy_performance(
@@ -565,22 +496,20 @@ class AdaptiveParallelExecutionOrchestrator:
                     latency=avg_latency,
                     error_rate=error_rate,
                     resource_efficiency=resource_efficiency,
-                    success=len(errors) == 0,
+                    success=len(errors) == 0
                 )
 
                 # Record performance history
-                self.performance_history.append(
-                    {
-                        "execution_id": execution_id,
-                        "strategy": self.current_strategy.value,
-                        "timestamp": time.time(),
-                        "total_time": total_time,
-                        "throughput": throughput,
-                        "speedup": speedup,
-                        "error_rate": error_rate,
-                        "resource_efficiency": resource_efficiency,
-                    }
-                )
+                self.performance_history.append({
+                    "execution_id": execution_id,
+                    "strategy": self.current_strategy.value,
+                    "timestamp": time.time(),
+                    "total_time": total_time,
+                    "throughput": throughput,
+                    "speedup": speedup,
+                    "error_rate": error_rate,
+                    "resource_efficiency": resource_efficiency
+                })
 
                 # Trim history
                 if len(self.performance_history) > 100:
@@ -605,7 +534,7 @@ class AdaptiveParallelExecutionOrchestrator:
                 "speedup": speedup,
                 "tasks_completed": len(results),
                 "tasks_failed": len(errors),
-                "resource_usage": self.resource_manager.get_resource_usage(),
+                "resource_usage": self.resource_manager.get_resource_usage()
             }
 
             if self.enable_adaptive:
@@ -617,7 +546,7 @@ class AdaptiveParallelExecutionOrchestrator:
                 "execution_id": execution_id,
                 "results": results,
                 "errors": errors,
-                "metrics": metrics,
+                "metrics": metrics
             }
 
         except Exception as e:
@@ -645,9 +574,7 @@ class AdaptiveParallelExecutionOrchestrator:
         for task in execution_graph.tasks:
             for dep in task.dependencies:
                 if dep not in task_id_set:
-                    raise ValueError(
-                        f"Task {task.task_id} has invalid dependency: {dep}"
-                    )
+                    raise ValueError(f"Task {task.task_id} has invalid dependency: {dep}")
 
     async def _execute_batches(self, execution_id: str, timeout: Optional[float]):
         """Execute tasks in batches respecting dependencies."""
@@ -656,9 +583,7 @@ class AdaptiveParallelExecutionOrchestrator:
         task_status = context["task_status"]
 
         # Create batches of tasks that can run in parallel
-        batches = self.dependency_resolver.create_execution_batches(
-            execution_graph.tasks
-        )
+        batches = self.dependency_resolver.create_execution_batches(execution_graph.tasks)
 
         logger.info(f"Executing {len(batches)} batches for execution {execution_id}")
 
@@ -679,15 +604,12 @@ class AdaptiveParallelExecutionOrchestrator:
 
             # Check for failures that should stop execution
             failed_tasks = [
-                task
-                for task in batch_tasks
+                task for task in batch_tasks
                 if task_status[task.task_id].status == TaskStatus.FAILED
             ]
 
             if failed_tasks and self._should_stop_on_failure(failed_tasks):
-                logger.error(
-                    f"Stopping execution {execution_id} due to critical failures"
-                )
+                logger.error(f"Stopping execution {execution_id} due to critical failures")
                 break
 
     async def _execute_batch(self, execution_id: str, batch: List[Task]):
@@ -711,10 +633,8 @@ class AdaptiveParallelExecutionOrchestrator:
         # Update progress
         if tracker:
             completed_count = sum(
-                1
-                for task in batch
-                if task_status[task.task_id].status
-                in [TaskStatus.COMPLETED, TaskStatus.FAILED]
+                1 for task in batch
+                if task_status[task.task_id].status in [TaskStatus.COMPLETED, TaskStatus.FAILED]
             )
 
             for i, task in enumerate(batch):
@@ -777,12 +697,10 @@ class AdaptiveParallelExecutionOrchestrator:
             if task_ref.retry_count < task_ref.max_retries:
                 task_ref.retry_count += 1
                 task_ref.status = TaskStatus.QUEUED
-                logger.info(
-                    f"Retrying task {task.task_id} (attempt {task_ref.retry_count + 1})"
-                )
+                logger.info(f"Retrying task {task.task_id} (attempt {task_ref.retry_count + 1})")
 
                 # Recursive retry with exponential backoff
-                await asyncio.sleep(min(2**task_ref.retry_count, 30))
+                await asyncio.sleep(min(2 ** task_ref.retry_count, 30))
                 await self._execute_single_task(execution_id, task)
 
         finally:
@@ -807,17 +725,13 @@ class AdaptiveParallelExecutionOrchestrator:
 
         while not await self.resource_manager.can_allocate(task):
             if time.time() - start_wait > max_wait:
-                raise Exception(
-                    f"Timeout waiting for resources for task {task.task_id}"
-                )
+                raise Exception(f"Timeout waiting for resources for task {task.task_id}")
 
             # Check for deadlock
             if self.deadlock_detector:
                 deadlock_cycle = self.deadlock_detector.detect_deadlock()
                 if deadlock_cycle and task.task_id in deadlock_cycle:
-                    raise Exception(
-                        f"Deadlock detected involving task {task.task_id}: {deadlock_cycle}"
-                    )
+                    raise Exception(f"Deadlock detected involving task {task.task_id}: {deadlock_cycle}")
 
             await asyncio.sleep(1.0)  # Check every second
 
@@ -837,9 +751,7 @@ class AdaptiveParallelExecutionOrchestrator:
         if asyncio.iscoroutinefunction(run_fn):
             try:
                 if task.timeout:
-                    return await asyncio.wait_for(
-                        run_fn(**task.tool_args), timeout=task.timeout
-                    )
+                    return await asyncio.wait_for(run_fn(**task.tool_args), timeout=task.timeout)
                 return await run_fn(**task.tool_args)
             except asyncio.TimeoutError:
                 raise Exception(f"Task {task.task_id} timed out after {task.timeout}s")
@@ -896,7 +808,8 @@ class AdaptiveParallelExecutionOrchestrator:
         status_counts = {}
         for status in TaskStatus:
             status_counts[status.value] = sum(
-                1 for task in task_status.values() if task.status == status
+                1 for task in task_status.values()
+                if task.status == status
             )
 
         return {
@@ -905,7 +818,7 @@ class AdaptiveParallelExecutionOrchestrator:
             "task_counts": status_counts,
             "results_count": len(context["results"]),
             "errors_count": len(context["errors"]),
-            "resource_usage": self.resource_manager.get_resource_usage(),
+            "resource_usage": self.resource_manager.get_resource_usage()
         }
 
     def cancel_execution(self, execution_id: str) -> bool:
@@ -925,7 +838,9 @@ class AdaptiveParallelExecutionOrchestrator:
         return True
 
     async def _create_execution_context(
-        self, execution_graph: ExecutionGraph, priority: Any
+        self,
+        execution_graph: ExecutionGraph,
+        priority: Any
     ) -> Any:
         """Create execution context for strategy selection."""
         from brain_researcher.services.agent.strategy_selector import ExecutionContext
@@ -934,7 +849,6 @@ class AdaptiveParallelExecutionOrchestrator:
         if not metrics:
             # Default metrics if monitoring not available
             from brain_researcher.services.agent.system_monitor import SystemMetrics
-
             metrics = SystemMetrics(
                 timestamp=time.time(),
                 cpu_usage=50.0,
@@ -945,36 +859,25 @@ class AdaptiveParallelExecutionOrchestrator:
                 network_sent=5.0,
                 network_recv=5.0,
                 load_average=(1.0, 1.0, 1.0),
-                active_processes=100,
+                active_processes=100
             )
 
         health = self.system_monitor.get_health_status()
         resource_util = self.system_monitor.get_resource_utilization()
 
         # Calculate metrics from execution graph
-        avg_duration = sum(
-            task.estimated_duration for task in execution_graph.tasks
-        ) / len(execution_graph.tasks)
+        avg_duration = sum(task.estimated_duration for task in execution_graph.tasks) / len(execution_graph.tasks)
         queue_depth = len(execution_graph.tasks)
 
         # Calculate error rate from recent history
         recent_executions = [
-            h
-            for h in self.performance_history
+            h for h in self.performance_history
             if time.time() - h["timestamp"] < 3600  # Last hour
         ]
-        error_rate = (
-            sum(h["error_rate"] for h in recent_executions) / len(recent_executions)
-            if recent_executions
-            else 0.0
-        )
+        error_rate = sum(h["error_rate"] for h in recent_executions) / len(recent_executions) if recent_executions else 0.0
 
         # Calculate throughput
-        throughput = (
-            sum(h["throughput"] for h in recent_executions) / len(recent_executions)
-            if recent_executions
-            else 0.0
-        )
+        throughput = sum(h["throughput"] for h in recent_executions) / len(recent_executions) if recent_executions else 0.0
 
         return ExecutionContext(
             system_metrics=metrics,
@@ -985,7 +888,7 @@ class AdaptiveParallelExecutionOrchestrator:
             error_rate=error_rate,
             resource_utilization=resource_util,
             user_priority=priority,
-            workload_type="mixed",  # Could be enhanced with workload analysis
+            workload_type="mixed"  # Could be enhanced with workload analysis
         )
 
     def _apply_strategy_config(self, config):
@@ -995,12 +898,13 @@ class AdaptiveParallelExecutionOrchestrator:
         if new_max_workers != self.executor_pool._max_workers:
             # Note: ThreadPoolExecutor doesn't support dynamic resizing
             # In a production system, you'd implement a more sophisticated approach
-            logger.info(
-                f"Strategy suggests {new_max_workers} workers (current: {self.executor_pool._max_workers})"
-            )
+            logger.info(f"Strategy suggests {new_max_workers} workers (current: {self.executor_pool._max_workers})")
 
     async def _execute_batches_adaptive(
-        self, execution_id: str, timeout: Optional[float], priority: Any
+        self,
+        execution_id: str,
+        timeout: Optional[float],
+        priority: Any
     ):
         """Execute batches with adaptive scheduling."""
         context = self.active_executions[execution_id]
@@ -1011,7 +915,7 @@ class AdaptiveParallelExecutionOrchestrator:
             await self.adaptive_scheduler.schedule_task(
                 task=task,
                 priority=priority,
-                deadline=time.time() + timeout if timeout else None,
+                deadline=time.time() + timeout if timeout else None
             )
 
         # Monitor execution and adapt as needed
@@ -1029,22 +933,16 @@ class AdaptiveParallelExecutionOrchestrator:
 
             # Periodic strategy re-evaluation
             if time.time() - self.strategy_start_time > 60:  # Re-evaluate every minute
-                new_context = await self._create_execution_context(
-                    execution_graph, priority
-                )
+                new_context = await self._create_execution_context(execution_graph, priority)
                 new_strategy = self.strategy_selector.select_strategy(new_context)
 
                 if new_strategy != self.current_strategy:
-                    logger.info(
-                        f"Strategy changed from {self.current_strategy.value} to {new_strategy.value}"
-                    )
+                    logger.info(f"Strategy changed from {self.current_strategy.value} to {new_strategy.value}")
                     self.current_strategy = new_strategy
                     self.strategy_start_time = time.time()
 
                     # Apply new strategy configuration
-                    strategy_config = self.strategy_selector.get_strategy_config(
-                        new_strategy
-                    )
+                    strategy_config = self.strategy_selector.get_strategy_config(new_strategy)
                     self._apply_strategy_config(strategy_config)
 
             await asyncio.sleep(1.0)  # Check every second
@@ -1064,7 +962,7 @@ class AdaptiveParallelExecutionOrchestrator:
                     "cpu_usage": current_metrics.cpu_usage,
                     "memory_usage": current_metrics.memory_usage,
                     "load_average": current_metrics.load_average[0],
-                    "health": self.system_monitor.get_health_status().value,
+                    "health": self.system_monitor.get_health_status().value
                 }
 
         # Scheduler metrics
@@ -1077,19 +975,13 @@ class AdaptiveParallelExecutionOrchestrator:
 
         # Performance history summary
         if self.performance_history:
-            recent = [
-                h
-                for h in self.performance_history
-                if time.time() - h["timestamp"] < 3600
-            ]
+            recent = [h for h in self.performance_history if time.time() - h["timestamp"] < 3600]
             if recent:
                 metrics["performance"] = {
-                    "avg_throughput": sum(h["throughput"] for h in recent)
-                    / len(recent),
+                    "avg_throughput": sum(h["throughput"] for h in recent) / len(recent),
                     "avg_speedup": sum(h["speedup"] for h in recent) / len(recent),
-                    "avg_error_rate": sum(h["error_rate"] for h in recent)
-                    / len(recent),
-                    "executions_last_hour": len(recent),
+                    "avg_error_rate": sum(h["error_rate"] for h in recent) / len(recent),
+                    "executions_last_hour": len(recent)
                 }
 
         return metrics
@@ -1119,9 +1011,8 @@ class AdaptiveParallelExecutionOrchestrator:
         if not metrics:
             return {}
 
-        from brain_researcher.services.agent.adaptive_scheduler import TaskPriority
         from brain_researcher.services.agent.strategy_selector import ExecutionContext
-
+        from brain_researcher.services.agent.adaptive_scheduler import TaskPriority
         context = ExecutionContext(
             system_metrics=metrics,
             system_health=self.system_monitor.get_health_status(),
@@ -1130,7 +1021,7 @@ class AdaptiveParallelExecutionOrchestrator:
             current_throughput=0.0,
             error_rate=0.0,
             resource_utilization=self.system_monitor.get_resource_utilization(),
-            user_priority=TaskPriority.NORMAL,
+            user_priority=TaskPriority.NORMAL
         )
 
         return self.strategy_selector.get_strategy_recommendations(context)
@@ -1158,7 +1049,7 @@ class AdaptiveParallelExecutionOrchestrator:
 def create_parallel_orchestrator(
     max_workers: int = 4,
     resource_limits: Optional[Dict[ResourceType, float]] = None,
-    enable_adaptive: bool = True,
+    enable_adaptive: bool = True
 ) -> AdaptiveParallelExecutionOrchestrator:
     """
     Create an adaptive parallel execution orchestrator.
@@ -1174,9 +1065,8 @@ def create_parallel_orchestrator(
     return AdaptiveParallelExecutionOrchestrator(
         max_workers=max_workers,
         resource_limits=resource_limits,
-        enable_adaptive_features=enable_adaptive,
+        enable_adaptive_features=enable_adaptive
     )
-
 
 # Backward compatibility alias
 ParallelExecutor = AdaptiveParallelExecutionOrchestrator

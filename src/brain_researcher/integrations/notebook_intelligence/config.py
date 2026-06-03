@@ -15,7 +15,7 @@ DEFAULT_EXTENSION_CLASS = (
     "BrainResearcherNotebookIntelligenceExtension"
 )
 DEFAULT_EXTENSION_SLUG = "brain-researcher"
-DEFAULT_PRODUCT_URL = "https://brain-researcher.com"
+DEFAULT_PRODUCT_URL = "https://${PUBLIC_HOSTNAME}"
 DEFAULT_PARTICIPANT_ID = "brain-researcher"
 DEFAULT_MCP_SERVER_NAME = "brain-researcher"
 DEFAULT_CHAT_MODE = "ask"

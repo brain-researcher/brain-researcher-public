@@ -10,17 +10,14 @@ import logging
 import random
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import List, Dict, Any
 
-from .aggregator import AggregationConfig, AggregationWindow, UsageMetricsAggregator
 from .collector import TelemetryCollector
-from .integrations import (
-    create_agent_telemetry,
-    create_br_kg_telemetry,
-    create_ui_telemetry,
-)
-from .models import EventType, PrivacyLevel, ServiceType, TelemetryConfiguration
+from .aggregator import UsageMetricsAggregator, AggregationWindow, AggregationConfig
 from .privacy import PrivacyController
+from .integrations import create_agent_telemetry, create_br_kg_telemetry, create_ui_telemetry
+from .models import TelemetryConfiguration, EventType, ServiceType, PrivacyLevel
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -40,7 +37,7 @@ class TelemetryDemo:
             flush_interval_seconds=10,
             anonymization_enabled=True,
             gdpr_compliance_mode=True,
-            debug_mode=True,
+            debug_mode=True
         )
 
         # Initialize core components
@@ -90,41 +87,41 @@ class TelemetryDemo:
         # Simulate various event types
         events_to_collect = [
             {
-                "event_type": EventType.TOOL_INVOCATION,
-                "service": ServiceType.AGENT,
-                "feature_name": "fmri_glm_analysis",
-                "action": "execute",
-                "user_id": "user_001",
-                "duration_ms": 15000,
-                "success": True,
+                'event_type': EventType.TOOL_INVOCATION,
+                'service': ServiceType.AGENT,
+                'feature_name': 'fmri_glm_analysis',
+                'action': 'execute',
+                'user_id': 'user_001',
+                'duration_ms': 15000,
+                'success': True
             },
             {
-                "event_type": EventType.PAGE_VIEW,
-                "service": ServiceType.WEB_UI,
-                "feature_name": "dashboard",
-                "action": "view",
-                "user_id": "user_002",
-                "context": {"page_path": "/dashboard/analytics"},
+                'event_type': EventType.PAGE_VIEW,
+                'service': ServiceType.WEB_UI,
+                'feature_name': 'dashboard',
+                'action': 'view',
+                'user_id': 'user_002',
+                'context': {'page_path': '/dashboard/analytics'}
             },
             {
-                "event_type": EventType.SEARCH_QUERY,
-                "service": ServiceType.BR_KG,
-                "feature_name": "knowledge_search",
-                "action": "query",
-                "user_id": "user_001",
-                "parameters": {"query_type": "semantic", "results_limit": 50},
-                "duration_ms": 250,
+                'event_type': EventType.SEARCH_QUERY,
+                'service': ServiceType.BR_KG,
+                'feature_name': 'knowledge_search',
+                'action': 'query',
+                'user_id': 'user_001',
+                'parameters': {'query_type': 'semantic', 'results_limit': 50},
+                'duration_ms': 250
             },
             {
-                "event_type": EventType.TOOL_ERROR,
-                "service": ServiceType.AGENT,
-                "feature_name": "data_preprocessing",
-                "action": "preprocess",
-                "user_id": "user_003",
-                "success": False,
-                "error_message": "Invalid BIDS dataset format",
-                "privacy_level": PrivacyLevel.INTERNAL_ONLY,
-            },
+                'event_type': EventType.TOOL_ERROR,
+                'service': ServiceType.AGENT,
+                'feature_name': 'data_preprocessing',
+                'action': 'preprocess',
+                'user_id': 'user_003',
+                'success': False,
+                'error_message': 'Invalid BIDS dataset format',
+                'privacy_level': PrivacyLevel.INTERNAL_ONLY
+            }
         ]
 
         for event_data in events_to_collect:
@@ -143,21 +140,21 @@ class TelemetryDemo:
 
         # Agent service integration
         logger.info("Agent Service Integration:")
-        self.agent_telemetry.set_user_context("researcher_001", "session_123")
+        self.agent_telemetry.set_user_context('researcher_001', 'session_123')
 
         # Track tool execution
         await self.simulate_agent_workflow()
 
         # BR-KG service integration
         logger.info("BR-KG Service Integration:")
-        self.br_kg_telemetry.set_user_context("researcher_001", "session_123")
+        self.br_kg_telemetry.set_user_context('researcher_001', 'session_123')
 
         # Track graph operations
         await self.simulate_br_kg_operations()
 
         # UI service integration
         logger.info("UI Service Integration:")
-        self.ui_telemetry.set_user_context("researcher_001", "session_123")
+        self.ui_telemetry.set_user_context('researcher_001', 'session_123')
 
         # Track UI interactions
         await self.simulate_ui_interactions()
@@ -168,20 +165,12 @@ class TelemetryDemo:
     async def simulate_agent_workflow(self):
         """Simulate a realistic agent workflow."""
         workflow_steps = [
-            ("data_loader", "load_dataset", {"dataset": "ds000114", "subjects": 20}),
-            (
-                "preprocessing",
-                "fmriprep_runner",
-                {"pipeline": "standard", "output_space": "MNI152"},
-            ),
-            ("quality_check", "motion_assessment", {"fd_threshold": 0.5}),
-            ("analysis", "first_level_glm", {"model_type": "canonical_hrf"}),
-            ("statistics", "group_analysis", {"n_subjects": 18, "contrasts": 3}),
-            (
-                "visualization",
-                "brain_plot",
-                {"map_type": "statistical", "threshold": 0.001},
-            ),
+            ('data_loader', 'load_dataset', {'dataset': 'ds000114', 'subjects': 20}),
+            ('preprocessing', 'fmriprep_runner', {'pipeline': 'standard', 'output_space': 'MNI152'}),
+            ('quality_check', 'motion_assessment', {'fd_threshold': 0.5}),
+            ('analysis', 'first_level_glm', {'model_type': 'canonical_hrf'}),
+            ('statistics', 'group_analysis', {'n_subjects': 18, 'contrasts': 3}),
+            ('visualization', 'brain_plot', {'map_type': 'statistical', 'threshold': 0.001})
         ]
 
         for i, (category, tool_name, params) in enumerate(workflow_steps):
@@ -196,12 +185,10 @@ class TelemetryDemo:
             self.agent_telemetry.track_tool_execution(
                 tool_name=tool_name,
                 input_params=params,
-                output_artifacts=(
-                    [f"artifact_{i}.nii.gz", f"log_{i}.txt"] if success else []
-                ),
+                output_artifacts=[f"artifact_{i}.nii.gz", f"log_{i}.txt"] if success else [],
                 execution_time_ms=processing_time,
                 success=success,
-                error_message=error_msg,
+                error_message=error_msg
             )
 
             # Track workflow step
@@ -209,17 +196,17 @@ class TelemetryDemo:
                 workflow_id="research_workflow_001",
                 step_name=tool_name,
                 step_index=i,
-                success=success,
+                success=success
             )
 
     async def simulate_br_kg_operations(self):
         """Simulate BR-KG database operations."""
         operations = [
-            ("concept_search", "complex", 150, 1200),
-            ("relationship_query", "simple", 45, 300),
-            ("data_ingestion", "medium", 1000, 8000),
-            ("knowledge_discovery", "complex", 200, 15000),
-            ("graph_traversal", "medium", 75, 2000),
+            ('concept_search', 'complex', 150, 1200),
+            ('relationship_query', 'simple', 45, 300),
+            ('data_ingestion', 'medium', 1000, 8000),
+            ('knowledge_discovery', 'complex', 200, 15000),
+            ('graph_traversal', 'medium', 75, 2000)
         ]
 
         for op_type, complexity, result_count, duration in operations:
@@ -227,20 +214,20 @@ class TelemetryDemo:
 
             success = random.random() > 0.05  # 95% success rate
 
-            if op_type == "data_ingestion":
+            if op_type == 'data_ingestion':
                 self.br_kg_telemetry.track_data_ingestion(
-                    data_source="pubmed_abstracts",
+                    data_source='pubmed_abstracts',
                     record_count=result_count,
                     processing_time_ms=duration,
                     success=success,
-                    errors_encountered=0 if success else random.randint(1, 5),
+                    errors_encountered=0 if success else random.randint(1, 5)
                 )
-            elif op_type == "knowledge_discovery":
+            elif op_type == 'knowledge_discovery':
                 self.br_kg_telemetry.track_knowledge_discovery(
-                    discovery_type="concept_relationships",
+                    discovery_type='concept_relationships',
                     entities_analyzed=result_count,
                     relationships_found=result_count // 4,
-                    confidence_score=random.uniform(0.6, 0.95),
+                    confidence_score=random.uniform(0.6, 0.95)
                 )
             else:
                 self.br_kg_telemetry.track_graph_query(
@@ -248,27 +235,19 @@ class TelemetryDemo:
                     query_complexity=complexity,
                     results_count=result_count,
                     execution_time_ms=duration,
-                    success=success,
+                    success=success
                 )
 
     async def simulate_ui_interactions(self):
         """Simulate UI user interactions."""
         interactions = [
-            ("navigation_header", "menu_click", {"menu_item": "analytics"}),
-            (
-                "search_autocomplete",
-                "search",
-                {"query_length": 15, "suggestions_shown": 8},
-            ),
-            (
-                "filter_sidebar",
-                "filter_apply",
-                {"filters": ["modality:fmri", "subjects:>10"]},
-            ),
-            ("dataset_card", "view_details", {"dataset_id": "ds000114"}),
-            ("analysis_form", "submit", {"analysis_type": "glm", "parameters": 12}),
-            ("result_display", "download", {"artifact_type": "statistical_map"}),
-            ("dashboard", "widget_interact", {"widget_type": "metrics_overview"}),
+            ('navigation_header', 'menu_click', {'menu_item': 'analytics'}),
+            ('search_autocomplete', 'search', {'query_length': 15, 'suggestions_shown': 8}),
+            ('filter_sidebar', 'filter_apply', {'filters': ['modality:fmri', 'subjects:>10']}),
+            ('dataset_card', 'view_details', {'dataset_id': 'ds000114'}),
+            ('analysis_form', 'submit', {'analysis_type': 'glm', 'parameters': 12}),
+            ('result_display', 'download', {'artifact_type': 'statistical_map'}),
+            ('dashboard', 'widget_interact', {'widget_type': 'metrics_overview'})
         ]
 
         for component, action, metadata in interactions:
@@ -277,13 +256,14 @@ class TelemetryDemo:
             self.ui_telemetry.track_component_interaction(
                 component_name=component,
                 interaction_type=action,
-                additional_data=metadata,
+                additional_data=metadata
             )
 
             # Simulate page navigation
-            if action == "menu_click":
+            if action == 'menu_click':
                 self.ui_telemetry.track_page_view(
-                    f"/{metadata['menu_item']}", referrer="/dashboard"
+                    f"/{metadata['menu_item']}",
+                    referrer="/dashboard"
                 )
 
     async def demo_user_journeys(self):
@@ -294,7 +274,7 @@ class TelemetryDemo:
         journeys = [
             self.simulate_research_journey,
             self.simulate_exploratory_journey,
-            self.simulate_collaboration_journey,
+            self.simulate_collaboration_journey
         ]
 
         for journey in journeys:
@@ -310,27 +290,25 @@ class TelemetryDemo:
         logger.info(f"Extracted {len(journeys)} user journeys")
 
         for journey in journeys[:3]:
-            logger.info(
-                f"Journey {journey.journey_id}: {journey.total_steps} steps, "
-                f"{journey.completion_rate:.1%} completion rate"
-            )
+            logger.info(f"Journey {journey.journey_id}: {journey.total_steps} steps, "
+                       f"{journey.completion_rate:.1%} completion rate")
 
     async def simulate_research_journey(self):
         """Simulate a complete research workflow journey."""
-        user_id = "researcher_001"
+        user_id = 'researcher_001'
         session_id = f"research_session_{int(time.time())}"
 
         with self.agent_telemetry.user_context(user_id, session_id):
             # Research workflow steps
             steps = [
-                ("session_start", {}),
-                ("dataset_search", {"query": "motor cortex fmri"}),
-                ("dataset_selection", {"dataset_id": "ds000114"}),
-                ("analysis_configuration", {"analysis_type": "glm"}),
-                ("analysis_execution", {"duration_ms": 45000}),
-                ("results_review", {"artifacts_generated": 5}),
-                ("results_export", {"format": "nifti"}),
-                ("session_end", {}),
+                ('session_start', {}),
+                ('dataset_search', {'query': 'motor cortex fmri'}),
+                ('dataset_selection', {'dataset_id': 'ds000114'}),
+                ('analysis_configuration', {'analysis_type': 'glm'}),
+                ('analysis_execution', {'duration_ms': 45000}),
+                ('results_review', {'artifacts_generated': 5}),
+                ('results_export', {'format': 'nifti'}),
+                ('session_end', {})
             ]
 
             for step_name, context in steps:
@@ -339,50 +317,50 @@ class TelemetryDemo:
                 self.collector.collect(
                     event_type=EventType.FEATURE_ACCESS,
                     service=ServiceType.WEB_UI,
-                    feature_name="research_workflow",
+                    feature_name='research_workflow',
                     action=step_name,
                     user_id=user_id,
                     session_id=session_id,
                     context=context,
-                    success=True,
+                    success=True
                 )
 
     async def simulate_exploratory_journey(self):
         """Simulate an exploratory data analysis journey."""
-        user_id = "explorer_002"
+        user_id = 'explorer_002'
         session_id = f"explore_session_{int(time.time())}"
 
         with self.ui_telemetry.user_context(user_id, session_id):
             # Exploratory steps
             exploration_actions = [
-                "browse_datasets",
-                "view_dataset_details",
-                "preview_data",
-                "compare_datasets",
-                "bookmark_interesting",
-                "share_findings",
+                'browse_datasets',
+                'view_dataset_details',
+                'preview_data',
+                'compare_datasets',
+                'bookmark_interesting',
+                'share_findings'
             ]
 
             for action in exploration_actions:
                 await asyncio.sleep(0.05)
 
                 self.ui_telemetry.track_feature_usage(
-                    feature_name="data_explorer",
+                    feature_name='data_explorer',
                     action=action,
-                    context={"exploration_type": "comparative"},
+                    context={'exploration_type': 'comparative'}
                 )
 
     async def simulate_collaboration_journey(self):
         """Simulate a collaboration workflow."""
-        user_id = "collaborator_003"
+        user_id = 'collaborator_003'
         session_id = f"collab_session_{int(time.time())}"
 
         collaboration_steps = [
-            ("project_access", ServiceType.WEB_UI),
-            ("analysis_review", ServiceType.AGENT),
-            ("comment_creation", ServiceType.WEB_UI),
-            ("result_discussion", ServiceType.WEB_UI),
-            ("revision_suggestion", ServiceType.AGENT),
+            ('project_access', ServiceType.WEB_UI),
+            ('analysis_review', ServiceType.AGENT),
+            ('comment_creation', ServiceType.WEB_UI),
+            ('result_discussion', ServiceType.WEB_UI),
+            ('revision_suggestion', ServiceType.AGENT)
         ]
 
         for step_name, service in collaboration_steps:
@@ -391,11 +369,11 @@ class TelemetryDemo:
             self.collector.collect(
                 event_type=EventType.COLLABORATION_ACTION,
                 service=service,
-                feature_name="collaboration",
+                feature_name='collaboration',
                 action=step_name,
                 user_id=user_id,
                 session_id=session_id,
-                success=True,
+                success=True
             )
 
     async def demo_privacy_features(self):
@@ -405,19 +383,19 @@ class TelemetryDemo:
         # Create test events with PII
         test_events = [
             {
-                "event_type": EventType.TOOL_INVOCATION,
-                "service": ServiceType.AGENT,
-                "feature_name": "data_analysis",
-                "user_id": "john.doe@university.edu",  # PII - email
-                "context": {
-                    "researcher_name": "John Doe",  # PII - name
-                    "ip_address": "192.168.1.100",  # PII - IP
-                    "institution": "University Research Lab",
+                'event_type': EventType.TOOL_INVOCATION,
+                'service': ServiceType.AGENT,
+                'feature_name': 'data_analysis',
+                'user_id': 'john.doe@university.edu',  # PII - email
+                'context': {
+                    'researcher_name': 'John Doe',  # PII - name
+                    'ip_address': '192.168.1.100',  # PII - IP
+                    'institution': 'University Research Lab'
                 },
-                "metadata": {
-                    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",  # PII
-                    "session_token": "abc123def456",
-                },
+                'metadata': {
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',  # PII
+                    'session_token': 'abc123def456'
+                }
             }
         ]
 
@@ -436,9 +414,7 @@ class TelemetryDemo:
 
         # Validate compliance
         for event in processed_events:
-            is_compliant, violations = self.privacy_controller.validate_data_compliance(
-                event
-            )
+            is_compliant, violations = self.privacy_controller.validate_data_compliance(event)
             logger.info(f"Event compliance: {is_compliant}, violations: {violations}")
 
         # Get privacy summary
@@ -470,11 +446,9 @@ class TelemetryDemo:
 
         # Show top features
         for feature in feature_analysis[:3]:
-            logger.info(
-                f"Feature: {feature.feature_name}, "
-                f"Usage: {feature.total_uses}, "
-                f"Adoption: {feature.adoption_rate:.1%}"
-            )
+            logger.info(f"Feature: {feature.feature_name}, "
+                       f"Usage: {feature.total_uses}, "
+                       f"Adoption: {feature.adoption_rate:.1%}")
 
     async def demo_real_time_monitoring(self):
         """Demonstrate real-time monitoring capabilities."""
@@ -499,16 +473,16 @@ class TelemetryDemo:
         logger.info("Generating Demo Report")
 
         report = {
-            "demo_completed_at": datetime.utcnow().isoformat(),
-            "collector_stats": self.collector.get_stats(),
-            "aggregator_stats": self.aggregator.get_aggregator_stats(),
-            "privacy_audit_count": len(self.privacy_controller._audit_logs),
-            "configuration": {
-                "collection_enabled": self.config.collection_enabled,
-                "anonymization_enabled": self.config.anonymization_enabled,
-                "gdpr_compliance": self.config.gdpr_compliance_mode,
-                "sampling_rate": self.config.sampling_rate,
-            },
+            'demo_completed_at': datetime.utcnow().isoformat(),
+            'collector_stats': self.collector.get_stats(),
+            'aggregator_stats': self.aggregator.get_aggregator_stats(),
+            'privacy_audit_count': len(self.privacy_controller._audit_logs),
+            'configuration': {
+                'collection_enabled': self.config.collection_enabled,
+                'anonymization_enabled': self.config.anonymization_enabled,
+                'gdpr_compliance': self.config.gdpr_compliance_mode,
+                'sampling_rate': self.config.sampling_rate
+            }
         }
 
         logger.info("=== TELEMETRY DEMO REPORT ===")

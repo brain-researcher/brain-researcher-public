@@ -4,7 +4,7 @@ This module provides prompt templates for the LLM tool router to select
 appropriate tools based on user goals and context.
 """
 
-from typing import TYPE_CHECKING, List
+from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from brain_researcher.services.tools.spec import ToolSpec

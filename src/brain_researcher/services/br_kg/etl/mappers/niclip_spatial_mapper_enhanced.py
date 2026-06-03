@@ -369,16 +369,16 @@ Key improvements:
 
 import json
 import logging
-import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple, Optional, Any
+import warnings
 
-import nibabel as nib
 import numpy as np
-import pandas as pd
-from scipy.ndimage import gaussian_filter
+import nibabel as nib
 from scipy.spatial.distance import cdist, cosine
 from scipy.stats import percentileofscore
+from scipy.ndimage import gaussian_filter
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -391,7 +391,7 @@ class EnhancedNiCLIPSpatialMapper:
         niclip_path: Optional[Path] = None,
         atlas: str = "difumo512",
         gaussian_sigma: float = 3.33,  # Default: radius/3
-        percentile_base: int = 100000,  # Sample size for percentile calculation
+        percentile_base: int = 100000  # Sample size for percentile calculation
     ):
         """
         Initialize enhanced spatial mapper.
@@ -406,12 +406,7 @@ class EnhancedNiCLIPSpatialMapper:
         if niclip_path is None:
             niclip_path = (
                 Path(__file__).parent.parent.parent.parent.parent.parent
-                / "data"
-                / "niclip"
-                / "dsj56"
-                / "osfstorage"
-                / "osfstorage"
-                / "data"
+                / "data" / "niclip" / "dsj56" / "osfstorage" / "osfstorage" / "data"
             )
 
         self.niclip_path = Path(niclip_path)
@@ -468,15 +463,18 @@ class EnhancedNiCLIPSpatialMapper:
     def _load_difumo_atlas(self):
         """Load DiFuMo atlas parcellation and coordinates."""
         # Map atlas names to file patterns
-        atlas_map = {"difumo256": "256", "difumo512": "512", "difumo1024": "1024"}
+        atlas_map = {
+            "difumo256": "256",
+            "difumo512": "512",
+            "difumo1024": "1024"
+        }
 
         atlas_num = atlas_map.get(self.atlas, "512")
 
         # Load atlas image
         atlas_path = (
-            self.niclip_path
-            / "atlases"
-            / f"atlas-DiFuMo_dimension-{atlas_num}_data-MNI152_2mm.nii.gz"
+            self.niclip_path / "atlases" /
+            f"atlas-DiFuMo_dimension-{atlas_num}_data-MNI152_2mm.nii.gz"
         )
 
         if atlas_path.exists():
@@ -500,8 +498,8 @@ class EnhancedNiCLIPSpatialMapper:
         if coords_path.exists():
             self.parcel_coords = pd.read_csv(coords_path)
             # Extract MNI coordinates
-            self.parcel_centers = self.parcel_coords[["x", "y", "z"]].values
-            self.parcel_names = self.parcel_coords["Difumo_names"].values
+            self.parcel_centers = self.parcel_coords[['x', 'y', 'z']].values
+            self.parcel_names = self.parcel_coords['Difumo_names'].values
             logger.info(f"Loaded {len(self.parcel_centers)} parcel coordinates")
         else:
             # Calculate parcel centers from atlas
@@ -535,9 +533,8 @@ class EnhancedNiCLIPSpatialMapper:
         """Load brain and text CLIP embeddings."""
         # Load brain embeddings
         brain_embed_path = (
-            self.niclip_path
-            / "image"
-            / f"image-DiFuMo_{self.atlas.replace('difumo', '')}_embedding-CLIP-ViT-B-32.npy"
+            self.niclip_path / "image" /
+            f"image-DiFuMo_{self.atlas.replace('difumo', '')}_embedding-CLIP-ViT-B-32.npy"
         )
 
         if brain_embed_path.exists():
@@ -546,18 +543,18 @@ class EnhancedNiCLIPSpatialMapper:
         else:
             # Try alternative path
             brain_embed_path = (
-                self.niclip_path / "embeddings" / f"brain_embeddings_{self.atlas}.npy"
+                self.niclip_path / "embeddings" /
+                f"brain_embeddings_{self.atlas}.npy"
             )
             if brain_embed_path.exists():
                 self.brain_embeddings = np.load(str(brain_embed_path))
             else:
-                raise FileNotFoundError(
-                    f"Brain embeddings not found: {brain_embed_path}"
-                )
+                raise FileNotFoundError(f"Brain embeddings not found: {brain_embed_path}")
 
         # Load text embeddings
         text_embed_path = (
-            self.niclip_path / "text" / "text-cogatlas_task_embedding-CLIP-ViT-B-32.npy"
+            self.niclip_path / "text" /
+            "text-cogatlas_task_embedding-CLIP-ViT-B-32.npy"
         )
 
         if text_embed_path.exists():
@@ -570,17 +567,17 @@ class EnhancedNiCLIPSpatialMapper:
         """Load task vocabulary and concept mappings."""
         # Load vocabulary priors
         vocab_path = (
-            self.niclip_path
-            / "vocabulary"
-            / "vocabulary-cogatlas_task-combined_embedding-CLIP-ViT-B-32_prior.csv"
+            self.niclip_path / "vocabulary" /
+            "vocabulary-cogatlas_task-combined_embedding-CLIP-ViT-B-32_prior.csv"
         )
 
         if vocab_path.exists():
             self.vocabulary = pd.read_csv(vocab_path)
-            self.task_names = self.vocabulary["name"].values
-            self.task_priors = dict(
-                zip(self.vocabulary["name"], self.vocabulary["prior"])
-            )
+            self.task_names = self.vocabulary['name'].values
+            self.task_priors = dict(zip(
+                self.vocabulary['name'],
+                self.vocabulary['prior']
+            ))
             logger.info(f"Loaded {len(self.task_names)} tasks")
         else:
             raise FileNotFoundError(f"Vocabulary not found: {vocab_path}")
@@ -598,14 +595,14 @@ class EnhancedNiCLIPSpatialMapper:
         if tasks_file.exists():
             df = pd.read_csv(tasks_file)
             for _, row in df.iterrows():
-                task = row["task"]
+                task = row['task']
                 concepts = []
                 for i in range(1, 4):  # concept_1, concept_2, concept_3
-                    concept = row.get(f"concept_{i}", "").strip()
+                    concept = row.get(f'concept_{i}', '').strip()
                     if concept:
                         concepts.append(concept)
                         # Map concept to process
-                        process = row.get(f"process_{i}", "").strip()
+                        process = row.get(f'process_{i}', '').strip()
                         if process:
                             self.concept_to_process[concept] = process
 
@@ -617,9 +614,7 @@ class EnhancedNiCLIPSpatialMapper:
 
     def _calculate_percentiles(self):
         """Pre-calculate percentile distributions for normalization."""
-        if not hasattr(self, "brain_embeddings") or not hasattr(
-            self, "text_embeddings"
-        ):
+        if not hasattr(self, 'brain_embeddings') or not hasattr(self, 'text_embeddings'):
             logger.warning("Embeddings not loaded, skipping percentile calculation")
             return
 
@@ -635,32 +630,28 @@ class EnhancedNiCLIPSpatialMapper:
         # Calculate cosine similarities
         sample_scores = []
         for b_idx, t_idx in zip(brain_indices, text_indices):
-            score = 1 - cosine(
-                self.brain_embeddings[b_idx], self.text_embeddings[t_idx]
-            )
+            score = 1 - cosine(self.brain_embeddings[b_idx], self.text_embeddings[t_idx])
             sample_scores.append(score)
 
         self.score_distribution = np.array(sample_scores)
 
         # Calculate key percentiles
         self.percentiles = {
-            "p50": np.percentile(self.score_distribution, 50),
-            "p75": np.percentile(self.score_distribution, 75),
-            "p90": np.percentile(self.score_distribution, 90),
-            "p95": np.percentile(self.score_distribution, 95),
-            "p99": np.percentile(self.score_distribution, 99),
+            'p50': np.percentile(self.score_distribution, 50),
+            'p75': np.percentile(self.score_distribution, 75),
+            'p90': np.percentile(self.score_distribution, 90),
+            'p95': np.percentile(self.score_distribution, 95),
+            'p99': np.percentile(self.score_distribution, 99)
         }
 
-        logger.info(
-            f"Calculated percentiles from {n_samples} samples: {self.percentiles}"
-        )
+        logger.info(f"Calculated percentiles from {n_samples} samples: {self.percentiles}")
 
     def coordinate_to_concepts(
         self,
         coordinates: List[Tuple[float, float, float]],
         radius: float = 10.0,
         top_k: int = 5,
-        min_percentile: float = 50.0,
+        min_percentile: float = 50.0
     ) -> List[Dict[str, Any]]:
         """
         Map MNI coordinates to cognitive concepts using enhanced method.
@@ -675,73 +666,65 @@ class EnhancedNiCLIPSpatialMapper:
             List of mappings with concepts and scores
         """
         if not self._loaded:
-            return [
-                {
-                    "coordinate": coord,
-                    "error": "Enhanced mapper not loaded",
-                    "concepts": [],
-                }
-                for coord in coordinates
-            ]
+            return [{
+                "coordinate": coord,
+                "error": "Enhanced mapper not loaded",
+                "concepts": []
+            } for coord in coordinates]
 
         results = []
 
         for coord in coordinates:
             # Validate coordinate
             if self.brain_mask and not self._is_in_brain(coord):
-                results.append(
-                    {
-                        "coordinate": coord,
-                        "warning": "Coordinate outside brain mask",
-                        "concepts": [],
-                    }
-                )
+                results.append({
+                    "coordinate": coord,
+                    "warning": "Coordinate outside brain mask",
+                    "concepts": []
+                })
                 continue
 
             # Find nearby parcels with Gaussian weighting
             parcel_weights = self._get_parcel_weights(coord, radius)
 
             if not parcel_weights:
-                results.append(
-                    {
-                        "coordinate": coord,
-                        "warning": "No parcels found within radius",
-                        "concepts": [],
-                    }
-                )
+                results.append({
+                    "coordinate": coord,
+                    "warning": "No parcels found within radius",
+                    "concepts": []
+                })
                 continue
 
             # Calculate concept scores
             concept_scores = self._calculate_concept_scores(
-                parcel_weights, min_percentile
+                parcel_weights,
+                min_percentile
             )
 
             # Get top concepts
             top_concepts = sorted(
-                concept_scores.items(), key=lambda x: x[1]["score"], reverse=True
+                concept_scores.items(),
+                key=lambda x: x[1]['score'],
+                reverse=True
             )[:top_k]
 
             # Format results
             concepts = []
             for concept_name, concept_data in top_concepts:
-                concepts.append(
-                    {
-                        "concept": concept_name,
-                        "score": concept_data["score"],
-                        "percentile": concept_data["percentile"],
-                        "process": self.concept_to_process.get(concept_name, "unknown"),
-                        "contributing_parcels": concept_data["parcels"],
-                    }
-                )
+                concepts.append({
+                    "concept": concept_name,
+                    "score": concept_data['score'],
+                    "percentile": concept_data['percentile'],
+                    "process": self.concept_to_process.get(concept_name, "unknown"),
+                    "contributing_parcels": concept_data['parcels']
+                })
 
-            results.append(
-                {
-                    "coordinate": coord,
-                    "concepts": concepts,
-                    "n_parcels": len(parcel_weights),
-                    "method": "enhanced_gaussian_weighted",
-                }
-            )
+            results.append({
+                "coordinate": coord,
+                "concepts": concepts,
+                "n_parcels": len(parcel_weights),
+                "method": "enhanced_gaussian_weighted"
+            })
 
         return results
 
@@ -751,20 +734,23 @@ class EnhancedNiCLIPSpatialMapper:
             return True
 
         # Convert MNI to voxel coordinates
-        voxel_coord = nib.affines.apply_affine(np.linalg.inv(self.brain_affine), coord)
+        voxel_coord = nib.affines.apply_affine(
+            np.linalg.inv(self.brain_affine),
+            coord
+        )
 
         # Check bounds
         x, y, z = [int(round(c)) for c in voxel_coord]
-        if (
-            0 <= x < self.brain_data.shape[0]
-            and 0 <= y < self.brain_data.shape[1]
-            and 0 <= z < self.brain_data.shape[2]
-        ):
+        if (0 <= x < self.brain_data.shape[0] and
+            0 <= y < self.brain_data.shape[1] and
+            0 <= z < self.brain_data.shape[2]):
             return self.brain_data[x, y, z] > 0
         return False
 
     def _get_parcel_weights(
-        self, coord: Tuple[float, float, float], radius: float
+        self,
+        coord: Tuple[float, float, float],
+        radius: float
     ) -> Dict[int, float]:
         """
         Get parcels within radius with Gaussian distance weighting.
@@ -775,7 +761,7 @@ class EnhancedNiCLIPSpatialMapper:
         coord_array = np.array(coord).reshape(1, -1)
 
         # Calculate distances to all parcel centers
-        distances = cdist(coord_array, self.parcel_centers, metric="euclidean")[0]
+        distances = cdist(coord_array, self.parcel_centers, metric='euclidean')[0]
 
         # Find parcels within radius
         within_radius = distances <= radius
@@ -788,7 +774,7 @@ class EnhancedNiCLIPSpatialMapper:
         if sigma <= 0:  # Use radius/3 as default
             sigma = radius / 3.0
 
-        weights = np.exp(-(distances[within_radius] ** 2) / (2 * sigma**2))
+        weights = np.exp(-(distances[within_radius]**2) / (2 * sigma**2))
 
         # Normalize weights to sum to 1
         weights = weights / weights.sum()
@@ -800,7 +786,9 @@ class EnhancedNiCLIPSpatialMapper:
         return parcel_weights
 
     def _calculate_concept_scores(
-        self, parcel_weights: Dict[int, float], min_percentile: float
+        self,
+        parcel_weights: Dict[int, float],
+        min_percentile: float
     ) -> Dict[str, Dict[str, Any]]:
         """
         Calculate concept scores from weighted parcels.
@@ -825,21 +813,15 @@ class EnhancedNiCLIPSpatialMapper:
                     # Calculate cosine similarity
                     similarity = 1 - cosine(
                         self.brain_embeddings[parcel_idx],
-                        self.text_embeddings[task_idx],
+                        self.text_embeddings[task_idx]
                     )
 
                     weighted_score += similarity * weight
-                    contributing_parcels.append(
-                        {
-                            "parcel": (
-                                self.parcel_names[parcel_idx]
-                                if parcel_idx < len(self.parcel_names)
-                                else f"Parcel_{parcel_idx}"
-                            ),
-                            "weight": weight,
-                            "similarity": similarity,
-                        }
-                    )
+                    contributing_parcels.append({
+                        "parcel": self.parcel_names[parcel_idx] if parcel_idx < len(self.parcel_names) else f"Parcel_{parcel_idx}",
+                        "weight": weight,
+                        "similarity": similarity
+                    })
 
             # Calculate percentile
             percentile = percentileofscore(self.score_distribution, weighted_score)
@@ -849,40 +831,25 @@ class EnhancedNiCLIPSpatialMapper:
                 continue
 
             # Normalize score to 0-1 range based on percentiles
-            if weighted_score >= self.percentiles["p95"]:
-                normalized_score = 0.9 + 0.1 * (
-                    weighted_score - self.percentiles["p95"]
-                ) / (1.0 - self.percentiles["p95"])
-            elif weighted_score >= self.percentiles["p90"]:
-                normalized_score = 0.8 + 0.1 * (
-                    weighted_score - self.percentiles["p90"]
-                ) / (self.percentiles["p95"] - self.percentiles["p90"])
-            elif weighted_score >= self.percentiles["p75"]:
-                normalized_score = 0.6 + 0.2 * (
-                    weighted_score - self.percentiles["p75"]
-                ) / (self.percentiles["p90"] - self.percentiles["p75"])
+            if weighted_score >= self.percentiles['p95']:
+                normalized_score = 0.9 + 0.1 * (weighted_score - self.percentiles['p95']) / (1.0 - self.percentiles['p95'])
+            elif weighted_score >= self.percentiles['p90']:
+                normalized_score = 0.8 + 0.1 * (weighted_score - self.percentiles['p90']) / (self.percentiles['p95'] - self.percentiles['p90'])
+            elif weighted_score >= self.percentiles['p75']:
+                normalized_score = 0.6 + 0.2 * (weighted_score - self.percentiles['p75']) / (self.percentiles['p90'] - self.percentiles['p75'])
             else:
-                normalized_score = (
-                    0.6
-                    * (weighted_score - self.percentiles["p50"])
-                    / (self.percentiles["p75"] - self.percentiles["p50"])
-                )
+                normalized_score = 0.6 * (weighted_score - self.percentiles['p50']) / (self.percentiles['p75'] - self.percentiles['p50'])
 
             normalized_score = np.clip(normalized_score, 0.0, 1.0)
 
             # Add concepts associated with this task
             for concept in self.task_to_concepts[task_name]:
-                if (
-                    concept not in concept_scores
-                    or normalized_score > concept_scores[concept]["score"]
-                ):
+                if concept not in concept_scores or normalized_score > concept_scores[concept]['score']:
                     concept_scores[concept] = {
-                        "score": normalized_score,
-                        "percentile": percentile,
-                        "task": task_name,
-                        "parcels": contributing_parcels[
-                            :3
-                        ],  # Top 3 contributing parcels
+                        'score': normalized_score,
+                        'percentile': percentile,
+                        'task': task_name,
+                        'parcels': contributing_parcels[:3]  # Top 3 contributing parcels
                     }
 
         return concept_scores
@@ -927,9 +894,7 @@ class EnhancedNiCLIPSpatialMapper:
 
 
 # Convenience function
-def get_enhanced_mapper(
-    atlas: str = "difumo512",
-) -> Optional[EnhancedNiCLIPSpatialMapper]:
+def get_enhanced_mapper(atlas: str = "difumo512") -> Optional[EnhancedNiCLIPSpatialMapper]:
     """Get or create enhanced spatial mapper instance."""
     try:
         return EnhancedNiCLIPSpatialMapper(atlas=atlas)

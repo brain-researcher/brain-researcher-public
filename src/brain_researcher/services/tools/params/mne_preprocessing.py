@@ -5,12 +5,12 @@ Shared helpers for MNE preprocessing workflows.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import os
 
 from brain_researcher.core.utils import configure_mne_environment
 
@@ -78,9 +78,7 @@ def _detect_bad_channels(raw) -> List[str]:
     return list({raw.ch_names[idx] for idx in bad_indices})
 
 
-def _apply_reference(
-    raw, reference: str, reference_channels: Optional[List[str]] = None
-):
+def _apply_reference(raw, reference: str, reference_channels: Optional[List[str]] = None):
     import mne
 
     if reference.lower() == "average":
@@ -101,9 +99,7 @@ def _apply_reference(
     return raw
 
 
-def mne_preprocessing_from_payload(
-    payload: Dict[str, Any],
-) -> MNEPreprocessingParameters:
+def mne_preprocessing_from_payload(payload: Dict[str, Any]) -> MNEPreprocessingParameters:
     def _tuple(val):
         if val is None:
             return tuple()

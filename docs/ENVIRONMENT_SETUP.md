@@ -121,7 +121,7 @@ br serve web --port 3000
 ### Endpoint Map
 
 - **Agent service (port 8000)**: `/act`, `/chat`, legacy `/api/runs*` compatibility facade, `/api/tools`, `/api/files`
-- **BR-KG service (port 5000)**: `/api/kg/*`, `/api/neurokg/*`, `/health`
+- **BR-KG service (port 5000)**: `/api/kg/*`, `/api/br-kg/*`, `/health`
 - **Orchestrator service (port 3001)**: `/run`, `/health`, `/docs`, `/api/jobs`, `/api/analyses`, `/api/cache/*`
 - **Web UI public proxy (port 3000)**: browser-facing `/api/*` routes. `/api/runs*` is compatibility-only and still proxies to Agent for legacy callers; submit/list now go through `/api/analyses*`, which is the canonical public analysis facade over Orchestrator `/run` + `/api/analyses`; detail/share/stream data comes from Orchestrator job/analysis endpoints.
 

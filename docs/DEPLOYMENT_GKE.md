@@ -162,7 +162,7 @@ Expected `/api/health/full` response:
   "status": "ok",
   "services": [
     {"name": "agent", "status": "ok", "latency_ms": 0},
-    {"name": "neurokg", "status": "ok", "latency_ms": 15},
+    {"name": "br-kg", "status": "ok", "latency_ms": 15},
     {"name": "neo4j", "status": "ok", "latency_ms": 25},
     {"name": "job_store", "status": "ok"}
   ],
@@ -209,7 +209,7 @@ kubectl logs -l app=neo4j -n brain-researcher-data
 kubectl exec -it neo4j-0 -n brain-researcher-data -- cypher-shell -u neo4j
 
 # Verify BR-KG can reach Neo4j
-kubectl exec -it deploy/neurokg -n brain-researcher-core -- \
+kubectl exec -it deploy/br-kg -n brain-researcher-core -- \
   curl http://neo4j.brain-researcher-data:7474/
 ```
 

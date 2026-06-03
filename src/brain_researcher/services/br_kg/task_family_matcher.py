@@ -261,9 +261,7 @@ class TaskFamilyMatcher:
             for subfamily in subfamilies:
                 if not isinstance(subfamily, dict):
                     continue
-                subfamily_id = (
-                    str(subfamily.get("id") or "").strip() or f"{family_id}::subfamily"
-                )
+                subfamily_id = str(subfamily.get("id") or "").strip() or f"{family_id}::subfamily"
                 subfamily_label = str(subfamily.get("label") or subfamily_id).strip()
                 paradigms = subfamily.get("paradigms") or []
                 if not isinstance(paradigms, list):
@@ -285,9 +283,7 @@ class TaskFamilyMatcher:
                     candidates = [paradigm_name]
                     aliases = paradigm.get("aliases") or []
                     if isinstance(aliases, list):
-                        candidates.extend(
-                            str(alias).strip() for alias in aliases if alias
-                        )
+                        candidates.extend(str(alias).strip() for alias in aliases if alias)
                     for candidate in candidates:
                         normalized = normalize_task_label(candidate)
                         if not normalized:
@@ -327,10 +323,7 @@ class TaskFamilyMatcher:
                 continue
             if subfamily_id and record.subfamily_id != subfamily_id:
                 continue
-            if (
-                paradigm_name
-                and normalize_task_label(record.paradigm_name) != paradigm_name
-            ):
+            if paradigm_name and normalize_task_label(record.paradigm_name) != paradigm_name:
                 continue
             candidates.append(record)
 
@@ -358,17 +351,12 @@ class TaskFamilyMatcher:
         try:
             payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         except Exception as exc:
-            logger.warning(
-                "Failed to load task family alias extensions (%s): %s", path, exc
-            )
+            logger.warning("Failed to load task family alias extensions (%s): %s", path, exc)
             return
 
         entries = payload.get("aliases") if isinstance(payload, dict) else None
         if not isinstance(entries, list):
-            logger.warning(
-                "Invalid task family alias extensions payload (expected aliases list): %s",
-                path,
-            )
+            logger.warning("Invalid task family alias extensions payload (expected aliases list): %s", path)
             return
 
         applied = 0
@@ -451,9 +439,7 @@ class TaskFamilyMatcher:
         )
         return candidates
 
-    def match(
-        self, label: str | None
-    ) -> tuple[TaskFamilyRecord | None, str, float | None]:
+    def match(self, label: str | None) -> tuple[TaskFamilyRecord | None, str, float | None]:
         normalized = normalize_task_label(label)
         if not normalized:
             return None, "unmapped", None
@@ -474,8 +460,7 @@ class TaskFamilyMatcher:
                 second = candidates[1] if len(candidates) > 1 else None
                 if (
                     second is not None
-                    and (best.combined_score - second.combined_score)
-                    <= self.ambiguity_margin
+                    and (best.combined_score - second.combined_score) <= self.ambiguity_margin
                     and second.combined_score >= self.aggressive_secondary_threshold
                 ):
                     return None, "ambiguous_rejected", None
@@ -504,7 +489,10 @@ class TaskFamilyMatcher:
 
     def enrich_entity(self, entity: dict[str, Any]) -> dict[str, Any]:
         label = (
-            entity.get("display_label") or entity.get("label") or entity.get("id") or ""
+            entity.get("display_label")
+            or entity.get("label")
+            or entity.get("id")
+            or ""
         )
         record, method, score = self.match(str(label))
         enriched = dict(entity)
@@ -565,7 +553,10 @@ def build_task_family_tree(
 
     for entity in entities:
         display_label = str(
-            entity.get("display_label") or entity.get("label") or entity.get("id") or ""
+            entity.get("display_label")
+            or entity.get("label")
+            or entity.get("id")
+            or ""
         )
         if q and q not in normalize_task_label(display_label):
             continue
@@ -615,10 +606,7 @@ def build_task_family_tree(
         for sub in children:
             sub["children"].sort(
                 key=lambda item: str(
-                    item.get("display_label")
-                    or item.get("label")
-                    or item.get("id")
-                    or ""
+                    item.get("display_label") or item.get("label") or item.get("id") or ""
                 ).lower()
             )
         families.append(

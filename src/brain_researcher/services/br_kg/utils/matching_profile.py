@@ -51,9 +51,7 @@ def _ensure_lower_set(values: list[str] | None) -> set[str]:
     return set(_ensure_lower_list(values))
 
 
-def _compile_replacements(
-    raw: dict[str, str] | None,
-) -> list[tuple[re.Pattern[str], str]]:
+def _compile_replacements(raw: dict[str, str] | None) -> list[tuple[re.Pattern[str], str]]:
     replacements: list[tuple[re.Pattern[str], str]] = []
     if not raw:
         return replacements
@@ -136,9 +134,7 @@ class NormalizationRules:
             return ""
 
         tokens = _tokenize(normalized)
-        tokens = _normalize_tokens(
-            tokens, stopwords=self.stopwords, min_token_len=self.min_token_len
-        )
+        tokens = _normalize_tokens(tokens, stopwords=self.stopwords, min_token_len=self.min_token_len)
         normalized = " ".join(tokens).strip()
 
         if not normalized:
@@ -180,9 +176,7 @@ class MatchingProfile:
         if not label or not self.normalization.disallow_suffixes:
             return False
         normalized = label.strip().lower()
-        return any(
-            normalized.endswith(suf) for suf in self.normalization.disallow_suffixes
-        )
+        return any(normalized.endswith(suf) for suf in self.normalization.disallow_suffixes)
 
     def to_dict(self, *, include_aliases: bool = True) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -237,9 +231,7 @@ def _add_alias(
     canonical_to_aliases.setdefault(canonical_key, set()).add(canonical_clean)
 
 
-def _aliases_from_task_synonyms(
-    path: Path,
-) -> tuple[dict[str, str], dict[str, set[str]]]:
+def _aliases_from_task_synonyms(path: Path) -> tuple[dict[str, str], dict[str, set[str]]]:
     alias_to_canonical: dict[str, str] = {}
     canonical_to_aliases: dict[str, set[str]] = {}
     data = _load_yaml(path) or []
@@ -249,22 +241,18 @@ def _aliases_from_task_synonyms(
         if not isinstance(entry, dict):
             continue
         canonical = entry.get("canonical")
-        for alias in entry.get("synonyms") or []:
+        for alias in (entry.get("synonyms") or []):
             _add_alias(alias_to_canonical, canonical_to_aliases, alias, canonical)
         source_aliases = entry.get("source_aliases") or {}
         if isinstance(source_aliases, dict):
             for aliases in source_aliases.values():
                 for alias in aliases or []:
-                    _add_alias(
-                        alias_to_canonical, canonical_to_aliases, alias, canonical
-                    )
+                    _add_alias(alias_to_canonical, canonical_to_aliases, alias, canonical)
         _add_alias(alias_to_canonical, canonical_to_aliases, canonical, canonical)
     return alias_to_canonical, canonical_to_aliases
 
 
-def _aliases_from_concept_synonyms(
-    path: Path,
-) -> tuple[dict[str, str], dict[str, set[str]]]:
+def _aliases_from_concept_synonyms(path: Path) -> tuple[dict[str, str], dict[str, set[str]]]:
     alias_to_canonical: dict[str, str] = {}
     canonical_to_aliases: dict[str, set[str]] = {}
     data = _load_yaml(path) or []
@@ -274,22 +262,18 @@ def _aliases_from_concept_synonyms(
         if not isinstance(entry, dict):
             continue
         canonical = entry.get("canonical")
-        for alias in entry.get("synonyms") or []:
+        for alias in (entry.get("synonyms") or []):
             _add_alias(alias_to_canonical, canonical_to_aliases, alias, canonical)
         source_aliases = entry.get("source_aliases") or {}
         if isinstance(source_aliases, dict):
             for aliases in source_aliases.values():
                 for alias in aliases or []:
-                    _add_alias(
-                        alias_to_canonical, canonical_to_aliases, alias, canonical
-                    )
+                    _add_alias(alias_to_canonical, canonical_to_aliases, alias, canonical)
         _add_alias(alias_to_canonical, canonical_to_aliases, canonical, canonical)
     return alias_to_canonical, canonical_to_aliases
 
 
-def _aliases_from_task_families(
-    path: Path,
-) -> tuple[dict[str, str], dict[str, set[str]]]:
+def _aliases_from_task_families(path: Path) -> tuple[dict[str, str], dict[str, set[str]]]:
     alias_to_canonical: dict[str, str] = {}
     canonical_to_aliases: dict[str, set[str]] = {}
     data = _load_yaml(path) or {}
@@ -325,7 +309,7 @@ def _load_alias_map_json(path: Path) -> tuple[dict[str, str], dict[str, set[str]
 
 
 def _merge_alias_sets(
-    items: list[tuple[dict[str, str], dict[str, set[str]]]],
+    items: list[tuple[dict[str, str], dict[str, set[str]]]]
 ) -> tuple[dict[str, str], dict[str, list[str]], list[tuple[str, str, str]]]:
     alias_to_canonical: dict[str, str] = {}
     canonical_to_aliases: dict[str, set[str]] = {}
@@ -351,9 +335,7 @@ def _merge_alias_sets(
 
 
 @lru_cache(maxsize=1)
-def load_matching_profiles(
-    config_root: Path | None = None,
-) -> dict[str, MatchingProfile]:
+def load_matching_profiles(config_root: Path | None = None) -> dict[str, MatchingProfile]:
     global _ALIAS_CONFLICTS
     root = config_root or CONFIG_ROOT
     mapping_settings = _load_yaml(root / "mapping_settings.yaml") or {}
@@ -365,11 +347,7 @@ def load_matching_profiles(
     )
     onvoc_tree = _load_yaml(onvoc_tree_path) or {}
 
-    normalization_settings = (
-        mapping_settings.get("normalization", {})
-        if isinstance(mapping_settings, dict)
-        else {}
-    )
+    normalization_settings = mapping_settings.get("normalization", {}) if isinstance(mapping_settings, dict) else {}
     base_stopwords = _ensure_lower_set(normalization_settings.get("stopwords"))
     min_token_len = int(normalization_settings.get("min_token_len", 2) or 2)
     ascii_fold = bool(normalization_settings.get("ascii_fold", True))
@@ -390,17 +368,9 @@ def load_matching_profiles(
 
     task_threshold = task_mapping.get("thresholds", {}).get("fuzzy_match")
     if task_threshold is None:
-        task_threshold = (
-            mapping_settings.get("scoring_defaults", {})
-            .get("accept", {})
-            .get("min_score", 0.85)
-        )
+        task_threshold = mapping_settings.get("scoring_defaults", {}).get("accept", {}).get("min_score", 0.85)
     task_fuzzy_threshold = int(float(task_threshold) * 100)
-    concept_threshold = (
-        mapping_settings.get("scoring_defaults", {})
-        .get("accept", {})
-        .get("min_score", 0.85)
-    )
+    concept_threshold = mapping_settings.get("scoring_defaults", {}).get("accept", {}).get("min_score", 0.85)
     concept_fuzzy_threshold = int(float(concept_threshold) * 100)
 
     task_stopwords = base_stopwords | onvoc_stopwords
@@ -418,43 +388,31 @@ def load_matching_profiles(
         ]
     )
 
-    task_alias_to_canonical, task_canonical_to_aliases, task_conflicts_strong = (
+    task_alias_to_canonical, task_canonical_to_aliases, task_conflicts_strong = _merge_alias_sets(
+        [
+            _aliases_from_task_synonyms(root / "legacy" / "mappings" / "task_synonyms.yaml"),
+            _load_alias_map_json(
+                root.parent / "scripts" / "neurostore_task" / "taxonomy" / "alias_map.json"
+            ),
+        ]
+    )
+    task_alias_to_canonical_soft, task_canonical_to_aliases_soft, task_conflicts_soft = (
         _merge_alias_sets(
             [
-                _aliases_from_task_synonyms(
-                    root / "legacy" / "mappings" / "task_synonyms.yaml"
-                ),
-                _load_alias_map_json(
-                    root.parent
-                    / "scripts"
-                    / "neurostore_task"
-                    / "taxonomy"
-                    / "alias_map.json"
+                _aliases_from_task_families(
+                    root / "taxonomy" / "exports" / "task_families_master.yaml"
                 ),
             ]
         )
     )
-    (
-        task_alias_to_canonical_soft,
-        task_canonical_to_aliases_soft,
-        task_conflicts_soft,
-    ) = _merge_alias_sets(
-        [
-            _aliases_from_task_families(
-                root / "taxonomy" / "exports" / "task_families_master.yaml"
-            ),
-        ]
-    )
-    (
-        concept_alias_to_canonical,
-        concept_canonical_to_aliases,
-        concept_conflicts_strong,
-    ) = _merge_alias_sets(
-        [
-            _aliases_from_concept_synonyms(
-                root / "legacy" / "mappings" / "concept_synonyms.yaml"
-            ),
-        ]
+    concept_alias_to_canonical, concept_canonical_to_aliases, concept_conflicts_strong = (
+        _merge_alias_sets(
+            [
+                _aliases_from_concept_synonyms(
+                    root / "legacy" / "mappings" / "concept_synonyms.yaml"
+                ),
+            ]
+        )
     )
     _ALIAS_CONFLICTS = {
         "task_strong": task_conflicts_strong,
@@ -479,11 +437,7 @@ def load_matching_profiles(
         alias_to_canonical_soft=task_alias_to_canonical_soft,
         canonical_to_aliases_soft=task_canonical_to_aliases_soft,
         fuzzy_threshold=task_fuzzy_threshold,
-        embed_threshold=float(
-            mapping_settings.get("scoring_defaults", {})
-            .get("accept", {})
-            .get("min_score", 0.85)
-        ),
+        embed_threshold=float(mapping_settings.get("scoring_defaults", {}).get("accept", {}).get("min_score", 0.85)),
     )
 
     concept_profile = MatchingProfile(
@@ -503,11 +457,7 @@ def load_matching_profiles(
         alias_to_canonical_soft={},
         canonical_to_aliases_soft={},
         fuzzy_threshold=concept_fuzzy_threshold,
-        embed_threshold=float(
-            mapping_settings.get("scoring_defaults", {})
-            .get("accept", {})
-            .get("min_score", 0.85)
-        ),
+        embed_threshold=float(mapping_settings.get("scoring_defaults", {}).get("accept", {}).get("min_score", 0.85)),
     )
 
     default_profile = MatchingProfile(
@@ -549,28 +499,20 @@ def export_matching_profiles(
     profiles = profiles or load_matching_profiles()
     payload = {
         "version": MATCHING_PROFILE_VERSION,
-        "profiles": {
-            name: profile.to_dict(include_aliases=True)
-            for name, profile in profiles.items()
-        },
+        "profiles": {name: profile.to_dict(include_aliases=True) for name, profile in profiles.items()},
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
-    )
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     if conflicts_path is not None:
         conflicts = get_alias_conflicts()
         conflicts_path.parent.mkdir(parents=True, exist_ok=True)
-        conflicts_path.write_text(
-            json.dumps(conflicts, indent=2, sort_keys=True), encoding="utf-8"
-        )
+        conflicts_path.write_text(json.dumps(conflicts, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def matching_profile_hash(profiles: dict[str, MatchingProfile] | None = None) -> str:
     profiles = profiles or load_matching_profiles()
     payload = {
-        name: profile.to_dict(include_aliases=True)
-        for name, profile in profiles.items()
+        name: profile.to_dict(include_aliases=True) for name, profile in profiles.items()
     }
     raw = json.dumps(payload, sort_keys=True)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()

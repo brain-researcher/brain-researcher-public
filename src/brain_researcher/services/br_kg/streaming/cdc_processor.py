@@ -5,16 +5,16 @@ and publishes them to the streaming infrastructure for real-time processing.
 Integrates with the existing subscription system and versioning.
 """
 
+import logging
 import asyncio
 import json
-import logging
+from typing import Dict, List, Any, Optional, Set, Callable, AsyncIterator
+from dataclasses import dataclass, field, asdict
+from datetime import datetime
+from enum import Enum
 import uuid
 import weakref
 from collections import defaultdict
-from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from enum import Enum
-from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Set
 
 try:
     from neo4j import GraphDatabase, Transaction
@@ -88,7 +88,7 @@ class GraphChangeEvent:
             "relationship_type": self.relationship_type,
             "user_id": self.user_id,
             "session_id": self.session_id,
-            "metadata": self.metadata,
+            "metadata": self.metadata
         }
 
     @classmethod
@@ -110,13 +110,12 @@ class GraphChangeEvent:
             relationship_type=data.get("relationship_type"),
             user_id=data.get("user_id"),
             session_id=data.get("session_id"),
-            metadata=data.get("metadata", {}),
+            metadata=data.get("metadata", {})
         )
 
 
 class CDCError(Exception):
     """CDC-related errors."""
-
     pass
 
 
@@ -130,7 +129,7 @@ class CDCProcessor:
         neo4j_password: str,
         database: Optional[str] = None,
         buffer_size: int = 1000,
-        batch_interval: float = 1.0,
+        batch_interval: float = 1.0
     ):
         """Initialize CDC processor.
 
@@ -170,7 +169,7 @@ class CDCProcessor:
             "events_by_type": defaultdict(int),
             "batches_processed": 0,
             "last_event_time": None,
-            "errors": 0,
+            "errors": 0
         }
 
         # Background tasks
@@ -187,7 +186,8 @@ class CDCProcessor:
 
         try:
             self.driver = GraphDatabase.driver(
-                self.neo4j_uri, auth=(self.neo4j_user, self.neo4j_password)
+                self.neo4j_uri,
+                auth=(self.neo4j_user, self.neo4j_password)
             )
 
             # Test connection
@@ -259,7 +259,7 @@ class CDCProcessor:
                     if node_id:
                         self.node_states[str(node_id)] = {
                             "labels": list(record["labels"]),
-                            "properties": dict(record["props"]),
+                            "properties": dict(record["props"])
                         }
 
                 # Capture current relationship states
@@ -277,7 +277,7 @@ class CDCProcessor:
                         "start_node_id": record["start_id"],
                         "end_node_id": record["end_id"],
                         "relationship_type": record["rel_type"],
-                        "properties": dict(record["props"]),
+                        "properties": dict(record["props"])
                     }
 
             logger.info(
@@ -289,9 +289,7 @@ class CDCProcessor:
             logger.error(f"Failed to initialize change tracking: {e}", exc_info=True)
             raise CDCError(f"Failed to initialize change tracking: {e}")
 
-    async def capture_changes(
-        self, session_id: Optional[str] = None, user_id: Optional[str] = None
-    ):
+    async def capture_changes(self, session_id: Optional[str] = None, user_id: Optional[str] = None):
         """Capture changes from current graph state.
 
         Args:
@@ -311,9 +309,7 @@ class CDCProcessor:
             logger.error(f"Error capturing changes: {e}", exc_info=True)
             self.stats["errors"] += 1
 
-    async def _capture_node_changes(
-        self, session, session_id: Optional[str], user_id: Optional[str]
-    ):
+    async def _capture_node_changes(self, session, session_id: Optional[str], user_id: Optional[str]):
         """Capture node changes."""
         current_nodes = {}
 
@@ -327,7 +323,7 @@ class CDCProcessor:
             if node_id:
                 current_nodes[str(node_id)] = {
                     "labels": list(record["labels"]),
-                    "properties": dict(record["props"]),
+                    "properties": dict(record["props"])
                 }
 
         # Detect new nodes
@@ -342,7 +338,7 @@ class CDCProcessor:
                     labels=current_state["labels"],
                     new_properties=current_state["properties"],
                     session_id=session_id,
-                    user_id=user_id,
+                    user_id=user_id
                 )
                 await self._add_event(event)
                 self.node_states[node_id] = current_state
@@ -362,12 +358,15 @@ class CDCProcessor:
                         if key not in old_props or old_props[key] != new_value:
                             property_changes[key] = {
                                 "old": old_props.get(key),
-                                "new": new_value,
+                                "new": new_value
                             }
 
                     for key in old_props:
                         if key not in new_props:
-                            property_changes[key] = {"old": old_props[key], "new": None}
+                            property_changes[key] = {
+                                "old": old_props[key],
+                                "new": None
+                            }
 
                     if property_changes:
                         event = GraphChangeEvent(
@@ -381,7 +380,7 @@ class CDCProcessor:
                             new_properties=new_props,
                             property_changes=property_changes,
                             session_id=session_id,
-                            user_id=user_id,
+                            user_id=user_id
                         )
                         await self._add_event(event)
                         self.node_states[node_id] = current_state
@@ -404,7 +403,7 @@ class CDCProcessor:
                             labels=[label],
                             session_id=session_id,
                             user_id=user_id,
-                            metadata={"added_label": label},
+                            metadata={"added_label": label}
                         )
                         await self._add_event(event)
 
@@ -418,7 +417,7 @@ class CDCProcessor:
                             labels=[label],
                             session_id=session_id,
                             user_id=user_id,
-                            metadata={"removed_label": label},
+                            metadata={"removed_label": label}
                         )
                         await self._add_event(event)
 
@@ -437,14 +436,12 @@ class CDCProcessor:
                     labels=old_state["labels"],
                     old_properties=old_state["properties"],
                     session_id=session_id,
-                    user_id=user_id,
+                    user_id=user_id
                 )
                 await self._add_event(event)
                 del self.node_states[node_id]
 
-    async def _capture_relationship_changes(
-        self, session, session_id: Optional[str], user_id: Optional[str]
-    ):
+    async def _capture_relationship_changes(self, session, session_id: Optional[str], user_id: Optional[str]):
         """Capture relationship changes."""
         current_relationships = {}
 
@@ -463,7 +460,7 @@ class CDCProcessor:
                 "start_node_id": record["start_id"],
                 "end_node_id": record["end_id"],
                 "relationship_type": record["rel_type"],
-                "properties": dict(record["props"]),
+                "properties": dict(record["props"])
             }
 
         # Detect new relationships
@@ -480,7 +477,7 @@ class CDCProcessor:
                     relationship_type=current_state["relationship_type"],
                     new_properties=current_state["properties"],
                     session_id=session_id,
-                    user_id=user_id,
+                    user_id=user_id
                 )
                 await self._add_event(event)
                 self.relationship_states[rel_id] = current_state
@@ -498,12 +495,15 @@ class CDCProcessor:
                         if key not in old_props or old_props[key] != new_value:
                             property_changes[key] = {
                                 "old": old_props.get(key),
-                                "new": new_value,
+                                "new": new_value
                             }
 
                     for key in old_props:
                         if key not in new_props:
-                            property_changes[key] = {"old": old_props[key], "new": None}
+                            property_changes[key] = {
+                                "old": old_props[key],
+                                "new": None
+                            }
 
                     if property_changes:
                         event = GraphChangeEvent(
@@ -519,7 +519,7 @@ class CDCProcessor:
                             new_properties=new_props,
                             property_changes=property_changes,
                             session_id=session_id,
-                            user_id=user_id,
+                            user_id=user_id
                         )
                         await self._add_event(event)
                         self.relationship_states[rel_id] = current_state
@@ -539,7 +539,7 @@ class CDCProcessor:
                     relationship_type=old_state["relationship_type"],
                     old_properties=old_state["properties"],
                     session_id=session_id,
-                    user_id=user_id,
+                    user_id=user_id
                 )
                 await self._add_event(event)
                 del self.relationship_states[rel_id]
@@ -652,16 +652,10 @@ class CDCProcessor:
             "event_handlers": len(self.event_handlers),
             "batch_handlers": len(self.batch_handlers),
             **self.stats,
-            "last_event_time": (
-                self.stats["last_event_time"].isoformat()
-                if self.stats["last_event_time"]
-                else None
-            ),
+            "last_event_time": self.stats["last_event_time"].isoformat() if self.stats["last_event_time"] else None
         }
 
-    async def manual_trigger(
-        self, session_id: Optional[str] = None, user_id: Optional[str] = None
-    ):
+    async def manual_trigger(self, session_id: Optional[str] = None, user_id: Optional[str] = None):
         """Manually trigger change detection.
 
         Args:
@@ -683,9 +677,7 @@ class CDCProcessor:
 
 
 # Integration with existing subscription system
-async def integrate_cdc_with_subscriptions(
-    cdc_processor: CDCProcessor, subscription_system
-):
+async def integrate_cdc_with_subscriptions(cdc_processor: CDCProcessor, subscription_system):
     """Integrate CDC processor with the existing subscription system.
 
     Args:
@@ -716,7 +708,7 @@ async def integrate_cdc_with_subscriptions(
             data=cdc_event.to_dict(),
             user_id=cdc_event.user_id,
             timestamp=cdc_event.timestamp,
-            metadata=cdc_event.metadata,
+            metadata=cdc_event.metadata
         )
 
     def cdc_event_handler(cdc_event: GraphChangeEvent):

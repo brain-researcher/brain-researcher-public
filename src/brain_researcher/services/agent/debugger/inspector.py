@@ -5,23 +5,23 @@ capabilities for workflow debugging.
 """
 
 import ast
-import copy
-import fnmatch
-import inspect
-import json
 import logging
+import json
 import sys
 import time
-import traceback
-import types
-from dataclasses import asdict, dataclass, field
+import copy
+import fnmatch
 from datetime import datetime
+from typing import Dict, List, Optional, Any, Set, Union, Callable, Tuple
+from dataclasses import dataclass, asdict, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+import traceback
+import inspect
+import types
 
 # Pull in execution trace structures from trace_analyzer for tests
 try:  # pragma: no cover - defensive import
-    from .trace_analyzer import EventType, ExecutionEvent, ExecutionTrace, TraceAnalyzer
+    from .trace_analyzer import TraceAnalyzer, ExecutionEvent, EventType, ExecutionTrace
 except Exception:  # pragma: no cover
     TraceAnalyzer = None
     ExecutionEvent = None
@@ -30,7 +30,6 @@ except Exception:  # pragma: no cover
 
 
 logger = logging.getLogger(__name__)
-
 
 # Simple awaitable wrapper so methods can be used in both sync and async flows
 class _AwaitableValue:
@@ -57,12 +56,11 @@ def _awaitable(value: Any) -> _AwaitableValue:
 
 class VariableScope(str, Enum):
     """Variable scope types"""
-
     LOCAL = "local"
     GLOBAL = "global"
     BUILTIN = "builtin"
     NODE = "node"  # Node-specific variables
-    DAG = "dag"  # DAG-level variables
+    DAG = "dag"   # DAG-level variables
 
 
 class VariableType(str, Enum):
@@ -114,11 +112,7 @@ class ExecutionTrace:
         if not self.events:
             return 0.0
         try:
-            ts = [
-                datetime.fromisoformat(e["timestamp"])
-                for e in self.events
-                if "timestamp" in e
-            ]
+            ts = [datetime.fromisoformat(e["timestamp"]) for e in self.events if "timestamp" in e]
             if len(ts) >= 2:
                 return (max(ts) - min(ts)).total_seconds()
         except Exception:
@@ -138,13 +132,8 @@ class ExecutionTrace:
                 continue
             if e.get("event_type") in {"NODE_ENTER"}:
                 enter_ts[node] = ts
-            if (
-                e.get("event_type") in {"NODE_EXIT", "NODE_SUCCESS", "NODE_ERROR"}
-                and node in enter_ts
-            ):
-                times[node] = max(
-                    times.get(node, 0.0), (ts - enter_ts[node]).total_seconds()
-                )
+            if e.get("event_type") in {"NODE_EXIT", "NODE_SUCCESS", "NODE_ERROR"} and node in enter_ts:
+                times[node] = max(times.get(node, 0.0), (ts - enter_ts[node]).total_seconds())
         return times
 
     def get_execution_path(self) -> List[Dict[str, Any]]:
@@ -274,7 +263,6 @@ class StateSnapshot:
 @dataclass
 class VariableInfo:
     """Information about a variable (internal, richer than Variable)."""
-
     name: str
     value: Any
     type_name: str
@@ -294,29 +282,29 @@ class VariableInfo:
         # Handle value serialization
         try:
             if self.value is None:
-                data["value"] = None
-                data["string_value"] = "None"
+                data['value'] = None
+                data['string_value'] = 'None'
             elif isinstance(self.value, (str, int, float, bool)):
-                data["value"] = self.value
-                data["string_value"] = str(self.value)
+                data['value'] = self.value
+                data['string_value'] = str(self.value)
             else:
                 # For complex objects, store string representation
                 string_val = str(self.value)
                 if len(string_val) > max_value_length:
                     string_val = string_val[:max_value_length] + "..."
-                data["string_value"] = string_val
-                data["value"] = f"<{self.type_name} object>"
+                data['string_value'] = string_val
+                data['value'] = f"<{self.type_name} object>"
 
         except Exception as e:
-            data["value"] = f"<Error converting value: {e}>"
-            data["string_value"] = data["value"]
+            data['value'] = f"<Error converting value: {e}>"
+            data['string_value'] = data['value']
 
         return data
 
     @staticmethod
-    def from_variable(
-        name: str, value: Any, scope: VariableScope = VariableScope.LOCAL
-    ) -> "VariableInfo":
+    def from_variable(name: str,
+                     value: Any,
+                     scope: VariableScope = VariableScope.LOCAL) -> 'VariableInfo':
         """Create VariableInfo from a variable"""
 
         # Determine type information
@@ -345,9 +333,7 @@ class VariableInfo:
             pass
 
         # Check mutability
-        is_mutable = not isinstance(
-            value, (int, float, str, bool, tuple, frozenset, type(None))
-        )
+        is_mutable = not isinstance(value, (int, float, str, bool, tuple, frozenset, type(None)))
 
         # Check if callable
         is_callable = callable(value)
@@ -355,7 +341,7 @@ class VariableInfo:
         # Get docstring
         doc_string = None
         try:
-            if hasattr(value, "__doc__") and value.__doc__:
+            if hasattr(value, '__doc__') and value.__doc__:
                 doc_string = value.__doc__.strip()
         except (AttributeError, TypeError):
             pass
@@ -366,7 +352,7 @@ class VariableInfo:
 
         try:
             for attr_name in dir(value):
-                if not attr_name.startswith("_"):
+                if not attr_name.startswith('_'):
                     try:
                         attr_value = getattr(value, attr_name)
                         if callable(attr_value):
@@ -388,14 +374,13 @@ class VariableInfo:
             is_callable=is_callable,
             doc_string=doc_string,
             attributes=attributes,
-            methods=methods,
+            methods=methods
         )
 
 
 @dataclass
 class StackFrame:
     """Represents a stack frame for debugging"""
-
     function_name: str
     node_id: Optional[str] = None
     variables: Dict[str, Variable] = field(default_factory=dict)
@@ -407,12 +392,12 @@ class StackFrame:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        data["variables"] = {
+        data['variables'] = {
             name: var.to_dict() for name, var in self.variables.items()
         }
         # datetime to isoformat for serialization
         if isinstance(self.created_at, datetime):
-            data["created_at"] = self.created_at.isoformat()
+            data['created_at'] = self.created_at.isoformat()
         return data
 
     # Helpers used in tests
@@ -443,97 +428,40 @@ class ExpressionEvaluator:
     def __init__(self):
         # Safe built-in functions
         self.safe_builtins = {
-            "abs": abs,
-            "all": all,
-            "any": any,
-            "bool": bool,
-            "chr": chr,
-            "dict": dict,
-            "dir": dir,
-            "divmod": divmod,
-            "enumerate": enumerate,
-            "filter": filter,
-            "float": float,
-            "frozenset": frozenset,
-            "getattr": getattr,
-            "hasattr": hasattr,
-            "hash": hash,
-            "hex": hex,
-            "id": id,
-            "int": int,
-            "isinstance": isinstance,
-            "issubclass": issubclass,
-            "iter": iter,
-            "len": len,
-            "list": list,
-            "map": map,
-            "max": max,
-            "min": min,
-            "next": next,
-            "oct": oct,
-            "ord": ord,
-            "pow": pow,
-            "range": range,
-            "repr": repr,
-            "reversed": reversed,
-            "round": round,
-            "set": set,
-            "slice": slice,
-            "sorted": sorted,
-            "str": str,
-            "sum": sum,
-            "tuple": tuple,
-            "type": type,
-            "zip": zip,
+            'abs': abs, 'all': all, 'any': any, 'bool': bool,
+            'chr': chr, 'dict': dict, 'dir': dir, 'divmod': divmod,
+            'enumerate': enumerate, 'filter': filter, 'float': float,
+            'frozenset': frozenset, 'getattr': getattr, 'hasattr': hasattr,
+            'hash': hash, 'hex': hex, 'id': id, 'int': int,
+            'isinstance': isinstance, 'issubclass': issubclass, 'iter': iter,
+            'len': len, 'list': list, 'map': map, 'max': max,
+            'min': min, 'next': next, 'oct': oct, 'ord': ord,
+            'pow': pow, 'range': range, 'repr': repr, 'reversed': reversed,
+            'round': round, 'set': set, 'slice': slice, 'sorted': sorted,
+            'str': str, 'sum': sum, 'tuple': tuple, 'type': type,
+            'zip': zip
         }
 
         # Forbidden names
         self.forbidden_names = {
-            "eval",
-            "exec",
-            "compile",
-            "open",
-            "__import__",
-            "globals",
-            "locals",
-            "vars",
-            "dir",
-            "help",
-            "input",
-            "print",
-            "breakpoint",
+            'eval', 'exec', 'compile', 'open', '__import__',
+            'globals', 'locals', 'vars', 'dir', 'help',
+            'input', 'print', 'breakpoint'
         }
 
         # Safe AST node types
         self.safe_node_types = {
-            ast.Expression,
-            ast.BinOp,
-            ast.UnaryOp,
-            ast.Compare,
-            ast.BoolOp,
-            ast.Constant,
-            ast.Name,
-            ast.Call,
-            ast.Attribute,
-            ast.Subscript,
-            ast.List,
-            ast.Dict,
-            ast.Tuple,
-            ast.Set,
-            ast.ListComp,
-            ast.DictComp,
-            ast.SetComp,
-            ast.GeneratorExp,
-            ast.IfExp,
-            ast.JoinedStr,
-            ast.FormattedValue,
-            ast.Slice,
+            ast.Expression, ast.BinOp, ast.UnaryOp, ast.Compare, ast.BoolOp,
+            ast.Constant, ast.Name, ast.Call, ast.Attribute, ast.Subscript,
+            ast.List, ast.Dict, ast.Tuple, ast.Set, ast.ListComp,
+            ast.DictComp, ast.SetComp, ast.GeneratorExp, ast.IfExp,
+            ast.JoinedStr, ast.FormattedValue, ast.Slice
         }
 
     def validate_expression(self, expression: str) -> Tuple[bool, str]:
         """Validate that expression is safe to evaluate"""
         try:
-            tree = ast.parse(expression, mode="eval")
+            tree = ast.parse(expression, mode='eval')
         except SyntaxError as e:
             return False, f"Syntax error: {e}"
 
@@ -557,14 +485,14 @@ class ExpressionEvaluator:
 
             # Check for attribute access to private members
             if isinstance(node, ast.Attribute):
-                if node.attr.startswith("_"):
+                if node.attr.startswith('_'):
                     return False, f"Access to private attribute: {node.attr}"
 
         return True, "Expression is safe"
 
-    def evaluate_expression(
-        self, expression: str, context: Dict[str, Any]
-    ) -> Tuple[bool, Any, str]:
+    def evaluate_expression(self,
+                          expression: str,
+                          context: Dict[str, Any]) -> Tuple[bool, Any, str]:
         """Evaluate expression in given context"""
 
         # First validate the expression
@@ -579,7 +507,7 @@ class ExpressionEvaluator:
 
             # Add context variables
             for name, value in context.items():
-                if not name.startswith("_"):
+                if not name.startswith('_'):
                     safe_locals[name] = value
 
             # Evaluate expression
@@ -593,7 +521,9 @@ class ExpressionEvaluator:
 class WatchExpression:
     """Represents a watched expression"""
 
-    def __init__(self, expression: str, name: Optional[str] = None):
+    def __init__(self,
+                 expression: str,
+                 name: Optional[str] = None):
         self.expression = expression
         self.name = name or expression
         self.last_value: Any = None
@@ -607,9 +537,7 @@ class WatchExpression:
         self.evaluation_count += 1
         current_time = datetime.utcnow()
 
-        success, result, message = evaluator.evaluate_expression(
-            self.expression, context
-        )
+        success, result, message = evaluator.evaluate_expression(self.expression, context)
 
         if success:
             self.last_value = result
@@ -621,25 +549,21 @@ class WatchExpression:
         self.last_evaluation_time = current_time
 
         return {
-            "name": self.name,
-            "expression": self.expression,
-            "success": success,
-            "value": result if success else None,
-            "error": message if not success else None,
-            "last_evaluation": current_time.isoformat(),
-            "evaluation_count": self.evaluation_count,
-            "error_count": self.error_count,
+            'name': self.name,
+            'expression': self.expression,
+            'success': success,
+            'value': result if success else None,
+            'error': message if not success else None,
+            'last_evaluation': current_time.isoformat(),
+            'evaluation_count': self.evaluation_count,
+            'error_count': self.error_count
         }
 
 
 class Inspector:
     """Main variable inspector"""
 
-    def __init__(
-        self,
-        execution_context=None,
-        inspection_filter: Optional[InspectionFilter] = None,
-    ):
+    def __init__(self, execution_context=None, inspection_filter: Optional[InspectionFilter] = None):
         self.execution_context = execution_context
         self.inspection_filter = inspection_filter or InspectionFilter()
         self.evaluator = ExpressionEvaluator()
@@ -657,9 +581,7 @@ class Inspector:
 
         logger.info("Variable inspector initialized")
 
-    def _inspect_variable_sync(
-        self, name: str, scope: VariableScope = VariableScope.LOCAL
-    ) -> Optional[Variable]:
+    def _inspect_variable_sync(self, name: str, scope: VariableScope = VariableScope.LOCAL) -> Optional[Variable]:
         """Synchronous helper to inspect a specific variable."""
         value = self._get_variable_value(name, scope)
         if value is None and name not in self._get_scope_dict(scope):
@@ -669,9 +591,7 @@ class Inspector:
         except Exception:
             return None
 
-    async def inspect_variable(
-        self, name: str, scope: VariableScope = VariableScope.LOCAL
-    ) -> Optional[Variable]:
+    async def inspect_variable(self, name: str, scope: VariableScope = VariableScope.LOCAL) -> Optional[Variable]:
         """Async-friendly inspection used in tests/integration."""
         return self._inspect_variable_sync(name, scope)
 
@@ -679,14 +599,10 @@ class Inspector:
         """Sync entrypoint kept for backward compatibility; returns awaitable wrapper."""
         return _awaitable(self._inspect_variables_sync(scope))
 
-    async def _inspect_variables_async(
-        self, scope: VariableScope = VariableScope.LOCAL
-    ) -> Dict[str, Variable]:
+    async def _inspect_variables_async(self, scope: VariableScope = VariableScope.LOCAL) -> Dict[str, Variable]:
         return self._inspect_variables_sync(scope)
 
-    def _inspect_variables_sync(
-        self, scope: VariableScope = VariableScope.LOCAL
-    ) -> Dict[str, Variable]:
+    def _inspect_variables_sync(self, scope: VariableScope = VariableScope.LOCAL) -> Dict[str, Variable]:
         scope_dict = self._get_scope_dict(scope)
         variables: Dict[str, Variable] = {}
         for name, value in scope_dict.items():
@@ -700,9 +616,7 @@ class Inspector:
                 continue
         # apply filters (name/type patterns)
         variables = self.inspection_filter.apply_to_variables(variables)
-        self._record_inspection(
-            "inspect_variables", {"scope": scope.value, "count": len(variables)}
-        )
+        self._record_inspection("inspect_variables", {"scope": scope.value, "count": len(variables)})
         return variables
 
     def inspect_all_variables(self) -> Dict[VariableScope, Dict[str, VariableInfo]]:
@@ -714,7 +628,7 @@ class Inspector:
             scope_dict = self._get_scope_dict(scope)
 
             for name, value in scope_dict.items():
-                if not name.startswith("_"):  # Skip private variables
+                if not name.startswith('_'):  # Skip private variables
                     try:
                         var_info = VariableInfo.from_variable(name, value, scope)
                         scope_vars[name] = var_info
@@ -741,9 +655,7 @@ class Inspector:
             file_path=None,
             line_number=None,
         )
-        self._record_inspection(
-            "stack_frame", {"node": self.execution_context.current_node}
-        )
+        self._record_inspection("stack_frame", {"node": self.execution_context.current_node})
         return frame
 
     async def inspect_execution_state(self) -> Dict[str, Any]:
@@ -757,18 +669,13 @@ class Inspector:
             "variables": dict(self.execution_context.variables),
             "node_results": dict(self.execution_context.node_results),
         }
-        self._record_inspection(
-            "execution_state",
-            {"stack_len": len(self.execution_context.execution_stack)},
-        )
+        self._record_inspection("execution_state", {"stack_len": len(self.execution_context.execution_stack)})
         return state
 
     async def inspect_node_results(self) -> Dict[str, Any]:
         if not self.execution_context:
             return {}
-        self._record_inspection(
-            "node_results", {"count": len(self.execution_context.node_results)}
-        )
+        self._record_inspection("node_results", {"count": len(self.execution_context.node_results)})
         return dict(self.execution_context.node_results)
 
     async def inspect_node_result(self, node_id: str) -> Optional[Dict[str, Any]]:
@@ -777,9 +684,10 @@ class Inspector:
         self._record_inspection("node_result", {"node": node_id})
         return self.execution_context.node_results.get(node_id)
 
-    def modify_variable(
-        self, name: str, new_value: Any, scope: VariableScope = VariableScope.LOCAL
-    ) -> bool:
+    def modify_variable(self,
+                       name: str,
+                       new_value: Any,
+                       scope: VariableScope = VariableScope.LOCAL) -> bool:
         """Modify a variable's value"""
         try:
             scope_dict = self._get_scope_dict(scope)
@@ -798,9 +706,7 @@ class Inspector:
             if self.execution_context and scope == VariableScope.LOCAL:
                 self.execution_context.variables[name] = new_value
             elif self.execution_context and scope == VariableScope.DAG:
-                self.execution_context.dag_definition.global_parameters[name] = (
-                    new_value
-                )
+                self.execution_context.dag_definition.global_parameters[name] = new_value
 
             logger.info(f"Modified variable {name} in {scope.value} scope")
             return True
@@ -809,9 +715,10 @@ class Inspector:
             logger.error(f"Failed to modify variable {name}: {e}")
             return False
 
-    def create_variable(
-        self, name: str, value: Any, scope: VariableScope = VariableScope.LOCAL
-    ) -> bool:
+    def create_variable(self,
+                       name: str,
+                       value: Any,
+                       scope: VariableScope = VariableScope.LOCAL) -> bool:
         """Create a new variable"""
         try:
             scope_dict = self._get_scope_dict(scope)
@@ -840,9 +747,9 @@ class Inspector:
             logger.error(f"Failed to create variable {name}: {e}")
             return False
 
-    def delete_variable(
-        self, name: str, scope: VariableScope = VariableScope.LOCAL
-    ) -> bool:
+    def delete_variable(self,
+                       name: str,
+                       scope: VariableScope = VariableScope.LOCAL) -> bool:
         """Delete a variable"""
         try:
             scope_dict = self._get_scope_dict(scope)
@@ -901,23 +808,23 @@ class Inspector:
         for scope in VariableScope:
             scope_dict = self._get_scope_dict(scope)
             for name, value in scope_dict.items():
-                if not name.startswith("_"):
+                if not name.startswith('_'):
                     context[name] = value
 
-        success, result, message = self.evaluator.evaluate_expression(
-            expression, context
-        )
+        success, result, message = self.evaluator.evaluate_expression(expression, context)
 
         return {
-            "expression": expression,
-            "success": success,
-            "result": result,
-            "message": message,
-            "context_size": len(context),
-            "evaluation_time": datetime.utcnow().isoformat(),
+            'expression': expression,
+            'success': success,
+            'result': result,
+            'message': message,
+            'context_size': len(context),
+            'evaluation_time': datetime.utcnow().isoformat()
         }
 
-    def add_watch_expression(self, expression: str, name: Optional[str] = None) -> str:
+    def add_watch_expression(self,
+                           expression: str,
+                           name: Optional[str] = None) -> str:
         """Add a watch expression"""
         watch_name = name or f"watch_{len(self.watch_expressions)}"
 
@@ -944,7 +851,7 @@ class Inspector:
         for scope in VariableScope:
             scope_dict = self._get_scope_dict(scope)
             for name, value in scope_dict.items():
-                if not name.startswith("_"):
+                if not name.startswith('_'):
                     context[name] = value
 
         # Evaluate each watch
@@ -964,7 +871,7 @@ class Inspector:
                     frame_id=f"frame_{i}",
                     function_name=node_id,
                     filename=None,
-                    line_number=None,
+                    line_number=None
                 )
 
                 # Add variables visible at this frame
@@ -972,20 +879,15 @@ class Inspector:
 
                 # Add local variables
                 for name, value in self.execution_context.variables.items():
-                    if not name.startswith("_"):
+                    if not name.startswith('_'):
                         frame.variables[name] = VariableInfo.from_variable(
                             name, value, VariableScope.LOCAL
                         )
 
                 # Add node results up to this point
-                for (
-                    result_name,
-                    result_value,
-                ) in self.execution_context.node_results.items():
-                    frame.variables[f"{result_name}_result"] = (
-                        VariableInfo.from_variable(
-                            f"{result_name}_result", result_value, VariableScope.NODE
-                        )
+                for result_name, result_value in self.execution_context.node_results.items():
+                    frame.variables[f"{result_name}_result"] = VariableInfo.from_variable(
+                        f"{result_name}_result", result_value, VariableScope.NODE
                     )
 
                 frames.append(frame)
@@ -998,17 +900,17 @@ class Inspector:
 
         return [
             {
-                "timestamp": change["timestamp"].isoformat(),
-                "old_value": str(change["old_value"]),
-                "new_value": str(change["new_value"]),
-                "change_type": change["change_type"],
+                'timestamp': change['timestamp'].isoformat(),
+                'old_value': str(change['old_value']),
+                'new_value': str(change['new_value']),
+                'change_type': change['change_type']
             }
             for change in history
         ]
 
-    def search_variables(
-        self, query: str, scope: Optional[VariableScope] = None
-    ) -> List[VariableInfo]:
+    def search_variables(self,
+                        query: str,
+                        scope: Optional[VariableScope] = None) -> List[VariableInfo]:
         """Search for variables matching query"""
         results = []
 
@@ -1033,9 +935,7 @@ class Inspector:
 
         return results
 
-    async def deep_inspect_variable(
-        self, name: str, max_depth: int = 3
-    ) -> Optional[Dict[str, Any]]:
+    async def deep_inspect_variable(self, name: str, max_depth: int = 3) -> Optional[Dict[str, Any]]:
         """Recursively inspect a variable up to max_depth."""
         value = self._get_variable_value(name, VariableScope.LOCAL)
         if value is None and self.execution_context:
@@ -1051,9 +951,7 @@ class Inspector:
             if isinstance(val, dict):
                 node["children"] = {k: _walk(v, depth + 1) for k, v in val.items()}
             elif isinstance(val, (list, tuple)):
-                node["children"] = {
-                    str(i): _walk(v, depth + 1) for i, v in enumerate(val)
-                }
+                node["children"] = {str(i): _walk(v, depth + 1) for i, v in enumerate(val)}
             return node
 
         result = _walk(value, 0)
@@ -1065,11 +963,7 @@ class Inspector:
 
     async def inspect_memory_usage(self) -> Dict[str, Any]:
         if not self.execution_context:
-            return {
-                "total_variables": 0,
-                "total_size_bytes": 0,
-                "largest_variables": [],
-            }
+            return {"total_variables": 0, "total_size_bytes": 0, "largest_variables": []}
         vars_dict = self.execution_context.variables
         sizes = []
         total = 0
@@ -1102,9 +996,7 @@ class Inspector:
             execution_stack=list(self.execution_context.execution_stack),
         )
 
-    def compare_snapshots(
-        self, snap1: "StateSnapshot", snap2: "StateSnapshot"
-    ) -> Dict[str, Any]:
+    def compare_snapshots(self, snap1: "StateSnapshot", snap2: "StateSnapshot") -> Dict[str, Any]:
         vars1 = snap1.variables
         vars2 = snap2.variables
         added = {k: v for k, v in vars2.items() if k not in vars1}
@@ -1122,21 +1014,17 @@ class Inspector:
     def get_inspector_statistics(self) -> Dict[str, Any]:
         """Get inspector statistics"""
         stats = {
-            "total_variables": 0,
-            "variables_by_scope": {},
-            "watch_expressions": len(self.watch_expressions),
-            "variable_history_entries": sum(
-                len(history) for history in self.variable_history.values()
-            ),
+            'total_variables': 0,
+            'variables_by_scope': {},
+            'watch_expressions': len(self.watch_expressions),
+            'variable_history_entries': sum(len(history) for history in self.variable_history.values())
         }
 
         for scope in VariableScope:
             scope_dict = self._get_scope_dict(scope)
-            count = len(
-                [name for name in scope_dict.keys() if not name.startswith("_")]
-            )
-            stats["variables_by_scope"][scope.value] = count
-            stats["total_variables"] += count
+            count = len([name for name in scope_dict.keys() if not name.startswith('_')])
+            stats['variables_by_scope'][scope.value] = count
+            stats['total_variables'] += count
 
         return stats
 
@@ -1161,11 +1049,7 @@ class Inspector:
         elif scope == VariableScope.GLOBAL:
             return globals()
         elif scope == VariableScope.BUILTIN:
-            return (
-                vars(__builtins__)
-                if isinstance(__builtins__, types.ModuleType)
-                else __builtins__
-            )
+            return vars(__builtins__) if isinstance(__builtins__, types.ModuleType) else __builtins__
         elif scope == VariableScope.NODE and self.execution_context:
             return self.execution_context.node_results
         elif scope == VariableScope.DAG and self.execution_context:
@@ -1178,17 +1062,13 @@ class Inspector:
         if name not in self.variable_history:
             self.variable_history[name] = []
 
-        change_type = (
-            "created"
-            if old_value is None
-            else "deleted" if new_value is None else "modified"
-        )
+        change_type = "created" if old_value is None else "deleted" if new_value is None else "modified"
 
         change_record = {
-            "timestamp": datetime.utcnow(),
-            "old_value": old_value,
-            "new_value": new_value,
-            "change_type": change_type,
+            'timestamp': datetime.utcnow(),
+            'old_value': old_value,
+            'new_value': new_value,
+            'change_type': change_type
         }
 
         history = self.variable_history[name]

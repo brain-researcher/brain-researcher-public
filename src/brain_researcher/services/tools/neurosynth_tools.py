@@ -62,16 +62,14 @@ def _get_dataset_path() -> str:
 
     # Use the actual dataset location
     # Try both .pkl and .pkl.gz formats
-    base_dir = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),  # services/tools/
-            "..",
-            "..",
-            "..",  # up to brain_researcher/
-            "data",
-            "neurosynth_nimare",
-        )
-    )
+    base_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__),  # services/tools/
+        "..",
+        "..",
+        "..",  # up to brain_researcher/
+        "data",
+        "neurosynth_nimare",
+    ))
 
     # Check for .pkl.gz first (compressed), then .pkl
     pkl_gz_path = os.path.join(base_dir, "neurosynth_dataset_v7.pkl.gz")
@@ -361,9 +359,9 @@ class NeuroSynthTermSearchTool(BaseNeuroSynthTool):
                                 {
                                     "term": clean,
                                     "full_label": original,
-                                    "score": (
-                                        100.0 if clean.lower() == query_lower else 80.0
-                                    ),
+                                    "score": 100.0
+                                    if clean.lower() == query_lower
+                                    else 80.0,
                                 }
                             )
                     results = sorted(matches, key=lambda x: x["score"], reverse=True)[

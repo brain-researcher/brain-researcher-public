@@ -6,18 +6,18 @@
 ## ✅ Completed
 
 ### 1. Configuration Files
-- **`configs/neurokg/edge_scoring.yaml`** - Matching methods, thresholds, canonical priority
+- **`configs/br-kg/edge_scoring.yaml`** - Matching methods, thresholds, canonical priority
   - 9 node types configured (Task, Concept, Publication, Coordinate, Region, etc.)
   - 4 matching methods: exact, fuzzy, embedding, spatial
   - Edge creation rules for SAME_AS, MAPS_TO, ACTIVATES, IN_REGION
 
-- **`configs/neurokg/thresholds.yaml`** - Confidence thresholds and matching parameters
+- **`configs/br-kg/thresholds.yaml`** - Confidence thresholds and matching parameters
   - Per-node-type SAME_AS thresholds (0.85-1.0)
   - Spatial matching: 8mm radius with linear decay
   - Canonical selection priority rules
 
 ### 2. Core Matching Service
-- **`src/brain_researcher/services/neurokg/matching/node_matcher.py`** - UnifiedNodeMatcher class
+- **`src/brain_researcher/services/br_kg/matching/node_matcher.py`** - UnifiedNodeMatcher class
   - **Matching cascade**: Exact → Fuzzy → Embedding → Spatial
   - **Methods implemented**:
     - `match_node()` - Find matching nodes with confidence scores
@@ -41,7 +41,7 @@
   - Stats tracking: `same_as_edges_created`, `nodes_matched`
 
 ### 4. Testing
-- **`tests/unit/neurokg/test_node_matcher.py`** - 6 test cases
+- **`tests/unit/br-kg/test_node_matcher.py`** - 6 test cases
   - Exact matching
   - Fuzzy matching with capitalization differences
   - Spatial matching for coordinates
@@ -89,12 +89,12 @@ No canonical merging (preserves all coordinates)
 ## Example Usage
 
 ```python
-from brain_researcher.services.neurokg.matching import UnifiedNodeMatcher
-from brain_researcher.services.neurokg.graph.graph_database import NeuroKGGraphDB
+from brain_researcher.services.br_kg.matching import UnifiedNodeMatcher
+from brain_researcher.services.br_kg.graph.graph_database import BR-KGGraphDB
 
 # Initialize
 matcher = UnifiedNodeMatcher()
-db = NeuroKGGraphDB("data/neurokg/db/neurokg_full.db")
+db = BR-KGGraphDB("data/br-kg/db/br-kg_full.db")
 
 # Match new node
 candidate = {"id": "openneuro:nback", "label": "N-back task"}
@@ -117,7 +117,7 @@ All unified loaders can now use matching:
 
 ```python
 # In neurovault_unified.py, pubmed_unified.py, etc.
-from brain_researcher.services.neurokg.matching import UnifiedNodeMatcher
+from brain_researcher.services.br_kg.matching import UnifiedNodeMatcher
 
 matcher = UnifiedNodeMatcher()
 
@@ -148,8 +148,9 @@ if matches:
 
 - Schema: `docs/standards/schema_catalog.md`
 - Invariants: `docs/standards/invariants.md` (ID-01, REL-01, MERGE-01)
-- PRD: `docs/PRD/prd_o2_kg_schema.md` (Section 8: Matching Methods)
-- Config: `configs/neurokg/edge_scoring.yaml`, `thresholds.yaml`
+- Matching references: `docs/standards/schema_catalog.md` and
+  `docs/standards/invariants.md`
+- Config: `configs/br-kg/edge_scoring.yaml`, `thresholds.yaml`
 
 ## Status
 

@@ -61,6 +61,4 @@ def test_active_cli_runtime_files_do_not_use_path_bootstrap_hacks() -> None:
     for relpath in sorted(ACTIVE_RUNTIME_FILES):
         text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
         for needle in FORBIDDEN_SUBSTRINGS:
-            assert (
-                needle not in text
-            ), f"Found forbidden path bootstrap in {relpath}: {needle}"
+            assert needle not in text, f"Found forbidden path bootstrap in {relpath}: {needle}"

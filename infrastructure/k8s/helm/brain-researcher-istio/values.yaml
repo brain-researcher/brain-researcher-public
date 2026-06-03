@@ -339,8 +339,8 @@ gateways:
     hosts:
       - "brain-researcher.local"
       - "*.brain-researcher.local"
-      - "app.brain-researcher.com"
-      - "*.app.brain-researcher.com"
+      - "app.${PUBLIC_HOSTNAME}"
+      - "*.app.${PUBLIC_HOSTNAME}"
     tls:
       enabled: true
       credentialName: brain-researcher-tls-cert
@@ -371,7 +371,7 @@ virtualServices:
     enabled: true
     hosts:
       - "brain-researcher.local"
-      - "app.brain-researcher.com"
+      - "app.${PUBLIC_HOSTNAME}"
       - "ui.brain-researcher.local"
     routes:
       - match:

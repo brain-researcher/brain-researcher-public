@@ -14,7 +14,6 @@ At this stage we explicitly avoid any heavy orchestration logic; the goal is to
 standardise argument handling, logging, and error reporting so higher level
 modules (FitLins, fMRIPrep, FSL, etc.) can build on a consistent contract.
 """
-
 from __future__ import annotations
 
 import json
@@ -24,6 +23,7 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Literal, Optional
+
 
 Runtime = Literal["docker", "apptainer", "wrapper", "neurodesk_module"]
 """Runtime execution modes:
@@ -101,14 +101,7 @@ class ContainerRequest:
 class ContainerExecutionError(RuntimeError):
     """Raised when container execution fails."""
 
-    def __init__(
-        self,
-        message: str,
-        *,
-        stdout: str = "",
-        stderr: str = "",
-        exit_code: int | None = None,
-    ):
+    def __init__(self, message: str, *, stdout: str = "", stderr: str = "", exit_code: int | None = None):
         super().__init__(message)
         self.stdout = stdout
         self.stderr = stderr
@@ -221,9 +214,7 @@ def _build_local_command(request: ContainerRequest) -> List[str]:
     raise ValueError(f"Unsupported runtime: {request.runtime}")
 
 
-def _run_subprocess(
-    cmd: List[str], *, env: Optional[Dict[str, str]] = None
-) -> subprocess.CompletedProcess:
+def _run_subprocess(cmd: List[str], *, env: Optional[Dict[str, str]] = None) -> subprocess.CompletedProcess:
     proc = subprocess.run(cmd, check=False, capture_output=True, text=True, env=env)
     if proc.returncode != 0:
         raise ContainerExecutionError(

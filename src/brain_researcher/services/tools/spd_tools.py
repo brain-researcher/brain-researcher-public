@@ -113,9 +113,13 @@ class SPDBiMapArgs(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     data_files: List[str] = Field(description="List of SPD matrix file paths")
-    labels_file: Optional[str] = Field(default=None, description="Optional labels file")
+    labels_file: Optional[str] = Field(
+        default=None, description="Optional labels file"
+    )
     output_dim: int = Field(default=10, description="Target output dimension")
-    output_dir: str = Field(default="spd_bimap_output", description="Output directory")
+    output_dir: str = Field(
+        default="spd_bimap_output", description="Output directory"
+    )
     epochs: int = Field(default=50, description="Training epochs")
     learning_rate: float = Field(default=0.01, description="Learning rate")
 

@@ -16,9 +16,7 @@ from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResu
 class MetaBrainMapArgs(BaseModel):
     """Arguments for BrainMap meta-analysis query."""
 
-    term: str = Field(
-        description="Cognitive/behavioral term to query (e.g., 'working memory', 'emotion')"
-    )
+    term: str = Field(description="Cognitive/behavioral term to query (e.g., 'working memory', 'emotion')")
     contrast_type: str = Field(
         default="activation",
         description="Type of contrast: 'activation' or 'deactivation'",
@@ -70,9 +68,7 @@ class MetaBrainMapTool(NeuroToolWrapper):
         output_root.mkdir(parents=True, exist_ok=True)
 
         # Generate deterministic output paths
-        coord_table_path = (
-            output_root / f"{args.term.replace(' ', '_')}_coordinates.csv"
-        )
+        coord_table_path = output_root / f"{args.term.replace(' ', '_')}_coordinates.csv"
         stat_map_path = output_root / f"{args.term.replace(' ', '_')}_stat_map.nii.gz"
 
         outputs = {

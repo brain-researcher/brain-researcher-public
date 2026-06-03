@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """Comprehensive test of Python 3.10+ type syntax support in schema_fixer."""
 
-import json
-from typing import Dict, List, Optional
-
+from typing import Optional, List, Dict
 from pydantic import BaseModel
-
 from brain_researcher.services.tools.schema_fixer import generate_fixed_schema
-
+import json
 
 class ComprehensiveTestModel(BaseModel):
     """Model using various Python 3.10+ syntax patterns."""
-
     # Union syntax with None
     optional_tuple: tuple[int, int] | None = None
     optional_list: list[str] | None = None
@@ -32,7 +28,6 @@ class ComprehensiveTestModel(BaseModel):
     # Multiple type union (not just None)
     str_or_int: str | int
 
-
 def test_comprehensive_schema():
     """Test comprehensive Python 3.10+ type support."""
 
@@ -42,60 +37,60 @@ def test_comprehensive_schema():
     print(json.dumps(schema, indent=2))
 
     # Verify specific fields
-    props = schema["properties"]
+    props = schema['properties']
 
     # Check optional_tuple
-    assert props["optional_tuple"] == {
+    assert props['optional_tuple'] == {
         "type": "array",
         "items": {"type": "integer"},
         "minItems": 2,
         "maxItems": 2,
-        "nullable": True,
+        "nullable": True
     }, f"optional_tuple failed: {props['optional_tuple']}"
 
     # Check optional_list
-    assert props["optional_list"] == {
+    assert props['optional_list'] == {
         "type": "array",
         "items": {"type": "string"},
-        "nullable": True,
+        "nullable": True
     }, f"optional_list failed: {props['optional_list']}"
 
     # Check optional_dict
-    assert props["optional_dict"] == {
+    assert props['optional_dict'] == {
         "type": "object",
         "additionalProperties": {"type": "number"},
-        "nullable": True,
+        "nullable": True
     }, f"optional_dict failed: {props['optional_dict']}"
 
     # Check required versions (no nullable)
-    assert props["required_tuple"] == {
+    assert props['required_tuple'] == {
         "type": "array",
         "items": {"type": "integer"},
         "minItems": 2,
-        "maxItems": 2,
+        "maxItems": 2
     }, f"required_tuple failed: {props['required_tuple']}"
 
     # Check complex union
-    assert props["complex_union"] == {
+    assert props['complex_union'] == {
         "type": "array",
         "items": {
             "type": "array",
             "items": {"type": "integer"},
             "minItems": 2,
-            "maxItems": 2,
+            "maxItems": 2
         },
-        "nullable": True,
+        "nullable": True
     }, f"complex_union failed: {props['complex_union']}"
 
     # Check basic types with union
-    assert props["optional_int"] == {
+    assert props['optional_int'] == {
         "type": "integer",
-        "nullable": True,
+        "nullable": True
     }, f"optional_int failed: {props['optional_int']}"
 
-    assert props["optional_str"] == {
+    assert props['optional_str'] == {
         "type": "string",
-        "nullable": True,
+        "nullable": True
     }, f"optional_str failed: {props['optional_str']}"
 
     print("\n✅ All comprehensive tests passed!")
@@ -106,7 +101,6 @@ def test_comprehensive_schema():
     print("  • Nested unions like list[tuple[int, int]] | None")
     print("  • Basic types with | None")
     print("  • Multi-type unions (str | int)")
-
 
 if __name__ == "__main__":
     test_comprehensive_schema()

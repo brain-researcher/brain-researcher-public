@@ -104,9 +104,7 @@ class TraceReplayEnv:
         self._cursor = 0
         return self._records[0]
 
-    def step(
-        self, action: Optional[Any] = None
-    ) -> Tuple[Dict[str, Any], float, bool, Dict[str, Any]]:
+    def step(self, action: Optional[Any] = None) -> Tuple[Dict[str, Any], float, bool, Dict[str, Any]]:
         """
         Advance to next record. Action is ignored (replay), but kept for API parity.
         Returns: observation, reward (0), done, info
@@ -124,9 +122,7 @@ class TraceReplayEnv:
         if violations is None and isinstance(obs.get("observation"), dict):
             results = obs["observation"].get("results")
             if isinstance(results, list) and results:
-                content = (
-                    results[0].get("content") if isinstance(results[0], dict) else None
-                )
+                content = results[0].get("content") if isinstance(results[0], dict) else None
                 if isinstance(content, dict):
                     violations = content.get("violations")
 

@@ -5,18 +5,18 @@ Connects monitoring to tool executor, cache manager, and performance optimizer.
 
 import asyncio
 import logging
-from functools import wraps
 from typing import Any, Dict, Optional
+from functools import wraps
 
 from brain_researcher.services.agent.monitoring import (
-    Alert,
-    AlertManager,
-    AlertSeverity,
-    CircuitBreaker,
     HealthMonitor,
+    AlertManager,
     MetricsCollector,
     MonitoringDashboard,
-    ServiceType,
+    Alert,
+    AlertSeverity,
+    CircuitBreaker,
+    ServiceType
 )
 from brain_researcher.services.telemetry.metrics_kind_resolver import resolve_job_kind
 
@@ -37,7 +37,7 @@ class MonitoringIntegration:
         self.dashboard = MonitoringDashboard(
             health_monitor=self.health_monitor,
             alert_manager=self.alert_manager,
-            metrics_collector=self.metrics_collector,
+            metrics_collector=self.metrics_collector
         )
 
         # Circuit breakers for services
@@ -50,24 +50,34 @@ class MonitoringIntegration:
         """Set up integration hooks with services."""
         # Register services for monitoring
         self.health_monitor.register_service(
-            "tool_executor", ServiceType.CORE, self._check_tool_executor_health
+            "tool_executor",
+            ServiceType.CORE,
+            self._check_tool_executor_health
         )
 
         self.health_monitor.register_service(
-            "cache_manager", ServiceType.CACHE, self._check_cache_health
+            "cache_manager",
+            ServiceType.CACHE,
+            self._check_cache_health
         )
 
         self.health_monitor.register_service(
-            "performance_optimizer", ServiceType.CORE, self._check_optimizer_health
+            "performance_optimizer",
+            ServiceType.CORE,
+            self._check_optimizer_health
         )
 
         # Create circuit breakers
         self.circuit_breakers["tool_executor"] = CircuitBreaker(
-            failure_threshold=5, timeout=60, recovery_timeout=30
+            failure_threshold=5,
+            timeout=60,
+            recovery_timeout=30
         )
 
         self.circuit_breakers["cache"] = CircuitBreaker(
-            failure_threshold=10, timeout=30, recovery_timeout=15
+            failure_threshold=10,
+            timeout=30,
+            recovery_timeout=15
         )
 
     async def start(self):
@@ -99,7 +109,6 @@ class MonitoringIntegration:
         Args:
             tool_name: Name of the tool being executed
         """
-
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -109,15 +118,13 @@ class MonitoringIntegration:
                 breaker = self.circuit_breakers.get("tool_executor")
                 if breaker and breaker.state == "open":
                     # Send alert
-                    await self.alert_manager.send_alert(
-                        Alert(
-                            alert_id=f"circuit_open_{tool_name}",
-                            title=f"Circuit breaker open for {tool_name}",
-                            message="Too many failures, circuit breaker is open",
-                            severity=AlertSeverity.ERROR,
-                            source="tool_executor",
-                        )
-                    )
+                    await self.alert_manager.send_alert(Alert(
+                        alert_id=f"circuit_open_{tool_name}",
+                        title=f"Circuit breaker open for {tool_name}",
+                        message="Too many failures, circuit breaker is open",
+                        severity=AlertSeverity.ERROR,
+                        source="tool_executor"
+                    ))
                     raise Exception(f"Circuit breaker open for {tool_name}")
 
                 # Record execution start
@@ -145,16 +152,14 @@ class MonitoringIntegration:
 
                     # Send alert for critical tools
                     if tool_name in ["glm_analysis", "fmri_preprocessing"]:
-                        await self.alert_manager.send_alert(
-                            Alert(
-                                alert_id=f"tool_failure_{tool_name}",
-                                title=f"Critical tool failure: {tool_name}",
-                                message=str(e),
-                                severity=AlertSeverity.ERROR,
-                                source="tool_executor",
-                                metadata={"tool": tool_name},
-                            )
-                        )
+                        await self.alert_manager.send_alert(Alert(
+                            alert_id=f"tool_failure_{tool_name}",
+                            title=f"Critical tool failure: {tool_name}",
+                            message=str(e),
+                            severity=AlertSeverity.ERROR,
+                            source="tool_executor",
+                            metadata={"tool": tool_name}
+                        ))
 
                     raise
 
@@ -178,7 +183,6 @@ class MonitoringIntegration:
                     self.metrics_collector.record("agent_request_duration", duration_ms)
 
             return wrapper
-
         return decorator
 
     def monitor_cache_operation(self, operation: str):
@@ -187,16 +191,13 @@ class MonitoringIntegration:
         Args:
             operation: Cache operation (get, set, invalidate)
         """
-
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 # Check circuit breaker
                 breaker = self.circuit_breakers.get("cache")
                 if breaker and breaker.state == "open":
-                    logger.warning(
-                        f"Cache circuit breaker open, bypassing cache for {operation}"
-                    )
+                    logger.warning(f"Cache circuit breaker open, bypassing cache for {operation}")
                     # Return None for get operations, True for set operations
                     return None if operation == "get" else True
 
@@ -227,7 +228,6 @@ class MonitoringIntegration:
                     return None if operation == "get" else False
 
             return wrapper
-
         return decorator
 
     # Health check implementations
@@ -243,27 +243,25 @@ class MonitoringIntegration:
                 name="tool_executor",
                 status=HealthStatus.HEALTHY,
                 latency_ms=0,
-                message="Tool executor operational",
+                message="Tool executor operational"
             )
         except Exception as e:
             return HealthCheck(
                 name="tool_executor",
                 status=HealthStatus.UNHEALTHY,
                 latency_ms=0,
-                message=f"Tool executor error: {e}",
+                message=f"Tool executor error: {e}"
             )
 
     async def _check_cache_health(self):
         """Check cache health."""
-        import time
-
         from brain_researcher.services.agent.monitoring import HealthCheck, HealthStatus
+        import time
 
         try:
             # Test cache operation
             import redis
-
-            client = redis.Redis(host="localhost", port=6379, socket_connect_timeout=1)
+            client = redis.Redis(host='localhost', port=6379, socket_connect_timeout=1)
 
             start = time.time()
             client.set("health_check", "ok", ex=10)
@@ -275,14 +273,14 @@ class MonitoringIntegration:
                     name="cache_manager",
                     status=HealthStatus.HEALTHY,
                     latency_ms=latency,
-                    message="Cache operational",
+                    message="Cache operational"
                 )
             else:
                 return HealthCheck(
                     name="cache_manager",
                     status=HealthStatus.DEGRADED,
                     latency_ms=latency,
-                    message="Cache responding but degraded",
+                    message="Cache responding but degraded"
                 )
 
         except Exception as e:
@@ -290,7 +288,7 @@ class MonitoringIntegration:
                 name="cache_manager",
                 status=HealthStatus.UNHEALTHY,
                 latency_ms=0,
-                message=f"Cache error: {e}",
+                message=f"Cache error: {e}"
             )
 
     async def _check_optimizer_health(self):
@@ -305,14 +303,14 @@ class MonitoringIntegration:
                 status=HealthStatus.HEALTHY,
                 latency_ms=0,
                 message="Optimizer operational",
-                metadata={"optimization_level": "ADVANCED"},
+                metadata={"optimization_level": "ADVANCED"}
             )
         except Exception as e:
             return HealthCheck(
                 name="performance_optimizer",
                 status=HealthStatus.UNHEALTHY,
                 latency_ms=0,
-                message=f"Optimizer error: {e}",
+                message=f"Optimizer error: {e}"
             )
 
     def get_monitoring_dashboard_app(self):
@@ -341,9 +339,5 @@ def get_monitoring_integration() -> MonitoringIntegration:
 
 
 # Convenience decorators
-monitor_tool = lambda tool_name: get_monitoring_integration().monitor_tool_execution(
-    tool_name
-)
-monitor_cache = lambda operation: get_monitoring_integration().monitor_cache_operation(
-    operation
-)
+monitor_tool = lambda tool_name: get_monitoring_integration().monitor_tool_execution(tool_name)
+monitor_cache = lambda operation: get_monitoring_integration().monitor_cache_operation(operation)

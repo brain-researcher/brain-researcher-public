@@ -1,13 +1,12 @@
 """Thompson Sampling implementation for contextual bandits."""
 
-import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
-
 import numpy as np
-from scipy.linalg import LinAlgError, inv
+import logging
+from typing import Dict, List, Optional, Tuple, Any, Union
 from scipy.stats import multivariate_normal
+from scipy.linalg import inv, LinAlgError
 
-from .contextual_bandit import BanditAction, Context, ContextualBandit
+from .contextual_bandit import ContextualBandit, Context, BanditAction
 
 logger = logging.getLogger(__name__)
 
@@ -20,20 +19,14 @@ class BayesianLinearRegression:
         context_dim: int,
         prior_mean: Optional[np.ndarray] = None,
         prior_precision: Optional[np.ndarray] = None,
-        noise_precision: float = 1.0,
+        noise_precision: float = 1.0
     ):
         self.context_dim = context_dim
         self.noise_precision = noise_precision
 
         # Prior parameters
-        self.prior_mean = (
-            prior_mean if prior_mean is not None else np.zeros(context_dim)
-        )
-        self.prior_precision = (
-            prior_precision
-            if prior_precision is not None
-            else np.eye(context_dim) * 0.01
-        )
+        self.prior_mean = prior_mean if prior_mean is not None else np.zeros(context_dim)
+        self.prior_precision = prior_precision if prior_precision is not None else np.eye(context_dim) * 0.01
 
         # Posterior parameters (initialized to prior)
         self.posterior_mean = self.prior_mean.copy()
@@ -82,7 +75,9 @@ class BayesianLinearRegression:
 
             # Sample from multivariate normal distribution
             sampled_params = multivariate_normal.rvs(
-                mean=self.posterior_mean, cov=precision_inv, size=1
+                mean=self.posterior_mean,
+                cov=precision_inv,
+                size=1
             )
 
             return sampled_params
@@ -143,7 +138,7 @@ class ThompsonSampling(ContextualBandit):
         actions: Optional[List[BanditAction]] = None,
         noise_precision: float = 1.0,
         prior_precision: float = 0.01,
-        exploration_bonus: float = 1.0,
+        exploration_bonus: float = 1.0
     ):
         super().__init__(n_arms, context_dim, actions, exploration_bonus)
 
@@ -154,7 +149,7 @@ class ThompsonSampling(ContextualBandit):
             BayesianLinearRegression(
                 context_dim=context_dim,
                 prior_precision=prior_precision_matrix,
-                noise_precision=noise_precision,
+                noise_precision=noise_precision
             )
             for _ in range(n_arms)
         ]
@@ -169,7 +164,7 @@ class ThompsonSampling(ContextualBandit):
         self,
         context: Union[np.ndarray, Context],
         available_arms: Optional[List[int]] = None,
-        exploit: bool = False,
+        exploit: bool = False
     ) -> Tuple[int, Dict[str, Any]]:
         """Select arm using Thompson Sampling."""
         context_vector = self._extract_context_features(context)
@@ -178,18 +173,16 @@ class ThompsonSampling(ContextualBandit):
         if exploit:
             # Pure exploitation: select arm with highest posterior mean
             mean_rewards = [
-                self.models[arm].predict_mean(context_vector) for arm in available_arms
+                self.models[arm].predict_mean(context_vector)
+                for arm in available_arms
             ]
             best_arm_idx = np.argmax(mean_rewards)
             selected_arm = available_arms[best_arm_idx]
 
             selection_info = {
                 "method": "exploit",
-                "predicted_rewards": {
-                    str(arm): float(reward)
-                    for arm, reward in zip(available_arms, mean_rewards)
-                },
-                "selected_reward": float(mean_rewards[best_arm_idx]),
+                "predicted_rewards": {str(arm): float(reward) for arm, reward in zip(available_arms, mean_rewards)},
+                "selected_reward": float(mean_rewards[best_arm_idx])
             }
 
             self._exploitation_count += 1
@@ -213,21 +206,18 @@ class ThompsonSampling(ContextualBandit):
             selected_arm = available_arms[best_arm_idx]
 
             # Store samples for analysis
-            self.parameter_samples.append(
-                {arm: params for arm, params in zip(available_arms, parameter_samples)}
-            )
-            self.predicted_rewards.append(
-                {arm: reward for arm, reward in zip(available_arms, sampled_rewards)}
-            )
+            self.parameter_samples.append({
+                arm: params for arm, params in zip(available_arms, parameter_samples)
+            })
+            self.predicted_rewards.append({
+                arm: reward for arm, reward in zip(available_arms, sampled_rewards)
+            })
 
             selection_info = {
                 "method": "thompson_sampling",
-                "sampled_rewards": {
-                    str(arm): float(reward)
-                    for arm, reward in zip(available_arms, sampled_rewards)
-                },
+                "sampled_rewards": {str(arm): float(reward) for arm, reward in zip(available_arms, sampled_rewards)},
                 "selected_reward": float(sampled_rewards[best_arm_idx]),
-                "parameter_sample": parameter_samples[best_arm_idx].tolist(),
+                "parameter_sample": parameter_samples[best_arm_idx].tolist()
             }
 
             self._exploration_count += 1
@@ -235,19 +225,15 @@ class ThompsonSampling(ContextualBandit):
         # Add uncertainty estimates
         uncertainties = {}
         for arm in available_arms:
-            uncertainties[str(arm)] = float(
-                self.models[arm].predict_std(context_vector)
-            )
+            uncertainties[str(arm)] = float(self.models[arm].predict_std(context_vector))
 
-        selection_info.update(
-            {
-                "selected_arm": selected_arm,
-                "available_arms": available_arms,
-                "uncertainties": uncertainties,
-                "exploration_count": self._exploration_count,
-                "exploitation_count": self._exploitation_count,
-            }
-        )
+        selection_info.update({
+            "selected_arm": selected_arm,
+            "available_arms": available_arms,
+            "uncertainties": uncertainties,
+            "exploration_count": self._exploration_count,
+            "exploitation_count": self._exploitation_count
+        })
 
         return selected_arm, selection_info
 
@@ -256,7 +242,7 @@ class ThompsonSampling(ContextualBandit):
         context: Union[np.ndarray, Context],
         action: int,
         reward: float,
-        feedback: Optional[Any] = None,
+        feedback: Optional[Any] = None
     ) -> None:
         """Update Thompson Sampling model with observed reward."""
         context_vector = self._extract_context_features(context)
@@ -267,12 +253,12 @@ class ThompsonSampling(ContextualBandit):
         # Update parent class
         super().update(context, action, reward, feedback)
 
-        logger.debug(
-            f"Updated Thompson Sampling model for arm {action} with reward {reward}"
-        )
+        logger.debug(f"Updated Thompson Sampling model for arm {action} with reward {reward}")
 
     def predict_rewards(
-        self, contexts: np.ndarray, arms: Optional[List[int]] = None
+        self,
+        contexts: np.ndarray,
+        arms: Optional[List[int]] = None
     ) -> np.ndarray:
         """Predict rewards using posterior means."""
         arms = arms or list(range(self.n_arms))
@@ -285,7 +271,9 @@ class ThompsonSampling(ContextualBandit):
         return predictions
 
     def get_uncertainty_estimates(
-        self, contexts: np.ndarray, arms: Optional[List[int]] = None
+        self,
+        contexts: np.ndarray,
+        arms: Optional[List[int]] = None
     ) -> np.ndarray:
         """Get uncertainty estimates for predictions."""
         arms = arms or list(range(self.n_arms))
@@ -306,14 +294,14 @@ class ThompsonSampling(ContextualBandit):
             importance += np.abs(mean_params)
 
         # Normalize
-        importance = (
-            importance / np.sum(importance) if np.sum(importance) > 0 else importance
-        )
+        importance = importance / np.sum(importance) if np.sum(importance) > 0 else importance
 
         return {f"feature_{i}": float(importance[i]) for i in range(self.context_dim)}
 
     def sample_arm_preferences(
-        self, context: np.ndarray, num_samples: int = 1000
+        self,
+        context: np.ndarray,
+        num_samples: int = 1000
     ) -> Dict[int, float]:
         """Sample arm preferences for uncertainty quantification."""
         arm_wins = {arm: 0 for arm in range(self.n_arms)}
@@ -346,7 +334,7 @@ class ThompsonSampling(ContextualBandit):
             "parameter_confidence": [
                 float(1.96 * np.sqrt(posterior_cov[i, i]))  # 95% CI half-width
                 for i in range(self.context_dim)
-            ],
+            ]
         }
 
         return analysis
@@ -357,13 +345,13 @@ class ThompsonSampling(ContextualBandit):
         validation_actions: np.ndarray,
         validation_rewards: np.ndarray,
         hyperparameter_ranges: Dict[str, Tuple[float, float]],
-        num_trials: int = 50,
+        num_trials: int = 50
     ) -> Dict[str, float]:
         """Optimize hyperparameters using validation data."""
         logger.info("Starting Thompson Sampling hyperparameter optimization")
 
         best_params = {}
-        best_score = float("-inf")
+        best_score = float('-inf')
 
         original_models = [model for model in self.models]  # Backup
 
@@ -384,7 +372,7 @@ class ThompsonSampling(ContextualBandit):
                 BayesianLinearRegression(
                     context_dim=self.context_dim,
                     prior_precision=np.eye(self.context_dim) * prior_precision,
-                    noise_precision=noise_precision,
+                    noise_precision=noise_precision
                 )
                 for _ in range(self.n_arms)
             ]
@@ -392,9 +380,7 @@ class ThompsonSampling(ContextualBandit):
             # Evaluate on validation data
             total_reward = 0.0
 
-            for context, action, reward in zip(
-                validation_contexts, validation_actions, validation_rewards
-            ):
+            for context, action, reward in zip(validation_contexts, validation_actions, validation_rewards):
                 # Update model
                 trial_models[action].update(context, reward)
 
@@ -417,7 +403,7 @@ class ThompsonSampling(ContextualBandit):
             "algorithm": "thompson_sampling",
             "exploration_count": self._exploration_count,
             "exploitation_count": self._exploitation_count,
-            "models": [],
+            "models": []
         }
 
         # Save each model's state
@@ -429,7 +415,7 @@ class ThompsonSampling(ContextualBandit):
                 "prior_mean": model.prior_mean.tolist(),
                 "prior_precision": model.prior_precision.tolist(),
                 "noise_precision": model.noise_precision,
-                "n_updates": model.n_updates,
+                "n_updates": model.n_updates
             }
             state["models"].append(model_state)
 
@@ -450,9 +436,7 @@ class ThompsonSampling(ContextualBandit):
                 if arm_id < len(self.models):
                     model = self.models[arm_id]
                     model.posterior_mean = np.array(model_state["posterior_mean"])
-                    model.posterior_precision = np.array(
-                        model_state["posterior_precision"]
-                    )
+                    model.posterior_precision = np.array(model_state["posterior_precision"])
                     model.prior_mean = np.array(model_state["prior_mean"])
                     model.prior_precision = np.array(model_state["prior_precision"])
                     model.noise_precision = model_state["noise_precision"]

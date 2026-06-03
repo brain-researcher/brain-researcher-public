@@ -4,17 +4,17 @@ Hyperalignment tool for multi-subject brain data alignment.
 Implements functional alignment methods to find common representational spaces across subjects.
 """
 
-import json
 import logging
-import warnings
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+import json
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
-from scipy import linalg, stats
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Tuple
+from scipy import stats, linalg
 from scipy.spatial.distance import pdist, squareform
 from sklearn.decomposition import PCA
+import warnings
+
+from pydantic import BaseModel, Field, ConfigDict
 
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 class HyperalignmentArgs(BaseModel):
     """Arguments for hyperalignment analysis."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Input data
@@ -34,102 +33,156 @@ class HyperalignmentArgs(BaseModel):
         description="List of subject data files (time x voxels)"
     )
     roi_mask_file: Optional[str] = Field(
-        default=None, description="Path to ROI mask for selective alignment"
+        default=None,
+        description="Path to ROI mask for selective alignment"
     )
 
     # Alignment method
     method: str = Field(
         default="procrustes",
-        description="Method: 'procrustes', 'cca', 'ridge_cka', 'searchlight', 'response_model', 'srm'",
+        description="Method: 'procrustes', 'cca', 'ridge_cka', 'searchlight', 'response_model', 'srm'"
     )
 
     # Procrustes parameters
     procrustes_scaling: bool = Field(
-        default=True, description="Allow scaling in Procrustes alignment"
+        default=True,
+        description="Allow scaling in Procrustes alignment"
     )
     procrustes_reflection: bool = Field(
-        default=True, description="Allow reflection in Procrustes"
+        default=True,
+        description="Allow reflection in Procrustes"
     )
 
     # CCA parameters
-    n_components: int = Field(default=50, description="Number of CCA components")
-    regularization: float = Field(default=0.1, description="Regularization for CCA")
+    n_components: int = Field(
+        default=50,
+        description="Number of CCA components"
+    )
+    regularization: float = Field(
+        default=0.1,
+        description="Regularization for CCA"
+    )
 
     # Response model parameters
     n_features: int = Field(
-        default=100, description="Number of features for response model"
+        default=100,
+        description="Number of features for response model"
     )
 
     # SRM (Shared Response Model) parameters
-    srm_iterations: int = Field(default=10, description="Number of SRM iterations")
-    srm_features: int = Field(default=50, description="Number of shared features")
+    srm_iterations: int = Field(
+        default=10,
+        description="Number of SRM iterations"
+    )
+    srm_features: int = Field(
+        default=50,
+        description="Number of shared features"
+    )
 
     # Searchlight parameters
     searchlight_radius: float = Field(
-        default=10.0, description="Searchlight radius in mm"
+        default=10.0,
+        description="Searchlight radius in mm"
     )
     searchlight_stride: int = Field(
-        default=3, description="Searchlight stride in voxels"
+        default=3,
+        description="Searchlight stride in voxels"
     )
 
     # Validation options
     leave_one_out: bool = Field(
-        default=True, description="Use leave-one-out validation"
+        default=True,
+        description="Use leave-one-out validation"
     )
     test_data_files: Optional[List[str]] = Field(
-        default=None, description="Separate test data files"
+        default=None,
+        description="Separate test data files"
     )
 
     # Performance metrics
     compute_isc: bool = Field(
-        default=True, description="Compute inter-subject correlation"
+        default=True,
+        description="Compute inter-subject correlation"
     )
     compute_classification: bool = Field(
-        default=False, description="Test classification across subjects"
+        default=False,
+        description="Test classification across subjects"
     )
     classification_labels_file: Optional[str] = Field(
-        default=None, description="Labels for classification test"
+        default=None,
+        description="Labels for classification test"
     )
 
     # Dimensionality reduction
     reduce_dimensions: bool = Field(
-        default=True, description="Apply dimensionality reduction before alignment"
+        default=True,
+        description="Apply dimensionality reduction before alignment"
     )
     target_dimensions: Optional[int] = Field(
-        default=None, description="Target dimensions after reduction"
+        default=None,
+        description="Target dimensions after reduction"
     )
     reduction_method: str = Field(
-        default="pca", description="Reduction method: 'pca', 'ica', 'factor_analysis'"
+        default="pca",
+        description="Reduction method: 'pca', 'ica', 'factor_analysis'"
     )
 
     # Anatomical alignment
     use_anatomical: bool = Field(
-        default=False, description="Use anatomical alignment as initialization"
+        default=False,
+        description="Use anatomical alignment as initialization"
     )
     anatomical_transforms_file: Optional[str] = Field(
-        default=None, description="Path to anatomical transformation matrices"
+        default=None,
+        description="Path to anatomical transformation matrices"
     )
 
     # Output options
-    output_dir: str = Field(description="Output directory for results")
+    output_dir: str = Field(
+        description="Output directory for results"
+    )
     save_transforms: bool = Field(
-        default=True, description="Save transformation matrices"
+        default=True,
+        description="Save transformation matrices"
     )
-    save_aligned: bool = Field(default=True, description="Save aligned data")
+    save_aligned: bool = Field(
+        default=True,
+        description="Save aligned data"
+    )
     save_common_space: bool = Field(
-        default=True, description="Save common space representation"
+        default=True,
+        description="Save common space representation"
     )
-    visualize: bool = Field(default=True, description="Generate visualizations")
+    visualize: bool = Field(
+        default=True,
+        description="Generate visualizations"
+    )
 
     # Advanced options
     bootstrap: bool = Field(
-        default=False, description="Use bootstrap for stability assessment"
+        default=False,
+        description="Use bootstrap for stability assessment"
     )
-    n_bootstraps: int = Field(default=100, description="Number of bootstrap iterations")
-    parallel: bool = Field(default=True, description="Use parallel processing")
-    n_jobs: int = Field(default=-1, description="Number of parallel jobs")
-    random_state: int = Field(default=42, description="Random seed")
-    verbose: bool = Field(default=True, description="Verbose output")
+    n_bootstraps: int = Field(
+        default=100,
+        description="Number of bootstrap iterations"
+    )
+    parallel: bool = Field(
+        default=True,
+        description="Use parallel processing"
+    )
+    n_jobs: int = Field(
+        default=-1,
+        description="Number of parallel jobs"
+    )
+    random_state: int = Field(
+        default=42,
+        description="Random seed"
+    )
+    verbose: bool = Field(
+        default=True,
+        description="Verbose output"
+    )
 
 
 class HyperalignmentTool(NeuroToolWrapper):
@@ -147,7 +200,6 @@ class HyperalignmentTool(NeuroToolWrapper):
 
         try:
             import mvpa2
-
             self.pymvpa_available = True
             logger.info("PyMVPA available for hyperalignment")
         except ImportError:
@@ -155,7 +207,6 @@ class HyperalignmentTool(NeuroToolWrapper):
 
         try:
             import brainiak
-
             self.brainiak_available = True
             logger.info("BrainIAK available for advanced alignment")
         except ImportError:
@@ -184,7 +235,7 @@ class HyperalignmentTool(NeuroToolWrapper):
         subjects_data = []
 
         for file_path in data_files:
-            if file_path.endswith(".npy"):
+            if file_path.endswith('.npy'):
                 data = np.load(file_path)
             else:
                 data = np.loadtxt(file_path)
@@ -231,9 +282,7 @@ class HyperalignmentTool(NeuroToolWrapper):
 
                 # Scaling factor
                 if scaling:
-                    scale = np.trace(subject_centered @ R @ ref_centered.T) / np.trace(
-                        subject_centered @ subject_centered.T
-                    )
+                    scale = np.trace(subject_centered @ R @ ref_centered.T) / np.trace(subject_centered @ subject_centered.T)
                 else:
                     scale = 1.0
 
@@ -241,14 +290,12 @@ class HyperalignmentTool(NeuroToolWrapper):
                 aligned = scale * subject_centered @ R + ref_mean
 
                 if iteration == 2:  # Final iteration
-                    transforms.append(
-                        {
-                            "rotation": R,
-                            "scale": scale,
-                            "subject_mean": subject_mean,
-                            "ref_mean": ref_mean,
-                        }
-                    )
+                    transforms.append({
+                        'rotation': R,
+                        'scale': scale,
+                        'subject_mean': subject_mean,
+                        'ref_mean': ref_mean
+                    })
                     aligned_data.append(aligned)
 
                 new_reference += aligned / n_subjects
@@ -277,9 +324,7 @@ class HyperalignmentTool(NeuroToolWrapper):
                 transforms.append({"reference": True})
             else:
                 # Fit CCA
-                cca = CCA(
-                    n_components=min(n_components, subject.shape[1], reference.shape[1])
-                )
+                cca = CCA(n_components=min(n_components, subject.shape[1], reference.shape[1]))
                 cca.fit(reference, subject)
 
                 # Transform to common space
@@ -289,14 +334,12 @@ class HyperalignmentTool(NeuroToolWrapper):
                 aligned = subj_scores @ cca.y_loadings_.T
                 aligned_data.append(aligned)
 
-                transforms.append(
-                    {
-                        "x_weights": cca.x_weights_,
-                        "y_weights": cca.y_weights_,
-                        "x_loadings": cca.x_loadings_,
-                        "y_loadings": cca.y_loadings_,
-                    }
-                )
+                transforms.append({
+                    'x_weights': cca.x_weights_,
+                    'y_weights': cca.y_weights_,
+                    'x_loadings': cca.x_loadings_,
+                    'y_loadings': cca.y_loadings_
+                })
 
         # Compute common space as average
         common_space = np.mean(aligned_data, axis=0)
@@ -337,11 +380,7 @@ class HyperalignmentTool(NeuroToolWrapper):
             new_transforms = []
             for subject in subjects_data:
                 # Solve for optimal transform: W = X @ S.T @ (S @ S.T)^-1
-                W = (
-                    subject.T
-                    @ shared_response
-                    @ np.linalg.inv(shared_response.T @ shared_response)
-                )
+                W = subject.T @ shared_response @ np.linalg.inv(shared_response.T @ shared_response)
                 new_transforms.append(W)
 
             transforms = new_transforms
@@ -444,8 +483,8 @@ class HyperalignmentTool(NeuroToolWrapper):
 
     def _test_classification(self, aligned_data, labels):
         """Test cross-subject classification."""
-        from sklearn.model_selection import cross_val_score
         from sklearn.svm import SVC
+        from sklearn.model_selection import cross_val_score
 
         n_subjects = len(aligned_data)
         scores = []
@@ -468,7 +507,7 @@ class HyperalignmentTool(NeuroToolWrapper):
             y_test = labels
 
             # Train classifier
-            clf = SVC(kernel="linear")
+            clf = SVC(kernel='linear')
             clf.fit(X_train, y_train)
 
             # Test
@@ -485,16 +524,12 @@ class HyperalignmentTool(NeuroToolWrapper):
 
         # Plot 1: ISC distribution
         if isc_values is not None:
-            axes[0, 0].hist(isc_values, bins=50, edgecolor="black", alpha=0.7)
-            axes[0, 0].axvline(
-                np.mean(isc_values),
-                color="red",
-                linestyle="--",
-                label=f"Mean={np.mean(isc_values):.3f}",
-            )
-            axes[0, 0].set_xlabel("ISC")
-            axes[0, 0].set_ylabel("Count")
-            axes[0, 0].set_title("Inter-Subject Correlation Distribution")
+            axes[0, 0].hist(isc_values, bins=50, edgecolor='black', alpha=0.7)
+            axes[0, 0].axvline(np.mean(isc_values), color='red', linestyle='--',
+                              label=f'Mean={np.mean(isc_values):.3f}')
+            axes[0, 0].set_xlabel('ISC')
+            axes[0, 0].set_ylabel('Count')
+            axes[0, 0].set_title('Inter-Subject Correlation Distribution')
             axes[0, 0].legend()
             axes[0, 0].grid(True, alpha=0.3)
 
@@ -506,17 +541,15 @@ class HyperalignmentTool(NeuroToolWrapper):
             for j in range(n_subjects):
                 if i != j:
                     # Compute correlation between subject patterns
-                    corr = np.corrcoef(
-                        aligned_data[i].ravel(), aligned_data[j].ravel()
-                    )[0, 1]
+                    corr = np.corrcoef(aligned_data[i].ravel(), aligned_data[j].ravel())[0, 1]
                     corr_matrix[i, j] = corr
                 else:
                     corr_matrix[i, j] = 1.0
 
-        im = axes[0, 1].imshow(corr_matrix, cmap="RdBu_r", vmin=-1, vmax=1)
-        axes[0, 1].set_xlabel("Subject")
-        axes[0, 1].set_ylabel("Subject")
-        axes[0, 1].set_title("Between-Subject Correlation")
+        im = axes[0, 1].imshow(corr_matrix, cmap='RdBu_r', vmin=-1, vmax=1)
+        axes[0, 1].set_xlabel('Subject')
+        axes[0, 1].set_ylabel('Subject')
+        axes[0, 1].set_title('Between-Subject Correlation')
         plt.colorbar(im, ax=axes[0, 1])
 
         # Plot 3: Variance explained
@@ -525,25 +558,21 @@ class HyperalignmentTool(NeuroToolWrapper):
         pca = PCA(n_components=min(20, all_aligned.shape[1]))
         pca.fit(all_aligned)
 
-        axes[0, 2].plot(np.cumsum(pca.explained_variance_ratio_), "o-")
-        axes[0, 2].set_xlabel("Component")
-        axes[0, 2].set_ylabel("Cumulative Variance Explained")
-        axes[0, 2].set_title("PCA of Aligned Data")
+        axes[0, 2].plot(np.cumsum(pca.explained_variance_ratio_), 'o-')
+        axes[0, 2].set_xlabel('Component')
+        axes[0, 2].set_ylabel('Cumulative Variance Explained')
+        axes[0, 2].set_title('PCA of Aligned Data')
         axes[0, 2].grid(True, alpha=0.3)
 
         # Plot 4: Sample timeseries before/after
         if len(aligned_data) >= 2:
             # Show first two subjects, first voxel
             t = np.arange(min(100, aligned_data[0].shape[0]))
-            axes[1, 0].plot(
-                t, aligned_data[0][: len(t), 0], label="Subject 1", alpha=0.7
-            )
-            axes[1, 0].plot(
-                t, aligned_data[1][: len(t), 0], label="Subject 2", alpha=0.7
-            )
-            axes[1, 0].set_xlabel("Time")
-            axes[1, 0].set_ylabel("Activity")
-            axes[1, 0].set_title("Aligned Timeseries (Voxel 1)")
+            axes[1, 0].plot(t, aligned_data[0][:len(t), 0], label='Subject 1', alpha=0.7)
+            axes[1, 0].plot(t, aligned_data[1][:len(t), 0], label='Subject 2', alpha=0.7)
+            axes[1, 0].set_xlabel('Time')
+            axes[1, 0].set_ylabel('Activity')
+            axes[1, 0].set_title('Aligned Timeseries (Voxel 1)')
             axes[1, 0].legend()
             axes[1, 0].grid(True, alpha=0.3)
 
@@ -552,30 +581,26 @@ class HyperalignmentTool(NeuroToolWrapper):
         for i in range(n_subjects):
             for j in range(n_subjects):
                 if i != j:
-                    dist = np.mean((aligned_data[i] - aligned_data[j]) ** 2)
+                    dist = np.mean((aligned_data[i] - aligned_data[j])**2)
                     distances[i, j] = dist
 
-        im = axes[1, 1].imshow(distances, cmap="viridis")
-        axes[1, 1].set_xlabel("Subject")
-        axes[1, 1].set_ylabel("Subject")
-        axes[1, 1].set_title("Pairwise Distances")
+        im = axes[1, 1].imshow(distances, cmap='viridis')
+        axes[1, 1].set_xlabel('Subject')
+        axes[1, 1].set_ylabel('Subject')
+        axes[1, 1].set_title('Pairwise Distances')
         plt.colorbar(im, ax=axes[1, 1])
 
         # Plot 6: ISC spatial map (if available)
         if isc_values is not None and len(isc_values) > 1:
             # Simple visualization of ISC values
             axes[1, 2].scatter(range(len(isc_values)), isc_values, alpha=0.5, s=1)
-            axes[1, 2].set_xlabel("Voxel")
-            axes[1, 2].set_ylabel("ISC")
-            axes[1, 2].set_title("ISC Across Voxels")
+            axes[1, 2].set_xlabel('Voxel')
+            axes[1, 2].set_ylabel('ISC')
+            axes[1, 2].set_title('ISC Across Voxels')
             axes[1, 2].grid(True, alpha=0.3)
 
         plt.tight_layout()
-        plt.savefig(
-            output_path / "hyperalignment_visualization.png",
-            dpi=150,
-            bbox_inches="tight",
-        )
+        plt.savefig(output_path / 'hyperalignment_visualization.png', dpi=150, bbox_inches='tight')
         plt.close()
 
     def _run(
@@ -613,7 +638,7 @@ class HyperalignmentTool(NeuroToolWrapper):
         n_jobs: int = -1,
         random_state: int = 42,
         verbose: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute hyperalignment analysis."""
         try:
@@ -636,11 +661,7 @@ class HyperalignmentTool(NeuroToolWrapper):
 
             # Apply ROI mask if provided
             if roi_mask_file:
-                mask = (
-                    np.load(roi_mask_file)
-                    if roi_mask_file.endswith(".npy")
-                    else np.loadtxt(roi_mask_file)
-                )
+                mask = np.load(roi_mask_file) if roi_mask_file.endswith('.npy') else np.loadtxt(roi_mask_file)
                 mask = mask.astype(bool)
                 subjects_data = [s[:, mask] for s in subjects_data]
 
@@ -654,9 +675,7 @@ class HyperalignmentTool(NeuroToolWrapper):
 
                 for subject in subjects_data:
                     if reduction_method == "pca":
-                        pca = PCA(
-                            n_components=target_dimensions or min(100, subject.shape[1])
-                        )
+                        pca = PCA(n_components=target_dimensions or min(100, subject.shape[1]))
                         reduced = pca.fit_transform(subject)
                         reduced_data.append(reduced)
                         reduction_transforms.append(pca)
@@ -711,17 +730,11 @@ class HyperalignmentTool(NeuroToolWrapper):
                 if verbose:
                     logger.info("Testing cross-subject classification")
 
-                labels = (
-                    np.load(classification_labels_file)
-                    if classification_labels_file.endswith(".npy")
-                    else np.loadtxt(classification_labels_file)
-                )
+                labels = np.load(classification_labels_file) if classification_labels_file.endswith('.npy') else np.loadtxt(classification_labels_file)
                 classification_scores = self._test_classification(aligned_data, labels)
 
                 if verbose:
-                    logger.info(
-                        f"Mean classification accuracy: {np.mean(classification_scores):.3f}"
-                    )
+                    logger.info(f"Mean classification accuracy: {np.mean(classification_scores):.3f}")
 
             # Save outputs
             if save_transforms and transforms is not None:
@@ -743,33 +756,29 @@ class HyperalignmentTool(NeuroToolWrapper):
 
             # Prepare results
             results = {
-                "method": method,
-                "n_subjects": n_subjects,
-                "n_timepoints": aligned_data[0].shape[0],
-                "n_features": aligned_data[0].shape[1],
-                "alignment_completed": True,
+                'method': method,
+                'n_subjects': n_subjects,
+                'n_timepoints': aligned_data[0].shape[0],
+                'n_features': aligned_data[0].shape[1],
+                'alignment_completed': True
             }
 
             if isc_values is not None:
-                results["mean_isc"] = float(mean_isc)
-                results["std_isc"] = float(np.std(isc_values))
-                results["median_isc"] = float(np.median(isc_values))
+                results['mean_isc'] = float(mean_isc)
+                results['std_isc'] = float(np.std(isc_values))
+                results['median_isc'] = float(np.median(isc_values))
 
             if classification_scores is not None:
-                results["classification_scores"] = [
-                    float(s) for s in classification_scores
-                ]
-                results["mean_classification"] = float(np.mean(classification_scores))
+                results['classification_scores'] = [float(s) for s in classification_scores]
+                results['mean_classification'] = float(np.mean(classification_scores))
 
             # Save results
             results_file = output_path / "hyperalignment_results.json"
-            with open(results_file, "w") as f:
+            with open(results_file, 'w') as f:
                 json.dump(results, f, indent=2)
 
             # Prepare message
-            message = (
-                f"Hyperalignment completed: {method} method, {n_subjects} subjects"
-            )
+            message = f"Hyperalignment completed: {method} method, {n_subjects} subjects"
             if isc_values is not None:
                 message += f", mean ISC={mean_isc:.3f}"
 
@@ -778,30 +787,22 @@ class HyperalignmentTool(NeuroToolWrapper):
                 data={
                     "outputs": {
                         "results": str(results_file),
-                        "transforms": (
-                            str(transforms_file)
-                            if save_transforms and transforms is not None
-                            else None
-                        ),
-                        "common_space": (
-                            str(common_file)
-                            if save_common_space and common_space is not None
-                            else None
-                        ),
-                        "visualization": (
-                            str(output_path / "hyperalignment_visualization.png")
-                            if visualize
-                            else None
-                        ),
+                        "transforms": str(transforms_file) if save_transforms and transforms is not None else None,
+                        "common_space": str(common_file) if save_common_space and common_space is not None else None,
+                        "visualization": str(output_path / "hyperalignment_visualization.png") if visualize else None
                     },
                     "summary": results,
-                    "message": message,
-                },
+                    "message": message
+                }
             )
 
         except Exception as e:
             logger.error(f"Hyperalignment failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={"error": str(e)})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={"error": str(e)}
+            )
 
 
 class HyperalignmentTools:
@@ -810,4 +811,6 @@ class HyperalignmentTools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all hyperalignment tools."""
-        return [HyperalignmentTool()]
+        return [
+            HyperalignmentTool()
+        ]

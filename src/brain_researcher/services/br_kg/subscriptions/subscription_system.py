@@ -4,15 +4,15 @@ This module provides real-time updates via GraphQL subscriptions using WebSocket
 with event filtering, connection management, and scalable pub/sub.
 """
 
+import logging
 import asyncio
 import json
-import logging
-import uuid
-from collections import defaultdict
+from typing import Dict, List, Any, Optional, Set, Callable, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+import uuid
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -20,31 +20,26 @@ logger = logging.getLogger(__name__)
 # Custom Exception Classes
 class SubscriptionSystemError(Exception):
     """Base exception for subscription system errors."""
-
     pass
 
 
 class ConnectionError(SubscriptionSystemError):
     """Connection-related errors."""
-
     pass
 
 
 class SubscriptionError(SubscriptionSystemError):
     """Subscription-related errors."""
-
     pass
 
 
 class ValidationError(SubscriptionSystemError):
     """Validation errors."""
-
     pass
 
 
 class MaxConnectionsError(SubscriptionSystemError):
     """Maximum connections exceeded error."""
-
     pass
 
 
@@ -148,7 +143,7 @@ class SubscriptionSystem:
             "total_connections": 0,
             "total_subscriptions": 0,
             "total_events": 0,
-            "events_by_type": defaultdict(int),
+            "events_by_type": defaultdict(int)
         }
 
         # Start background tasks
@@ -188,7 +183,7 @@ class SubscriptionSystem:
         self,
         websocket: Any,
         user_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """Handle new WebSocket connection.
 
@@ -208,9 +203,7 @@ class SubscriptionSystem:
             raise ValidationError("metadata must be a dictionary")
 
         if len(self.connections) >= self.max_connections:
-            raise MaxConnectionsError(
-                f"Maximum connections reached ({self.max_connections})"
-            )
+            raise MaxConnectionsError(f"Maximum connections reached ({self.max_connections})")
 
         connection_id = str(uuid.uuid4())
 
@@ -218,16 +211,17 @@ class SubscriptionSystem:
             connection_id=connection_id,
             websocket=websocket,
             user_id=user_id,
-            metadata=metadata or {},
+            metadata=metadata or {}
         )
 
         self.connections[connection_id] = connection
         self.stats["total_connections"] += 1
 
         # Send connection acknowledgment
-        await self._send_message(
-            connection_id, {"type": "connection_ack", "connection_id": connection_id}
-        )
+        await self._send_message(connection_id, {
+            "type": "connection_ack",
+            "connection_id": connection_id
+        })
 
         logger.info(f"Client connected: {connection_id}")
         return connection_id
@@ -262,7 +256,7 @@ class SubscriptionSystem:
         connection_id: str,
         query: str,
         variables: Optional[Dict[str, Any]] = None,
-        operation_name: Optional[str] = None,
+        operation_name: Optional[str] = None
     ) -> str:
         """Create a new subscription.
 
@@ -280,17 +274,13 @@ class SubscriptionSystem:
             raise ValidationError("query must be a string")
 
         if len(query) > self.max_query_length:
-            raise ValidationError(
-                f"query exceeds maximum length ({self.max_query_length})"
-            )
+            raise ValidationError(f"query exceeds maximum length ({self.max_query_length})")
 
         if variables is not None:
             if not isinstance(variables, dict):
                 raise ValidationError("variables must be a dictionary")
             if len(str(variables)) > self.max_variables_size:
-                raise ValidationError(
-                    f"variables exceed maximum size ({self.max_variables_size})"
-                )
+                raise ValidationError(f"variables exceed maximum size ({self.max_variables_size})")
 
         if connection_id not in self.connections:
             raise ConnectionError(f"Connection not found: {connection_id}")
@@ -306,7 +296,7 @@ class SubscriptionSystem:
             connection_id=connection_id,
             query=query,
             variables=variables or {},
-            filters=filters,
+            filters=filters
         )
 
         self.subscriptions[subscription_id] = subscription
@@ -314,9 +304,10 @@ class SubscriptionSystem:
         self.stats["total_subscriptions"] += 1
 
         # Send subscription confirmation
-        await self._send_message(
-            connection_id, {"type": "subscription_success", "id": subscription_id}
-        )
+        await self._send_message(connection_id, {
+            "type": "subscription_success",
+            "id": subscription_id
+        })
 
         # Execute subscription handler if defined
         handler_name = self._get_handler_name(query)
@@ -385,7 +376,9 @@ class SubscriptionSystem:
 
                         # Send to connection
                         await self._send_subscription_data(
-                            subscription.connection_id, subscription_id, data
+                            subscription.connection_id,
+                            subscription_id,
+                            data
                         )
 
                         # Update subscription stats
@@ -473,9 +466,7 @@ class SubscriptionSystem:
 
         return True
 
-    def _format_event_data(
-        self, event: Event, subscription: Subscription
-    ) -> Dict[str, Any]:
+    def _format_event_data(self, event: Event, subscription: Subscription) -> Dict[str, Any]:
         """Format event data for subscription.
 
         Args:
@@ -492,7 +483,7 @@ class SubscriptionSystem:
             "entity_type": event.entity_type,
             "entity_id": event.entity_id,
             "timestamp": event.timestamp.isoformat(),
-            "data": event.data,
+            "data": event.data
         }
 
         # Add metadata if requested in query
@@ -506,7 +497,10 @@ class SubscriptionSystem:
         return data
 
     async def _send_subscription_data(
-        self, connection_id: str, subscription_id: str, data: Dict[str, Any]
+        self,
+        connection_id: str,
+        subscription_id: str,
+        data: Dict[str, Any]
     ):
         """Send subscription data to connection.
 
@@ -515,10 +509,13 @@ class SubscriptionSystem:
             subscription_id: Subscription ID
             data: Data to send
         """
-        await self._send_message(
-            connection_id,
-            {"type": "data", "id": subscription_id, "payload": {"data": data}},
-        )
+        await self._send_message(connection_id, {
+            "type": "data",
+            "id": subscription_id,
+            "payload": {
+                "data": data
+            }
+        })
 
     async def _send_message(self, connection_id: str, message: Dict[str, Any]):
         """Send message to connection.
@@ -535,9 +532,7 @@ class SubscriptionSystem:
         try:
             await connection.websocket.send(json.dumps(message))
         except Exception as e:
-            logger.error(
-                f"Error sending message to {connection_id}: {e}", exc_info=True
-            )
+            logger.error(f"Error sending message to {connection_id}: {e}", exc_info=True)
             # Mark connection as expired for cleanup
             if connection_id in self.connections:
                 self.expired_connections.add(connection_id)
@@ -550,7 +545,9 @@ class SubscriptionSystem:
                 await asyncio.sleep(30)  # Ping every 30 seconds
 
                 for connection_id in list(self.connections.keys()):
-                    await self._send_message(connection_id, {"type": "ping"})
+                    await self._send_message(connection_id, {
+                        "type": "ping"
+                    })
 
                     connection = self.connections.get(connection_id)
                     if connection:
@@ -562,7 +559,9 @@ class SubscriptionSystem:
                 logger.error(f"Error pinging connections: {e}", exc_info=True)
 
     def _parse_subscription_filters(
-        self, query: str, variables: Optional[Dict[str, Any]]
+        self,
+        query: str,
+        variables: Optional[Dict[str, Any]]
     ) -> SubscriptionFilter:
         """Parse subscription query to extract filters.
 
@@ -645,7 +644,7 @@ class SubscriptionSystem:
             "data": event.data,
             "user_id": event.user_id,
             "timestamp": event.timestamp.isoformat(),
-            "metadata": event.metadata,
+            "metadata": event.metadata
         }
 
         try:
@@ -664,9 +663,7 @@ class SubscriptionSystem:
 
             while True:
                 try:
-                    message = await pubsub.get_message(
-                        ignore_subscribe_messages=True, timeout=1.0
-                    )
+                    message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
 
                     if not message:
                         # Avoid a busy loop in dev/tests (mock pubsub returns immediately).
@@ -685,7 +682,7 @@ class SubscriptionSystem:
                             data=event_data["data"],
                             user_id=event_data.get("user_id"),
                             timestamp=datetime.fromisoformat(event_data["timestamp"]),
-                            metadata=event_data.get("metadata", {}),
+                            metadata=event_data.get("metadata", {})
                         )
 
                         # Process event
@@ -721,7 +718,8 @@ class SubscriptionSystem:
 
         # Calculate average subscriptions per connection
         avg_subscriptions = (
-            active_subscriptions / active_connections if active_connections > 0 else 0
+            active_subscriptions / active_connections
+            if active_connections > 0 else 0
         )
 
         return {
@@ -733,7 +731,7 @@ class SubscriptionSystem:
             "total_events": self.stats["total_events"],
             "events_by_type": dict(self.stats["events_by_type"]),
             "max_connections": self.max_connections,
-            "connections_by_user": self._get_connections_by_user(),
+            "connections_by_user": self._get_connections_by_user()
         }
 
     def _get_connections_by_user(self) -> Dict[str, int]:
@@ -764,16 +762,11 @@ class SubscriptionSystem:
                 # Find expired connections
                 for connection_id, connection in self.connections.items():
                     # Check if connection hasn't been pinged recently
-                    if (
-                        connection.last_ping_at
-                        and current_time - connection.last_ping_at
-                        > timedelta(seconds=self.connection_timeout)
-                    ):
+                    if (connection.last_ping_at and
+                        current_time - connection.last_ping_at > timedelta(seconds=self.connection_timeout)):
                         expired_connection_ids.append(connection_id)
                     # Check if connection is too old
-                    elif current_time - connection.connected_at > timedelta(
-                        seconds=self.connection_timeout * 2
-                    ):
+                    elif current_time - connection.connected_at > timedelta(seconds=self.connection_timeout * 2):
                         expired_connection_ids.append(connection_id)
 
                 # Clean up expired connections
@@ -782,16 +775,12 @@ class SubscriptionSystem:
                     await self.disconnect(connection_id)
 
                 if expired_connection_ids:
-                    logger.info(
-                        f"Cleaned up {len(expired_connection_ids)} expired connections"
-                    )
+                    logger.info(f"Cleaned up {len(expired_connection_ids)} expired connections")
 
             except asyncio.CancelledError:
                 raise
             except Exception as e:
-                logger.error(
-                    f"Error cleaning up expired connections: {e}", exc_info=True
-                )
+                logger.error(f"Error cleaning up expired connections: {e}", exc_info=True)
                 await asyncio.sleep(self.cleanup_interval)
 
 

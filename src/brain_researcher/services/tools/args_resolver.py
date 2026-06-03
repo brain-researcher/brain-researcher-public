@@ -18,11 +18,9 @@ Behavior:
 This unblocks planner → tool execution. Extend with synonym mapping / BIDS
 metadata injection later as needed.
 """
-
 from __future__ import annotations
-
-import logging
 from typing import Any, Dict, Mapping, Optional
+import logging
 
 try:  # Pydantic v1/v2 compatibility
     from pydantic import BaseModel, ValidationError
@@ -33,14 +31,10 @@ except Exception:  # pragma: no cover
 logger = logging.getLogger(__name__)
 
 
-def resolve_args(
-    tool_schema: Mapping[str, Any], raw_args: Mapping[str, Any]
-) -> Dict[str, Any]:
+def resolve_args(tool_schema: Mapping[str, Any], raw_args: Mapping[str, Any]) -> Dict[str, Any]:
     if not tool_schema:
         return dict(raw_args)
-    params = (
-        tool_schema.get("parameters", {}) if isinstance(tool_schema, Mapping) else {}
-    )
+    params = tool_schema.get("parameters", {}) if isinstance(tool_schema, Mapping) else {}
     props = params.get("properties", {}) if isinstance(params, Mapping) else {}
     if not props:
         return dict(raw_args)
@@ -52,15 +46,11 @@ def resolve_args(
             logger.debug("ArgsResolver dropped unknown keys for tool: %s", dropped)
         return filtered
     # schema exists but missing needed keys; be permissive to avoid breaking tools
-    logger.debug(
-        "ArgsResolver falling back to raw args because schema filtered everything"
-    )
+    logger.debug("ArgsResolver falling back to raw args because schema filtered everything")
     return dict(raw_args)
 
 
-def resolve_synonyms(
-    raw_args: Mapping[str, Any], synonyms: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+def resolve_synonyms(raw_args: Mapping[str, Any], synonyms: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Map synonym keys to canonical names.
 
     synonyms format (as used in ToolSpec): {canonical: [syn1, syn2, ...]}.
@@ -84,14 +74,10 @@ class ArgsResolver:
     def __init__(self, *args, **kwargs):
         pass
 
-    def resolve(
-        self, tool_schema: Mapping[str, Any], raw_args: Mapping[str, Any]
-    ) -> Dict[str, Any]:
+    def resolve(self, tool_schema: Mapping[str, Any], raw_args: Mapping[str, Any]) -> Dict[str, Any]:
         return resolve_args(tool_schema, raw_args)
 
-    def resolve_synonyms(
-        self, raw_args: Mapping[str, Any], synonyms: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def resolve_synonyms(self, raw_args: Mapping[str, Any], synonyms: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         return resolve_synonyms(raw_args, synonyms)
 
     def resolve_full_pipeline(
@@ -113,21 +99,14 @@ class ArgsResolver:
         trace = {"args_raw": dict(raw_args), "validation": {"ok": None, "error": None}}
 
         # Prefer Pydantic validation if possible
-        if (
-            schema_class
-            and BaseModel
-            and isinstance(schema_class, type)
-            and issubclass(schema_class, BaseModel)
-        ):
+        if schema_class and BaseModel and isinstance(schema_class, type) and issubclass(schema_class, BaseModel):
             try:
                 model = schema_class(**raw_args)
                 if hasattr(model, "model_dump"):
                     validated = model.model_dump(exclude_none=True)
                 else:
                     validated = model.dict(exclude_none=True)
-                trace["validated_with"] = getattr(
-                    schema_class, "__name__", "pydantic_model"
-                )
+                trace["validated_with"] = getattr(schema_class, "__name__", "pydantic_model")
                 trace["validation"]["ok"] = True
                 return {"params": validated, "trace": trace}
             except ValidationError as exc:
@@ -152,6 +131,5 @@ class ArgsResolver:
             trace["validation"]["ok"] = True
 
         return {"params": filtered, "trace": trace}
-
 
 __all__ = ["ArgsResolver", "resolve_args"]

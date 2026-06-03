@@ -6,12 +6,11 @@ Uses env:
   NEO4J_USER (default neo4j)
   NEO4J_PASSWORD (required)
 """
-
 from __future__ import annotations
 
-import json
 import os
 from functools import lru_cache
+import json
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from neo4j import GraphDatabase
@@ -20,7 +19,6 @@ from neo4j.exceptions import Neo4jError
 from brain_researcher.config.paths import resolve_from_config
 
 _CATALOG_ALIAS_CACHE: Dict[str, str] | None = None
-
 
 @lru_cache(maxsize=1)
 def _get_driver():
@@ -186,9 +184,7 @@ def get_failed_on_stats(
                     "fail_count": int(row.get("fail_count") or 0),
                     "last_seen": row.get("last_seen"),
                     "error_categories": [
-                        ec
-                        for ec in row.get("error_categories") or []
-                        if isinstance(ec, str)
+                        ec for ec in row.get("error_categories") or [] if isinstance(ec, str)
                     ],
                 }
             return out

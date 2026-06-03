@@ -122,7 +122,7 @@
 
 ## Files Generated
 - Test script: `test_tools_with_real_data.py`
-- Test outputs: `/home/zijiaochen/projects/brain_researcher/outputs/test_outputs/`
+- Test outputs: `${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/outputs/test_outputs/`
 - Event files: Temporary directories with FSL-format events
 - Test results: `test_results.json`
 

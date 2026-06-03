@@ -171,10 +171,7 @@ def normalize_with_lesion_tool(
     (out_dir / "lesion_normalization_manifest.json").write_text(
         pd.io.json.dumps(manifest, indent=2), encoding="utf-8"
     )
-    return {
-        "status": "success",
-        "outputs": {"manifest": str(out_dir / "lesion_normalization_manifest.json")},
-    }
+    return {"status": "success", "outputs": {"manifest": str(out_dir / 'lesion_normalization_manifest.json')}}
 
 
 __all__ = [

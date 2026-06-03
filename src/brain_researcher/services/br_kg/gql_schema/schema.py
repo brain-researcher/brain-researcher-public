@@ -29,27 +29,17 @@ def _db():
     return get_db()
 
 
-def _find_nodes_by_label_and_prop(
-    label: str, prop: Optional[str] = None, value: Any = None
-) -> list[Node]:
+def _find_nodes_by_label_and_prop(label: str, prop: Optional[str] = None, value: Any = None) -> list[Node]:
     db = _db()
     props = {prop: value} if prop is not None else None
     out: list[Node] = []
     for nid, p in db.find_nodes(label, props):  # type: ignore[attr-defined]
         labels = p.get("labels") or ([label] if label else [])
-        out.append(
-            Node(
-                id=str(nid),
-                labels=list(labels),
-                properties={k: v for k, v in p.items() if k not in {"id", "labels"}},
-            )
-        )
+        out.append(Node(id=str(nid), labels=list(labels), properties={k: v for k, v in p.items() if k not in {"id", "labels"}}))
     return out
 
 
-def _find_nodes_by_label_and_prop_in(
-    label: str, prop: str, values: list[Any]
-) -> list[Node]:
+def _find_nodes_by_label_and_prop_in(label: str, prop: str, values: list[Any]) -> list[Node]:
     out: list[Node] = []
     if not values:
         return out
@@ -61,9 +51,7 @@ def _find_nodes_by_label_and_prop_in(
                 Node(
                     id=str(nid),
                     labels=list(labels),
-                    properties={
-                        k: v for k, v in p.items() if k not in {"id", "labels"}
-                    },
+                    properties={k: v for k, v in p.items() if k not in {"id", "labels"}},
                 )
             )
     return out
@@ -76,11 +64,7 @@ def _find_node_by_id(nid: str) -> Optional[Node]:
         return None
     _, p = matches[0]
     labels = p.get("labels", [])
-    return Node(
-        id=nid,
-        labels=list(labels),
-        properties={k: v for k, v in p.items() if k not in {"id", "labels"}},
-    )
+    return Node(id=nid, labels=list(labels), properties={k: v for k, v in p.items() if k not in {"id", "labels"}})
 
 
 def _bfs(start_id: str, depth: int = 2) -> tuple[list[Node], list[dict[str, Any]]]:
@@ -96,16 +80,12 @@ def _bfs(start_id: str, depth: int = 2) -> tuple[list[Node], list[dict[str, Any]
         nodes.append(center)
     if hasattr(db, "find_relationships"):
         for a, b, rp in db.find_relationships(start_id, None, None):  # type: ignore[attr-defined]
-            edges.append(
-                {"start": a, "end": b, "type": rp.get("type", ""), "properties": rp}
-            )
+            edges.append({"start": a, "end": b, "type": rp.get("type", ""), "properties": rp})
             n = _find_node_by_id(b)
             if n:
                 nodes.append(n)
         for a, b, rp in db.find_relationships(None, start_id, None):  # type: ignore[attr-defined]
-            edges.append(
-                {"start": a, "end": b, "type": rp.get("type", ""), "properties": rp}
-            )
+            edges.append({"start": a, "end": b, "type": rp.get("type", ""), "properties": rp})
             n = _find_node_by_id(a)
             if n:
                 nodes.append(n)
@@ -187,9 +167,7 @@ def build_schema() -> Any:
         if label == "Task":
             return Task(id=n.id, name=p.get("name"))
         if label == "Region":
-            return Region(
-                id=n.id, name=p.get("name"), abbreviation=p.get("abbreviation")
-            )
+            return Region(id=n.id, name=p.get("name"), abbreviation=p.get("abbreviation"))
         if label == "Dataset":
             return Dataset(id=n.id, name=p.get("name"), accession=p.get("accession"))
         if label == "Publication":
@@ -224,28 +202,13 @@ def build_schema() -> Any:
 
         @strawberry.field
         def tasks(self, name: Optional[str] = None) -> list[Task]:
-            nodes = (
-                _find_nodes_by_label_and_prop("Task", "name", name)
-                if name
-                else _find_nodes_by_label_and_prop("Task")
-            )
+            nodes = _find_nodes_by_label_and_prop("Task", "name", name) if name else _find_nodes_by_label_and_prop("Task")
             return [Task(id=n.id, name=n.properties.get("name")) for n in nodes]
 
         @strawberry.field
         def regions(self, name: Optional[str] = None) -> list[Region]:
-            nodes = (
-                _find_nodes_by_label_and_prop("Region", "name", name)
-                if name
-                else _find_nodes_by_label_and_prop("Region")
-            )
-            return [
-                Region(
-                    id=n.id,
-                    name=n.properties.get("name"),
-                    abbreviation=n.properties.get("abbreviation"),
-                )
-                for n in nodes
-            ]
+            nodes = _find_nodes_by_label_and_prop("Region", "name", name) if name else _find_nodes_by_label_and_prop("Region")
+            return [Region(id=n.id, name=n.properties.get("name"), abbreviation=n.properties.get("abbreviation")) for n in nodes]
 
         @strawberry.field
         def datasets(self, accession: Optional[str] = None) -> list[Dataset]:
@@ -254,22 +217,11 @@ def build_schema() -> Any:
                 if accession
                 else _find_nodes_by_label_and_prop("Dataset")
             )
-            return [
-                Dataset(
-                    id=n.id,
-                    name=n.properties.get("name"),
-                    accession=n.properties.get("accession"),
-                )
-                for n in nodes
-            ]
+            return [Dataset(id=n.id, name=n.properties.get("name"), accession=n.properties.get("accession")) for n in nodes]
 
         @strawberry.field
         def publications(self, pmid: Optional[str] = None) -> list[Publication]:
-            nodes = (
-                _find_nodes_by_label_and_prop("Publication", "pmid", pmid)
-                if pmid
-                else _find_nodes_by_label_and_prop("Publication")
-            )
+            nodes = _find_nodes_by_label_and_prop("Publication", "pmid", pmid) if pmid else _find_nodes_by_label_and_prop("Publication")
             return [
                 Publication(
                     id=n.id,
@@ -298,19 +250,8 @@ def build_schema() -> Any:
         @strawberry.field
         def bfs(self, start_id: str, depth: int = 2) -> Graph:
             nodes, edges = _bfs(start_id, depth)
-            gnodes = [
-                GNode(id=n.id, labels=n.labels, properties=to_kv(n.properties))
-                for n in nodes
-            ]
-            gedges = [
-                GEdge(
-                    start=e["start"],
-                    end=e["end"],
-                    type=e.get("type", ""),
-                    properties=to_kv(e.get("properties", {})),
-                )
-                for e in edges
-            ]
+            gnodes = [GNode(id=n.id, labels=n.labels, properties=to_kv(n.properties)) for n in nodes]
+            gedges = [GEdge(start=e["start"], end=e["end"], type=e.get("type", ""), properties=to_kv(e.get("properties", {}))) for e in edges]
             return Graph(nodes=gnodes, edges=gedges)
 
     # -----------------
@@ -338,27 +279,21 @@ def build_schema() -> Any:
             return Task(id=id, name=name)
 
         @strawberry.mutation
-        def create_publication(
-            self, pmid: str, title: Optional[str] = None
-        ) -> Publication:
+        def create_publication(self, pmid: str, title: Optional[str] = None) -> Publication:
             _validate_props(["pmid"], {"pmid": pmid})
             db = _db()
             nid = db.create_node("Publication", {"pmid": pmid, "title": title or ""})  # type: ignore[attr-defined]
             return Publication(id=nid, pmid=pmid, title=title or "")
 
         @strawberry.mutation
-        def create_region(
-            self, name: str, abbreviation: Optional[str] = None
-        ) -> Region:
+        def create_region(self, name: str, abbreviation: Optional[str] = None) -> Region:
             _validate_props(["name"], {"name": name})
             db = _db()
             nid = db.create_node("Region", {"name": name, "abbreviation": abbreviation or ""})  # type: ignore[attr-defined]
             return Region(id=nid, name=name, abbreviation=abbreviation or "")
 
         @strawberry.mutation
-        def create_dataset(
-            self, id: str, name: Optional[str] = None, accession: Optional[str] = None
-        ) -> Dataset:
+        def create_dataset(self, id: str, name: Optional[str] = None, accession: Optional[str] = None) -> Dataset:
             _validate_props(["id"], {"id": id})
             db = _db()
             db.create_node("Dataset", {"id": id, "name": name or "", "accession": accession or ""})  # type: ignore[attr-defined]
@@ -374,10 +309,7 @@ def build_schema() -> Any:
             confidence: Optional[float] = None,
             timestamp: Optional[str] = None,
         ) -> bool:
-            _validate_props(
-                ["start_id", "end_id", "type"],
-                {"start_id": start_id, "end_id": end_id, "type": type},
-            )
+            _validate_props(["start_id", "end_id", "type"], {"start_id": start_id, "end_id": end_id, "type": type})
             db = _db()
             props = {"source": source, "confidence": confidence, "timestamp": timestamp}
             props = {k: v for k, v in props.items() if v is not None}

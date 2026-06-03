@@ -1,23 +1,20 @@
 """Magic Link Authentication Service"""
 
-import logging
-import os
-import secrets
-import smtplib
 from datetime import datetime, timedelta
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import secrets
 from typing import Optional
-
+import os
 import redis.asyncio as redis
 from pydantic import BaseModel, EmailStr
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import logging
 
 logger = logging.getLogger(__name__)
 
-
 class MagicLinkRequest(BaseModel):
     email: EmailStr
-
 
 class MagicLinkService:
     """Service for handling Magic Link authentication"""
@@ -26,14 +23,14 @@ class MagicLinkService:
         """Initialize Magic Link service"""
         self.redis = redis_client
         self.token_expiry = 15 * 60  # 15 minutes
-        self.frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-        self.email_from = os.getenv("EMAIL_FROM", "noreply@brain-researcher.ai")
+        self.frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+        self.email_from = os.getenv('EMAIL_FROM', 'noreply@brain-researcher.ai')
 
         # Email configuration
-        self.smtp_host = os.getenv("EMAIL_SERVER_HOST", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("EMAIL_SERVER_PORT", "587"))
-        self.smtp_user = os.getenv("EMAIL_SERVER_USER")
-        self.smtp_pass = os.getenv("EMAIL_SERVER_PASSWORD")
+        self.smtp_host = os.getenv('EMAIL_SERVER_HOST', 'smtp.gmail.com')
+        self.smtp_port = int(os.getenv('EMAIL_SERVER_PORT', '587'))
+        self.smtp_user = os.getenv('EMAIL_SERVER_USER')
+        self.smtp_pass = os.getenv('EMAIL_SERVER_PASSWORD')
 
         # In-memory storage fallback if Redis not available
         self.memory_store = {} if not redis_client else None
@@ -44,11 +41,18 @@ class MagicLinkService:
 
         if self.redis:
             # Store in Redis with expiry
-            await self.redis.setex(f"magic_link:{token}", self.token_expiry, email)
+            await self.redis.setex(
+                f"magic_link:{token}",
+                self.token_expiry,
+                email
+            )
         else:
             # Fallback to in-memory storage
             expiry_time = datetime.utcnow() + timedelta(seconds=self.token_expiry)
-            self.memory_store[token] = {"email": email, "expires_at": expiry_time}
+            self.memory_store[token] = {
+                'email': email,
+                'expires_at': expiry_time
+            }
             # Clean up expired tokens
             self._cleanup_expired_tokens()
 
@@ -63,13 +67,13 @@ class MagicLinkService:
             if email:
                 # Delete token after use (one-time use)
                 await self.redis.delete(key)
-                return email.decode("utf-8") if isinstance(email, bytes) else email
+                return email.decode('utf-8') if isinstance(email, bytes) else email
         else:
             # Fallback to in-memory storage
             if token in self.memory_store:
                 token_data = self.memory_store[token]
-                if datetime.utcnow() < token_data["expires_at"]:
-                    email = token_data["email"]
+                if datetime.utcnow() < token_data['expires_at']:
+                    email = token_data['email']
                     # Delete token after use
                     del self.memory_store[token]
                     return email
@@ -86,9 +90,8 @@ class MagicLinkService:
 
         now = datetime.utcnow()
         expired_tokens = [
-            token
-            for token, data in self.memory_store.items()
-            if data["expires_at"] <= now
+            token for token, data in self.memory_store.items()
+            if data['expires_at'] <= now
         ]
 
         for token in expired_tokens:
@@ -101,10 +104,10 @@ class MagicLinkService:
             link = await self.generate_magic_link(email)
 
             # Create email message
-            message = MIMEMultipart("alternative")
-            message["Subject"] = "Login to Brain Researcher"
-            message["From"] = self.email_from
-            message["To"] = email
+            message = MIMEMultipart('alternative')
+            message['Subject'] = 'Login to Brain Researcher'
+            message['From'] = self.email_from
+            message['To'] = email
 
             # HTML content
             html_content = f"""
@@ -156,8 +159,8 @@ class MagicLinkService:
             """
 
             # Attach parts
-            part1 = MIMEText(text_content, "plain")
-            part2 = MIMEText(html_content, "html")
+            part1 = MIMEText(text_content, 'plain')
+            part2 = MIMEText(html_content, 'html')
             message.attach(part1)
             message.attach(part2)
 

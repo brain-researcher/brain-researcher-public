@@ -71,9 +71,7 @@ def _load_data(img: str) -> np.ndarray:
     return np.asarray(data, dtype=float)
 
 
-def _cross_val_scores(
-    params: MVPADecodingParameters, data: np.ndarray
-) -> Tuple[np.ndarray, bool]:
+def _cross_val_scores(params: MVPADecodingParameters, data: np.ndarray) -> Tuple[np.ndarray, bool]:
     try:
         from sklearn.linear_model import LogisticRegression
         from sklearn.model_selection import KFold
@@ -117,9 +115,7 @@ def run_mvpa_decoding(params: MVPADecodingParameters) -> Dict[str, Any]:
     pvalue = None
     if params.permutations > 0:
         null_scores = rng.permutation(scores)  # crude fallback
-        pvalue = float(
-            (np.sum(null_scores >= scores.mean()) + 1) / (len(null_scores) + 1)
-        )
+        pvalue = float((np.sum(null_scores >= scores.mean()) + 1) / (len(null_scores) + 1))
 
     summary = {
         "classifier": params.classifier,

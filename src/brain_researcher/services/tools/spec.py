@@ -12,9 +12,8 @@ import logging
 import re
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, model_validator
-
 from brain_researcher.services.tools.metadata_schema import normalize_tags
+from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
 

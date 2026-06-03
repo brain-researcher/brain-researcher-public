@@ -239,19 +239,13 @@ def resolve_mapping_path(
                 canonical_path=spec.canonical_path,
                 reason="env_override_alias",
             )
-        if _is_usable(
-            override_path, kind=spec.kind if spec else "file", must_exist=must_exist
-        ):
+        if _is_usable(override_path, kind=spec.kind if spec else "file", must_exist=must_exist):
             return override_path
 
     if spec is None:
-        if requested_abs and _is_usable(
-            requested_abs, kind="file", must_exist=must_exist
-        ):
+        if requested_abs and _is_usable(requested_abs, kind="file", must_exist=must_exist):
             return requested_abs
-        if fallback_path and _is_usable(
-            fallback_path, kind="file", must_exist=must_exist
-        ):
+        if fallback_path and _is_usable(fallback_path, kind="file", must_exist=must_exist):
             return fallback_path
         raise FileNotFoundError(
             f"Mapping '{mapping_id}' is not registered and no usable path was provided."
@@ -261,9 +255,7 @@ def resolve_mapping_path(
     canonical = spec.canonical_path
 
     if requested_abs is not None:
-        if requested_abs == canonical and _is_usable(
-            canonical, kind=kind, must_exist=must_exist
-        ):
+        if requested_abs == canonical and _is_usable(canonical, kind=kind, must_exist=must_exist):
             return canonical
         if requested_abs in spec.aliases:
             _record_alias_hit(

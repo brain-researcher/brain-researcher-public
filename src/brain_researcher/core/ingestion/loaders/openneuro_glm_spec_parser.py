@@ -12,9 +12,7 @@ from typing import Dict, Iterable, List, Optional
 logger = logging.getLogger(__name__)
 
 
-_SPEC_PATTERN = re.compile(
-    r"^(?P<dataset>ds\d+)-(?P<task>.+?)_specs\.json$", re.IGNORECASE
-)
+_SPEC_PATTERN = re.compile(r"^(?P<dataset>ds\d+)-(?P<task>.+?)_specs\.json$", re.IGNORECASE)
 
 
 @dataclass
@@ -99,11 +97,7 @@ def _build_task_spec(
         bids_model_version=bids_model_version,
         model_name=model_name,
         group_by=group_by,
-        extra_metadata={
-            k: v
-            for k, v in spec_data.items()
-            if k not in {"BIDSModelVersion", "Name", "Nodes", "Input"}
-        },
+        extra_metadata={k: v for k, v in spec_data.items() if k not in {"BIDSModelVersion", "Name", "Nodes", "Input"}},
         fitlins_params=_extract_fitlins_params(spec_data),
     )
 
@@ -190,16 +184,10 @@ def _extract_fitlins_params(spec_data: Dict[str, object]) -> Dict[str, object]:
             params["convolve_input"] = step.get("Input")
             break
 
-    model_block = (
-        run_node.get("Model", {}) if isinstance(run_node.get("Model"), dict) else {}
-    )
+    model_block = run_node.get("Model", {}) if isinstance(run_node.get("Model"), dict) else {}
     if model_block.get("Type"):
         params["model_type"] = model_block.get("Type")
-    opts = (
-        model_block.get("Options", {})
-        if isinstance(model_block.get("Options"), dict)
-        else {}
-    )
+    opts = model_block.get("Options", {}) if isinstance(model_block.get("Options"), dict) else {}
     if opts:
         params["model_options"] = opts
         if "HighPassFilterCutoff" in opts:

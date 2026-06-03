@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Test script for BR-KG deployment on brain-researcher.com
+Test script for BR-KG deployment on ${PUBLIC_HOSTNAME}
 """
 
 import requests
 
 # Configuration
-BASE_URL = "https://br_kg.brain-researcher.com"
+BASE_URL = "https://br_kg.${PUBLIC_HOSTNAME}"
 # For testing before DNS setup, use Railway URL:
 # BASE_URL = "https://your-railway-app.up.railway.app"
 
@@ -68,7 +68,7 @@ def main():
 
     print("\n" + "=" * 50)
     print("🎉 Brain Research Platform Test Complete!")
-    print("\n📊 Key URLs for brain-researcher.com:")
+    print("\n📊 Key URLs for ${PUBLIC_HOSTNAME}:")
     print(f"   🏠 Homepage: {BASE_URL}")
     print(f"   📈 Dashboard: {BASE_URL}/dashboard/")
     print(f"   🔬 API Docs: {BASE_URL}/api/glmfitlins/")

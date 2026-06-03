@@ -51,7 +51,7 @@ function handler(event) {
                 '</static/css/main.css>; rel=preload; as=style',
                 '</static/js/main.js>; rel=preload; as=script',
                 '//fonts.googleapis.com; rel=preconnect; crossorigin',
-                '//api.brain-researcher.com; rel=preconnect'
+                '//api.${PUBLIC_HOSTNAME}; rel=preconnect'
             ].join(', ')
         };
     }

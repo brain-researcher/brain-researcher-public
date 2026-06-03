@@ -48,9 +48,7 @@ class ToolCatalogValidator:
             return False
         return True
 
-    def validate_operation_hierarchy_acyclic(
-        self, operations: list[dict[str, Any]]
-    ) -> bool:
+    def validate_operation_hierarchy_acyclic(self, operations: list[dict[str, Any]]) -> bool:
         """Check that operation parent-child relationships form a DAG (no cycles).
 
         Uses a simple DFS-based cycle detection without external dependencies.
@@ -101,9 +99,7 @@ class ToolCatalogValidator:
                 dfs(op_id, [])
 
         if cycles_found:
-            self.result.add_error(
-                f"Cycles detected in operation hierarchy: {cycles_found[:5]}"
-            )
+            self.result.add_error(f"Cycles detected in operation hierarchy: {cycles_found[:5]}")
             return False
         return True
 
@@ -129,9 +125,7 @@ class ToolCatalogValidator:
         if all(isinstance(v, dict) for v in evidence.values()):
             return True, evidence
 
-        self.result.add_warning(
-            "Evidence file format ambiguous, attempting best-effort parse"
-        )
+        self.result.add_warning("Evidence file format ambiguous, attempting best-effort parse")
         return True, evidence
 
     def validate_family_resources_consistency(
@@ -151,21 +145,15 @@ class ToolCatalogValidator:
         mismatches: list[str] = []
         for tool in tools:
             tool_id = tool.get("id")
-            tool_resources = set(tool.get("consumes", [])) | set(
-                tool.get("produces", [])
-            )
+            tool_resources = set(tool.get("consumes", [])) | set(tool.get("produces", []))
             for cap in tool.get("capabilities", []):
                 if cap in family_resources:
                     fam_resources = family_resources[cap]
-                    if tool_resources and not tool_resources.issubset(
-                        fam_resources | tool_resources
-                    ):
+                    if tool_resources and not tool_resources.issubset(fam_resources | tool_resources):
                         # Tool has resources not declared by family (just a warning)
                         extra = tool_resources - fam_resources
                         if extra and len(mismatches) < 5:
-                            mismatches.append(
-                                f"{tool_id}: extra resources {extra} not in family {cap}"
-                            )
+                            mismatches.append(f"{tool_id}: extra resources {extra} not in family {cap}")
 
         if mismatches:
             self.result.add_warning(f"Tool/family resource mismatches: {mismatches}")

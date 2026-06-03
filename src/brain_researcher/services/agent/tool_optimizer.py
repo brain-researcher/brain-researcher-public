@@ -4,25 +4,24 @@ Implements parallel execution, batching, and performance optimization for 207+ t
 """
 
 import asyncio
-import hashlib
-import json
 import logging
-import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Callable
+import time
+import hashlib
+import json
 
+from brain_researcher.services.tools.tool_base import BRKGToolWrapper
 from brain_researcher.services.agent.cache_manager import CacheManager
 from brain_researcher.services.agent.parallel_executor import ParallelExecutor
-from brain_researcher.services.tools.tool_base import BRKGToolWrapper
 
 logger = logging.getLogger(__name__)
 
 
 class ToolCategory(Enum):
     """Categories for tool grouping and optimization."""
-
     FMRI_ANALYSIS = "fmri_analysis"
     PREPROCESSING = "preprocessing"
     STATISTICAL = "statistical"
@@ -37,7 +36,6 @@ class ToolCategory(Enum):
 
 class ExecutionMode(Enum):
     """Execution modes for tools."""
-
     SEQUENTIAL = "sequential"
     PARALLEL = "parallel"
     BATCH = "batch"
@@ -48,7 +46,6 @@ class ExecutionMode(Enum):
 @dataclass
 class ToolProfile:
     """Performance profile for a tool."""
-
     tool_name: str
     category: ToolCategory
     avg_execution_time: float = 0.0
@@ -65,7 +62,6 @@ class ToolProfile:
 @dataclass
 class BatchRequest:
     """Batch execution request."""
-
     tool_name: str
     requests: List[Dict[str, Any]]
     mode: ExecutionMode = ExecutionMode.BATCH
@@ -76,12 +72,10 @@ class BatchRequest:
 class ToolOptimizer:
     """Optimizes tool execution through parallelization, batching, and caching."""
 
-    def __init__(
-        self,
-        max_workers: int = 10,
-        enable_gpu: bool = True,
-        cache_manager: Optional[CacheManager] = None,
-    ):
+    def __init__(self,
+                 max_workers: int = 10,
+                 enable_gpu: bool = True,
+                 cache_manager: Optional[CacheManager] = None):
         """Initialize the tool optimizer.
 
         Args:
@@ -150,12 +144,10 @@ class ToolOptimizer:
         self.tool_profiles[tool_name] = profile
         return profile
 
-    async def execute_optimized(
-        self,
-        tool: BRKGToolWrapper,
-        args: Dict[str, Any],
-        mode: Optional[ExecutionMode] = None,
-    ) -> Any:
+    async def execute_optimized(self,
+                                tool: BRKGToolWrapper,
+                                args: Dict[str, Any],
+                                mode: Optional[ExecutionMode] = None) -> Any:
         """Execute a tool with optimizations.
 
         Args:
@@ -180,9 +172,7 @@ class ToolOptimizer:
             cached_result = await self.cache_manager.get(cache_key)
             if cached_result is not None:
                 self.metrics["cache_hits"] += 1
-                profile.cache_hit_rate = self.metrics["cache_hits"] / (
-                    profile.execution_count + 1
-                )
+                profile.cache_hit_rate = self.metrics["cache_hits"] / (profile.execution_count + 1)
                 return cached_result
 
         # Determine execution mode
@@ -206,8 +196,9 @@ class ToolOptimizer:
         # Update profile
         profile.execution_count += 1
         profile.avg_execution_time = (
-            profile.avg_execution_time * (profile.execution_count - 1) + execution_time
-        ) / profile.execution_count
+            (profile.avg_execution_time * (profile.execution_count - 1) + execution_time)
+            / profile.execution_count
+        )
 
         # Cache result if applicable
         if profile.cacheable and self.cache_manager and result:
@@ -230,14 +221,13 @@ class ToolOptimizer:
         profile = self.tool_profiles.get(tool_name)
 
         if not profile:
-            logger.warning(
-                f"No profile for tool {tool_name}, using sequential execution"
-            )
+            logger.warning(f"No profile for tool {tool_name}, using sequential execution")
             return await self._execute_batch_sequential(batch_request)
 
         # Select appropriate batch executor
         executor = self.category_executors.get(
-            profile.category, self._execute_batch_parallel
+            profile.category,
+            self._execute_batch_parallel
         )
 
         self.metrics["batch_executions"] += 1
@@ -273,18 +263,8 @@ class ToolOptimizer:
 
     def _check_gpu_capability(self, tool_name: str) -> bool:
         """Check if a tool can use GPU acceleration."""
-        gpu_keywords = [
-            "torch",
-            "tensorflow",
-            "cuda",
-            "gpu",
-            "deep",
-            "nn",
-            "convol",
-            "transform",
-            "fft",
-            "matrix",
-        ]
+        gpu_keywords = ["torch", "tensorflow", "cuda", "gpu", "deep", "nn",
+                       "convol", "transform", "fft", "matrix"]
         return any(keyword in tool_name.lower() for keyword in gpu_keywords)
 
     def _check_parallelizable(self, tool_name: str) -> bool:
@@ -320,9 +300,7 @@ class ToolOptimizer:
         key_data = json.dumps({"tool": tool_name, "args": args}, sort_keys=True)
         return hashlib.sha256(key_data.encode()).hexdigest()
 
-    def _select_execution_mode(
-        self, profile: ToolProfile, args: Dict[str, Any]
-    ) -> ExecutionMode:
+    def _select_execution_mode(self, profile: ToolProfile, args: Dict[str, Any]) -> ExecutionMode:
         """Select optimal execution mode based on profile and args."""
         # Check for GPU acceleration first
         if profile.gpu_capable and self.enable_gpu:
@@ -343,30 +321,22 @@ class ToolOptimizer:
         """Estimate data size in MB from arguments."""
         # Simplified estimation
         import sys
-
         return sys.getsizeof(args) / (1024 * 1024)
 
-    async def _execute_sequential(
-        self, tool: BRKGToolWrapper, args: Dict[str, Any]
-    ) -> Any:
+    async def _execute_sequential(self, tool: BRKGToolWrapper, args: Dict[str, Any]) -> Any:
         """Execute tool sequentially."""
         return tool.run(**args)
 
-    async def _execute_parallel(
-        self, tool: BRKGToolWrapper, args: Dict[str, Any]
-    ) -> Any:
+    async def _execute_parallel(self, tool: BRKGToolWrapper, args: Dict[str, Any]) -> Any:
         """Execute tool in parallel thread."""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(self.thread_pool, tool.run, **args)
 
-    async def _execute_gpu_accelerated(
-        self, tool: BRKGToolWrapper, args: Dict[str, Any]
-    ) -> Any:
+    async def _execute_gpu_accelerated(self, tool: BRKGToolWrapper, args: Dict[str, Any]) -> Any:
         """Execute tool with GPU acceleration."""
         # Check for GPU availability
         try:
             import torch
-
             if torch.cuda.is_available():
                 # Move data to GPU if applicable
                 args = self._move_to_gpu(args)
@@ -401,9 +371,9 @@ class ToolOptimizer:
             results.append(await self._execute_sequential(None, request))
         return results
 
-    async def _execute_batch_parallel(
-        self, batch_request: BatchRequest, profile: ToolProfile
-    ) -> List[Any]:
+    async def _execute_batch_parallel(self,
+                                     batch_request: BatchRequest,
+                                     profile: ToolProfile) -> List[Any]:
         """Execute batch requests in parallel."""
         tasks = []
         for request in batch_request.requests:
@@ -414,15 +384,15 @@ class ToolOptimizer:
         # Execute with concurrency limit
         results = []
         for i in range(0, len(tasks), batch_request.max_parallel):
-            batch_tasks = tasks[i : i + batch_request.max_parallel]
+            batch_tasks = tasks[i:i + batch_request.max_parallel]
             batch_results = await asyncio.gather(*batch_tasks)
             results.extend(batch_results)
 
         return results
 
-    async def _execute_fmri_batch(
-        self, batch_request: BatchRequest, profile: ToolProfile
-    ) -> List[Any]:
+    async def _execute_fmri_batch(self,
+                                  batch_request: BatchRequest,
+                                  profile: ToolProfile) -> List[Any]:
         """Optimized batch execution for fMRI tools."""
         # Group by similar parameters for better cache utilization
         grouped = self._group_similar_requests(batch_request.requests)
@@ -434,33 +404,31 @@ class ToolOptimizer:
                 BatchRequest(
                     tool_name=batch_request.tool_name,
                     requests=group,
-                    max_parallel=min(5, batch_request.max_parallel),
+                    max_parallel=min(5, batch_request.max_parallel)
                 ),
-                profile,
+                profile
             )
             results.extend(group_results)
 
         return results
 
-    async def _execute_preprocessing_batch(
-        self, batch_request: BatchRequest, profile: ToolProfile
-    ) -> List[Any]:
+    async def _execute_preprocessing_batch(self,
+                                          batch_request: BatchRequest,
+                                          profile: ToolProfile) -> List[Any]:
         """Optimized batch execution for preprocessing tools."""
         # Use process pool for CPU-intensive preprocessing
         loop = asyncio.get_event_loop()
 
         futures = []
         for request in batch_request.requests:
-            future = loop.run_in_executor(
-                self.process_pool, self._process_data, request
-            )
+            future = loop.run_in_executor(self.process_pool, self._process_data, request)
             futures.append(future)
 
         return await asyncio.gather(*futures)
 
-    async def _execute_statistical_batch(
-        self, batch_request: BatchRequest, profile: ToolProfile
-    ) -> List[Any]:
+    async def _execute_statistical_batch(self,
+                                        batch_request: BatchRequest,
+                                        profile: ToolProfile) -> List[Any]:
         """Optimized batch execution for statistical tools."""
         # Vectorize operations where possible
         if self._can_vectorize(batch_request.requests):
@@ -468,25 +436,23 @@ class ToolOptimizer:
 
         return await self._execute_batch_parallel(batch_request, profile)
 
-    async def _execute_visualization_batch(
-        self, batch_request: BatchRequest, profile: ToolProfile
-    ) -> List[Any]:
+    async def _execute_visualization_batch(self,
+                                          batch_request: BatchRequest,
+                                          profile: ToolProfile) -> List[Any]:
         """Optimized batch execution for visualization tools."""
         # Render visualizations in parallel with resource limits
         return await self._execute_batch_parallel(
             BatchRequest(
                 tool_name=batch_request.tool_name,
                 requests=batch_request.requests,
-                max_parallel=min(
-                    3, batch_request.max_parallel
-                ),  # Limit concurrent renders
+                max_parallel=min(3, batch_request.max_parallel)  # Limit concurrent renders
             ),
-            profile,
+            profile
         )
 
-    async def _execute_deep_learning_batch(
-        self, batch_request: BatchRequest, profile: ToolProfile
-    ) -> List[Any]:
+    async def _execute_deep_learning_batch(self,
+                                          batch_request: BatchRequest,
+                                          profile: ToolProfile) -> List[Any]:
         """Optimized batch execution for deep learning tools."""
         # Batch inputs for GPU processing
         if self.enable_gpu and profile.gpu_capable:
@@ -517,9 +483,7 @@ class ToolOptimizer:
             # Fallback to CPU execution
             return await self._execute_batch_parallel(batch_request, None)
 
-    def _group_similar_requests(
-        self, requests: List[Dict[str, Any]]
-    ) -> List[List[Dict[str, Any]]]:
+    def _group_similar_requests(self, requests: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
         """Group similar requests for better cache utilization."""
         groups = {}
 
@@ -613,12 +577,8 @@ class ToolOptimizer:
 
         # Add tool profile stats
         stats["profiled_tools"] = len(self.tool_profiles)
-        stats["gpu_capable_tools"] = sum(
-            1 for p in self.tool_profiles.values() if p.gpu_capable
-        )
-        stats["cacheable_tools"] = sum(
-            1 for p in self.tool_profiles.values() if p.cacheable
-        )
+        stats["gpu_capable_tools"] = sum(1 for p in self.tool_profiles.values() if p.gpu_capable)
+        stats["cacheable_tools"] = sum(1 for p in self.tool_profiles.values() if p.cacheable)
 
         return stats
 

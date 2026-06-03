@@ -4,26 +4,21 @@ This module provides a complete ML pipeline including training, evaluation,
 and prediction services for graph machine learning tasks.
 """
 
+import logging
 import asyncio
 import json
-import logging
-import pickle
-from dataclasses import asdict, dataclass, field
+from typing import Dict, List, Any, Optional, Tuple, Union, Callable
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+import pickle
 
 try:
-    import joblib
     import numpy as np
-    from sklearn.metrics import (
-        accuracy_score,
-        precision_recall_fscore_support,
-        roc_auc_score,
-    )
+    from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
     from sklearn.model_selection import train_test_split
-
+    import joblib
     SKLEARN_AVAILABLE = True
 except ImportError:
     np = None
@@ -34,8 +29,8 @@ except ImportError:
     joblib = None
     SKLEARN_AVAILABLE = False
 
-from .gnn_models import GNNConfig, GNNModelType, GNNPredictor
-from .graph_embeddings import EmbeddingConfig, EmbeddingType, GraphEmbedder
+from .gnn_models import GNNPredictor, GNNModelType, GNNConfig
+from .graph_embeddings import GraphEmbedder, EmbeddingType, EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +93,7 @@ class MLTask:
             "test_ratio": self.test_ratio,
             "random_seed": self.random_seed,
             "created_at": self.created_at.isoformat(),
-            "tags": self.tags,
+            "tags": self.tags
         }
 
     @classmethod
@@ -118,10 +113,8 @@ class MLTask:
             val_ratio=data.get("val_ratio", 0.1),
             test_ratio=data.get("test_ratio", 0.1),
             random_seed=data.get("random_seed", 42),
-            created_at=datetime.fromisoformat(
-                data.get("created_at", datetime.now().isoformat())
-            ),
-            tags=data.get("tags", []),
+            created_at=datetime.fromisoformat(data.get("created_at", datetime.now().isoformat())),
+            tags=data.get("tags", [])
         )
 
 
@@ -171,7 +164,7 @@ class TrainingResult:
             "best_epoch": self.best_epoch,
             "status": self.status,
             "error_message": self.error_message,
-            "completed_at": self.completed_at.isoformat(),
+            "completed_at": self.completed_at.isoformat()
         }
 
 
@@ -185,9 +178,7 @@ class ModelTrainer:
             model_storage_path: Path to store trained models
         """
         if not SKLEARN_AVAILABLE:
-            logger.warning(
-                "scikit-learn not available, some functionality may be limited"
-            )
+            logger.warning("scikit-learn not available, some functionality may be limited")
 
         self.model_storage_path = Path(model_storage_path)
         self.model_storage_path.mkdir(parents=True, exist_ok=True)
@@ -216,7 +207,7 @@ class ModelTrainer:
             self.active_trainings[task.task_id] = {
                 "start_time": start_time,
                 "status": "training",
-                "progress": 0.0,
+                "progress": 0.0
             }
 
             # Train based on model type
@@ -240,9 +231,7 @@ class ModelTrainer:
                 # Update path to full path
                 result.model_path = str(model_dir / Path(result.model_path).name)
 
-            logger.info(
-                f"Completed training for task {task.task_id} in {result.training_time_seconds:.2f}s"
-            )
+            logger.info(f"Completed training for task {task.task_id} in {result.training_time_seconds:.2f}s")
 
             # Notify callbacks
             for callback in self.training_callbacks:
@@ -262,7 +251,7 @@ class ModelTrainer:
                 training_time_seconds=(datetime.now() - start_time).total_seconds(),
                 status="failed",
                 error_message=str(e),
-                completed_at=datetime.now(),
+                completed_at=datetime.now()
             )
 
             return result
@@ -302,7 +291,7 @@ class ModelTrainer:
             model_type=model_type,
             input_dim=input_dim,
             output_dim=output_dim,
-            **{k: v for k, v in model_config.items() if k not in ["model_type"]},
+            **{k: v for k, v in model_config.items() if k not in ["model_type"]}
         )
 
         # Create and build model
@@ -318,7 +307,9 @@ class ModelTrainer:
             node_ids = list(task.labels.keys())
             if SKLEARN_AVAILABLE:
                 train_nodes, val_nodes = train_test_split(
-                    node_ids, train_size=task.train_ratio, random_state=task.random_seed
+                    node_ids,
+                    train_size=task.train_ratio,
+                    random_state=task.random_seed
                 )
             else:
                 # Simple split without sklearn
@@ -331,27 +322,23 @@ class ModelTrainer:
                 task.labels,
                 train_mask=train_nodes,
                 val_mask=val_nodes,
-                num_classes=output_dim,
+                num_classes=output_dim
             )
 
         elif task.task_type == TaskType.LINK_PREDICTION:
             # Generate positive and negative edges for training
             edges = task.graph_data.get("edges", [])
-            positive_edges = [
-                (e.get("start") or e.get("source"), e.get("end") or e.get("target"))
-                for e in edges
-            ]
+            positive_edges = [(e.get("start") or e.get("source"),
+                             e.get("end") or e.get("target")) for e in edges]
 
             # Generate negative edges (sample non-existing edges)
-            negative_edges = self._generate_negative_edges(
-                task.graph_data, len(positive_edges)
-            )
+            negative_edges = self._generate_negative_edges(task.graph_data, len(positive_edges))
 
             training_results = predictor.train_link_prediction(
                 task.graph_data,
                 positive_edges,
                 negative_edges,
-                train_ratio=task.train_ratio,
+                train_ratio=task.train_ratio
             )
 
         else:
@@ -368,9 +355,7 @@ class ModelTrainer:
             task_id=task.task_id,
             model_type="gnn",
             training_metrics={"final_loss": training_results.get("final_loss", 0.0)},
-            validation_metrics={
-                "best_val_acc": training_results.get("best_val_acc", 0.0)
-            },
+            validation_metrics={"best_val_acc": training_results.get("best_val_acc", 0.0)},
             training_history=training_results.get("training_history", []),
             model_path=model_filename,
             model_params=gnn_config.to_dict(),
@@ -391,7 +376,7 @@ class ModelTrainer:
         # Create embedding config
         embedding_config = EmbeddingConfig(
             embedding_type=embedding_type,
-            **{k: v for k, v in model_config.items() if k not in ["embedding_type"]},
+            **{k: v for k, v in model_config.items() if k not in ["embedding_type"]}
         )
 
         # Create embedder
@@ -421,17 +406,15 @@ class ModelTrainer:
             training_metrics={
                 "num_embeddings": embedding_info["num_embeddings"],
                 "embedding_dimension": embedding_info["embedding_dimension"],
-                "training_time_seconds": training_time,
+                "training_time_seconds": training_time
             },
             model_path=model_filename,
-            model_params=embedding_config.to_dict(),
+            model_params=embedding_config.to_dict()
         )
 
         return result
 
-    def _generate_negative_edges(
-        self, graph_data: Dict[str, Any], num_negatives: int
-    ) -> List[Tuple[str, str]]:
+    def _generate_negative_edges(self, graph_data: Dict[str, Any], num_negatives: int) -> List[Tuple[str, str]]:
         """Generate negative edges for link prediction."""
         nodes = graph_data.get("nodes", [])
         edges = graph_data.get("edges", [])
@@ -450,7 +433,6 @@ class ModelTrainer:
         max_attempts = num_negatives * 10
 
         import random
-
         while len(negative_edges) < num_negatives and attempts < max_attempts:
             src = random.choice(nodes)
             dst = random.choice(nodes)
@@ -481,16 +463,14 @@ class ModelEvaluator:
     def __init__(self):
         """Initialize model evaluator."""
         if not SKLEARN_AVAILABLE:
-            logger.warning(
-                "scikit-learn not available, some metrics may not be available"
-            )
+            logger.warning("scikit-learn not available, some metrics may not be available")
 
     def evaluate_model(
         self,
         model_path: str,
         test_data: Dict[str, Any],
         task_type: TaskType,
-        labels: Optional[Dict[str, Any]] = None,
+        labels: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Evaluate a trained model.
 
@@ -518,7 +498,10 @@ class ModelEvaluator:
             return {"error": str(e)}
 
     def _evaluate_node_classification(
-        self, model_path: str, test_data: Dict[str, Any], labels: Dict[str, Any]
+        self,
+        model_path: str,
+        test_data: Dict[str, Any],
+        labels: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Evaluate node classification model."""
         # Load GNN model
@@ -526,16 +509,14 @@ class ModelEvaluator:
         predictor.load_model(model_path)
 
         # Make predictions
-        predictions_result = predictor.predict(
-            test_data, task_type="node_classification"
-        )
+        predictions_result = predictor.predict(test_data, task_type="node_classification")
         predictions = predictions_result["predictions"]
         probabilities = predictions_result["probabilities"]
         node_ids = predictions_result["node_ids"]
 
         # Get ground truth
         true_labels = [labels[node_id] for node_id in node_ids if node_id in labels]
-        pred_labels = predictions[: len(true_labels)]
+        pred_labels = predictions[:len(true_labels)]
 
         if not true_labels:
             return {"error": "No ground truth labels found"}
@@ -557,16 +538,12 @@ class ModelEvaluator:
             # AUC if probabilities available
             if len(set(true_labels)) == 2:  # Binary classification
                 try:
-                    metrics["auc"] = roc_auc_score(
-                        true_labels, probabilities[: len(true_labels), 1]
-                    )
+                    metrics["auc"] = roc_auc_score(true_labels, probabilities[:len(true_labels), 1])
                 except:
                     pass
         else:
             # Basic accuracy without sklearn
-            metrics["accuracy"] = sum(
-                1 for i in range(len(true_labels)) if true_labels[i] == pred_labels[i]
-            ) / len(true_labels)
+            metrics["accuracy"] = sum(1 for i in range(len(true_labels)) if true_labels[i] == pred_labels[i]) / len(true_labels)
 
         metrics["num_test_samples"] = len(true_labels)
         metrics["num_classes"] = len(set(true_labels))
@@ -574,7 +551,10 @@ class ModelEvaluator:
         return metrics
 
     def _evaluate_link_prediction(
-        self, model_path: str, test_data: Dict[str, Any], test_edges: Dict[str, Any]
+        self,
+        model_path: str,
+        test_data: Dict[str, Any],
+        test_edges: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Evaluate link prediction model."""
         # Load GNN model
@@ -591,7 +571,9 @@ class ModelEvaluator:
         # Make predictions
         all_test_edges = positive_edges + negative_edges
         predictions_result = predictor.predict(
-            test_data, task_type="link_prediction", test_edges=all_test_edges
+            test_data,
+            task_type="link_prediction",
+            test_edges=all_test_edges
         )
 
         link_probs = predictions_result["link_probabilities"]
@@ -624,9 +606,7 @@ class ModelEvaluator:
 
         return metrics
 
-    def _evaluate_embeddings(
-        self, model_path: str, test_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _evaluate_embeddings(self, model_path: str, test_data: Dict[str, Any]) -> Dict[str, Any]:
         """Evaluate embedding quality."""
         # Load embeddings
         embedder = GraphEmbedder(EmbeddingType.NODE2VEC)  # Type will be loaded
@@ -649,8 +629,7 @@ class ModelEvaluator:
             "embedding_dimension": embedding_matrix.shape[1],
             "mean_norm": float(np.mean(np.linalg.norm(embedding_matrix, axis=1))),
             "std_norm": float(np.std(np.linalg.norm(embedding_matrix, axis=1))),
-            "coverage": embedding_info.get("num_embeddings", 0)
-            / len(test_data.get("nodes", [])),
+            "coverage": embedding_info.get("num_embeddings", 0) / len(test_data.get("nodes", []))
         }
 
         return metrics
@@ -674,7 +653,11 @@ class PredictionService:
         logger.info("Initialized prediction service")
 
     def predict(
-        self, model_id: str, graph_data: Dict[str, Any], task_type: TaskType, **kwargs
+        self,
+        model_id: str,
+        graph_data: Dict[str, Any],
+        task_type: TaskType,
+        **kwargs
     ) -> Dict[str, Any]:
         """Make predictions using a trained model.
 
@@ -750,27 +733,21 @@ class PredictionService:
         model: GNNPredictor,
         graph_data: Dict[str, Any],
         task_type: TaskType,
-        **kwargs,
+        **kwargs
     ) -> Dict[str, Any]:
         """Make predictions with GNN model."""
         if task_type == TaskType.NODE_CLASSIFICATION:
             num_classes = kwargs.get("num_classes", 2)
-            return model.predict(
-                graph_data, task_type="node_classification", num_classes=num_classes
-            )
+            return model.predict(graph_data, task_type="node_classification", num_classes=num_classes)
 
         elif task_type == TaskType.LINK_PREDICTION:
             test_edges = kwargs.get("test_edges", [])
-            return model.predict(
-                graph_data, task_type="link_prediction", test_edges=test_edges
-            )
+            return model.predict(graph_data, task_type="link_prediction", test_edges=test_edges)
 
         else:
             return model.predict(graph_data, task_type="node_embeddings")
 
-    def _predict_with_embedder(
-        self, model: GraphEmbedder, graph_data: Dict[str, Any], **kwargs
-    ) -> Dict[str, Any]:
+    def _predict_with_embedder(self, model: GraphEmbedder, graph_data: Dict[str, Any], **kwargs) -> Dict[str, Any]:
         """Make predictions with embedding model."""
         # For embeddings, we just return the embeddings
         embeddings = model.get_all_embeddings()
@@ -778,18 +755,16 @@ class PredictionService:
         # Optional: find similar entities
         target_entity = kwargs.get("target_entity")
         if target_entity and target_entity in embeddings:
-            similar_entities = model.most_similar(
-                target_entity, topn=kwargs.get("topn", 10)
-            )
+            similar_entities = model.most_similar(target_entity, topn=kwargs.get("topn", 10))
             return {
                 "target_entity": target_entity,
                 "embedding": embeddings[target_entity].tolist(),
-                "similar_entities": similar_entities,
+                "similar_entities": similar_entities
             }
 
         return {
             "embeddings": {k: v.tolist() for k, v in embeddings.items()},
-            "embedding_info": model.get_embedding_info(),
+            "embedding_info": model.get_embedding_info()
         }
 
     def list_available_models(self) -> List[Dict[str, Any]]:
@@ -801,7 +776,7 @@ class PredictionService:
                 model_info = {
                     "model_id": model_dir.name,
                     "model_files": [],
-                    "model_type": "unknown",
+                    "model_type": "unknown"
                 }
 
                 # Check for GNN files
@@ -892,15 +867,10 @@ class MLPipeline:
         if training_result.status == "completed" and training_result.model_path:
             try:
                 evaluation_metrics = self.evaluator.evaluate_model(
-                    str(
-                        self.storage_path
-                        / "models"
-                        / task_id
-                        / training_result.model_path
-                    ),
+                    str(self.storage_path / "models" / task_id / training_result.model_path),
                     task.graph_data,
                     task.task_type,
-                    task.labels,
+                    task.labels
                 )
                 training_result.test_metrics = evaluation_metrics
                 self._save_training_result(training_result)
@@ -911,7 +881,10 @@ class MLPipeline:
         return training_result
 
     def predict(
-        self, task_id: str, graph_data: Dict[str, Any], **kwargs
+        self,
+        task_id: str,
+        graph_data: Dict[str, Any],
+        **kwargs
     ) -> Dict[str, Any]:
         """Make predictions for a task.
 
@@ -929,7 +902,10 @@ class MLPipeline:
         task = self.tasks[task_id]
 
         return self.prediction_service.predict(
-            task_id, graph_data, task.task_type, **kwargs
+            task_id,
+            graph_data,
+            task.task_type,
+            **kwargs
         )
 
     def get_task(self, task_id: str) -> Optional[MLTask]:
@@ -977,7 +953,6 @@ class MLPipeline:
         model_dir = self.storage_path / "models" / task_id
         if model_dir.exists():
             import shutil
-
             shutil.rmtree(model_dir)
 
         logger.info(f"Deleted task {task_id}")
@@ -989,7 +964,7 @@ class MLPipeline:
         tasks_dir.mkdir(exist_ok=True)
 
         task_file = tasks_dir / f"{task.task_id}.json"
-        with open(task_file, "w") as f:
+        with open(task_file, 'w') as f:
             json.dump(task.to_dict(), f, indent=2)
 
     def _save_training_result(self, result: TrainingResult):
@@ -998,7 +973,7 @@ class MLPipeline:
         results_dir.mkdir(exist_ok=True)
 
         result_file = results_dir / f"{result.task_id}.json"
-        with open(result_file, "w") as f:
+        with open(result_file, 'w') as f:
             json.dump(result.to_dict(), f, indent=2)
 
     def _load_tasks(self):
@@ -1009,7 +984,7 @@ class MLPipeline:
         if tasks_dir.exists():
             for task_file in tasks_dir.glob("*.json"):
                 try:
-                    with open(task_file, "r") as f:
+                    with open(task_file, 'r') as f:
                         task_data = json.load(f)
 
                     task = MLTask.from_dict(task_data)
@@ -1021,20 +996,16 @@ class MLPipeline:
         if results_dir.exists():
             for result_file in results_dir.glob("*.json"):
                 try:
-                    with open(result_file, "r") as f:
+                    with open(result_file, 'r') as f:
                         result_data = json.load(f)
 
                     result = TrainingResult(**result_data)
                     self.training_results[result.task_id] = result
 
                 except Exception as e:
-                    logger.error(
-                        f"Failed to load training result from {result_file}: {e}"
-                    )
+                    logger.error(f"Failed to load training result from {result_file}: {e}")
 
-        logger.info(
-            f"Loaded {len(self.tasks)} tasks and {len(self.training_results)} training results"
-        )
+        logger.info(f"Loaded {len(self.tasks)} tasks and {len(self.training_results)} training results")
 
     def get_pipeline_status(self) -> Dict[str, Any]:
         """Get overall pipeline status."""
@@ -1063,5 +1034,5 @@ class MLPipeline:
             "available_models": len(available_models),
             "task_types": dict(task_types),
             "storage_path": str(self.storage_path),
-            "active_training_details": active_trainings,
+            "active_training_details": active_trainings
         }

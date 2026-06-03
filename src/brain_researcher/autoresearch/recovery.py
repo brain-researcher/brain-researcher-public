@@ -39,10 +39,7 @@ def detect_missing_artifacts(paths: ArtifactPaths) -> list[str]:
 
 def detect_path_drift(paths: ArtifactPaths) -> bool:
     for alias_project_root in paths.alias_project_roots:
-        if (
-            alias_project_root.exists()
-            and alias_project_root.resolve() != paths.project_root
-        ):
+        if alias_project_root.exists() and alias_project_root.resolve() != paths.project_root:
             return True
     return False
 

@@ -6,28 +6,24 @@ specialized for neuroimaging research patterns and feedback analysis.
 """
 
 import asyncio
-import inspect
 import json
 import logging
-import uuid
-from collections import Counter, defaultdict
+import inspect
 from contextlib import contextmanager
-from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Tuple
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
-
-import numpy as np
 import pandas as pd
-from sqlalchemy.orm import Session
+import numpy as np
+from collections import Counter, defaultdict
+import uuid
 
+from sqlalchemy.orm import Session
 from .database import get_db
 from .survey_models import (
-    Survey,
-    SurveyInsight,
-    SurveyQuestion,
-    SurveyResponse,
-    SurveyResponseAnalytics,
+    Survey, SurveyResponse, SurveyQuestion, SurveyInsight,
+    SurveyResponseAnalytics
 )
 
 logger = logging.getLogger(__name__)
@@ -57,10 +53,8 @@ def _get_db_session():
 
     yield db_source
 
-
 class InsightType(Enum):
     """Types of insights that can be generated"""
-
     SENTIMENT_ANALYSIS = "sentiment_analysis"
     RESPONSE_PATTERNS = "response_patterns"
     COMPLETION_TRENDS = "completion_trends"
@@ -71,11 +65,9 @@ class InsightType(Enum):
     PREDICTIVE_INSIGHTS = "predictive_insights"
     ANOMALY_DETECTION = "anomaly_detection"
 
-
 @dataclass
 class InsightResult:
     """Container for insight analysis results"""
-
     insight_type: str
     title: str
     description: str
@@ -87,7 +79,6 @@ class InsightResult:
     def __post_init__(self):
         if self.recommendations is None:
             self.recommendations = []
-
 
 class SurveyInsightsEngine:
     """AI-powered insights engine for survey analysis"""
@@ -102,7 +93,7 @@ class SurveyInsightsEngine:
             InsightType.QUALITY_ASSESSMENT.value: self._assess_response_quality,
             InsightType.COMPARATIVE_ANALYSIS.value: self._comparative_analysis,
             InsightType.PREDICTIVE_INSIGHTS.value: self._generate_predictions,
-            InsightType.ANOMALY_DETECTION.value: self._detect_anomalies,
+            InsightType.ANOMALY_DETECTION.value: self._detect_anomalies
         }
 
         # Neuroimaging-specific patterns
@@ -110,7 +101,7 @@ class SurveyInsightsEngine:
             "scanner_types": ["1.5T", "3T", "7T"],
             "common_sequences": ["T1-MPRAGE", "T2-FLAIR", "EPI", "DTI"],
             "brain_networks": ["DMN", "Salience", "Executive", "Attention"],
-            "cognitive_domains": ["attention", "memory", "executive", "language"],
+            "cognitive_domains": ["attention", "memory", "executive", "language"]
         }
 
     async def process_new_response(self, survey_id: str, response_id: str):
@@ -137,9 +128,7 @@ class SurveyInsightsEngine:
         except Exception as e:
             logger.error(f"Error processing new response {response_id}: {e}")
 
-    async def generate_insights(
-        self, survey_ids: List[str], db: Session
-    ) -> Dict[str, Any]:
+    async def generate_insights(self, survey_ids: List[str], db: Session) -> Dict[str, Any]:
         """Generate comprehensive insights for multiple surveys"""
         insights = {}
 
@@ -153,9 +142,8 @@ class SurveyInsightsEngine:
 
         return insights
 
-    async def get_survey_insights(
-        self, survey_id: str, insight_type: Optional[str], db: Session
-    ) -> List[Dict[str, Any]]:
+    async def get_survey_insights(self, survey_id: str, insight_type: Optional[str],
+                                db: Session) -> List[Dict[str, Any]]:
         """Get specific insights for a survey"""
 
         query = db.query(SurveyInsight).filter(SurveyInsight.survey_id == survey_id)
@@ -174,14 +162,12 @@ class SurveyInsightsEngine:
                 "confidence_score": insight.confidence_score,
                 "supporting_data": insight.supporting_data,
                 "methodology": insight.methodology,
-                "generated_at": insight.generated_at.isoformat(),
+                "generated_at": insight.generated_at.isoformat()
             }
             for insight in insights
         ]
 
-    async def calculate_response_rates(
-        self, survey_ids: List[str], db: Session
-    ) -> Dict[str, float]:
+    async def calculate_response_rates(self, survey_ids: List[str], db: Session) -> Dict[str, float]:
         """Calculate response rates for surveys"""
         response_rates = {}
 
@@ -193,94 +179,65 @@ class SurveyInsightsEngine:
 
                 # Get distribution count (invitations sent)
                 from .survey_models import SurveyDistribution
-
-                distributions = (
-                    db.query(SurveyDistribution)
-                    .filter(SurveyDistribution.survey_id == survey_id)
-                    .all()
-                )
+                distributions = db.query(SurveyDistribution).filter(
+                    SurveyDistribution.survey_id == survey_id
+                ).all()
 
                 total_invitations = sum(d.sent_count for d in distributions)
 
                 # Get response count
-                response_count = (
-                    db.query(SurveyResponse)
-                    .filter(
-                        SurveyResponse.survey_id == survey_id,
-                        SurveyResponse.completion_status == "completed",
-                    )
-                    .count()
-                )
+                response_count = db.query(SurveyResponse).filter(
+                    SurveyResponse.survey_id == survey_id,
+                    SurveyResponse.completion_status == "completed"
+                ).count()
 
                 if total_invitations > 0:
-                    response_rates[survey_id] = (
-                        response_count / total_invitations
-                    ) * 100
+                    response_rates[survey_id] = (response_count / total_invitations) * 100
                 else:
                     response_rates[survey_id] = 0.0
 
             except Exception as e:
-                logger.error(
-                    f"Error calculating response rate for survey {survey_id}: {e}"
-                )
+                logger.error(f"Error calculating response rate for survey {survey_id}: {e}")
                 response_rates[survey_id] = 0.0
 
         return response_rates
 
-    async def calculate_completion_rates(
-        self, survey_ids: List[str], db: Session
-    ) -> Dict[str, float]:
+    async def calculate_completion_rates(self, survey_ids: List[str], db: Session) -> Dict[str, float]:
         """Calculate completion rates for surveys"""
         completion_rates = {}
 
         for survey_id in survey_ids:
             try:
-                total_responses = (
-                    db.query(SurveyResponse)
-                    .filter(SurveyResponse.survey_id == survey_id)
-                    .count()
-                )
+                total_responses = db.query(SurveyResponse).filter(
+                    SurveyResponse.survey_id == survey_id
+                ).count()
 
-                completed_responses = (
-                    db.query(SurveyResponse)
-                    .filter(
-                        SurveyResponse.survey_id == survey_id,
-                        SurveyResponse.completion_status == "completed",
-                    )
-                    .count()
-                )
+                completed_responses = db.query(SurveyResponse).filter(
+                    SurveyResponse.survey_id == survey_id,
+                    SurveyResponse.completion_status == "completed"
+                ).count()
 
                 if total_responses > 0:
-                    completion_rates[survey_id] = (
-                        completed_responses / total_responses
-                    ) * 100
+                    completion_rates[survey_id] = (completed_responses / total_responses) * 100
                 else:
                     completion_rates[survey_id] = 0.0
 
             except Exception as e:
-                logger.error(
-                    f"Error calculating completion rate for survey {survey_id}: {e}"
-                )
+                logger.error(f"Error calculating completion rate for survey {survey_id}: {e}")
                 completion_rates[survey_id] = 0.0
 
         return completion_rates
 
-    async def analyze_demographics(
-        self, survey_ids: List[str], db: Session
-    ) -> Dict[str, Any]:
+    async def analyze_demographics(self, survey_ids: List[str], db: Session) -> Dict[str, Any]:
         """Analyze demographic patterns across surveys"""
         demographics = {}
 
         for survey_id in survey_ids:
             try:
-                responses = (
-                    db.query(SurveyResponse)
-                    .filter(
-                        SurveyResponse.survey_id == survey_id,
-                        SurveyResponse.completion_status == "completed",
-                    )
-                    .all()
-                )
+                responses = db.query(SurveyResponse).filter(
+                    SurveyResponse.survey_id == survey_id,
+                    SurveyResponse.completion_status == "completed"
+                ).all()
 
                 if not responses:
                     demographics[survey_id] = {"message": "No completed responses"}
@@ -306,15 +263,11 @@ class SurveyInsightsEngine:
                     "response_count": len(responses),
                     "age_distribution": self._analyze_numeric_distribution(age_data),
                     "gender_distribution": dict(Counter(gender_data)),
-                    "education_distribution": self._analyze_numeric_distribution(
-                        education_data
-                    ),
+                    "education_distribution": self._analyze_numeric_distribution(education_data)
                 }
 
             except Exception as e:
-                logger.error(
-                    f"Error analyzing demographics for survey {survey_id}: {e}"
-                )
+                logger.error(f"Error analyzing demographics for survey {survey_id}: {e}")
                 demographics[survey_id] = {"error": str(e)}
 
         return demographics
@@ -342,9 +295,7 @@ class SurveyInsightsEngine:
         supporting_data = {
             "age_distribution": self._analyze_numeric_distribution(age_data),
             "gender_distribution": dict(Counter(gender_data)),
-            "education_distribution": self._analyze_numeric_distribution(
-                education_data
-            ),
+            "education_distribution": self._analyze_numeric_distribution(education_data),
             "sample_size": len(responses),
         }
 
@@ -362,9 +313,7 @@ class SurveyInsightsEngine:
 
     # Private insight generation methods
 
-    async def _generate_survey_insights(
-        self, survey_id: str, db: Session
-    ) -> List[Dict[str, Any]]:
+    async def _generate_survey_insights(self, survey_id: str, db: Session) -> List[Dict[str, Any]]:
         """Generate all types of insights for a survey"""
         insights = []
 
@@ -373,14 +322,10 @@ class SurveyInsightsEngine:
         if not survey:
             raise ValueError(f"Survey {survey_id} not found")
 
-        responses = (
-            db.query(SurveyResponse)
-            .filter(
-                SurveyResponse.survey_id == survey_id,
-                SurveyResponse.completion_status == "completed",
-            )
-            .all()
-        )
+        responses = db.query(SurveyResponse).filter(
+            SurveyResponse.survey_id == survey_id,
+            SurveyResponse.completion_status == "completed"
+        ).all()
 
         if len(responses) < 3:  # Need minimum responses for meaningful insights
             return insights
@@ -391,28 +336,21 @@ class SurveyInsightsEngine:
                 insight_result = await generator(survey, responses, db)
                 if insight_result:
                     # Save insight to database
-                    insight_record = await self._save_insight(
-                        survey_id, insight_result, db
-                    )
-                    insights.append(
-                        {
-                            "id": insight_record.id,
-                            "type": insight_result.insight_type,
-                            "title": insight_result.title,
-                            "description": insight_result.description,
-                            "confidence_score": insight_result.confidence_score,
-                        }
-                    )
+                    insight_record = await self._save_insight(survey_id, insight_result, db)
+                    insights.append({
+                        "id": insight_record.id,
+                        "type": insight_result.insight_type,
+                        "title": insight_result.title,
+                        "description": insight_result.description,
+                        "confidence_score": insight_result.confidence_score
+                    })
             except Exception as e:
-                logger.error(
-                    f"Error generating {insight_type} insight for survey {survey_id}: {e}"
-                )
+                logger.error(f"Error generating {insight_type} insight for survey {survey_id}: {e}")
 
         return insights
 
-    async def _analyze_sentiment(
-        self, survey: Survey, responses: List[SurveyResponse], db: Session
-    ) -> Optional[InsightResult]:
+    async def _analyze_sentiment(self, survey: Survey, responses: List[SurveyResponse],
+                               db: Session) -> Optional[InsightResult]:
         """Analyze sentiment in text responses"""
 
         text_responses = []
@@ -425,23 +363,8 @@ class SurveyInsightsEngine:
             return None
 
         # Simple sentiment analysis (would use actual NLP library in production)
-        positive_words = [
-            "good",
-            "excellent",
-            "satisfied",
-            "helpful",
-            "easy",
-            "clear",
-            "useful",
-        ]
-        negative_words = [
-            "bad",
-            "difficult",
-            "confusing",
-            "slow",
-            "unclear",
-            "frustrated",
-        ]
+        positive_words = ["good", "excellent", "satisfied", "helpful", "easy", "clear", "useful"]
+        negative_words = ["bad", "difficult", "confusing", "slow", "unclear", "frustrated"]
 
         sentiment_scores = []
         for text in text_responses:
@@ -450,56 +373,47 @@ class SurveyInsightsEngine:
             negative_count = sum(1 for word in negative_words if word in text_lower)
 
             if positive_count + negative_count > 0:
-                sentiment = (positive_count - negative_count) / (
-                    positive_count + negative_count
-                )
+                sentiment = (positive_count - negative_count) / (positive_count + negative_count)
                 sentiment_scores.append(sentiment)
 
         if not sentiment_scores:
             return None
 
         avg_sentiment = np.mean(sentiment_scores)
-        sentiment_label = (
-            "Positive"
-            if avg_sentiment > 0.1
-            else "Negative" if avg_sentiment < -0.1 else "Neutral"
-        )
+        sentiment_label = "Positive" if avg_sentiment > 0.1 else "Negative" if avg_sentiment < -0.1 else "Neutral"
 
         return InsightResult(
             insight_type=InsightType.SENTIMENT_ANALYSIS.value,
             title=f"Overall Sentiment: {sentiment_label}",
             description=f"Analysis of {len(text_responses)} text responses shows {sentiment_label.lower()} sentiment with an average score of {avg_sentiment:.2f}.",
-            confidence_score=min(
-                0.9, len(sentiment_scores) / 20
-            ),  # Higher confidence with more data
+            confidence_score=min(0.9, len(sentiment_scores) / 20),  # Higher confidence with more data
             supporting_data={
                 "average_sentiment": avg_sentiment,
                 "sentiment_distribution": {
                     "positive": len([s for s in sentiment_scores if s > 0.1]),
                     "neutral": len([s for s in sentiment_scores if -0.1 <= s <= 0.1]),
-                    "negative": len([s for s in sentiment_scores if s < -0.1]),
+                    "negative": len([s for s in sentiment_scores if s < -0.1])
                 },
-                "sample_size": len(text_responses),
+                "sample_size": len(text_responses)
             },
             methodology={
                 "algorithm": "keyword_based_sentiment",
                 "positive_keywords": positive_words,
-                "negative_keywords": negative_words,
-            },
+                "negative_keywords": negative_words
+            }
         )
 
-    async def _analyze_response_patterns(
-        self, survey: Survey, responses: List[SurveyResponse], db: Session
-    ) -> Optional[InsightResult]:
+    async def _analyze_response_patterns(self, survey: Survey, responses: List[SurveyResponse],
+                                       db: Session) -> Optional[InsightResult]:
         """Analyze patterns in survey responses"""
 
         if len(responses) < 5:
             return None
 
         # Get questions
-        questions = (
-            db.query(SurveyQuestion).filter(SurveyQuestion.survey_id == survey.id).all()
-        )
+        questions = db.query(SurveyQuestion).filter(
+            SurveyQuestion.survey_id == survey.id
+        ).all()
 
         question_patterns = {}
 
@@ -520,22 +434,17 @@ class SurveyInsightsEngine:
                     "type": "distribution",
                     "pattern": pattern,
                     "dominant_response": most_common[0],
-                    "dominant_percentage": (most_common[1] / len(question_responses))
-                    * 100,
+                    "dominant_percentage": (most_common[1] / len(question_responses)) * 100
                 }
 
             elif question.question_type == "scale":
-                numeric_responses = [
-                    float(r)
-                    for r in question_responses
-                    if str(r).replace(".", "").isdigit()
-                ]
+                numeric_responses = [float(r) for r in question_responses if str(r).replace('.', '').isdigit()]
                 if numeric_responses:
                     question_patterns[question.id] = {
                         "type": "scale_distribution",
                         "mean": np.mean(numeric_responses),
                         "std": np.std(numeric_responses),
-                        "median": np.median(numeric_responses),
+                        "median": np.median(numeric_responses)
                     }
 
         if not question_patterns:
@@ -544,17 +453,10 @@ class SurveyInsightsEngine:
         # Find interesting patterns
         insights = []
         for q_id, pattern in question_patterns.items():
-            if (
-                pattern["type"] == "distribution"
-                and pattern["dominant_percentage"] > 70
-            ):
-                insights.append(
-                    f"Question {q_id}: {pattern['dominant_percentage']:.1f}% chose '{pattern['dominant_response']}'"
-                )
+            if pattern["type"] == "distribution" and pattern["dominant_percentage"] > 70:
+                insights.append(f"Question {q_id}: {pattern['dominant_percentage']:.1f}% chose '{pattern['dominant_response']}'")
             elif pattern["type"] == "scale_distribution" and pattern["std"] < 0.5:
-                insights.append(
-                    f"Question {q_id}: High consensus (low variability) around {pattern['mean']:.1f}"
-                )
+                insights.append(f"Question {q_id}: High consensus (low variability) around {pattern['mean']:.1f}")
 
         return InsightResult(
             insight_type=InsightType.RESPONSE_PATTERNS.value,
@@ -564,17 +466,16 @@ class SurveyInsightsEngine:
             supporting_data={
                 "patterns": question_patterns,
                 "key_insights": insights,
-                "questions_analyzed": len(question_patterns),
+                "questions_analyzed": len(question_patterns)
             },
             methodology={
                 "algorithm": "frequency_and_distribution_analysis",
-                "minimum_responses_per_question": 3,
-            },
+                "minimum_responses_per_question": 3
+            }
         )
 
-    async def _analyze_completion_trends(
-        self, survey: Survey, responses: List[SurveyResponse], db: Session
-    ) -> Optional[InsightResult]:
+    async def _analyze_completion_trends(self, survey: Survey, responses: List[SurveyResponse],
+                                       db: Session) -> Optional[InsightResult]:
         """Analyze completion time and abandonment patterns"""
 
         completion_times = []
@@ -587,9 +488,7 @@ class SurveyInsightsEngine:
             # Analyze incomplete responses
             if response.completion_status != "completed":
                 response_count = len(response.responses)
-                abandonment_points[response_count] = (
-                    abandonment_points.get(response_count, 0) + 1
-                )
+                abandonment_points[response_count] = abandonment_points.get(response_count, 0) + 1
 
         if not completion_times and not abandonment_points:
             return None
@@ -605,7 +504,7 @@ class SurveyInsightsEngine:
                 "average_seconds": avg_time,
                 "median_seconds": median_time,
                 "average_minutes": avg_time / 60,
-                "sample_size": len(completion_times),
+                "sample_size": len(completion_times)
             }
 
             insights.append(f"Average completion time: {avg_time/60:.1f} minutes")
@@ -614,13 +513,9 @@ class SurveyInsightsEngine:
                 insights.append("Long completion time may indicate survey fatigue")
 
         if abandonment_points:
-            most_common_abandonment = max(
-                abandonment_points.items(), key=lambda x: x[1]
-            )
+            most_common_abandonment = max(abandonment_points.items(), key=lambda x: x[1])
             supporting_data["abandonment_patterns"] = abandonment_points
-            insights.append(
-                f"Most common abandonment point: after {most_common_abandonment[0]} questions"
-            )
+            insights.append(f"Most common abandonment point: after {most_common_abandonment[0]} questions")
 
         return InsightResult(
             insight_type=InsightType.COMPLETION_TRENDS.value,
@@ -630,13 +525,12 @@ class SurveyInsightsEngine:
             supporting_data=supporting_data,
             methodology={
                 "algorithm": "time_series_and_abandonment_analysis",
-                "metrics": ["completion_time", "abandonment_points"],
-            },
+                "metrics": ["completion_time", "abandonment_points"]
+            }
         )
 
-    async def _analyze_neuroimaging_correlations(
-        self, survey: Survey, responses: List[SurveyResponse], db: Session
-    ) -> Optional[InsightResult]:
+    async def _analyze_neuroimaging_correlations(self, survey: Survey, responses: List[SurveyResponse],
+                                               db: Session) -> Optional[InsightResult]:
         """Analyze neuroimaging-specific response patterns"""
 
         neuroimaging_data = defaultdict(list)
@@ -645,11 +539,7 @@ class SurveyInsightsEngine:
         for response in responses:
             for question_id, answer in response.responses.items():
                 # Check if this is neuroimaging-related
-                question = (
-                    db.query(SurveyQuestion)
-                    .filter(SurveyQuestion.id == question_id)
-                    .first()
-                )
+                question = db.query(SurveyQuestion).filter(SurveyQuestion.id == question_id).first()
                 if question and question.neuroimaging_context:
                     context = question.neuroimaging_context
                     category = context.get("category")
@@ -685,9 +575,9 @@ class SurveyInsightsEngine:
                     all_regions.append(data)
 
             region_counts = dict(Counter(all_regions))
-            correlations["popular_brain_regions"] = dict(
-                sorted(region_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-            )
+            correlations["popular_brain_regions"] = dict(sorted(
+                region_counts.items(), key=lambda x: x[1], reverse=True
+            )[:10])
 
         if not correlations:
             return None
@@ -695,18 +585,12 @@ class SurveyInsightsEngine:
         # Generate insights
         insights = []
         if "field_strength_distribution" in correlations:
-            most_common_fs = max(
-                correlations["field_strength_distribution"].items(), key=lambda x: x[1]
-            )
-            insights.append(
-                f"Most common field strength: {most_common_fs[0]} ({most_common_fs[1]} studies)"
-            )
+            most_common_fs = max(correlations["field_strength_distribution"].items(), key=lambda x: x[1])
+            insights.append(f"Most common field strength: {most_common_fs[0]} ({most_common_fs[1]} studies)")
 
         if "popular_brain_regions" in correlations:
             top_region = list(correlations["popular_brain_regions"].items())[0]
-            insights.append(
-                f"Most analyzed brain region: {top_region[0]} ({top_region[1]} studies)"
-            )
+            insights.append(f"Most analyzed brain region: {top_region[0]} ({top_region[1]} studies)")
 
         return InsightResult(
             insight_type=InsightType.NEUROIMAGING_CORRELATIONS.value,
@@ -716,27 +600,20 @@ class SurveyInsightsEngine:
             supporting_data={
                 "correlations": correlations,
                 "data_categories": list(neuroimaging_data.keys()),
-                "sample_size": len(responses),
+                "sample_size": len(responses)
             },
             methodology={
                 "algorithm": "neuroimaging_pattern_analysis",
-                "focus_areas": [
-                    "acquisition_parameters",
-                    "analysis_regions",
-                    "cognitive_domains",
-                ],
-            },
+                "focus_areas": ["acquisition_parameters", "analysis_regions", "cognitive_domains"]
+            }
         )
 
-    async def _assess_response_quality(
-        self, survey: Survey, responses: List[SurveyResponse], db: Session
-    ) -> Optional[InsightResult]:
+    async def _assess_response_quality(self, survey: Survey, responses: List[SurveyResponse],
+                                     db: Session) -> Optional[InsightResult]:
         """Assess the quality of survey responses"""
 
         total_questions = (
-            db.query(SurveyQuestion)
-            .filter(SurveyQuestion.survey_id == survey.id)
-            .count()
+            db.query(SurveyQuestion).filter(SurveyQuestion.survey_id == survey.id).count()
         )
 
         quality_scores: List[float] = []
@@ -800,22 +677,22 @@ class SurveyInsightsEngine:
             else:
                 medium_quality_count += 1
 
-        issue_counts = Counter(
-            issue for issues in per_response_issues for issue in issues
-        )
+        issue_counts = Counter(issue for issues in per_response_issues for issue in issues)
         quality_issues = [f"{issue}:{count}" for issue, count in issue_counts.items()]
 
         quality_level = (
-            "High" if avg_quality >= 0.8 else "Medium" if avg_quality >= 0.6 else "Low"
+            "High"
+            if avg_quality >= 0.8
+            else "Medium"
+            if avg_quality >= 0.6
+            else "Low"
         )
 
         recommendations = []
         if low_quality_count > len(quality_scores) * 0.2:
             recommendations.append("Consider adding attention check questions.")
         if "too_fast" in issue_counts:
-            recommendations.append(
-                "Review survey length/clarity; some responses are unusually fast."
-            )
+            recommendations.append("Review survey length/clarity; some responses are unusually fast.")
 
         return InsightResult(
             insight_type=InsightType.QUALITY_ASSESSMENT.value,
@@ -847,21 +724,16 @@ class SurveyInsightsEngine:
             recommendations=recommendations,
         )
 
-    async def _comparative_analysis(
-        self, survey: Survey, responses: List[SurveyResponse], db: Session
-    ) -> Optional[InsightResult]:
+    async def _comparative_analysis(self, survey: Survey, responses: List[SurveyResponse],
+                                  db: Session) -> Optional[InsightResult]:
         """Compare this survey's performance with similar surveys"""
 
         # Find similar surveys by category
-        similar_surveys = (
-            db.query(Survey)
-            .filter(
-                Survey.category == survey.category,
-                Survey.id != survey.id,
-                Survey.status.in_(["active", "completed"]),
-            )
-            .all()
-        )
+        similar_surveys = db.query(Survey).filter(
+            Survey.category == survey.category,
+            Survey.id != survey.id,
+            Survey.status.in_(["active", "completed"])
+        ).all()
 
         if not similar_surveys:
             return None
@@ -871,31 +743,19 @@ class SurveyInsightsEngine:
         similar_response_counts = []
 
         for similar_survey in similar_surveys:
-            similar_response_count = (
-                db.query(SurveyResponse)
-                .filter(
-                    SurveyResponse.survey_id == similar_survey.id,
-                    SurveyResponse.completion_status == "completed",
-                )
-                .count()
-            )
+            similar_response_count = db.query(SurveyResponse).filter(
+                SurveyResponse.survey_id == similar_survey.id,
+                SurveyResponse.completion_status == "completed"
+            ).count()
             similar_response_counts.append(similar_response_count)
 
         if not similar_response_counts:
             return None
 
         avg_similar_responses = np.mean(similar_response_counts)
-        percentile = (
-            len([c for c in similar_response_counts if c < current_response_count])
-            / len(similar_response_counts)
-            * 100
-        )
+        percentile = len([c for c in similar_response_counts if c < current_response_count]) / len(similar_response_counts) * 100
 
-        performance = (
-            "Above Average"
-            if percentile >= 60
-            else "Below Average" if percentile <= 40 else "Average"
-        )
+        performance = "Above Average" if percentile >= 60 else "Below Average" if percentile <= 40 else "Average"
 
         return InsightResult(
             insight_type=InsightType.COMPARATIVE_ANALYSIS.value,
@@ -907,18 +767,17 @@ class SurveyInsightsEngine:
                 "similar_surveys_count": len(similar_surveys),
                 "average_similar_responses": avg_similar_responses,
                 "percentile_rank": percentile,
-                "comparison_category": survey.category,
+                "comparison_category": survey.category
             },
             methodology={
                 "algorithm": "category_based_comparison",
                 "comparison_metric": "response_count",
-                "peer_group_size": len(similar_surveys),
-            },
+                "peer_group_size": len(similar_surveys)
+            }
         )
 
-    async def _generate_predictions(
-        self, survey: Survey, responses: List[SurveyResponse], db: Session
-    ) -> Optional[InsightResult]:
+    async def _generate_predictions(self, survey: Survey, responses: List[SurveyResponse],
+                                  db: Session) -> Optional[InsightResult]:
         """Generate predictive insights about survey performance"""
 
         if len(responses) < 10:  # Need sufficient data for predictions
@@ -946,11 +805,7 @@ class SurveyInsightsEngine:
         overall_rate = np.mean(response_rates)
 
         # Predict based on trend
-        trend = (
-            "Increasing"
-            if recent_rate > overall_rate * 1.2
-            else "Decreasing" if recent_rate < overall_rate * 0.8 else "Stable"
-        )
+        trend = "Increasing" if recent_rate > overall_rate * 1.2 else "Decreasing" if recent_rate < overall_rate * 0.8 else "Stable"
 
         # Estimate total responses if survey continues
         days_active = len(daily_responses)
@@ -970,18 +825,17 @@ class SurveyInsightsEngine:
                 "overall_daily_rate": overall_rate,
                 "projected_total_responses": projected_total,
                 "days_active": days_active,
-                "daily_response_data": dict(daily_responses),
+                "daily_response_data": dict(daily_responses)
             },
             methodology={
                 "algorithm": "trend_based_projection",
                 "projection_period_days": 30,
-                "trend_window_days": 3,
-            },
+                "trend_window_days": 3
+            }
         )
 
-    async def _detect_anomalies(
-        self, survey: Survey, responses: List[SurveyResponse], db: Session
-    ) -> Optional[InsightResult]:
+    async def _detect_anomalies(self, survey: Survey, responses: List[SurveyResponse],
+                              db: Session) -> Optional[InsightResult]:
         """Detect anomalous patterns in responses"""
 
         if len(responses) < 5:  # Basic signal threshold; keep small for unit tests
@@ -990,9 +844,7 @@ class SurveyInsightsEngine:
         anomalies = []
 
         # Check for unusual completion times
-        completion_times = [
-            r.completion_time_seconds for r in responses if r.completion_time_seconds
-        ]
+        completion_times = [r.completion_time_seconds for r in responses if r.completion_time_seconds]
         outliers: List[float] = []
         if len(completion_times) >= 8:
             # Use an IQR rule so extreme outliers don't inflate std and hide each other.
@@ -1008,9 +860,7 @@ class SurveyInsightsEngine:
                 outliers = [t for t in completion_times if abs(t - median) > 60]
 
             if outliers:
-                anomalies.append(
-                    f"{len(outliers)} responses with unusual completion times"
-                )
+                anomalies.append(f"{len(outliers)} responses with unusual completion times")
 
         # Check for duplicate responses (same IP, similar responses)
         ip_responses = defaultdict(list)
@@ -1020,9 +870,7 @@ class SurveyInsightsEngine:
 
         duplicate_ips = [ip for ip, resps in ip_responses.items() if len(resps) > 1]
         if duplicate_ips:
-            anomalies.append(
-                f"{len(duplicate_ips)} IP addresses with multiple responses"
-            )
+            anomalies.append(f"{len(duplicate_ips)} IP addresses with multiple responses")
 
         # Check for unusual response patterns
         question_responses = defaultdict(list)
@@ -1059,29 +907,23 @@ class SurveyInsightsEngine:
                 "anomalies": anomalies,
                 "duplicate_ip_count": len(duplicate_ips),
                 "completion_time_outliers": len(outliers),
-                "sample_size": len(responses),
+                "sample_size": len(responses)
             },
             methodology={
                 "algorithm": "statistical_anomaly_detection",
-                "methods": [
-                    "z_score_outliers",
-                    "duplicate_detection",
-                    "uniform_response_detection",
-                ],
-                "threshold": "3_standard_deviations",
+                "methods": ["z_score_outliers", "duplicate_detection", "uniform_response_detection"],
+                "threshold": "3_standard_deviations"
             },
             recommendations=[
                 "Review responses from duplicate IP addresses",
                 "Consider implementing CAPTCHA or other anti-bot measures",
-                "Investigate questions with uniform responses for clarity issues",
-            ],
+                "Investigate questions with uniform responses for clarity issues"
+            ]
         )
 
     # Utility methods
 
-    async def _generate_realtime_insights(
-        self, survey_id: str, response: SurveyResponse, db: Session
-    ):
+    async def _generate_realtime_insights(self, survey_id: str, response: SurveyResponse, db: Session):
         """Generate real-time insights for new responses"""
 
         # Quick quality check
@@ -1102,58 +944,42 @@ class SurveyInsightsEngine:
         """Update cumulative analytics after new response"""
 
         # Calculate basic stats
-        total_responses = (
-            db.query(SurveyResponse)
-            .filter(SurveyResponse.survey_id == survey_id)
-            .count()
-        )
+        total_responses = db.query(SurveyResponse).filter(
+            SurveyResponse.survey_id == survey_id
+        ).count()
 
-        completed_responses = (
-            db.query(SurveyResponse)
-            .filter(
-                SurveyResponse.survey_id == survey_id,
-                SurveyResponse.completion_status == "completed",
-            )
-            .count()
-        )
+        completed_responses = db.query(SurveyResponse).filter(
+            SurveyResponse.survey_id == survey_id,
+            SurveyResponse.completion_status == "completed"
+        ).count()
 
         # Update or create analytics record
-        analytics = (
-            db.query(SurveyResponseAnalytics)
-            .filter(
-                SurveyResponseAnalytics.survey_id == survey_id,
-                SurveyResponseAnalytics.analytics_type == "daily_summary",
-            )
-            .first()
-        )
+        analytics = db.query(SurveyResponseAnalytics).filter(
+            SurveyResponseAnalytics.survey_id == survey_id,
+            SurveyResponseAnalytics.analytics_type == "daily_summary"
+        ).first()
 
         if not analytics:
             analytics = SurveyResponseAnalytics(
                 id=str(uuid.uuid4()),
                 survey_id=survey_id,
                 analytics_type="daily_summary",
-                time_period="daily",
+                time_period="daily"
             )
             db.add(analytics)
 
         analytics.analytics_data = {
             "total_responses": total_responses,
             "completed_responses": completed_responses,
-            "completion_rate": (
-                (completed_responses / total_responses * 100)
-                if total_responses > 0
-                else 0
-            ),
-            "last_updated": datetime.utcnow().isoformat(),
+            "completion_rate": (completed_responses / total_responses * 100) if total_responses > 0 else 0,
+            "last_updated": datetime.utcnow().isoformat()
         }
         analytics.computed_at = datetime.utcnow()
         analytics.record_count = total_responses
 
         db.commit()
 
-    async def _save_insight(
-        self, survey_id: str, insight_result: InsightResult, db: Session
-    ):
+    async def _save_insight(self, survey_id: str, insight_result: InsightResult, db: Session):
         """Save insight to database"""
 
         insight = SurveyInsight(
@@ -1165,7 +991,7 @@ class SurveyInsightsEngine:
             confidence_score=insight_result.confidence_score,
             supporting_data=insight_result.supporting_data,
             methodology=insight_result.methodology,
-            generated_by="survey_insights_engine_v1",
+            generated_by="survey_insights_engine_v1"
         )
 
         db.add(insight)
@@ -1178,7 +1004,7 @@ class SurveyInsightsEngine:
         if not data:
             return {}
 
-        numeric_data = [float(x) for x in data if str(x).replace(".", "").isdigit()]
+        numeric_data = [float(x) for x in data if str(x).replace('.', '').isdigit()]
         if not numeric_data:
             return {}
 
@@ -1188,5 +1014,5 @@ class SurveyInsightsEngine:
             "std": np.std(numeric_data),
             "min": min(numeric_data),
             "max": max(numeric_data),
-            "count": len(numeric_data),
+            "count": len(numeric_data)
         }

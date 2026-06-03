@@ -53,7 +53,7 @@
    └────────────────────┘    └────────────────────┘
 ```
 
-For a deeper dive see [`docs/architecture/`](docs/architecture/) (incl. `codegraph_baseline.md` for the import-graph baseline that CI enforces, and `contract-tiers.md` for the two axes — stability and surface_tier — that govern the MCP surface).
+For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the MCP surface contract and [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) for the import-boundary ratchet.
 
 ---
 
@@ -155,18 +155,17 @@ The main helm chart renders 26 K8s resources cleanly; the istio overlay subchart
 
 | Directory | Purpose |
 |---|---|
-| `packages/brain-researcher/src/brain_researcher/` | Python package: CLI, core, services (agent / MCP / BR-KG / orchestrator), semantics, autoresearch |
-| `packages/brain-researcher/src/brain_researcher/br/` | Stable re-export namespace: `br.retry`, `br.provenance`, `br.artifact`, `br.http`, `br.redaction` |
-| `packages/cli/` | Auxiliary CLI package |
+| `src/brain_researcher/` | Python package: CLI, core, services (agent / MCP / BR-KG / orchestrator), semantics, autoresearch |
+| `src/brain_researcher/br/` | Stable re-export namespace: `br.retry`, `br.provenance`, `br.artifact`, `br.http`, `br.redaction` |
 | `apps/web-ui/` | Next.js 14 frontend (chat, studio, demo replay, KG explorer) |
 | `contracts/` | OSS API stability surface: `VERSION`, `br-tool-contract.schema.json`, `tools/*.json` (10 stable-tier tool schemas) |
-| `configs/` | Tool catalogs, mappings, taxonomy, demo bundles, SLURM profiles |
-| `docs/` | Architecture, operations, MCP, neurokg, how-to-add-tool, contract-tiers, migration |
+| `configs/` | Tool catalogs, mappings, taxonomy, and public runtime defaults |
+| `docs/` | MCP, specs, appendices, use cases, migration notes, and contributor-facing docs |
 | `tests/` | Unit + integration + contracts (Pact) + e2e (Playwright) |
 | `infrastructure/` | docker-compose, Helm chart, K8s manifests, monitoring, nginx, haproxy |
 | `scripts/` | ETL / analysis / build / CI helpers; OSS-specific tools under `scripts/oss/` |
 
-For the full source-tree layout and import-graph baseline, see [`docs/architecture/codegraph_baseline.md`](docs/architecture/codegraph_baseline.md). For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit).
+For the current import-boundary ratchet, see [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt). For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit).
 
 ---
 

@@ -444,9 +444,7 @@ try:
 except (TypeError, ValueError):
     _HUB_CREATE_ACQUIRE_TIMEOUT_S = 2.0
 try:
-    _HUB_CREATE_RETRY_AFTER_S = int(
-        os.getenv("BR_HUB_SESSION_CREATE_RETRY_AFTER_S", "5")
-    )
+    _HUB_CREATE_RETRY_AFTER_S = int(os.getenv("BR_HUB_SESSION_CREATE_RETRY_AFTER_S", "5"))
 except (TypeError, ValueError):
     _HUB_CREATE_RETRY_AFTER_S = 5
 
@@ -483,7 +481,9 @@ async def create_or_attach_hub_session(
     acquired = False
     if sem is not None:
         try:
-            await asyncio.wait_for(sem.acquire(), timeout=_HUB_CREATE_ACQUIRE_TIMEOUT_S)
+            await asyncio.wait_for(
+                sem.acquire(), timeout=_HUB_CREATE_ACQUIRE_TIMEOUT_S
+            )
             acquired = True
         except asyncio.TimeoutError:
             raise HTTPException(
@@ -651,7 +651,8 @@ def _select_marimo_session_id(
                     return sid
 
     logger.warning(
-        "Multiple marimo sessions (%s) and no path match for hint=%r; " "using first",
+        "Multiple marimo sessions (%s) and no path match for hint=%r; "
+        "using first",
         ids,
         path_hint,
     )

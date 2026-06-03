@@ -8,8 +8,6 @@ from typing import Any
 from brain_researcher.core.contracts.code_review import CodeReviewBundle, ReviewFinding
 from brain_researcher.core.literature.literature_priors import (
     infer_effect_size_priors,
-)
-from brain_researcher.core.literature.literature_priors import (
     infer_effect_size_priors_multi as _infer_effect_size_priors_multi_from_core,
 )
 
@@ -175,9 +173,7 @@ def effect_size_plausibility_check(bundle: CodeReviewBundle) -> ReviewFinding | 
 
     try:
         payload = infer_effect_size_priors_multi(
-            task=task,
-            contrast=contrast,
-            region=region,
+            task=task, contrast=contrast, region=region,
         )
     except Exception:
         # Fall back to simple literature prior.
@@ -244,9 +240,7 @@ def effect_size_plausibility_check(bundle: CodeReviewBundle) -> ReviewFinding | 
             titles = [
                 str(paper.get("title")).strip()
                 for paper in top_papers
-                if isinstance(paper, dict)
-                and isinstance(paper.get("title"), str)
-                and paper.get("title")
+                if isinstance(paper, dict) and isinstance(paper.get("title"), str) and paper.get("title")
             ]
             evidence.extend(title for title in titles[:3] if title)
 

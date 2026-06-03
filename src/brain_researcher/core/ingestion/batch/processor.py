@@ -8,25 +8,23 @@ import asyncio
 import json
 import logging
 import multiprocessing as mp
-import pickle
-import traceback
-import uuid
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
+from typing import Dict, List, Any, Optional, Callable, Union
+import traceback
+import pickle
 from queue import PriorityQueue
-from typing import Any, Callable, Dict, List, Optional, Union
-
 import redis
+import uuid
 
 logger = logging.getLogger(__name__)
 
 
 class JobStatus(str, Enum):
     """Job status states."""
-
     PENDING = "pending"
     QUEUED = "queued"
     CLAIMED = "claimed"
@@ -43,7 +41,6 @@ class JobStatus(str, Enum):
 
 class JobPriority(int, Enum):
     """Job priority levels."""
-
     CRITICAL = 0
     HIGH = 1
     NORMAL = 2
@@ -54,7 +51,6 @@ class JobPriority(int, Enum):
 @dataclass
 class BatchJob:
     """Represents a batch processing job."""
-
     job_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str = ""
     task_type: str = ""
@@ -115,12 +111,15 @@ class JobQueue:
             self.redis_client.hset(
                 f"jobs:{job.job_id}",
                 mapping={
-                    "data": pickle.dumps(job),
-                    "status": job.status.value,
-                    "priority": job.priority.value,
-                },
+                    'data': pickle.dumps(job),
+                    'status': job.status.value,
+                    'priority': job.priority.value
+                }
             )
-            self.redis_client.zadd("job_queue", {job.job_id: job.priority.value})
+            self.redis_client.zadd(
+                'job_queue',
+                {job.job_id: job.priority.value}
+            )
         else:
             # Use local priority queue
             self.local_queue.put((job.priority, job.job_id, job))
@@ -136,14 +135,10 @@ class JobQueue:
         """
         if self.redis_client:
             # Get from Redis
-            result = self.redis_client.zpopmin("job_queue")
+            result = self.redis_client.zpopmin('job_queue')
             if result:
-                job_id = (
-                    result[0][0].decode()
-                    if isinstance(result[0][0], bytes)
-                    else result[0][0]
-                )
-                job_data = self.redis_client.hget(f"jobs:{job_id}", "data")
+                job_id = result[0][0].decode() if isinstance(result[0][0], bytes) else result[0][0]
+                job_data = self.redis_client.hget(f"jobs:{job_id}", 'data')
                 if job_data:
                     return pickle.loads(job_data)
         else:
@@ -167,11 +162,9 @@ class JobQueue:
             return self.jobs[job_id].status
 
         if self.redis_client:
-            status = self.redis_client.hget(f"jobs:{job_id}", "status")
+            status = self.redis_client.hget(f"jobs:{job_id}", 'status')
             if status:
-                return JobStatus(
-                    status.decode() if isinstance(status, bytes) else status
-                )
+                return JobStatus(status.decode() if isinstance(status, bytes) else status)
 
         return None
 
@@ -187,22 +180,20 @@ class JobQueue:
             self.redis_client.hset(
                 f"jobs:{job.job_id}",
                 mapping={
-                    "data": pickle.dumps(job),
-                    "status": job.status.value,
-                    "progress": str(job.progress),
-                },
+                    'data': pickle.dumps(job),
+                    'status': job.status.value,
+                    'progress': str(job.progress)
+                }
             )
 
 
 class BatchProcessor:
     """Main batch processing engine."""
 
-    def __init__(
-        self,
-        max_workers: int = None,
-        use_processes: bool = True,
-        redis_url: Optional[str] = None,
-    ):
+    def __init__(self,
+                 max_workers: int = None,
+                 use_processes: bool = True,
+                 redis_url: Optional[str] = None):
         """Initialize batch processor.
 
         Args:
@@ -330,7 +321,7 @@ class BatchProcessor:
                 output_file = Path(job.output_path)
                 output_file.parent.mkdir(parents=True, exist_ok=True)
 
-                with open(output_file, "w") as f:
+                with open(output_file, 'w') as f:
                     json.dump(result, f, indent=2, default=str)
 
             logger.info(f"Job {job.job_id} completed successfully")
@@ -345,7 +336,7 @@ class BatchProcessor:
                 job.retry_count += 1
                 job.status = JobStatus.RETRYING
                 logger.info(f"Retrying job {job.job_id} (attempt {job.retry_count})")
-                await asyncio.sleep(2**job.retry_count)  # Exponential backoff
+                await asyncio.sleep(2 ** job.retry_count)  # Exponential backoff
                 self.job_queue.submit(job)
 
         finally:
@@ -363,12 +354,11 @@ class BatchProcessor:
         Returns:
             Handler result
         """
-
         # Create progress callback
         def update_progress(progress: float, message: str = ""):
             job.progress = progress
             if message:
-                job.metadata["status_message"] = message
+                job.metadata['status_message'] = message
             self.job_queue.update_job(job)
 
         # Call handler with progress callback
@@ -396,15 +386,13 @@ class BatchProcessor:
 
             await asyncio.sleep(30)  # Monitor every 30 seconds
 
-    def submit_job(
-        self,
-        name: str,
-        task_type: str,
-        input_data: Any,
-        priority: JobPriority = JobPriority.NORMAL,
-        dependencies: List[str] = None,
-        output_path: Optional[str] = None,
-    ) -> str:
+    def submit_job(self,
+                  name: str,
+                  task_type: str,
+                  input_data: Any,
+                  priority: JobPriority = JobPriority.NORMAL,
+                  dependencies: List[str] = None,
+                  output_path: Optional[str] = None) -> str:
         """Submit a new job.
 
         Args:
@@ -424,7 +412,7 @@ class BatchProcessor:
             input_data=input_data,
             priority=priority,
             dependencies=dependencies or [],
-            output_path=output_path,
+            output_path=output_path
         )
 
         return self.job_queue.submit(job)
@@ -448,17 +436,17 @@ class BatchProcessor:
             duration = (end_time - job.started_at).total_seconds()
 
         return {
-            "job_id": job.job_id,
-            "name": job.name,
-            "status": job.status.value,
-            "progress": job.progress,
-            "created_at": job.created_at.isoformat(),
-            "started_at": job.started_at.isoformat() if job.started_at else None,
-            "completed_at": job.completed_at.isoformat() if job.completed_at else None,
-            "duration_seconds": duration,
-            "error_message": job.error_message,
-            "retry_count": job.retry_count,
-            "metadata": job.metadata,
+            'job_id': job.job_id,
+            'name': job.name,
+            'status': job.status.value,
+            'progress': job.progress,
+            'created_at': job.created_at.isoformat(),
+            'started_at': job.started_at.isoformat() if job.started_at else None,
+            'completed_at': job.completed_at.isoformat() if job.completed_at else None,
+            'duration_seconds': duration,
+            'error_message': job.error_message,
+            'retry_count': job.retry_count,
+            'metadata': job.metadata
         }
 
     def cancel_job(self, job_id: str) -> bool:
@@ -485,12 +473,12 @@ class BatchProcessor:
             Statistics dictionary
         """
         status_counts = {
-            "pending": 0,
-            "queued": 0,
-            "running": 0,
-            "completed": 0,
-            "failed": 0,
-            "cancelled": 0,
+            'pending': 0,
+            'queued': 0,
+            'running': 0,
+            'completed': 0,
+            'failed': 0,
+            'cancelled': 0
         }
 
         for job in self.job_queue.jobs.values():
@@ -498,9 +486,9 @@ class BatchProcessor:
 
         return {
             **status_counts,
-            "total": len(self.job_queue.jobs),
-            "workers": self.max_workers,
-            "queue_size": self.job_queue.local_queue.qsize(),
+            'total': len(self.job_queue.jobs),
+            'workers': self.max_workers,
+            'queue_size': self.job_queue.local_queue.qsize()
         }
 
     async def shutdown(self):
@@ -525,12 +513,10 @@ class ParallelProcessor:
     """Simplified parallel processing for common tasks."""
 
     @staticmethod
-    def process_files(
-        file_paths: List[Path],
-        processor_func: Callable,
-        max_workers: int = None,
-        chunk_size: int = 100,
-    ) -> List[Any]:
+    def process_files(file_paths: List[Path],
+                     processor_func: Callable,
+                     max_workers: int = None,
+                     chunk_size: int = 100) -> List[Any]:
         """Process files in parallel.
 
         Args:
@@ -557,10 +543,8 @@ class ParallelProcessor:
             # Submit in chunks
             futures = []
             for i in range(0, len(file_paths), chunk_size):
-                chunk = file_paths[i : i + chunk_size]
-                future = executor.submit(
-                    ParallelProcessor._process_chunk, chunk, processor_func
-                )
+                chunk = file_paths[i:i + chunk_size]
+                future = executor.submit(ParallelProcessor._process_chunk, chunk, processor_func)
                 futures.append(future)
 
             # Collect results with progress
@@ -597,9 +581,8 @@ class ParallelProcessor:
 
 
 # Example task handlers
-def example_ingestion_handler(
-    input_data: Dict[str, Any], progress_callback: Callable
-) -> Dict[str, Any]:
+def example_ingestion_handler(input_data: Dict[str, Any],
+                             progress_callback: Callable) -> Dict[str, Any]:
     """Example handler for data ingestion.
 
     Args:
@@ -612,7 +595,7 @@ def example_ingestion_handler(
     progress_callback(0, "Starting ingestion")
 
     # Simulate processing
-    total_items = input_data.get("total_items", 100)
+    total_items = input_data.get('total_items', 100)
     processed = 0
 
     for i in range(total_items):
@@ -623,4 +606,7 @@ def example_ingestion_handler(
         progress = (processed / total_items) * 100
         progress_callback(progress, f"Processed {processed}/{total_items} items")
 
-    return {"processed": processed, "status": "success"}
+    return {
+        'processed': processed,
+        'status': 'success'
+    }

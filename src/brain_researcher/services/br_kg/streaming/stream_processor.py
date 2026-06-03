@@ -4,20 +4,20 @@ This module provides windowed stream processing, event aggregation, and
 complex event detection for real-time graph analytics and insights.
 """
 
-import asyncio
-import heapq
-import itertools
-import json
 import logging
-import statistics
-import uuid
-from collections import defaultdict, deque
-from dataclasses import asdict, dataclass, field
+import asyncio
+import json
+from typing import Dict, List, Any, Optional, Callable, Set, Tuple, Union, ClassVar
+from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Set, Tuple, Union
+import uuid
+from collections import defaultdict, deque
+import statistics
+import heapq
+import itertools
 
-from .cdc_processor import ChangeType, GraphChangeEvent
+from .cdc_processor import GraphChangeEvent, ChangeType
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,9 @@ class WindowType(Enum):
     """Types of event windows."""
 
     TUMBLING = "tumbling"  # Non-overlapping fixed-size windows
-    HOPPING = "hopping"  # Overlapping fixed-size windows
-    SESSION = "session"  # Dynamic windows based on activity
-    SLIDING = "sliding"  # Continuous windows with fixed size
+    HOPPING = "hopping"    # Overlapping fixed-size windows
+    SESSION = "session"    # Dynamic windows based on activity
+    SLIDING = "sliding"    # Continuous windows with fixed size
 
 
 class AggregationType(Enum):
@@ -113,7 +113,7 @@ class EventWindow:
             "events_by_type": self.get_events_by_type(),
             "affected_entities": list(self.get_affected_entities()),
             "aggregations": self.aggregations,
-            "metadata": self.metadata,
+            "metadata": self.metadata
         }
 
 
@@ -142,15 +142,11 @@ class AggregationRule:
         # Group events if needed
         if self.group_by:
             groups = self._group_events(events)
-            return {
-                str(key): self._aggregate_group(group) for key, group in groups.items()
-            }
+            return {str(key): self._aggregate_group(group) for key, group in groups.items()}
         else:
             return self._aggregate_group(events)
 
-    def _group_events(
-        self, events: List[GraphChangeEvent]
-    ) -> Dict[Tuple, List[GraphChangeEvent]]:
+    def _group_events(self, events: List[GraphChangeEvent]) -> Dict[Tuple, List[GraphChangeEvent]]:
         """Group events by specified fields."""
         groups = defaultdict(list)
 
@@ -167,9 +163,7 @@ class AggregationRule:
                     key_values.append(event.user_id)
                 elif field.startswith("labels."):
                     # Handle label-specific grouping
-                    label_index = (
-                        int(field.split(".")[1]) if len(field.split(".")) > 1 else 0
-                    )
+                    label_index = int(field.split(".")[1]) if len(field.split(".")) > 1 else 0
                     if label_index < len(event.labels):
                         key_values.append(event.labels[label_index])
                     else:
@@ -199,12 +193,8 @@ class AggregationRule:
             else:
                 return len(set(e.entity_id for e in events if e.entity_id))
 
-        elif self.aggregation_type in [
-            AggregationType.SUM,
-            AggregationType.AVERAGE,
-            AggregationType.MIN,
-            AggregationType.MAX,
-        ]:
+        elif self.aggregation_type in [AggregationType.SUM, AggregationType.AVERAGE,
+                                       AggregationType.MIN, AggregationType.MAX]:
             if not self.field_path:
                 return None
 
@@ -234,17 +224,13 @@ class AggregationRule:
                     value = self._get_field_value(event, self.field_path)
                     if value is not None:
                         value_counts[str(value)] += 1
-                return dict(
-                    sorted(value_counts.items(), key=lambda x: x[1], reverse=True)[:k]
-                )
+                return dict(sorted(value_counts.items(), key=lambda x: x[1], reverse=True)[:k])
             else:
                 # Top K entity types
                 type_counts = defaultdict(int)
                 for event in events:
                     type_counts[event.change_type.value] += 1
-                return dict(
-                    sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:k]
-                )
+                return dict(sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:k])
 
         elif self.aggregation_type == AggregationType.HISTOGRAM:
             if not self.field_path:
@@ -381,7 +367,7 @@ class StreamProcessor:
             "windows_completed": 0,
             "aggregations_computed": 0,
             "late_events": 0,
-            "dropped_events": 0,
+            "dropped_events": 0
         }
 
         # Event buffer for ordering
@@ -429,9 +415,7 @@ class StreamProcessor:
             return
 
         # Add to buffer for ordering
-        heapq.heappush(
-            self.event_buffer, (event.timestamp, next(self._event_counter), event)
-        )
+        heapq.heappush(self.event_buffer, (event.timestamp, next(self._event_counter), event))
 
         # Keep buffer size manageable
         if len(self.event_buffer) > self.buffer_size:
@@ -494,9 +478,7 @@ class StreamProcessor:
             window_id = f"tumbling_{window_start.isoformat()}"
 
             if window_id not in self.windows:
-                await self._create_window(
-                    window_id, window_start, window_start + self.window_size
-                )
+                await self._create_window(window_id, window_start, window_start + self.window_size)
 
             self.windows[window_id].add_event(event)
 
@@ -510,9 +492,7 @@ class StreamProcessor:
                 window_id = f"hopping_{window_start.isoformat()}"
 
                 if window_id not in self.windows:
-                    await self._create_window(
-                        window_id, window_start, window_start + self.window_size
-                    )
+                    await self._create_window(window_id, window_start, window_start + self.window_size)
 
                 window = self.windows[window_id]
                 window.add_event(event)
@@ -528,25 +508,18 @@ class StreamProcessor:
                     # Check if event belongs to this session (within 30 seconds of last event)
                     if window.events:
                         last_event = max(window.events, key=lambda e: e.timestamp)
-                        if (
-                            abs((event_time - last_event.timestamp).total_seconds())
-                            <= 30
-                        ):
+                        if abs((event_time - last_event.timestamp).total_seconds()) <= 30:
                             session_window = window
                             break
 
             if not session_window:
                 # Create new session window
                 window_id = f"session_{event_time.isoformat()}_{uuid.uuid4().hex[:8]}"
-                session_window = await self._create_window(
-                    window_id, event_time, event_time + timedelta(hours=1)
-                )
+                session_window = await self._create_window(window_id, event_time, event_time + timedelta(hours=1))
 
             session_window.add_event(event)
             # Update session window end time
-            session_window.end_time = max(
-                session_window.end_time, event_time + timedelta(minutes=30)
-            )
+            session_window.end_time = max(session_window.end_time, event_time + timedelta(minutes=30))
 
         elif self.window_type == WindowType.SLIDING:
             # Sliding window - create a new window for each event
@@ -574,16 +547,14 @@ class StreamProcessor:
         window_number = int(seconds_since_epoch // window_seconds)
         return epoch + timedelta(seconds=window_number * window_seconds)
 
-    async def _create_window(
-        self, window_id: str, start_time: datetime, end_time: datetime
-    ) -> EventWindow:
+    async def _create_window(self, window_id: str, start_time: datetime, end_time: datetime) -> EventWindow:
         """Create a new event window."""
         window = EventWindow(
             window_id=window_id,
             window_type=self.window_type,
             start_time=start_time,
             end_time=end_time,
-            duration=end_time - start_time,
+            duration=end_time - start_time
         )
 
         self.windows[window_id] = window
@@ -620,9 +591,7 @@ class StreamProcessor:
 
     async def _complete_window(self, window: EventWindow):
         """Complete and process a window."""
-        logger.debug(
-            f"Completing window {window.window_id} with {len(window.events)} events"
-        )
+        logger.debug(f"Completing window {window.window_id} with {len(window.events)} events")
 
         # Apply aggregation rules
         for rule in self.aggregation_rules:
@@ -636,14 +605,10 @@ class StreamProcessor:
                     try:
                         handler(rule.name, result, window)
                     except Exception as e:
-                        logger.error(
-                            f"Error in aggregation handler: {e}", exc_info=True
-                        )
+                        logger.error(f"Error in aggregation handler: {e}", exc_info=True)
 
             except Exception as e:
-                logger.error(
-                    f"Error applying aggregation rule {rule.name}: {e}", exc_info=True
-                )
+                logger.error(f"Error applying aggregation rule {rule.name}: {e}", exc_info=True)
 
         # Notify window handlers
         for handler in self.window_handlers:
@@ -669,9 +634,7 @@ class StreamProcessor:
 
     def remove_aggregation_rule(self, rule_name: str):
         """Remove an aggregation rule."""
-        self.aggregation_rules = [
-            r for r in self.aggregation_rules if r.name != rule_name
-        ]
+        self.aggregation_rules = [r for r in self.aggregation_rules if r.name != rule_name]
         logger.info(f"Removed aggregation rule: {rule_name}")
 
     def add_window_handler(self, handler: Callable[[EventWindow], None]):
@@ -704,7 +667,7 @@ class StreamProcessor:
             "window_handlers": len(self.window_handlers),
             "aggregation_handlers": len(self.aggregation_handlers),
             "buffer_size": len(self.event_buffer),
-            **self.stats,
+            **self.stats
         }
 
 
@@ -716,39 +679,43 @@ def create_common_aggregation_rules() -> List[AggregationRule]:
         AggregationRule(
             name="event_count_by_type",
             aggregation_type=AggregationType.COUNT,
-            group_by=["change_type"],
+            group_by=["change_type"]
         ),
+
         # Distinct entities affected
         AggregationRule(
             name="distinct_entities_affected",
             aggregation_type=AggregationType.DISTINCT_COUNT,
-            field_path="entity_id",
+            field_path="entity_id"
         ),
+
         # Top 5 most active users
         AggregationRule(
             name="top_users",
             aggregation_type=AggregationType.TOP_K,
             field_path="user_id",
-            parameters={"k": 5},
+            parameters={"k": 5}
         ),
+
         # Node creation rate
         AggregationRule(
             name="node_creation_rate",
             aggregation_type=AggregationType.COUNT,
-            filter_condition=lambda e: e.change_type == ChangeType.NODE_CREATED,
+            filter_condition=lambda e: e.change_type == ChangeType.NODE_CREATED
         ),
+
         # Relationship creation rate
         AggregationRule(
             name="relationship_creation_rate",
             aggregation_type=AggregationType.COUNT,
-            filter_condition=lambda e: e.change_type
-            in [ChangeType.RELATIONSHIP_CREATED],
+            filter_condition=lambda e: e.change_type in [ChangeType.RELATIONSHIP_CREATED]
         ),
+
         # Entity types being modified
         AggregationRule(
             name="entity_types_modified",
             aggregation_type=AggregationType.TOP_K,
             field_path="entity_type",
-            parameters={"k": 10},
-        ),
+            parameters={"k": 10}
+        )
     ]

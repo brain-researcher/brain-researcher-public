@@ -5,7 +5,6 @@ It provides the main interface for discovering and retrieving tool metadata.
 
 Moved from: archive/mcp_server/tools/niwrap.py
 """
-
 from __future__ import annotations
 
 import logging
@@ -122,18 +121,18 @@ def _initialize_cache(
                 try:
                     tool_def = build_tool_definition(descriptor)
                     # Add internal metadata
-                    tool_def["input_schema"]["properties"]["_tool_name"] = {
-                        "type": "string",
-                        "default": tool_def["name"],
-                        "description": "Internal: tool name for execution",
+                    tool_def['input_schema']['properties']['_tool_name'] = {
+                        'type': 'string',
+                        'default': tool_def['name'],
+                        'description': 'Internal: tool name for execution'
                     }
-                    tool_def["input_schema"]["properties"]["_preview"] = {
-                        "type": "boolean",
-                        "default": False,
-                        "description": "Internal: if true, only return command without executing",
+                    tool_def['input_schema']['properties']['_preview'] = {
+                        'type': 'boolean',
+                        'default': False,
+                        'description': 'Internal: if true, only return command without executing'
                     }
-                    tool_def["input_schema"]["additionalProperties"] = True
-                    _TOOL_CACHE[tool_def["name"]] = tool_def
+                    tool_def['input_schema']['additionalProperties'] = True
+                    _TOOL_CACHE[tool_def['name']] = tool_def
                     found_tools.add(tool_key)
                 except Exception as exc:
                     logger.warning(
@@ -150,18 +149,18 @@ def _initialize_cache(
             try:
                 tool_def = build_tool_definition(descriptor)
                 # Add internal metadata
-                tool_def["input_schema"]["properties"]["_tool_name"] = {
-                    "type": "string",
-                    "default": tool_def["name"],
-                    "description": "Internal: tool name for execution",
+                tool_def['input_schema']['properties']['_tool_name'] = {
+                    'type': 'string',
+                    'default': tool_def['name'],
+                    'description': 'Internal: tool name for execution'
                 }
-                tool_def["input_schema"]["properties"]["_preview"] = {
-                    "type": "boolean",
-                    "default": False,
-                    "description": "Internal: if true, only return command without executing",
+                tool_def['input_schema']['properties']['_preview'] = {
+                    'type': 'boolean',
+                    'default': False,
+                    'description': 'Internal: if true, only return command without executing'
                 }
-                tool_def["input_schema"]["additionalProperties"] = True
-                _TOOL_CACHE[tool_def["name"]] = tool_def
+                tool_def['input_schema']['additionalProperties'] = True
+                _TOOL_CACHE[tool_def['name']] = tool_def
             except Exception as exc:
                 logger.warning(
                     f"Failed to build tool definition for {descriptor.package}.{descriptor.app}: {exc}"
@@ -247,9 +246,8 @@ def get_niwrap_tools(
         # Apply filters if needed
         if packages:
             tools = [
-                t
-                for t in tools
-                if any(t["name"].startswith(f"{pkg}.") for pkg in packages)
+                t for t in tools
+                if any(t['name'].startswith(f"{pkg}.") for pkg in packages)
             ]
 
         if limit:
@@ -275,17 +273,17 @@ def get_niwrap_tools(
             if tool_key in test_tool_set and tool_key not in found_tools:
                 try:
                     tool_def = build_tool_definition(descriptor)
-                    tool_def["input_schema"]["properties"]["_tool_name"] = {
-                        "type": "string",
-                        "default": tool_def["name"],
-                        "description": "Internal: tool name for execution",
+                    tool_def['input_schema']['properties']['_tool_name'] = {
+                        'type': 'string',
+                        'default': tool_def['name'],
+                        'description': 'Internal: tool name for execution'
                     }
-                    tool_def["input_schema"]["properties"]["_preview"] = {
-                        "type": "boolean",
-                        "default": False,
-                        "description": "Internal: if true, only return command without executing",
+                    tool_def['input_schema']['properties']['_preview'] = {
+                        'type': 'boolean',
+                        'default': False,
+                        'description': 'Internal: if true, only return command without executing'
                     }
-                    tool_def["input_schema"]["additionalProperties"] = True
+                    tool_def['input_schema']['additionalProperties'] = True
                     tools.append(tool_def)
                     found_tools.add(tool_key)
                     logger.info(f"Loaded NiWrap tool: {tool_def['name']}")
@@ -302,17 +300,17 @@ def get_niwrap_tools(
         for descriptor in descriptors:
             try:
                 tool_def = build_tool_definition(descriptor)
-                tool_def["input_schema"]["properties"]["_tool_name"] = {
-                    "type": "string",
-                    "default": tool_def["name"],
-                    "description": "Internal: tool name for execution",
+                tool_def['input_schema']['properties']['_tool_name'] = {
+                    'type': 'string',
+                    'default': tool_def['name'],
+                    'description': 'Internal: tool name for execution'
                 }
-                tool_def["input_schema"]["properties"]["_preview"] = {
-                    "type": "boolean",
-                    "default": False,
-                    "description": "Internal: if true, only return command without executing",
+                tool_def['input_schema']['properties']['_preview'] = {
+                    'type': 'boolean',
+                    'default': False,
+                    'description': 'Internal: if true, only return command without executing'
                 }
-                tool_def["input_schema"]["additionalProperties"] = True
+                tool_def['input_schema']['additionalProperties'] = True
                 tools.append(tool_def)
                 logger.debug(f"Loaded NiWrap tool: {tool_def['name']}")
             except Exception as exc:
@@ -347,19 +345,17 @@ def search_tools(
 
     for tool_def in _TOOL_CACHE.values():
         # Filter by package if specified
-        if package and not tool_def["name"].startswith(f"{package}."):
+        if package and not tool_def['name'].startswith(f"{package}."):
             continue
 
         # Search in name, description, and tags
-        name = tool_def.get("name", "").lower()
-        description = tool_def.get("description", "").lower()
-        tags = [t.lower() for t in tool_def.get("tags", [])]
+        name = tool_def.get('name', '').lower()
+        description = tool_def.get('description', '').lower()
+        tags = [t.lower() for t in tool_def.get('tags', [])]
 
-        if (
-            query_lower in name
-            or query_lower in description
-            or any(query_lower in tag for tag in tags)
-        ):
+        if (query_lower in name or
+            query_lower in description or
+            any(query_lower in tag for tag in tags)):
             matches.append(tool_def)
 
             if len(matches) >= limit:

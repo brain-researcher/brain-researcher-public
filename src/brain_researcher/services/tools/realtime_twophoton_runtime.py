@@ -554,51 +554,49 @@ class RealtimeTwoPhotonRunner:
                 "state_hold_frames": int(self.args.state_hold_frames),
                 "refractory_frames": int(self.args.refractory_frames),
             },
-            "stream_config": (
-                {
-                    "stream_host": self.args.stream_host,
-                    "stream_port": int(self.args.stream_port),
-                    "stream_timeout_s": float(self.args.stream_timeout_s),
-                    "stream_max_frames": (
-                        int(self.args.stream_max_frames)
-                        if self.args.stream_max_frames is not None
-                        else None
-                    ),
-                }
-                if self.args.data_source == "raw_socket"
-                else None
-            ),
+            "stream_config": {
+                "stream_host": self.args.stream_host,
+                "stream_port": int(self.args.stream_port),
+                "stream_timeout_s": float(self.args.stream_timeout_s),
+                "stream_max_frames": (
+                    int(self.args.stream_max_frames)
+                    if self.args.stream_max_frames is not None
+                    else None
+                ),
+            }
+            if self.args.data_source == "raw_socket"
+            else None,
             "n_frames_processed": int(len(trace_history)),
             "n_rois": int(roi_masks.shape[0]),
             "decode_window_frames": int(self.args.decode_window_frames),
             "motion_summary": {
-                "mean_confidence": (
-                    float(np.mean(motion_conf)) if len(motion_conf) else 0.0
-                ),
-                "min_confidence": (
-                    float(np.min(motion_conf)) if len(motion_conf) else 0.0
-                ),
+                "mean_confidence": float(np.mean(motion_conf))
+                if len(motion_conf)
+                else 0.0,
+                "min_confidence": float(np.min(motion_conf))
+                if len(motion_conf)
+                else 0.0,
                 "low_confidence_frames": int(
                     np.sum(motion_conf < self.args.motion_confidence_threshold)
                 ),
-                "mean_abs_shift_px": (
-                    float(np.mean(abs_shift)) if len(abs_shift) else 0.0
-                ),
+                "mean_abs_shift_px": float(np.mean(abs_shift))
+                if len(abs_shift)
+                else 0.0,
             },
             "decode_summary": {
                 "state_name": state_name,
                 "n_predictions": int(np.sum(valid_predictions)),
-                "mean_confidence": (
-                    float(np.mean(prediction_conf_array[valid_predictions]))
-                    if np.any(valid_predictions)
-                    else 0.0
-                ),
+                "mean_confidence": float(
+                    np.mean(prediction_conf_array[valid_predictions])
+                )
+                if np.any(valid_predictions)
+                else 0.0,
                 "accuracy": accuracy,
-                "state_histogram": (
-                    dict(Counter(predictions_array[valid_predictions].tolist()))
-                    if np.any(valid_predictions)
-                    else {}
-                ),
+                "state_histogram": dict(
+                    Counter(predictions_array[valid_predictions].tolist())
+                )
+                if np.any(valid_predictions)
+                else {},
             },
             "controller_summary": {
                 "backend": self.args.controller_backend,
@@ -611,16 +609,16 @@ class RealtimeTwoPhotonRunner:
                 "emitted_state_histogram": emitted_state_histogram,
             },
             "latency_summary": {
-                "mean_processing_ms": (
-                    float(np.mean([m["processing_ms"] for m in frame_metrics]))
-                    if frame_metrics
-                    else 0.0
-                ),
-                "max_processing_ms": (
-                    float(np.max([m["processing_ms"] for m in frame_metrics]))
-                    if frame_metrics
-                    else 0.0
-                ),
+                "mean_processing_ms": float(
+                    np.mean([m["processing_ms"] for m in frame_metrics])
+                )
+                if frame_metrics
+                else 0.0,
+                "max_processing_ms": float(
+                    np.max([m["processing_ms"] for m in frame_metrics])
+                )
+                if frame_metrics
+                else 0.0,
             },
         }
 

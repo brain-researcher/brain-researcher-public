@@ -43,13 +43,14 @@ def launch_kg_service(
             # Check if auto mode is set in environment
             auto_mode = os.environ.get("PORT_CONFLICT_MODE", "prompt")
             port = port_manager.handle_port_conflict(
-                service="kg", requested_port=port, host=host, auto_mode=auto_mode
+                service="kg",
+                requested_port=port,
+                host=host,
+                auto_mode=auto_mode
             )
         elif not port_manager.check_port(port, host):
             console.print(f"[red]Error: Port {port} is already in use[/red]")
-            console.print(
-                "[yellow]Use --auto-port flag to handle conflicts automatically[/yellow]"
-            )
+            console.print("[yellow]Use --auto-port flag to handle conflicts automatically[/yellow]")
             sys.exit(1)
 
         # Set environment variables
@@ -92,16 +93,13 @@ def launch_kg_service(
 
     except ImportError as e:
         console.print(f"[red]Error: Could not import BR-KG service: {e}[/red]")
-        console.print(
-            "[yellow]Make sure the BR-KG dependencies are installed:[/yellow]"
-        )
+        console.print("[yellow]Make sure the BR-KG dependencies are installed:[/yellow]")
         console.print("  pip install -e '.[br-kg]'")
         sys.exit(1)
     except Exception as e:
         console.print(f"[red]Error starting BR-KG service: {e}[/red]")
         if verbose:
             import traceback
-
             console.print(traceback.format_exc())
         sys.exit(1)
 
@@ -140,9 +138,7 @@ def launch_kg_service_production(
                     "[yellow]GLM FitLins database not found; related endpoints may be disabled.[/yellow]"
                 )
 
-        console.print(
-            f"[green]Starting BR-KG service (production) on {host}:{port}...[/green]"
-        )
+        console.print(f"[green]Starting BR-KG service (production) on {host}:{port}...[/green]")
         console.print(f"[dim]Workers: {workers}[/dim]")
 
         # Run with gunicorn

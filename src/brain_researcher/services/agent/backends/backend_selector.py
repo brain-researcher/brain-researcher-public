@@ -2,15 +2,13 @@
 
 import asyncio
 import logging
+from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
 
 from .base_backend import (
-    BackendCapacity,
-    BackendUnavailableError,
-    BaseBackend,
-    ResourceRequirements,
+    BaseBackend, ResourceRequirements, BackendCapacity,
+    BackendUnavailableError
 )
 
 logger = logging.getLogger(__name__)
@@ -18,18 +16,16 @@ logger = logging.getLogger(__name__)
 
 class SelectionStrategy(Enum):
     """Backend selection strategies."""
-
-    FASTEST = "fastest"  # Select backend with shortest queue time
-    CHEAPEST = "cheapest"  # Select backend with lowest cost
+    FASTEST = "fastest"          # Select backend with shortest queue time
+    CHEAPEST = "cheapest"        # Select backend with lowest cost
     MOST_AVAILABLE = "most_available"  # Select backend with most available resources
-    PREFERRED = "preferred"  # Use preferred order with fallback
-    LOAD_BALANCED = "load_balanced"  # Distribute load across backends
+    PREFERRED = "preferred"      # Use preferred order with fallback
+    LOAD_BALANCED = "load_balanced"    # Distribute load across backends
 
 
 @dataclass
 class BackendScore:
     """Scoring information for backend selection."""
-
     backend: BaseBackend
     score: float
     queue_time: int
@@ -43,12 +39,9 @@ class BackendScore:
 class BackendSelector:
     """Intelligent backend selection and failover management."""
 
-    def __init__(
-        self,
-        backends: List[BaseBackend],
-        strategy: SelectionStrategy = SelectionStrategy.MOST_AVAILABLE,
-        preferred_order: Optional[List[str]] = None,
-    ):
+    def __init__(self, backends: List[BaseBackend],
+                 strategy: SelectionStrategy = SelectionStrategy.MOST_AVAILABLE,
+                 preferred_order: Optional[List[str]] = None):
         """Initialize backend selector.
 
         Args:
@@ -65,12 +58,10 @@ class BackendSelector:
 
         logger.info(f"Initialized backend selector with {len(backends)} backends")
 
-    async def select_backend(
-        self,
-        requirements: ResourceRequirements,
-        strategy: Optional[SelectionStrategy] = None,
-        excluded_backends: Optional[List[str]] = None,
-    ) -> BaseBackend:
+    async def select_backend(self,
+                           requirements: ResourceRequirements,
+                           strategy: Optional[SelectionStrategy] = None,
+                           excluded_backends: Optional[List[str]] = None) -> BaseBackend:
         """Select the best backend for given requirements.
 
         Args:
@@ -89,8 +80,7 @@ class BackendSelector:
 
         # Filter available backends
         available_backends = [
-            backend
-            for name, backend in self.backends.items()
+            backend for name, backend in self.backends.items()
             if name not in excluded_backends
         ]
 
@@ -104,11 +94,8 @@ class BackendSelector:
         suitable_backends = [score for score in backend_scores if score.can_satisfy]
 
         if not suitable_backends:
-            reasons = [
-                f"{score.backend.name}: {score.reason}"
-                for score in backend_scores
-                if not score.can_satisfy
-            ]
+            reasons = [f"{score.backend.name}: {score.reason}"
+                      for score in backend_scores if not score.can_satisfy]
             raise BackendUnavailableError(
                 f"No backends can satisfy requirements. Reasons: {'; '.join(reasons)}"
             )
@@ -123,18 +110,15 @@ class BackendSelector:
         )
 
         # Update load balancing tracking
-        self._last_selected[selected_score.backend.name] = (
+        self._last_selected[selected_score.backend.name] = \
             self._last_selected.get(selected_score.backend.name, 0) + 1
-        )
 
         return selected_score.backend
 
-    async def select_with_failover(
-        self,
-        requirements: ResourceRequirements,
-        max_attempts: int = 3,
-        strategy: Optional[SelectionStrategy] = None,
-    ) -> BaseBackend:
+    async def select_with_failover(self,
+                                 requirements: ResourceRequirements,
+                                 max_attempts: int = 3,
+                                 strategy: Optional[SelectionStrategy] = None) -> BaseBackend:
         """Select backend with automatic failover.
 
         Args:
@@ -177,9 +161,9 @@ class BackendSelector:
             f"All backends failed after {max_attempts} attempts. Last error: {last_error}"
         )
 
-    async def _score_backends(
-        self, backends: List[BaseBackend], requirements: ResourceRequirements
-    ) -> List[BackendScore]:
+    async def _score_backends(self,
+                            backends: List[BaseBackend],
+                            requirements: ResourceRequirements) -> List[BackendScore]:
         """Score all backends for selection."""
         scores = []
 
@@ -193,26 +177,24 @@ class BackendSelector:
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Error scoring backend {backends[i].name}: {result}")
-                scores.append(
-                    BackendScore(
-                        backend=backends[i],
-                        score=0.0,
-                        queue_time=9999,
-                        cost=9999.0,
-                        availability_ratio=0.0,
-                        health_status=False,
-                        can_satisfy=False,
-                        reason=f"Error: {result}",
-                    )
-                )
+                scores.append(BackendScore(
+                    backend=backends[i],
+                    score=0.0,
+                    queue_time=9999,
+                    cost=9999.0,
+                    availability_ratio=0.0,
+                    health_status=False,
+                    can_satisfy=False,
+                    reason=f"Error: {result}"
+                ))
             else:
                 scores.append(result)
 
         return scores
 
-    async def _score_backend(
-        self, backend: BaseBackend, requirements: ResourceRequirements
-    ) -> BackendScore:
+    async def _score_backend(self,
+                           backend: BaseBackend,
+                           requirements: ResourceRequirements) -> BackendScore:
         """Score a single backend."""
         try:
             # Check if backend can satisfy requirements
@@ -226,7 +208,7 @@ class BackendSelector:
                     availability_ratio=0.0,
                     health_status=False,
                     can_satisfy=False,
-                    reason="Requirements not supported",
+                    reason="Requirements not supported"
                 )
 
             # Get health status (with caching)
@@ -240,7 +222,7 @@ class BackendSelector:
                     availability_ratio=0.0,
                     health_status=False,
                     can_satisfy=False,
-                    reason="Backend unhealthy",
+                    reason="Backend unhealthy"
                 )
 
             # Get capacity information (with caching)
@@ -248,16 +230,12 @@ class BackendSelector:
 
             # Calculate availability ratio
             cpu_ratio = capacity.available_cpu / max(capacity.total_cpu, 1.0)
-            memory_ratio = capacity.available_memory_gb / max(
-                capacity.total_memory_gb, 1.0
-            )
+            memory_ratio = capacity.available_memory_gb / max(capacity.total_memory_gb, 1.0)
             availability_ratio = min(cpu_ratio, memory_ratio)
 
             # Check if enough resources available
-            if (
-                capacity.available_cpu < requirements.cpu
-                or capacity.available_memory_gb < requirements.memory_gb
-            ):
+            if (capacity.available_cpu < requirements.cpu or
+                capacity.available_memory_gb < requirements.memory_gb):
                 return BackendScore(
                     backend=backend,
                     score=0.0,
@@ -266,7 +244,7 @@ class BackendSelector:
                     availability_ratio=availability_ratio,
                     health_status=True,
                     can_satisfy=False,
-                    reason="Insufficient resources available",
+                    reason="Insufficient resources available"
                 )
 
             # Get queue time and cost estimates
@@ -286,7 +264,7 @@ class BackendSelector:
                 availability_ratio=availability_ratio,
                 health_status=True,
                 can_satisfy=True,
-                reason="Available",
+                reason="Available"
             )
 
         except Exception as e:
@@ -299,12 +277,11 @@ class BackendSelector:
                 availability_ratio=0.0,
                 health_status=False,
                 can_satisfy=False,
-                reason=f"Scoring error: {e}",
+                reason=f"Scoring error: {e}"
             )
 
-    def _calculate_score(
-        self, availability_ratio: float, queue_time: int, cost: float, queue_depth: int
-    ) -> float:
+    def _calculate_score(self, availability_ratio: float, queue_time: int,
+                        cost: float, queue_depth: int) -> float:
         """Calculate composite score for backend."""
         # Normalize components (0-1)
         availability_score = availability_ratio
@@ -320,17 +297,17 @@ class BackendSelector:
 
         # Weighted combination
         score = (
-            availability_score * 0.4
-            + queue_score * 0.3
-            + cost_score * 0.2
-            + depth_score * 0.1
+            availability_score * 0.4 +
+            queue_score * 0.3 +
+            cost_score * 0.2 +
+            depth_score * 0.1
         ) * 100
 
         return score
 
-    def _apply_strategy(
-        self, backend_scores: List[BackendScore], strategy: SelectionStrategy
-    ) -> BackendScore:
+    def _apply_strategy(self,
+                       backend_scores: List[BackendScore],
+                       strategy: SelectionStrategy) -> BackendScore:
         """Apply selection strategy to choose backend."""
 
         if strategy == SelectionStrategy.FASTEST:
@@ -423,26 +400,26 @@ class BackendSelector:
                 capacity = await self._get_cached_capacity(backend)
 
                 status[name] = {
-                    "name": name,
-                    "type": backend.__class__.__name__,
-                    "healthy": health,
-                    "capacity": {
-                        "total_cpu": capacity.total_cpu,
-                        "available_cpu": capacity.available_cpu,
-                        "total_memory_gb": capacity.total_memory_gb,
-                        "available_memory_gb": capacity.available_memory_gb,
-                        "total_gpu": capacity.total_gpu,
-                        "available_gpu": capacity.available_gpu,
-                        "queue_depth": capacity.queue_depth,
+                    'name': name,
+                    'type': backend.__class__.__name__,
+                    'healthy': health,
+                    'capacity': {
+                        'total_cpu': capacity.total_cpu,
+                        'available_cpu': capacity.available_cpu,
+                        'total_memory_gb': capacity.total_memory_gb,
+                        'available_memory_gb': capacity.available_memory_gb,
+                        'total_gpu': capacity.total_gpu,
+                        'available_gpu': capacity.available_gpu,
+                        'queue_depth': capacity.queue_depth
                     },
-                    "usage_count": self._last_selected.get(name, 0),
+                    'usage_count': self._last_selected.get(name, 0)
                 }
             except Exception as e:
                 status[name] = {
-                    "name": name,
-                    "type": backend.__class__.__name__,
-                    "healthy": False,
-                    "error": str(e),
+                    'name': name,
+                    'type': backend.__class__.__name__,
+                    'healthy': False,
+                    'error': str(e)
                 }
 
         return status

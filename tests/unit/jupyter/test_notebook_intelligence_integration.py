@@ -21,8 +21,8 @@ from brain_researcher.integrations.notebook_intelligence._compat import Markdown
 
 def test_nbi_settings_from_env(monkeypatch):
     monkeypatch.setenv("BR_PRODUCT_NAME", "Brain Researcher")
-    monkeypatch.setenv("BR_PRODUCT_URL", "https://brain-researcher.com")
-    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://hub.brain-researcher.com/mcp")
+    monkeypatch.setenv("BR_PRODUCT_URL", "https://${PUBLIC_HOSTNAME}")
+    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://hub.${PUBLIC_HOSTNAME}/mcp")
     monkeypatch.setenv("BR_MCP_BEARER_TOKEN", "secret-token")
     monkeypatch.setenv("BR_NBI_MCP_SERVER_NAME", "brain-researcher")
     monkeypatch.setenv("BR_NBI_CHAT_MODEL_PROVIDER", "openai-compatible")
@@ -51,7 +51,7 @@ def test_nbi_settings_from_env(monkeypatch):
         ],
     }
     assert mcp_server == {
-        "url": "https://hub.brain-researcher.com/mcp",
+        "url": "https://hub.${PUBLIC_HOSTNAME}/mcp",
         "headers": {"Authorization": "Bearer secret-token"},
         "autoApprove": ["kg_search_nodes", "kg_verify_hypothesis"],
     }
@@ -59,8 +59,8 @@ def test_nbi_settings_from_env(monkeypatch):
 
 def test_nbi_settings_fallback_to_managed_marimo_ai_env(monkeypatch):
     monkeypatch.setenv("BR_PRODUCT_NAME", "Brain Researcher")
-    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp")
-    monkeypatch.setenv("BR_MARIMO_AI_BASE_URL", "https://llm.brain-researcher.com/v1")
+    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp")
+    monkeypatch.setenv("BR_MARIMO_AI_BASE_URL", "https://llm.${PUBLIC_HOSTNAME}/v1")
     monkeypatch.setenv("BR_MARIMO_AI_API_KEY", "runtime-ai-token")
     monkeypatch.setenv(
         "BR_MARIMO_AI_CHAT_MODEL",
@@ -85,7 +85,7 @@ def test_nbi_settings_fallback_to_managed_marimo_ai_env(monkeypatch):
             {"id": "api_key", "value": "runtime-ai-token"},
             {
                 "id": "base_url",
-                "value": "https://llm.brain-researcher.com/v1",
+                "value": "https://llm.${PUBLIC_HOSTNAME}/v1",
             },
         ],
     }
@@ -93,7 +93,7 @@ def test_nbi_settings_fallback_to_managed_marimo_ai_env(monkeypatch):
 
 def test_nbi_settings_fallback_to_builtin_google_marimo_ai_env(monkeypatch):
     monkeypatch.setenv("BR_PRODUCT_NAME", "Brain Researcher")
-    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp")
+    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp")
     monkeypatch.setenv("BR_MARIMO_AI_PROVIDER_NAME", "google")
     monkeypatch.setenv("BR_MARIMO_AI_API_KEY", "runtime-ai-token")
     monkeypatch.setenv(
@@ -134,7 +134,7 @@ def test_write_user_mcp_config_merges_existing_servers(tmp_path):
         product_name="Brain Researcher",
         workspace_mode="hosted",
         provider_name="Brain Researcher",
-        provider_url="https://brain-researcher.com",
+        provider_url="https://${PUBLIC_HOSTNAME}",
         extension_id="brain-researcher",
         extension_name="Brain Researcher",
         extension_slug="brain-researcher",
@@ -146,7 +146,7 @@ def test_write_user_mcp_config_merges_existing_servers(tmp_path):
         participant_name="Brain Researcher",
         participant_description="Neuroimaging research assistant powered by BR MCP.",
         mcp_server_name="brain-researcher",
-        mcp_http_url="https://hub.brain-researcher.com/mcp",
+        mcp_http_url="https://hub.${PUBLIC_HOSTNAME}/mcp",
         mcp_bearer_token="secret-token",
         default_chat_mode="ask",
         chat_model_provider="openai-compatible",
@@ -181,7 +181,7 @@ def test_write_user_mcp_config_merges_existing_servers(tmp_path):
 
     assert payload["mcpServers"]["other"] == {"url": "http://other/mcp"}
     assert payload["mcpServers"]["brain-researcher"] == {
-        "url": "https://hub.brain-researcher.com/mcp",
+        "url": "https://hub.${PUBLIC_HOSTNAME}/mcp",
         "headers": {"Authorization": "Bearer secret-token"},
         "autoApprove": ["kg_search_nodes"],
     }
@@ -192,7 +192,7 @@ def test_write_user_config_merges_existing_settings(tmp_path):
         product_name="Brain Researcher",
         workspace_mode="hosted",
         provider_name="Brain Researcher",
-        provider_url="https://brain-researcher.com",
+        provider_url="https://${PUBLIC_HOSTNAME}",
         extension_id="brain-researcher",
         extension_name="Brain Researcher",
         extension_slug="brain-researcher",
@@ -204,7 +204,7 @@ def test_write_user_config_merges_existing_settings(tmp_path):
         participant_name="Brain Researcher",
         participant_description="Neuroimaging research assistant powered by BR MCP.",
         mcp_server_name="brain-researcher",
-        mcp_http_url="https://hub.brain-researcher.com/mcp",
+        mcp_http_url="https://hub.${PUBLIC_HOSTNAME}/mcp",
         mcp_bearer_token="secret-token",
         default_chat_mode="ask",
         chat_model_provider="openai-compatible",
@@ -416,7 +416,7 @@ def test_build_user_config_defaults_models_to_none():
         product_name="Brain Researcher",
         workspace_mode="hosted",
         provider_name="Brain Researcher",
-        provider_url="https://brain-researcher.com",
+        provider_url="https://${PUBLIC_HOSTNAME}",
         extension_id="brain-researcher",
         extension_name="Brain Researcher",
         extension_slug="brain-researcher",
@@ -428,7 +428,7 @@ def test_build_user_config_defaults_models_to_none():
         participant_name="Brain Researcher",
         participant_description="Neuroimaging research assistant powered by BR MCP.",
         mcp_server_name="brain-researcher",
-        mcp_http_url="https://hub.brain-researcher.com/mcp",
+        mcp_http_url="https://hub.${PUBLIC_HOSTNAME}/mcp",
         mcp_bearer_token=None,
         default_chat_mode="ask",
         chat_model_provider=None,

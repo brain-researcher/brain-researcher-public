@@ -26,9 +26,7 @@ import torch
 # Add brain-decoder to path - try multiple locations
 _brain_decoder_paths = [
     Path(__file__).parent.parent.parent.parent.parent / "external" / "brain-decoder",
-    Path(
-        "/data/ECoG-foundation-model/mnndl_temp/brain_researcher/external/brain-decoder"
-    ),
+    Path("/data/ECoG-foundation-model/mnndl_temp/brain_researcher/external/brain-decoder"),
 ]
 
 for _path in _brain_decoder_paths:
@@ -89,22 +87,13 @@ class FmriTextAlignmentModel:
         if niclip_data_path is None:
             try:
                 from brain_researcher.config import get_data_path
-
-                niclip_data_path = get_data_path("local", "niclip")
+                niclip_data_path = get_data_path('local', 'niclip')
                 if niclip_data_path is None:
                     # Fallback to default locations
-                    niclip_data_path = (
-                        Path(__file__).parent.parent.parent.parent.parent
-                        / "data"
-                        / "niclip"
-                    )
+                    niclip_data_path = Path(__file__).parent.parent.parent.parent.parent / "data" / "niclip"
             except ImportError:
                 # Config system not available, use fallback
-                niclip_data_path = (
-                    Path(__file__).parent.parent.parent.parent.parent
-                    / "data"
-                    / "niclip"
-                )
+                niclip_data_path = Path(__file__).parent.parent.parent.parent.parent / "data" / "niclip"
 
         self.niclip_data_path = Path(niclip_data_path)
         self.model_name = model_name
@@ -390,11 +379,9 @@ class FmriTextAlignmentModel:
                     self.model_path,
                     self.vocabulary,
                     vocab_embeddings,
-                    (
-                        self.prior_probabilities
-                        if use_bayes
-                        else np.ones(len(self.vocabulary))
-                    ),
+                    self.prior_probabilities
+                    if use_bayes
+                    else np.ones(len(self.vocabulary)),
                     topk=top_k,
                     device=self.device,
                     standardize=False,

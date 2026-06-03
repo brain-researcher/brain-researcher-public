@@ -12,17 +12,13 @@ import unittest
 br_kg_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, br_kg_path)
 
-from graph.graph_database import BRKGGraphDB
-
 from brain_researcher.services.br_kg.etl.pubmed_task_linker_improved import (
     build_comprehensive_task_index,
     ingest_publication_with_tasks,
     match_task_advanced,
 )
-from brain_researcher.services.br_kg.etl.task_extraction import (
-    GENERIC_TASK_BLACKLIST,
-    extract_tasks_from_metadata,
-)
+from brain_researcher.services.br_kg.etl.task_extraction import GENERIC_TASK_BLACKLIST, extract_tasks_from_metadata
+from graph.graph_database import BRKGGraphDB
 
 
 class TestTaskExtraction(unittest.TestCase):

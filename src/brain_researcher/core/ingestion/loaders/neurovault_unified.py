@@ -16,20 +16,18 @@ Features:
 Author: Brain Researcher Team
 """
 
-import hashlib
 import json
 import logging
+import hashlib
 import re
-from collections import Counter
-from datetime import datetime, timedelta
-from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
-from urllib.parse import parse_qs, urlparse
-
+from typing import Dict, List, Any, Optional, Tuple, Iterator
+from urllib.parse import urlparse, parse_qs
+from datetime import datetime, timedelta
 import requests
-from requests.exceptions import ConnectionError as ReqConnectionError
-from requests.exceptions import ReadTimeout
+from requests.exceptions import ReadTimeout, ConnectionError as ReqConnectionError
+from difflib import SequenceMatcher
+from collections import Counter
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +55,7 @@ class NeuroVaultUnifiedLoader:
         cache_dir: Optional[str] = None,
         use_niclip: bool = True,
         niclip_path: Optional[str] = None,
-        cache_duration: timedelta = DEFAULT_CACHE_DURATION,
+        cache_duration: timedelta = DEFAULT_CACHE_DURATION
     ):
         """
         Initialize the unified NeuroVault loader.
@@ -69,11 +67,7 @@ class NeuroVaultUnifiedLoader:
             cache_duration: How long to keep cached data
         """
         # Set cache directory
-        self.cache_dir = (
-            Path(cache_dir)
-            if cache_dir
-            else Path.home() / ".br_kg_cache" / "neurovault"
-        )
+        self.cache_dir = Path(cache_dir) if cache_dir else Path.home() / ".br_kg_cache" / "neurovault"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_duration = cache_duration
 
@@ -92,7 +86,7 @@ class NeuroVaultUnifiedLoader:
             "cache_hits": 0,
             "api_calls": 0,
             "contrasts_matched": 0,
-            "pubmed_links": 0,
+            "pubmed_links": 0
         }
 
         self._qa_allowed_map_types = {
@@ -101,7 +95,7 @@ class NeuroVaultUnifiedLoader:
             "F map",
             "beta map",
             "Chi squared map",
-            '1-P map ("inverted" probability)',
+            "1-P map (\"inverted\" probability)",
             "other",
             "ROI/mask",
             "univariate-beta map",
@@ -122,14 +116,13 @@ class NeuroVaultUnifiedLoader:
     def _init_niclip(self, niclip_path: Optional[str]):
         """Initialize NICLIP components for enhanced matching."""
         try:
-            from brain_researcher.core.ingestion.loaders.niclip_embeddings import (
-                NICLIPEmbeddingLoader,
-            )
+            from brain_researcher.core.ingestion.loaders.niclip_embeddings import NICLIPEmbeddingLoader
 
             self.niclip_loader = NICLIPEmbeddingLoader(niclip_path)
             # Load coordinate embeddings for matching
             self.niclip_embeddings = self.niclip_loader.get_coordinate_embeddings(
-                method="MKDA", normalization="standardized"
+                method="MKDA",
+                normalization="standardized"
             )
             logger.info("NICLIP integration initialized")
         except Exception as e:
@@ -142,7 +135,7 @@ class NeuroVaultUnifiedLoader:
         download_maps: bool = False,
         validate_quality: bool = True,
         link_pubmed: bool = True,
-        match_contrasts: bool = True,
+        match_contrasts: bool = True
     ) -> Dict[str, Any]:
         """
         Load a NeuroVault collection with metadata and maps.
@@ -162,7 +155,7 @@ class NeuroVaultUnifiedLoader:
             "metadata": {},
             "maps": [],
             "links": {},
-            "quality_metrics": {},
+            "quality_metrics": {}
         }
 
         # Load collection metadata
@@ -212,9 +205,7 @@ class NeuroVaultUnifiedLoader:
 
         # Add NICLIP embeddings if available
         if self.use_niclip and self.niclip_embeddings is not None:
-            collection_data["niclip_enhanced"] = self._enhance_with_niclip(
-                collection_data
-            )
+            collection_data["niclip_enhanced"] = self._enhance_with_niclip(collection_data)
 
         return collection_data
 
@@ -282,7 +273,11 @@ class NeuroVaultUnifiedLoader:
 
     def _validate_map_quality(self, map_data: Dict[str, Any]) -> Dict[str, Any]:
         """Validate the quality of a statistical map."""
-        quality = {"is_valid": True, "warnings": [], "metrics": {}}
+        quality = {
+            "is_valid": True,
+            "warnings": [],
+            "metrics": {}
+        }
 
         # Check required fields
         required_fields = ["name", "file", "map_type"]
@@ -308,9 +303,7 @@ class NeuroVaultUnifiedLoader:
 
         # Calculate quality score
         quality["metrics"]["completeness"] = self._calculate_completeness(map_data)
-        quality["metrics"]["has_coordinates"] = bool(
-            map_data.get("perc_bad_voxels", 0) < 50
-        )
+        quality["metrics"]["has_coordinates"] = bool(map_data.get("perc_bad_voxels", 0) < 50)
 
         # Overall validity
         if len(quality["warnings"]) > 3:
@@ -321,15 +314,9 @@ class NeuroVaultUnifiedLoader:
     def _calculate_completeness(self, map_data: Dict[str, Any]) -> float:
         """Calculate completeness score for a map."""
         fields = [
-            "name",
-            "description",
-            "map_type",
-            "modality",
-            "cognitive_paradigm_cogatlas",
-            "cognitive_contrast_cogatlas",
-            "number_of_subjects",
-            "analysis_level",
-            "file",
+            "name", "description", "map_type", "modality",
+            "cognitive_paradigm_cogatlas", "cognitive_contrast_cogatlas",
+            "number_of_subjects", "analysis_level", "file"
         ]
 
         present = sum(1 for f in fields if map_data.get(f))
@@ -342,9 +329,7 @@ class NeuroVaultUnifiedLoader:
             return None
 
         # Create download directory
-        download_dir = (
-            self.cache_dir / "maps" / str(map_data.get("collection_id", "unknown"))
-        )
+        download_dir = self.cache_dir / "maps" / str(map_data.get("collection_id", "unknown"))
         download_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate filename
@@ -393,17 +378,13 @@ class NeuroVaultUnifiedLoader:
             norm_name = self._normalize_text(name)
 
             # Simple similarity matching
-            similarity = self._calculate_similarity(
-                norm_name, "working memory"
-            )  # Example
+            similarity = self._calculate_similarity(norm_name, "working memory")  # Example
             if similarity > 0.8:
-                matches.append(
-                    {
-                        "contrast": name,
-                        "confidence": similarity,
-                        "method": "text_similarity",
-                    }
-                )
+                matches.append({
+                    "contrast": name,
+                    "confidence": similarity,
+                    "method": "text_similarity"
+                })
 
         return matches
 
@@ -434,12 +415,15 @@ class NeuroVaultUnifiedLoader:
             "doi": doi,
             "pmid": None,  # Would be fetched from PubMed
             "title": None,
-            "authors": [],
+            "authors": []
         }
 
     def _enhance_with_niclip(self, collection_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhance collection data with NICLIP embeddings."""
-        enhancements = {"coordinate_embeddings": [], "similar_concepts": []}
+        enhancements = {
+            "coordinate_embeddings": [],
+            "similar_concepts": []
+        }
 
         # Process each map
         for map_data in collection_data.get("maps", []):
@@ -454,7 +438,7 @@ class NeuroVaultUnifiedLoader:
         query: str = None,
         limit: int = 100,
         modality: str = None,
-        paginate_all: bool = False,
+        paginate_all: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Search for NeuroVault collections.
@@ -658,49 +642,31 @@ class NeuroVaultUnifiedLoader:
 
                             time.sleep(sleep)
                             continue
-                        logger.error(
-                            "NeuroVault image fetch failed after %s retries: %s",
-                            retries,
-                            e,
-                        )
+                        logger.error("NeuroVault image fetch failed after %s retries: %s", retries, e)
                         if not resume_on_error:
                             return
                         # Resume from the next offset rather than exiting entirely.
                         current_offset = self._extract_offset(url, params) + limit
-                        logger.warning(
-                            "Resuming NeuroVault image fetch from offset %s",
-                            current_offset,
-                        )
+                        logger.warning("Resuming NeuroVault image fetch from offset %s", current_offset)
                         url = (
                             f"{NEUROVAULT_API_BASE}/collections/{collection_id}/images/"
                             if collection_id
                             else f"{NEUROVAULT_API_BASE}/images/"
                         )
-                        params = {
-                            **base_params,
-                            "offset": current_offset,
-                            "limit": limit,
-                        }
+                        params = {**base_params, "offset": current_offset, "limit": limit}
                         attempt = 0
                         continue
                     except requests.HTTPError as e:
                         logger.error("NeuroVault image fetch HTTP error: %s", e)
                         if resume_on_error:
                             current_offset = self._extract_offset(url, params) + limit
-                            logger.warning(
-                                "Resuming NeuroVault image fetch from offset %s",
-                                current_offset,
-                            )
+                            logger.warning("Resuming NeuroVault image fetch from offset %s", current_offset)
                             url = (
                                 f"{NEUROVAULT_API_BASE}/collections/{collection_id}/images/"
                                 if collection_id
                                 else f"{NEUROVAULT_API_BASE}/images/"
                             )
-                            params = {
-                                **base_params,
-                                "offset": current_offset,
-                                "limit": limit,
-                            }
+                            params = {**base_params, "offset": current_offset, "limit": limit}
                             attempt = 0
                             continue
                         return
@@ -744,9 +710,7 @@ class NeuroVaultUnifiedLoader:
 
         try:
             # Check if cache is expired
-            file_age = datetime.now() - datetime.fromtimestamp(
-                cache_file.stat().st_mtime
-            )
+            file_age = datetime.now() - datetime.fromtimestamp(cache_file.stat().st_mtime)
             if file_age > self.cache_duration:
                 logger.debug(f"Cache expired for {key}")
                 return None
@@ -768,9 +732,7 @@ class NeuroVaultUnifiedLoader:
         except Exception as e:
             logger.debug(f"Error saving cache: {e}")
 
-    def assess_image_quality(
-        self, image: Dict[str, Any]
-    ) -> Tuple[bool, str, List[str], float, bool]:
+    def assess_image_quality(self, image: Dict[str, Any]) -> Tuple[bool, str, List[str], float, bool]:
         """Assess whether a NeuroVault image should be ingested.
 
         Returns:
@@ -792,8 +754,7 @@ class NeuroVaultUnifiedLoader:
             self._qa_unsupported_map_types[map_key] += 1
             if (
                 self._qa_unsupported_map_types[map_key] == 1
-                and len(self._qa_unsupported_map_types)
-                <= self._qa_unsupported_log_limit
+                and len(self._qa_unsupported_map_types) <= self._qa_unsupported_log_limit
             ):
                 logger.info(
                     "UNSUPPORTED_MAP_TYPE example #%d: %r (id=%s collection=%s)",
@@ -897,14 +858,14 @@ if __name__ == "__main__":
         # Load first collection
         collection_id = collections[0]["id"]
         data = loader.load_collection(
-            collection_id, download_maps=False, validate_quality=True
+            collection_id,
+            download_maps=False,
+            validate_quality=True
         )
 
         print(f"\nCollection: {data['metadata'].get('name', 'Unknown')}")
         print(f"Maps: {len(data['maps'])}")
-        print(
-            f"Quality validated: {sum(1 for m in data['maps'] if m.get('quality', {}).get('is_valid'))}"
-        )
+        print(f"Quality validated: {sum(1 for m in data['maps'] if m.get('quality', {}).get('is_valid'))}")
 
     # Print statistics
     print(f"\nStatistics: {loader.get_statistics()}")

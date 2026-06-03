@@ -1,9 +1,9 @@
 """Reinforcement Learning optimization for agent planning."""
 
-from .cql_optimizer import CQLOptimizer
 from .iql_optimizer import IQLOptimizer
-from .policy_network import PolicyNetwork, QNetwork, ValueNetwork
+from .cql_optimizer import CQLOptimizer
 from .reward_model import NeuroimagingRewardModel
+from .policy_network import PolicyNetwork, QNetwork, ValueNetwork
 from .training_pipeline import RLTrainingPipeline
 
 __all__ = [
@@ -13,5 +13,5 @@ __all__ = [
     "PolicyNetwork",
     "QNetwork",
     "ValueNetwork",
-    "RLTrainingPipeline",
+    "RLTrainingPipeline"
 ]

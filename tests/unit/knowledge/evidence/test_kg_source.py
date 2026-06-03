@@ -1,8 +1,7 @@
 """Tests for KG evidence source adapter."""
 
-from unittest.mock import MagicMock, patch
-
 import pytest
+from unittest.mock import MagicMock, patch
 
 from brain_researcher.services.knowledge.evidence.base import (
     EvidenceQuery,

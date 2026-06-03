@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from .monitor import integration_router as monitor_integration_router
 from ..monitor_runtime import CreateSlackBridgeRequest
 from ..session_runtime import (
     CreateSessionRequest,
@@ -13,7 +14,6 @@ from ..session_runtime import (
     SessionKind,
     SessionRuntime,
 )
-from .monitor import integration_router as monitor_integration_router
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 integration_router = monitor_integration_router
@@ -34,9 +34,7 @@ async def _resolve_request_user(request: Request):
 
 @router.post("")
 @router.post("/attach")
-async def create_session(
-    request: Request, payload: CreateSessionRequest
-) -> dict[str, Any]:
+async def create_session(request: Request, payload: CreateSessionRequest) -> dict[str, Any]:
     runtime = _runtime_from_request(request)
     user, _ = await _resolve_request_user(request)
     session = await runtime.create_session(user.id, payload)

@@ -81,9 +81,7 @@ def _render_preflight_table(preflight: dict[str, Any]) -> None:
 
     blocks = preflight.get("required_blocks") or {}
     if blocks:
-        block_table = Table(
-            title="Required Blocks", show_header=True, header_style="bold cyan"
-        )
+        block_table = Table(title="Required Blocks", show_header=True, header_style="bold cyan")
         block_table.add_column("Block", style="cyan")
         block_table.add_column("Present", style="magenta")
         for name, present in blocks.items():
@@ -92,9 +90,7 @@ def _render_preflight_table(preflight: dict[str, Any]) -> None:
 
     issues = preflight.get("issues") or []
     if issues:
-        issue_table = Table(
-            title="Preflight Issues", show_header=True, header_style="bold red"
-        )
+        issue_table = Table(title="Preflight Issues", show_header=True, header_style="bold red")
         issue_table.add_column("Severity", style="red")
         issue_table.add_column("Code", style="yellow")
         issue_table.add_column("Message", style="white")
@@ -124,13 +120,9 @@ def _render_advance_table(payload: dict[str, Any]) -> None:
     )
     console.print(f"[dim]{decision['rationale']}[/dim]")
     if payload.get("review_skipped_reason"):
-        console.print(
-            f"[yellow]review skipped:[/yellow] {payload['review_skipped_reason']}"
-        )
+        console.print(f"[yellow]review skipped:[/yellow] {payload['review_skipped_reason']}")
     if not preflight["ready_for_review"]:
-        console.print(
-            "[yellow]preflight did not pass; controller issued a repair directive[/yellow]"
-        )
+        console.print("[yellow]preflight did not pass; controller issued a repair directive[/yellow]")
 
     trace_event = decision.get("trace_event") or {}
     if trace_event:
@@ -141,9 +133,7 @@ def _render_advance_table(payload: dict[str, Any]) -> None:
 
 @app.command("preflight")
 def line_preflight(
-    workspace: Path = typer.Argument(
-        ..., exists=True, file_okay=True, dir_okay=True, readable=True
-    ),
+    workspace: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=True, readable=True),
     output_format: str = typer.Option(
         "table", "--format", help="Output format: table | json"
     ),
@@ -151,9 +141,7 @@ def line_preflight(
     """Run deterministic report preflight for one autoresearch workspace."""
     fmt = _validate_output_format(output_format)
     resolved_workspace = _resolve_workspace_root(workspace)
-    preflight = run_autoresearch_report_preflight(resolved_workspace).model_dump(
-        mode="json"
-    )
+    preflight = run_autoresearch_report_preflight(resolved_workspace).model_dump(mode="json")
     if fmt == "json":
         console.print_json(data=json.loads(json.dumps(preflight)))
         raise typer.Exit(0)
@@ -163,9 +151,7 @@ def line_preflight(
 @app.command("advance")
 @app.command("run")
 def line_advance(
-    workspace: Path = typer.Argument(
-        ..., exists=True, file_okay=True, dir_okay=True, readable=True
-    ),
+    workspace: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=True, readable=True),
     persist: bool = typer.Option(
         True,
         "--persist/--no-persist",

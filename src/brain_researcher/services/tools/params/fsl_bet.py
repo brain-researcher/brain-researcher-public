@@ -36,9 +36,7 @@ class FSLBETParameters:
     radius: float | None = None
     extra_flags: Tuple[str, ...] = field(default_factory=tuple)
 
-    def command(
-        self, include_executable: bool = True, executable: str = "bet"
-    ) -> list[str]:
+    def command(self, include_executable: bool = True, executable: str = "bet") -> list[str]:
         cmd: list[str] = []
         if include_executable:
             cmd.append(executable)
@@ -78,10 +76,7 @@ class FSLBETParameters:
 
 
 def build_fsl_bet_command(
-    params: FSLBETParameters,
-    *,
-    include_executable: bool = True,
-    executable: str = "bet",
+    params: FSLBETParameters, *, include_executable: bool = True, executable: str = "bet"
 ) -> list[str]:
     return params.command(include_executable=include_executable, executable=executable)
 

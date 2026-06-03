@@ -86,9 +86,7 @@ def memory_write(
             }
         if not isinstance(card_data, dict):
             raise ValueError("card_data must be an object")
-        response = MemoryStore(run_root=_runstore.RUN_ROOT).write(
-            normalized_type, card_data
-        )
+        response = MemoryStore(run_root=_runstore.RUN_ROOT).write(normalized_type, card_data)
         return _memory_response_without_embeddings(
             response,
             include_embedding_vector=include_embedding_vector,
@@ -103,10 +101,8 @@ def memory_write(
 @mcp.tool()
 def memory_search(
     query: str = "",
-    card_type: (
-        enum_str(_MEMORY_CARD_TYPE_VALUES, "filter to a derived memory card type")
-        | None
-    ) = None,
+    card_type: enum_str(_MEMORY_CARD_TYPE_VALUES, "filter to a derived memory card type")
+    | None = None,
     filters: dict[str, Any] | None = None,
     limit: int = _MEMORY_SEARCH_DEFAULT_LIMIT,
     include_full_cards: bool = False,

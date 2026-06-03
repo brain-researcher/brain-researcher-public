@@ -1,11 +1,10 @@
 """Centrality measures for graph analysis."""
 
-import time
-from functools import lru_cache
-from typing import Dict, Optional
-
-import networkx as nx
 import numpy as np
+import networkx as nx
+from typing import Dict, Optional
+from functools import lru_cache
+import time
 
 
 class CentralityCalculator:
@@ -33,7 +32,9 @@ class CentralityCalculator:
         self._cache[key] = value
         self._cache_times[key] = time.time()
 
-    def betweenness(self, graph: nx.Graph, normalized: bool = True) -> Dict[str, float]:
+    def betweenness(self,
+                   graph: nx.Graph,
+                   normalized: bool = True) -> Dict[str, float]:
         """Calculate betweenness centrality.
 
         Args:
@@ -96,13 +97,11 @@ class CentralityCalculator:
         self._set_cache(cache_key, betweenness)
         return betweenness
 
-    def pagerank(
-        self,
-        graph: nx.Graph,
-        alpha: float = 0.85,
-        max_iter: int = 100,
-        tol: float = 1e-6,
-    ) -> Dict[str, float]:
+    def pagerank(self,
+                graph: nx.Graph,
+                alpha: float = 0.85,
+                max_iter: int = 100,
+                tol: float = 1e-6) -> Dict[str, float]:
         """Calculate PageRank centrality.
 
         Args:
@@ -138,18 +137,18 @@ class CentralityCalculator:
                 pagerank[node] = (1 - alpha) / n + alpha * rank_sum
 
             # Check convergence
-            err = sum(
-                abs(pagerank[node] - prev_pagerank[node]) for node in graph.nodes()
-            )
+            err = sum(abs(pagerank[node] - prev_pagerank[node])
+                     for node in graph.nodes())
             if err < n * tol:
                 break
 
         self._set_cache(cache_key, pagerank)
         return pagerank
 
-    def eigenvector(
-        self, graph: nx.Graph, max_iter: int = 100, tol: float = 1e-6
-    ) -> Dict[str, float]:
+    def eigenvector(self,
+                   graph: nx.Graph,
+                   max_iter: int = 100,
+                   tol: float = 1e-6) -> Dict[str, float]:
         """Calculate eigenvector centrality.
 
         Args:

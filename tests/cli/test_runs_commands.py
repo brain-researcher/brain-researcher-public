@@ -9,16 +9,10 @@ Tests cover:
 - br runs artifacts: Artifact listing
 """
 
-from unittest.mock import AsyncMock, Mock, patch
-
 import pytest
 from typer.testing import CliRunner
-
-from brain_researcher.cli.commands.runs_commands import (
-    app,
-    format_file_size,
-    format_timestamp,
-)
+from unittest.mock import patch, Mock, AsyncMock
+from brain_researcher.cli.commands.runs_commands import app, format_timestamp, format_file_size
 
 runner = CliRunner()
 
@@ -26,7 +20,6 @@ runner = CliRunner()
 # ============================================================================
 # Unit Tests for Helpers
 # ============================================================================
-
 
 class TestFormatHelpers:
     """Test formatting helper functions"""
@@ -63,7 +56,6 @@ class TestFormatHelpers:
 # Integration Tests for Commands
 # ============================================================================
 
-
 class TestRunsList:
     """Test br runs ls command"""
 
@@ -77,7 +69,7 @@ class TestRunsList:
                     "tool": "fsl_bet",
                     "prompt": "skull strip",
                     "created_at": 1704067200,
-                    "plan_summary": {"plan_status": "completed"},
+                    "plan_summary": {"plan_status": "completed"}
                 },
                 {
                     "id": "run_xyz789",
@@ -85,10 +77,10 @@ class TestRunsList:
                     "tool": "afni.3dSkullStrip",
                     "prompt": "extract brain",
                     "created_at": 1704067100,
-                    "plan_summary": {"plan_status": "planned"},
-                },
+                    "plan_summary": {"plan_status": "planned"}
+                }
             ],
-            "total": 2,
+            "total": 2
         }
 
         result = runner.invoke(app, ["ls"])
@@ -140,7 +132,6 @@ class TestRunsInspect:
     @patch("brain_researcher.cli.commands.runs_commands.api_get_sync")
     def test_inspect_basic(self, mock_get):
         """Test basic job inspection"""
-
         def mock_api_get(path, **kwargs):
             if "/plan" in path:
                 raise Exception("Plan not available")
@@ -151,7 +142,7 @@ class TestRunsInspect:
                 "prompt": "skull strip",
                 "created_at": 1704067200,
                 "completed_at": 1704067260,
-                "priority": 0,
+                "priority": 0
             }
 
         mock_get.side_effect = mock_api_get
@@ -166,7 +157,6 @@ class TestRunsInspect:
     @patch("brain_researcher.cli.commands.runs_commands.api_get_sync")
     def test_inspect_with_error(self, mock_get):
         """Test inspecting failed job"""
-
         def mock_api_get(path, **kwargs):
             if "/plan" in path:
                 raise Exception("Plan not available")
@@ -174,7 +164,7 @@ class TestRunsInspect:
                 "job_id": "run_failed",
                 "state": "failed",
                 "error": "Container execution failed",
-                "created_at": 1704067200,
+                "created_at": 1704067200
             }
 
         mock_get.side_effect = mock_api_get
@@ -189,11 +179,10 @@ class TestRunsInspect:
     def test_inspect_not_found(self, mock_get):
         """Test inspecting non-existent job"""
         import httpx
-
         mock_get.side_effect = httpx.HTTPStatusError(
             "404 Not Found",
             request=Mock(),
-            response=Mock(status_code=404, json=lambda: {"detail": "Job not found"}),
+            response=Mock(status_code=404, json=lambda: {"detail": "Job not found"})
         )
 
         result = runner.invoke(app, ["inspect", "nonexistent"])
@@ -210,23 +199,11 @@ class TestRunsPlan:
         mock_get.return_value = {
             "intent": "skull strip",
             "candidates": [
-                {
-                    "tool_id": "fsl_bet",
-                    "tool_name": "bet",
-                    "score": 0.85,
-                    "preflight_ok": True,
-                    "reason": "OK",
-                },
-                {
-                    "tool_id": "afni.3dSkullStrip",
-                    "tool_name": "3dSkullStrip",
-                    "score": 0.79,
-                    "preflight_ok": False,
-                    "reason": "Image not found",
-                },
+                {"tool_id": "fsl_bet", "tool_name": "bet", "score": 0.85, "preflight_ok": True, "reason": "OK"},
+                {"tool_id": "afni.3dSkullStrip", "tool_name": "3dSkullStrip", "score": 0.79, "preflight_ok": False, "reason": "Image not found"}
             ],
             "chosen": {"tool_id": "fsl_bet", "tool_name": "bet", "score": 0.85},
-            "constraints": {"infile": "/data/brain.nii.gz"},
+            "constraints": {"infile": "/data/brain.nii.gz"}
         }
 
         result = runner.invoke(app, ["plan", "run_abc123"])
@@ -240,13 +217,10 @@ class TestRunsPlan:
     def test_plan_not_found(self, mock_get):
         """Test viewing plan for job without planner"""
         import httpx
-
         mock_get.side_effect = httpx.HTTPStatusError(
             "404 Not Found",
             request=Mock(),
-            response=Mock(
-                status_code=404, json=lambda: {"detail": "Plan not available"}
-            ),
+            response=Mock(status_code=404, json=lambda: {"detail": "Plan not available"})
         )
 
         result = runner.invoke(app, ["plan", "run_no_plan"])
@@ -265,7 +239,7 @@ class TestRunsLogs:
             "logs": [
                 {"timestamp": "2024-01-01 00:00:00", "text": "Starting job"},
                 {"timestamp": "2024-01-01 00:00:01", "text": "Processing..."},
-                {"timestamp": "2024-01-01 00:00:02", "text": "Complete"},
+                {"timestamp": "2024-01-01 00:00:02", "text": "Complete"}
             ]
         }
 
@@ -300,17 +274,9 @@ class TestRunsArtifacts:
             "run_dir": "/tmp/runs/run_abc123",
             "file_count": 2,
             "files": [
-                {
-                    "name": "output.nii.gz",
-                    "size": 1048576,
-                    "modified": "2024-01-01 00:00:00",
-                },
-                {
-                    "name": "results.csv",
-                    "size": 2048,
-                    "modified": "2024-01-01 00:00:01",
-                },
-            ],
+                {"name": "output.nii.gz", "size": 1048576, "modified": "2024-01-01 00:00:00"},
+                {"name": "results.csv", "size": 2048, "modified": "2024-01-01 00:00:01"}
+            ]
         }
 
         result = runner.invoke(app, ["artifacts", "run_abc123"])
@@ -326,7 +292,7 @@ class TestRunsArtifacts:
         mock_get.return_value = {
             "run_id": "run_empty",
             "run_dir": "/tmp/runs/run_empty",
-            "files": [],
+            "files": []
         }
 
         result = runner.invoke(app, ["artifacts", "run_empty"])
@@ -338,13 +304,10 @@ class TestRunsArtifacts:
     def test_artifacts_not_found(self, mock_get):
         """Test artifacts for job without run directory"""
         import httpx
-
         mock_get.side_effect = httpx.HTTPStatusError(
             "404 Not Found",
             request=Mock(),
-            response=Mock(
-                status_code=404, json=lambda: {"detail": "Run directory not found"}
-            ),
+            response=Mock(status_code=404, json=lambda: {"detail": "Run directory not found"})
         )
 
         result = runner.invoke(app, ["artifacts", "run_no_dir"])

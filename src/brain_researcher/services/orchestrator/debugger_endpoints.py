@@ -8,26 +8,18 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel, Field
 
-from ..agent.debugger.breakpoint_manager import (
-    BreakpointManager,
-    BreakpointType,
-    DataChangeType,
-)
+from ..agent.debugger.workflow_debugger import WorkflowDebugger, DebugConfig, DAGDefinition, StepType
+from ..agent.debugger.breakpoint_manager import BreakpointManager, BreakpointType, DataChangeType
 from ..agent.debugger.inspector import Inspector, VariableScope
-from ..agent.debugger.profiler import ProfilingType, WorkflowProfiler
 from ..agent.debugger.trace_analyzer import TraceAnalyzer
-from ..agent.debugger.workflow_debugger import (
-    DAGDefinition,
-    DebugConfig,
-    StepType,
-    WorkflowDebugger,
-)
+from ..agent.debugger.profiler import WorkflowProfiler, ProfilingType
 from .models import ErrorResponse
+
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +33,8 @@ workflow_profiler: Optional[WorkflowProfiler] = None
 
 # Request/Response Models
 
-
 class StartDebugSessionRequest(BaseModel):
     """Request to start a debug session"""
-
     dag_id: str = Field(..., description="DAG identifier")
     dag_definition: Dict[str, Any] = Field(..., description="DAG definition")
     enable_tracing: bool = Field(True, description="Enable execution tracing")
@@ -55,7 +45,6 @@ class StartDebugSessionRequest(BaseModel):
 
 class DebugSessionResponse(BaseModel):
     """Debug session information"""
-
     session_id: str
     dag_id: str
     execution_state: str
@@ -73,13 +62,10 @@ class DebugSessionResponse(BaseModel):
 
 class AddBreakpointRequest(BaseModel):
     """Request to add a breakpoint"""
-
     node_id: Optional[str] = Field(None, description="Node ID for breakpoint")
     breakpoint_type: str = Field("node", description="Breakpoint type")
     condition: Optional[str] = Field(None, description="Breakpoint condition")
-    variable_name: Optional[str] = Field(
-        None, description="Variable name for data breakpoints"
-    )
+    variable_name: Optional[str] = Field(None, description="Variable name for data breakpoints")
     change_type: str = Field("change", description="Data change type")
     hit_count: Optional[int] = Field(None, description="Hit count threshold")
     description: str = Field("", description="Breakpoint description")
@@ -87,21 +73,18 @@ class AddBreakpointRequest(BaseModel):
 
 class AddBreakpointResponse(BaseModel):
     """Response for adding breakpoint"""
-
     breakpoint_id: str
     message: str
 
 
 class VariableInspectionRequest(BaseModel):
     """Request to inspect variables"""
-
     variable_name: Optional[str] = Field(None, description="Specific variable name")
     scope: str = Field("local", description="Variable scope")
 
 
 class ModifyVariableRequest(BaseModel):
     """Request to modify a variable"""
-
     variable_name: str = Field(..., description="Variable name")
     new_value: Any = Field(..., description="New variable value")
     scope: str = Field("local", description="Variable scope")
@@ -109,28 +92,22 @@ class ModifyVariableRequest(BaseModel):
 
 class EvaluateExpressionRequest(BaseModel):
     """Request to evaluate an expression"""
-
     expression: str = Field(..., description="Expression to evaluate")
 
 
 class StartTracingRequest(BaseModel):
     """Request to start trace recording"""
-
     dag_id: str = Field(..., description="DAG identifier")
     session_id: str = Field(..., description="Debug session ID")
 
 
 class StartProfilingRequest(BaseModel):
     """Request to start profiling"""
-
     dag_id: str = Field(..., description="DAG identifier")
-    profiling_types: List[str] = Field(
-        ["cpu", "memory"], description="Types of profiling"
-    )
+    profiling_types: List[str] = Field(["cpu", "memory"], description="Types of profiling")
 
 
 # Dependency injection
-
 
 def get_workflow_debugger():
     """Get workflow debugger dependency"""
@@ -158,11 +135,10 @@ def get_workflow_profiler():
 
 # Debug Session Endpoints
 
-
 @router.post("/sessions/start", response_model=Dict[str, str])
 async def start_debug_session(
     request: StartDebugSessionRequest,
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Start a new debug session"""
     try:
@@ -174,7 +150,7 @@ async def start_debug_session(
             nodes={},  # Would need proper conversion from request
             entry_points=request.dag_definition.get("entry_points", []),
             exit_points=request.dag_definition.get("exit_points", []),
-            global_parameters=request.dag_definition.get("global_parameters", {}),
+            global_parameters=request.dag_definition.get("global_parameters", {})
         )
 
         # Create debug config
@@ -184,7 +160,7 @@ async def start_debug_session(
             enable_tracing=request.enable_tracing,
             enable_profiling=request.enable_profiling,
             step_on_start=request.step_on_start,
-            break_on_error=request.break_on_error,
+            break_on_error=request.break_on_error
         )
 
         session_id = await debugger.start_debug_session(dag_def, debug_config)
@@ -198,7 +174,8 @@ async def start_debug_session(
 
 @router.get("/sessions/{session_id}", response_model=DebugSessionResponse)
 async def get_debug_session(
-    session_id: str, debugger: WorkflowDebugger = Depends(get_workflow_debugger)
+    session_id: str,
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Get debug session information"""
     try:
@@ -218,7 +195,8 @@ async def get_debug_session(
 
 @router.delete("/sessions/{session_id}")
 async def stop_debug_session(
-    session_id: str, debugger: WorkflowDebugger = Depends(get_workflow_debugger)
+    session_id: str,
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Stop a debug session"""
     try:
@@ -238,7 +216,7 @@ async def stop_debug_session(
 
 @router.get("/sessions")
 async def list_debug_sessions(
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """List all active debug sessions"""
     try:
@@ -252,12 +230,11 @@ async def list_debug_sessions(
 
 # Execution Control Endpoints
 
-
 @router.post("/sessions/{session_id}/execute")
 async def execute_with_debugging(
     session_id: str,
     background_tasks: BackgroundTasks,
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Execute DAG with debugging"""
     try:
@@ -275,7 +252,7 @@ async def execute_with_debugging(
 async def step_execution(
     session_id: str,
     step_type: str,
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Step through execution"""
     try:
@@ -286,9 +263,7 @@ async def step_execution(
         elif step_type == "out":
             success = await debugger.step_out(session_id)
         else:
-            raise HTTPException(
-                status_code=400, detail=f"Invalid step type: {step_type}"
-            )
+            raise HTTPException(status_code=400, detail=f"Invalid step type: {step_type}")
 
         if success:
             return {"message": f"Step {step_type} executed"}
@@ -304,7 +279,8 @@ async def step_execution(
 
 @router.post("/sessions/{session_id}/continue")
 async def continue_execution(
-    session_id: str, debugger: WorkflowDebugger = Depends(get_workflow_debugger)
+    session_id: str,
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Continue execution"""
     try:
@@ -324,7 +300,8 @@ async def continue_execution(
 
 @router.post("/sessions/{session_id}/pause")
 async def pause_execution(
-    session_id: str, debugger: WorkflowDebugger = Depends(get_workflow_debugger)
+    session_id: str,
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Pause execution"""
     try:
@@ -344,12 +321,11 @@ async def pause_execution(
 
 # Breakpoint Management Endpoints
 
-
 @router.post("/sessions/{session_id}/breakpoints", response_model=AddBreakpointResponse)
 async def add_breakpoint(
     session_id: str,
     request: AddBreakpointRequest,
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Add a breakpoint"""
     try:
@@ -361,11 +337,12 @@ async def add_breakpoint(
         breakpoint_id = await session.add_breakpoint(
             node_id=request.node_id,
             condition=request.condition,
-            hit_count=request.hit_count,
+            hit_count=request.hit_count
         )
 
         return AddBreakpointResponse(
-            breakpoint_id=breakpoint_id, message="Breakpoint added successfully"
+            breakpoint_id=breakpoint_id,
+            message="Breakpoint added successfully"
         )
 
     except HTTPException:
@@ -379,7 +356,7 @@ async def add_breakpoint(
 async def remove_breakpoint(
     session_id: str,
     breakpoint_id: str,
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Remove a breakpoint"""
     try:
@@ -403,7 +380,8 @@ async def remove_breakpoint(
 
 @router.get("/sessions/{session_id}/breakpoints")
 async def list_breakpoints(
-    session_id: str, debugger: WorkflowDebugger = Depends(get_workflow_debugger)
+    session_id: str,
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """List all breakpoints for a session"""
     try:
@@ -415,7 +393,7 @@ async def list_breakpoints(
 
         return {
             "breakpoints": [bp.to_dict() for bp in breakpoints],
-            "count": len(breakpoints),
+            "count": len(breakpoints)
         }
 
     except HTTPException:
@@ -427,13 +405,12 @@ async def list_breakpoints(
 
 # Variable Inspection Endpoints
 
-
 @router.get("/sessions/{session_id}/variables")
 async def inspect_variables(
     session_id: str,
     variable_name: Optional[str] = None,
     scope: str = "local",
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Inspect variables"""
     try:
@@ -478,7 +455,7 @@ async def inspect_variables(
 async def modify_variable(
     session_id: str,
     request: ModifyVariableRequest,
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Modify a variable value"""
     try:
@@ -491,12 +468,12 @@ async def modify_variable(
         try:
             variable_scope = VariableScope(request.scope)
         except ValueError:
-            raise HTTPException(
-                status_code=400, detail=f"Invalid scope: {request.scope}"
-            )
+            raise HTTPException(status_code=400, detail=f"Invalid scope: {request.scope}")
 
         success = inspector.modify_variable(
-            request.variable_name, request.new_value, variable_scope
+            request.variable_name,
+            request.new_value,
+            variable_scope
         )
 
         if success:
@@ -515,7 +492,7 @@ async def modify_variable(
 async def evaluate_expression(
     session_id: str,
     request: EvaluateExpressionRequest,
-    debugger: WorkflowDebugger = Depends(get_workflow_debugger),
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Evaluate an expression"""
     try:
@@ -538,7 +515,8 @@ async def evaluate_expression(
 
 @router.get("/sessions/{session_id}/call-stack")
 async def get_call_stack(
-    session_id: str, debugger: WorkflowDebugger = Depends(get_workflow_debugger)
+    session_id: str,
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Get current call stack"""
     try:
@@ -552,7 +530,7 @@ async def get_call_stack(
 
         return {
             "call_stack": [frame.to_dict() for frame in call_stack],
-            "depth": len(call_stack),
+            "depth": len(call_stack)
         }
 
     except HTTPException:
@@ -564,10 +542,10 @@ async def get_call_stack(
 
 # Trace Analysis Endpoints
 
-
 @router.post("/traces/start", response_model=Dict[str, str])
 async def start_trace(
-    request: StartTracingRequest, analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
+    request: StartTracingRequest,
+    analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
 ):
     """Start trace recording"""
     try:
@@ -585,7 +563,7 @@ async def end_trace(
     trace_id: str,
     success: bool = True,
     error_message: Optional[str] = None,
-    analyzer: TraceAnalyzer = Depends(get_trace_analyzer),
+    analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
 ):
     """End trace recording"""
     try:
@@ -605,7 +583,8 @@ async def end_trace(
 
 @router.get("/traces/{trace_id}")
 async def get_trace(
-    trace_id: str, analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
+    trace_id: str,
+    analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
 ):
     """Get trace data"""
     try:
@@ -625,7 +604,8 @@ async def get_trace(
 
 @router.get("/traces/{trace_id}/analyze")
 async def analyze_trace(
-    trace_id: str, analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
+    trace_id: str,
+    analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
 ):
     """Analyze execution trace"""
     try:
@@ -647,7 +627,7 @@ async def analyze_trace(
 async def replay_trace(
     trace_id: str,
     speed: float = 1.0,
-    analyzer: TraceAnalyzer = Depends(get_trace_analyzer),
+    analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
 ):
     """Start trace replay"""
     try:
@@ -670,13 +650,13 @@ async def control_replay(
     replay_id: str,
     action: str,
     speed: Optional[float] = None,
-    analyzer: TraceAnalyzer = Depends(get_trace_analyzer),
+    analyzer: TraceAnalyzer = Depends(get_trace_analyzer)
 ):
     """Control trace replay"""
     try:
         kwargs = {}
         if speed is not None:
-            kwargs["speed"] = speed
+            kwargs['speed'] = speed
 
         success = await analyzer.control_replay(replay_id, action, **kwargs)
 
@@ -692,11 +672,10 @@ async def control_replay(
 
 # Profiling Endpoints
 
-
 @router.post("/profiling/start", response_model=Dict[str, str])
 async def start_profiling(
     request: StartProfilingRequest,
-    profiler: WorkflowProfiler = Depends(get_workflow_profiler),
+    profiler: WorkflowProfiler = Depends(get_workflow_profiler)
 ):
     """Start performance profiling"""
     try:
@@ -705,13 +684,9 @@ async def start_profiling(
             try:
                 profiling_types.add(ProfilingType(prof_type))
             except ValueError:
-                raise HTTPException(
-                    status_code=400, detail=f"Invalid profiling type: {prof_type}"
-                )
+                raise HTTPException(status_code=400, detail=f"Invalid profiling type: {prof_type}")
 
-        session_id = await profiler.start_profiling_session(
-            request.dag_id, profiling_types
-        )
+        session_id = await profiler.start_profiling_session(request.dag_id, profiling_types)
 
         return {"session_id": session_id, "message": "Profiling started"}
 
@@ -724,7 +699,8 @@ async def start_profiling(
 
 @router.post("/profiling/{session_id}/end")
 async def end_profiling(
-    session_id: str, profiler: WorkflowProfiler = Depends(get_workflow_profiler)
+    session_id: str,
+    profiler: WorkflowProfiler = Depends(get_workflow_profiler)
 ):
     """End performance profiling"""
     try:
@@ -744,7 +720,8 @@ async def end_profiling(
 
 @router.get("/profiling/{session_id}/analyze")
 async def analyze_performance(
-    session_id: str, profiler: WorkflowProfiler = Depends(get_workflow_profiler)
+    session_id: str,
+    profiler: WorkflowProfiler = Depends(get_workflow_profiler)
 ):
     """Analyze performance profiling data"""
     try:
@@ -764,7 +741,8 @@ async def analyze_performance(
 
 @router.get("/profiling/{session_id}/flamegraph")
 async def get_flamegraph(
-    session_id: str, profiler: WorkflowProfiler = Depends(get_workflow_profiler)
+    session_id: str,
+    profiler: WorkflowProfiler = Depends(get_workflow_profiler)
 ):
     """Generate flamegraph data"""
     try:
@@ -784,13 +762,17 @@ async def get_flamegraph(
 
 @router.get("/profiling/{session_id}/optimization")
 async def get_optimization_opportunities(
-    session_id: str, profiler: WorkflowProfiler = Depends(get_workflow_profiler)
+    session_id: str,
+    profiler: WorkflowProfiler = Depends(get_workflow_profiler)
 ):
     """Get optimization opportunities"""
     try:
         opportunities = await profiler.find_optimization_opportunities(session_id)
 
-        return {"opportunities": opportunities, "count": len(opportunities)}
+        return {
+            "opportunities": opportunities,
+            "count": len(opportunities)
+        }
 
     except Exception as e:
         logger.error(f"Failed to get optimization opportunities: {e}")
@@ -799,12 +781,11 @@ async def get_optimization_opportunities(
 
 # Statistics and Status Endpoints
 
-
 @router.get("/status")
 async def get_debugger_status(
     debugger: WorkflowDebugger = Depends(get_workflow_debugger),
     analyzer: TraceAnalyzer = Depends(get_trace_analyzer),
-    profiler: WorkflowProfiler = Depends(get_workflow_profiler),
+    profiler: WorkflowProfiler = Depends(get_workflow_profiler)
 ):
     """Get overall debugger system status"""
     try:
@@ -813,7 +794,7 @@ async def get_debugger_status(
             "debug_session_history": len(debugger.get_session_history()),
             "trace_summary": analyzer.get_trace_summary(),
             "profiler_statistics": profiler.get_profiler_statistics(),
-            "system_status": "healthy",
+            "system_status": "healthy"
         }
 
     except Exception as e:
@@ -823,13 +804,17 @@ async def get_debugger_status(
 
 @router.get("/history")
 async def get_debug_history(
-    limit: int = 50, debugger: WorkflowDebugger = Depends(get_workflow_debugger)
+    limit: int = 50,
+    debugger: WorkflowDebugger = Depends(get_workflow_debugger)
 ):
     """Get debug session history"""
     try:
         history = debugger.get_session_history(limit)
 
-        return {"history": history, "count": len(history)}
+        return {
+            "history": history,
+            "count": len(history)
+        }
 
     except Exception as e:
         logger.error(f"Failed to get debug history: {e}")

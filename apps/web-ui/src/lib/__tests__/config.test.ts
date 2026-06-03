@@ -16,11 +16,11 @@ describe('config agent public base resolution', () => {
 
   it('uses NEXT_PUBLIC_AGENT_API when proxy mode is disabled', async () => {
     vi.stubEnv('NEXT_PUBLIC_USE_API_PROXY', 'false')
-    vi.stubEnv('NEXT_PUBLIC_AGENT_API', 'https://brain-researcher.com/internal-agent')
+    vi.stubEnv('NEXT_PUBLIC_AGENT_API', 'https://${PUBLIC_HOSTNAME}/internal-agent')
 
     const { SERVICE_URLS } = await import('@/lib/config')
 
-    expect(SERVICE_URLS.AGENT).toBe('https://brain-researcher.com/internal-agent')
+    expect(SERVICE_URLS.AGENT).toBe('https://${PUBLIC_HOSTNAME}/internal-agent')
   })
 
   it('ignores legacy NEXT_PUBLIC_AGENT_URL in browser config resolution', async () => {

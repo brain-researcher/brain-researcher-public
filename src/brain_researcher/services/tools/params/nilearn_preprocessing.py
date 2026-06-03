@@ -26,9 +26,9 @@ from brain_researcher.services.tools.atlas_utils import (
     find_local_yeo_atlas,
     is_path_like_atlas,
     normalize_harvard_oxford_variant,
-    parse_schaefer_n_rois,
     parse_schaefer_yeo_networks,
     parse_yeo_networks,
+    parse_schaefer_n_rois,
     schaefer_output_root,
 )
 

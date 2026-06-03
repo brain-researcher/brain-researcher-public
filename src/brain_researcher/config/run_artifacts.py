@@ -281,7 +281,9 @@ def resolve_recorded_path_for_read(
 ) -> Path:
     """Resolve a recorded run-store path to the best readable candidate."""
 
-    candidates = tuple(iter_recorded_path_candidates(path, primary_root=primary_root))
+    candidates = tuple(
+        iter_recorded_path_candidates(path, primary_root=primary_root)
+    )
     for candidate in candidates:
         if candidate.exists():
             return candidate

@@ -64,9 +64,7 @@ class OnvocLinker:
             fallback=DEFAULT_TREE_PATH,
             must_exist=False,
         )
-        self.crosswalk = self._load_crosswalk(
-            resolved_crosswalk or CANONICAL_CROSSWALK_PATH
-        )
+        self.crosswalk = self._load_crosswalk(resolved_crosswalk or CANONICAL_CROSSWALK_PATH)
         self._onvoc_by_id: Dict[str, Dict[str, Any]] = {}
         self._normalized_name_index: Dict[str, Set[str]] = {}
         self._fuzzy_lookup: Dict[str, str] = {}
@@ -107,9 +105,7 @@ class OnvocLinker:
         except OnvocTreeError as exc:
             logger.warning("Unable to load ONVOC tree from %s: %s", path, exc)
         except Exception as exc:  # pragma: no cover - defensive
-            logger.warning(
-                "Unexpected error while loading ONVOC tree %s: %s", path, exc
-            )
+            logger.warning("Unexpected error while loading ONVOC tree %s: %s", path, exc)
         return None
 
     def _load_onvoc_classes(self) -> bool:
@@ -351,11 +347,7 @@ class OnvocLinker:
         ):
             if not class_id or class_id not in self._onvoc_by_id:
                 continue
-            if (
-                selected
-                and self._tree
-                and self._tree.conflicts_with(class_id, selected)
-            ):
+            if selected and self._tree and self._tree.conflicts_with(class_id, selected):
                 logger.debug(
                     "Skipping ONVOC class %s due to cannot-link constraint", class_id
                 )
@@ -441,9 +433,7 @@ class OnvocLinker:
         self.db.create_relationship(entity_id, class_id, "IN_ONVOC", props)
         return 1
 
-    def _get_existing_link_confidence(
-        self, entity_id: str, class_id: str
-    ) -> Optional[float]:
+    def _get_existing_link_confidence(self, entity_id: str, class_id: str) -> Optional[float]:
         try:
             result = self.db._run(
                 """

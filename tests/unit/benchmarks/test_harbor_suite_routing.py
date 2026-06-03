@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from benchmarks.harbor_suite_routing.runner import (
     HarborRoutingEvaluator,
     HarborRoutingSuiteSpec,

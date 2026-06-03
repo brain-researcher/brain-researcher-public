@@ -20,6 +20,7 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
+
 SHARE_TOKEN_PREFIX = "share_v1"
 
 

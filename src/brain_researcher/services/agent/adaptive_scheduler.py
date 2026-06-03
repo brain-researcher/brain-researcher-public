@@ -11,23 +11,17 @@ import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Callable
 from uuid import uuid4
 
-from brain_researcher.services.agent.parallel_executor import (
-    ResourceRequirement,
-    ResourceType,
-    Task,
-    TaskStatus,
-)
-from brain_researcher.services.agent.system_monitor import SystemHealth, SystemMonitor
+from brain_researcher.services.agent.system_monitor import SystemMonitor, SystemHealth
+from brain_researcher.services.agent.parallel_executor import Task, TaskStatus, ResourceType, ResourceRequirement
 
 logger = logging.getLogger(__name__)
 
 
 class TaskPriority(int, Enum):
     """Task priority levels (lower number = higher priority)."""
-
     CRITICAL = 1
     HIGH = 2
     NORMAL = 3
@@ -37,7 +31,6 @@ class TaskPriority(int, Enum):
 
 class SchedulingPolicy(str, Enum):
     """Scheduling policy types."""
-
     PRIORITY_FIRST = "priority_first"
     FAIR_SHARE = "fair_share"
     SHORTEST_JOB_FIRST = "shortest_job_first"
@@ -47,7 +40,6 @@ class SchedulingPolicy(str, Enum):
 @dataclass
 class ScheduledTask:
     """Task wrapper with scheduling metadata."""
-
     task: Task
     priority: TaskPriority
     submission_time: float
@@ -65,18 +57,14 @@ class ScheduledTask:
         base_score = self.priority.value
 
         # Age bonus (waiting time reduces priority score)
-        age_bonus = min(
-            (time.time() - self.submission_time) / 300.0, 2.0
-        )  # Max 2 points for 5min wait
+        age_bonus = min((time.time() - self.submission_time) / 300.0, 2.0)  # Max 2 points for 5min wait
 
         # Deadline urgency
         deadline_urgency = 0.0
         if self.deadline:
             time_to_deadline = self.deadline - time.time()
             if time_to_deadline > 0:
-                deadline_urgency = max(
-                    0, 3.0 - (time_to_deadline / 600.0)
-                )  # Urgent if <10min
+                deadline_urgency = max(0, 3.0 - (time_to_deadline / 600.0))  # Urgent if <10min
 
         # Retry penalty
         retry_penalty = (self.retry_penalty - 1.0) * 0.5
@@ -91,7 +79,6 @@ class ScheduledTask:
 @dataclass
 class ResourcePool:
     """Resource pool with allocation tracking."""
-
     resource_type: ResourceType
     total_capacity: float
     allocated: float = 0.0
@@ -106,11 +93,7 @@ class ResourcePool:
     @property
     def utilization(self) -> float:
         """Get utilization percentage."""
-        return (
-            (self.allocated / self.total_capacity) * 100
-            if self.total_capacity > 0
-            else 0.0
-        )
+        return (self.allocated / self.total_capacity) * 100 if self.total_capacity > 0 else 0.0
 
 
 class PreemptionManager:
@@ -147,14 +130,12 @@ class PreemptionManager:
             self.preempted_tasks[task.task.task_id] = task
 
             # Record preemption
-            self.preemption_history.append(
-                {
-                    "task_id": task.task.task_id,
-                    "reason": reason,
-                    "timestamp": time.time(),
-                    "priority": task.priority.value,
-                }
-            )
+            self.preemption_history.append({
+                "task_id": task.task.task_id,
+                "reason": reason,
+                "timestamp": time.time(),
+                "priority": task.priority.value
+            })
 
             logger.info(f"Preempted task {task.task.task_id}: {reason}")
             return True
@@ -184,8 +165,7 @@ class PreemptionManager:
             return {"total_preemptions": 0}
 
         recent_preemptions = [
-            p
-            for p in self.preemption_history
+            p for p in self.preemption_history
             if time.time() - p["timestamp"] < 3600  # Last hour
         ]
 
@@ -193,7 +173,7 @@ class PreemptionManager:
             "total_preemptions": len(self.preemption_history),
             "recent_preemptions": len(recent_preemptions),
             "preempted_tasks_waiting": len(self.preempted_tasks),
-            "avg_preemptions_per_hour": len(recent_preemptions),
+            "avg_preemptions_per_hour": len(recent_preemptions)
         }
 
 
@@ -206,17 +186,17 @@ class LoadBalancer:
         self.balancing_strategies = {
             "round_robin": self._round_robin_balance,
             "least_loaded": self._least_loaded_balance,
-            "resource_aware": self._resource_aware_balance,
+            "resource_aware": self._resource_aware_balance
         }
         self._last_assignment = 0
 
     def select_resource_assignment(
-        self, task: ScheduledTask, strategy: str = "resource_aware"
+        self,
+        task: ScheduledTask,
+        strategy: str = "resource_aware"
     ) -> Dict[ResourceType, float]:
         """Select optimal resource assignment for task."""
-        balance_func = self.balancing_strategies.get(
-            strategy, self._resource_aware_balance
-        )
+        balance_func = self.balancing_strategies.get(strategy, self._resource_aware_balance)
         return balance_func(task)
 
     def _round_robin_balance(self, task: ScheduledTask) -> Dict[ResourceType, float]:
@@ -242,9 +222,7 @@ class LoadBalancer:
     def _resource_aware_balance(self, task: ScheduledTask) -> Dict[ResourceType, float]:
         """Balance based on resource availability and task priority."""
         assignment = {}
-        priority_multiplier = (
-            1.0 + (5 - task.priority.value) * 0.2
-        )  # Higher priority gets more resources
+        priority_multiplier = 1.0 + (5 - task.priority.value) * 0.2  # Higher priority gets more resources
 
         for req in task.task.resource_requirements:
             pool = self.resource_pools.get(req.resource_type)
@@ -256,17 +234,11 @@ class LoadBalancer:
             if pool.utilization < 50:
                 scale_factor = priority_multiplier  # Full resources for low utilization
             elif pool.utilization < 80:
-                scale_factor = (
-                    priority_multiplier * 0.8
-                )  # Reduce for medium utilization
+                scale_factor = priority_multiplier * 0.8  # Reduce for medium utilization
             else:
-                scale_factor = (
-                    priority_multiplier * 0.6
-                )  # Further reduce for high utilization
+                scale_factor = priority_multiplier * 0.6  # Further reduce for high utilization
 
-            assignment[req.resource_type] = (
-                req.amount * scale_factor * task.resource_weight
-            )
+            assignment[req.resource_type] = req.amount * scale_factor * task.resource_weight
 
         return assignment
 
@@ -278,7 +250,7 @@ class LoadBalancer:
                 "utilization": pool.utilization,
                 "available": pool.available,
                 "allocated": pool.allocated,
-                "total": pool.total_capacity,
+                "total": pool.total_capacity
             }
 
         # Overall system utilization
@@ -287,15 +259,11 @@ class LoadBalancer:
 
         stats["overall"] = {
             "average_utilization": avg_util,
-            "hottest_resource": (
-                max(
-                    self.resource_pools.items(),
-                    key=lambda x: x[1].utilization,
-                    default=(None, None),
-                )[0].value
-                if self.resource_pools
-                else None
-            ),
+            "hottest_resource": max(
+                self.resource_pools.items(),
+                key=lambda x: x[1].utilization,
+                default=(None, None)
+            )[0].value if self.resource_pools else None
         }
 
         return stats
@@ -317,7 +285,7 @@ class AdaptiveScheduler:
         self,
         monitor: SystemMonitor,
         resource_limits: Optional[Dict[ResourceType, float]] = None,
-        scheduling_policy: SchedulingPolicy = SchedulingPolicy.PRIORITY_FIRST,
+        scheduling_policy: SchedulingPolicy = SchedulingPolicy.PRIORITY_FIRST
     ):
         """
         Initialize adaptive scheduler.
@@ -336,7 +304,7 @@ class AdaptiveScheduler:
             ResourceType.GPU: 1.0,
             ResourceType.MEMORY: 32.0,
             ResourceType.STORAGE: 1000.0,
-            ResourceType.NETWORK: 1000.0,
+            ResourceType.NETWORK: 1000.0
         }
         limits = resource_limits or default_limits
         self.resource_pools = {
@@ -363,12 +331,10 @@ class AdaptiveScheduler:
             "tasks_preempted": 0,
             "avg_wait_time": 0.0,
             "avg_execution_time": 0.0,
-            "throughput": 0.0,
+            "throughput": 0.0
         }
 
-        logger.info(
-            f"Adaptive scheduler initialized with {scheduling_policy.value} policy"
-        )
+        logger.info(f"Adaptive scheduler initialized with {scheduling_policy.value} policy")
 
     async def start_scheduler(self):
         """Start the adaptive scheduler loop."""
@@ -400,7 +366,7 @@ class AdaptiveScheduler:
         task: Task,
         priority: TaskPriority = TaskPriority.NORMAL,
         deadline: Optional[float] = None,
-        preemptible: bool = True,
+        preemptible: bool = True
     ) -> str:
         """
         Schedule a task for execution.
@@ -421,7 +387,7 @@ class AdaptiveScheduler:
                 priority=priority,
                 submission_time=time.time(),
                 deadline=deadline,
-                preemptible=preemptible,
+                preemptible=preemptible
             )
 
             # Add to priority queue
@@ -477,8 +443,7 @@ class AdaptiveScheduler:
         """Emergency scheduling mode - only critical tasks."""
         # Preempt all non-critical running tasks
         tasks_to_preempt = [
-            task
-            for task in self.running_tasks.values()
+            task for task in self.running_tasks.values()
             if task.priority != TaskPriority.CRITICAL and task.preemptible
         ]
 
@@ -500,7 +465,7 @@ class AdaptiveScheduler:
         # Schedule high priority tasks only
         await self._schedule_next_tasks(
             max_tasks=max_concurrent - len(self.running_tasks),
-            priority_filter=TaskPriority.HIGH,
+            priority_filter=TaskPriority.HIGH
         )
 
     async def _normal_scheduling(self):
@@ -519,7 +484,7 @@ class AdaptiveScheduler:
     async def _schedule_next_tasks(
         self,
         max_tasks: Optional[int] = None,
-        priority_filter: Optional[TaskPriority] = None,
+        priority_filter: Optional[TaskPriority] = None
     ):
         """Schedule next tasks from the queue."""
         scheduled_count = 0
@@ -600,7 +565,7 @@ class AdaptiveScheduler:
                 # Preempt the running task
                 self.preemption_manager.preempt_task(
                     running_task,
-                    f"Higher priority task waiting: {highest_waiting.task.task_id}",
+                    f"Higher priority task waiting: {highest_waiting.task.task_id}"
                 )
 
                 # Release resources
@@ -649,8 +614,7 @@ class AdaptiveScheduler:
 
         # Calculate throughput (tasks completed in last minute)
         recent_completions = [
-            task
-            for task in self.completed_tasks.values()
+            task for task in self.completed_tasks.values()
             if task.task.completed_at and (current_time - task.task.completed_at) < 60
         ]
         self.scheduling_stats["throughput"] = len(recent_completions)
@@ -689,16 +653,13 @@ class AdaptiveScheduler:
 
                 # Update running averages
                 self.scheduling_stats["avg_execution_time"] = (
-                    self.scheduling_stats["avg_execution_time"] * 0.9
-                    + execution_time * 0.1
+                    self.scheduling_stats["avg_execution_time"] * 0.9 + execution_time * 0.1
                 )
                 self.scheduling_stats["avg_wait_time"] = (
                     self.scheduling_stats["avg_wait_time"] * 0.9 + wait_time * 0.1
                 )
 
-            logger.info(
-                f"Completed task {task_id} ({'success' if not error else 'failure'})"
-            )
+            logger.info(f"Completed task {task_id} ({'success' if not error else 'failure'})")
 
     def get_queue_status(self) -> Dict[str, Any]:
         """Get current queue status."""
@@ -707,28 +668,22 @@ class AdaptiveScheduler:
             "running_tasks": len(self.running_tasks),
             "completed_tasks": len(self.completed_tasks),
             "queue_by_priority": {
-                priority.name: sum(
-                    1 for t in self.priority_queue if t.priority == priority
-                )
+                priority.name: sum(1 for t in self.priority_queue if t.priority == priority)
                 for priority in TaskPriority
-            },
+            }
         }
 
     def get_performance_metrics(self) -> Dict[str, Any]:
         """Get scheduler performance metrics."""
         metrics = self.scheduling_stats.copy()
-        metrics.update(
-            {
-                "preemption_stats": self.preemption_manager.get_preemption_stats(),
-                "load_balancing": self.load_balancer.get_load_statistics(),
-                "queue_status": self.get_queue_status(),
-            }
-        )
+        metrics.update({
+            "preemption_stats": self.preemption_manager.get_preemption_stats(),
+            "load_balancing": self.load_balancer.get_load_statistics(),
+            "queue_status": self.get_queue_status()
+        })
         return metrics
 
-    async def adjust_task_priority(
-        self, task_id: str, new_priority: TaskPriority
-    ) -> bool:
+    async def adjust_task_priority(self, task_id: str, new_priority: TaskPriority) -> bool:
         """Adjust priority of a queued task."""
         async with self._scheduling_lock:
             # Find task in queue
@@ -756,7 +711,7 @@ class AdaptiveScheduler:
 def create_adaptive_scheduler(
     monitor: SystemMonitor,
     resource_limits: Optional[Dict[ResourceType, float]] = None,
-    scheduling_policy: SchedulingPolicy = SchedulingPolicy.PRIORITY_FIRST,
+    scheduling_policy: SchedulingPolicy = SchedulingPolicy.PRIORITY_FIRST
 ) -> AdaptiveScheduler:
     """
     Create an adaptive scheduler instance.
@@ -772,5 +727,5 @@ def create_adaptive_scheduler(
     return AdaptiveScheduler(
         monitor=monitor,
         resource_limits=resource_limits,
-        scheduling_policy=scheduling_policy,
+        scheduling_policy=scheduling_policy
     )

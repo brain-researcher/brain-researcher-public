@@ -5,24 +5,24 @@ Analyzes execution patterns, performance bottlenecks, and provides insights.
 """
 
 import asyncio
-import copy
 import json
 import logging
-import statistics
 import time
-import uuid
-from collections import defaultdict, deque
-from dataclasses import asdict, dataclass, field
+import statistics
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Set, Tuple, Callable
+from dataclasses import dataclass, asdict, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+import uuid
+import copy
+from collections import defaultdict, deque
+
 
 logger = logging.getLogger(__name__)
 
 
 class EventType(str, Enum):
     """Types of execution events"""
-
     EXECUTION_START = "execution_start"
     EXECUTION_END = "execution_end"
     NODE_ENTER = "node_enter"
@@ -37,7 +37,6 @@ class EventType(str, Enum):
 
 class SeverityLevel(str, Enum):
     """Event severity levels"""
-
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -48,7 +47,6 @@ class SeverityLevel(str, Enum):
 @dataclass
 class ExecutionEvent:
     """Represents a single execution event"""
-
     event_id: str
     event_type: EventType
     timestamp: datetime
@@ -62,20 +60,19 @@ class ExecutionEvent:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        data["timestamp"] = self.timestamp.isoformat()
+        data['timestamp'] = self.timestamp.isoformat()
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "ExecutionEvent":
-        if "timestamp" in data:
-            data["timestamp"] = datetime.fromisoformat(data["timestamp"])
+    def from_dict(cls, data: Dict) -> 'ExecutionEvent':
+        if 'timestamp' in data:
+            data['timestamp'] = datetime.fromisoformat(data['timestamp'])
         return cls(**data)
 
 
 @dataclass
 class ExecutionTrace:
     """Complete execution trace"""
-
     trace_id: str
     dag_id: str
     session_id: str
@@ -89,23 +86,23 @@ class ExecutionTrace:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        data["start_time"] = self.start_time.isoformat()
+        data['start_time'] = self.start_time.isoformat()
         if self.end_time:
-            data["end_time"] = self.end_time.isoformat()
-        data["events"] = [event.to_dict() for event in self.events]
+            data['end_time'] = self.end_time.isoformat()
+        data['events'] = [event.to_dict() for event in self.events]
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "ExecutionTrace":
-        if "start_time" in data:
-            data["start_time"] = datetime.fromisoformat(data["start_time"])
-        if "end_time" in data and data["end_time"]:
-            data["end_time"] = datetime.fromisoformat(data["end_time"])
+    def from_dict(cls, data: Dict) -> 'ExecutionTrace':
+        if 'start_time' in data:
+            data['start_time'] = datetime.fromisoformat(data['start_time'])
+        if 'end_time' in data and data['end_time']:
+            data['end_time'] = datetime.fromisoformat(data['end_time'])
 
         events = []
-        for event_data in data.get("events", []):
+        for event_data in data.get('events', []):
             events.append(ExecutionEvent.from_dict(event_data))
-        data["events"] = events
+        data['events'] = events
 
         return cls(**data)
 
@@ -113,7 +110,6 @@ class ExecutionTrace:
 @dataclass
 class TraceAnalysis:
     """Analysis results of an execution trace"""
-
     trace_id: str
     analysis_time: datetime
     total_duration_ms: float
@@ -136,14 +132,13 @@ class TraceAnalysis:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        data["analysis_time"] = self.analysis_time.isoformat()
+        data['analysis_time'] = self.analysis_time.isoformat()
         return data
 
 
 @dataclass
 class ReplayState:
     """State for trace replay"""
-
     trace_id: str
     current_event_index: int
     replay_speed: float  # 1.0 = normal speed
@@ -155,7 +150,7 @@ class ReplayState:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        data["start_time"] = self.start_time.isoformat()
+        data['start_time'] = self.start_time.isoformat()
         return data
 
 
@@ -166,7 +161,9 @@ class ReplayEngine:
         self.active_replays: Dict[str, ReplayState] = {}
         self.replay_callbacks: Dict[str, List[Callable]] = defaultdict(list)
 
-    async def start_replay(self, trace: ExecutionTrace, speed: float = 1.0) -> str:
+    async def start_replay(self,
+                          trace: ExecutionTrace,
+                          speed: float = 1.0) -> str:
         """Start replaying a trace"""
         replay_id = f"replay_{trace.trace_id}_{int(time.time())}"
 
@@ -176,7 +173,7 @@ class ReplayEngine:
             replay_speed=speed,
             is_playing=True,
             is_paused=False,
-            start_time=datetime.utcnow(),
+            start_time=datetime.utcnow()
         )
 
         self.active_replays[replay_id] = replay_state
@@ -224,9 +221,8 @@ class ReplayEngine:
         try:
             replay_state = self.active_replays[replay_id]
 
-            while replay_state.is_playing and replay_state.current_event_index < len(
-                trace.events
-            ):
+            while (replay_state.is_playing and
+                   replay_state.current_event_index < len(trace.events)):
 
                 # Check if paused
                 while replay_state.is_paused and replay_state.is_playing:
@@ -262,21 +258,22 @@ class ReplayEngine:
             if replay_id in self.active_replays:
                 del self.active_replays[replay_id]
 
-    async def _process_replay_event(
-        self, replay_id: str, event: ExecutionEvent, replay_state: ReplayState
-    ):
+    async def _process_replay_event(self,
+                                  replay_id: str,
+                                  event: ExecutionEvent,
+                                  replay_state: ReplayState):
         """Process a single replay event"""
         try:
             # Update replay state based on event
             if event.event_type == EventType.VARIABLE_CHANGE:
-                var_name = event.metadata.get("variable_name")
-                var_value = event.metadata.get("new_value")
+                var_name = event.metadata.get('variable_name')
+                var_value = event.metadata.get('new_value')
                 if var_name and var_value is not None:
                     replay_state.variables[var_name] = var_value
 
             elif event.event_type == EventType.NODE_SUCCESS:
                 node_id = event.node_id
-                result = event.metadata.get("result")
+                result = event.metadata.get('result')
                 if node_id and result is not None:
                     replay_state.node_results[node_id] = result
 
@@ -305,17 +302,15 @@ class ExecutionStatistics:
 
     def calculate_node_statistics(self, events: List[ExecutionEvent]) -> Dict[str, Any]:
         """Calculate statistics per node"""
-        node_stats = defaultdict(
-            lambda: {
-                "enter_count": 0,
-                "success_count": 0,
-                "error_count": 0,
-                "total_time_ms": 0.0,
-                "min_time_ms": float("inf"),
-                "max_time_ms": 0.0,
-                "execution_times": [],
-            }
-        )
+        node_stats = defaultdict(lambda: {
+            'enter_count': 0,
+            'success_count': 0,
+            'error_count': 0,
+            'total_time_ms': 0.0,
+            'min_time_ms': float('inf'),
+            'max_time_ms': 0.0,
+            'execution_times': []
+        })
 
         # Track node entry/exit times
         node_times = {}
@@ -327,49 +322,44 @@ class ExecutionStatistics:
             stats = node_stats[event.node_id]
 
             if event.event_type == EventType.NODE_ENTER:
-                stats["enter_count"] += 1
+                stats['enter_count'] += 1
                 node_times[event.node_id] = event.timestamp
 
             elif event.event_type == EventType.NODE_EXIT:
                 if event.node_id in node_times:
-                    duration = (
-                        event.timestamp - node_times[event.node_id]
-                    ).total_seconds() * 1000
-                    stats["execution_times"].append(duration)
-                    stats["total_time_ms"] += duration
-                    stats["min_time_ms"] = min(stats["min_time_ms"], duration)
-                    stats["max_time_ms"] = max(stats["max_time_ms"], duration)
+                    duration = (event.timestamp - node_times[event.node_id]).total_seconds() * 1000
+                    stats['execution_times'].append(duration)
+                    stats['total_time_ms'] += duration
+                    stats['min_time_ms'] = min(stats['min_time_ms'], duration)
+                    stats['max_time_ms'] = max(stats['max_time_ms'], duration)
 
             elif event.event_type == EventType.NODE_SUCCESS:
-                stats["success_count"] += 1
+                stats['success_count'] += 1
 
             elif event.event_type == EventType.NODE_ERROR:
-                stats["error_count"] += 1
+                stats['error_count'] += 1
 
         # Calculate averages and clean up
         for node_id, stats in node_stats.items():
-            if stats["execution_times"]:
-                stats["avg_time_ms"] = statistics.mean(stats["execution_times"])
-                stats["median_time_ms"] = statistics.median(stats["execution_times"])
-                if len(stats["execution_times"]) > 1:
-                    stats["std_dev_ms"] = statistics.stdev(stats["execution_times"])
+            if stats['execution_times']:
+                stats['avg_time_ms'] = statistics.mean(stats['execution_times'])
+                stats['median_time_ms'] = statistics.median(stats['execution_times'])
+                if len(stats['execution_times']) > 1:
+                    stats['std_dev_ms'] = statistics.stdev(stats['execution_times'])
                 else:
-                    stats["std_dev_ms"] = 0.0
+                    stats['std_dev_ms'] = 0.0
             else:
-                stats["avg_time_ms"] = 0.0
-                stats["median_time_ms"] = 0.0
-                stats["std_dev_ms"] = 0.0
+                stats['avg_time_ms'] = 0.0
+                stats['median_time_ms'] = 0.0
+                stats['std_dev_ms'] = 0.0
 
-            if stats["min_time_ms"] == float("inf"):
-                stats["min_time_ms"] = 0.0
+            if stats['min_time_ms'] == float('inf'):
+                stats['min_time_ms'] = 0.0
 
             # Calculate success rate
-            total_executions = stats["success_count"] + stats["error_count"]
-            stats["success_rate"] = (
-                stats["success_count"] / total_executions * 100
-                if total_executions > 0
-                else 0.0
-            )
+            total_executions = stats['success_count'] + stats['error_count']
+            stats['success_rate'] = (stats['success_count'] / total_executions * 100
+                                   if total_executions > 0 else 0.0)
 
         return dict(node_stats)
 
@@ -396,27 +386,17 @@ class ExecutionStatistics:
         total_duration = (end_time - start_time).total_seconds() * 1000
 
         # Event frequency
-        event_frequency = (
-            total_events / (total_duration / 1000) if total_duration > 0 else 0
-        )
+        event_frequency = total_events / (total_duration / 1000) if total_duration > 0 else 0
 
         return {
-            "total_events": total_events,
-            "total_duration_ms": total_duration,
-            "event_frequency_per_second": event_frequency,
-            "event_type_counts": dict(event_type_counts),
-            "severity_counts": dict(severity_counts),
-            "success_rate": (
-                (
-                    event_type_counts.get("node_success", 0)
-                    / max(
-                        1,
-                        event_type_counts.get("node_success", 0)
-                        + event_type_counts.get("node_error", 0),
-                    )
-                )
-                * 100
-            ),
+            'total_events': total_events,
+            'total_duration_ms': total_duration,
+            'event_frequency_per_second': event_frequency,
+            'event_type_counts': dict(event_type_counts),
+            'severity_counts': dict(severity_counts),
+            'success_rate': ((event_type_counts.get('node_success', 0) /
+                             max(1, event_type_counts.get('node_success', 0) +
+                                 event_type_counts.get('node_error', 0))) * 100)
         }
 
 
@@ -432,9 +412,7 @@ class TraceAnalyzer:
         # Analysis cache
         self.analysis_cache: Dict[str, TraceAnalysis] = {}
 
-        logger.info(
-            f"Trace analyzer initialized with max {max_events} events per trace"
-        )
+        logger.info(f"Trace analyzer initialized with max {max_events} events per trace")
 
     async def start_trace(self, dag_id: str, session_id: str) -> str:
         """Start a new execution trace"""
@@ -444,7 +422,7 @@ class TraceAnalyzer:
             trace_id=trace_id,
             dag_id=dag_id,
             session_id=session_id,
-            start_time=datetime.utcnow(),
+            start_time=datetime.utcnow()
         )
 
         self.traces[trace_id] = trace
@@ -452,9 +430,7 @@ class TraceAnalyzer:
         logger.info(f"Started trace {trace_id} for DAG {dag_id}")
         return trace_id
 
-    async def end_trace(
-        self, trace_id: str, success: bool = True, error_message: str = None
-    ):
+    async def end_trace(self, trace_id: str, success: bool = True, error_message: str = None):
         """End an execution trace"""
         if trace_id not in self.traces:
             return False
@@ -465,9 +441,7 @@ class TraceAnalyzer:
         trace.error_message = error_message
 
         if trace.start_time and trace.end_time:
-            trace.total_duration_ms = (
-                trace.end_time - trace.start_time
-            ).total_seconds() * 1000
+            trace.total_duration_ms = (trace.end_time - trace.start_time).total_seconds() * 1000
 
         logger.info(f"Ended trace {trace_id} - Success: {success}")
         return True
@@ -478,7 +452,10 @@ class TraceAnalyzer:
         # If no trace_id specified, try to find active trace
         if not trace_id:
             # Use the most recent active trace
-            active_traces = [t for t in self.traces.values() if t.end_time is None]
+            active_traces = [
+                t for t in self.traces.values()
+                if t.end_time is None
+            ]
 
             if not active_traces:
                 logger.warning("No active trace to record event")
@@ -496,10 +473,8 @@ class TraceAnalyzer:
 
         # Trim events if exceeding max
         if len(trace.events) > self.max_events:
-            trace.events = trace.events[-self.max_events // 2 :]
-            logger.warning(
-                f"Trimmed trace {trace.trace_id} to {len(trace.events)} events"
-            )
+            trace.events = trace.events[-self.max_events // 2:]
+            logger.warning(f"Trimmed trace {trace.trace_id} to {len(trace.events)} events")
 
         return True
 
@@ -545,31 +520,30 @@ class TraceAnalyzer:
         if node_stats:
             # Sort nodes by average execution time
             sorted_nodes = sorted(
-                node_stats.items(), key=lambda x: x[1]["avg_time_ms"], reverse=True
+                node_stats.items(),
+                key=lambda x: x[1]['avg_time_ms'],
+                reverse=True
             )
 
             # Top 3 slowest nodes are bottlenecks
             for node_id, stats in sorted_nodes[:3]:
-                if stats["avg_time_ms"] > 0:
-                    bottlenecks.append(
-                        {
-                            "node_id": node_id,
-                            "avg_time_ms": stats["avg_time_ms"],
-                            "percentage_of_total": (
-                                stats["total_time_ms"]
-                                / max(1, overall_stats.get("total_duration_ms", 1))
-                                * 100
-                            ),
-                            "reason": f"Average execution time: {stats['avg_time_ms']:.2f}ms",
-                        }
-                    )
+                if stats['avg_time_ms'] > 0:
+                    bottlenecks.append({
+                        'node_id': node_id,
+                        'avg_time_ms': stats['avg_time_ms'],
+                        'percentage_of_total': (stats['total_time_ms'] /
+                                              max(1, overall_stats.get('total_duration_ms', 1)) * 100),
+                        'reason': f"Average execution time: {stats['avg_time_ms']:.2f}ms"
+                    })
 
         # Find critical path (simplified)
         critical_path = []
         if node_stats:
             # Critical path is the sequence of nodes with longest total execution time
             sorted_by_total = sorted(
-                node_stats.items(), key=lambda x: x[1]["total_time_ms"], reverse=True
+                node_stats.items(),
+                key=lambda x: x[1]['total_time_ms'],
+                reverse=True
             )
             critical_path = [node_id for node_id, _ in sorted_by_total[:5]]
 
@@ -579,34 +553,28 @@ class TraceAnalyzer:
 
         for event in trace.events:
             if event.event_type == EventType.NODE_ERROR:
-                errors.append(
-                    {
-                        "node_id": event.node_id,
-                        "timestamp": event.timestamp.isoformat(),
-                        "message": event.message,
-                        "metadata": event.metadata,
-                    }
-                )
+                errors.append({
+                    'node_id': event.node_id,
+                    'timestamp': event.timestamp.isoformat(),
+                    'message': event.message,
+                    'metadata': event.metadata
+                })
 
             # Detect anomalies (e.g., unusually long execution times)
-            if event.duration_ms and event.duration_ms > 10000:  # > 10 seconds
-                anomalies.append(
-                    {
-                        "node_id": event.node_id,
-                        "type": "long_execution",
-                        "duration_ms": event.duration_ms,
-                        "timestamp": event.timestamp.isoformat(),
-                    }
-                )
+            if (event.duration_ms and event.duration_ms > 10000):  # > 10 seconds
+                anomalies.append({
+                    'node_id': event.node_id,
+                    'type': 'long_execution',
+                    'duration_ms': event.duration_ms,
+                    'timestamp': event.timestamp.isoformat()
+                })
 
         # Generate suggestions
         suggestions = []
 
         if bottlenecks:
-            suggestions.append(
-                f"Consider optimizing {bottlenecks[0]['node_id']} - it accounts for "
-                f"{bottlenecks[0]['percentage_of_total']:.1f}% of execution time"
-            )
+            suggestions.append(f"Consider optimizing {bottlenecks[0]['node_id']} - it accounts for "
+                             f"{bottlenecks[0]['percentage_of_total']:.1f}% of execution time")
 
         if len(errors) > 0:
             suggestions.append(f"Fix {len(errors)} error(s) to improve reliability")
@@ -618,17 +586,18 @@ class TraceAnalyzer:
         analysis = TraceAnalysis(
             trace_id=trace_id,
             analysis_time=datetime.utcnow(),
-            total_duration_ms=overall_stats.get("total_duration_ms", 0.0),
-            total_events=overall_stats.get("total_events", 0),
+            total_duration_ms=overall_stats.get('total_duration_ms', 0.0),
+            total_events=overall_stats.get('total_events', 0),
             bottlenecks=bottlenecks,
             critical_path=critical_path,
-            node_timings={
-                node_id: stats["avg_time_ms"] for node_id, stats in node_stats.items()
-            },
+            node_timings={node_id: stats['avg_time_ms'] for node_id, stats in node_stats.items()},
             errors=errors,
             anomalies=anomalies,
             suggestions=suggestions,
-            statistics={"overall": overall_stats, "nodes": node_stats},
+            statistics={
+                'overall': overall_stats,
+                'nodes': node_stats
+            }
         )
 
         # Cache analysis
@@ -651,8 +620,7 @@ class TraceAnalyzer:
         # Compare durations
         durations = [
             (trace.end_time - trace.start_time).total_seconds() * 1000
-            for trace in traces
-            if trace.end_time
+            for trace in traces if trace.end_time
         ]
 
         # Compare event counts
@@ -661,41 +629,33 @@ class TraceAnalyzer:
         # Compare success rates
         success_rates = []
         for trace in traces:
-            success_events = len(
-                [e for e in trace.events if e.event_type == EventType.NODE_SUCCESS]
-            )
-            error_events = len(
-                [e for e in trace.events if e.event_type == EventType.NODE_ERROR]
-            )
+            success_events = len([e for e in trace.events if e.event_type == EventType.NODE_SUCCESS])
+            error_events = len([e for e in trace.events if e.event_type == EventType.NODE_ERROR])
             total = success_events + error_events
             success_rate = (success_events / total * 100) if total > 0 else 100.0
             success_rates.append(success_rate)
 
         return {
-            "trace_count": len(traces),
-            "duration_comparison": {
-                "durations_ms": durations,
-                "min_duration_ms": min(durations) if durations else 0,
-                "max_duration_ms": max(durations) if durations else 0,
-                "avg_duration_ms": statistics.mean(durations) if durations else 0,
-                "improvement_pct": (
-                    ((max(durations) - min(durations)) / max(durations) * 100)
-                    if durations
-                    else 0
-                ),
+            'trace_count': len(traces),
+            'duration_comparison': {
+                'durations_ms': durations,
+                'min_duration_ms': min(durations) if durations else 0,
+                'max_duration_ms': max(durations) if durations else 0,
+                'avg_duration_ms': statistics.mean(durations) if durations else 0,
+                'improvement_pct': ((max(durations) - min(durations)) / max(durations) * 100) if durations else 0
             },
-            "event_count_comparison": {
-                "event_counts": event_counts,
-                "min_events": min(event_counts),
-                "max_events": max(event_counts),
-                "avg_events": statistics.mean(event_counts),
+            'event_count_comparison': {
+                'event_counts': event_counts,
+                'min_events': min(event_counts),
+                'max_events': max(event_counts),
+                'avg_events': statistics.mean(event_counts)
             },
-            "success_rate_comparison": {
-                "success_rates": success_rates,
-                "min_success_rate": min(success_rates),
-                "max_success_rate": max(success_rates),
-                "avg_success_rate": statistics.mean(success_rates),
-            },
+            'success_rate_comparison': {
+                'success_rates': success_rates,
+                'min_success_rate': min(success_rates),
+                'max_success_rate': max(success_rates),
+                'avg_success_rate': statistics.mean(success_rates)
+            }
         }
 
     async def replay_trace(self, trace_id: str, speed: float = 1.0) -> Optional[str]:
@@ -708,7 +668,10 @@ class TraceAnalyzer:
 
         return replay_id
 
-    async def control_replay(self, replay_id: str, action: str, **kwargs) -> bool:
+    async def control_replay(self,
+                           replay_id: str,
+                           action: str,
+                           **kwargs) -> bool:
         """Control trace replay"""
         if action == "pause":
             return await self.replay_engine.pause_replay(replay_id)
@@ -717,7 +680,7 @@ class TraceAnalyzer:
         elif action == "stop":
             return await self.replay_engine.stop_replay(replay_id)
         elif action == "speed":
-            speed = kwargs.get("speed", 1.0)
+            speed = kwargs.get('speed', 1.0)
             return await self.replay_engine.set_replay_speed(replay_id, speed)
         else:
             return False
@@ -729,10 +692,10 @@ class TraceAnalyzer:
         successful_traces = len([t for t in self.traces.values() if t.success])
 
         return {
-            "total_traces": total_traces,
-            "completed_traces": completed_traces,
-            "successful_traces": successful_traces,
-            "success_rate": (successful_traces / max(1, completed_traces) * 100),
-            "active_traces": total_traces - completed_traces,
-            "cache_size": len(self.analysis_cache),
+            'total_traces': total_traces,
+            'completed_traces': completed_traces,
+            'successful_traces': successful_traces,
+            'success_rate': (successful_traces / max(1, completed_traces) * 100),
+            'active_traces': total_traces - completed_traces,
+            'cache_size': len(self.analysis_cache)
         }

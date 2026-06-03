@@ -27,7 +27,7 @@ _load_dotenv_if_available()
 # Configuration — supplied via environment, never hardcoded.
 API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
 ZONE_ID = os.environ["CLOUDFLARE_ZONE_ID"]
-DOMAIN = os.environ.get("CLOUDFLARE_DOMAIN", "brain-researcher.com")
+DOMAIN = os.environ.get("CLOUDFLARE_DOMAIN", "${PUBLIC_HOSTNAME}")
 
 # Cloudflare API endpoint
 BASE_URL = "https://api.cloudflare.com/client/v4"

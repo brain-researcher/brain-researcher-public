@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import os
 from collections import deque
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterable, List, Optional
 
+import logging
+
 from brain_researcher.config.paths import get_data_root
 
-from .models import TelemetryEvent, _is_test_env
+from .models import _is_test_env
+
+from .models import TelemetryEvent
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +67,7 @@ class TelemetryEventStore:
                         payload = json.loads(line)
                         event = TelemetryEvent(**payload)
                     except Exception:
-                        logger.warning(
-                            "Skipping malformed telemetry event line", exc_info=True
-                        )
+                        logger.warning("Skipping malformed telemetry event line", exc_info=True)
                         continue
                     if cutoff and event.timestamp < cutoff:
                         continue
@@ -84,9 +85,7 @@ class TelemetryEventStore:
         if not batch:
             return
 
-        lines = (
-            "\n".join(json.dumps(evt.model_dump(mode="json")) for evt in batch) + "\n"
-        )
+        lines = "\n".join(json.dumps(evt.model_dump(mode="json")) for evt in batch) + "\n"
         async with self._get_write_lock():
             if _is_test_env():
                 # Avoid executor deadlocks in test harnesses.
@@ -101,9 +100,7 @@ class TelemetryEventStore:
         batch = list(events)
         if not batch:
             return
-        lines = (
-            "\n".join(json.dumps(evt.model_dump(mode="json")) for evt in batch) + "\n"
-        )
+        lines = "\n".join(json.dumps(evt.model_dump(mode="json")) for evt in batch) + "\n"
         self._append_text(lines)
         self._maybe_prune_sync()
 
@@ -152,10 +149,7 @@ class TelemetryEventStore:
             return
         temp_path = self.events_file.with_suffix(".tmp")
         kept = 0
-        with (
-            self.events_file.open("r", encoding="utf-8") as src,
-            temp_path.open("w", encoding="utf-8") as dst,
-        ):
+        with self.events_file.open("r", encoding="utf-8") as src, temp_path.open("w", encoding="utf-8") as dst:
             for line in src:
                 try:
                     payload = json.loads(line)

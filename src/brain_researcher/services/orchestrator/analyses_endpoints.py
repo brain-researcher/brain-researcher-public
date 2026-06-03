@@ -47,9 +47,7 @@ async def _resolve_share_owner_user_id(request: Request) -> str:
     user, _payload = await _resolve_authenticated_user(request)
     user_id = str(getattr(user, "id", "") or "").strip()
     if not user_id:
-        raise HTTPException(
-            status_code=401, detail="Invalid authentication credentials"
-        )
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     return user_id
 
 
@@ -186,9 +184,7 @@ def _build_analysis_list_item(record: Any) -> dict[str, Any]:
 def _record_matches_project(record: Any, project_id: str | None) -> bool:
     if not project_id:
         return True
-    record_project = (
-        _first_text(_build_analysis_list_item(record).get("project_id")) or "default"
-    )
+    record_project = _first_text(_build_analysis_list_item(record).get("project_id")) or "default"
     if project_id == "default":
         return record_project == "default"
     return record_project == project_id
@@ -197,10 +193,7 @@ def _record_matches_project(record: Any, project_id: str | None) -> bool:
 def _validate_path_security(target_path: Path, base_path: Path) -> None:
     resolved_target = target_path.resolve()
     resolved_base = base_path.resolve()
-    if (
-        resolved_base not in resolved_target.parents
-        and resolved_target != resolved_base
-    ):
+    if resolved_base not in resolved_target.parents and resolved_target != resolved_base:
         raise PermissionError(f"Path traversal detected: {target_path}")
 
 
@@ -289,13 +282,9 @@ async def list_analyses(
     if job_store is None:
         raise HTTPException(status_code=503, detail="Job store not available")
 
-    records = await job_store.list_all(
-        limit=limit, offset=offset, project_id=project_id
-    )
+    records = await job_store.list_all(limit=limit, offset=offset, project_id=project_id)
     include_id = (include_id or "").strip()
-    if include_id and all(
-        str(getattr(record, "job_id", "")) != include_id for record in records
-    ):
+    if include_id and all(str(getattr(record, "job_id", "")) != include_id for record in records):
         included = await job_store.get(include_id)
         if included is not None and _record_matches_project(included, project_id):
             records.append(included)
@@ -405,12 +394,8 @@ def _safe_unlink(path: Path) -> None:
         return
 
 
-@api_router.post(
-    "/{analysis_id}/share", response_model=AnalysisShareResponse, status_code=201
-)
-async def share_analysis(
-    analysis_id: str, request: Request, payload: AnalysisShareRequest
-):
+@api_router.post("/{analysis_id}/share", response_model=AnalysisShareResponse, status_code=201)
+async def share_analysis(analysis_id: str, request: Request, payload: AnalysisShareRequest):
     requester_id = await _resolve_share_owner_user_id(request)
 
     job_store = getattr(request.app.state, "job_store", None)
@@ -454,9 +439,7 @@ async def share_analysis(
         )
     except Exception as exc:
         logger.warning("Failed to persist analysis share token: %s", exc)
-        raise HTTPException(
-            status_code=500, detail="share_token_persist_failed"
-        ) from exc
+        raise HTTPException(status_code=500, detail="share_token_persist_failed") from exc
 
     return AnalysisShareResponse(
         analysis_id=analysis_id,
@@ -467,9 +450,7 @@ async def share_analysis(
 
 
 @api_router.get("/{analysis_id}/export", response_class=FileResponse)
-async def export_analysis_bundle_zip(
-    analysis_id: str, request: Request
-) -> FileResponse:
+async def export_analysis_bundle_zip(analysis_id: str, request: Request) -> FileResponse:
     """Export a run zip with canonical bundle files plus `.bundle_support/` install assets."""
     job_store = getattr(request.app.state, "job_store", None)
     if job_store is None:
@@ -497,9 +478,7 @@ async def export_analysis_bundle_zip(
     try:
         export_dir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
-        raise HTTPException(
-            status_code=500, detail="export_tmpdir_unavailable"
-        ) from exc
+        raise HTTPException(status_code=500, detail="export_tmpdir_unavailable") from exc
 
     tmp = tempfile.NamedTemporaryFile(
         mode="wb",
@@ -512,9 +491,7 @@ async def export_analysis_bundle_zip(
     tmp.close()
 
     try:
-        with zipfile.ZipFile(
-            tmp_path, mode="w", compression=zipfile.ZIP_DEFLATED
-        ) as zf:
+        with zipfile.ZipFile(tmp_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for root, _, filenames in os.walk(run_dir):
                 for filename in filenames:
                     file_path = Path(root) / filename
@@ -527,9 +504,7 @@ async def export_analysis_bundle_zip(
                     zf.write(file_path, arcname=rel_path)
     except Exception as exc:
         _safe_unlink(tmp_path)
-        raise HTTPException(
-            status_code=500, detail="failed_to_build_export_zip"
-        ) from exc
+        raise HTTPException(status_code=500, detail="failed_to_build_export_zip") from exc
 
     return FileResponse(
         path=str(tmp_path),

@@ -5,11 +5,11 @@ These schemas define the structure and validation rules for all relationship typ
 in the knowledge graph, including provenance and strength scoring.
 """
 
-import hashlib
 from datetime import datetime
-from typing import Any, Dict, Literal, Optional, Tuple, Union
+from typing import Optional, Dict, Any, Literal, Tuple, Union
+from pydantic import BaseModel, Field, validator, root_validator
+import hashlib
 
-from pydantic import BaseModel, Field, root_validator, validator
 
 NodeTypeSpec = Union[str, Tuple[str, ...]]
 EdgeSignature = Tuple[str, str]
@@ -241,9 +241,7 @@ class InRegionEdge(BaseEdge):
     def infer_signature_from_ids(cls, values):
         source_id = str(values.get("source_id") or "")
         if values.get("source_type") is None:
-            values["source_type"] = (
-                "Coordinate" if source_id.startswith("coord:") else "StatsMap"
-            )
+            values["source_type"] = "Coordinate" if source_id.startswith("coord:") else "StatsMap"
         if values.get("target_type") is None:
             values["target_type"] = (
                 "Region" if values["source_type"] == "Coordinate" else "BrainRegion"
@@ -263,9 +261,7 @@ class InRegionEdge(BaseEdge):
         source_id = str(values.get("source_id") or "")
         if values["source_type"] == "Coordinate":
             if not source_id.startswith("coord:"):
-                raise ValueError(
-                    "Coordinate IN_REGION source must be a Coordinate node"
-                )
+                raise ValueError("Coordinate IN_REGION source must be a Coordinate node")
             return values
 
         if not _looks_like_statistical_map_id(source_id):
@@ -277,9 +273,7 @@ class InRegionEdge(BaseEdge):
     @validator("target_id")
     def validate_target_is_region_like(cls, v):
         if ":" not in v or v.startswith(("coord:", "map:", "nv:")):
-            raise ValueError(
-                "Target must be a BrainRegion/Region node with atlas prefix"
-            )
+            raise ValueError("Target must be a BrainRegion/Region node with atlas prefix")
         return v
 
 
@@ -539,9 +533,7 @@ class PublicationStudyAlignmentEdge(BaseEdge):
 
     @validator("source_id")
     def validate_source_is_publication(cls, v):
-        if not (
-            v.startswith("pmid:") or v.startswith("doi:") or v.startswith("paper:")
-        ):
+        if not (v.startswith("pmid:") or v.startswith("doi:") or v.startswith("paper:")):
             raise ValueError("Source must be a Publication node")
         return v
 
@@ -699,9 +691,7 @@ class AssociatedWithEdge(BaseEdge):
             or _looks_like_disease_trait_id(v)
             or _looks_like_concept_id(v)
         ):
-            raise ValueError(
-                "Source must be a RiskLocus, DiseaseTrait, or Concept node"
-            )
+            raise ValueError("Source must be a RiskLocus, DiseaseTrait, or Concept node")
         return v
 
     @validator("target_id")
@@ -1072,10 +1062,7 @@ ALLOWED_EDGES: Dict[str, Tuple[NodeTypeSpec, NodeTypeSpec]] = {
     "HAS_POPULATION": ("Study", "Population"),
     "HAS_LEAD_LOCUS": ("Study", "RiskLocus"),
     "IMPLICATES_GENE": ("RiskLocus", "Gene"),
-    "ASSOCIATED_WITH": (
-        ("Concept", "DiseaseTrait", "RiskLocus"),
-        ("Region", "BrainRegion", "DiseaseTrait"),
-    ),
+    "ASSOCIATED_WITH": (("Concept", "DiseaseTrait", "RiskLocus"), ("Region", "BrainRegion", "DiseaseTrait")),
     "DERIVED_FROM": ("StatisticalMap", ("Publication", "Contrast", "Task")),
     "IMPLEMENTS_TASK": (("Dataset", "Contrast"), "Task"),
     "MAPS_TO": ("Any", "Any"),  # Same type required

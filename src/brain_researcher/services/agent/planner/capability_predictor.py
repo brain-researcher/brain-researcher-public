@@ -13,9 +13,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
-from brain_researcher.services.agent.planner.config_loader import (
-    load_capability_crosswalk,
-)
+from brain_researcher.services.agent.planner.config_loader import load_capability_crosswalk
 from brain_researcher.services.agent.planner.synonyms_loader import match_intents
 
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
@@ -134,9 +132,7 @@ def _clean_query(query: str) -> str:
     return "\n".join(lines).strip()
 
 
-def _query_understanding_intents(
-    query_understanding: Mapping[str, Any] | None,
-) -> list[str]:
+def _query_understanding_intents(query_understanding: Mapping[str, Any] | None) -> list[str]:
     if not isinstance(query_understanding, Mapping):
         return []
     raw = query_understanding.get("intent")
@@ -209,11 +205,7 @@ def _extract_domain_signals(
     signals: list[str] = []
     q = str(query or "").lower()
     combined = " ".join(
-        [
-            str(x).lower()
-            for x in (list(predicted_capabilities) + list(predicted_intents))
-            if x
-        ]
+        [str(x).lower() for x in (list(predicted_capabilities) + list(predicted_intents)) if x]
     )
     for domain, patterns in _DOMAIN_HINTS.items():
         if any(p and (p in q or p in combined) for p in patterns):

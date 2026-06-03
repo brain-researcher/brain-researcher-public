@@ -15,9 +15,7 @@ _DEFAULT_MNI_RESOLUTION_MM = 2
 
 
 def _safe_slug(text: str) -> str:
-    cleaned = "".join(
-        ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in text.strip()
-    )
+    cleaned = "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in text.strip())
     cleaned = "_".join(filter(None, cleaned.split("_")))
     return cleaned or "term"
 
@@ -62,11 +60,7 @@ def _build_activation_map_from_coordinates(
             ii = int(ijk[0] + dx)
             jj = int(ijk[1] + dy)
             kk = int(ijk[2] + dz)
-            if (
-                0 <= ii < data.shape[0]
-                and 0 <= jj < data.shape[1]
-                and 0 <= kk < data.shape[2]
-            ):
+            if 0 <= ii < data.shape[0] and 0 <= jj < data.shape[1] and 0 <= kk < data.shape[2]:
                 data[ii, jj, kk] += 1.0
 
     data[data < float(threshold_count)] = 0.0
@@ -143,7 +137,7 @@ def get_neurosynth_mapping(keyword: str, threshold: float = 3.0) -> dict[str, An
         dataset = _load_dataset()
 
         # Get vocabulary terms
-        if not hasattr(dataset, "annotations") or dataset.annotations is None:
+        if not hasattr(dataset, 'annotations') or dataset.annotations is None:
             return {
                 "keyword": keyword,
                 "error": "Dataset has no annotations",
@@ -162,7 +156,6 @@ def get_neurosynth_mapping(keyword: str, threshold: float = 3.0) -> dict[str, An
         if not matching_terms:
             # Try fuzzy match
             import difflib
-
             close_matches = difflib.get_close_matches(keyword, vocab, n=1, cutoff=0.6)
             if close_matches:
                 matching_terms = close_matches
@@ -225,11 +218,7 @@ def get_neurosynth_mapping(keyword: str, threshold: float = 3.0) -> dict[str, An
         for colset in (("x", "y", "z"), ("X", "Y", "Z")):
             if all(c in coordinates_df.columns for c in colset):
                 coords = [
-                    (
-                        float(row[colset[0]]),
-                        float(row[colset[1]]),
-                        float(row[colset[2]]),
-                    )
+                    (float(row[colset[0]]), float(row[colset[1]]), float(row[colset[2]]))
                     for _, row in coordinates_df[list(colset)].dropna().iterrows()
                 ]
                 break
@@ -302,13 +291,10 @@ def get_neurosynth_mapping(keyword: str, threshold: float = 3.0) -> dict[str, An
         }
 
 
-def visualize_activation_maps(
-    activation_maps: list, threshold: float = 3.0
-) -> dict[str, Any]:
+def visualize_activation_maps(activation_maps: list, threshold: float = 3.0) -> dict[str, Any]:
     """Create visualization of activation maps."""
-    import matplotlib
     import nibabel as nib
-
+    import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -323,12 +309,12 @@ def visualize_activation_maps(
 
             # Get middle slice
             mid_slice = data.shape[2] // 2
-            ax.imshow(data[:, :, mid_slice].T, cmap="hot", origin="lower")
+            ax.imshow(data[:, :, mid_slice].T, cmap='hot', origin='lower')
             ax.set_title(f"Activation Map {i+1}")
             plt.colorbar(ax.images[0], ax=ax)
 
             plot_path = os.path.join(output_dir, f"activation_map_{i+1}.png")
-            plt.savefig(plot_path, dpi=150, bbox_inches="tight")
+            plt.savefig(plot_path, dpi=150, bbox_inches='tight')
             plt.close(fig)
 
             plots.append(plot_path)
@@ -340,9 +326,7 @@ def visualize_activation_maps(
         return {"error": str(e)}
 
 
-def calculate_relevance_scores(
-    term: str, terms: list, scores: list
-) -> dict[str, float]:
+def calculate_relevance_scores(term: str, terms: list, scores: list) -> dict[str, float]:
     """Calculate relevance scores for term matching."""
     import difflib
 

@@ -68,22 +68,22 @@ class DualEvidenceGraph(BRKGGraphDB):
                 "type": "brain_language_alignment",
                 "description": "Neuroimaging Contrastive Language-Image Pre-training",
                 "version": "1.0",
-                "reliability": 0.85,
+                "reliability": 0.85
             },
             {
                 "name": "LLM_Semantic",
                 "type": "semantic_reasoning",
                 "description": "Large Language Model semantic understanding",
                 "version": "1.0",
-                "reliability": 0.80,
+                "reliability": 0.80
             },
             {
                 "name": "GLM_Validation",
                 "type": "brain_activation",
                 "description": "General Linear Model activation validation",
                 "version": "1.0",
-                "reliability": 0.90,
-            },
+                "reliability": 0.90
+            }
         ]
 
         for source in evidence_sources:
@@ -100,7 +100,7 @@ class DualEvidenceGraph(BRKGGraphDB):
         evidence_data: Dict[str, Any],
         confidence_score: float,
         coordinates: Optional[List[Tuple[float, float, float]]] = None,
-        task_context: Optional[str] = None,
+        task_context: Optional[str] = None
     ) -> str:
         """
         Create an evidence node with source tracking.
@@ -124,7 +124,7 @@ class DualEvidenceGraph(BRKGGraphDB):
             "confidence_score": confidence_score,
             "timestamp": datetime.now().isoformat(),
             "evidence_data": json.dumps(evidence_data),
-            "task_context": task_context,
+            "task_context": task_context
         }
 
         if coordinates:
@@ -134,13 +134,11 @@ class DualEvidenceGraph(BRKGGraphDB):
                 sum(coord[i] for coord in coordinates) / len(coordinates)
                 for i in range(3)
             ]
-            properties.update(
-                {
-                    "centroid_x": centroid[0],
-                    "centroid_y": centroid[1],
-                    "centroid_z": centroid[2],
-                }
-            )
+            properties.update({
+                "centroid_x": centroid[0],
+                "centroid_y": centroid[1],
+                "centroid_z": centroid[2]
+            })
 
         # Create evidence node
         evidence_id = self.create_node("Evidence", properties)
@@ -150,10 +148,8 @@ class DualEvidenceGraph(BRKGGraphDB):
         if source_nodes:
             source_id = source_nodes[0][0]
             self.create_relationship(
-                evidence_id,
-                source_id,
-                "GENERATED_BY",
-                {"timestamp": datetime.now().isoformat()},
+                evidence_id, source_id, "GENERATED_BY",
+                {"timestamp": datetime.now().isoformat()}
             )
 
         # Link to concept if it exists
@@ -161,29 +157,26 @@ class DualEvidenceGraph(BRKGGraphDB):
         if concept_nodes:
             concept_id = concept_nodes[0][0]
             self.create_relationship(
-                evidence_id,
-                concept_id,
-                "SUPPORTS_CONCEPT",
+                evidence_id, concept_id, "SUPPORTS_CONCEPT",
                 {
                     "confidence": confidence_score,
                     "source": source_type,
-                    "timestamp": datetime.now().isoformat(),
-                },
+                    "timestamp": datetime.now().isoformat()
+                }
             )
         else:
             # Create concept node if it doesn't exist
             concept_id = self.create_node(
-                "Concept", {"name": concept_name, "created_from": source_type}
+                "Concept",
+                {"name": concept_name, "created_from": source_type}
             )
             self.create_relationship(
-                evidence_id,
-                concept_id,
-                "SUPPORTS_CONCEPT",
+                evidence_id, concept_id, "SUPPORTS_CONCEPT",
                 {
                     "confidence": confidence_score,
                     "source": source_type,
-                    "timestamp": datetime.now().isoformat(),
-                },
+                    "timestamp": datetime.now().isoformat()
+                }
             )
 
         return evidence_id
@@ -194,7 +187,7 @@ class DualEvidenceGraph(BRKGGraphDB):
         niclip_evidence: Optional[Dict[str, Any]] = None,
         llm_evidence: Optional[Dict[str, Any]] = None,
         fusion_result: Optional[Dict[str, Any]] = None,
-        coordinates: Optional[List[Tuple[float, float, float]]] = None,
+        coordinates: Optional[List[Tuple[float, float, float]]] = None
     ) -> str:
         """
         Create a fused concept node that combines evidence from multiple sources.
@@ -212,35 +205,33 @@ class DualEvidenceGraph(BRKGGraphDB):
 
         # Calculate consensus confidence
         confidences = []
-        if niclip_evidence and "confidence" in niclip_evidence:
-            confidences.append(niclip_evidence["confidence"])
-        if llm_evidence and "confidence" in llm_evidence:
-            confidences.append(llm_evidence["confidence"])
+        if niclip_evidence and 'confidence' in niclip_evidence:
+            confidences.append(niclip_evidence['confidence'])
+        if llm_evidence and 'confidence' in llm_evidence:
+            confidences.append(llm_evidence['confidence'])
 
-        consensus_confidence = (
-            sum(confidences) / len(confidences) if confidences else 0.0
-        )
+        consensus_confidence = sum(confidences) / len(confidences) if confidences else 0.0
 
         # Create fused concept properties
         properties = {
             "concept_name": concept_name,
             "consensus_confidence": consensus_confidence,
             "n_sources": len([e for e in [niclip_evidence, llm_evidence] if e]),
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat()
         }
 
         if niclip_evidence:
-            properties["niclip_confidence"] = niclip_evidence.get("confidence", 0.0)
+            properties["niclip_confidence"] = niclip_evidence.get('confidence', 0.0)
             properties["niclip_data"] = json.dumps(niclip_evidence)
 
         if llm_evidence:
-            properties["llm_confidence"] = llm_evidence.get("confidence", 0.0)
+            properties["llm_confidence"] = llm_evidence.get('confidence', 0.0)
             properties["llm_data"] = json.dumps(llm_evidence)
 
         if fusion_result:
             properties["fusion_data"] = json.dumps(fusion_result)
-            properties["fusion_conflicts"] = fusion_result.get("n_conflicts", 0)
-            properties["fusion_overlap"] = fusion_result.get("overlap_ratio", 0.0)
+            properties["fusion_conflicts"] = fusion_result.get('n_conflicts', 0)
+            properties["fusion_overlap"] = fusion_result.get('overlap_ratio', 0.0)
 
         if coordinates:
             properties["coordinates"] = json.dumps(coordinates)
@@ -249,13 +240,11 @@ class DualEvidenceGraph(BRKGGraphDB):
                 sum(coord[i] for coord in coordinates) / len(coordinates)
                 for i in range(3)
             ]
-            properties.update(
-                {
-                    "centroid_x": centroid[0],
-                    "centroid_y": centroid[1],
-                    "centroid_z": centroid[2],
-                }
-            )
+            properties.update({
+                "centroid_x": centroid[0],
+                "centroid_y": centroid[1],
+                "centroid_z": centroid[2]
+            })
 
         # Create fused concept node
         fused_id = self.create_node("FusedConcept", properties)
@@ -263,32 +252,30 @@ class DualEvidenceGraph(BRKGGraphDB):
         # Create evidence nodes and link them
         if niclip_evidence:
             niclip_id = self.create_evidence_node(
-                concept_name,
-                "brain_language_alignment",
-                niclip_evidence,
-                niclip_evidence.get("confidence", 0.0),
-                coordinates,
+                concept_name, "brain_language_alignment",
+                niclip_evidence, niclip_evidence.get('confidence', 0.0),
+                coordinates
             )
             self.create_relationship(
-                niclip_id,
-                fused_id,
-                "CONTRIBUTES_TO",
-                {"weight": niclip_evidence.get("confidence", 0.0), "source": "niclip"},
+                niclip_id, fused_id, "CONTRIBUTES_TO",
+                {
+                    "weight": niclip_evidence.get('confidence', 0.0),
+                    "source": "niclip"
+                }
             )
 
         if llm_evidence:
             llm_id = self.create_evidence_node(
-                concept_name,
-                "semantic_reasoning",
-                llm_evidence,
-                llm_evidence.get("confidence", 0.0),
-                coordinates,
+                concept_name, "semantic_reasoning",
+                llm_evidence, llm_evidence.get('confidence', 0.0),
+                coordinates
             )
             self.create_relationship(
-                llm_id,
-                fused_id,
-                "CONTRIBUTES_TO",
-                {"weight": llm_evidence.get("confidence", 0.0), "source": "llm"},
+                llm_id, fused_id, "CONTRIBUTES_TO",
+                {
+                    "weight": llm_evidence.get('confidence', 0.0),
+                    "source": "llm"
+                }
             )
 
         return fused_id
@@ -299,7 +286,7 @@ class DualEvidenceGraph(BRKGGraphDB):
         source1_evidence: Dict[str, Any],
         source2_evidence: Dict[str, Any],
         conflict_type: str,
-        conflict_details: Dict[str, Any],
+        conflict_details: Dict[str, Any]
     ) -> str:
         """
         Record a conflict between evidence sources.
@@ -318,17 +305,17 @@ class DualEvidenceGraph(BRKGGraphDB):
         properties = {
             "concept_name": concept_name,
             "conflict_type": conflict_type,
-            "source1_type": source1_evidence.get("source_type", "unknown"),
-            "source2_type": source2_evidence.get("source_type", "unknown"),
-            "source1_confidence": source1_evidence.get("confidence", 0.0),
-            "source2_confidence": source2_evidence.get("confidence", 0.0),
+            "source1_type": source1_evidence.get('source_type', 'unknown'),
+            "source2_type": source2_evidence.get('source_type', 'unknown'),
+            "source1_confidence": source1_evidence.get('confidence', 0.0),
+            "source2_confidence": source2_evidence.get('confidence', 0.0),
             "confidence_difference": abs(
-                source1_evidence.get("confidence", 0.0)
-                - source2_evidence.get("confidence", 0.0)
+                source1_evidence.get('confidence', 0.0) -
+                source2_evidence.get('confidence', 0.0)
             ),
             "conflict_details": json.dumps(conflict_details),
             "timestamp": datetime.now().isoformat(),
-            "resolved": False,
+            "resolved": False
         }
 
         # Create conflict record
@@ -337,15 +324,13 @@ class DualEvidenceGraph(BRKGGraphDB):
         # Link to evidence sources if they exist
         evidence_nodes = self.find_nodes("Evidence", {"concept_name": concept_name})
         for evidence_id, evidence_data in evidence_nodes:
-            if evidence_data.get("source_type") in [
-                source1_evidence.get("source_type"),
-                source2_evidence.get("source_type"),
+            if evidence_data.get('source_type') in [
+                source1_evidence.get('source_type'),
+                source2_evidence.get('source_type')
             ]:
                 self.create_relationship(
-                    conflict_id,
-                    evidence_id,
-                    "CONFLICTS_WITH",
-                    {"severity": conflict_details.get("severity", "medium")},
+                    conflict_id, evidence_id, "CONFLICTS_WITH",
+                    {"severity": conflict_details.get('severity', 'medium')}
                 )
 
         return conflict_id
@@ -354,7 +339,7 @@ class DualEvidenceGraph(BRKGGraphDB):
         self,
         min_consensus_confidence: float = 0.5,
         coordinates: Optional[List[Tuple[float, float, float]]] = None,
-        radius: float = 10.0,
+        radius: float = 10.0
     ) -> List[Dict[str, Any]]:
         """
         Find concepts with evidence from multiple sources.
@@ -387,12 +372,9 @@ class DualEvidenceGraph(BRKGGraphDB):
                 within_radius = False
                 for query_coord in coordinates:
                     for concept_coord in concept_coords:
-                        distance = (
-                            sum(
-                                (a - b) ** 2 for a, b in zip(query_coord, concept_coord)
-                            )
-                            ** 0.5
-                        )
+                        distance = sum(
+                            (a - b) ** 2 for a, b in zip(query_coord, concept_coord)
+                        ) ** 0.5
                         if distance <= radius:
                             within_radius = True
                             break
@@ -403,37 +385,27 @@ class DualEvidenceGraph(BRKGGraphDB):
                     continue
 
             # Get evidence contributions
-            contributions = self.find_relationships(
-                end_node=node_id, rel_type="CONTRIBUTES_TO"
-            )
+            contributions = self.find_relationships(end_node=node_id, rel_type="CONTRIBUTES_TO")
             evidence_sources = []
             for start_node, end_node, edge_data in contributions:
                 evidence_node = self.get_node(start_node)
                 if evidence_node:
-                    evidence_sources.append(
-                        {
-                            "source_type": evidence_node.get("source_type"),
-                            "confidence": evidence_node.get("confidence_score"),
-                            "weight": edge_data.get("weight", 0.0),
-                        }
-                    )
+                    evidence_sources.append({
+                        "source_type": evidence_node.get("source_type"),
+                        "confidence": evidence_node.get("confidence_score"),
+                        "weight": edge_data.get("weight", 0.0)
+                    })
 
-            fused_concepts.append(
-                {
-                    "id": node_id,
-                    "concept_name": node_data.get("concept_name"),
-                    "consensus_confidence": node_data.get("consensus_confidence"),
-                    "evidence_sources": evidence_sources,
-                    "fusion_conflicts": node_data.get("fusion_conflicts", 0),
-                    "fusion_overlap": node_data.get("fusion_overlap", 0.0),
-                    "coordinates": (
-                        json.loads(node_data["coordinates"])
-                        if "coordinates" in node_data
-                        else None
-                    ),
-                    "properties": node_data,
-                }
-            )
+            fused_concepts.append({
+                "id": node_id,
+                "concept_name": node_data.get("concept_name"),
+                "consensus_confidence": node_data.get("consensus_confidence"),
+                "evidence_sources": evidence_sources,
+                "fusion_conflicts": node_data.get("fusion_conflicts", 0),
+                "fusion_overlap": node_data.get("fusion_overlap", 0.0),
+                "coordinates": json.loads(node_data["coordinates"]) if "coordinates" in node_data else None,
+                "properties": node_data
+            })
 
         # Sort by consensus confidence
         fused_concepts.sort(key=lambda x: x["consensus_confidence"], reverse=True)
@@ -444,7 +416,7 @@ class DualEvidenceGraph(BRKGGraphDB):
         self,
         concept_name: Optional[str] = None,
         conflict_type: Optional[str] = None,
-        unresolved_only: bool = True,
+        unresolved_only: bool = True
     ) -> List[Dict[str, Any]]:
         """
         Get evidence conflicts, optionally filtered.
@@ -470,43 +442,35 @@ class DualEvidenceGraph(BRKGGraphDB):
         conflicts = []
         for node_id, node_data in self.find_nodes("ConflictRecord", filters):
             # Get linked evidence
-            conflict_rels = self.find_relationships(
-                start_node=node_id, rel_type="CONFLICTS_WITH"
-            )
+            conflict_rels = self.find_relationships(start_node=node_id, rel_type="CONFLICTS_WITH")
             evidence_nodes = []
             for start_node, end_node, edge_data in conflict_rels:
                 evidence_node = self.get_node(end_node)
                 if evidence_node:
-                    evidence_nodes.append(
-                        {
-                            "id": end_node,
-                            "source_type": evidence_node.get("source_type"),
-                            "confidence": evidence_node.get("confidence_score"),
-                            "severity": edge_data.get("severity"),
-                        }
-                    )
+                    evidence_nodes.append({
+                        "id": end_node,
+                        "source_type": evidence_node.get("source_type"),
+                        "confidence": evidence_node.get("confidence_score"),
+                        "severity": edge_data.get("severity")
+                    })
 
-            conflicts.append(
-                {
-                    "id": node_id,
-                    "concept_name": node_data.get("concept_name"),
-                    "conflict_type": node_data.get("conflict_type"),
-                    "confidence_difference": node_data.get("confidence_difference"),
-                    "details": json.loads(node_data.get("conflict_details", "{}")),
-                    "evidence": evidence_nodes,
-                    "timestamp": node_data.get("timestamp"),
-                    "resolved": node_data.get("resolved", False),
-                }
-            )
+            conflicts.append({
+                "id": node_id,
+                "concept_name": node_data.get("concept_name"),
+                "conflict_type": node_data.get("conflict_type"),
+                "confidence_difference": node_data.get("confidence_difference"),
+                "details": json.loads(node_data.get("conflict_details", "{}")),
+                "evidence": evidence_nodes,
+                "timestamp": node_data.get("timestamp"),
+                "resolved": node_data.get("resolved", False)
+            })
 
         # Sort by confidence difference (most severe first)
         conflicts.sort(key=lambda x: x["confidence_difference"], reverse=True)
 
         return conflicts
 
-    def resolve_conflict(
-        self, conflict_id: str, resolution_method: str, resolution_data: Dict[str, Any]
-    ) -> bool:
+    def resolve_conflict(self, conflict_id: str, resolution_method: str, resolution_data: Dict[str, Any]) -> bool:
         """
         Mark a conflict as resolved with resolution details.
 
@@ -525,23 +489,19 @@ class DualEvidenceGraph(BRKGGraphDB):
             return False
 
         # Update conflict node
-        self.graph.nodes[conflict_id].update(
-            {
-                "resolved": True,
-                "resolution_method": resolution_method,
-                "resolution_data": json.dumps(resolution_data),
-                "resolution_timestamp": datetime.now().isoformat(),
-            }
-        )
+        self.graph.nodes[conflict_id].update({
+            "resolved": True,
+            "resolution_method": resolution_method,
+            "resolution_data": json.dumps(resolution_data),
+            "resolution_timestamp": datetime.now().isoformat()
+        })
 
         # Save to database
         labels = conflict_node.get("labels", ["ConflictRecord"])
         updated_props = dict(self.graph.nodes[conflict_id])
         self._save_node(conflict_id, labels, updated_props)
 
-        logger.info(
-            f"Resolved conflict {conflict_id} using method: {resolution_method}"
-        )
+        logger.info(f"Resolved conflict {conflict_id} using method: {resolution_method}")
         return True
 
     def get_dual_evidence_stats(self) -> Dict[str, Any]:
@@ -578,7 +538,7 @@ class DualEvidenceGraph(BRKGGraphDB):
                 "mean": sum(confidence_scores) / len(confidence_scores),
                 "min": min(confidence_scores),
                 "max": max(confidence_scores),
-                "count": len(confidence_scores),
+                "count": len(confidence_scores)
             }
 
         dual_evidence_stats = {
@@ -587,7 +547,7 @@ class DualEvidenceGraph(BRKGGraphDB):
             "conflict_records": conflict_count,
             "evidence_by_source": source_counts,
             "conflicts_by_type": conflict_types,
-            "consensus_confidence_stats": confidence_stats,
+            "consensus_confidence_stats": confidence_stats
         }
 
         # Merge with base stats
@@ -606,20 +566,20 @@ if __name__ == "__main__":
         "confidence": 0.85,
         "spatial_score": 0.9,
         "source_type": "brain_language_alignment",
-        "task_priors": [0.002, 0.003, 0.001],
+        "task_priors": [0.002, 0.003, 0.001]
     }
 
     llm_evidence = {
         "confidence": 0.75,
         "semantic_score": 0.8,
         "source_type": "semantic_reasoning",
-        "task_concepts": ["working memory", "cognitive control"],
+        "task_concepts": ["working memory", "cognitive control"]
     }
 
     fusion_result = {
         "consensus_confidence": 0.80,
         "n_conflicts": 1,
-        "overlap_ratio": 0.6,
+        "overlap_ratio": 0.6
     }
 
     # Create fused concept
@@ -628,7 +588,7 @@ if __name__ == "__main__":
         niclip_evidence=niclip_evidence,
         llm_evidence=llm_evidence,
         fusion_result=fusion_result,
-        coordinates=[(-44, 36, 20), (44, 36, 20)],
+        coordinates=[(-44, 36, 20), (44, 36, 20)]
     )
 
     print(f"Created fused concept: {fused_id}")
@@ -639,7 +599,7 @@ if __name__ == "__main__":
         {"source_type": "brain_language_alignment", "confidence": 0.9},
         {"source_type": "semantic_reasoning", "confidence": 0.4},
         "confidence",
-        {"severity": "high", "difference": 0.5},
+        {"severity": "high", "difference": 0.5}
     )
 
     print(f"Recorded conflict: {conflict_id}")

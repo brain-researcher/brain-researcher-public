@@ -132,9 +132,7 @@ class MicroscopeFrameAdapter:
         if self.config.auto_start and not self._started:
             self.start_session()
         elif not self._started:
-            raise RuntimeError(
-                "Session has not been started. Call start_session() first."
-            )
+            raise RuntimeError("Session has not been started. Call start_session() first.")
 
         payload = dict(self.config.frame_metadata)
         if metadata:
@@ -178,12 +176,8 @@ class MicroscopeFrameAdapter:
             timestamp_s = (
                 None if timestamp_extractor is None else timestamp_extractor(payload)
             )
-            frame_id = (
-                None if frame_id_extractor is None else frame_id_extractor(payload)
-            )
-            metadata = (
-                None if metadata_extractor is None else metadata_extractor(payload)
-            )
+            frame_id = None if frame_id_extractor is None else frame_id_extractor(payload)
+            metadata = None if metadata_extractor is None else metadata_extractor(payload)
             if metadata is not None and not isinstance(metadata, dict):
                 raise ValueError("metadata_extractor must return a dict or None")
             return self.publish_frame(

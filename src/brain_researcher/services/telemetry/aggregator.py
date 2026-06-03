@@ -3,25 +3,20 @@ UsageMetricsAggregator - Advanced data aggregation and analysis engine.
 """
 
 import asyncio
-import json
 import logging
-import math
-import statistics
-from collections import Counter, defaultdict
-from dataclasses import dataclass
+from collections import defaultdict, Counter
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Any, Tuple, Callable, Union
+from dataclasses import dataclass
+import statistics
+import json
+import math
 
 from .models import (
-    EventType,
-    FeatureUsage,
-    MetricType,
-    PrivacyLevel,
-    ServiceType,
-    TelemetryEvent,
-    UsageMetric,
-    UserJourney,
+    TelemetryEvent, UsageMetric, FeatureUsage, UserJourney,
+    EventType, MetricType, ServiceType, PrivacyLevel
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +24,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AggregationWindow:
     """Time window for metric aggregation."""
-
     start: datetime
     end: datetime
     granularity: str  # 'hour', 'day', 'week', 'month'
@@ -46,7 +40,6 @@ class AggregationWindow:
 @dataclass
 class AggregationConfig:
     """Configuration for metrics aggregation."""
-
     # Time windows
     default_window_hours: int = 24
     max_window_days: int = 90
@@ -94,9 +87,7 @@ class UsageMetricsAggregator:
         self._feature_cache: Dict[str, Tuple[datetime, FeatureUsage]] = {}
 
         # Real-time aggregation state
-        self._real_time_counters: Dict[str, Dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self._real_time_counters: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self._real_time_timers: Dict[str, List[float]] = defaultdict(list)
 
         # Journey tracking
@@ -137,12 +128,10 @@ class UsageMetricsAggregator:
             self._update_journey_tracking(event)
         logger.info("Seeded %s telemetry events from persistent storage", len(events))
 
-    async def calculate_usage_metrics(
-        self,
-        window: Optional[AggregationWindow] = None,
-        services: Optional[List[ServiceType]] = None,
-        features: Optional[List[str]] = None,
-    ) -> List[UsageMetric]:
+    async def calculate_usage_metrics(self,
+                                    window: Optional[AggregationWindow] = None,
+                                    services: Optional[List[ServiceType]] = None,
+                                    features: Optional[List[str]] = None) -> List[UsageMetric]:
         """Calculate comprehensive usage metrics for the specified window."""
         if window is None:
             end_time = datetime.utcnow()
@@ -157,7 +146,9 @@ class UsageMetricsAggregator:
 
         # Filter events
         filtered_events = self._filter_events(
-            window=window, services=services, features=features
+            window=window,
+            services=services,
+            features=features
         )
 
         if not filtered_events:
@@ -172,9 +163,7 @@ class UsageMetricsAggregator:
         metrics.extend(await self._calculate_adoption_metrics(filtered_events, window))
 
         # Performance metrics
-        metrics.extend(
-            await self._calculate_performance_metrics(filtered_events, window)
-        )
+        metrics.extend(await self._calculate_performance_metrics(filtered_events, window))
 
         # Error rate metrics
         metrics.extend(await self._calculate_error_metrics(filtered_events, window))
@@ -185,17 +174,13 @@ class UsageMetricsAggregator:
         # Cache results
         self._cache_result(cache_key, metrics)
 
-        logger.info(
-            f"Calculated {len(metrics)} usage metrics for window {window.start} - {window.end}"
-        )
+        logger.info(f"Calculated {len(metrics)} usage metrics for window {window.start} - {window.end}")
         return metrics
 
-    async def analyze_feature_usage(
-        self,
-        feature_name: Optional[str] = None,
-        service: Optional[ServiceType] = None,
-        window: Optional[AggregationWindow] = None,
-    ) -> List[FeatureUsage]:
+    async def analyze_feature_usage(self,
+                                  feature_name: Optional[str] = None,
+                                  service: Optional[ServiceType] = None,
+                                  window: Optional[AggregationWindow] = None) -> List[FeatureUsage]:
         """Analyze detailed feature usage patterns."""
         if window is None:
             if self._events:
@@ -203,16 +188,14 @@ class UsageMetricsAggregator:
                 end_time = max(e.timestamp for e in self._events)
             else:
                 end_time = datetime.utcnow()
-                start_time = end_time - timedelta(
-                    hours=self.config.default_window_hours
-                )
+                start_time = end_time - timedelta(hours=self.config.default_window_hours)
             window = AggregationWindow(start_time, end_time, "day")
 
         # Filter events for feature analysis
         filtered_events = self._filter_events(
             window=window,
             services=[service] if service else None,
-            features=[feature_name] if feature_name else None,
+            features=[feature_name] if feature_name else None
         )
 
         # Group by feature and service
@@ -228,9 +211,7 @@ class UsageMetricsAggregator:
             if len(events) < self.config.min_feature_uses:
                 continue
 
-            analysis = await self._analyze_feature_events(
-                fname, fservice, events, window
-            )
+            analysis = await self._analyze_feature_events(fname, fservice, events, window)
             feature_analyses.append(analysis)
 
         # Sort by usage count
@@ -239,12 +220,10 @@ class UsageMetricsAggregator:
         logger.info(f"Analyzed {len(feature_analyses)} features")
         return feature_analyses
 
-    async def extract_user_journeys(
-        self,
-        user_hash: Optional[str] = None,
-        window: Optional[AggregationWindow] = None,
-        min_steps: int = 2,
-    ) -> List[UserJourney]:
+    async def extract_user_journeys(self,
+                                  user_hash: Optional[str] = None,
+                                  window: Optional[AggregationWindow] = None,
+                                  min_steps: int = 2) -> List[UserJourney]:
         """Extract and analyze user journeys from events."""
         if window is None:
             if self._events:
@@ -257,7 +236,8 @@ class UsageMetricsAggregator:
 
         # Get session-grouped events
         session_events = self._group_events_by_session(
-            self._filter_events(window=window), user_hash=user_hash
+            self._filter_events(window=window),
+            user_hash=user_hash
         )
 
         journeys = []
@@ -285,17 +265,19 @@ class UsageMetricsAggregator:
         window_start = now - timedelta(minutes=self.config.real_time_window_minutes)
 
         # Get recent events
-        recent_events = [e for e in self._events if e.timestamp >= window_start]
+        recent_events = [
+            e for e in self._events
+            if e.timestamp >= window_start
+        ]
 
         metrics = {
             "timestamp": now.isoformat(),
             "window_minutes": self.config.real_time_window_minutes,
             "total_events": len(recent_events),
-            "events_per_minute": len(recent_events)
-            / self.config.real_time_window_minutes,
+            "events_per_minute": len(recent_events) / self.config.real_time_window_minutes,
             "services": {},
             "features": {},
-            "errors": {},
+            "errors": {}
         }
 
         # Service breakdown
@@ -303,12 +285,13 @@ class UsageMetricsAggregator:
         for service, count in service_counts.items():
             metrics["services"][service.value] = {
                 "event_count": count,
-                "events_per_minute": count / self.config.real_time_window_minutes,
+                "events_per_minute": count / self.config.real_time_window_minutes
             }
 
         # Feature usage
         feature_counts = Counter(
-            e.feature_name for e in recent_events if e.feature_name
+            e.feature_name for e in recent_events
+            if e.feature_name
         )
         for feature, count in feature_counts.most_common(10):
             metrics["features"][feature] = count
@@ -320,9 +303,7 @@ class UsageMetricsAggregator:
             metrics["errors"] = {
                 "total_errors": len(error_events),
                 "error_rate": error_rate,
-                "error_types": Counter(
-                    e.error_message for e in error_events if e.error_message
-                ),
+                "error_types": Counter(e.error_message for e in error_events if e.error_message)
             }
 
         return metrics
@@ -339,76 +320,68 @@ class UsageMetricsAggregator:
                 "default_window_hours": self.config.default_window_hours,
                 "batch_size": self.config.batch_size,
                 "cache_ttl_minutes": self.config.cache_ttl_minutes,
-                "parallel_processing": self.config.parallel_processing,
-            },
+                "parallel_processing": self.config.parallel_processing
+            }
         }
 
     # Private helper methods
 
-    async def _calculate_usage_counts(
-        self, events: List[TelemetryEvent], window: AggregationWindow
-    ) -> List[UsageMetric]:
+    async def _calculate_usage_counts(self, events: List[TelemetryEvent],
+                                    window: AggregationWindow) -> List[UsageMetric]:
         """Calculate basic usage count metrics."""
         metrics = []
 
         # Total events
-        metrics.append(
-            UsageMetric(
-                id=f"usage_count_{window.granularity}_{int(window.start.timestamp())}",
-                metric_type=MetricType.USAGE_COUNT,
-                name="Total Events",
-                value=float(len(events)),
-                unit="events",
-                period_start=window.start,
-                period_end=window.end,
-                granularity=window.granularity,
-                sample_size=len(events),
-                privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-            )
-        )
+        metrics.append(UsageMetric(
+            id=f"usage_count_{window.granularity}_{int(window.start.timestamp())}",
+            metric_type=MetricType.USAGE_COUNT,
+            name="Total Events",
+            value=float(len(events)),
+            unit="events",
+            period_start=window.start,
+            period_end=window.end,
+            granularity=window.granularity,
+            sample_size=len(events),
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
+        ))
 
         # Events by service
         service_counts = Counter(e.service for e in events)
         for service, count in service_counts.items():
-            metrics.append(
-                UsageMetric(
-                    id=f"service_usage_{service.value}_{int(window.start.timestamp())}",
-                    metric_type=MetricType.USAGE_COUNT,
-                    name=f"{service.value} Usage",
-                    value=float(count),
-                    unit="events",
-                    period_start=window.start,
-                    period_end=window.end,
-                    granularity=window.granularity,
-                    dimensions={"service": service.value},
-                    sample_size=count,
-                    privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-                )
-            )
+            metrics.append(UsageMetric(
+                id=f"service_usage_{service.value}_{int(window.start.timestamp())}",
+                metric_type=MetricType.USAGE_COUNT,
+                name=f"{service.value} Usage",
+                value=float(count),
+                unit="events",
+                period_start=window.start,
+                period_end=window.end,
+                granularity=window.granularity,
+                dimensions={"service": service.value},
+                sample_size=count,
+                privacy_level=PrivacyLevel.AGGREGATE_ONLY
+            ))
 
         # Unique users
         unique_users = len(set(e.user_id for e in events if e.user_id))
         if unique_users > 0:
-            metrics.append(
-                UsageMetric(
-                    id=f"unique_users_{int(window.start.timestamp())}",
-                    metric_type=MetricType.USAGE_COUNT,
-                    name="Unique Users",
-                    value=float(unique_users),
-                    unit="users",
-                    period_start=window.start,
-                    period_end=window.end,
-                    granularity=window.granularity,
-                    sample_size=unique_users,
-                    privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-                )
-            )
+            metrics.append(UsageMetric(
+                id=f"unique_users_{int(window.start.timestamp())}",
+                metric_type=MetricType.USAGE_COUNT,
+                name="Unique Users",
+                value=float(unique_users),
+                unit="users",
+                period_start=window.start,
+                period_end=window.end,
+                granularity=window.granularity,
+                sample_size=unique_users,
+                privacy_level=PrivacyLevel.AGGREGATE_ONLY
+            ))
 
         return metrics
 
-    async def _calculate_adoption_metrics(
-        self, events: List[TelemetryEvent], window: AggregationWindow
-    ) -> List[UsageMetric]:
+    async def _calculate_adoption_metrics(self, events: List[TelemetryEvent],
+                                        window: AggregationWindow) -> List[UsageMetric]:
         """Calculate feature adoption metrics."""
         metrics = []
 
@@ -425,34 +398,29 @@ class UsageMetricsAggregator:
 
         for feature, users in feature_users.items():
             adoption_rate = len(users) / total_users
-            metrics.append(
-                UsageMetric(
-                    id=f"adoption_{feature}_{int(window.start.timestamp())}",
-                    metric_type=MetricType.ADOPTION_RATE,
-                    name=f"{feature} Adoption Rate",
-                    value=adoption_rate,
-                    unit="percentage",
-                    period_start=window.start,
-                    period_end=window.end,
-                    granularity=window.granularity,
-                    dimensions={"feature": feature},
-                    sample_size=len(users),
-                    privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-                )
-            )
+            metrics.append(UsageMetric(
+                id=f"adoption_{feature}_{int(window.start.timestamp())}",
+                metric_type=MetricType.ADOPTION_RATE,
+                name=f"{feature} Adoption Rate",
+                value=adoption_rate,
+                unit="percentage",
+                period_start=window.start,
+                period_end=window.end,
+                granularity=window.granularity,
+                dimensions={"feature": feature},
+                sample_size=len(users),
+                privacy_level=PrivacyLevel.AGGREGATE_ONLY
+            ))
 
         return metrics
 
-    async def _calculate_performance_metrics(
-        self, events: List[TelemetryEvent], window: AggregationWindow
-    ) -> List[UsageMetric]:
+    async def _calculate_performance_metrics(self, events: List[TelemetryEvent],
+                                           window: AggregationWindow) -> List[UsageMetric]:
         """Calculate performance-related metrics."""
         metrics = []
 
         # Events with duration data
-        duration_events = [
-            e for e in events if e.duration_ms is not None and e.duration_ms > 0
-        ]
+        duration_events = [e for e in events if e.duration_ms is not None and e.duration_ms > 0]
 
         if not duration_events:
             return metrics
@@ -460,60 +428,53 @@ class UsageMetricsAggregator:
         durations = [e.duration_ms for e in duration_events]
 
         # Overall performance metrics
-        metrics.append(
-            UsageMetric(
-                id=f"avg_response_time_{int(window.start.timestamp())}",
-                metric_type=MetricType.PERFORMANCE_METRICS,
-                name="Average Response Time",
-                value=statistics.mean(durations),
-                unit="milliseconds",
-                period_start=window.start,
-                period_end=window.end,
-                granularity=window.granularity,
-                sample_size=len(durations),
-                privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-            )
-        )
+        metrics.append(UsageMetric(
+            id=f"avg_response_time_{int(window.start.timestamp())}",
+            metric_type=MetricType.PERFORMANCE_METRICS,
+            name="Average Response Time",
+            value=statistics.mean(durations),
+            unit="milliseconds",
+            period_start=window.start,
+            period_end=window.end,
+            granularity=window.granularity,
+            sample_size=len(durations),
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
+        ))
 
-        metrics.append(
-            UsageMetric(
-                id=f"median_response_time_{int(window.start.timestamp())}",
-                metric_type=MetricType.PERFORMANCE_METRICS,
-                name="Median Response Time",
-                value=statistics.median(durations),
-                unit="milliseconds",
-                period_start=window.start,
-                period_end=window.end,
-                granularity=window.granularity,
-                sample_size=len(durations),
-                privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-            )
-        )
+        metrics.append(UsageMetric(
+            id=f"median_response_time_{int(window.start.timestamp())}",
+            metric_type=MetricType.PERFORMANCE_METRICS,
+            name="Median Response Time",
+            value=statistics.median(durations),
+            unit="milliseconds",
+            period_start=window.start,
+            period_end=window.end,
+            granularity=window.granularity,
+            sample_size=len(durations),
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
+        ))
 
         # Percentile metrics
         for percentile in self.config.percentile_thresholds:
             value = self._calculate_percentile(durations, percentile)
-            metrics.append(
-                UsageMetric(
-                    id=f"p{int(percentile)}_response_time_{int(window.start.timestamp())}",
-                    metric_type=MetricType.PERFORMANCE_METRICS,
-                    name=f"P{int(percentile)} Response Time",
-                    value=value,
-                    unit="milliseconds",
-                    period_start=window.start,
-                    period_end=window.end,
-                    granularity=window.granularity,
-                    dimensions={"percentile": str(int(percentile))},
-                    sample_size=len(durations),
-                    privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-                )
-            )
+            metrics.append(UsageMetric(
+                id=f"p{int(percentile)}_response_time_{int(window.start.timestamp())}",
+                metric_type=MetricType.PERFORMANCE_METRICS,
+                name=f"P{int(percentile)} Response Time",
+                value=value,
+                unit="milliseconds",
+                period_start=window.start,
+                period_end=window.end,
+                granularity=window.granularity,
+                dimensions={"percentile": str(int(percentile))},
+                sample_size=len(durations),
+                privacy_level=PrivacyLevel.AGGREGATE_ONLY
+            ))
 
         return metrics
 
-    async def _calculate_error_metrics(
-        self, events: List[TelemetryEvent], window: AggregationWindow
-    ) -> List[UsageMetric]:
+    async def _calculate_error_metrics(self, events: List[TelemetryEvent],
+                                     window: AggregationWindow) -> List[UsageMetric]:
         """Calculate error rate metrics."""
         metrics = []
 
@@ -524,20 +485,18 @@ class UsageMetricsAggregator:
         error_events = [e for e in events if not e.success]
         error_rate = len(error_events) / total_events
 
-        metrics.append(
-            UsageMetric(
-                id=f"error_rate_{int(window.start.timestamp())}",
-                metric_type=MetricType.ERROR_RATE,
-                name="Overall Error Rate",
-                value=error_rate,
-                unit="percentage",
-                period_start=window.start,
-                period_end=window.end,
-                granularity=window.granularity,
-                sample_size=total_events,
-                privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-            )
-        )
+        metrics.append(UsageMetric(
+            id=f"error_rate_{int(window.start.timestamp())}",
+            metric_type=MetricType.ERROR_RATE,
+            name="Overall Error Rate",
+            value=error_rate,
+            unit="percentage",
+            period_start=window.start,
+            period_end=window.end,
+            granularity=window.granularity,
+            sample_size=total_events,
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
+        ))
 
         # Error rates by service
         service_events = defaultdict(list)
@@ -548,27 +507,24 @@ class UsageMetricsAggregator:
             service_errors = [e for e in service_event_list if not e.success]
             service_error_rate = len(service_errors) / len(service_event_list)
 
-            metrics.append(
-                UsageMetric(
-                    id=f"error_rate_{service.value}_{int(window.start.timestamp())}",
-                    metric_type=MetricType.ERROR_RATE,
-                    name=f"{service.value} Error Rate",
-                    value=service_error_rate,
-                    unit="percentage",
-                    period_start=window.start,
-                    period_end=window.end,
-                    granularity=window.granularity,
-                    dimensions={"service": service.value},
-                    sample_size=len(service_event_list),
-                    privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-                )
-            )
+            metrics.append(UsageMetric(
+                id=f"error_rate_{service.value}_{int(window.start.timestamp())}",
+                metric_type=MetricType.ERROR_RATE,
+                name=f"{service.value} Error Rate",
+                value=service_error_rate,
+                unit="percentage",
+                period_start=window.start,
+                period_end=window.end,
+                granularity=window.granularity,
+                dimensions={"service": service.value},
+                sample_size=len(service_event_list),
+                privacy_level=PrivacyLevel.AGGREGATE_ONLY
+            ))
 
         return metrics
 
-    async def _calculate_temporal_metrics(
-        self, events: List[TelemetryEvent], window: AggregationWindow
-    ) -> List[UsageMetric]:
+    async def _calculate_temporal_metrics(self, events: List[TelemetryEvent],
+                                        window: AggregationWindow) -> List[UsageMetric]:
         """Calculate temporal pattern metrics."""
         metrics = []
 
@@ -585,47 +541,39 @@ class UsageMetricsAggregator:
         peak_hour = max(hourly_counts.keys(), key=lambda h: hourly_counts[h])
         peak_count = hourly_counts[peak_hour]
 
-        metrics.append(
-            UsageMetric(
-                id=f"peak_usage_hour_{int(window.start.timestamp())}",
-                metric_type=MetricType.TEMPORAL_PATTERNS,
-                name="Peak Usage Hour",
-                value=float(peak_hour),
-                unit="hour",
-                period_start=window.start,
-                period_end=window.end,
-                granularity=window.granularity,
-                breakdown={str(hour): count for hour, count in hourly_counts.items()},
-                sample_size=len(events),
-                privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-            )
-        )
+        metrics.append(UsageMetric(
+            id=f"peak_usage_hour_{int(window.start.timestamp())}",
+            metric_type=MetricType.TEMPORAL_PATTERNS,
+            name="Peak Usage Hour",
+            value=float(peak_hour),
+            unit="hour",
+            period_start=window.start,
+            period_end=window.end,
+            granularity=window.granularity,
+            breakdown={str(hour): count for hour, count in hourly_counts.items()},
+            sample_size=len(events),
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
+        ))
 
-        metrics.append(
-            UsageMetric(
-                id=f"peak_usage_count_{int(window.start.timestamp())}",
-                metric_type=MetricType.TEMPORAL_PATTERNS,
-                name="Peak Hour Event Count",
-                value=float(peak_count),
-                unit="events",
-                period_start=window.start,
-                period_end=window.end,
-                granularity=window.granularity,
-                dimensions={"peak_hour": str(peak_hour)},
-                sample_size=peak_count,
-                privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-            )
-        )
+        metrics.append(UsageMetric(
+            id=f"peak_usage_count_{int(window.start.timestamp())}",
+            metric_type=MetricType.TEMPORAL_PATTERNS,
+            name="Peak Hour Event Count",
+            value=float(peak_count),
+            unit="events",
+            period_start=window.start,
+            period_end=window.end,
+            granularity=window.granularity,
+            dimensions={"peak_hour": str(peak_hour)},
+            sample_size=peak_count,
+            privacy_level=PrivacyLevel.AGGREGATE_ONLY
+        ))
 
         return metrics
 
-    async def _analyze_feature_events(
-        self,
-        feature_name: str,
-        service: ServiceType,
-        events: List[TelemetryEvent],
-        window: AggregationWindow,
-    ) -> FeatureUsage:
+    async def _analyze_feature_events(self, feature_name: str, service: ServiceType,
+                                    events: List[TelemetryEvent],
+                                    window: AggregationWindow) -> FeatureUsage:
         """Analyze events for a specific feature."""
         total_uses = len(events)
         unique_users = len(set(e.user_id for e in events if e.user_id))
@@ -645,12 +593,8 @@ class UsageMetricsAggregator:
         first_half = [e for e in events if e.timestamp < mid_point]
         second_half = [e for e in events if e.timestamp >= mid_point]
 
-        first_half_rate = (
-            len(first_half) / (len(first_half) + len(second_half)) if events else 0
-        )
-        second_half_rate = (
-            len(second_half) / (len(first_half) + len(second_half)) if events else 0
-        )
+        first_half_rate = len(first_half) / (len(first_half) + len(second_half)) if events else 0
+        second_half_rate = len(second_half) / (len(first_half) + len(second_half)) if events else 0
 
         trend = "stable"
         period_change = 0.0
@@ -666,9 +610,7 @@ class UsageMetricsAggregator:
         error_rate = len(error_events) / total_uses if total_uses > 0 else 0
 
         # Response time analysis
-        response_times = [
-            e.duration_ms for e in successful_events if e.duration_ms is not None
-        ]
+        response_times = [e.duration_ms for e in successful_events if e.duration_ms is not None]
         avg_response_time = statistics.mean(response_times) if response_times else None
 
         # Peak usage analysis
@@ -676,11 +618,7 @@ class UsageMetricsAggregator:
         for event in events:
             hourly_usage[event.timestamp.hour] += 1
 
-        peak_hour = (
-            max(hourly_usage.keys(), key=lambda h: hourly_usage[h])
-            if hourly_usage
-            else None
-        )
+        peak_hour = max(hourly_usage.keys(), key=lambda h: hourly_usage[h]) if hourly_usage else None
 
         return FeatureUsage(
             feature_name=feature_name,
@@ -698,40 +636,33 @@ class UsageMetricsAggregator:
             error_rate=error_rate,
             avg_response_time_ms=avg_response_time,
             period_start=window.start,
-            period_end=window.end,
+            period_end=window.end
         )
 
-    def _filter_events(
-        self,
-        window: Optional[AggregationWindow] = None,
-        services: Optional[List[ServiceType]] = None,
-        features: Optional[List[str]] = None,
-        event_types: Optional[List[EventType]] = None,
-    ) -> List[TelemetryEvent]:
+    def _filter_events(self,
+                      window: Optional[AggregationWindow] = None,
+                      services: Optional[List[ServiceType]] = None,
+                      features: Optional[List[str]] = None,
+                      event_types: Optional[List[EventType]] = None) -> List[TelemetryEvent]:
         """Filter events based on various criteria."""
         filtered = self._events
 
         if window:
-            filtered = [
-                e for e in filtered if window.start <= e.timestamp <= window.end
-            ]
+            filtered = [e for e in filtered if window.start <= e.timestamp <= window.end]
 
         if services:
             filtered = [e for e in filtered if e.service in services]
 
         if features:
-            filtered = [
-                e for e in filtered if e.feature_name and e.feature_name in features
-            ]
+            filtered = [e for e in filtered if e.feature_name and e.feature_name in features]
 
         if event_types:
             filtered = [e for e in filtered if e.event_type in event_types]
 
         return filtered
 
-    def _group_events_by_session(
-        self, events: List[TelemetryEvent], user_hash: Optional[str] = None
-    ) -> Dict[str, List[TelemetryEvent]]:
+    def _group_events_by_session(self, events: List[TelemetryEvent],
+                               user_hash: Optional[str] = None) -> Dict[str, List[TelemetryEvent]]:
         """Group events by session ID."""
         session_groups = defaultdict(list)
 
@@ -742,9 +673,7 @@ class UsageMetricsAggregator:
 
         return dict(session_groups)
 
-    def _build_user_journey(
-        self, session_id: str, events: List[TelemetryEvent]
-    ) -> Optional[UserJourney]:
+    def _build_user_journey(self, session_id: str, events: List[TelemetryEvent]) -> Optional[UserJourney]:
         """Build a user journey from session events."""
         if len(events) < 2:
             return None
@@ -762,7 +691,7 @@ class UsageMetricsAggregator:
                 "feature_name": event.feature_name,
                 "action": event.action,
                 "success": event.success,
-                "duration_ms": event.duration_ms,
+                "duration_ms": event.duration_ms
             }
             steps.append(step)
 
@@ -772,10 +701,7 @@ class UsageMetricsAggregator:
 
         # Look for conversion events (simplified logic)
         for event in reversed(events):
-            if event.event_type in [
-                EventType.ANALYSIS_COMPLETE,
-                EventType.EXPORT_REQUEST,
-            ]:
+            if event.event_type in [EventType.ANALYSIS_COMPLETE, EventType.EXPORT_REQUEST]:
                 conversion_event = event.event_type.value
                 break
 
@@ -790,21 +716,14 @@ class UsageMetricsAggregator:
                 drop_off_step = i + 1
                 break
 
-        user_hash = (
-            events[0].user_id
-            if events and events[0].user_id
-            else f"session_{session_id}"
-        )
+        user_hash = events[0].user_id if events and events[0].user_id else f"session_{session_id}"
 
         return UserJourney(
             journey_id=f"journey_{session_id}_{int(events[0].timestamp.timestamp())}",
             user_hash=user_hash,
             start_time=events[0].timestamp,
             end_time=events[-1].timestamp,
-            total_duration_minutes=(
-                events[-1].timestamp - events[0].timestamp
-            ).total_seconds()
-            / 60,
+            total_duration_minutes=(events[-1].timestamp - events[0].timestamp).total_seconds() / 60,
             steps=steps,
             completed_steps=successful_steps,
             total_steps=len(events),
@@ -813,12 +732,10 @@ class UsageMetricsAggregator:
             conversion_event=conversion_event,
             drop_off_step=drop_off_step,
             common_path=False,  # Would need pattern analysis to determine
-            anomaly_score=None,  # Would need ML model to calculate
+            anomaly_score=None  # Would need ML model to calculate
         )
 
-    def _analyze_journey_patterns(
-        self, journeys: List[UserJourney]
-    ) -> List[UserJourney]:
+    def _analyze_journey_patterns(self, journeys: List[UserJourney]) -> List[UserJourney]:
         """Analyze patterns in user journeys to identify common paths."""
         if len(journeys) < 10:  # Not enough data for pattern analysis
             return journeys
@@ -830,7 +747,7 @@ class UsageMetricsAggregator:
             # Create a signature based on the sequence of features/actions
             signature = []
             for step in journey.steps:
-                if step.get("feature_name") and step.get("action"):
+                if step.get('feature_name') and step.get('action'):
                     signature.append(f"{step['feature_name']}:{step['action']}")
 
             path_key = "->".join(signature)
@@ -838,9 +755,7 @@ class UsageMetricsAggregator:
 
         # Identify common paths
         total_journeys = len(journeys)
-        common_threshold = max(
-            2, int(total_journeys * self.config.common_path_threshold)
-        )
+        common_threshold = max(2, int(total_journeys * self.config.common_path_threshold))
 
         for path_key, path_journeys in path_signatures.items():
             if len(path_journeys) >= common_threshold:
@@ -872,9 +787,7 @@ class UsageMetricsAggregator:
 
             # Keep only recent measurements
             if len(self._real_time_timers["response_times"]) > 1000:
-                self._real_time_timers["response_times"] = self._real_time_timers[
-                    "response_times"
-                ][-500:]
+                self._real_time_timers["response_times"] = self._real_time_timers["response_times"][-500:]
 
     def _update_journey_tracking(self, event: TelemetryEvent):
         """Update journey tracking with new event."""
@@ -891,15 +804,11 @@ class UsageMetricsAggregator:
         session_events = self._active_journeys[event.session_id]
 
         # Journey completion conditions (simplified)
-        if (
-            len(session_events) > self.config.max_journey_steps
-            or event.event_type == EventType.SESSION_END
-            or (
-                session_events
-                and (event.timestamp - session_events[0].timestamp).total_seconds()
-                > self.config.journey_timeout_minutes * 60
-            )
-        ):
+        if (len(session_events) > self.config.max_journey_steps or
+            event.event_type == EventType.SESSION_END or
+            (session_events and
+             (event.timestamp - session_events[0].timestamp).total_seconds() >
+             self.config.journey_timeout_minutes * 60)):
 
             # Complete the journey
             journey = self._build_user_journey(event.session_id, session_events)
@@ -945,7 +854,7 @@ class UsageMetricsAggregator:
         """Generate cache key for results."""
         key_parts = [operation]
         for arg in args:
-            if hasattr(arg, "__dict__"):
+            if hasattr(arg, '__dict__'):
                 key_parts.append(str(hash(frozenset(arg.__dict__.items()))))
             else:
                 key_parts.append(str(hash(str(arg))))
@@ -958,9 +867,7 @@ class UsageMetricsAggregator:
 
         if cache_key in self._metric_cache:
             timestamp, result = self._metric_cache[cache_key]
-            if (
-                datetime.utcnow() - timestamp
-            ).total_seconds() < self.config.cache_ttl_minutes * 60:
+            if (datetime.utcnow() - timestamp).total_seconds() < self.config.cache_ttl_minutes * 60:
                 return result
             else:
                 del self._metric_cache[cache_key]

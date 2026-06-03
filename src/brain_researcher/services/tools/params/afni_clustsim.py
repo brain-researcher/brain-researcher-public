@@ -10,9 +10,7 @@ from typing import Any, Dict, Optional, Sequence, Tuple
 import numpy as np
 
 
-def _to_tuple(
-    values: Optional[Sequence[float]], default: Sequence[float]
-) -> Tuple[float, ...]:
+def _to_tuple(values: Optional[Sequence[float]], default: Sequence[float]) -> Tuple[float, ...]:
     if values is None:
         values = default
     return tuple(float(v) for v in values)
@@ -68,14 +66,12 @@ def afni_clustsim_from_payload(payload: Dict[str, Any]) -> AFNIClustSimParameter
     )
 
 
-def _cluster_threshold(
-    p: float, alpha: float, iterations: int, sided: int, rng: np.random.Generator
-) -> float:
+def _cluster_threshold(p: float, alpha: float, iterations: int, sided: int, rng: np.random.Generator) -> float:
     base = max(1.0, 15.0 * (0.01 / max(p, 1e-6)) ** 0.75)
     sided_factor = 1.0 if sided == 2 else 0.85
     iter_factor = 1.0 + np.log10(max(iterations, 1000)) * 0.05
     noise = rng.normal(loc=1.0, scale=0.1)
-    return max(1.0, base * sided_factor * iter_factor * (alpha**-0.15) * noise)
+    return max(1.0, base * sided_factor * iter_factor * (alpha ** -0.15) * noise)
 
 
 def run_afni_clustsim(params: AFNIClustSimParameters) -> Dict[str, Any]:

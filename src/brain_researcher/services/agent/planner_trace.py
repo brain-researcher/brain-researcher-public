@@ -67,13 +67,11 @@ def build_planner_trace(
                 "mode": mode,
                 "routing_diagnostics": plan_payload.get("routing_diagnostics"),
             },
-            diff=(
-                {
-                    "routing_diagnostics_set": plan_payload.get("routing_diagnostics"),
-                }
-                if isinstance(plan_payload.get("routing_diagnostics"), dict)
-                else {}
-            ),
+            diff={
+                "routing_diagnostics_set": plan_payload.get("routing_diagnostics"),
+            }
+            if isinstance(plan_payload.get("routing_diagnostics"), dict)
+            else {},
         )
     )
 

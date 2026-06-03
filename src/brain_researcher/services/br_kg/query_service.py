@@ -1381,7 +1381,9 @@ def _rank_ood_verification_partner(
                                     else (
                                         8
                                         if has_label and not publication_like
-                                        else 9 if not publication_like else 10
+                                        else 9
+                                        if not publication_like
+                                        else 10
                                     )
                                 )
                             )

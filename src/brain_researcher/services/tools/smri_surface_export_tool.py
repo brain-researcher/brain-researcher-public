@@ -49,9 +49,7 @@ class SMRISurfaceExportTool(NeuroToolWrapper):
             "surface_type": args.surface_type,
         }
 
-        return ToolResult(
-            status="success", data={"outputs": outputs, "summary": summary}
-        )
+        return ToolResult(status="success", data={"outputs": outputs, "summary": summary})
 
 
 class SMRISurfaceExportTools:

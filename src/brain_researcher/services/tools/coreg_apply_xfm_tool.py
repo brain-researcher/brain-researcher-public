@@ -17,10 +17,11 @@ class CoregApplyXfmArgs(BaseModel):
     transform_matrix: str = Field(
         description="Transformation matrix from coreg_register"
     )
-    reference_image: str = Field(description="Reference image defining target space")
+    reference_image: str = Field(
+        description="Reference image defining target space"
+    )
     interpolation: str = Field(
-        default="trilinear",
-        description="Interpolation method (trilinear, nearest, spline)",
+        default="trilinear", description="Interpolation method (trilinear, nearest, spline)"
     )
     output_dir: Optional[str] = Field(
         default=None, description="Directory to store transformed volume"

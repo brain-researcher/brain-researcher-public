@@ -4,16 +4,16 @@ Doctor Command - Health Check for Brain Researcher Environment
 Verifies Package Management, containers, modules, and tool availability.
 """
 
-import json
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
+import json
+from datetime import datetime
 
 import typer
-from rich import box
 from rich.console import Console
 from rich.table import Table
+from rich import box
 
 from brain_researcher.core.package_resolver import PackageResolver
 
@@ -28,7 +28,7 @@ def check_cvmfs() -> Dict[str, Any]:
         "neurodesk": False,
         "containers": 0,
         "cache_size": None,
-        "cache_location": None,
+        "cache_location": None
     }
 
     # Check if Package Management is mounted
@@ -53,10 +53,10 @@ def check_cvmfs() -> Dict[str, Any]:
             ["cvmfs_config", "stat", "neurodesk.ardc.edu.au"],
             capture_output=True,
             text=True,
-            timeout=5,
+            timeout=5
         )
         if result.returncode == 0:
-            for line in result.stdout.split("\n"):
+            for line in result.stdout.split('\n'):
                 if "CACHE_SIZE" in line or "CACHEMAX" in line:
                     parts = line.split()
                     if len(parts) >= 2:
@@ -81,13 +81,16 @@ def check_module_system() -> Dict[str, Any]:
         "type": None,
         "available": False,
         "modules_count": 0,
-        "neuroimaging_tools": [],
+        "neuroimaging_tools": []
     }
 
     # Check for Lmod
     try:
         result = subprocess.run(
-            ["module", "--version"], capture_output=True, text=True, timeout=2
+            ["module", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=2
         )
         if result.returncode == 0:
             if "Lmod" in result.stderr or "Lmod" in result.stdout:
@@ -103,27 +106,22 @@ def check_module_system() -> Dict[str, Any]:
     if status["available"]:
         try:
             result = subprocess.run(
-                ["module", "avail"], capture_output=True, text=True, timeout=5
+                ["module", "avail"],
+                capture_output=True,
+                text=True,
+                timeout=5
             )
             output = result.stderr + result.stdout
 
             # Parse neuroimaging tools
             tools = []
-            for line in output.split("\n"):
+            for line in output.split('\n'):
                 line_lower = line.lower()
-                for tool in [
-                    "fsl",
-                    "mrtrix",
-                    "ants",
-                    "freesurfer",
-                    "spm",
-                    "afni",
-                    "fmriprep",
-                ]:
-                    if tool in line_lower and "/" in line:
+                for tool in ["fsl", "mrtrix", "ants", "freesurfer", "spm", "afni", "fmriprep"]:
+                    if tool in line_lower and '/' in line:
                         parts = line.strip().split()
                         for part in parts:
-                            if tool in part.lower() and "/" in part:
+                            if tool in part.lower() and '/' in part:
                                 tools.append(part)
                                 break
 
@@ -138,12 +136,19 @@ def check_module_system() -> Dict[str, Any]:
 
 def check_containers() -> Dict[str, Any]:
     """Check container runtime status."""
-    status = {"runtime": None, "version": None, "available": False}
+    status = {
+        "runtime": None,
+        "version": None,
+        "available": False
+    }
 
     for cmd in ["apptainer", "singularity"]:
         try:
             result = subprocess.run(
-                [cmd, "--version"], capture_output=True, text=True, timeout=2
+                [cmd, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=2
             )
             if result.returncode == 0:
                 status["runtime"] = cmd
@@ -158,7 +163,11 @@ def check_containers() -> Dict[str, Any]:
 
 def check_python_packages() -> Dict[str, List[str]]:
     """Check installed Python neuroimaging packages."""
-    packages = {"core": [], "optional": [], "missing": []}
+    packages = {
+        "core": [],
+        "optional": [],
+        "missing": []
+    }
 
     # Core packages
     core_pkgs = ["nibabel", "nilearn", "numpy", "scipy", "pandas"]
@@ -171,16 +180,8 @@ def check_python_packages() -> Dict[str, List[str]]:
 
     # Optional packages
     optional_pkgs = [
-        "mne",
-        "nipype",
-        "antspyx",
-        "fooof",
-        "autoreject",
-        "rsatoolbox",
-        "bctpy",
-        "pymc",
-        "tensorly",
-        "nimare",
+        "mne", "nipype", "antspyx", "fooof", "autoreject",
+        "rsatoolbox", "bctpy", "pymc", "tensorly", "nimare"
     ]
     for pkg in optional_pkgs:
         try:
@@ -204,7 +205,10 @@ def check_tools_availability() -> Dict[str, Any]:
     resolver = PackageResolver()
     tools = resolver.list_available_tools()
 
-    summary = {"total_tools": len(tools), "tools": {}}
+    summary = {
+        "total_tools": len(tools),
+        "tools": {}
+    }
 
     for tool_name, backends in tools.items():
         best_backend = backends[0] if backends else None
@@ -212,7 +216,7 @@ def check_tools_availability() -> Dict[str, Any]:
             summary["tools"][tool_name] = {
                 "version": best_backend.version,
                 "type": best_backend.type.value,
-                "backends": len(backends),
+                "backends": len(backends)
             }
 
     return summary
@@ -221,16 +225,17 @@ def check_tools_availability() -> Dict[str, Any]:
 @app.command()
 def check(
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output")
 ):
     """
     Run comprehensive health check on Brain Researcher environment.
     """
-    console.print(
-        "\n[bold cyan]Brain Researcher Environment Health Check[/bold cyan]\n"
-    )
+    console.print("\n[bold cyan]Brain Researcher Environment Health Check[/bold cyan]\n")
 
-    results = {"timestamp": datetime.now().isoformat(), "checks": {}}
+    results = {
+        "timestamp": datetime.now().isoformat(),
+        "checks": {}
+    }
 
     # 1. Check Package Management
     with console.status("[bold green]Checking Package Management..."):
@@ -288,10 +293,12 @@ def display_results(results: Dict[str, Any], verbose: bool = False):
     cvmfs_table.add_column("Status", style="green")
 
     cvmfs_table.add_row(
-        "Package Management Mounted", "✅ Yes" if cvmfs["mounted"] else "❌ No"
+        "Package Management Mounted",
+        "✅ Yes" if cvmfs["mounted"] else "❌ No"
     )
     cvmfs_table.add_row(
-        "Neurodesk Available", "✅ Yes" if cvmfs["neurodesk"] else "❌ No"
+        "Neurodesk Available",
+        "✅ Yes" if cvmfs["neurodesk"] else "❌ No"
     )
     if cvmfs["containers"] > 0:
         cvmfs_table.add_row("Containers Available", f"✅ {cvmfs['containers']}")
@@ -310,7 +317,8 @@ def display_results(results: Dict[str, Any], verbose: bool = False):
     module_table.add_column("Status", style="green")
 
     module_table.add_row(
-        "Module System", modules["type"] if modules["available"] else "❌ Not Available"
+        "Module System",
+        modules["type"] if modules["available"] else "❌ Not Available"
     )
     if modules["available"]:
         module_table.add_row("Neuroimaging Modules", f"✅ {modules['modules_count']}")
@@ -344,18 +352,24 @@ def display_results(results: Dict[str, Any], verbose: bool = False):
 
     pkg_table.add_row(
         "Core Packages",
-        f"✅ {len(packages['core'])}/{len(packages['core']) + len(packages['missing'])}",
+        f"✅ {len(packages['core'])}/{len(packages['core']) + len(packages['missing'])}"
     )
     if verbose and packages["core"]:
         pkg_table.add_row("  Installed", ", ".join(packages["core"]))
 
     if packages["optional"]:
-        pkg_table.add_row("Optional Packages", f"✅ {len(packages['optional'])}/10")
+        pkg_table.add_row(
+            "Optional Packages",
+            f"✅ {len(packages['optional'])}/10"
+        )
         if verbose:
             pkg_table.add_row("  Installed", ", ".join(packages["optional"]))
 
     if packages["missing"]:
-        pkg_table.add_row("Missing Core", f"❌ {', '.join(packages['missing'])}")
+        pkg_table.add_row(
+            "Missing Core",
+            f"❌ {', '.join(packages['missing'])}"
+        )
 
     console.print(pkg_table)
     console.print()
@@ -369,17 +383,28 @@ def display_results(results: Dict[str, Any], verbose: bool = False):
         tool_table.add_column("Backend", style="yellow")
 
         for tool_name, info in list(tools["tools"].items())[:10]:
-            tool_table.add_row(tool_name, info["version"], info["type"])
+            tool_table.add_row(
+                tool_name,
+                info["version"],
+                info["type"]
+            )
 
         if tools["total_tools"] > 10:
-            tool_table.add_row(f"... and {tools['total_tools'] - 10} more", "", "")
+            tool_table.add_row(
+                f"... and {tools['total_tools'] - 10} more",
+                "",
+                ""
+            )
 
         console.print(tool_table)
 
 
 def evaluate_overall_status(results: Dict[str, Any]) -> Dict[str, Any]:
     """Evaluate overall environment health."""
-    status = {"healthy": True, "issues": []}
+    status = {
+        "healthy": True,
+        "issues": []
+    }
 
     # Check Package Management
     if not results["checks"]["cvmfs"]["mounted"]:
@@ -394,9 +419,7 @@ def evaluate_overall_status(results: Dict[str, Any]) -> Dict[str, Any]:
 
     # Check Python packages
     if results["checks"]["python"]["missing"]:
-        status["issues"].append(
-            f"Missing core Python packages: {', '.join(results['checks']['python']['missing'])}"
-        )
+        status["issues"].append(f"Missing core Python packages: {', '.join(results['checks']['python']['missing'])}")
         status["healthy"] = False
 
     # Check tools
@@ -410,9 +433,7 @@ def evaluate_overall_status(results: Dict[str, Any]) -> Dict[str, Any]:
 def test_skull_strip(
     input_file: str = typer.Argument(..., help="Input NIfTI file"),
     output_dir: str = typer.Option(None, help="Output directory for results"),
-    benchmark: bool = typer.Option(
-        False, "--benchmark", help="Run benchmark on all backends"
-    ),
+    benchmark: bool = typer.Option(False, "--benchmark", help="Run benchmark on all backends")
 ):
     """
     Test skull stripping capability with available backends.
@@ -438,12 +459,11 @@ def test_skull_strip(
 
     if benchmark:
         # Run benchmark
-        console.print(
-            "\n[bold yellow]Running benchmark on all backends...[/bold yellow]"
-        )
+        console.print("\n[bold yellow]Running benchmark on all backends...[/bold yellow]")
 
         results = capability.benchmark(
-            input_file=str(input_path), output_dir=output_dir
+            input_file=str(input_path),
+            output_dir=output_dir
         )
 
         # Display results
@@ -458,7 +478,7 @@ def test_skull_strip(
                 backend,
                 "✅" if result["success"] else "❌",
                 f"{result['time']:.2f}",
-                Path(result["output"]).name if result["output"] else "N/A",
+                Path(result["output"]).name if result["output"] else "N/A"
             )
 
         console.print(bench_table)
@@ -472,7 +492,8 @@ def test_skull_strip(
         console.print(f"Output: {output_file}")
 
         success = capability.run(
-            input_file=str(input_path), output_file=str(output_file)
+            input_file=str(input_path),
+            output_file=str(output_file)
         )
 
         if success:
@@ -486,7 +507,7 @@ def test_skull_strip(
 @app.command()
 def list_tools(
     category: str = typer.Option(None, help="Filter by category"),
-    json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
+    json_output: bool = typer.Option(False, "--json", help="Output as JSON")
 ):
     """
     List all available neuroimaging tools.
@@ -499,7 +520,11 @@ def list_tools(
         output = {}
         for tool_name, backends in tools.items():
             output[tool_name] = [
-                {"type": b.type.value, "version": b.version, "priority": b.priority}
+                {
+                    "type": b.type.value,
+                    "version": b.version,
+                    "priority": b.priority
+                }
                 for b in backends
             ]
         console.print_json(json.dumps(output, indent=2))
@@ -518,7 +543,7 @@ def list_tools(
                     tool_name,
                     best.type.value,
                     best.version,
-                    str(len(backends) - 1) if len(backends) > 1 else "-",
+                    str(len(backends) - 1) if len(backends) > 1 else "-"
                 )
 
         console.print(table)

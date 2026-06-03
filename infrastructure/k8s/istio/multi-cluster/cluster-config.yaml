@@ -419,7 +419,7 @@ data:
         recovery_threshold: "300s"  # 5 minutes of healthy state
       manual:
         enabled: true
-        notification_webhook: "https://alerts.brain-researcher.com/webhook"
+        notification_webhook: "https://alerts.${PUBLIC_HOSTNAME}/webhook"
 
     # Data synchronization
     data_sync:

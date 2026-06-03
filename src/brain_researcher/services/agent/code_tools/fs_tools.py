@@ -18,9 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from brain_researcher.services.agent.code_tool_registry import CodeTool
-from brain_researcher.services.agent.code_tools.utils import (
-    validate_path as _validate_path,
-)
+from brain_researcher.services.agent.code_tools.utils import validate_path as _validate_path
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +27,7 @@ class ReadFileTool(CodeTool):
     """Read file content with optional line range."""
 
     name = "code.fs.read_file"
-    description = (
-        "Read file content with optional line range. Returns the content as text."
-    )
+    description = "Read file content with optional line range. Returns the content as text."
 
     def get_parameters_schema(self) -> Dict[str, Any]:
         return {
@@ -99,9 +95,7 @@ class ReadFileTool(CodeTool):
 
             # Truncate if too long
             if len(content) > max_bytes:
-                content = (
-                    content[:max_bytes] + f"\n... (truncated at {max_bytes} bytes)"
-                )
+                content = content[:max_bytes] + f"\n... (truncated at {max_bytes} bytes)"
 
             return {
                 "status": "success",
@@ -184,11 +178,7 @@ class ReadDirTool(CodeTool):
 
                 file_info = {
                     "path": str(path),
-                    "relative_path": (
-                        str(path.relative_to(base_path))
-                        if path.is_relative_to(base_path)
-                        else str(path)
-                    ),
+                    "relative_path": str(path.relative_to(base_path)) if path.is_relative_to(base_path) else str(path),
                     "size": path.stat().st_size,
                 }
 
@@ -196,9 +186,7 @@ class ReadDirTool(CodeTool):
                     try:
                         content = path.read_text(encoding="utf-8", errors="replace")
                         if len(content) > max_bytes_per_file:
-                            content = (
-                                content[:max_bytes_per_file] + f"\n... (truncated)"
-                            )
+                            content = content[:max_bytes_per_file] + f"\n... (truncated)"
                         file_info["content"] = content
                     except Exception as exc:
                         file_info["content"] = f"(error reading: {exc})"
@@ -250,9 +238,7 @@ class ApplyPatchTool(CodeTool):
     """Apply unified diff patch to files."""
 
     name = "code.fs.apply_patch"
-    description = (
-        "Apply a unified diff patch to files. Supports dry-run mode to preview changes."
-    )
+    description = "Apply a unified diff patch to files. Supports dry-run mode to preview changes."
 
     def get_parameters_schema(self) -> Dict[str, Any]:
         return {
@@ -292,9 +278,7 @@ class ApplyPatchTool(CodeTool):
                     }
 
             # Write patch to temp file
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".patch", delete=False
-            ) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".patch", delete=False) as f:
                 f.write(patch)
                 patch_file = f.name
 
@@ -318,11 +302,7 @@ class ApplyPatchTool(CodeTool):
                     return {
                         "status": "success",
                         "dry_run": dry_run,
-                        "message": (
-                            "Patch applied successfully"
-                            if not dry_run
-                            else "Patch would apply cleanly"
-                        ),
+                        "message": "Patch applied successfully" if not dry_run else "Patch would apply cleanly",
                         "stdout": result.stdout,
                     }
                 else:

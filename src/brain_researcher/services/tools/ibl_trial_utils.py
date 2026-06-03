@@ -43,11 +43,7 @@ def _append_trial_membership(
     time_column: str,
     trials: pd.DataFrame,
 ) -> pd.DataFrame:
-    if (
-        time_column not in df.columns
-        or "interval_start" not in trials.columns
-        or "interval_end" not in trials.columns
-    ):
+    if time_column not in df.columns or "interval_start" not in trials.columns or "interval_end" not in trials.columns:
         return df
     interval_start = trials["interval_start"].to_numpy(dtype=float)
     interval_end = trials["interval_end"].to_numpy(dtype=float)
@@ -104,7 +100,9 @@ def _prepare_ibl_trial_metadata(df: pd.DataFrame) -> pd.DataFrame:
             [1, -1],
             default=0,
         ).astype("int64")
-        out["zero_contrast"] = left.fillna(0.0).eq(0.0) & right.fillna(0.0).eq(0.0)
+        out["zero_contrast"] = (
+            left.fillna(0.0).eq(0.0) & right.fillna(0.0).eq(0.0)
+        )
         out["max_contrast"] = np.maximum(
             left.abs().fillna(0.0),
             right.abs().fillna(0.0),
@@ -149,9 +147,7 @@ def _resolve_label_values(df: pd.DataFrame, label_field: str) -> pd.Series:
     raise KeyError(f"Unsupported IBL label_field: {label_field}")
 
 
-def _encode_label_array(
-    values: pd.Series, *, label_field: str
-) -> tuple[np.ndarray, dict[str, Any]]:
+def _encode_label_array(values: pd.Series, *, label_field: str) -> tuple[np.ndarray, dict[str, Any]]:
     observed = values.dropna()
     if observed.empty:
         raise ValueError(f"No valid labels found for {label_field}")
@@ -189,9 +185,7 @@ def _encode_label_array(
     }
 
 
-def _encode_group_array(
-    values: pd.Series, *, group_by: str
-) -> tuple[np.ndarray, dict[str, Any]]:
+def _encode_group_array(values: pd.Series, *, group_by: str) -> tuple[np.ndarray, dict[str, Any]]:
     observed = values.fillna("unknown").astype(str)
     ordered_values = sorted(observed.unique().tolist())
     mapping = {value: index for index, value in enumerate(ordered_values)}

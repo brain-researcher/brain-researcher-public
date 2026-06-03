@@ -162,16 +162,12 @@ class MemoryStore:
             self._persist_record(conn, record)
             persisted_events: list[dict[str, Any]] = []
             for event in relation_events:
-                existing_event = self._load_existing_by_stable_key(
-                    conn, event.stable_key
-                )
+                existing_event = self._load_existing_by_stable_key(conn, event.stable_key)
                 if existing_event is None:
                     self._persist_record(conn, event)
                     persisted_events.append(event.model_dump(exclude_none=True))
                 else:
-                    persisted_events.append(
-                        existing_event.model_dump(exclude_none=True)
-                    )
+                    persisted_events.append(existing_event.model_dump(exclude_none=True))
             conn.commit()
 
         return {
@@ -291,9 +287,7 @@ class MemoryStore:
             "card_type": card_type,
             "filters": safe_filters,
             "count": len(hits),
-            "cards": [
-                dict(hit.get("record") or {}, score=hit.get("score")) for hit in hits
-            ],
+            "cards": [dict(hit.get("record") or {}, score=hit.get("score")) for hit in hits],
             "hits": hits,
         }
 
@@ -347,13 +341,9 @@ class MemoryStore:
         _atomic_write_json(path, record.model_dump(exclude_none=True))
         primary_source_run_id = self._primary_source_run_id(record)
         primary_source_session_id = self._primary_source_session_id(record)
-        dataset_refs = (
-            record.dataset_refs if isinstance(record, EpisodicRunMemoryV1) else []
-        )
+        dataset_refs = record.dataset_refs if isinstance(record, EpisodicRunMemoryV1) else []
         target_ids = record.target_ids if isinstance(record, ClaimMemoryV1) else []
-        relation_type = (
-            record.relation_type if isinstance(record, ClaimRelationEventV1) else None
-        )
+        relation_type = record.relation_type if isinstance(record, ClaimRelationEventV1) else None
         conn.execute(
             """
             INSERT INTO memory_records (
@@ -492,9 +482,7 @@ class MemoryStore:
                 "claim_type": incoming.claim_type or existing.claim_type,
                 "claim_polarity": claim_polarity,
                 "domain": incoming.domain or existing.domain,
-                "target_ids": unique_non_empty(
-                    existing.target_ids + incoming.target_ids
-                ),
+                "target_ids": unique_non_empty(existing.target_ids + incoming.target_ids),
                 "extra": self._merge_claim_extra(existing.extra, incoming.extra),
                 "status": merged_status,
                 "superseded_by": merged_superseded_by,
@@ -515,11 +503,7 @@ class MemoryStore:
                 or existing.last_tested_at
                 or incoming.last_tested_at,
                 "times_tested": max(
-                    len(
-                        unique_non_empty(
-                            existing.source_run_ids + incoming.source_run_ids
-                        )
-                    ),
+                    len(unique_non_empty(existing.source_run_ids + incoming.source_run_ids)),
                     int(existing.times_tested or 0),
                     int(incoming.times_tested or 0),
                 ),
@@ -688,9 +672,7 @@ class MemoryStore:
         return ClaimMemoryV1.model_validate(
             {
                 **record.model_dump(exclude_none=True),
-                "related_claims": [
-                    item.model_dump(exclude_none=True) for item in merged
-                ],
+                "related_claims": [item.model_dump(exclude_none=True) for item in merged],
             }
         )
 
@@ -705,9 +687,7 @@ class MemoryStore:
         polarity_conflict = bool(
             left_polarity and right_polarity and left_polarity != right_polarity
         )
-        left_conditions = {
-            normalize_token_text(item) for item in left.analytic_conditions
-        }
+        left_conditions = {normalize_token_text(item) for item in left.analytic_conditions}
         right_conditions = {
             normalize_token_text(item) for item in right.analytic_conditions
         }
@@ -722,9 +702,9 @@ class MemoryStore:
             return ("contradicts", "Claims share targets but carry opposing polarity.")
         if similarity < 0.45:
             return None
-        if similarity >= 0.9 and normalize_token_text(
-            left.claim_text
-        ) != normalize_token_text(right.claim_text):
+        if similarity >= 0.9 and normalize_token_text(left.claim_text) != normalize_token_text(
+            right.claim_text
+        ):
             return ("refines", "Claims strongly overlap and likely refine each other.")
         if similarity >= 0.6:
             return ("supports", "Claims align on target and overall direction.")
@@ -739,14 +719,10 @@ class MemoryStore:
             if not expected:
                 continue
             if key == "status":
-                if normalize_token_text(
-                    getattr(record, "status", "")
-                ) != normalize_token_text(expected):
+                if normalize_token_text(getattr(record, "status", "")) != normalize_token_text(expected):
                     return False
             elif key == "task_type":
-                if normalize_token_text(
-                    getattr(record, "task_type", "")
-                ) != normalize_token_text(expected):
+                if normalize_token_text(getattr(record, "task_type", "")) != normalize_token_text(expected):
                     return False
             elif key == "dataset_ref":
                 if not isinstance(record, EpisodicRunMemoryV1):
@@ -763,9 +739,7 @@ class MemoryStore:
                 }:
                     return False
             elif key == "claim_type":
-                if normalize_token_text(
-                    getattr(record, "claim_type", "")
-                ) != normalize_token_text(expected):
+                if normalize_token_text(getattr(record, "claim_type", "")) != normalize_token_text(expected):
                     return False
             elif key == "claim_update_action":
                 if not isinstance(record, ClaimMemoryV1):
@@ -786,9 +760,7 @@ class MemoryStore:
             elif key == "relation_type":
                 if not isinstance(record, ClaimRelationEventV1):
                     return False
-                if normalize_token_text(record.relation_type) != normalize_token_text(
-                    expected
-                ):
+                if normalize_token_text(record.relation_type) != normalize_token_text(expected):
                     return False
             else:
                 candidate = getattr(record, raw_key, None)

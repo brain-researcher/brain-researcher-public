@@ -58,9 +58,7 @@ class ScannerProfile(BaseModel):
         gt=0,
         description="Planned task duration excluding dummy scans (seconds)",
     )
-    trigger_key: str = Field(
-        default="5", description="Keypress that marks scanner trigger"
-    )
+    trigger_key: str = Field(default="5", description="Keypress that marks scanner trigger")
     iti_jitter_sec: tuple[float, float] | None = Field(
         default=None, description="(low, high) uniform ITI jitter in seconds"
     )
@@ -77,7 +75,9 @@ class ScannerProfile(BaseModel):
 
     @field_validator("iti_jitter_sec")
     @classmethod
-    def _jitter_ok(cls, v: tuple[float, float] | None) -> tuple[float, float] | None:
+    def _jitter_ok(
+        cls, v: tuple[float, float] | None
+    ) -> tuple[float, float] | None:
         if v is None:
             return None
         try:
@@ -102,9 +102,7 @@ class ScannerProfile(BaseModel):
                 "planned_duration_sec must exceed the time consumed by dummy_scans * tr_sec"
             )
         if self.n_volumes is not None:
-            usable_budget = float(self.n_volumes - self.dummy_scans) * float(
-                self.tr_sec
-            )
+            usable_budget = float(self.n_volumes - self.dummy_scans) * float(self.tr_sec)
             if float(self.planned_duration_sec) > usable_budget + 1e-6:
                 raise ValueError(
                     "planned_duration_sec exceeds the available scan budget implied by "

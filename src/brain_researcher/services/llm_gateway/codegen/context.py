@@ -7,7 +7,7 @@ so they can be reused by the tool wrapper and unit tests.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import List, Optional, Dict, Any
 
 
 @dataclass

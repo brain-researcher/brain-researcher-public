@@ -102,13 +102,9 @@ def _roll_up(findings: list[ReviewFinding]) -> tuple[str, str]:
 def _rationale(findings: list[ReviewFinding], decision: str) -> str:
     if not findings:
         return f"rapidtide method review passed all canonical checks. Decision: {decision}."
-    head = [
-        f"rapidtide method review — Decision: {decision}. {len(findings)} finding(s):"
-    ]
+    head = [f"rapidtide method review — Decision: {decision}. {len(findings)} finding(s):"]
     for finding in findings[:5]:
-        head.append(
-            f"[{finding.severity.upper()}] {finding.rule_id}: {finding.message}"
-        )
+        head.append(f"[{finding.severity.upper()}] {finding.rule_id}: {finding.message}")
     return " | ".join(head)
 
 

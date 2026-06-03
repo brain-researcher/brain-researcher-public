@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 from pydantic import BaseModel, Field
+
+from typing import Any
 
 from brain_researcher.core.analysis.connectivity_contracts import (
     FeatureContract,

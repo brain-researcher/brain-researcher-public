@@ -16,22 +16,22 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.shared.credits import CreditsStore  # noqa: F401
-from brain_researcher.services.shared.credits import (  # noqa: F401
-    API_MONTHLY_ALLOWANCE_MILLI_USD,
+from brain_researcher.services.shared.credits import (
+    API_MONTHLY_ALLOWANCE_MILLI_USD,  # noqa: F401
     API_USD_BUCKET,
     API_USD_CURRENCY,
-    INITIAL_API_USD_ALLOWANCE_MILLI_USD,
-    INITIAL_WORKFLOW_ALLOWANCE_MILLI_CREDITS,
-    WORKFLOW_MONTHLY_ALLOWANCE_MILLI_CREDITS,
-    WORKFLOW_RUNTIME_BUCKET,
-    WORKFLOW_RUNTIME_CURRENCY,
+    INITIAL_API_USD_ALLOWANCE_MILLI_USD,  # noqa: F401
+    INITIAL_WORKFLOW_ALLOWANCE_MILLI_CREDITS,  # noqa: F401
+    WORKFLOW_MONTHLY_ALLOWANCE_MILLI_CREDITS,  # noqa: F401
+    WORKFLOW_RUNTIME_BUCKET,  # noqa: F401
+    WORKFLOW_RUNTIME_CURRENCY,  # noqa: F401
+    CreditsStore,  # noqa: F401
     _from_milli_credits,
     _get_store,
     _to_milli_credits,
-    grant_initial_account_credits_for_account,
-    grant_initial_api_usd_credits_for_account,
-    grant_initial_workflow_credits_for_account,
+    grant_initial_account_credits_for_account,  # noqa: F401
+    grant_initial_api_usd_credits_for_account,  # noqa: F401
+    grant_initial_workflow_credits_for_account,  # noqa: F401
 )
 
 router = APIRouter(prefix="/api/credits", tags=["Credits"])

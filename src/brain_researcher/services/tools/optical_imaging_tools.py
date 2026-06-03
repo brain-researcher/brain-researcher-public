@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field
-from scipy import ndimage, signal, stats
+from scipy import signal, stats, ndimage
 from scipy.optimize import curve_fit
 
 from brain_researcher.core.package_resolver import PackageResolver
@@ -19,18 +19,13 @@ logger = logging.getLogger(__name__)
 
 class OpticalInput(BaseModel):
     """Input schema for optical imaging tools."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    imaging_data: Optional[np.ndarray] = Field(
-        None, description="Optical imaging data (e.g., calcium imaging)"
-    )
+    imaging_data: Optional[np.ndarray] = Field(None, description="Optical imaging data (e.g., calcium imaging)")
     time_series: Optional[np.ndarray] = Field(None, description="Time series data")
     sampling_rate: Optional[float] = Field(None, description="Sampling rate in Hz")
     roi_masks: Optional[np.ndarray] = Field(None, description="ROI masks for analysis")
-    wavelengths: Optional[List[float]] = Field(
-        None, description="Wavelengths for spectral imaging"
-    )
+    wavelengths: Optional[List[float]] = Field(None, description="Wavelengths for spectral imaging")
     output_dir: Optional[str] = Field(None, description="Output directory for results")
 
 
@@ -58,7 +53,7 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
         spike_detection_method: str = "deconvolution",  # or "threshold"
         baseline_correction: bool = True,
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Analyze calcium imaging data."""
         try:
@@ -70,9 +65,7 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
                 data, rois = self._generate_synthetic_calcium_data()
             else:
                 data = imaging_data
-                rois = (
-                    roi_masks if roi_masks is not None else self._auto_detect_rois(data)
-                )
+                rois = roi_masks if roi_masks is not None else self._auto_detect_rois(data)
 
             # Extract time series from ROIs
             time_series = self._extract_roi_time_series(data, rois)
@@ -101,16 +94,16 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
 
             # Save results
             results = {
-                "n_rois": len(rois),
-                "sampling_rate": sampling_rate,
-                "recording_duration": float(len(df_f[0]) / sampling_rate),
-                "activity_metrics": metrics,
-                "network_analysis": network,
-                "population_events": events,
-                "processing_parameters": {
-                    "spike_detection": spike_detection_method,
-                    "baseline_corrected": baseline_correction,
-                },
+                'n_rois': len(rois),
+                'sampling_rate': sampling_rate,
+                'recording_duration': float(len(df_f[0]) / sampling_rate),
+                'activity_metrics': metrics,
+                'network_analysis': network,
+                'population_events': events,
+                'processing_parameters': {
+                    'spike_detection': spike_detection_method,
+                    'baseline_corrected': baseline_correction
+                }
             }
 
             # Save processed data
@@ -118,7 +111,7 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
                 output_path / "calcium_processed.npz",
                 df_f=df_f,
                 spikes=spikes,
-                roi_masks=rois,
+                roi_masks=rois
             )
 
             with open(output_path / "calcium_results.json", "w") as f:
@@ -130,9 +123,9 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "processed_data": str(output_path / "calcium_processed.npz"),
-                        "results": str(output_path / "calcium_results.json"),
+                        "results": str(output_path / "calcium_results.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -151,16 +144,16 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
 
         for i in range(n_neurons):
             # Create circular ROI
-            center = [np.random.randint(10, s - 10) for s in shape[:2]]
+            center = [np.random.randint(10, s-10) for s in shape[:2]]
             radius = np.random.randint(3, 7)
 
-            y, x = np.ogrid[: shape[0], : shape[1]]
-            mask = ((x - center[0]) ** 2 + (y - center[1]) ** 2) <= radius**2
+            y, x = np.ogrid[:shape[0], :shape[1]]
+            mask = ((x - center[0])**2 + (y - center[1])**2) <= radius**2
             rois.append(mask)
 
             # Generate calcium transients
             n_spikes = np.random.randint(5, 20)
-            spike_times = np.sort(np.random.randint(100, shape[2] - 100, n_spikes))
+            spike_times = np.sort(np.random.randint(100, shape[2]-100, n_spikes))
 
             for spike_time in spike_times:
                 # Calcium transient shape (exponential decay)
@@ -170,7 +163,7 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
 
                 # Add to data
                 end_time = min(spike_time + duration, shape[2])
-                data[mask, spike_time:end_time] += transient[: end_time - spike_time]
+                data[mask, spike_time:end_time] += transient[:end_time-spike_time]
 
         # Add noise
         data += np.random.randn(*shape) * 0.05
@@ -191,7 +184,6 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
 
         # Find connected components
         from scipy.ndimage import label
-
         labeled, n_features = label(binary)
 
         rois = []
@@ -200,9 +192,7 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
 
         return rois
 
-    def _extract_roi_time_series(
-        self, data: np.ndarray, rois: List[np.ndarray]
-    ) -> np.ndarray:
+    def _extract_roi_time_series(self, data: np.ndarray, rois: List[np.ndarray]) -> np.ndarray:
         """Extract time series from ROIs."""
         n_rois = len(rois)
         n_time = data.shape[2]
@@ -221,7 +211,6 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
         for i in range(len(time_series)):
             # Estimate baseline using percentile filter
             from scipy.ndimage import percentile_filter
-
             baseline = percentile_filter(time_series[i], 20, size=300)
             corrected[i] = time_series[i] - baseline
 
@@ -249,14 +238,11 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
             derivative = np.concatenate([[0], derivative])
 
             # Threshold positive derivatives
-            threshold = 3 * np.std(
-                derivative[derivative < 0]
-            )  # Use negative for noise estimate
+            threshold = 3 * np.std(derivative[derivative < 0])  # Use negative for noise estimate
             spikes[i] = (derivative > threshold).astype(float)
 
             # Smooth spike train
             from scipy.ndimage import gaussian_filter1d
-
             spikes[i] = gaussian_filter1d(spikes[i], sigma=1)
 
         return spikes
@@ -272,23 +258,22 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
 
         return spikes
 
-    def _calculate_activity_metrics(
-        self, df_f: np.ndarray, spikes: np.ndarray, sampling_rate: float
-    ) -> Dict[str, Any]:
+    def _calculate_activity_metrics(self, df_f: np.ndarray, spikes: np.ndarray,
+                                   sampling_rate: float) -> Dict[str, Any]:
         """Calculate activity metrics."""
         metrics = {}
 
         # Per-neuron metrics
         firing_rates = np.sum(spikes, axis=1) / (len(spikes[0]) / sampling_rate)
 
-        metrics["mean_firing_rate"] = float(np.mean(firing_rates))
-        metrics["std_firing_rate"] = float(np.std(firing_rates))
-        metrics["max_firing_rate"] = float(np.max(firing_rates))
+        metrics['mean_firing_rate'] = float(np.mean(firing_rates))
+        metrics['std_firing_rate'] = float(np.std(firing_rates))
+        metrics['max_firing_rate'] = float(np.max(firing_rates))
 
         # Activity levels
         mean_df_f = np.mean(np.abs(df_f), axis=1)
-        metrics["mean_activity"] = float(np.mean(mean_df_f))
-        metrics["activity_variance"] = float(np.var(mean_df_f))
+        metrics['mean_activity'] = float(np.mean(mean_df_f))
+        metrics['activity_variance'] = float(np.var(mean_df_f))
 
         # Burst analysis
         burst_counts = []
@@ -298,13 +283,11 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
             bursts = np.sum(diff == 1)
             burst_counts.append(bursts)
 
-        metrics["mean_burst_count"] = float(np.mean(burst_counts))
+        metrics['mean_burst_count'] = float(np.mean(burst_counts))
 
         return metrics
 
-    def _analyze_network_activity(
-        self, df_f: np.ndarray, spikes: np.ndarray
-    ) -> Dict[str, Any]:
+    def _analyze_network_activity(self, df_f: np.ndarray, spikes: np.ndarray) -> Dict[str, Any]:
         """Analyze network-level activity."""
         # Correlation analysis
         correlation_matrix = np.corrcoef(df_f)
@@ -335,33 +318,31 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
         n_communities = self._detect_communities(correlation_matrix)
 
         return {
-            "mean_correlation": float(mean_correlation),
-            "network_clustering": float(np.mean(clustering_coeffs)),
-            "n_communities": int(n_communities),
-            "synchrony_index": float(mean_correlation),
-            "max_correlation": float(np.max(correlation_matrix)),
+            'mean_correlation': float(mean_correlation),
+            'network_clustering': float(np.mean(clustering_coeffs)),
+            'n_communities': int(n_communities),
+            'synchrony_index': float(mean_correlation),
+            'max_correlation': float(np.max(correlation_matrix))
         }
 
     def _detect_communities(self, correlation_matrix: np.ndarray) -> int:
         """Detect communities in correlation network."""
         # Simplified community detection using clustering
-        from scipy.cluster.hierarchy import fcluster, linkage
+        from scipy.cluster.hierarchy import linkage, fcluster
 
         # Convert correlation to distance
         distance = 1 - np.abs(correlation_matrix)
 
         # Hierarchical clustering
         condensed = distance[np.triu_indices(len(distance), k=1)]
-        Z = linkage(condensed, method="average")
+        Z = linkage(condensed, method='average')
 
         # Cut tree to get communities
-        communities = fcluster(Z, t=0.7, criterion="distance")
+        communities = fcluster(Z, t=0.7, criterion='distance')
 
         return len(np.unique(communities))
 
-    def _detect_population_events(
-        self, spikes: np.ndarray, sampling_rate: float
-    ) -> Dict[str, Any]:
+    def _detect_population_events(self, spikes: np.ndarray, sampling_rate: float) -> Dict[str, Any]:
         """Detect population-wide events."""
         # Sum activity across neurons
         population_activity = np.sum(spikes, axis=0)
@@ -370,15 +351,12 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
         threshold = np.mean(population_activity) + 2 * np.std(population_activity)
 
         from scipy.signal import find_peaks
-
-        peaks, properties = find_peaks(
-            population_activity, height=threshold, distance=int(sampling_rate)
-        )
+        peaks, properties = find_peaks(population_activity, height=threshold, distance=int(sampling_rate))
 
         # Calculate event properties
         if len(peaks) > 0:
             event_rate = len(peaks) / (len(population_activity) / sampling_rate)
-            mean_amplitude = np.mean(properties["peak_heights"])
+            mean_amplitude = np.mean(properties['peak_heights'])
 
             # Inter-event intervals
             if len(peaks) > 1:
@@ -392,11 +370,11 @@ class CalciumImagingAnalysisTool(NeuroToolWrapper):
             mean_interval = 0
 
         return {
-            "n_events": len(peaks),
-            "event_rate_hz": float(event_rate),
-            "mean_amplitude": float(mean_amplitude),
-            "mean_interval_s": float(mean_interval),
-            "event_times": peaks.tolist() if len(peaks) > 0 else [],
+            'n_events': len(peaks),
+            'event_rate_hz': float(event_rate),
+            'mean_amplitude': float(mean_amplitude),
+            'mean_interval_s': float(mean_interval),
+            'event_times': peaks.tolist() if len(peaks) > 0 else []
         }
 
 
@@ -423,7 +401,7 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
         sampling_rate: float = 10.0,  # Hz
         analysis_type: str = "reflectance",  # or "oxygenation"
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Analyze intrinsic signal imaging."""
         try:
@@ -448,47 +426,38 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
                 results_data = self._analyze_reflectance(data)
 
             # Detect activated regions
-            activation_map = self._detect_activation(
-                results_data, stim_times, sampling_rate
-            )
+            activation_map = self._detect_activation(results_data, stim_times, sampling_rate)
 
             # Calculate hemodynamic response
-            hrf = self._calculate_hemodynamic_response(
-                results_data, stim_times, sampling_rate
-            )
+            hrf = self._calculate_hemodynamic_response(results_data, stim_times, sampling_rate)
 
             # Spatial analysis
             spatial_metrics = self._analyze_spatial_patterns(activation_map)
 
             # Temporal analysis
-            temporal_metrics = self._analyze_temporal_dynamics(
-                results_data, sampling_rate
-            )
+            temporal_metrics = self._analyze_temporal_dynamics(results_data, sampling_rate)
 
             results = {
-                "analysis_type": analysis_type,
-                "wavelengths": wavelengths,
-                "sampling_rate": sampling_rate,
-                "n_stimuli": len(stim_times),
-                "hemodynamic_response": hrf,
-                "spatial_metrics": spatial_metrics,
-                "temporal_metrics": temporal_metrics,
-                "activation_statistics": {
-                    "activated_area": float(np.sum(activation_map > 0)),
-                    "max_activation": float(np.max(activation_map)),
-                    "mean_activation": (
-                        float(np.mean(activation_map[activation_map > 0]))
-                        if np.any(activation_map > 0)
-                        else 0
-                    ),
-                },
+                'analysis_type': analysis_type,
+                'wavelengths': wavelengths,
+                'sampling_rate': sampling_rate,
+                'n_stimuli': len(stim_times),
+                'hemodynamic_response': hrf,
+                'spatial_metrics': spatial_metrics,
+                'temporal_metrics': temporal_metrics,
+                'activation_statistics': {
+                    'activated_area': float(np.sum(activation_map > 0)),
+                    'max_activation': float(np.max(activation_map)),
+                    'mean_activation': float(np.mean(activation_map[activation_map > 0]))
+                    if np.any(activation_map > 0) else 0
+                }
             }
 
             # Save results
             np.savez(
                 output_path / "intrinsic_processed.npz",
                 processed_data=results_data,
-                activation_map=activation_map,
+                activation_map=activation_map
             )
 
             with open(output_path / "intrinsic_results.json", "w") as f:
@@ -500,9 +469,9 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "processed_data": str(output_path / "intrinsic_processed.npz"),
-                        "results": str(output_path / "intrinsic_results.json"),
+                        "results": str(output_path / "intrinsic_results.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -525,8 +494,8 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
             # Create activation region
             center = [32 + np.random.randint(-10, 10), 32 + np.random.randint(-10, 10)]
 
-            y, x = np.ogrid[: shape[0], : shape[1]]
-            mask = ((x - center[0]) ** 2 + (y - center[1]) ** 2) <= 15**2
+            y, x = np.ogrid[:shape[0], :shape[1]]
+            mask = ((x - center[0])**2 + (y - center[1])**2) <= 15**2
 
             # Hemodynamic response
             response_duration = 100
@@ -544,8 +513,8 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
             # Apply response
             for t_idx in range(stim_time, end_time):
                 rel_t = t_idx - stim_time
-                data[mask, t_idx, 0] *= 1 + hrf_530[rel_t]
-                data[mask, t_idx, 1] *= 1 + hrf_610[rel_t]
+                data[mask, t_idx, 0] *= (1 + hrf_530[rel_t])
+                data[mask, t_idx, 1] *= (1 + hrf_610[rel_t])
 
         return data, stim_times
 
@@ -564,9 +533,7 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
 
         return delta_r
 
-    def _analyze_oxygenation(
-        self, data: np.ndarray, wavelengths: List[float]
-    ) -> np.ndarray:
+    def _analyze_oxygenation(self, data: np.ndarray, wavelengths: List[float]) -> np.ndarray:
         """Analyze oxygenation changes from multi-wavelength data."""
         # Simplified oxygenation calculation
         # In reality, would use modified Beer-Lambert law
@@ -589,9 +556,8 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
 
         return hbo2
 
-    def _detect_activation(
-        self, data: np.ndarray, stim_times: List[float], sampling_rate: float
-    ) -> np.ndarray:
+    def _detect_activation(self, data: np.ndarray, stim_times: List[float],
+                          sampling_rate: float) -> np.ndarray:
         """Detect activated regions."""
         if len(stim_times) == 0:
             # No stimuli - use variance
@@ -608,9 +574,7 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
                 end_frame = min(stim_frame + window_duration, data.shape[2])
 
                 # Baseline
-                baseline = np.mean(
-                    data[:, :, max(0, stim_frame - 50) : stim_frame], axis=2
-                )
+                baseline = np.mean(data[:, :, max(0, stim_frame-50):stim_frame], axis=2)
 
                 # Response
                 response = np.mean(data[:, :, stim_frame:end_frame], axis=2)
@@ -628,12 +592,11 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
 
         return activation_map
 
-    def _calculate_hemodynamic_response(
-        self, data: np.ndarray, stim_times: List[float], sampling_rate: float
-    ) -> Dict[str, Any]:
+    def _calculate_hemodynamic_response(self, data: np.ndarray, stim_times: List[float],
+                                       sampling_rate: float) -> Dict[str, Any]:
         """Calculate average hemodynamic response function."""
         if len(stim_times) == 0:
-            return {"peak_time": 0, "peak_amplitude": 0, "duration": 0}
+            return {'peak_time': 0, 'peak_amplitude': 0, 'duration': 0}
 
         # Extract and average responses
         window_duration = int(15 * sampling_rate)  # 15 seconds
@@ -650,7 +613,7 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
             roi_signal = np.mean(center_roi, axis=(0, 1))
 
             # Baseline subtract
-            baseline = np.mean(roi_signal[: int(sampling_rate)])
+            baseline = np.mean(roi_signal[:int(sampling_rate)])
             roi_signal = roi_signal - baseline
 
             responses.append(roi_signal)
@@ -674,10 +637,10 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
             duration = 0
 
         return {
-            "peak_time_s": float(peak_time),
-            "peak_amplitude": float(peak_amplitude),
-            "duration_s": float(duration),
-            "response_curve": avg_response.tolist(),
+            'peak_time_s': float(peak_time),
+            'peak_amplitude': float(peak_amplitude),
+            'duration_s': float(duration),
+            'response_curve': avg_response.tolist()
         }
 
     def _analyze_spatial_patterns(self, activation_map: np.ndarray) -> Dict[str, float]:
@@ -696,7 +659,6 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
 
             # Center of mass
             from scipy.ndimage import center_of_mass
-
             com = center_of_mass(activation_map)
 
             # Spatial spread
@@ -711,26 +673,21 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
             spread = 0
 
         return {
-            "n_clusters": int(n_features),
-            "largest_cluster_size": int(max_cluster),
-            "center_of_mass_x": float(com[1]) if n_features > 0 else 0,
-            "center_of_mass_y": float(com[0]) if n_features > 0 else 0,
-            "spatial_spread": float(spread),
+            'n_clusters': int(n_features),
+            'largest_cluster_size': int(max_cluster),
+            'center_of_mass_x': float(com[1]) if n_features > 0 else 0,
+            'center_of_mass_y': float(com[0]) if n_features > 0 else 0,
+            'spatial_spread': float(spread)
         }
 
-    def _analyze_temporal_dynamics(
-        self, data: np.ndarray, sampling_rate: float
-    ) -> Dict[str, float]:
+    def _analyze_temporal_dynamics(self, data: np.ndarray, sampling_rate: float) -> Dict[str, float]:
         """Analyze temporal dynamics."""
         # Global signal
         global_signal = np.mean(data, axis=(0, 1))
 
         # Frequency analysis
         from scipy.signal import welch
-
-        frequencies, psd = welch(
-            global_signal, fs=sampling_rate, nperseg=min(256, len(global_signal))
-        )
+        frequencies, psd = welch(global_signal, fs=sampling_rate, nperseg=min(256, len(global_signal)))
 
         # Find dominant frequency
         dominant_freq_idx = np.argmax(psd[1:]) + 1  # Exclude DC
@@ -749,10 +706,10 @@ class IntrinsicSignalImagingTool(NeuroToolWrapper):
         snr = signal_power / (noise_power + 1e-10)
 
         return {
-            "dominant_frequency_hz": float(dominant_freq),
-            "temporal_snr": float(snr),
-            "signal_variance": float(signal_power),
-            "mean_signal": float(np.mean(global_signal)),
+            'dominant_frequency_hz': float(dominant_freq),
+            'temporal_snr': float(snr),
+            'signal_variance': float(signal_power),
+            'mean_signal': float(np.mean(global_signal))
         }
 
 
@@ -778,7 +735,7 @@ class VoltageImagingTool(NeuroToolWrapper):
         bleaching_correction: bool = True,
         spike_detection: bool = True,
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Analyze voltage imaging data."""
         try:
@@ -800,9 +757,7 @@ class VoltageImagingTool(NeuroToolWrapper):
 
             # Detect action potentials if requested
             if spike_detection:
-                spikes, spike_times = self._detect_action_potentials(
-                    df_f, sampling_rate
-                )
+                spikes, spike_times = self._detect_action_potentials(df_f, sampling_rate)
             else:
                 spikes = None
                 spike_times = []
@@ -817,23 +772,23 @@ class VoltageImagingTool(NeuroToolWrapper):
             statistics = self._calculate_voltage_statistics(df_f, spikes, sampling_rate)
 
             results = {
-                "sampling_rate": sampling_rate,
-                "recording_duration": float(data.shape[2] / sampling_rate),
-                "membrane_dynamics": dynamics,
-                "propagation_analysis": propagation,
-                "statistics": statistics,
-                "n_action_potentials": len(spike_times) if spike_times else 0,
-                "processing": {
-                    "bleaching_corrected": bleaching_correction,
-                    "spike_detection": spike_detection,
-                },
+                'sampling_rate': sampling_rate,
+                'recording_duration': float(data.shape[2] / sampling_rate),
+                'membrane_dynamics': dynamics,
+                'propagation_analysis': propagation,
+                'statistics': statistics,
+                'n_action_potentials': len(spike_times) if spike_times else 0,
+                'processing': {
+                    'bleaching_corrected': bleaching_correction,
+                    'spike_detection': spike_detection
+                }
             }
 
             # Save processed data
-            save_dict = {"df_f": df_f}
+            save_dict = {'df_f': df_f}
             if spikes is not None:
-                save_dict["spikes"] = spikes
-                save_dict["spike_times"] = spike_times
+                save_dict['spikes'] = spikes
+                save_dict['spike_times'] = spike_times
 
             np.savez(output_path / "voltage_processed.npz", **save_dict)
 
@@ -846,9 +801,9 @@ class VoltageImagingTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "processed_data": str(output_path / "voltage_processed.npz"),
-                        "results": str(output_path / "voltage_results.json"),
+                        "results": str(output_path / "voltage_results.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -865,7 +820,7 @@ class VoltageImagingTool(NeuroToolWrapper):
 
         # Add action potentials
         n_spikes = 20
-        spike_times = np.sort(np.random.randint(500, shape[2] - 500, n_spikes))
+        spike_times = np.sort(np.random.randint(500, shape[2]-500, n_spikes))
 
         for spike_time in spike_times:
             # Spatial pattern (propagating wave)
@@ -881,14 +836,11 @@ class VoltageImagingTool(NeuroToolWrapper):
                 if spike_time + dt < shape[2]:
                     # Expanding wave
                     radius = 3 + dt * 2
-                    y, x = np.ogrid[: shape[0], : shape[1]]
-                    mask = ((x - center[0]) ** 2 + (y - center[1]) ** 2) <= radius**2
-                    mask = mask & (
-                        ((x - center[0]) ** 2 + (y - center[1]) ** 2)
-                        >= (radius - 2) ** 2
-                    )
+                    y, x = np.ogrid[:shape[0], :shape[1]]
+                    mask = ((x - center[0])**2 + (y - center[1])**2) <= radius**2
+                    mask = mask & (((x - center[0])**2 + (y - center[1])**2) >= (radius-2)**2)
 
-                    data[mask, spike_time + dt] *= 1 + ap_waveform[dt]
+                    data[mask, spike_time + dt] *= (1 + ap_waveform[dt])
 
         # Add slow oscillations
         slow_freq = 0.01  # 10 Hz
@@ -927,9 +879,7 @@ class VoltageImagingTool(NeuroToolWrapper):
                     corrected[i, j, :] = signal - bleaching_curve
                 except:
                     # If fit fails, use simple linear correction
-                    corrected[i, j, :] = signal - np.linspace(
-                        0, signal[-1] - signal[0], len(signal)
-                    )
+                    corrected[i, j, :] = signal - np.linspace(0, signal[-1] - signal[0], len(signal))
 
         return corrected
 
@@ -940,26 +890,20 @@ class VoltageImagingTool(NeuroToolWrapper):
         df_f = (data - baseline) / (baseline + 0.001)
         return df_f
 
-    def _detect_action_potentials(
-        self, df_f: np.ndarray, sampling_rate: float
-    ) -> Tuple[np.ndarray, List]:
+    def _detect_action_potentials(self, df_f: np.ndarray, sampling_rate: float) -> Tuple[np.ndarray, List]:
         """Detect action potentials in voltage imaging data."""
         # Spatial average for detection
         spatial_avg = np.mean(df_f, axis=(0, 1))
 
         # High-pass filter to enhance spikes
         from scipy.signal import butter, filtfilt
-
-        b, a = butter(4, 100, fs=sampling_rate, btype="high")
+        b, a = butter(4, 100, fs=sampling_rate, btype='high')
         filtered = filtfilt(b, a, spatial_avg)
 
         # Detect peaks
         from scipy.signal import find_peaks
-
         threshold = 3 * np.std(filtered)
-        peaks, properties = find_peaks(
-            filtered, height=threshold, distance=int(sampling_rate * 0.002)
-        )
+        peaks, properties = find_peaks(filtered, height=threshold, distance=int(sampling_rate * 0.002))
 
         # Create spike array
         spikes = np.zeros_like(df_f)
@@ -971,23 +915,17 @@ class VoltageImagingTool(NeuroToolWrapper):
 
         return spikes, peaks.tolist()
 
-    def _analyze_membrane_dynamics(
-        self, df_f: np.ndarray, sampling_rate: float
-    ) -> Dict[str, Any]:
+    def _analyze_membrane_dynamics(self, df_f: np.ndarray, sampling_rate: float) -> Dict[str, Any]:
         """Analyze membrane potential dynamics."""
         # Global signal
         global_signal = np.mean(df_f, axis=(0, 1))
 
         # Frequency analysis
         from scipy.signal import welch
-
-        frequencies, psd = welch(
-            global_signal, fs=sampling_rate, nperseg=min(1024, len(global_signal))
-        )
+        frequencies, psd = welch(global_signal, fs=sampling_rate, nperseg=min(1024, len(global_signal)))
 
         # Find peaks in spectrum
         from scipy.signal import find_peaks
-
         peaks, _ = find_peaks(psd, height=np.mean(psd))
 
         if len(peaks) > 0:
@@ -997,7 +935,6 @@ class VoltageImagingTool(NeuroToolWrapper):
 
         # Phase analysis (simplified)
         from scipy.signal import hilbert
-
         analytic = hilbert(global_signal)
         phase = np.angle(analytic)
 
@@ -1005,17 +942,13 @@ class VoltageImagingTool(NeuroToolWrapper):
         phase_coherence = np.abs(np.mean(np.exp(1j * phase)))
 
         return {
-            "dominant_frequencies": dominant_freqs,
-            "phase_coherence": float(phase_coherence),
-            "mean_frequency": float(np.sum(frequencies * psd) / np.sum(psd)),
-            "spectral_entropy": float(
-                -np.sum(psd * np.log(psd + 1e-10)) / np.log(len(psd))
-            ),
+            'dominant_frequencies': dominant_freqs,
+            'phase_coherence': float(phase_coherence),
+            'mean_frequency': float(np.sum(frequencies * psd) / np.sum(psd)),
+            'spectral_entropy': float(-np.sum(psd * np.log(psd + 1e-10)) / np.log(len(psd)))
         }
 
-    def _analyze_signal_propagation(
-        self, df_f: np.ndarray, sampling_rate: float
-    ) -> Dict[str, float]:
+    def _analyze_signal_propagation(self, df_f: np.ndarray, sampling_rate: float) -> Dict[str, float]:
         """Analyze signal propagation patterns."""
         # Calculate propagation velocity (simplified)
         # Cross-correlation between adjacent pixels
@@ -1029,7 +962,7 @@ class VoltageImagingTool(NeuroToolWrapper):
                 signal2 = df_f[i, j + 1, :]
 
                 # Cross-correlation
-                correlation = np.correlate(signal1, signal2, mode="same")
+                correlation = np.correlate(signal1, signal2, mode='same')
                 lag = np.argmax(correlation) - len(correlation) // 2
 
                 # Convert to velocity (pixels/second)
@@ -1053,30 +986,25 @@ class VoltageImagingTool(NeuroToolWrapper):
         angle = np.arctan2(np.mean(dy), np.mean(dx))
 
         return {
-            "mean_propagation_velocity": float(mean_velocity),
-            "std_propagation_velocity": float(std_velocity),
-            "predominant_direction_rad": float(angle),
-            "anisotropy_index": float(np.std([np.std(dx), np.std(dy)])),
+            'mean_propagation_velocity': float(mean_velocity),
+            'std_propagation_velocity': float(std_velocity),
+            'predominant_direction_rad': float(angle),
+            'anisotropy_index': float(np.std([np.std(dx), np.std(dy)]))
         }
 
-    def _calculate_voltage_statistics(
-        self, df_f: np.ndarray, spikes: Optional[np.ndarray], sampling_rate: float
-    ) -> Dict[str, float]:
+    def _calculate_voltage_statistics(self, df_f: np.ndarray, spikes: Optional[np.ndarray],
+                                     sampling_rate: float) -> Dict[str, float]:
         """Calculate voltage imaging statistics."""
         stats = {
-            "mean_df_f": float(np.mean(np.abs(df_f))),
-            "max_df_f": float(np.max(np.abs(df_f))),
-            "signal_variance": float(np.var(df_f)),
-            "spatial_correlation": float(
-                np.mean(np.corrcoef(df_f.reshape(-1, df_f.shape[2])))
-            ),
+            'mean_df_f': float(np.mean(np.abs(df_f))),
+            'max_df_f': float(np.max(np.abs(df_f))),
+            'signal_variance': float(np.var(df_f)),
+            'spatial_correlation': float(np.mean(np.corrcoef(df_f.reshape(-1, df_f.shape[2]))))
         }
 
         if spikes is not None:
-            spike_rate = np.sum(spikes) / (
-                np.prod(spikes.shape[:2]) * spikes.shape[2] / sampling_rate
-            )
-            stats["spike_rate_hz"] = float(spike_rate)
+            spike_rate = np.sum(spikes) / (np.prod(spikes.shape[:2]) * spikes.shape[2] / sampling_rate)
+            stats['spike_rate_hz'] = float(spike_rate)
 
         return stats
 
@@ -1104,7 +1032,7 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
         dendritic_analysis: bool = False,
         sampling_rate: float = 15.0,  # Hz
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Analyze two-photon microscopy data."""
         try:
@@ -1142,28 +1070,26 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
             quality = self._assess_signal_quality(data)
 
             results = {
-                "imaging_type": "z_stack" if z_stack else "time_series",
-                "sampling_rate": sampling_rate if not z_stack else None,
-                "motion_corrected": motion_correction and not z_stack,
-                "morphology": morphology,
-                "signal_quality": quality,
-                "dendrite_analysis": dendrite_results,
-                "processing_results": results_data,
+                'imaging_type': 'z_stack' if z_stack else 'time_series',
+                'sampling_rate': sampling_rate if not z_stack else None,
+                'motion_corrected': motion_correction and not z_stack,
+                'morphology': morphology,
+                'signal_quality': quality,
+                'dendrite_analysis': dendrite_results,
+                'processing_results': results_data
             }
 
             if shifts is not None:
-                results["motion_shifts"] = {
-                    "mean_x": float(np.mean(shifts[:, 0])),
-                    "mean_y": float(np.mean(shifts[:, 1])),
-                    "max_displacement": float(
-                        np.max(np.sqrt(shifts[:, 0] ** 2 + shifts[:, 1] ** 2))
-                    ),
+                results['motion_shifts'] = {
+                    'mean_x': float(np.mean(shifts[:, 0])),
+                    'mean_y': float(np.mean(shifts[:, 1])),
+                    'max_displacement': float(np.max(np.sqrt(shifts[:, 0]**2 + shifts[:, 1]**2)))
                 }
 
             # Save results
             np.savez(
                 output_path / "twophoton_processed.npz",
-                processed_data=data if isinstance(data, np.ndarray) else results_data,
+                processed_data=data if isinstance(data, np.ndarray) else results_data
             )
 
             with open(output_path / "twophoton_results.json", "w") as f:
@@ -1175,9 +1101,9 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "processed_data": str(output_path / "twophoton_processed.npz"),
-                        "results": str(output_path / "twophoton_results.json"),
+                        "results": str(output_path / "twophoton_results.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -1194,13 +1120,12 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
             # Add structures
             for _ in range(10):
                 # Neurons
-                center = [np.random.randint(20, s - 20) for s in shape]
+                center = [np.random.randint(20, s-20) for s in shape]
                 radius = np.random.randint(5, 10)
 
-                z, y, x = np.ogrid[: shape[2], : shape[0], : shape[1]]
-                mask = (
-                    (x - center[1]) ** 2 + (y - center[0]) ** 2 + (z - center[2]) ** 2
-                ) <= radius**2
+                z, y, x = np.ogrid[:shape[2], :shape[0], :shape[1]]
+                mask = ((x - center[1])**2 + (y - center[0])**2 +
+                       (z - center[2])**2) <= radius**2
                 data[mask[1:, :]] += 50
 
             # Add dendrites (lines)
@@ -1220,11 +1145,11 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
 
             # Add neurons with calcium transients
             for _ in range(15):
-                center = [np.random.randint(20, s - 20) for s in shape[:2]]
+                center = [np.random.randint(20, s-20) for s in shape[:2]]
                 radius = np.random.randint(5, 8)
 
-                y, x = np.ogrid[: shape[0], : shape[1]]
-                mask = ((x - center[0]) ** 2 + (y - center[1]) ** 2) <= radius**2
+                y, x = np.ogrid[:shape[0], :shape[1]]
+                mask = ((x - center[0])**2 + (y - center[1])**2) <= radius**2
 
                 # Base fluorescence
                 data[mask] += 30
@@ -1237,7 +1162,7 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
                     t = np.arange(duration)
                     transient = 20 * np.exp(-t / 10)
 
-                    data[mask, t_start : t_start + duration] += transient
+                    data[mask, t_start:t_start + duration] += transient
 
         return data
 
@@ -1255,8 +1180,7 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
 
             # Cross-correlation for shift detection
             from scipy.signal import correlate2d
-
-            correlation = correlate2d(reference, frame, mode="same")
+            correlation = correlate2d(reference, frame, mode='same')
 
             # Find peak
             peak = np.unravel_index(np.argmax(correlation), correlation.shape)
@@ -1264,7 +1188,6 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
 
             # Apply shift
             from scipy.ndimage import shift as nd_shift
-
             corrected[:, :, t] = nd_shift(frame, [-shift[0], -shift[1]], order=1)
 
             shifts[t] = shift
@@ -1295,23 +1218,20 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
             intensities.append(intensity)
 
         return {
-            "n_structures": int(n_features),
-            "mean_volume": float(np.mean(volumes)) if volumes else 0,
-            "mean_intensity": float(np.mean(intensities)) if intensities else 0,
-            "max_projection_mean": float(np.mean(mip)),
-            "depth_range": int(data.shape[2]),
+            'n_structures': int(n_features),
+            'mean_volume': float(np.mean(volumes)) if volumes else 0,
+            'mean_intensity': float(np.mean(intensities)) if intensities else 0,
+            'max_projection_mean': float(np.mean(mip)),
+            'depth_range': int(data.shape[2])
         }
 
-    def _process_time_series(
-        self, data: np.ndarray, sampling_rate: float
-    ) -> Dict[str, Any]:
+    def _process_time_series(self, data: np.ndarray, sampling_rate: float) -> Dict[str, Any]:
         """Process time series data."""
         # Detect ROIs
         max_proj = np.max(data, axis=2)
         threshold = np.percentile(max_proj, 90)
 
         from scipy.ndimage import label
-
         binary = max_proj > threshold
         labeled, n_features = label(binary)
 
@@ -1331,17 +1251,17 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
             np.fill_diagonal(corr_matrix, 0)
 
             results = {
-                "n_rois": len(time_series),
-                "mean_correlation": float(np.mean(np.abs(corr_matrix))),
-                "mean_activity": float(np.mean(time_series)),
-                "recording_duration": float(data.shape[2] / sampling_rate),
+                'n_rois': len(time_series),
+                'mean_correlation': float(np.mean(np.abs(corr_matrix))),
+                'mean_activity': float(np.mean(time_series)),
+                'recording_duration': float(data.shape[2] / sampling_rate)
             }
         else:
             results = {
-                "n_rois": 0,
-                "mean_correlation": 0,
-                "mean_activity": 0,
-                "recording_duration": float(data.shape[2] / sampling_rate),
+                'n_rois': 0,
+                'mean_correlation': 0,
+                'mean_activity': 0,
+                'recording_duration': float(data.shape[2] / sampling_rate)
             }
 
         return results
@@ -1375,7 +1295,6 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
 
         # Skeleton analysis (simplified)
         from scipy.ndimage import binary_erosion
-
         skeleton = binary_erosion(dendrite_mask, iterations=1)
 
         # Calculate metrics
@@ -1383,19 +1302,17 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
 
         # Branch points (simplified - pixels with >2 neighbors)
         from scipy.ndimage import convolve
-
         kernel = np.ones((3, 3))
         kernel[1, 1] = 0
-        neighbor_count = convolve(skeleton.astype(int), kernel, mode="constant")
+        neighbor_count = convolve(skeleton.astype(int), kernel, mode='constant')
         branch_points = (neighbor_count > 2) & skeleton
 
         return {
-            "total_dendritic_length": int(total_length),
-            "n_branch_points": int(np.sum(branch_points)),
-            "dendritic_density": float(total_length / np.prod(proj.shape)),
-            "mean_dendrite_intensity": (
-                float(np.mean(proj[dendrite_mask])) if np.any(dendrite_mask) else 0
-            ),
+            'total_dendritic_length': int(total_length),
+            'n_branch_points': int(np.sum(branch_points)),
+            'dendritic_density': float(total_length / np.prod(proj.shape)),
+            'mean_dendrite_intensity': float(np.mean(proj[dendrite_mask]))
+                if np.any(dendrite_mask) else 0
         }
 
     def _analyze_morphology(self, data: np.ndarray) -> Dict[str, float]:
@@ -1411,7 +1328,7 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
         binary = proj > threshold
 
         # Morphological measurements
-        from scipy.ndimage import binary_fill_holes, label
+        from scipy.ndimage import label, binary_fill_holes
 
         # Fill holes
         filled = binary_fill_holes(binary)
@@ -1426,7 +1343,6 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
 
             # Perimeter (simplified using edge detection)
             from scipy.ndimage import binary_erosion
-
             perimeters = []
             for i in range(1, min(n_features + 1, 20)):
                 obj = labeled == i
@@ -1435,9 +1351,8 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
                 perimeters.append(perimeter)
 
             if perimeters and areas:
-                circularities = [
-                    4 * np.pi * a / (p**2 + 0.01) for a, p in zip(areas, perimeters)
-                ]
+                circularities = [4 * np.pi * a / (p**2 + 0.01)
+                               for a, p in zip(areas, perimeters)]
                 mean_circularity = np.mean(circularities)
             else:
                 mean_circularity = 0
@@ -1448,10 +1363,10 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
             mean_circularity = 0
 
         return {
-            "n_objects": int(n_features),
-            "mean_object_area": float(mean_area),
-            "mean_circularity": float(mean_circularity),
-            "tissue_coverage": float(np.sum(binary) / binary.size),
+            'n_objects': int(n_features),
+            'mean_object_area': float(mean_area),
+            'mean_circularity': float(mean_circularity),
+            'tissue_coverage': float(np.sum(binary) / binary.size)
         }
 
     def _assess_signal_quality(self, data: np.ndarray) -> Dict[str, float]:
@@ -1468,11 +1383,11 @@ class TwoPhotonMicroscopyTool(NeuroToolWrapper):
         contrast = np.std(data) / (np.mean(data) + 0.01)
 
         return {
-            "snr": float(snr),
-            "dynamic_range": float(dynamic_range),
-            "contrast": float(contrast),
-            "mean_intensity": float(np.mean(data)),
-            "quality_score": float(snr * contrast),
+            'snr': float(snr),
+            'dynamic_range': float(dynamic_range),
+            'contrast': float(contrast),
+            'mean_intensity': float(np.mean(data)),
+            'quality_score': float(snr * contrast)
         }
 
 
@@ -1499,7 +1414,7 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
         sampling_rate: float = 30.0,
         response_window: float = 5.0,  # seconds
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Analyze optogenetic data."""
         try:
@@ -1535,20 +1450,20 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
             spatial = self._analyze_spatial_patterns(df_f, stim_times, sampling_rate)
 
             results = {
-                "n_stimulations": len(stim_times),
-                "stimulation_parameters": stim_params,
-                "sampling_rate": sampling_rate,
-                "response_analysis": responses,
-                "cell_type_responses": cell_types,
-                "temporal_dynamics": dynamics,
-                "spatial_patterns": spatial,
+                'n_stimulations': len(stim_times),
+                'stimulation_parameters': stim_params,
+                'sampling_rate': sampling_rate,
+                'response_analysis': responses,
+                'cell_type_responses': cell_types,
+                'temporal_dynamics': dynamics,
+                'spatial_patterns': spatial
             }
 
             # Save processed data
             np.savez(
                 output_path / "optogenetics_processed.npz",
                 df_f=df_f,
-                stim_times=stim_times,
+                stim_times=stim_times
             )
 
             with open(output_path / "optogenetics_results.json", "w") as f:
@@ -1559,12 +1474,10 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
                 data=results,
                 metadata={
                     "output_files": {
-                        "processed_data": str(
-                            output_path / "optogenetics_processed.npz"
-                        ),
-                        "results": str(output_path / "optogenetics_results.json"),
+                        "processed_data": str(output_path / "optogenetics_processed.npz"),
+                        "results": str(output_path / "optogenetics_results.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -1578,10 +1491,10 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
 
         # Stimulation parameters
         stim_params = {
-            "wavelength": 470,  # nm (blue light for ChR2)
-            "power": 10,  # mW
-            "pulse_duration": 10,  # ms
-            "frequency": 20,  # Hz
+            'wavelength': 470,  # nm (blue light for ChR2)
+            'power': 10,  # mW
+            'pulse_duration': 10,  # ms
+            'frequency': 20  # Hz
         }
 
         # Stimulation times (in frames)
@@ -1592,24 +1505,24 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
 
         for i in range(n_cells):
             # Cell location
-            center = [np.random.randint(10, s - 10) for s in shape[:2]]
+            center = [np.random.randint(10, s-10) for s in shape[:2]]
             radius = np.random.randint(4, 8)
 
-            y, x = np.ogrid[: shape[0], : shape[1]]
-            mask = ((x - center[0]) ** 2 + (y - center[1]) ** 2) <= radius**2
+            y, x = np.ogrid[:shape[0], :shape[1]]
+            mask = ((x - center[0])**2 + (y - center[1])**2) <= radius**2
 
             # Baseline fluorescence
             data[mask] *= 1.5
 
             # Cell type (excitatory vs inhibitory response)
-            cell_type = "excitatory" if i < n_cells * 0.7 else "inhibitory"
+            cell_type = 'excitatory' if i < n_cells * 0.7 else 'inhibitory'
 
             # Add responses to stimulation
             for stim_time in stim_times:
                 response_duration = 150  # 5 seconds
                 t = np.arange(response_duration)
 
-                if cell_type == "excitatory":
+                if cell_type == 'excitatory':
                     # Positive response
                     response = 0.3 * np.exp(-t / 30) * (1 - np.exp(-t / 5))
                     # Add some cells with delayed response
@@ -1621,7 +1534,7 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
                     response = -0.2 * np.exp(-t / 40) * (1 - np.exp(-t / 10))
 
                 end_time = min(stim_time + response_duration, shape[2])
-                data[mask, stim_time:end_time] *= 1 + response[: end_time - stim_time]
+                data[mask, stim_time:end_time] *= (1 + response[:end_time-stim_time])
 
         return data, stim_times, stim_params
 
@@ -1632,13 +1545,8 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
         df_f = (data - baseline) / (baseline + 0.001)
         return df_f
 
-    def _analyze_stimulation_responses(
-        self,
-        df_f: np.ndarray,
-        stim_times: List,
-        sampling_rate: float,
-        response_window: float,
-    ) -> Dict:
+    def _analyze_stimulation_responses(self, df_f: np.ndarray, stim_times: List,
+                                      sampling_rate: float, response_window: float) -> Dict:
         """Analyze responses to optogenetic stimulation."""
         window_frames = int(response_window * sampling_rate)
 
@@ -1663,45 +1571,35 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
             threshold = np.mean(baseline) + 2 * np.std(baseline)
             activated_area = np.sum(response_frame > threshold)
 
-            responses.append(
-                {
-                    "peak_amplitude": float(peak_response),
-                    "time_to_peak": float(time_to_peak),
-                    "activated_area": int(activated_area),
-                    "baseline_mean": float(np.mean(baseline)),
-                }
-            )
+            responses.append({
+                'peak_amplitude': float(peak_response),
+                'time_to_peak': float(time_to_peak),
+                'activated_area': int(activated_area),
+                'baseline_mean': float(np.mean(baseline))
+            })
 
         # Average across stimulations
         avg_response = {
-            "mean_peak_amplitude": float(
-                np.mean([r["peak_amplitude"] for r in responses])
-            ),
-            "mean_time_to_peak": float(np.mean([r["time_to_peak"] for r in responses])),
-            "mean_activated_area": float(
-                np.mean([r["activated_area"] for r in responses])
-            ),
-            "response_reliability": float(
-                np.std([r["peak_amplitude"] for r in responses])
-                / (np.mean([r["peak_amplitude"] for r in responses]) + 0.01)
-            ),
+            'mean_peak_amplitude': float(np.mean([r['peak_amplitude'] for r in responses])),
+            'mean_time_to_peak': float(np.mean([r['time_to_peak'] for r in responses])),
+            'mean_activated_area': float(np.mean([r['activated_area'] for r in responses])),
+            'response_reliability': float(np.std([r['peak_amplitude'] for r in responses]) /
+                                        (np.mean([r['peak_amplitude'] for r in responses]) + 0.01))
         }
 
         return avg_response
 
-    def _classify_cell_responses(
-        self, df_f: np.ndarray, stim_times: List, sampling_rate: float
-    ) -> Dict:
+    def _classify_cell_responses(self, df_f: np.ndarray, stim_times: List,
+                                sampling_rate: float) -> Dict:
         """Classify cells based on response type."""
         if not stim_times:
-            return {"n_responsive": 0, "n_excited": 0, "n_inhibited": 0}
+            return {'n_responsive': 0, 'n_excited': 0, 'n_inhibited': 0}
 
         # Detect ROIs
         max_proj = np.max(df_f, axis=2)
         threshold = np.percentile(max_proj, 90)
 
         from scipy.ndimage import label
-
         binary = max_proj > threshold
         labeled, n_features = label(binary)
 
@@ -1720,8 +1618,8 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
             # Calculate response
             responses = []
             for stim_time in stim_times:
-                baseline = np.mean(ts[max(0, stim_time - 30) : stim_time])
-                response = np.mean(ts[stim_time : min(stim_time + 60, len(ts))])
+                baseline = np.mean(ts[max(0, stim_time-30):stim_time])
+                response = np.mean(ts[stim_time:min(stim_time+60, len(ts))])
                 responses.append(response - baseline)
 
             mean_response = np.mean(responses)
@@ -1736,20 +1634,19 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
         total = excited + inhibited + non_responsive
 
         return {
-            "n_responsive": int(excited + inhibited),
-            "n_excited": int(excited),
-            "n_inhibited": int(inhibited),
-            "n_non_responsive": int(non_responsive),
-            "excitation_ratio": float(excited / total) if total > 0 else 0,
-            "inhibition_ratio": float(inhibited / total) if total > 0 else 0,
+            'n_responsive': int(excited + inhibited),
+            'n_excited': int(excited),
+            'n_inhibited': int(inhibited),
+            'n_non_responsive': int(non_responsive),
+            'excitation_ratio': float(excited / total) if total > 0 else 0,
+            'inhibition_ratio': float(inhibited / total) if total > 0 else 0
         }
 
-    def _analyze_temporal_dynamics(
-        self, df_f: np.ndarray, stim_times: List, sampling_rate: float
-    ) -> Dict:
+    def _analyze_temporal_dynamics(self, df_f: np.ndarray, stim_times: List,
+                                  sampling_rate: float) -> Dict:
         """Analyze temporal dynamics of optogenetic responses."""
         if not stim_times:
-            return {"onset_latency": 0, "decay_time": 0}
+            return {'onset_latency': 0, 'decay_time': 0}
 
         # Average spatial signal
         spatial_avg = np.mean(df_f, axis=(0, 1))
@@ -1758,12 +1655,10 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
         stim_time = stim_times[0]
 
         # Onset latency
-        baseline = np.mean(spatial_avg[max(0, stim_time - 30) : stim_time])
-        threshold = baseline + 2 * np.std(
-            spatial_avg[max(0, stim_time - 30) : stim_time]
-        )
+        baseline = np.mean(spatial_avg[max(0, stim_time-30):stim_time])
+        threshold = baseline + 2 * np.std(spatial_avg[max(0, stim_time-30):stim_time])
 
-        post_stim = spatial_avg[stim_time : min(stim_time + 150, len(spatial_avg))]
+        post_stim = spatial_avg[stim_time:min(stim_time+150, len(spatial_avg))]
         above_threshold = np.where(post_stim > threshold)[0]
 
         if len(above_threshold) > 0:
@@ -1788,29 +1683,26 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
             decay_time = 0
 
         return {
-            "onset_latency_s": float(onset_latency),
-            "peak_time_s": float(peak_time),
-            "decay_time_s": float(decay_time),
-            "response_duration_s": float(
-                (peak_time + decay_time) if decay_time > 0 else 0
-            ),
+            'onset_latency_s': float(onset_latency),
+            'peak_time_s': float(peak_time),
+            'decay_time_s': float(decay_time),
+            'response_duration_s': float((peak_time + decay_time) if decay_time > 0 else 0)
         }
 
-    def _analyze_spatial_patterns(
-        self, df_f: np.ndarray, stim_times: List, sampling_rate: float
-    ) -> Dict:
+    def _analyze_spatial_patterns(self, df_f: np.ndarray, stim_times: List,
+                                 sampling_rate: float) -> Dict:
         """Analyze spatial patterns of optogenetic activation."""
         if not stim_times:
-            return {"spatial_spread": 0, "propagation_velocity": 0}
+            return {'spatial_spread': 0, 'propagation_velocity': 0}
 
         # Analyze response to first stimulation
         stim_time = stim_times[0]
         window = 60  # 2 seconds at 30 Hz
 
-        response_window = df_f[:, :, stim_time : min(stim_time + window, df_f.shape[2])]
+        response_window = df_f[:, :, stim_time:min(stim_time+window, df_f.shape[2])]
 
         # Calculate activation map
-        baseline = np.mean(df_f[:, :, max(0, stim_time - 30) : stim_time], axis=2)
+        baseline = np.mean(df_f[:, :, max(0, stim_time-30):stim_time], axis=2)
         max_response = np.max(response_window, axis=2)
         activation = max_response - baseline
 
@@ -1822,7 +1714,7 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
         if np.any(activated):
             y, x = np.where(activated)
             center_y, center_x = np.mean(y), np.mean(x)
-            distances = np.sqrt((y - center_y) ** 2 + (x - center_x) ** 2)
+            distances = np.sqrt((y - center_y)**2 + (x - center_x)**2)
             spatial_spread = np.mean(distances)
 
             # Propagation analysis (simplified)
@@ -1830,9 +1722,7 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
             time_to_activation = np.zeros(activation.shape)
             for i in range(response_window.shape[2]):
                 newly_activated = (response_window[:, :, i] - baseline) > threshold
-                time_to_activation[newly_activated & (time_to_activation == 0)] = (
-                    i / sampling_rate
-                )
+                time_to_activation[newly_activated & (time_to_activation == 0)] = i / sampling_rate
 
             # Calculate propagation velocity (simplified)
             if np.sum(time_to_activation > 0) > 10:
@@ -1847,10 +1737,10 @@ class OptogenecicsAnalysisTool(NeuroToolWrapper):
             propagation_velocity = 0
 
         return {
-            "spatial_spread_pixels": float(spatial_spread),
-            "propagation_velocity_pixels_per_s": float(propagation_velocity),
-            "activated_fraction": float(np.sum(activated) / activated.size),
-            "max_activation_strength": float(np.max(activation)),
+            'spatial_spread_pixels': float(spatial_spread),
+            'propagation_velocity_pixels_per_s': float(propagation_velocity),
+            'activated_fraction': float(np.sum(activated) / activated.size),
+            'max_activation_strength': float(np.max(activation))
         }
 
 
@@ -1876,7 +1766,7 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
         sampling_rate: float = 10.0,
         channel_positions: Optional[np.ndarray] = None,
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Analyze fNIRS data."""
         try:
@@ -1888,11 +1778,7 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
                 data, positions = self._generate_synthetic_fnirs_data()
             else:
                 data = time_series
-                positions = (
-                    channel_positions
-                    if channel_positions is not None
-                    else self._default_positions()
-                )
+                positions = channel_positions if channel_positions is not None else self._default_positions()
 
             # Set wavelengths
             if wavelengths is None:
@@ -1902,9 +1788,7 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
             hbo, hbr = self._modified_beer_lambert(data, wavelengths)
 
             # Motion artifact correction
-            hbo_clean, hbr_clean = self._motion_artifact_correction(
-                hbo, hbr, sampling_rate
-            )
+            hbo_clean, hbr_clean = self._motion_artifact_correction(hbo, hbr, sampling_rate)
 
             # Calculate connectivity
             connectivity = self._calculate_connectivity(hbo_clean, sampling_rate)
@@ -1916,17 +1800,17 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
             quality = self._assess_signal_quality(hbo_clean, hbr_clean)
 
             results = {
-                "n_channels": len(data) if len(data.shape) > 1 else 1,
-                "sampling_rate": sampling_rate,
-                "wavelengths": wavelengths,
-                "hemoglobin_concentrations": {
-                    "hbo_mean": float(np.mean(hbo_clean)),
-                    "hbr_mean": float(np.mean(hbr_clean)),
-                    "total_hb": float(np.mean(hbo_clean + hbr_clean)),
+                'n_channels': len(data) if len(data.shape) > 1 else 1,
+                'sampling_rate': sampling_rate,
+                'wavelengths': wavelengths,
+                'hemoglobin_concentrations': {
+                    'hbo_mean': float(np.mean(hbo_clean)),
+                    'hbr_mean': float(np.mean(hbr_clean)),
+                    'total_hb': float(np.mean(hbo_clean + hbr_clean))
                 },
-                "connectivity": connectivity,
-                "hrf_analysis": hrf,
-                "signal_quality": quality,
+                'connectivity': connectivity,
+                'hrf_analysis': hrf,
+                'signal_quality': quality
             }
 
             # Save processed data
@@ -1934,7 +1818,7 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
                 output_path / "fnirs_processed.npz",
                 hbo=hbo_clean,
                 hbr=hbr_clean,
-                positions=positions,
+                positions=positions
             )
 
             with open(output_path / "fnirs_results.json", "w") as f:
@@ -1946,9 +1830,9 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "processed_data": str(output_path / "fnirs_processed.npz"),
-                        "results": str(output_path / "fnirs_results.json"),
+                        "results": str(output_path / "fnirs_results.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -1974,22 +1858,20 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
 
         # Add hemodynamic responses
         n_events = 10
-        event_times = np.sort(np.random.randint(200, n_timepoints - 200, n_events))
+        event_times = np.sort(np.random.randint(200, n_timepoints-200, n_events))
 
         for event_time in event_times:
             # Random activation pattern
-            activated_channels = np.random.choice(
-                n_channels, size=n_channels // 2, replace=False
-            )
+            activated_channels = np.random.choice(n_channels, size=n_channels//2, replace=False)
 
             # HRF
             t = np.arange(200)
-            hrf = 0.05 * np.exp(-t / 30) * (1 - np.exp(-t / 6))
+            hrf = 0.05 * np.exp(-t/30) * (1 - np.exp(-t/6))
 
             for ch in activated_channels:
                 # Different response for different wavelengths
-                data[ch, event_time : event_time + 200, 0] -= hrf * 1.2
-                data[ch, event_time : event_time + 200, 1] -= hrf * 0.8
+                data[ch, event_time:event_time+200, 0] -= hrf * 1.2
+                data[ch, event_time:event_time+200, 1] -= hrf * 0.8
 
         return data, positions
 
@@ -2003,12 +1885,13 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
             positions[i] = [5 * np.cos(angle), 5 * np.sin(angle)]
         return positions
 
-    def _modified_beer_lambert(
-        self, data: np.ndarray, wavelengths: List[float]
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def _modified_beer_lambert(self, data: np.ndarray, wavelengths: List[float]) -> Tuple[np.ndarray, np.ndarray]:
         """Convert optical density to hemoglobin concentrations."""
         # Extinction coefficients (simplified)
-        epsilon = {760: {"hbo": 1.486, "hbr": 3.844}, 850: {"hbo": 2.526, "hbr": 1.798}}
+        epsilon = {
+            760: {'hbo': 1.486, 'hbr': 3.844},
+            850: {'hbo': 2.526, 'hbr': 1.798}
+        }
 
         # Ensure we have the right wavelengths
         if 760 not in wavelengths or 850 not in wavelengths:
@@ -2036,12 +1919,10 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
                 y = np.stack([od_760, od_850], axis=1)
 
             # Extinction matrix
-            E = np.array(
-                [
-                    [epsilon[760]["hbo"], epsilon[760]["hbr"]],
-                    [epsilon[850]["hbo"], epsilon[850]["hbr"]],
-                ]
-            )
+            E = np.array([
+                [epsilon[760]['hbo'], epsilon[760]['hbr']],
+                [epsilon[850]['hbo'], epsilon[850]['hbr']]
+            ])
 
             # Solve
             for t in range(y.shape[0]):
@@ -2058,9 +1939,8 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
 
         return hbo, hbr
 
-    def _motion_artifact_correction(
-        self, hbo: np.ndarray, hbr: np.ndarray, sampling_rate: float
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def _motion_artifact_correction(self, hbo: np.ndarray, hbr: np.ndarray,
+                                   sampling_rate: float) -> Tuple[np.ndarray, np.ndarray]:
         """Correct motion artifacts."""
         # Simple spline interpolation method
         hbo_clean = np.zeros_like(hbo)
@@ -2084,21 +1964,10 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
                 clean_idx = np.setdiff1d(np.arange(len(signal_hbo)), artifacts)
                 if len(clean_idx) > 2:
                     from scipy.interpolate import interp1d
-
-                    f_hbo = interp1d(
-                        clean_idx,
-                        signal_hbo[clean_idx],
-                        kind="cubic",
-                        fill_value="extrapolate",
-                        bounds_error=False,
-                    )
-                    f_hbr = interp1d(
-                        clean_idx,
-                        signal_hbr[clean_idx],
-                        kind="cubic",
-                        fill_value="extrapolate",
-                        bounds_error=False,
-                    )
+                    f_hbo = interp1d(clean_idx, signal_hbo[clean_idx], kind='cubic',
+                                    fill_value='extrapolate', bounds_error=False)
+                    f_hbr = interp1d(clean_idx, signal_hbr[clean_idx], kind='cubic',
+                                    fill_value='extrapolate', bounds_error=False)
 
                     if len(hbo_clean.shape) > 1:
                         hbo_clean[ch] = f_hbo(np.arange(len(signal_hbo)))
@@ -2123,12 +1992,10 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
 
         return hbo_clean, hbr_clean
 
-    def _calculate_connectivity(
-        self, hbo: np.ndarray, sampling_rate: float
-    ) -> Dict[str, Any]:
+    def _calculate_connectivity(self, hbo: np.ndarray, sampling_rate: float) -> Dict[str, Any]:
         """Calculate functional connectivity."""
         if len(hbo.shape) == 1:
-            return {"mean_connectivity": 0, "clustering_coefficient": 0}
+            return {'mean_connectivity': 0, 'clustering_coefficient': 0}
 
         # Correlation-based connectivity
         corr_matrix = np.corrcoef(hbo)
@@ -2149,9 +2016,9 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
                 clustering.append(n_edges / n_possible if n_possible > 0 else 0)
 
         return {
-            "mean_connectivity": float(np.mean(np.abs(corr_matrix))),
-            "clustering_coefficient": float(np.mean(clustering)) if clustering else 0,
-            "max_correlation": float(np.max(np.abs(corr_matrix))),
+            'mean_connectivity': float(np.mean(np.abs(corr_matrix))),
+            'clustering_coefficient': float(np.mean(clustering)) if clustering else 0,
+            'max_correlation': float(np.max(np.abs(corr_matrix)))
         }
 
     def _analyze_hrf(self, hbo: np.ndarray, sampling_rate: float) -> Dict[str, float]:
@@ -2164,14 +2031,11 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
 
         # Find peaks
         from scipy.signal import find_peaks
-
-        peaks, properties = find_peaks(
-            signal, height=np.std(signal), distance=int(sampling_rate * 5)
-        )
+        peaks, properties = find_peaks(signal, height=np.std(signal), distance=int(sampling_rate*5))
 
         if len(peaks) > 0:
             # Average peak properties
-            peak_amplitude = np.mean(properties["peak_heights"])
+            peak_amplitude = np.mean(properties['peak_heights'])
 
             # Time to peak (from detected events)
             if len(peaks) > 1:
@@ -2183,14 +2047,12 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
             inter_peak_interval = 0
 
         return {
-            "n_peaks": len(peaks),
-            "mean_peak_amplitude": float(peak_amplitude),
-            "inter_peak_interval_s": float(inter_peak_interval),
+            'n_peaks': len(peaks),
+            'mean_peak_amplitude': float(peak_amplitude),
+            'inter_peak_interval_s': float(inter_peak_interval)
         }
 
-    def _assess_signal_quality(
-        self, hbo: np.ndarray, hbr: np.ndarray
-    ) -> Dict[str, float]:
+    def _assess_signal_quality(self, hbo: np.ndarray, hbr: np.ndarray) -> Dict[str, float]:
         """Assess signal quality metrics."""
         # SNR
         signal_hbo = np.std(hbo)
@@ -2209,12 +2071,10 @@ class fNIRSAnalysisTool(NeuroToolWrapper):
             mean_correlation = np.corrcoef(hbo, hbr)[0, 1]
 
         return {
-            "snr_hbo": float(snr_hbo),
-            "snr_hbr": float(snr_hbr),
-            "hbo_hbr_correlation": float(mean_correlation),
-            "signal_quality_index": float(
-                (snr_hbo + snr_hbr) / 2 * (1 - abs(mean_correlation))
-            ),
+            'snr_hbo': float(snr_hbo),
+            'snr_hbr': float(snr_hbr),
+            'hbo_hbr_correlation': float(mean_correlation),
+            'signal_quality_index': float((snr_hbo + snr_hbr) / 2 * (1 - abs(mean_correlation)))
         }
 
 
@@ -2240,7 +2100,7 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
         cell_detection: bool = True,
         vessel_segmentation: bool = False,
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Analyze light-sheet microscopy data."""
         try:
@@ -2276,29 +2136,27 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
             metrics = self._calculate_volume_metrics(data, cells, vessels, voxel_size)
 
             # Spatial statistics
-            spatial_stats = self._analyze_spatial_distribution(
-                cells, data.shape, voxel_size
-            )
+            spatial_stats = self._analyze_spatial_distribution(cells, data.shape, voxel_size)
 
             results = {
-                "volume_shape": data.shape,
-                "voxel_size_um": voxel_size,
-                "n_cells_detected": len(cells),
-                "tissue_regions": tissue_regions,
-                "volume_metrics": metrics,
-                "spatial_statistics": spatial_stats,
+                'volume_shape': data.shape,
+                'voxel_size_um': voxel_size,
+                'n_cells_detected': len(cells),
+                'tissue_regions': tissue_regions,
+                'volume_metrics': metrics,
+                'spatial_statistics': spatial_stats
             }
 
             if vessels is not None:
-                results["vessel_analysis"] = {
-                    "vessel_volume_fraction": float(np.sum(vessels) / vessels.size),
-                    "mean_vessel_intensity": float(np.mean(data[vessels])),
+                results['vessel_analysis'] = {
+                    'vessel_volume_fraction': float(np.sum(vessels) / vessels.size),
+                    'mean_vessel_intensity': float(np.mean(data[vessels]))
                 }
 
             # Save results
-            save_dict = {"cell_positions": cells}
+            save_dict = {'cell_positions': cells}
             if vessels is not None:
-                save_dict["vessel_mask"] = vessels
+                save_dict['vessel_mask'] = vessels
 
             np.savez(output_path / "lightsheet_results.npz", **save_dict)
 
@@ -2311,9 +2169,9 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "results_data": str(output_path / "lightsheet_results.npz"),
-                        "analysis": str(output_path / "lightsheet_analysis.json"),
+                        "analysis": str(output_path / "lightsheet_analysis.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -2328,13 +2186,12 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
         # Add cells
         n_cells = 200
         for _ in range(n_cells):
-            center = [np.random.randint(5, s - 5) for s in shape]
+            center = [np.random.randint(5, s-5) for s in shape]
             radius = np.random.randint(2, 4)
 
-            z, y, x = np.ogrid[: shape[0], : shape[1], : shape[2]]
-            mask = (
-                (x - center[2]) ** 2 + (y - center[1]) ** 2 + (z - center[0]) ** 2
-            ) <= radius**2
+            z, y, x = np.ogrid[:shape[0], :shape[1], :shape[2]]
+            mask = ((x - center[2])**2 + (y - center[1])**2 +
+                   (z - center[0])**2) <= radius**2
             data[mask] += 50
 
         # Add vessels
@@ -2348,15 +2205,13 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
                 if all(0 <= point[i] < shape[i] for i in range(3)):
                     # Vessel with varying diameter
                     radius = 1 + np.random.rand()
-                    z, y, x = np.ogrid[: shape[0], : shape[1], : shape[2]]
-                    mask = (
-                        (x - point[2]) ** 2 + (y - point[1]) ** 2 + (z - point[0]) ** 2
-                    ) <= radius**2
+                    z, y, x = np.ogrid[:shape[0], :shape[1], :shape[2]]
+                    mask = ((x - point[2])**2 + (y - point[1])**2 +
+                           (z - point[0])**2) <= radius**2
                     data[mask] += 30
 
         # Smooth
         from scipy.ndimage import gaussian_filter
-
         data = gaussian_filter(data, sigma=0.5)
 
         return data
@@ -2379,11 +2234,8 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
 
         # Find local maxima
         from scipy.ndimage import maximum_filter
-
         local_max = maximum_filter(max_response, size=5)
-        peaks = (max_response == local_max) & (
-            max_response > np.percentile(max_response, 98)
-        )
+        peaks = (max_response == local_max) & (max_response > np.percentile(max_response, 98))
 
         # Get coordinates
         cells = list(zip(*np.where(peaks)))
@@ -2406,7 +2258,6 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
 
         # Gradients
         from scipy.ndimage import sobel
-
         gx = sobel(smooth, axis=0)
         gy = sobel(smooth, axis=1)
         gz = sobel(smooth, axis=2)
@@ -2425,7 +2276,6 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
 
         # Morphological operations
         from scipy.ndimage import binary_closing
-
         vessels = binary_closing(vessels, iterations=2)
 
         return vessels
@@ -2436,12 +2286,10 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
         thresholds = np.percentile(data[data > 0], [30, 60, 90])
 
         regions = {
-            "background": np.sum(data <= thresholds[0]),
-            "low_intensity": np.sum((data > thresholds[0]) & (data <= thresholds[1])),
-            "medium_intensity": np.sum(
-                (data > thresholds[1]) & (data <= thresholds[2])
-            ),
-            "high_intensity": np.sum(data > thresholds[2]),
+            'background': np.sum(data <= thresholds[0]),
+            'low_intensity': np.sum((data > thresholds[0]) & (data <= thresholds[1])),
+            'medium_intensity': np.sum((data > thresholds[1]) & (data <= thresholds[2])),
+            'high_intensity': np.sum(data > thresholds[2])
         }
 
         total = np.prod(data.shape)
@@ -2450,13 +2298,9 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
 
         return regions
 
-    def _calculate_volume_metrics(
-        self,
-        data: np.ndarray,
-        cells: List,
-        vessels: Optional[np.ndarray],
-        voxel_size: Tuple,
-    ) -> Dict[str, float]:
+    def _calculate_volume_metrics(self, data: np.ndarray, cells: List,
+                                 vessels: Optional[np.ndarray],
+                                 voxel_size: Tuple) -> Dict[str, float]:
         """Calculate volume-based metrics."""
         voxel_volume = np.prod(voxel_size)
         total_volume = np.prod(data.shape) * voxel_volume
@@ -2469,27 +2313,24 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
         tissue_volume = np.sum(tissue_mask) * voxel_volume
 
         metrics = {
-            "total_volume_um3": float(total_volume),
-            "tissue_volume_um3": float(tissue_volume),
-            "cell_density_per_mm3": float(cell_density * 1e9),  # Convert to mm³
-            "tissue_fraction": float(tissue_volume / total_volume),
+            'total_volume_um3': float(total_volume),
+            'tissue_volume_um3': float(tissue_volume),
+            'cell_density_per_mm3': float(cell_density * 1e9),  # Convert to mm³
+            'tissue_fraction': float(tissue_volume / total_volume)
         }
 
         if vessels is not None:
             vessel_volume = np.sum(vessels) * voxel_volume
-            metrics["vessel_volume_um3"] = float(vessel_volume)
-            metrics["vessel_fraction"] = (
-                float(vessel_volume / tissue_volume) if tissue_volume > 0 else 0
-            )
+            metrics['vessel_volume_um3'] = float(vessel_volume)
+            metrics['vessel_fraction'] = float(vessel_volume / tissue_volume) if tissue_volume > 0 else 0
 
         return metrics
 
-    def _analyze_spatial_distribution(
-        self, cells: List, volume_shape: Tuple, voxel_size: Tuple
-    ) -> Dict[str, float]:
+    def _analyze_spatial_distribution(self, cells: List, volume_shape: Tuple,
+                                     voxel_size: Tuple) -> Dict[str, float]:
         """Analyze spatial distribution of cells."""
         if len(cells) < 2:
-            return {"clustering_index": 0, "spatial_uniformity": 0}
+            return {'clustering_index': 0, 'spatial_uniformity': 0}
 
         # Convert to physical coordinates
         cells_physical = np.array(cells) * np.array(voxel_size)
@@ -2513,7 +2354,7 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
         mean_nn = np.mean(nn_distances)
         volume = np.prod(volume_shape) * np.prod(voxel_size)
         density = len(cells) / volume
-        expected_nn = 0.5 / (density ** (1 / 3)) if density > 0 else 0
+        expected_nn = 0.5 / (density ** (1/3)) if density > 0 else 0
 
         clark_evans = mean_nn / expected_nn if expected_nn > 0 else 1
 
@@ -2521,10 +2362,10 @@ class LightSheetMicroscopyTool(NeuroToolWrapper):
         cv = np.std(nn_distances) / mean_nn if mean_nn > 0 else 0
 
         return {
-            "mean_nearest_neighbor_um": float(mean_nn),
-            "clark_evans_index": float(clark_evans),
-            "spatial_cv": float(cv),
-            "clustering_index": float(1 / clark_evans) if clark_evans > 0 else 0,
+            'mean_nearest_neighbor_um': float(mean_nn),
+            'clark_evans_index': float(clark_evans),
+            'spatial_cv': float(cv),
+            'clustering_index': float(1 / clark_evans) if clark_evans > 0 else 0
         }
 
 
@@ -2550,7 +2391,7 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
         sampling_rate: float = 50e6,  # 50 MHz typical for PA
         speed_of_sound: float = 1540.0,  # m/s in tissue
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Analyze photoacoustic imaging data."""
         try:
@@ -2582,28 +2423,26 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
             quality = self._assess_pa_quality(pa_images)
 
             results = {
-                "wavelengths": wavelengths,
-                "sampling_rate": sampling_rate,
-                "image_shape": (
-                    pa_images.shape[:2] if len(pa_images.shape) > 2 else pa_images.shape
-                ),
-                "spectroscopic_components": {
-                    "hbo_fraction": float(np.mean(components.get("hbo", 0))),
-                    "hbr_fraction": float(np.mean(components.get("hbr", 0))),
+                'wavelengths': wavelengths,
+                'sampling_rate': sampling_rate,
+                'image_shape': pa_images.shape[:2] if len(pa_images.shape) > 2 else pa_images.shape,
+                'spectroscopic_components': {
+                    'hbo_fraction': float(np.mean(components.get('hbo', 0))),
+                    'hbr_fraction': float(np.mean(components.get('hbr', 0)))
                 },
-                "oxygen_saturation": {
-                    "mean_so2": float(np.mean(so2_map)),
-                    "std_so2": float(np.std(so2_map)),
+                'oxygen_saturation': {
+                    'mean_so2': float(np.mean(so2_map)),
+                    'std_so2': float(np.std(so2_map))
                 },
-                "vascular_metrics": vascular,
-                "signal_quality": quality,
+                'vascular_metrics': vascular,
+                'signal_quality': quality
             }
 
             # Save results
             np.savez(
                 output_path / "photoacoustic_results.npz",
                 pa_images=pa_images,
-                so2_map=so2_map,
+                so2_map=so2_map
             )
 
             with open(output_path / "photoacoustic_analysis.json", "w") as f:
@@ -2615,9 +2454,9 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "pa_data": str(output_path / "photoacoustic_results.npz"),
-                        "analysis": str(output_path / "photoacoustic_analysis.json"),
+                        "analysis": str(output_path / "photoacoustic_analysis.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -2642,11 +2481,9 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
 
             for det in range(n_detectors):
                 # Calculate time of flight
-                det_pos = (det - n_detectors / 2) * 0.5  # mm
-                distance = np.sqrt((lateral - det_pos) ** 2 + depth**2)
-                tof = int(
-                    distance / 1.54 * 50
-                )  # samples (assuming 1.54 mm/μs and 50 MHz)
+                det_pos = (det - n_detectors/2) * 0.5  # mm
+                distance = np.sqrt((lateral - det_pos)**2 + depth**2)
+                tof = int(distance / 1.54 * 50)  # samples (assuming 1.54 mm/μs and 50 MHz)
 
                 if tof < n_samples - 10:
                     # N-shaped pulse
@@ -2655,16 +2492,15 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
                     for wl_idx in range(len(wavelengths)):
                         # Wavelength-dependent absorption
                         amplitude = np.random.uniform(0.5, 1.5) * (1 + 0.1 * wl_idx)
-                        data[det, tof : tof + 5, wl_idx] += amplitude * pulse
+                        data[det, tof:tof+5, wl_idx] += amplitude * pulse
 
         # Add noise
         data += np.random.randn(*data.shape) * 0.1
 
         return data, wavelengths
 
-    def _reconstruct_pa_images(
-        self, data: np.ndarray, sampling_rate: float, speed_of_sound: float
-    ) -> np.ndarray:
+    def _reconstruct_pa_images(self, data: np.ndarray, sampling_rate: float,
+                              speed_of_sound: float) -> np.ndarray:
         """Reconstruct PA images using delay-and-sum beamforming."""
         if len(data.shape) == 3:
             n_detectors, n_samples, n_wavelengths = data.shape
@@ -2692,7 +2528,7 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
 
                     for det in range(n_detectors):
                         # Distance from pixel to detector
-                        distance = np.sqrt((xi - det_x[det]) ** 2 + zj**2)
+                        distance = np.sqrt((xi - det_x[det])**2 + zj**2)
 
                         # Time of flight (samples)
                         tof = int(distance / speed_of_sound * sampling_rate)
@@ -2706,15 +2542,13 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
 
         # Envelope detection
         from scipy.signal import hilbert
-
         for wl in range(n_wavelengths):
             images[:, :, wl] = np.abs(hilbert(images[:, :, wl], axis=0))
 
         return images
 
-    def _spectroscopic_unmixing(
-        self, pa_images: np.ndarray, wavelengths: List[float]
-    ) -> Dict[str, np.ndarray]:
+    def _spectroscopic_unmixing(self, pa_images: np.ndarray,
+                               wavelengths: List[float]) -> Dict[str, np.ndarray]:
         """Unmix chromophores using spectroscopy."""
         # Simplified unmixing for HbO and HbR
 
@@ -2723,11 +2557,11 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
         for wl in wavelengths:
             # Approximate values
             if wl < 750:
-                extinction[wl] = {"hbo": 0.5, "hbr": 2.0}
+                extinction[wl] = {'hbo': 0.5, 'hbr': 2.0}
             elif wl < 850:
-                extinction[wl] = {"hbo": 1.0, "hbr": 1.0}
+                extinction[wl] = {'hbo': 1.0, 'hbr': 1.0}
             else:
-                extinction[wl] = {"hbo": 2.0, "hbr": 0.8}
+                extinction[wl] = {'hbo': 2.0, 'hbr': 0.8}
 
         # Solve for concentrations
         if len(pa_images.shape) == 3 and pa_images.shape[2] >= 2:
@@ -2744,12 +2578,10 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
                     signal = [pa_images[i, j, 0], pa_images[i, j, 1]]
 
                     # Extinction matrix
-                    E = np.array(
-                        [
-                            [extinction[wl1]["hbo"], extinction[wl1]["hbr"]],
-                            [extinction[wl2]["hbo"], extinction[wl2]["hbr"]],
-                        ]
-                    )
+                    E = np.array([
+                        [extinction[wl1]['hbo'], extinction[wl1]['hbr']],
+                        [extinction[wl2]['hbo'], extinction[wl2]['hbr']]
+                    ])
 
                     try:
                         conc = np.linalg.solve(E, signal)
@@ -2762,14 +2594,12 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
             hbo_map = pa_images if len(pa_images.shape) == 2 else pa_images[:, :, 0]
             hbr_map = np.zeros_like(hbo_map)
 
-        return {"hbo": hbo_map, "hbr": hbr_map}
+        return {'hbo': hbo_map, 'hbr': hbr_map}
 
-    def _calculate_oxygen_saturation(
-        self, components: Dict[str, np.ndarray]
-    ) -> np.ndarray:
+    def _calculate_oxygen_saturation(self, components: Dict[str, np.ndarray]) -> np.ndarray:
         """Calculate oxygen saturation map."""
-        hbo = components.get("hbo", np.zeros((128, 128)))
-        hbr = components.get("hbr", np.zeros((128, 128)))
+        hbo = components.get('hbo', np.zeros((128, 128)))
+        hbr = components.get('hbr', np.zeros((128, 128)))
 
         total_hb = hbo + hbr
         so2 = np.zeros_like(hbo)
@@ -2793,7 +2623,6 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
 
         # Morphological operations
         from scipy.ndimage import binary_closing, label
-
         vessels = binary_closing(vessels, iterations=2)
 
         # Label vessels
@@ -2804,7 +2633,6 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
 
         # Vessel diameter (simplified)
         from scipy.ndimage import distance_transform_edt
-
         if np.any(vessels):
             dist_transform = distance_transform_edt(vessels)
             mean_diameter = 2 * np.mean(dist_transform[vessels])
@@ -2812,10 +2640,10 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
             mean_diameter = 0
 
         return {
-            "vessel_density": float(vessel_density),
-            "n_vessels": int(n_vessels),
-            "mean_vessel_diameter_pixels": float(mean_diameter),
-            "vascular_volume_fraction": float(vessel_density),
+            'vessel_density': float(vessel_density),
+            'n_vessels': int(n_vessels),
+            'mean_vessel_diameter_pixels': float(mean_diameter),
+            'vascular_volume_fraction': float(vessel_density)
         }
 
     def _assess_pa_quality(self, pa_images: np.ndarray) -> Dict[str, float]:
@@ -2837,15 +2665,14 @@ class PhotoacousticImagingTool(NeuroToolWrapper):
 
         # Resolution (edge sharpness)
         from scipy.ndimage import sobel
-
-        edges = np.sqrt(sobel(image, axis=0) ** 2 + sobel(image, axis=1) ** 2)
+        edges = np.sqrt(sobel(image, axis=0)**2 + sobel(image, axis=1)**2)
         sharpness = np.mean(edges)
 
         return {
-            "snr": float(snr),
-            "contrast": float(contrast),
-            "edge_sharpness": float(sharpness),
-            "quality_index": float(snr * contrast),
+            'snr': float(snr),
+            'contrast': float(contrast),
+            'edge_sharpness': float(sharpness),
+            'quality_index': float(snr * contrast)
         }
 
 
@@ -2861,7 +2688,7 @@ class OpticalImagingTools:
             OptogenecicsAnalysisTool(),
             fNIRSAnalysisTool(),
             LightSheetMicroscopyTool(),
-            PhotoacousticImagingTool(),
+            PhotoacousticImagingTool()
         ]
 
     def get_all_tools(self) -> List[NeuroToolWrapper]:

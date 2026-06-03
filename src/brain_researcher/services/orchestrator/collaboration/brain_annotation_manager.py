@@ -9,13 +9,12 @@ collaborative brain mapping.
 import asyncio
 import json
 import logging
-import uuid
-from dataclasses import asdict, dataclass
+import numpy as np
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
-
-import numpy as np
+from typing import Dict, List, Optional, Any, Union, Tuple, Set
+import uuid
 
 from .operational_transform import Operation, OperationType
 
@@ -24,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 class AnnotationType(str, Enum):
     """Types of brain annotations."""
-
     ROI = "roi"  # Region of Interest
     ACTIVATION = "activation"  # Activation cluster
     STATISTICAL = "statistical"  # Statistical annotation
@@ -37,7 +35,6 @@ class AnnotationType(str, Enum):
 
 class CoordinateSystem(str, Enum):
     """Coordinate systems used in neuroimaging."""
-
     TALAIRACH = "talairach"
     MNI = "mni"
     NATIVE = "native"
@@ -47,7 +44,6 @@ class CoordinateSystem(str, Enum):
 
 class AnnotationStatus(str, Enum):
     """Status of annotations."""
-
     DRAFT = "draft"
     PENDING_REVIEW = "pending_review"
     APPROVED = "approved"
@@ -58,7 +54,6 @@ class AnnotationStatus(str, Enum):
 @dataclass
 class BrainCoordinate:
     """3D coordinate in brain space."""
-
     x: float
     y: float
     z: float
@@ -69,25 +64,20 @@ class BrainCoordinate:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BrainCoordinate":
+    def from_dict(cls, data: Dict[str, Any]) -> 'BrainCoordinate':
         return cls(**data)
 
-    def distance_to(self, other: "BrainCoordinate") -> float:
+    def distance_to(self, other: 'BrainCoordinate') -> float:
         """Calculate Euclidean distance to another coordinate."""
         if self.coordinate_system != other.coordinate_system:
-            raise ValueError(
-                "Cannot calculate distance between different coordinate systems"
-            )
+            raise ValueError("Cannot calculate distance between different coordinate systems")
 
-        return np.sqrt(
-            (self.x - other.x) ** 2 + (self.y - other.y) ** 2 + (self.z - other.z) ** 2
-        )
+        return np.sqrt((self.x - other.x)**2 + (self.y - other.y)**2 + (self.z - other.z)**2)
 
 
 @dataclass
 class BrainRegion:
     """Represents a brain region or ROI."""
-
     region_id: str
     name: str
     coordinates: List[BrainCoordinate]
@@ -102,23 +92,21 @@ class BrainRegion:
         if self.anatomical_labels is None:
             self.anatomical_labels = []
 
-    def contains_coordinate(
-        self, coord: BrainCoordinate, tolerance: float = 2.0
-    ) -> bool:
+    def contains_coordinate(self, coord: BrainCoordinate, tolerance: float = 2.0) -> bool:
         """Check if coordinate is within this region."""
         return any(c.distance_to(coord) <= tolerance for c in self.coordinates)
 
-    def overlaps_with(self, other: "BrainRegion", tolerance: float = 5.0) -> bool:
+    def overlaps_with(self, other: 'BrainRegion', tolerance: float = 5.0) -> bool:
         """Check if this region overlaps with another."""
         return any(
-            other.contains_coordinate(coord, tolerance) for coord in self.coordinates
+            other.contains_coordinate(coord, tolerance)
+            for coord in self.coordinates
         )
 
 
 @dataclass
 class BrainAnnotation:
     """Comprehensive brain annotation with collaborative metadata."""
-
     annotation_id: str
     annotation_type: AnnotationType
     title: str
@@ -173,30 +161,30 @@ class BrainAnnotation:
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
         # Convert datetime objects to ISO strings
-        data["created_at"] = self.created_at.isoformat()
-        data["modified_at"] = self.modified_at.isoformat()
+        data['created_at'] = self.created_at.isoformat()
+        data['modified_at'] = self.modified_at.isoformat()
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BrainAnnotation":
+    def from_dict(cls, data: Dict[str, Any]) -> 'BrainAnnotation':
         # Convert ISO strings back to datetime objects
-        if isinstance(data.get("created_at"), str):
-            data["created_at"] = datetime.fromisoformat(data["created_at"])
-        if isinstance(data.get("modified_at"), str):
-            data["modified_at"] = datetime.fromisoformat(data["modified_at"])
+        if isinstance(data.get('created_at'), str):
+            data['created_at'] = datetime.fromisoformat(data['created_at'])
+        if isinstance(data.get('modified_at'), str):
+            data['modified_at'] = datetime.fromisoformat(data['modified_at'])
 
         # Handle nested objects
-        if data.get("coordinate"):
-            data["coordinate"] = BrainCoordinate.from_dict(data["coordinate"])
-        if data.get("region"):
-            region_data = data["region"]
-            if region_data.get("coordinates"):
-                region_data["coordinates"] = [
-                    BrainCoordinate.from_dict(c) for c in region_data["coordinates"]
+        if data.get('coordinate'):
+            data['coordinate'] = BrainCoordinate.from_dict(data['coordinate'])
+        if data.get('region'):
+            region_data = data['region']
+            if region_data.get('coordinates'):
+                region_data['coordinates'] = [
+                    BrainCoordinate.from_dict(c) for c in region_data['coordinates']
                 ]
-            if region_data.get("center"):
-                region_data["center"] = BrainCoordinate.from_dict(region_data["center"])
-            data["region"] = BrainRegion(**region_data)
+            if region_data.get('center'):
+                region_data['center'] = BrainCoordinate.from_dict(region_data['center'])
+            data['region'] = BrainRegion(**region_data)
 
         return cls(**data)
 
@@ -221,9 +209,7 @@ class BrainAnnotationManager:
         self.annotations_by_author: Dict[str, Set[str]] = {}
 
         # Collaborative state
-        self.active_editors: Dict[str, Dict[str, Any]] = (
-            {}
-        )  # annotation_id -> user_info
+        self.active_editors: Dict[str, Dict[str, Any]] = {}  # annotation_id -> user_info
         self.review_sessions: Dict[str, Dict[str, Any]] = {}
 
         # Template annotations and atlases
@@ -248,7 +234,7 @@ class BrainAnnotationManager:
         author_name: str,
         coordinate: Optional[BrainCoordinate] = None,
         region: Optional[BrainRegion] = None,
-        **kwargs,
+        **kwargs
     ) -> BrainAnnotation:
         """Create a new brain annotation."""
 
@@ -265,7 +251,7 @@ class BrainAnnotationManager:
             modified_at=now,
             coordinate=coordinate,
             region=region,
-            **kwargs,
+            **kwargs
         )
 
         # Store annotation
@@ -287,7 +273,10 @@ class BrainAnnotationManager:
         return annotation
 
     async def update_annotation(
-        self, annotation_id: str, user_id: str, updates: Dict[str, Any]
+        self,
+        annotation_id: str,
+        user_id: str,
+        updates: Dict[str, Any]
     ) -> Optional[BrainAnnotation]:
         """Update an existing annotation."""
 
@@ -299,9 +288,7 @@ class BrainAnnotationManager:
 
         # Check permissions
         if not await self._check_annotation_permission(annotation, user_id, "edit"):
-            logger.warning(
-                f"User {user_id} lacks permission to edit annotation {annotation_id}"
-            )
+            logger.warning(f"User {user_id} lacks permission to edit annotation {annotation_id}")
             return None
 
         # Apply updates
@@ -318,7 +305,11 @@ class BrainAnnotationManager:
 
         return annotation
 
-    async def delete_annotation(self, annotation_id: str, user_id: str) -> bool:
+    async def delete_annotation(
+        self,
+        annotation_id: str,
+        user_id: str
+    ) -> bool:
         """Delete an annotation."""
 
         if annotation_id not in self.annotations:
@@ -328,9 +319,7 @@ class BrainAnnotationManager:
 
         # Check permissions
         if not await self._check_annotation_permission(annotation, user_id, "delete"):
-            logger.warning(
-                f"User {user_id} lacks permission to delete annotation {annotation_id}"
-            )
+            logger.warning(f"User {user_id} lacks permission to delete annotation {annotation_id}")
             return False
 
         # Remove from indices
@@ -350,14 +339,14 @@ class BrainAnnotationManager:
         return True
 
     async def get_document_annotations(
-        self, document_id: str, filter_criteria: Optional[Dict[str, Any]] = None
+        self,
+        document_id: str,
+        filter_criteria: Optional[Dict[str, Any]] = None
     ) -> List[BrainAnnotation]:
         """Get all annotations for a document with optional filtering."""
 
         annotation_ids = self.annotations_by_document.get(document_id, set())
-        annotations = [
-            self.annotations[aid] for aid in annotation_ids if aid in self.annotations
-        ]
+        annotations = [self.annotations[aid] for aid in annotation_ids if aid in self.annotations]
 
         # Apply filters if provided
         if filter_criteria:
@@ -369,7 +358,7 @@ class BrainAnnotationManager:
         self,
         coordinate: BrainCoordinate,
         radius: float = 10.0,
-        document_id: Optional[str] = None,
+        document_id: Optional[str] = None
     ) -> List[BrainAnnotation]:
         """Find annotations near a specific coordinate."""
 
@@ -383,20 +372,17 @@ class BrainAnnotationManager:
         nearby_annotations = []
 
         for annotation in search_annotations:
-            if (
-                annotation.coordinate
-                and annotation.coordinate.distance_to(coordinate) <= radius
-            ):
+            if annotation.coordinate and annotation.coordinate.distance_to(coordinate) <= radius:
                 nearby_annotations.append(annotation)
-            elif annotation.region and annotation.region.contains_coordinate(
-                coordinate, radius
-            ):
+            elif annotation.region and annotation.region.contains_coordinate(coordinate, radius):
                 nearby_annotations.append(annotation)
 
         return nearby_annotations
 
     async def find_overlapping_annotations(
-        self, region: BrainRegion, document_id: Optional[str] = None
+        self,
+        region: BrainRegion,
+        document_id: Optional[str] = None
     ) -> List[BrainAnnotation]:
         """Find annotations that overlap with a given region."""
 
@@ -412,15 +398,16 @@ class BrainAnnotationManager:
         for annotation in search_annotations:
             if annotation.region and annotation.region.overlaps_with(region):
                 overlapping.append(annotation)
-            elif annotation.coordinate and region.contains_coordinate(
-                annotation.coordinate
-            ):
+            elif annotation.coordinate and region.contains_coordinate(annotation.coordinate):
                 overlapping.append(annotation)
 
         return overlapping
 
     async def start_collaborative_editing(
-        self, annotation_id: str, user_id: str, user_name: str
+        self,
+        annotation_id: str,
+        user_id: str,
+        user_name: str
     ) -> bool:
         """Start collaborative editing session for an annotation."""
 
@@ -442,7 +429,7 @@ class BrainAnnotationManager:
             "user_name": user_name,
             "started_at": datetime.utcnow(),
             "last_activity": datetime.utcnow(),
-            "cursor_position": None,
+            "cursor_position": None
         }
 
         # Notify other editors
@@ -451,14 +438,14 @@ class BrainAnnotationManager:
         return True
 
     async def stop_collaborative_editing(
-        self, annotation_id: str, user_id: str
+        self,
+        annotation_id: str,
+        user_id: str
     ) -> bool:
         """Stop collaborative editing session."""
 
-        if (
-            annotation_id not in self.active_editors
-            or user_id not in self.active_editors[annotation_id]
-        ):
+        if (annotation_id not in self.active_editors or
+            user_id not in self.active_editors[annotation_id]):
             return False
 
         user_name = self.active_editors[annotation_id][user_id]["user_name"]
@@ -476,14 +463,15 @@ class BrainAnnotationManager:
         return True
 
     async def update_editor_cursor(
-        self, annotation_id: str, user_id: str, cursor_position: Dict[str, Any]
+        self,
+        annotation_id: str,
+        user_id: str,
+        cursor_position: Dict[str, Any]
     ) -> bool:
         """Update editor's cursor position."""
 
-        if (
-            annotation_id not in self.active_editors
-            or user_id not in self.active_editors[annotation_id]
-        ):
+        if (annotation_id not in self.active_editors or
+            user_id not in self.active_editors[annotation_id]):
             return False
 
         self.active_editors[annotation_id][user_id]["cursor_position"] = cursor_position
@@ -495,7 +483,10 @@ class BrainAnnotationManager:
         return True
 
     async def start_annotation_review(
-        self, annotation_id: str, reviewer_id: str, reviewer_name: str
+        self,
+        annotation_id: str,
+        reviewer_id: str,
+        reviewer_name: str
     ) -> str:
         """Start a review session for an annotation."""
 
@@ -515,7 +506,7 @@ class BrainAnnotationManager:
             "started_at": datetime.utcnow(),
             "status": "in_progress",
             "comments": [],
-            "decision": None,
+            "decision": None
         }
 
         # Add reviewer to annotation
@@ -536,7 +527,7 @@ class BrainAnnotationManager:
         review_session_id: str,
         decision: str,  # "approved", "rejected", "needs_revision"
         comments: str,
-        suggested_changes: Optional[Dict[str, Any]] = None,
+        suggested_changes: Optional[Dict[str, Any]] = None
     ) -> bool:
         """Submit a review decision for an annotation."""
 
@@ -555,13 +546,11 @@ class BrainAnnotationManager:
         review_session["status"] = "completed"
         review_session["decision"] = decision
         review_session["completed_at"] = datetime.utcnow()
-        review_session["comments"].append(
-            {
-                "text": comments,
-                "timestamp": datetime.utcnow().isoformat(),
-                "suggested_changes": suggested_changes,
-            }
-        )
+        review_session["comments"].append({
+            "text": comments,
+            "timestamp": datetime.utcnow().isoformat(),
+            "suggested_changes": suggested_changes
+        })
 
         # Update annotation based on decision
         if decision == "approved":
@@ -571,15 +560,13 @@ class BrainAnnotationManager:
         # "needs_revision" keeps it in pending_review status
 
         # Add review comment to annotation
-        annotation.comments.append(
-            {
-                "author_id": review_session["reviewer_id"],
-                "author_name": review_session["reviewer_name"],
-                "text": comments,
-                "timestamp": datetime.utcnow().isoformat(),
-                "type": "review",
-            }
-        )
+        annotation.comments.append({
+            "author_id": review_session["reviewer_id"],
+            "author_name": review_session["reviewer_name"],
+            "text": comments,
+            "timestamp": datetime.utcnow().isoformat(),
+            "type": "review"
+        })
 
         # Notify handlers
         await self._notify_review_completed(review_session_id, annotation, decision)
@@ -593,7 +580,7 @@ class BrainAnnotationManager:
         coordinate: BrainCoordinate,
         author_id: str,
         author_name: str,
-        **overrides,
+        **overrides
     ) -> Optional[BrainAnnotation]:
         """Create annotation from a predefined template."""
 
@@ -612,7 +599,9 @@ class BrainAnnotationManager:
         return await self.create_annotation(document_id, **template)
 
     async def export_annotations(
-        self, document_id: str, format: str = "json"  # json, csv, nifti
+        self,
+        document_id: str,
+        format: str = "json"  # json, csv, nifti
     ) -> Dict[str, Any]:
         """Export annotations in various formats."""
 
@@ -623,7 +612,7 @@ class BrainAnnotationManager:
                 "document_id": document_id,
                 "exported_at": datetime.utcnow().isoformat(),
                 "count": len(annotations),
-                "annotations": [ann.to_dict() for ann in annotations],
+                "annotations": [ann.to_dict() for ann in annotations]
             }
 
         elif format == "csv":
@@ -641,18 +630,19 @@ class BrainAnnotationManager:
                 }
 
                 if ann.coordinate:
-                    row.update(
-                        {
-                            "x": ann.coordinate.x,
-                            "y": ann.coordinate.y,
-                            "z": ann.coordinate.z,
-                            "coordinate_system": ann.coordinate.coordinate_system.value,
-                        }
-                    )
+                    row.update({
+                        "x": ann.coordinate.x,
+                        "y": ann.coordinate.y,
+                        "z": ann.coordinate.z,
+                        "coordinate_system": ann.coordinate.coordinate_system.value
+                    })
 
                 csv_data.append(row)
 
-            return {"format": "csv", "data": csv_data}
+            return {
+                "format": "csv",
+                "data": csv_data
+            }
 
         else:
             raise ValueError(f"Unsupported export format: {format}")
@@ -660,7 +650,10 @@ class BrainAnnotationManager:
     # Helper methods
 
     async def _check_annotation_permission(
-        self, annotation: BrainAnnotation, user_id: str, action: str
+        self,
+        annotation: BrainAnnotation,
+        user_id: str,
+        action: str
     ) -> bool:
         """Check if user has permission to perform action on annotation."""
 
@@ -679,7 +672,9 @@ class BrainAnnotationManager:
         return False
 
     async def _filter_annotations(
-        self, annotations: List[BrainAnnotation], criteria: Dict[str, Any]
+        self,
+        annotations: List[BrainAnnotation],
+        criteria: Dict[str, Any]
     ) -> List[BrainAnnotation]:
         """Filter annotations based on criteria."""
 
@@ -691,9 +686,7 @@ class BrainAnnotationManager:
 
         return filtered
 
-    def _matches_criteria(
-        self, annotation: BrainAnnotation, criteria: Dict[str, Any]
-    ) -> bool:
+    def _matches_criteria(self, annotation: BrainAnnotation, criteria: Dict[str, Any]) -> bool:
         """Check if annotation matches filter criteria."""
 
         for key, value in criteria.items():
@@ -719,7 +712,7 @@ class BrainAnnotationManager:
                 "description": "Standard ROI annotation",
                 "color": "#FF0000",
                 "opacity": 0.7,
-                "marker_size": 8.0,
+                "marker_size": 8.0
             },
             "activation_template": {
                 "annotation_type": AnnotationType.ACTIVATION,
@@ -728,7 +721,7 @@ class BrainAnnotationManager:
                 "color": "#00FF00",
                 "opacity": 0.8,
                 "marker_size": 6.0,
-                "statistical_values": {"t_stat": 0.0, "p_value": 0.05},
+                "statistical_values": {"t_stat": 0.0, "p_value": 0.05}
             },
             "anatomical_template": {
                 "annotation_type": AnnotationType.ANATOMICAL,
@@ -736,15 +729,13 @@ class BrainAnnotationManager:
                 "description": "Anatomical structure label",
                 "color": "#0000FF",
                 "opacity": 0.6,
-                "marker_size": 5.0,
-            },
+                "marker_size": 5.0
+            }
         }
 
     # Event notification methods
 
-    async def _notify_annotation_created(
-        self, document_id: str, annotation: BrainAnnotation
-    ):
+    async def _notify_annotation_created(self, document_id: str, annotation: BrainAnnotation):
         """Notify handlers about new annotation."""
         for handler in self.annotation_handlers:
             try:
@@ -756,7 +747,10 @@ class BrainAnnotationManager:
                 logger.error(f"Annotation handler error: {str(e)}")
 
     async def _notify_annotation_updated(
-        self, annotation: BrainAnnotation, user_id: str, updates: Dict[str, Any]
+        self,
+        annotation: BrainAnnotation,
+        user_id: str,
+        updates: Dict[str, Any]
     ):
         """Notify handlers about annotation update."""
         for handler in self.annotation_handlers:
@@ -768,9 +762,7 @@ class BrainAnnotationManager:
             except Exception as e:
                 logger.error(f"Annotation handler error: {str(e)}")
 
-    async def _notify_annotation_deleted(
-        self, annotation: BrainAnnotation, user_id: str
-    ):
+    async def _notify_annotation_deleted(self, annotation: BrainAnnotation, user_id: str):
         """Notify handlers about annotation deletion."""
         for handler in self.annotation_handlers:
             try:
@@ -781,30 +773,27 @@ class BrainAnnotationManager:
             except Exception as e:
                 logger.error(f"Annotation handler error: {str(e)}")
 
-    async def _notify_editor_joined(
-        self, annotation_id: str, user_id: str, user_name: str
-    ):
+    async def _notify_editor_joined(self, annotation_id: str, user_id: str, user_name: str):
         """Notify about editor joining collaborative session."""
         # This will be handled by WebSocket layer
         pass
 
-    async def _notify_editor_left(
-        self, annotation_id: str, user_id: str, user_name: str
-    ):
+    async def _notify_editor_left(self, annotation_id: str, user_id: str, user_name: str):
         """Notify about editor leaving collaborative session."""
         # This will be handled by WebSocket layer
         pass
 
     async def _notify_cursor_update(
-        self, annotation_id: str, user_id: str, cursor_position: Dict[str, Any]
+        self,
+        annotation_id: str,
+        user_id: str,
+        cursor_position: Dict[str, Any]
     ):
         """Notify about cursor position update."""
         # This will be handled by WebSocket layer
         pass
 
-    async def _notify_review_started(
-        self, review_session_id: str, annotation: BrainAnnotation
-    ):
+    async def _notify_review_started(self, review_session_id: str, annotation: BrainAnnotation):
         """Notify handlers about review session start."""
         for handler in self.review_handlers:
             try:
@@ -816,15 +805,16 @@ class BrainAnnotationManager:
                 logger.error(f"Review handler error: {str(e)}")
 
     async def _notify_review_completed(
-        self, review_session_id: str, annotation: BrainAnnotation, decision: str
+        self,
+        review_session_id: str,
+        annotation: BrainAnnotation,
+        decision: str
     ):
         """Notify handlers about review completion."""
         for handler in self.review_handlers:
             try:
                 if asyncio.iscoroutinefunction(handler):
-                    await handler(
-                        "review_completed", review_session_id, annotation, decision
-                    )
+                    await handler("review_completed", review_session_id, annotation, decision)
                 else:
                     handler("review_completed", review_session_id, annotation, decision)
             except Exception as e:
@@ -852,24 +842,14 @@ class BrainAnnotationManager:
         status_counts = {}
 
         for ann in self.annotations.values():
-            type_counts[ann.annotation_type.value] = (
-                type_counts.get(ann.annotation_type.value, 0) + 1
-            )
+            type_counts[ann.annotation_type.value] = type_counts.get(ann.annotation_type.value, 0) + 1
             status_counts[ann.status.value] = status_counts.get(ann.status.value, 0) + 1
 
         return {
             "total_annotations": total_annotations,
             "active_documents": len(self.annotations_by_document),
-            "active_editors": sum(
-                len(editors) for editors in self.active_editors.values()
-            ),
-            "active_reviews": len(
-                [
-                    r
-                    for r in self.review_sessions.values()
-                    if r["status"] == "in_progress"
-                ]
-            ),
+            "active_editors": sum(len(editors) for editors in self.active_editors.values()),
+            "active_reviews": len([r for r in self.review_sessions.values() if r["status"] == "in_progress"]),
             "annotation_types": type_counts,
-            "annotation_statuses": status_counts,
+            "annotation_statuses": status_counts
         }

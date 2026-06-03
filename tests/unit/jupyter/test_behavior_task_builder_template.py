@@ -291,7 +291,7 @@ def test_behavior_execute_helper_uses_local_stdio_client(monkeypatch) -> None:
     monkeypatch.setattr(mod.br, "BRClient", FakeClient)
     with monkeypatch.context() as m:
         m.setenv("BR_MCP_TRANSPORT", "streamable-http")
-        m.setenv("BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp")
+        m.setenv("BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp")
         m.delenv("BR_MCP_ENABLE_TOOL_EXECUTE", raising=False)
         m.delenv("BR_MCP_TOOL_EXECUTE_ALLOWLIST", raising=False)
         m.setenv("BR_RUNTIME_SEMANTIC_MATCHING", "1")
@@ -320,7 +320,7 @@ def test_behavior_mcp_env_context_restores_process_env(monkeypatch) -> None:
     from notebooks.templates import behavior_task_builder as mod
 
     monkeypatch.setenv("BR_MCP_TRANSPORT", "streamable-http")
-    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp")
+    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp")
     monkeypatch.setenv("BR_MCP_ENABLE_TOOL_EXECUTE", "0")
     monkeypatch.setenv("BR_MCP_TOOL_EXECUTE_ALLOWLIST", "extract_timeseries")
     monkeypatch.setenv("BR_MCP_ALLOWED_ROOTS", "/srv/data")
@@ -345,7 +345,7 @@ def test_behavior_mcp_env_context_restores_process_env(monkeypatch) -> None:
         assert os.environ["BR_RUNTIME_SEMANTIC_MATCHING"] == "0"
 
     assert os.environ["BR_MCP_TRANSPORT"] == "streamable-http"
-    assert os.environ["BR_MCP_HTTP_URL"] == "https://brain-researcher.com/mcp"
+    assert os.environ["BR_MCP_HTTP_URL"] == "https://${PUBLIC_HOSTNAME}/mcp"
     assert os.environ["BR_MCP_ENABLE_TOOL_EXECUTE"] == "0"
     assert os.environ["BR_MCP_TOOL_EXECUTE_ALLOWLIST"] == "extract_timeseries"
     assert os.environ["BR_MCP_ALLOWED_ROOTS"] == "/srv/data"

@@ -22,16 +22,16 @@ plugins:
 # Navigation
 nav:
   - Home: index-simple.md
-  - Getting Started:
-      - Installation: getting-started/installation.md
-      - Quick Start: getting-started/quickstart.md
-      - Configuration: getting-started/configuration.md
-  - User Guide:
-      - CLI Usage: user-guide/cli.md
-  - API Reference:
-      - CLI Reference: api/cli-reference.md
-  - Development:
-      - Architecture: development/architecture.md
+  - MCP: mcp.md
+  - Operations: OPERATIONS.md
+  - Architecture: architecture/overview.md
+  - BR-KG:
+      - Tool Schema: services/br-kg/kg_tool_schema.md
+      - GABRIEL Pipeline: services/br-kg/gabriel_full_pipeline.md
+      - GABRIEL Quickstart: services/br-kg/gabriel_sample_quickstart.md
+  - Release:
+      - Public KG Dump: release/public_kg_dump.md
+      - OSS Preview Gate: release/oss_preview_release_gate_2026-05-28.md
 
 # Extensions
 markdown_extensions:

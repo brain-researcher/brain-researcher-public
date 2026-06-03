@@ -4,18 +4,14 @@ Uses fastjsonschema for high-performance validation.
 Schemas are pre-compiled for speed.
 """
 
-from typing import Any, Callable, Dict
+from typing import Dict, Any, Callable
 
 try:
     import fastjsonschema
-
     HAS_FASTJSONSCHEMA = True
 except ImportError:
     import json
-
-    from jsonschema import ValidationError as JSONSchemaError
-    from jsonschema import validate
-
+    from jsonschema import validate, ValidationError as JSONSchemaError
     HAS_FASTJSONSCHEMA = False
     print("Warning: fastjsonschema not available, using jsonschema (slower)")
 
@@ -28,16 +24,14 @@ _SCHEMA_DEFINITIONS = {
             "concept_id": {"type": "string", "minLength": 1},
             "name": {"type": "string", "minLength": 1},
             "definition": {"type": "string"},
-            "category": {
-                "type": "string",
-                "enum": ["process", "task", "condition", "contrast"],
-            },
+            "category": {"type": "string", "enum": ["process", "task", "condition", "contrast"]},
             "parent_id": {"type": ["string", "null"]},
             "aliases": {"type": "array", "items": {"type": "string"}},
         },
         "required": ["concept_id", "name", "category"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "cognitive_atlas.task": {
         "type": "object",
         "properties": {
@@ -49,8 +43,9 @@ _SCHEMA_DEFINITIONS = {
             "contrasts": {"type": "array", "items": {"type": "string"}},
         },
         "required": ["task_id", "name"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "pubmed.article": {
         "type": "object",
         "properties": {
@@ -70,18 +65,16 @@ _SCHEMA_DEFINITIONS = {
                         "x": {"type": "number"},
                         "y": {"type": "number"},
                         "z": {"type": "number"},
-                        "space": {
-                            "type": "string",
-                            "enum": ["MNI", "TAL", "MNI152", "UNKNOWN"],
-                        },
+                        "space": {"type": "string", "enum": ["MNI", "TAL", "MNI152", "UNKNOWN"]},
                     },
-                    "required": ["x", "y", "z"],
-                },
+                    "required": ["x", "y", "z"]
+                }
             },
         },
         "required": ["pmid", "title"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "neurosynth.study": {
         "type": "object",
         "properties": {
@@ -99,14 +92,15 @@ _SCHEMA_DEFINITIONS = {
                         "y": {"type": "number"},
                         "z": {"type": "number"},
                     },
-                    "required": ["x", "y", "z"],
-                },
+                    "required": ["x", "y", "z"]
+                }
             },
             "topics": {"type": "array", "items": {"type": "string"}},
         },
         "required": ["study_id"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "neurovault.collection": {
         "type": "object",
         "properties": {
@@ -118,8 +112,9 @@ _SCHEMA_DEFINITIONS = {
             "number_of_images": {"type": "integer", "minimum": 0},
         },
         "required": ["collection_id", "name"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "neurovault.statmap": {
         "type": "object",
         "properties": {
@@ -132,8 +127,9 @@ _SCHEMA_DEFINITIONS = {
             "file_url": {"type": "string", "format": "uri"},
         },
         "required": ["map_id", "collection_id"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "wikidata.brain_region": {
         "type": "object",
         "properties": {
@@ -153,8 +149,9 @@ _SCHEMA_DEFINITIONS = {
             "atlas": {"type": "string"},
         },
         "required": ["region_id", "name"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "openneuro.dataset": {
         "type": "object",
         "properties": {
@@ -168,8 +165,9 @@ _SCHEMA_DEFINITIONS = {
             "modalities": {"type": "array", "items": {"type": "string"}},
         },
         "required": ["dataset_id"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "bids.dataset_description": {
         "type": "object",
         "properties": {
@@ -192,9 +190,9 @@ _SCHEMA_DEFINITIONS = {
                         "Version": {"type": "string"},
                         "Description": {"type": "string"},
                         "CodeURL": {"type": "string"},
-                        "Container": {"type": "object"},
-                    },
-                },
+                        "Container": {"type": "object"}
+                    }
+                }
             },
             "SourceDatasets": {
                 "type": "array",
@@ -203,35 +201,31 @@ _SCHEMA_DEFINITIONS = {
                     "properties": {
                         "DOI": {"type": "string"},
                         "URL": {"type": "string"},
-                        "Version": {"type": "string"},
-                    },
-                },
-            },
+                        "Version": {"type": "string"}
+                    }
+                }
+            }
         },
         "required": ["Name", "BIDSVersion"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "bids.participant": {
         "type": "object",
         "properties": {
             "participant_id": {"type": "string", "pattern": "^sub-[a-zA-Z0-9]+$"},
             "age": {"type": ["number", "string", "null"]},
-            "sex": {
-                "type": ["string", "null"],
-                "enum": ["M", "F", "O", "m", "f", "o", None],
-            },
-            "handedness": {
-                "type": ["string", "null"],
-                "enum": ["L", "R", "A", "l", "r", "a", None],
-            },
+            "sex": {"type": ["string", "null"], "enum": ["M", "F", "O", "m", "f", "o", None]},
+            "handedness": {"type": ["string", "null"], "enum": ["L", "R", "A", "l", "r", "a", None]},
             "group": {"type": ["string", "null"]},
             "species": {"type": "string", "default": "homo sapiens"},
             "strain": {"type": ["string", "null"]},
-            "strain_rrid": {"type": ["string", "null"]},
+            "strain_rrid": {"type": ["string", "null"]}
         },
         "required": ["participant_id"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "bids.task_events": {
         "type": "object",
         "properties": {
@@ -241,11 +235,12 @@ _SCHEMA_DEFINITIONS = {
             "response_time": {"type": ["number", "null"]},
             "stim_file": {"type": ["string", "null"]},
             "value": {"type": ["number", "string", "null"]},
-            "HED": {"type": ["string", "null"]},
+            "HED": {"type": ["string", "null"]}
         },
         "required": ["onset", "duration"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
+
     "bids.validation_result": {
         "type": "object",
         "properties": {
@@ -261,33 +256,18 @@ _SCHEMA_DEFINITIONS = {
                         "code": {"type": "string"},
                         "message": {"type": "string"},
                         "file": {"type": ["string", "null"]},
-                        "severity": {
-                            "type": "string",
-                            "enum": ["error", "warning", "info"],
-                        },
-                    },
-                },
+                        "severity": {"type": "string", "enum": ["error", "warning", "info"]}
+                    }
+                }
             },
             "warnings": {"type": "array", "items": {"type": "object"}},
             "quality_metrics": {
                 "type": "object",
                 "properties": {
-                    "overall_quality_score": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 100,
-                    },
-                    "completeness_score": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 100,
-                    },
-                    "required_files_score": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 100,
-                    },
-                },
+                    "overall_quality_score": {"type": "number", "minimum": 0, "maximum": 100},
+                    "completeness_score": {"type": "number", "minimum": 0, "maximum": 100},
+                    "required_files_score": {"type": "number", "minimum": 0, "maximum": 100}
+                }
             },
             "metadata": {
                 "type": "object",
@@ -295,12 +275,12 @@ _SCHEMA_DEFINITIONS = {
                     "n_subjects": {"type": "integer", "minimum": 0},
                     "n_sessions": {"type": "integer", "minimum": 0},
                     "tasks": {"type": "array", "items": {"type": "string"}},
-                    "modalities": {"type": "array", "items": {"type": "string"}},
-                },
-            },
+                    "modalities": {"type": "array", "items": {"type": "string"}}
+                }
+            }
         },
         "required": ["dataset_path", "is_valid", "validation_time"],
-        "additionalProperties": True,
+        "additionalProperties": True
     },
 }
 
@@ -315,9 +295,7 @@ if HAS_FASTJSONSCHEMA:
         except Exception as e:
             print(f"Warning: Failed to compile schema {key}: {e}")
             # Fallback to uncompiled
-            COMPILED_SCHEMAS[key] = lambda obj, s=schema: fastjsonschema.validate(
-                s, obj
-            )
+            COMPILED_SCHEMAS[key] = lambda obj, s=schema: fastjsonschema.validate(s, obj)
 else:
     # Fallback to jsonschema
     def make_validator(schema):
@@ -326,7 +304,6 @@ else:
                 validate(obj, schema)
             except JSONSchemaError as e:
                 raise ValueError(str(e))
-
         return validator
 
     for key, schema in _SCHEMA_DEFINITIONS.items():

@@ -5,14 +5,14 @@ This guide deploys **Brain Researcher** to a **GCE VM** running **k3s**, using *
 ## Prerequisites
 
 - A GCE VM (Ubuntu 22.04+, 4+ vCPUs, 16 GB+ RAM recommended)
-- A domain pointing to the VM's external IP (e.g. `brain-researcher.com`)
+- A domain pointing to the VM's external IP (e.g. `${PUBLIC_HOSTNAME}`)
 - Docker Hub account with images pushed (see Step 2)
 - SSH access to the VM
 
 ## 1. Environment Setup
 
 ```bash
-export DOMAIN="brain-researcher.com"
+export DOMAIN="${PUBLIC_HOSTNAME}"
 export DH_NS="zjc062"                           # Docker Hub namespace
 export TAG="$(git rev-parse --short HEAD)"
 ```
@@ -72,7 +72,7 @@ curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 |
 Create an A record pointing your domain to the VM's external IP:
 
 ```
-brain-researcher.com  →  <VM_EXTERNAL_IP>
+${PUBLIC_HOSTNAME}  →  <VM_EXTERNAL_IP>
 ```
 
 ## 5. cert-manager (Let's Encrypt TLS)
@@ -138,7 +138,7 @@ Required for orchestrator and web-ui startup:
 
 ```bash
 kubectl -n brain-researcher-core create secret generic brain-researcher-external-services \
-  --from-literal=NEXTAUTH_URL='https://brain-researcher.com' \
+  --from-literal=NEXTAUTH_URL='https://${PUBLIC_HOSTNAME}' \
   --from-literal=NEXTAUTH_SECRET='<secret>' \
   --from-literal=AUTH_SECRET='<secret>' \
   --from-literal=JWT_SECRET_KEY='<secret>' \
@@ -164,7 +164,7 @@ helm upgrade --install brain-researcher infrastructure/k8s/helm/brain-researcher
 Add the following authorized redirect URI in the Google Cloud Console:
 
 ```
-https://brain-researcher.com/api/auth/callback/google
+https://${PUBLIC_HOSTNAME}/api/auth/callback/google
 ```
 
 ## 9. Verification
@@ -177,16 +177,16 @@ kubectl -n brain-researcher-core get pods -w
 kubectl -n brain-researcher-core logs -l app.kubernetes.io/component=orchestrator
 
 # Verify TLS
-curl -Ik https://brain-researcher.com/
+curl -Ik https://${PUBLIC_HOSTNAME}/
 
 # Verify orchestrator health
-curl https://brain-researcher.com/health
+curl https://${PUBLIC_HOSTNAME}/health
 ```
 
 ### Checklist
 
 1. All pods Running/Ready
-2. `curl -Ik https://brain-researcher.com/` returns 200 with valid cert
+2. `curl -Ik https://${PUBLIC_HOSTNAME}/` returns 200 with valid cert
 3. Web UI loads in browser
 4. Google OAuth login works (after adding redirect URI)
 5. Dev credentials login: `demo@example.com` / `DemoPass123!`

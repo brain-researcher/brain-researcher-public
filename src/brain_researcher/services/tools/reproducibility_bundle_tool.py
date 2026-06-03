@@ -50,8 +50,8 @@ class ReproducibilityBundleTool(NeuroToolWrapper):
     def _run(self, run_id: str, run_dir: str | None = None) -> ToolResult:
         try:
             args = ReproducibilityBundleArgs(run_id=run_id, run_dir=run_dir)
-            params: ReproducibilityBundleParameters = (
-                reproducibility_bundle_from_payload(args.model_dump())
+            params: ReproducibilityBundleParameters = reproducibility_bundle_from_payload(
+                args.model_dump()
             )
             payload = build_reproducibility_bundle_payload(
                 params.run_id,

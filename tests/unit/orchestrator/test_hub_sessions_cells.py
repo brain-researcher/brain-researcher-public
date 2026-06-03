@@ -25,7 +25,7 @@ def test_internal_base_url_appends_marimo_base_path() -> None:
     """marimo serves under --base-url <path>; internal calls must include it."""
     target = SimpleNamespace(
         internal_url="http://br-marimo-rt-abc:2718",
-        public_url="https://brain-researcher.com/hub/br-marimo-rt-abc",
+        public_url="https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-abc",
     )
     assert (
         _resolve_marimo_internal_base_url(target)
@@ -36,7 +36,7 @@ def test_internal_base_url_appends_marimo_base_path() -> None:
 def test_internal_base_url_no_double_prefix() -> None:
     target = SimpleNamespace(
         internal_url="http://br-marimo-rt-abc:2718/hub/br-marimo-rt-abc",
-        public_url="https://brain-researcher.com/hub/br-marimo-rt-abc",
+        public_url="https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-abc",
     )
     assert (
         _resolve_marimo_internal_base_url(target)
@@ -47,7 +47,7 @@ def test_internal_base_url_no_double_prefix() -> None:
 def test_internal_base_url_no_path_when_public_has_none() -> None:
     target = SimpleNamespace(
         internal_url="http://br-marimo-rt-abc:2718",
-        public_url="https://brain-researcher.com",
+        public_url="https://${PUBLIC_HOSTNAME}",
     )
     assert _resolve_marimo_internal_base_url(target) == "http://br-marimo-rt-abc:2718"
 

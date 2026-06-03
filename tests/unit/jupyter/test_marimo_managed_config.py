@@ -34,9 +34,9 @@ def test_default_ai_rules_route_conceptual_questions_without_tools() -> None:
 
 def test_marimo_settings_from_env_builds_managed_ai_and_mcp_config(monkeypatch) -> None:
     monkeypatch.setenv("HOME", "/tmp/br-home")
-    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp")
+    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp")
     monkeypatch.setenv("BR_MCP_BEARER_TOKEN", "runtime-mcp-token")
-    monkeypatch.setenv("BR_MARIMO_AI_BASE_URL", "https://llm.brain-researcher.com/v1")
+    monkeypatch.setenv("BR_MARIMO_AI_BASE_URL", "https://llm.${PUBLIC_HOSTNAME}/v1")
     monkeypatch.setenv("BR_MARIMO_AI_API_KEY", "runtime-ai-token")
     monkeypatch.setenv("BR_MARIMO_AI_PROVIDER_NAME", "brain-researcher")
     monkeypatch.setenv("DEFAULT_LLM_MODEL", "gemini-3-flash-preview")
@@ -59,10 +59,10 @@ def test_marimo_settings_from_env_builds_managed_ai_and_mcp_config(monkeypatch) 
     )
     assert payload["ai"]["custom_providers"]["brain-researcher"] == {
         "api_key": "runtime-ai-token",
-        "base_url": "https://llm.brain-researcher.com/v1",
+        "base_url": "https://llm.${PUBLIC_HOSTNAME}/v1",
     }
     assert payload["mcp"]["mcpServers"]["brain-researcher"] == {
-        "url": "https://brain-researcher.com/mcp",
+        "url": "https://${PUBLIC_HOSTNAME}/mcp",
         "headers": {"Authorization": "Bearer runtime-mcp-token"},
         "timeout": 30.0,
     }
@@ -70,7 +70,7 @@ def test_marimo_settings_from_env_builds_managed_ai_and_mcp_config(monkeypatch) 
 
 def test_marimo_settings_from_env_supports_builtin_google_provider(monkeypatch) -> None:
     monkeypatch.setenv("HOME", "/tmp/br-home")
-    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp")
+    monkeypatch.setenv("BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp")
     monkeypatch.setenv("BR_MCP_BEARER_TOKEN", "runtime-mcp-token")
     monkeypatch.setenv("BR_MARIMO_AI_PROVIDER_NAME", "google")
     monkeypatch.delenv("BR_MARIMO_AI_BASE_URL", raising=False)
@@ -94,13 +94,13 @@ def test_write_marimo_user_config_merges_existing_config(tmp_path) -> None:
     settings = BrainResearcherMarimoSettings(
         user_home=str(tmp_path / "home"),
         mcp_server_name="brain-researcher",
-        mcp_http_url="https://brain-researcher.com/mcp",
+        mcp_http_url="https://${PUBLIC_HOSTNAME}/mcp",
         mcp_bearer_token="runtime-mcp-token",
         mcp_timeout_seconds=15.0,
         ai_provider_name="brain-researcher",
         ai_provider_config_key=None,
         ai_model_provider="brain-researcher",
-        ai_base_url="https://llm.brain-researcher.com/v1",
+        ai_base_url="https://llm.${PUBLIC_HOSTNAME}/v1",
         ai_api_key="runtime-ai-token",
         ai_mode="agent",
         ai_rules=None,
@@ -144,7 +144,7 @@ url = "https://other.example/mcp"
     }
     assert payload["ai"]["custom_providers"]["brain-researcher"] == {
         "api_key": "runtime-ai-token",
-        "base_url": "https://llm.brain-researcher.com/v1",
+        "base_url": "https://llm.${PUBLIC_HOSTNAME}/v1",
     }
     assert payload["ai"]["rules"] == _default_ai_rules()
     assert payload["ai"]["models"]["displayed_models"] == [
@@ -152,7 +152,7 @@ url = "https://other.example/mcp"
     ]
     assert payload["mcp"]["mcpServers"]["other"] == {"url": "https://other.example/mcp"}
     assert payload["mcp"]["mcpServers"]["brain-researcher"] == {
-        "url": "https://brain-researcher.com/mcp",
+        "url": "https://${PUBLIC_HOSTNAME}/mcp",
         "headers": {"Authorization": "Bearer runtime-mcp-token"},
         "timeout": 15.0,
     }

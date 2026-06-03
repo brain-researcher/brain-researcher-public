@@ -568,9 +568,9 @@ class ToolExecutor:
                 tool_id=current_request.tool_name,
                 step_metadata=self._extract_step_metadata(context),
                 step_idx=step_idx,
-                plan_candidates=(
-                    plan_candidates if isinstance(plan_candidates, list) else None
-                ),
+                plan_candidates=plan_candidates
+                if isinstance(plan_candidates, list)
+                else None,
                 query=context.get("query")
                 or context.get("user_query")
                 or context.get("prompt"),
@@ -1216,7 +1216,9 @@ class ToolExecutor:
                     )
                 issues = policy_check_tool(
                     spec,
-                    allow_network=os.getenv("BR_MCP_ALLOW_NETWORK", "").strip().lower()
+                    allow_network=os.getenv("BR_MCP_ALLOW_NETWORK", "")
+                    .strip()
+                    .lower()
                     in {"1", "true", "yes", "on"},
                     allow_dangerous=os.getenv("BR_MCP_ALLOW_DANGEROUS", "")
                     .strip()
@@ -2244,9 +2246,9 @@ class ToolExecutor:
                     tracker.complete_execution()
 
                     recorder.add_extra(
-                        outputs=(
-                            result.get("outputs") if isinstance(result, dict) else None
-                        )
+                        outputs=result.get("outputs")
+                        if isinstance(result, dict)
+                        else None
                     )
                     if isinstance(result, dict):
                         discovered_outputs = self._discover_output_files_from_payload(
@@ -2260,17 +2262,15 @@ class ToolExecutor:
                         execution_id=request.execution_id,
                         tool_name=request.tool_name,
                         status="success" if success else "error",
-                        result=(
-                            result if isinstance(result, dict) else {"result": result}
-                        ),
-                        error=(
-                            None
-                            if success
-                            else (
-                                result.get("error")
-                                if isinstance(result, dict)
-                                else str(result)
-                            )
+                        result=result
+                        if isinstance(result, dict)
+                        else {"result": result},
+                        error=None
+                        if success
+                        else (
+                            result.get("error")
+                            if isinstance(result, dict)
+                            else str(result)
                         ),
                         execution_time=time.time() - start_time,
                         resource_usage=self._get_resource_usage(request.execution_id),
@@ -2768,9 +2768,7 @@ class ToolExecutor:
                 ) or (result.get("data", {}) and result.get("data", {}).get("version"))
             else:
                 # ToolResult-like object
-                version = getattr(result, "metadata", {}) and result.metadata.get(
-                    "version"
-                )
+                version = getattr(result, "metadata", {}) and result.metadata.get("version")
         except Exception:
             version = None
         try:

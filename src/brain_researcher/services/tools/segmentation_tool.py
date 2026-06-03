@@ -10,8 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from brain_researcher.services.tools.params import (
     SegmentationParameters,
-    run_segmentation,
     segmentation_from_payload,
+    run_segmentation,
 )
 from brain_researcher.services.tools.qc_rendering import render_label_overlay_png
 from brain_researcher.services.tools.spec import (
@@ -35,15 +35,11 @@ class SegmentationArgs(BaseModel):
     modality: str = Field(default="T1", description="Imaging modality")
     segmentation_type: str = Field(default="tissue", description="Segmentation type")
     n_classes: int = Field(default=3, description="Number of classes")
-    threshold_method: str = Field(
-        default="adaptive", description="Thresholding strategy"
-    )
+    threshold_method: str = Field(default="adaptive", description="Thresholding strategy")
     min_lesion_size: int = Field(default=3, description="Minimum lesion size")
     random_state: Optional[int] = Field(default=42, description="Random seed")
     save_masks: bool = Field(default=True, description="Persist segmentation masks")
-    save_probabilities: bool = Field(
-        default=True, description="Persist probability maps"
-    )
+    save_probabilities: bool = Field(default=True, description="Persist probability maps")
     save_volumes: bool = Field(default=True, description="Persist volume summary")
     output_format: str = Field(default="nifti", description="Output format")
 
@@ -111,7 +107,9 @@ class SegmentationTool(NeuroToolWrapper):
             results = run_segmentation(params)
             outputs = results.get("outputs") if isinstance(results, dict) else None
             segmentation_path = (
-                outputs.get("segmentation") if isinstance(outputs, dict) else None
+                outputs.get("segmentation")
+                if isinstance(outputs, dict)
+                else None
             )
             if segmentation_path and Path(segmentation_path).exists():
                 try:

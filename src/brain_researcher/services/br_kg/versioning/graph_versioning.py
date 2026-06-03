@@ -4,16 +4,16 @@ This module provides Git-like versioning for the knowledge graph,
 allowing tracking of changes, creating snapshots, and rollback.
 """
 
-import gzip
-import hashlib
 import json
+import hashlib
 import logging
-import pickle
-from dataclasses import asdict, dataclass, field
+from typing import Dict, List, Any, Optional, Set, Tuple
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
+import pickle
+import gzip
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class GraphChange:
             "old_value": self.old_value,
             "new_value": self.new_value,
             "timestamp": self.timestamp.isoformat(),
-            "metadata": self.metadata,
+            "metadata": self.metadata
         }
 
 
@@ -77,7 +77,7 @@ class GraphCommit:
             "author": self.author,
             "timestamp": self.timestamp.isoformat(),
             "tags": self.tags,
-            "metadata": self.metadata,
+            "metadata": self.metadata
         }
 
 
@@ -94,10 +94,10 @@ class GraphSnapshot:
 
     def get_hash(self) -> str:
         """Calculate hash of snapshot content."""
-        content = json.dumps(
-            {"nodes": sorted(self.nodes.items()), "edges": sorted(self.edges.items())},
-            sort_keys=True,
-        )
+        content = json.dumps({
+            "nodes": sorted(self.nodes.items()),
+            "edges": sorted(self.edges.items())
+        }, sort_keys=True)
         return hashlib.sha256(content.encode()).hexdigest()
 
 
@@ -157,7 +157,7 @@ class GraphVersioning:
         entity_id: str,
         old_value: Optional[Dict[str, Any]] = None,
         new_value: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None
     ):
         """Track a change to the graph.
 
@@ -175,15 +175,13 @@ class GraphVersioning:
             entity_id=entity_id,
             old_value=old_value,
             new_value=new_value,
-            metadata=metadata or {},
+            metadata=metadata or {}
         )
 
         self.uncommitted_changes.append(change)
         logger.info(f"Tracked change: {change_type.value} on {entity_type} {entity_id}")
 
-    def commit(
-        self, message: str, author: str, tags: Optional[List[str]] = None
-    ) -> str:
+    def commit(self, message: str, author: str, tags: Optional[List[str]] = None) -> str:
         """Commit tracked changes.
 
         Args:
@@ -199,16 +197,13 @@ class GraphVersioning:
             return None
 
         # Generate commit ID
-        commit_content = json.dumps(
-            {
-                "parent": self.current_commit,
-                "changes": [c.to_dict() for c in self.uncommitted_changes],
-                "message": message,
-                "author": author,
-                "timestamp": datetime.now().isoformat(),
-            },
-            sort_keys=True,
-        )
+        commit_content = json.dumps({
+            "parent": self.current_commit,
+            "changes": [c.to_dict() for c in self.uncommitted_changes],
+            "message": message,
+            "author": author,
+            "timestamp": datetime.now().isoformat()
+        }, sort_keys=True)
         commit_id = hashlib.sha256(commit_content.encode()).hexdigest()[:12]
 
         # Create commit
@@ -218,7 +213,7 @@ class GraphVersioning:
             changes=self.uncommitted_changes.copy(),
             message=message,
             author=author,
-            tags=tags or [],
+            tags=tags or []
         )
 
         # Save commit
@@ -238,7 +233,7 @@ class GraphVersioning:
         self,
         nodes: Dict[str, Dict[str, Any]],
         edges: Dict[str, Dict[str, Any]],
-        message: str = None,
+        message: str = None
     ) -> str:
         """Create a snapshot of the current graph state.
 
@@ -261,7 +256,7 @@ class GraphVersioning:
             commit_id=self.current_commit or "initial",
             nodes=nodes.copy(),
             edges=edges.copy(),
-            metadata={"message": message} if message else {},
+            metadata={"message": message} if message else {}
         )
 
         # Compress and save
@@ -323,7 +318,7 @@ class GraphVersioning:
                     old_value=c["old_value"],
                     new_value=c["new_value"],
                     timestamp=datetime.fromisoformat(c["timestamp"]),
-                    metadata=c["metadata"],
+                    metadata=c["metadata"]
                 )
                 for c in commit_data["changes"]
             ],
@@ -331,7 +326,7 @@ class GraphVersioning:
             author=commit_data["author"],
             timestamp=datetime.fromisoformat(commit_data["timestamp"]),
             tags=commit_data.get("tags", []),
-            metadata=commit_data.get("metadata", {}),
+            metadata=commit_data.get("metadata", {})
         )
 
         return commit
@@ -532,7 +527,7 @@ class GraphVersioning:
         commit_id = self.commit(
             message=f"Merge branch '{source_branch}': {message}",
             author=author,
-            tags=["merge"],
+            tags=["merge"]
         )
 
         return commit_id
@@ -573,10 +568,10 @@ class GraphVersioning:
                     "message": c.message,
                     "author": c.author,
                     "timestamp": c.timestamp.isoformat(),
-                    "changes": len(c.changes),
+                    "changes": len(c.changes)
                 }
                 for c in self.get_history(5)
-            ],
+            ]
         }
 
     def export_patch(self, commit_id: str, output_file: str):
@@ -595,7 +590,7 @@ class GraphVersioning:
         patch = {
             "commit": commit.to_dict(),
             "format_version": "1.0",
-            "exported_at": datetime.now().isoformat(),
+            "exported_at": datetime.now().isoformat()
         }
 
         with open(output_file, "w") as f:
@@ -625,14 +620,14 @@ class GraphVersioning:
                 entity_id=change_data["entity_id"],
                 old_value=change_data["old_value"],
                 new_value=change_data["new_value"],
-                metadata=change_data["metadata"],
+                metadata=change_data["metadata"]
             )
 
         # Commit with original message
         commit_id = self.commit(
             message=f"[IMPORTED] {commit_data['message']}",
             author=commit_data["author"],
-            tags=commit_data.get("tags", []) + ["imported"],
+            tags=commit_data.get("tags", []) + ["imported"]
         )
 
         logger.info(f"Imported patch as commit {commit_id}")

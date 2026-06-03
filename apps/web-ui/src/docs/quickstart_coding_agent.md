@@ -30,7 +30,7 @@ corepack pnpm dev  # http://localhost:3000
 
 3. **Coding agent (the important one)**
    - Switch to **coding** tab
-   - Repo root: `/home/zijiaochen/projects/brain_researcher`
+   - Repo root: `${BRAIN_RESEARCHER_HOME}/projects/brain_researcher`
    - Files: `brain_researcher/services/agent/chat_orchestrator.py`
    - Prompt: `Add a concise docstring to _delegate_to_code_orchestrator describing the coding flow.`
    - Expect streaming events (plan/patch/test/result) under the assistant message; metadata.type will be `coding_tool`.
@@ -56,7 +56,7 @@ curl -N -X POST http://127.0.0.1:8000/api/chat/stream \
     "tools":{"mode":"coding"},
     "ctx":{
       "tools":{"mode":"coding"},
-      "repo_root":"/home/zijiaochen/projects/brain_researcher",
+      "repo_root":"${BRAIN_RESEARCHER_HOME}/projects/brain_researcher",
       "file_paths":["brain_researcher/services/agent/chat_orchestrator.py"]
     }
   }'

@@ -165,47 +165,32 @@ def coerce_cross_stage_context(raw: Any) -> CrossStageContextV1 | None:
         return None
 
     # Accept both new keys and legacy aliases.
-    if "condition_constraints" not in data and isinstance(
-        data.get("condition_tags"), list
-    ):
+    if "condition_constraints" not in data and isinstance(data.get("condition_tags"), list):
         normalized: list[dict[str, Any]] = []
         for row in data.get("condition_tags") or []:
             if not isinstance(row, Mapping):
                 continue
             normalized.append(
                 {
-                    "condition_key": row.get("condition_key")
-                    or row.get("key")
-                    or "condition",
-                    "condition_value": row.get("condition_value")
-                    or row.get("value")
-                    or "",
-                    "expected_conclusion": row.get("expected_conclusion")
-                    or row.get("conclusion"),
-                    "source_signal_id": row.get("source_signal_id")
-                    or row.get("signal_id"),
+                    "condition_key": row.get("condition_key") or row.get("key") or "condition",
+                    "condition_value": row.get("condition_value") or row.get("value") or "",
+                    "expected_conclusion": row.get("expected_conclusion") or row.get("conclusion"),
+                    "source_signal_id": row.get("source_signal_id") or row.get("signal_id"),
                 }
             )
         data["condition_constraints"] = normalized
 
-    if "sensitivity_constraints" not in data and isinstance(
-        data.get("sensitivity_findings"), list
-    ):
+    if "sensitivity_constraints" not in data and isinstance(data.get("sensitivity_findings"), list):
         normalized_sens: list[dict[str, Any]] = []
         for row in data.get("sensitivity_findings") or []:
             if not isinstance(row, Mapping):
                 continue
             normalized_sens.append(
                 {
-                    "analysis_axis": row.get("analysis_axis")
-                    or row.get("axis")
-                    or "unknown",
-                    "min_eta_squared": row.get("min_eta_squared")
-                    or row.get("eta_squared"),
-                    "recommendation": row.get("recommendation")
-                    or row.get("recommended_action"),
-                    "source_signal_id": row.get("source_signal_id")
-                    or row.get("signal_id"),
+                    "analysis_axis": row.get("analysis_axis") or row.get("axis") or "unknown",
+                    "min_eta_squared": row.get("min_eta_squared") or row.get("eta_squared"),
+                    "recommendation": row.get("recommendation") or row.get("recommended_action"),
+                    "source_signal_id": row.get("source_signal_id") or row.get("signal_id"),
                 }
             )
         data["sensitivity_constraints"] = normalized_sens
@@ -214,13 +199,9 @@ def coerce_cross_stage_context(raw: Any) -> CrossStageContextV1 | None:
         return CrossStageContextV1.model_validate(data)
     except Exception:
         fallback = CrossStageContextV1(
-            task_family=(
-                str(data.get("task_family")) if data.get("task_family") else None
-            ),
+            task_family=str(data.get("task_family")) if data.get("task_family") else None,
             dataset_id=str(data.get("dataset_id")) if data.get("dataset_id") else None,
-            predicted_intents=[
-                str(x) for x in (data.get("predicted_intents") or []) if x
-            ],
+            predicted_intents=[str(x) for x in (data.get("predicted_intents") or []) if x],
         )
         summary = data.get("summary")
         if isinstance(summary, str) and summary.strip():

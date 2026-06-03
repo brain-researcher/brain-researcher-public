@@ -4,16 +4,15 @@ Comprehensive test suite for ALL 130 neuroimaging tools using synthetic data.
 This ensures all tools are functional and ready for real data.
 """
 
-import json
-import logging
 import os
+import json
 import tempfile
-import time
-from datetime import datetime
-from pathlib import Path
-
-import nibabel as nib
 import numpy as np
+from pathlib import Path
+import logging
+import time
+import nibabel as nib
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -33,9 +32,12 @@ class SyntheticDataGenerator:
         # Standard brain dimensions
         self.anat_shape = (192, 256, 256)
         self.func_shape = (64, 64, 40, 200)
-        self.affine = np.array(
-            [[1, 0, 0, -96], [0, 1, 0, -132], [0, 0, 1, -78], [0, 0, 0, 1]]
-        )
+        self.affine = np.array([
+            [1, 0, 0, -96],
+            [0, 1, 0, -132],
+            [0, 0, 1, -78],
+            [0, 0, 0, 1]
+        ])
 
     def generate_all_modalities(self):
         """Generate all types of synthetic neuroimaging data."""
@@ -44,90 +46,85 @@ class SyntheticDataGenerator:
         # T1-weighted anatomical
         t1_data = self._generate_t1()
         t1_path = self._save_nifti(t1_data, "synthetic_t1.nii.gz")
-        data_paths["t1"] = t1_path
+        data_paths['t1'] = t1_path
 
         # T2-weighted
         t2_data = self._generate_t2(t1_data)
         t2_path = self._save_nifti(t2_data, "synthetic_t2.nii.gz")
-        data_paths["t2"] = t2_path
+        data_paths['t2'] = t2_path
 
         # FLAIR
         flair_data = self._generate_flair(t1_data)
         flair_path = self._save_nifti(flair_data, "synthetic_flair.nii.gz")
-        data_paths["flair"] = flair_path
+        data_paths['flair'] = flair_path
 
         # DWI/DTI
         dwi_data, bvals, bvecs = self._generate_dwi()
         dwi_path = self._save_nifti(dwi_data, "synthetic_dwi.nii.gz")
-        data_paths["dwi"] = dwi_path
+        data_paths['dwi'] = dwi_path
         np.savetxt(self.output_dir / "bvals.txt", bvals)
         np.savetxt(self.output_dir / "bvecs.txt", bvecs)
-        data_paths["bvals"] = str(self.output_dir / "bvals.txt")
-        data_paths["bvecs"] = str(self.output_dir / "bvecs.txt")
+        data_paths['bvals'] = str(self.output_dir / "bvals.txt")
+        data_paths['bvecs'] = str(self.output_dir / "bvecs.txt")
 
         # fMRI
         fmri_data = self._generate_fmri()
         fmri_path = self._save_nifti(fmri_data, "synthetic_fmri.nii.gz")
-        data_paths["fmri"] = fmri_path
+        data_paths['fmri'] = fmri_path
 
         # ASL
         asl_data = self._generate_asl()
         asl_path = self._save_nifti(asl_data, "synthetic_asl.nii.gz")
-        data_paths["asl"] = asl_path
+        data_paths['asl'] = asl_path
 
         # Phase/Magnitude for QSM
         phase_data = self._generate_phase()
         phase_path = self._save_nifti(phase_data, "synthetic_phase.nii.gz")
-        data_paths["phase"] = phase_path
+        data_paths['phase'] = phase_path
 
         mag_data = np.abs(t1_data) * 1000
         mag_path = self._save_nifti(mag_data, "synthetic_magnitude.nii.gz")
-        data_paths["magnitude"] = mag_path
+        data_paths['magnitude'] = mag_path
 
         # Brain mask
         mask_data = self._generate_mask(t1_data)
         mask_path = self._save_nifti(mask_data.astype(np.uint8), "brain_mask.nii.gz")
-        data_paths["mask"] = mask_path
+        data_paths['mask'] = mask_path
 
         # Tissue probability maps
         gm_prob, wm_prob, csf_prob = self._generate_tissue_probs(t1_data)
-        data_paths["gm_prob"] = self._save_nifti(gm_prob, "gm_prob.nii.gz")
-        data_paths["wm_prob"] = self._save_nifti(wm_prob, "wm_prob.nii.gz")
-        data_paths["csf_prob"] = self._save_nifti(csf_prob, "csf_prob.nii.gz")
+        data_paths['gm_prob'] = self._save_nifti(gm_prob, "gm_prob.nii.gz")
+        data_paths['wm_prob'] = self._save_nifti(wm_prob, "wm_prob.nii.gz")
+        data_paths['csf_prob'] = self._save_nifti(csf_prob, "csf_prob.nii.gz")
 
         # Atlas
         atlas_data = self._generate_atlas()
         atlas_path = self._save_nifti(atlas_data.astype(np.int16), "atlas.nii.gz")
-        data_paths["atlas"] = atlas_path
+        data_paths['atlas'] = atlas_path
 
         # EEG/MEG data
         eeg_data = self._generate_eeg_data()
         np.save(self.output_dir / "synthetic_eeg.npy", eeg_data)
-        data_paths["eeg"] = str(self.output_dir / "synthetic_eeg.npy")
+        data_paths['eeg'] = str(self.output_dir / "synthetic_eeg.npy")
 
         # Surface mesh (simplified)
         vertices, faces = self._generate_surface_mesh()
         np.save(self.output_dir / "surface_vertices.npy", vertices)
         np.save(self.output_dir / "surface_faces.npy", faces)
-        data_paths["surface_vertices"] = str(self.output_dir / "surface_vertices.npy")
-        data_paths["surface_faces"] = str(self.output_dir / "surface_faces.npy")
+        data_paths['surface_vertices'] = str(self.output_dir / "surface_vertices.npy")
+        data_paths['surface_faces'] = str(self.output_dir / "surface_faces.npy")
 
         # BIDS-style events file
         events = self._generate_events()
         events_path = self.output_dir / "events.tsv"
-        np.savetxt(
-            events_path,
-            events,
-            delimiter="\t",
-            header="onset\tduration\ttrial_type",
-            comments="",
-        )
-        data_paths["events"] = str(events_path)
+        np.savetxt(events_path, events, delimiter='\t',
+                   header='onset\tduration\ttrial_type', comments='')
+        data_paths['events'] = str(events_path)
 
         # Design matrix for GLM
         design_matrix = self._generate_design_matrix()
         np.save(self.output_dir / "design_matrix.npy", design_matrix)
-        data_paths["design_matrix"] = str(self.output_dir / "design_matrix.npy")
+        data_paths['design_matrix'] = str(self.output_dir / "design_matrix.npy")
 
         return data_paths
 
@@ -178,7 +175,7 @@ class SyntheticDataGenerator:
             z = np.random.randint(50, 200)
             size = np.random.randint(2, 5)
 
-            flair[x : x + size, y : y + size, z : z + size] *= 1.5
+            flair[x:x+size, y:y+size, z:z+size] *= 1.5
 
         return flair
 
@@ -204,20 +201,18 @@ class SyntheticDataGenerator:
         fmri_data = np.random.randn(*self.func_shape) * 100 + 1000
 
         # Add some activation - create ellipsoid in functional space
-        x, y, z = np.ogrid[
-            : self.func_shape[0], : self.func_shape[1], : self.func_shape[2]
-        ]
+        x, y, z = np.ogrid[:self.func_shape[0], :self.func_shape[1], :self.func_shape[2]]
         center = [32, 32, 20]
         radii = [5, 5, 3]
 
-        activation_region = ((x - center[0]) / radii[0]) ** 2 + (
-            (y - center[1]) / radii[1]
-        ) ** 2 + ((z - center[2]) / radii[2]) ** 2 <= 1
+        activation_region = ((x - center[0])/radii[0])**2 + \
+                           ((y - center[1])/radii[1])**2 + \
+                           ((z - center[2])/radii[2])**2 <= 1
 
         # Create block design activation
         for t in range(0, self.func_shape[3], 40):
             if t // 40 % 2 == 0:  # On blocks
-                fmri_data[activation_region, t : t + 20] += 50
+                fmri_data[activation_region, t:t+20] += 50
 
         return fmri_data
 
@@ -255,8 +250,7 @@ class SyntheticDataGenerator:
         mask = brain_data > threshold
 
         # Clean up mask
-        from scipy.ndimage import binary_dilation, binary_erosion
-
+        from scipy.ndimage import binary_erosion, binary_dilation
         mask = binary_erosion(mask, iterations=2)
         mask = binary_dilation(mask, iterations=2)
 
@@ -277,7 +271,6 @@ class SyntheticDataGenerator:
 
         # Smooth
         from scipy.ndimage import gaussian_filter
-
         gm_prob = gaussian_filter(gm_prob, 2)
         wm_prob = gaussian_filter(wm_prob, 2)
         csf_prob = gaussian_filter(csf_prob, 2)
@@ -292,14 +285,14 @@ class SyntheticDataGenerator:
         center = [s // 2 for s in self.anat_shape]
 
         # Frontal
-        atlas[center[0] - 40 : center[0], :, :] = 1
+        atlas[center[0]-40:center[0], :, :] = 1
         # Parietal
-        atlas[center[0] : center[0] + 40, :, :] = 2
+        atlas[center[0]:center[0]+40, :, :] = 2
         # Temporal
-        atlas[:, : center[1] - 40, :] = 3
-        atlas[:, center[1] + 40 :, :] = 4
+        atlas[:, :center[1]-40, :] = 3
+        atlas[:, center[1]+40:, :] = 4
         # Occipital
-        atlas[:, :, center[2] + 60 :] = 5
+        atlas[:, :, center[2]+60:] = 5
 
         return atlas
 
@@ -327,7 +320,7 @@ class SyntheticDataGenerator:
         """Generate simple surface mesh."""
         # Create sphere vertices
         n_vertices = 1000
-        theta = np.random.uniform(0, 2 * np.pi, n_vertices)
+        theta = np.random.uniform(0, 2*np.pi, n_vertices)
         phi = np.random.uniform(0, np.pi, n_vertices)
 
         r = 80  # radius
@@ -363,7 +356,7 @@ class SyntheticDataGenerator:
         # Create box-car regressors
         for i in range(n_regressors):
             start = i * 40
-            design[start : start + 20, i] = 1
+            design[start:start+20, i] = 1
 
         # Add drift terms
         drift = np.linspace(0, 1, n_scans)
@@ -373,13 +366,11 @@ class SyntheticDataGenerator:
 
     def _create_ellipsoid(self, center, radii):
         """Create ellipsoid mask."""
-        x, y, z = np.ogrid[
-            : self.anat_shape[0], : self.anat_shape[1], : self.anat_shape[2]
-        ]
+        x, y, z = np.ogrid[:self.anat_shape[0], :self.anat_shape[1], :self.anat_shape[2]]
 
-        ellipsoid = ((x - center[0]) / radii[0]) ** 2 + (
-            (y - center[1]) / radii[1]
-        ) ** 2 + ((z - center[2]) / radii[2]) ** 2 <= 1
+        ellipsoid = ((x - center[0])/radii[0])**2 + \
+                   ((y - center[1])/radii[1])**2 + \
+                   ((z - center[2])/radii[2])**2 <= 1
 
         return ellipsoid
 
@@ -389,12 +380,8 @@ class SyntheticDataGenerator:
         center = [s // 2 for s in self.anat_shape]
 
         # Lateral ventricles
-        vent1 = self._create_ellipsoid(
-            [center[0] - 20, center[1], center[2]], [5, 15, 10]
-        )
-        vent2 = self._create_ellipsoid(
-            [center[0] + 20, center[1], center[2]], [5, 15, 10]
-        )
+        vent1 = self._create_ellipsoid([center[0]-20, center[1], center[2]], [5, 15, 10])
+        vent2 = self._create_ellipsoid([center[0]+20, center[1], center[2]], [5, 15, 10])
 
         brain[vent1 | vent2] = 20  # CSF intensity
 
@@ -430,55 +417,27 @@ class ToolTester:
 
         # Group tools by category
         categories = {
-            "fmri": [
-                "glm_analysis",
-                "contrast_analysis",
-                "encoding_model",
-                "brain_similarity",
-                "task_to_concept_mapping",
-            ],
-            "structural": [
-                "brain_segmentation",
-                "surface_analysis",
-                "registration_pipeline",
-                "multi_atlas_segmentation",
-            ],
-            "diffusion": [
-                "diffusion_tractography",
-                "qsiprep_preprocessing",
-                "bedpostx_preprocessing",
-            ],
-            "perfusion": ["asl_perfusion"],
-            "susceptibility": ["qsm_reconstruction"],
-            "spectroscopy": ["mr_spectroscopy"],
-            "connectivity": [
-                "functional_connectivity",
-                "effective_connectivity",
-                "dynamic_connectivity",
-                "graph_network_analysis",
-            ],
-            "clinical": [
-                "lesion_detection",
-                "phantom_analysis",
-                "motion_quantification",
-            ],
-            "preprocessing": [
-                "fmriprep_preprocessing",
-                "skull_stripping",
-                "bias_field_correction",
-                "coregistration",
-            ],
-            "statistics": [
-                "permutation_testing",
-                "multiple_comparison_correction",
-                "validation_metrics",
-                "cross_validation",
-            ],
-            "visualization": ["advanced_brain_plotting", "interactive_visualization"],
-            "ml": ["mvpa_classification", "deep_learning_fmri", "radiomics_extraction"],
-            "meta": ["meta_analysis", "literature_search"],
-            "quality": ["quality_control", "data_harmonization"],
-            "other": [],
+            'fmri': ['glm_analysis', 'contrast_analysis', 'encoding_model',
+                    'brain_similarity', 'task_to_concept_mapping'],
+            'structural': ['brain_segmentation', 'surface_analysis',
+                          'registration_pipeline', 'multi_atlas_segmentation'],
+            'diffusion': ['diffusion_tractography', 'qsiprep_preprocessing',
+                         'bedpostx_preprocessing'],
+            'perfusion': ['asl_perfusion'],
+            'susceptibility': ['qsm_reconstruction'],
+            'spectroscopy': ['mr_spectroscopy'],
+            'connectivity': ['functional_connectivity', 'effective_connectivity',
+                           'dynamic_connectivity', 'graph_network_analysis'],
+            'clinical': ['lesion_detection', 'phantom_analysis', 'motion_quantification'],
+            'preprocessing': ['fmriprep_preprocessing', 'skull_stripping',
+                            'bias_field_correction', 'coregistration'],
+            'statistics': ['permutation_testing', 'multiple_comparison_correction',
+                          'validation_metrics', 'cross_validation'],
+            'visualization': ['advanced_brain_plotting', 'interactive_visualization'],
+            'ml': ['mvpa_classification', 'deep_learning_fmri', 'radiomics_extraction'],
+            'meta': ['meta_analysis', 'literature_search'],
+            'quality': ['quality_control', 'data_harmonization'],
+            'other': []
         }
 
         # Test each category
@@ -533,7 +492,7 @@ class ToolTester:
                 self.results[tool_name] = "SUCCESS"
 
                 # Save output info
-                if result.data.get("outputs"):
+                if result.data.get('outputs'):
                     self._save_tool_info(tool_name, result.data)
             else:
                 print(f"✗ {tool_name}: FAILED - {result.error}")
@@ -545,85 +504,80 @@ class ToolTester:
 
     def _prepare_tool_args(self, tool_name):
         """Prepare arguments for each tool."""
-        args = {"output_dir": str(self.output_dir / tool_name)}
+        args = {
+            'output_dir': str(self.output_dir / tool_name)
+        }
 
         # Add data paths based on tool requirements
-        if "segmentation" in tool_name:
-            args.update({"input_image": self.data_paths["t1"], "modality": "T1"})
+        if 'segmentation' in tool_name:
+            args.update({
+                'input_image': self.data_paths['t1'],
+                'modality': 'T1'
+            })
 
-        elif "asl" in tool_name:
-            args.update(
-                {
-                    "asl_file": self.data_paths["asl"],
-                    "m0_file": self.data_paths["magnitude"],
-                }
-            )
+        elif 'asl' in tool_name:
+            args.update({
+                'asl_file': self.data_paths['asl'],
+                'm0_file': self.data_paths['magnitude']
+            })
 
-        elif "lesion" in tool_name:
-            args.update(
-                {
-                    "flair_image": self.data_paths["flair"],
-                    "t1_image": self.data_paths["t1"],
-                }
-            )
+        elif 'lesion' in tool_name:
+            args.update({
+                'flair_image': self.data_paths['flair'],
+                't1_image': self.data_paths['t1']
+            })
 
-        elif "qsm" in tool_name:
-            args.update(
-                {
-                    "phase_file": self.data_paths["phase"],
-                    "magnitude_file": self.data_paths["magnitude"],
-                }
-            )
+        elif 'qsm' in tool_name:
+            args.update({
+                'phase_file': self.data_paths['phase'],
+                'magnitude_file': self.data_paths['magnitude']
+            })
 
-        elif "glm" in tool_name or "contrast" in tool_name:
-            args.update(
-                {
-                    "fmri_file": self.data_paths["fmri"],
-                    "design_matrix": self.data_paths["design_matrix"],
-                    "mask_file": self.data_paths["mask"],
-                }
-            )
+        elif 'glm' in tool_name or 'contrast' in tool_name:
+            args.update({
+                'fmri_file': self.data_paths['fmri'],
+                'design_matrix': self.data_paths['design_matrix'],
+                'mask_file': self.data_paths['mask']
+            })
 
-        elif "tractography" in tool_name:
-            args.update(
-                {
-                    "dwi_file": self.data_paths["dwi"],
-                    "bvals_file": self.data_paths["bvals"],
-                    "bvecs_file": self.data_paths["bvecs"],
-                    "mask_file": self.data_paths["mask"],
-                }
-            )
+        elif 'tractography' in tool_name:
+            args.update({
+                'dwi_file': self.data_paths['dwi'],
+                'bvals_file': self.data_paths['bvals'],
+                'bvecs_file': self.data_paths['bvecs'],
+                'mask_file': self.data_paths['mask']
+            })
 
-        elif "surface" in tool_name:
-            args.update({"surface_file": self.data_paths["t1"]})
+        elif 'surface' in tool_name:
+            args.update({
+                'surface_file': self.data_paths['t1']
+            })
 
-        elif "motion" in tool_name:
-            args.update({"fmri_file": self.data_paths["fmri"]})
+        elif 'motion' in tool_name:
+            args.update({
+                'fmri_file': self.data_paths['fmri']
+            })
 
-        elif "radiomics" in tool_name:
-            args.update(
-                {
-                    "image_file": self.data_paths["t1"],
-                    "mask_file": self.data_paths["mask"],
-                }
-            )
+        elif 'radiomics' in tool_name:
+            args.update({
+                'image_file': self.data_paths['t1'],
+                'mask_file': self.data_paths['mask']
+            })
 
-        elif "meta_analysis" in tool_name:
-            args.update(
-                {
-                    "studies": [
-                        {"coordinates": [[10, 20, 30]], "sample_size": 20},
-                        {"coordinates": [[15, 25, 35]], "sample_size": 25},
-                    ]
-                }
-            )
+        elif 'meta_analysis' in tool_name:
+            args.update({
+                'studies': [
+                    {'coordinates': [[10, 20, 30]], 'sample_size': 20},
+                    {'coordinates': [[15, 25, 35]], 'sample_size': 25}
+                ]
+            })
 
         else:
             # Default to T1 image for other tools
-            if "image" in tool_name or "brain" in tool_name:
-                args["input_image"] = self.data_paths["t1"]
-            elif "fmri" in tool_name or "functional" in tool_name:
-                args["fmri_file"] = self.data_paths["fmri"]
+            if 'image' in tool_name or 'brain' in tool_name:
+                args['input_image'] = self.data_paths['t1']
+            elif 'fmri' in tool_name or 'functional' in tool_name:
+                args['fmri_file'] = self.data_paths['fmri']
 
         return args
 
@@ -632,13 +586,13 @@ class ToolTester:
         info_file = self.output_dir / f"{tool_name}_info.json"
 
         info = {
-            "tool_name": tool_name,
-            "status": "SUCCESS",
-            "outputs": data.get("outputs", {}),
-            "summary": data.get("summary", {}),
+            'tool_name': tool_name,
+            'status': 'SUCCESS',
+            'outputs': data.get('outputs', {}),
+            'summary': data.get('summary', {})
         }
 
-        with open(info_file, "w") as f:
+        with open(info_file, 'w') as f:
             json.dump(info, f, indent=2, default=str)
 
 
@@ -719,7 +673,7 @@ The high success rate indicates the platform is ready for real neuroimaging data
 *Generated automatically by test suite*
 """
 
-    with open(report_path, "w") as f:
+    with open(report_path, 'w') as f:
         f.write(report)
 
     print(f"\n📊 Report saved to: {report_path}")
@@ -729,10 +683,10 @@ The high success rate indicates the platform is ready for real neuroimaging data
 
 def main():
     """Main test function."""
-    print("\n" + "=" * 60)
+    print("\n" + "="*60)
     print("COMPREHENSIVE PLATFORM TEST")
     print("Testing ALL 130 Neuroimaging Tools")
-    print("=" * 60)
+    print("="*60)
 
     # Create test directory
     test_dir = Path("test_synthetic_complete")
@@ -760,9 +714,9 @@ def main():
 
     # Summary
     successful = sum(1 for r in results.values() if r == "SUCCESS")
-    print("\n" + "=" * 60)
+    print("\n" + "="*60)
     print("TEST COMPLETE")
-    print("=" * 60)
+    print("="*60)
     print(f"✅ Successful: {successful}/{len(results)}")
     print(f"📁 Results saved to: {test_dir}")
 

@@ -13,10 +13,8 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-
 class FailureCategory(str, Enum):
     """Categories of execution failures."""
-
     RESOURCE_EXHAUSTION = "resource_exhaustion"
     NETWORK_TIMEOUT = "network_timeout"
     TOOL_ERROR = "tool_error"
@@ -25,11 +23,9 @@ class FailureCategory(str, Enum):
     INFRASTRUCTURE_FAILURE = "infrastructure_failure"
     UNKNOWN = "unknown"
 
-
 @dataclass
 class FailureContext:
     """Context information for failure analysis."""
-
     execution_id: str
     step_id: str
     tool_name: str
@@ -37,7 +33,6 @@ class FailureContext:
     stack_trace: Optional[str]
     resource_usage: Dict[str, float]
     timestamp: float
-
 
 class FailureAnalyzer:
     """
@@ -70,31 +65,23 @@ class FailureAnalyzer:
             "category": category,
             "root_cause": root_cause,
             "recovery_suggestions": recovery_suggestions,
-            "confidence": 0.85,
+            "confidence": 0.85
         }
 
-    def _classify_failure(
-        self, error_msg: str, context: FailureContext
-    ) -> FailureCategory:
+    def _classify_failure(self, error_msg: str, context: FailureContext) -> FailureCategory:
         """Classify failure based on error message and context."""
         error_lower = error_msg.lower()
 
-        if any(
-            pattern in error_lower for pattern in ["memory", "out of memory", "oom"]
-        ):
+        if any(pattern in error_lower for pattern in ["memory", "out of memory", "oom"]):
             return FailureCategory.RESOURCE_EXHAUSTION
-        elif any(
-            pattern in error_lower for pattern in ["timeout", "connection", "network"]
-        ):
+        elif any(pattern in error_lower for pattern in ["timeout", "connection", "network"]):
             return FailureCategory.NETWORK_TIMEOUT
         elif "tool" in error_lower or context.tool_name in error_lower:
             return FailureCategory.TOOL_ERROR
         else:
             return FailureCategory.UNKNOWN
 
-    def _determine_root_cause(
-        self, category: FailureCategory, context: FailureContext
-    ) -> str:
+    def _determine_root_cause(self, category: FailureCategory, context: FailureContext) -> str:
         """Determine root cause of failure."""
         if category == FailureCategory.RESOURCE_EXHAUSTION:
             return f"Insufficient resources: CPU={context.resource_usage.get('cpu', 0)}, Memory={context.resource_usage.get('memory', 0)}"
@@ -103,21 +90,19 @@ class FailureAnalyzer:
         else:
             return "Unknown root cause - requires manual investigation"
 
-    def _suggest_recovery(
-        self, category: FailureCategory, context: FailureContext
-    ) -> List[str]:
+    def _suggest_recovery(self, category: FailureCategory, context: FailureContext) -> List[str]:
         """Suggest recovery strategies."""
         if category == FailureCategory.RESOURCE_EXHAUSTION:
             return [
                 "Increase memory allocation",
                 "Use more powerful instance type",
-                "Implement data chunking",
+                "Implement data chunking"
             ]
         elif category == FailureCategory.NETWORK_TIMEOUT:
             return [
                 "Retry with exponential backoff",
                 "Check service availability",
-                "Use alternative endpoint",
+                "Use alternative endpoint"
             ]
         else:
             return ["Manual investigation required", "Check logs for details"]
@@ -127,9 +112,5 @@ class FailureAnalyzer:
         return {
             "memory_patterns": ["out of memory", "memory error", "allocation failed"],
             "timeout_patterns": ["timeout", "connection refused", "unreachable"],
-            "tool_patterns": [
-                "command not found",
-                "invalid argument",
-                "execution failed",
-            ],
+            "tool_patterns": ["command not found", "invalid argument", "execution failed"]
         }

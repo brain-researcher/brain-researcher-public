@@ -175,7 +175,7 @@
             "title": "Sunet"
           },
           "pi_group": {
-            "default": "your_pi_group",
+            "default": "russpold",
             "title": "Pi Group",
             "type": "string"
           },
@@ -327,7 +327,7 @@
       "tier": "advanced",
       "surface_tier": "advanced",
       "capability_family": "slurm",
-      "description": "SLURM workflow guide and command renderer (any SLURM cluster via profile). Profile selected by pi_group (legacy) or BR_SLURM_PROFILE env var. Ships with sherlock_default profile; add your own at configs/slurm/profiles/<name>.yaml (see docs/hpc.md).",
+      "description": "SLURM workflow guide and command renderer (any SLURM cluster via profile). Profile selected by pi_group (legacy) or BR_SLURM_PROFILE env var. Ships with sherlock_russpold profile; add your own at configs/slurm/profiles/<name>.yaml (see docs/hpc.md).",
       "input_schema": {
         "properties": {
           "action": {
@@ -372,7 +372,7 @@
             "title": "Sunet"
           },
           "pi_group": {
-            "default": "your_pi_group",
+            "default": "russpold",
             "title": "Pi Group",
             "type": "string"
           },
@@ -532,7 +532,7 @@
             "type": "string"
           },
           "cluster_profile": {
-            "default": "sherlock_default",
+            "default": "sherlock_russpold",
             "title": "Cluster Profile",
             "type": "string"
           },
@@ -960,7 +960,7 @@
             "type": "string"
           },
           "cluster_profile": {
-            "default": "sherlock_default",
+            "default": "sherlock_russpold",
             "title": "Cluster Profile",
             "type": "string"
           },
@@ -1789,6 +1789,11 @@
             "default": "generic",
             "title": "Cluster Profile",
             "type": "string"
+          },
+          "include_legacy_local_run": {
+            "default": false,
+            "title": "Include Legacy Local Run",
+            "type": "boolean"
           }
         },
         "required": [
@@ -3073,6 +3078,106 @@
       "examples": []
     },
     {
+      "name": "rapidtide_implementation_review",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "scientific_review",
+      "description": "Audit a rapidtide sLFO time-lag analysis against the canonical method.",
+      "input_schema": {
+        "properties": {
+          "task_profile": {
+            "title": "Task Profile",
+            "type": "string"
+          },
+          "method_contract": {
+            "additionalProperties": true,
+            "title": "Method Contract",
+            "type": "object"
+          },
+          "subject_summaries": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subject Summaries"
+          }
+        },
+        "required": [
+          "task_profile",
+          "method_contract"
+        ],
+        "title": "rapidtide_implementation_reviewArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "rapidtide_implementation_reviewDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
+      "name": "report_claim_provenance_check",
+      "tier": "advanced",
+      "surface_tier": "advanced",
+      "capability_family": "scientific_review",
+      "description": "Check report claims are traceable to artifacts/code that actually ran.",
+      "input_schema": {
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "claims": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "require_claim_provenance": {
+            "default": false,
+            "title": "Require Claim Provenance",
+            "type": "boolean"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Workflow Id"
+          }
+        },
+        "required": [
+          "run_id",
+          "claims"
+        ],
+        "title": "report_claim_provenance_checkArguments",
+        "type": "object"
+      },
+      "output_schema": {
+        "additionalProperties": true,
+        "title": "report_claim_provenance_checkDictOutput",
+        "type": "object"
+      },
+      "examples": []
+    },
+    {
       "name": "grounding_resolve",
       "tier": "advanced",
       "surface_tier": "advanced",
@@ -3157,6 +3262,11 @@
           "run_id": {
             "title": "Run Id",
             "type": "string"
+          },
+          "verbose": {
+            "default": false,
+            "title": "Verbose",
+            "type": "boolean"
           }
         },
         "required": [
@@ -3781,7 +3891,7 @@
             "title": "Logs Dir"
           },
           "task_id": {
-            "default": "default",
+            "default": "liu_component_v1",
             "title": "Task Id",
             "type": "string"
           },
@@ -5163,6 +5273,13 @@
       "input_schema": {
         "properties": {
           "probe_type": {
+            "enum": [
+              "structural_leverage",
+              "contradiction_motifs",
+              "contradiction_frontiers",
+              "assumption_cracks",
+              "analogy_transfers"
+            ],
             "title": "Probe Type",
             "type": "string"
           },
@@ -6656,7 +6773,7 @@
             "title": "Logs Dir"
           },
           "task_id": {
-            "default": "default",
+            "default": "liu_component_v1",
             "title": "Task Id",
             "type": "string"
           },
@@ -6689,7 +6806,7 @@
       "tier": "advanced",
       "surface_tier": "advanced",
       "capability_family": "scientific_review",
-      "description": "Emit a stateless scientific-review directive for a non-BR external run.",
+      "description": "Emit a stateless scientific-review directive for a non-BR external run. session_id/client_session_id is optional for standalone directive rendering but required for the directive -> verdict round trip.",
       "input_schema": {
         "properties": {
           "goal": {
@@ -6719,6 +6836,7 @@
               }
             ],
             "default": null,
+            "description": "Optional only for standalone directive rendering; provide session_id or client_session_id to enable later submit_external_scientific_review_verdict.",
             "title": "Session Id"
           },
           "source_client": {
@@ -6743,7 +6861,13 @@
               }
             ],
             "default": null,
+            "description": "Optional only for standalone directive rendering; provide this or session_id to enable later submit_external_scientific_review_verdict.",
             "title": "Client Session Id"
+          },
+          "include_full_rubric": {
+            "default": false,
+            "title": "Include Full Rubric",
+            "type": "boolean"
           }
         },
         "required": [
@@ -6764,7 +6888,7 @@
       "tier": "advanced",
       "surface_tier": "advanced",
       "capability_family": "scientific_review",
-      "description": "Accept a ScientificReviewVerdict produced by an external coding agent.",
+      "description": "Accept a ScientificReviewVerdict produced by an external coding agent. Requires the same session_id/client_session_id binding used when the directive was issued.",
       "input_schema": {
         "properties": {
           "directive_id": {
@@ -6860,8 +6984,72 @@
       "input_schema": {
         "properties": {
           "findings": {
+            "description": "Non-empty structured finding rows. Each item requires claim, direction, status, and reason.",
             "items": {
               "additionalProperties": true,
+              "properties": {
+                "claim": {
+                  "description": "Tested claim or hypothesis.",
+                  "title": "Claim",
+                  "type": "string"
+                },
+                "direction": {
+                  "description": "Named tested direction or alternative.",
+                  "title": "Direction",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "Classification for this finding.",
+                  "enum": [
+                    "refuted",
+                    "supported",
+                    "inconclusive"
+                  ],
+                  "title": "Status",
+                  "type": "string"
+                },
+                "reason": {
+                  "description": "Brief evidence-backed rationale for the classification.",
+                  "title": "Reason",
+                  "type": "string"
+                },
+                "comparison": {
+                  "description": "Optional comparison context.",
+                  "title": "Comparison",
+                  "type": "string"
+                },
+                "evidence": {
+                  "description": "Optional evidence items used for compact summaries.",
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Evidence",
+                  "type": "array"
+                },
+                "caveats": {
+                  "description": "Optional caveats or coverage gaps.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Caveats",
+                  "type": "array"
+                },
+                "tags": {
+                  "description": "Optional tags for grouping.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Tags",
+                  "type": "array"
+                }
+              },
+              "required": [
+                "claim",
+                "direction",
+                "status",
+                "reason"
+              ],
               "type": "object"
             },
             "title": "Findings",
@@ -6985,6 +7173,11 @@
             "additionalProperties": true,
             "title": "Card Data",
             "type": "object"
+          },
+          "include_embedding_vector": {
+            "default": false,
+            "title": "Include Embedding Vector",
+            "type": "boolean"
           }
         },
         "required": [
@@ -7040,8 +7233,23 @@
             "title": "Filters"
           },
           "limit": {
-            "default": 10,
+            "default": 5,
             "title": "Limit",
+            "type": "integer"
+          },
+          "include_full_cards": {
+            "default": false,
+            "title": "Include Full Cards",
+            "type": "boolean"
+          },
+          "include_embedding_vector": {
+            "default": false,
+            "title": "Include Embedding Vector",
+            "type": "boolean"
+          },
+          "max_card_text_chars": {
+            "default": 1600,
+            "title": "Max Card Text Chars",
             "type": "integer"
           }
         },
@@ -7066,6 +7274,11 @@
           "card_id": {
             "title": "Card Id",
             "type": "string"
+          },
+          "include_embedding_vector": {
+            "default": false,
+            "title": "Include Embedding Vector",
+            "type": "boolean"
           }
         },
         "required": [

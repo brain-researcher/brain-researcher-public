@@ -40,9 +40,7 @@ def extract_roi_values(
     if neuropil_masks is None or neuropil_masks.size == 0:
         return roi_values.astype(np.float32)
 
-    neuropil_flat = neuropil_masks.reshape(neuropil_masks.shape[0], -1).astype(
-        np.float32
-    )
+    neuropil_flat = neuropil_masks.reshape(neuropil_masks.shape[0], -1).astype(np.float32)
     neuropil_counts = np.clip(neuropil_flat.sum(axis=1), 1.0, None)
     neuropil_values = (neuropil_flat @ image) / neuropil_counts
     corrected = roi_values - neuropil_coeff * neuropil_values

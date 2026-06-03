@@ -8,9 +8,7 @@ from typing import Any, Dict, Optional
 class DeploymentStrategySelector:
     """Select the safest deployment strategy for a service."""
 
-    def select_strategy(
-        self, service_profile: Dict[str, Any], preferred: Optional[str] = None
-    ) -> str:
+    def select_strategy(self, service_profile: Dict[str, Any], preferred: Optional[str] = None) -> str:
         criticality = service_profile.get("criticality", "medium")
 
         if preferred:

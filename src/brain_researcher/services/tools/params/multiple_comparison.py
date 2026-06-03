@@ -45,9 +45,7 @@ class MultipleComparisonParameters:
     verbose: bool = True
 
 
-def multiple_comparison_from_payload(
-    payload: Dict[str, Any],
-) -> MultipleComparisonParameters:
+def multiple_comparison_from_payload(payload: Dict[str, Any]) -> MultipleComparisonParameters:
     return MultipleComparisonParameters(
         p_values_file=payload.get("p_values_file"),
         p_values_array=_as_array(payload.get("p_values_array")),
@@ -63,11 +61,7 @@ def multiple_comparison_from_payload(
         min_cluster_size=int(payload.get("min_cluster_size", 1)),
         tfce_e=float(payload.get("tfce_e", 0.5)),
         tfce_h=float(payload.get("tfce_h", 2.0)),
-        output_dir=(
-            str(payload["output_dir"])
-            if payload.get("output_dir")
-            else str(Path.cwd() / "multiple_comparison")
-        ),
+        output_dir=str(payload["output_dir"]) if payload.get("output_dir") else str(Path.cwd() / "multiple_comparison"),
         save_corrected=bool(payload.get("save_corrected", True)),
         save_mask=bool(payload.get("save_mask", True)),
         save_report=bool(payload.get("save_report", True)),
@@ -92,14 +86,10 @@ def _load_p_values(params: MultipleComparisonParameters) -> np.ndarray:
             return np.asarray(data, dtype=float)
         return np.loadtxt(path)
 
-    raise ValueError(
-        "Multiple-comparison correction requires 'p_values_file' or 'p_values_array'."
-    )
+    raise ValueError("Multiple-comparison correction requires 'p_values_file' or 'p_values_array'.")
 
 
-def _apply_method(
-    p_values: np.ndarray, method: str, alpha: float
-) -> Tuple[np.ndarray, np.ndarray]:
+def _apply_method(p_values: np.ndarray, method: str, alpha: float) -> Tuple[np.ndarray, np.ndarray]:
     flat = p_values.ravel()
     n_tests = len(flat)
     method_key = method.lower()

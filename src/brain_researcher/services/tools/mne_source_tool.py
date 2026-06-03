@@ -8,19 +8,19 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.core.utils import configure_mne_environment
 from brain_researcher.services.tools.params import (
+    MNESourceInverseParameters,
     MNEBeamformerParameters,
     MNEDipoleParameters,
-    MNESourceInverseParameters,
+    mne_source_inverse_from_payload,
     mne_beamformer_from_payload,
     mne_dipole_from_payload,
-    mne_source_inverse_from_payload,
+    run_mne_source_inverse,
     run_mne_beamformer,
     run_mne_dipole,
-    run_mne_source_inverse,
 )
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
+from brain_researcher.core.utils import configure_mne_environment
 
 logger = logging.getLogger(__name__)
 
@@ -112,18 +112,14 @@ class MNESourceLocalizationTool(_BaseSourceTool):
         return "mne_source_localization"
 
     def get_tool_description(self) -> str:
-        return (
-            "Run MNE inverse solution (MNE/dSPM/sLORETA) using shared neurocore logic."
-        )
+        return "Run MNE inverse solution (MNE/dSPM/sLORETA) using shared neurocore logic."
 
     def get_args_schema(self):  # noqa: D401
         return MNESourceLocalizationArgs
 
     def _run(self, **kwargs: Any) -> ToolResult:
         if not self.mne_available:
-            return ToolResult(
-                status="error", error=self.mne_error or "MNE not available", data={}
-            )
+            return ToolResult(status="error", error=self.mne_error or "MNE not available", data={})
         args = MNESourceLocalizationArgs(**kwargs)
         payload: Dict[str, Any] = args.model_dump()
         payload["output_dir"] = self._default_output(args.output_dir, "inverse_output")
@@ -146,14 +142,10 @@ class MNEBeamformerTool(_BaseSourceTool):
 
     def _run(self, **kwargs: Any) -> ToolResult:
         if not self.mne_available:
-            return ToolResult(
-                status="error", error=self.mne_error or "MNE not available", data={}
-            )
+            return ToolResult(status="error", error=self.mne_error or "MNE not available", data={})
         args = MNEBeamformerArgs(**kwargs)
         payload: Dict[str, Any] = args.model_dump()
-        payload["output_dir"] = self._default_output(
-            args.output_dir, "beamformer_output"
-        )
+        payload["output_dir"] = self._default_output(args.output_dir, "beamformer_output")
         params: MNEBeamformerParameters = mne_beamformer_from_payload(payload)
         result = run_mne_beamformer(params)
         return ToolResult(status="success", data=result)
@@ -173,9 +165,7 @@ class MNEDipoleFittingTool(_BaseSourceTool):
 
     def _run(self, **kwargs: Any) -> ToolResult:
         if not self.mne_available:
-            return ToolResult(
-                status="error", error=self.mne_error or "MNE not available", data={}
-            )
+            return ToolResult(status="error", error=self.mne_error or "MNE not available", data={})
         args = MNEDipoleArgs(**kwargs)
         payload: Dict[str, Any] = args.model_dump()
         payload["output_dir"] = self._default_output(args.output_dir, "dipole_output")

@@ -210,9 +210,7 @@ def load_neurobagel_data(db, tsv_file: str) -> dict:
                 subject_audit.get("group_assignments", {})
             )
             if subject_audit.get("group_assignments", {}).get("cohort") is not None:
-                subject_props["site_or_cohort"] = subject_audit["group_assignments"][
-                    "cohort"
-                ]
+                subject_props["site_or_cohort"] = subject_audit["group_assignments"]["cohort"]
                 subject_props["group"] = subject_audit["group_assignments"]["cohort"]
             group_audit = stats["cohort_metadata"]["group_audit"]
             for key in subject_audit.get("resolved_group_keys", []):
@@ -229,9 +227,7 @@ def load_neurobagel_data(db, tsv_file: str) -> dict:
                 bucket["participant_counts"][value] = (
                     int(bucket["participant_counts"].get(value, 0)) + 1
                 )
-                bucket["row_counts"][value] = (
-                    int(bucket["row_counts"].get(value, 0)) + 1
-                )
+                bucket["row_counts"][value] = int(bucket["row_counts"].get(value, 0)) + 1
                 bucket["n_levels"] = len(bucket["participant_counts"])
 
         subject_node_id = None

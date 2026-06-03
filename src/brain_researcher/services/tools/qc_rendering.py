@@ -69,16 +69,12 @@ def _select_slice_indices(volume: np.ndarray, axis: int, count: int = 3) -> list
 
 
 def _match_shapes(left: np.ndarray, right: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    target_shape = tuple(
-        min(a, b) for a, b in zip(left.shape[:3], right.shape[:3], strict=False)
-    )
+    target_shape = tuple(min(a, b) for a, b in zip(left.shape[:3], right.shape[:3], strict=False))
     slices = tuple(slice(0, size) for size in target_shape)
     return np.asarray(left[slices]), np.asarray(right[slices])
 
 
-def _checkerboard_slice(
-    reference_slice: np.ndarray, moving_slice: np.ndarray, tiles: int = 8
-) -> np.ndarray:
+def _checkerboard_slice(reference_slice: np.ndarray, moving_slice: np.ndarray, tiles: int = 8) -> np.ndarray:
     height, width = reference_slice.shape
     tile_h = max(1, height // tiles)
     tile_w = max(1, width // tiles)
@@ -108,9 +104,7 @@ def render_mask_overlay_png(
     )
     slices: list[tuple[str, int, int]] = []
     for plane_name, axis in planes:
-        indices = _safe_slice_indices(
-            np.any(mask > 0, axis=tuple(i for i in range(3) if i != axis))
-        )
+        indices = _safe_slice_indices(np.any(mask > 0, axis=tuple(i for i in range(3) if i != axis)))
         if not indices:
             indices = [mask.shape[axis] // 2]
         for idx in indices:

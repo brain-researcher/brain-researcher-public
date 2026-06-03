@@ -306,7 +306,7 @@ tasks:
     source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/FaceBody/stimuli/*/*.jpg
     manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_face_body_manifest.json
     materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_face_body
-    derived_video_root: /home/zijiaochen/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_face_body
+    derived_video_root: ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_face_body
   contrasts:
   - contrast_id: face_vs_scrambled
     positive_conditions:
@@ -356,7 +356,7 @@ tasks:
     source_glob: /data/brain_researcher/research/discovery/inputs/public_protocols/Scene/Stimuli/Scanner/*.png
     manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_scene_perception_manifest.json
     materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_scene_perception
-    derived_video_root: /home/zijiaochen/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_scene_perception
+    derived_video_root: ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_scene_perception
     note: preserve a/b and w/x labels when building pairwise scene plausibility clips
   contrasts:
   - contrast_id: coherent_scene_vs_perturbed_scene
@@ -445,7 +445,7 @@ tasks:
       Stimuli/*
     manifest_path: /data/brain_researcher/research/discovery/project/manifests/ibc_hcp_emotion_manifest.json
     materialized_root: /data/brain_researcher/research/discovery/project/inputs/materialized/ibc_hcp_emotion
-    derived_video_root: /home/zijiaochen/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_hcp_emotion
+    derived_video_root: ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/data/stimuli/tribe_ibc/derived_media/ibc_hcp_emotion
     note: stay cortical in interpretation; TRIBE outputs are fsaverage5 surface predictions
       and will not report amygdala directly
   contrasts:

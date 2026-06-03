@@ -5,14 +5,14 @@ Executes neuroimaging tools in different software environments (modules, contain
 Handles environment setup, parameter passing, and output collection.
 """
 
-import json
-import logging
 import os
 import subprocess
 import tempfile
-from dataclasses import dataclass
+import json
+import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Optional, Dict, Any, List, Union
+from dataclasses import dataclass
 
 from .package_resolver import BackendType, ToolBackend
 
@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RunResult:
     """Result from running a backend command."""
-
     success: bool
     stdout: str
     stderr: str
@@ -56,7 +55,10 @@ class EnvironmentRunner:
         for cmd in ["apptainer", "singularity"]:
             try:
                 result = subprocess.run(
-                    [cmd, "--version"], capture_output=True, text=True, timeout=2
+                    [cmd, "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2
                 )
                 if result.returncode == 0:
                     logger.info(f"Container runtime detected: {cmd}")
@@ -74,7 +76,7 @@ class EnvironmentRunner:
         env: Dict[str, str] = None,
         input_files: Dict[str, Path] = None,
         output_files: Dict[str, str] = None,
-        gpu: bool = False,
+        gpu: bool = False
     ) -> RunResult:
         """
         Run a tool through the specified backend.
@@ -92,21 +94,13 @@ class EnvironmentRunner:
             RunResult with execution details
         """
         if backend.type == BackendType.MODULE:
-            return self.run_cvmfs_module(
-                backend, command, args, env, input_files, output_files
-            )
+            return self.run_cvmfs_module(backend, command, args, env, input_files, output_files)
         elif backend.type == BackendType.CONTAINER:
-            return self.run_apptainer(
-                backend, command, args, env, input_files, output_files, gpu
-            )
+            return self.run_apptainer(backend, command, args, env, input_files, output_files, gpu)
         elif backend.type == BackendType.LOCAL:
-            return self.run_local(
-                backend, command, args, env, input_files, output_files
-            )
+            return self.run_local(backend, command, args, env, input_files, output_files)
         elif backend.type == BackendType.PYTHON:
-            return self.run_python(
-                backend, command, args, env, input_files, output_files
-            )
+            return self.run_python(backend, command, args, env, input_files, output_files)
         else:
             raise ValueError(f"Unsupported backend type: {backend.type}")
 
@@ -117,7 +111,7 @@ class EnvironmentRunner:
         args: List[str] = None,
         env: Dict[str, str] = None,
         input_files: Dict[str, Path] = None,
-        output_files: Dict[str, str] = None,
+        output_files: Dict[str, str] = None
     ) -> RunResult:
         """Run a tool via CVMFS module system."""
         if not backend.module_name:
@@ -125,7 +119,7 @@ class EnvironmentRunner:
                 success=False,
                 stdout="",
                 stderr="Module name not specified",
-                return_code=1,
+                return_code=1
             )
 
         # Build command with module load
@@ -161,7 +155,7 @@ class EnvironmentRunner:
                         success=False,
                         stdout="",
                         stderr=f"Input file not found: {path}",
-                        return_code=1,
+                        return_code=1
                     )
 
         # Run the command
@@ -172,7 +166,7 @@ class EnvironmentRunner:
                 capture_output=True,
                 text=True,
                 env=run_env,
-                cwd=str(self.work_dir),
+                cwd=str(self.work_dir)
             )
 
             # Check for output files
@@ -189,11 +183,16 @@ class EnvironmentRunner:
                 stderr=result.stderr,
                 return_code=result.returncode,
                 output_files=found_outputs,
-                metadata={"backend": "cvmfs_module", "module": backend.module_name},
+                metadata={"backend": "cvmfs_module", "module": backend.module_name}
             )
 
         except Exception as e:
-            return RunResult(success=False, stdout="", stderr=str(e), return_code=-1)
+            return RunResult(
+                success=False,
+                stdout="",
+                stderr=str(e),
+                return_code=-1
+            )
 
     def run_apptainer(
         self,
@@ -203,7 +202,7 @@ class EnvironmentRunner:
         env: Dict[str, str] = None,
         input_files: Dict[str, Path] = None,
         output_files: Dict[str, str] = None,
-        gpu: bool = False,
+        gpu: bool = False
     ) -> RunResult:
         """Run a tool via Apptainer/Singularity container."""
         if not backend.container_path:
@@ -211,7 +210,7 @@ class EnvironmentRunner:
                 success=False,
                 stdout="",
                 stderr="Container path not specified",
-                return_code=1,
+                return_code=1
             )
 
         if not self._container_runtime:
@@ -219,7 +218,7 @@ class EnvironmentRunner:
                 success=False,
                 stdout="",
                 stderr="No container runtime available",
-                return_code=1,
+                return_code=1
             )
 
         # Build apptainer command
@@ -275,7 +274,7 @@ class EnvironmentRunner:
                 capture_output=True,
                 text=True,
                 env=run_env,
-                cwd=str(self.work_dir),
+                cwd=str(self.work_dir)
             )
 
             # Check for output files
@@ -295,12 +294,17 @@ class EnvironmentRunner:
                 metadata={
                     "backend": "apptainer",
                     "container": backend.container_path,
-                    "gpu": gpu,
-                },
+                    "gpu": gpu
+                }
             )
 
         except Exception as e:
-            return RunResult(success=False, stdout="", stderr=str(e), return_code=-1)
+            return RunResult(
+                success=False,
+                stdout="",
+                stderr=str(e),
+                return_code=-1
+            )
 
     def run_local(
         self,
@@ -309,7 +313,7 @@ class EnvironmentRunner:
         args: List[str] = None,
         env: Dict[str, str] = None,
         input_files: Dict[str, Path] = None,
-        output_files: Dict[str, str] = None,
+        output_files: Dict[str, str] = None
     ) -> RunResult:
         """Run a locally installed tool."""
         # Use the path from backend if available, otherwise use command as-is
@@ -340,7 +344,7 @@ class EnvironmentRunner:
                 capture_output=True,
                 text=True,
                 env=run_env,
-                cwd=str(self.work_dir),
+                cwd=str(self.work_dir)
             )
 
             # Check for output files
@@ -357,11 +361,16 @@ class EnvironmentRunner:
                 stderr=result.stderr,
                 return_code=result.returncode,
                 output_files=found_outputs,
-                metadata={"backend": "local", "executable": executable},
+                metadata={"backend": "local", "executable": executable}
             )
 
         except Exception as e:
-            return RunResult(success=False, stdout="", stderr=str(e), return_code=-1)
+            return RunResult(
+                success=False,
+                stdout="",
+                stderr=str(e),
+                return_code=-1
+            )
 
     def run_python(
         self,
@@ -370,7 +379,7 @@ class EnvironmentRunner:
         args: List[str] = None,
         env: Dict[str, str] = None,
         input_files: Dict[str, Path] = None,
-        output_files: Dict[str, str] = None,
+        output_files: Dict[str, str] = None
     ) -> RunResult:
         """Run a tool via Python interface (e.g., Nipype)."""
         if not backend.python_module:
@@ -378,12 +387,16 @@ class EnvironmentRunner:
                 success=False,
                 stdout="",
                 stderr="Python module not specified",
-                return_code=1,
+                return_code=1
             )
 
         # Create a Python script to run the tool
         script_content = self._generate_python_script(
-            backend.python_module, command, args, input_files, output_files
+            backend.python_module,
+            command,
+            args,
+            input_files,
+            output_files
         )
 
         # Write script to temporary file
@@ -402,7 +415,7 @@ class EnvironmentRunner:
                 capture_output=True,
                 text=True,
                 env=run_env,
-                cwd=str(self.work_dir),
+                cwd=str(self.work_dir)
             )
 
             # Check for output files
@@ -422,11 +435,16 @@ class EnvironmentRunner:
                 stderr=result.stderr,
                 return_code=result.returncode,
                 output_files=found_outputs,
-                metadata={"backend": "python", "module": backend.python_module},
+                metadata={"backend": "python", "module": backend.python_module}
             )
 
         except Exception as e:
-            return RunResult(success=False, stdout="", stderr=str(e), return_code=-1)
+            return RunResult(
+                success=False,
+                stdout="",
+                stderr=str(e),
+                return_code=-1
+            )
 
     def _generate_python_script(
         self,
@@ -434,7 +452,7 @@ class EnvironmentRunner:
         command: str,
         args: List[str] = None,
         input_files: Dict[str, Path] = None,
-        output_files: Dict[str, str] = None,
+        output_files: Dict[str, str] = None
     ) -> str:
         """Generate Python script for tool execution."""
         # Basic script template
@@ -455,13 +473,9 @@ except ImportError as e:
 
         # Add tool-specific implementation based on module and command
         if "nipype" in module:
-            script += self._generate_nipype_code(
-                module, command, args, input_files, output_files
-            )
+            script += self._generate_nipype_code(module, command, args, input_files, output_files)
         elif "antspyx" in module:
-            script += self._generate_antspyx_code(
-                command, args, input_files, output_files
-            )
+            script += self._generate_antspyx_code(command, args, input_files, output_files)
         else:
             # Generic fallback
             script += f"""
@@ -478,7 +492,7 @@ print("This is a placeholder implementation")
         command: str,
         args: List[str] = None,
         input_files: Dict[str, Path] = None,
-        output_files: Dict[str, str] = None,
+        output_files: Dict[str, str] = None
     ) -> str:
         """Generate Nipype-specific code."""
         code = f"""
@@ -515,7 +529,7 @@ except Exception as e:
         command: str,
         args: List[str] = None,
         input_files: Dict[str, Path] = None,
-        output_files: Dict[str, str] = None,
+        output_files: Dict[str, str] = None
     ) -> str:
         """Generate ANTsPy-specific code."""
         code = """
@@ -534,7 +548,7 @@ try:
     ants.image_write(corrected, '{output}')
 """.format(
                 input=input_files.get("input_image", "input.nii.gz"),
-                output=output_files.get("output_image", "output.nii.gz"),
+                output=output_files.get("output_image", "output.nii.gz")
             )
         else:
             code += f"""

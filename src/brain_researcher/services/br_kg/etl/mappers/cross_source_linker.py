@@ -14,15 +14,15 @@ Usage:
 """
 
 import logging
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
 from typing import Any
 
+from brain_researcher.services.br_kg.utils.node_label_linker import NodeLabelLinker
 from brain_researcher.services.br_kg.utils.matching_profile import (
     MATCHING_PROFILE_VERSION,
     matching_profile_hash,
 )
-from brain_researcher.services.br_kg.utils.node_label_linker import NodeLabelLinker
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ class CrossSourceLinker:
                 "target_source": "cognitive_atlas",
                 "threshold": 0.80,
                 "description": "NiCLIP cognitive processes to high-level concepts",
-            },
+            }
         ],
         "neurostore": [
             {
@@ -474,9 +474,7 @@ class CrossSourceLinker:
         if self._niclip_enhanced_disabled:
             return 0
         try:
-            from brain_researcher.services.br_kg.etl.mappers.niclip_task_mapper import (
-                get_mapper,
-            )
+            from brain_researcher.services.br_kg.etl.mappers.niclip_task_mapper import get_mapper
             from brain_researcher.services.br_kg.utils.vocab_loader import (
                 search_similar_tasks,
             )
@@ -487,9 +485,7 @@ class CrossSourceLinker:
                 return 0
 
             created = 0
-            logger.info(
-                f"Using NiCLIP-enhanced linking for {source_label} -> {target_label}"
-            )
+            logger.info(f"Using NiCLIP-enhanced linking for {source_label} -> {target_label}")
 
             # If linking tasks, use NiCLIP's task mappings
             if source_label.lower() == "task" or target_label.lower() == "task":
@@ -502,20 +498,16 @@ class CrossSourceLinker:
                     # Check if task is in NiCLIP
                     if task_name in mapper.task_to_concepts:
                         # Task is validated by NiCLIP, increase confidence
-                        adjusted_threshold = (
-                            threshold * 0.9
-                        )  # Lower threshold for NiCLIP tasks
+                        adjusted_threshold = threshold * 0.9  # Lower threshold for NiCLIP tasks
 
                         # Find similar tasks in target
                         similar = search_similar_tasks(task_name, top_k=5)
                         for match in similar:
-                            if match["score"] >= adjusted_threshold:
-                                target_nodes = list(
-                                    self.db.find_nodes(
-                                        labels=target_label,
-                                        properties={"name": match["task"]},
-                                    )
-                                )
+                            if match['score'] >= adjusted_threshold:
+                                target_nodes = list(self.db.find_nodes(
+                                    labels=target_label,
+                                    properties={"name": match['task']}
+                                ))
                                 for target_id, target_node in target_nodes:
                                     if task_id != target_id:  # Avoid self-links
                                         # Create MAPS_TO relationship
@@ -524,11 +516,11 @@ class CrossSourceLinker:
                                             target_id,
                                             "MAPS_TO",
                                             properties={
-                                                "confidence": match["score"],
+                                                "confidence": match['score'],
                                                 "method": "niclip_enhanced",
                                                 "created_by": "cross_source_linker",
-                                                "timestamp": datetime.utcnow().isoformat(),
-                                            },
+                                                "timestamp": datetime.utcnow().isoformat()
+                                            }
                                         )
                                         if rel_created:
                                             created += 1
@@ -551,12 +543,10 @@ class CrossSourceLinker:
 
                         # Link to concepts in same process with higher confidence
                         for related_concept in process_concepts[:10]:  # Limit to top 10
-                            target_nodes = list(
-                                self.db.find_nodes(
-                                    labels=target_label,
-                                    properties={"name": related_concept},
-                                )
-                            )
+                            target_nodes = list(self.db.find_nodes(
+                                labels=target_label,
+                                properties={"name": related_concept}
+                            ))
                             for target_id, target_node in target_nodes:
                                 if concept_id != target_id:
                                     # Create MAPS_TO relationship
@@ -569,8 +559,8 @@ class CrossSourceLinker:
                                             "method": "niclip_process_mapping",
                                             "cognitive_process": process,
                                             "created_by": "cross_source_linker",
-                                            "timestamp": datetime.utcnow().isoformat(),
-                                        },
+                                            "timestamp": datetime.utcnow().isoformat()
+                                        }
                                     )
                                     if rel_created:
                                         created += 1
@@ -686,9 +676,7 @@ class CrossSourceLinker:
             match_props = {
                 "match_version": MATCHING_PROFILE_VERSION,
                 "match_profile": profile or "default",
-                "match_config_hash": matching_profile_hash(
-                    self.linker._matching_profiles
-                ),
+                "match_config_hash": matching_profile_hash(self.linker._matching_profiles),
             }
             relationship_key_props = ["match_version", "match_profile"]
             equivalence_only = True
@@ -780,9 +768,7 @@ class CrossSourceLinker:
             match_props = {
                 "match_version": MATCHING_PROFILE_VERSION,
                 "match_profile": profile or "default",
-                "match_config_hash": matching_profile_hash(
-                    self.linker._matching_profiles
-                ),
+                "match_config_hash": matching_profile_hash(self.linker._matching_profiles),
             }
             relationship_key_props = ["match_version", "match_profile"]
             equivalence_only = True
@@ -817,9 +803,7 @@ class CrossSourceLinker:
             )
 
     @staticmethod
-    def _matching_profile_for_labels(
-        source_label: str, target_label: str
-    ) -> str | None:
+    def _matching_profile_for_labels(source_label: str, target_label: str) -> str | None:
         if source_label == "Task" and target_label == "Task":
             return "task"
         if source_label == "Concept" and target_label == "Concept":
@@ -834,9 +818,7 @@ class CrossSourceLinker:
     def _candidate_output_path(source_name: str, profile: str | None) -> str:
         repo_root = Path(__file__).resolve().parents[5]
         profile_name = profile or "default"
-        filename = (
-            f"{source_name}_{profile_name}_{MATCHING_PROFILE_VERSION}_candidates.jsonl"
-        )
+        filename = f"{source_name}_{profile_name}_{MATCHING_PROFILE_VERSION}_candidates.jsonl"
         return str(repo_root / "artifacts" / "matching" / "candidates" / filename)
 
     def get_linking_report(self) -> str:

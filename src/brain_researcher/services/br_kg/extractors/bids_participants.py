@@ -10,6 +10,7 @@ import yaml
 
 from brain_researcher.config.paths import resolve_from_config
 
+
 LEXICA_DIR = resolve_from_config("lexica")
 
 # TODO CMD: expand diagnosis/medication/instrument lexica before large-scale scoring

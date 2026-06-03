@@ -10,19 +10,18 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
-
 import pytest
 
 import brain_researcher.services.agent.logging.run_recorder as run_recorder_module
 from brain_researcher.config.run_artifacts import get_metadata_root
 from brain_researcher.services.agent.logging.run_recorder import (
     RunRecorder,
-    compute_tool_spec_digest,
-    file_fingerprint,
-    get_git_sha,
-    get_package_version,
     get_recorder,
+    file_fingerprint,
     redacted_path,
+    compute_tool_spec_digest,
+    get_package_version,
+    get_git_sha,
 )
 from brain_researcher.services.tools.args_resolver import ArgsResolver
 

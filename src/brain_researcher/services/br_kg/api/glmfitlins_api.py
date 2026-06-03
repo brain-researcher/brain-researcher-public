@@ -12,7 +12,9 @@ from typing import Any
 
 from flask import Blueprint, jsonify, request
 
-from brain_researcher.services.br_kg.db.schema import setup_schema as setup_neo4j_schema
+from brain_researcher.services.br_kg.db.schema import (
+    setup_schema as setup_neo4j_schema,
+)
 from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
 
 # Configure logging
@@ -82,6 +84,8 @@ def _parse_int_param(
     return parsed
 
 
+
+
 def _generate_spec_family(
     priors: dict[str, dict[str, float]],
     *,
@@ -119,9 +123,7 @@ def get_db():
             try:
                 setup_neo4j_schema(_db)
             except Exception as exc:  # pragma: no cover
-                logger.warning(
-                    "Neo4j schema setup skipped for GLM FitLins API: %s", exc
-                )
+                logger.warning("Neo4j schema setup skipped for GLM FitLins API: %s", exc)
             logger.info("Connected to Neo4j backend for GLM FitLins API")
         except Exception as exc:
             raise RuntimeError(
@@ -413,9 +415,7 @@ def search():
             return jsonify({"error": str(exc)}), 400
 
         results = {"datasets": [], "contrasts": [], "constructs": []}
-        rerank_flag = (
-            request.args.get("rerank") or os.environ.get("BR_SEARCH_RERANK", "")
-        ).lower()
+        rerank_flag = (request.args.get("rerank") or os.environ.get("BR_SEARCH_RERANK", "")).lower()
 
         # Search datasets
         if not type_filter or type_filter == "dataset":
@@ -464,16 +464,11 @@ def search():
                     )
 
         # Optional NiCLIP re-rank (constructs only by default)
-        if (
-            rerank_flag in {"1", "true", "yes", "on", "niclip"}
-            and results["constructs"]
-        ):
+        if rerank_flag in {"1", "true", "yes", "on", "niclip"} and results["constructs"]:
             try:
                 from brain_researcher.services.br_kg.niclip.rerank import rerank_items
 
-                reranked, meta = rerank_items(
-                    query, results["constructs"], text_key="name"
-                )
+                reranked, meta = rerank_items(query, results["constructs"], text_key="name")
                 results["constructs"] = reranked
                 results["rerank"] = meta
             except Exception as exc:  # pragma: no cover - optional dependency
@@ -504,9 +499,7 @@ def search():
                         score += corpus.count(text)
                     return score
 
-                def _rerank(
-                    items: list[dict[str, Any]], keys: list[str]
-                ) -> list[dict[str, Any]]:
+                def _rerank(items: list[dict[str, Any]], keys: list[str]) -> list[dict[str, Any]]:
                     scored = []
                     for item in items:
                         score = _score_item(item, keys)
@@ -515,18 +508,12 @@ def search():
                     return [item for _, item in scored]
 
                 target_all = rerank_flag == "gfs_all"
-                if (
-                    target_all or rerank_flag in {"gfs", "literature", "gfs_lit"}
-                ) and results["constructs"]:
+                if (target_all or rerank_flag in {"gfs", "literature", "gfs_lit"}) and results["constructs"]:
                     results["constructs"] = _rerank(results["constructs"], ["name"])
                 if target_all and results["datasets"]:
-                    results["datasets"] = _rerank(
-                        results["datasets"], ["dataset_id", "name"]
-                    )
+                    results["datasets"] = _rerank(results["datasets"], ["dataset_id", "name"])
                 if target_all and results["contrasts"]:
-                    results["contrasts"] = _rerank(
-                        results["contrasts"], ["name", "task_label", "dataset_id"]
-                    )
+                    results["contrasts"] = _rerank(results["contrasts"], ["name", "task_label", "dataset_id"])
 
                 results["rerank_gfs"] = {
                     "status": gfs_result.get("status"),
@@ -710,7 +697,9 @@ def get_glm_priors():
 
         if mode == "family":
             try:
-                k = _parse_int_param("k", request.args.get("k"), default=24, minimum=1)
+                k = _parse_int_param(
+                    "k", request.args.get("k"), default=24, minimum=1
+                )
             except ValueError as exc:
                 return jsonify({"error": str(exc)}), 400
         else:
@@ -971,18 +960,12 @@ def _get_glm_priors_from_graph_db(
                             cov_val = float(value)
                         except (TypeError, ValueError):
                             continue
-                        coverage_sums[axis] = coverage_sums.get(axis, 0.0) + (
-                            cov_val * node_n_specs
-                        )
-                        coverage_weights[axis] = (
-                            coverage_weights.get(axis, 0.0) + node_n_specs
-                        )
+                        coverage_sums[axis] = coverage_sums.get(axis, 0.0) + (cov_val * node_n_specs)
+                        coverage_weights[axis] = coverage_weights.get(axis, 0.0) + node_n_specs
             dataset_val = node.get("dataset_id") or node.get("study_id")
             if dataset_val:
                 datasets.add(str(dataset_val))
-            task_val = (
-                node.get("task") or node.get("task_label") or node.get("task_name")
-            )
+            task_val = node.get("task") or node.get("task_label") or node.get("task_name")
             if task_val:
                 task_str = str(task_val)
                 if task_str.lower() not in {"__all__", "all"}:

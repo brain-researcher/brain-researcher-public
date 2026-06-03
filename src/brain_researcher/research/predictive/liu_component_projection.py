@@ -146,12 +146,7 @@ COMPONENT_COLUMN_TO_ROW_INDEX = {
 }
 
 COMPONENT_TOP_WEIGHT_HINTS = {
-    "ICA_Cognition": [
-        "CogFluidComp",
-        "CogEarlyComp",
-        "CogTotalComp",
-        "Cognitive Flexibility",
-    ],
+    "ICA_Cognition": ["CogFluidComp", "CogEarlyComp", "CogTotalComp", "Cognitive Flexibility"],
     "ICA_TobaccoUse": ["Tobacco Use", "Smoking History"],
     "ICA_PersonalityEmotion": ["Loneliness", "PercReject", "Sadness", "LifeSatisf"],
     "ICA_IllicitDrugUse": ["Marijuana", "Illicits Use", "Cocaine", "Hallucinogens"],
@@ -177,19 +172,14 @@ def _sha256(path: Path) -> str:
 
 
 def _read_header3_names(mat_payload: dict[str, Any]) -> list[str]:
-    return [
-        str(x[0]) if hasattr(x, "__len__") else str(x)
-        for x in mat_payload["header3"].ravel()
-    ]
+    return [str(x[0]) if hasattr(x, "__len__") else str(x) for x in mat_payload["header3"].ravel()]
 
 
 def behavior_column_mapping() -> dict[str, str]:
     return dict(zip(EXPECTED_HEADER3_NAMES, EXPECTED_BEHAVIOR_COLUMNS, strict=True))
 
 
-def download_demixing_matrix(
-    destination: Path, *, url: str = SUBCORTEX_ICA_MAT_URL
-) -> Path:
+def download_demixing_matrix(destination: Path, *, url: str = SUBCORTEX_ICA_MAT_URL) -> Path:
     destination.parent.mkdir(parents=True, exist_ok=True)
     response = requests.get(url, timeout=60)
     response.raise_for_status()
@@ -294,15 +284,8 @@ def project_liu_component_scores(
 ) -> LiuProjectionArtifacts:
     validate_header_alignment(header3_names)
 
-    required_columns = [
-        subject_id_column,
-        age_column,
-        sex_column,
-        *EXPECTED_BEHAVIOR_COLUMNS,
-    ]
-    missing_columns = [
-        column for column in required_columns if column not in behavior_df.columns
-    ]
+    required_columns = [subject_id_column, age_column, sex_column, *EXPECTED_BEHAVIOR_COLUMNS]
+    missing_columns = [column for column in required_columns if column not in behavior_df.columns]
     if missing_columns:
         raise ValueError(f"Missing required behavior columns: {missing_columns}")
 
@@ -318,9 +301,7 @@ def project_liu_component_scores(
     age_sex_available_row_count = len(working)
     complete_cases = working.dropna(subset=EXPECTED_BEHAVIOR_COLUMNS).copy()
     if complete_cases.empty:
-        raise ValueError(
-            "No complete-case rows remain after filtering the 109 behavior items"
-        )
+        raise ValueError("No complete-case rows remain after filtering the 109 behavior items")
 
     continuous_columns = infer_continuous_columns(complete_cases)
     working = working.assign(
@@ -328,9 +309,7 @@ def project_liu_component_scores(
     )
     if working["_subject_key"].duplicated().any():
         duplicated = (
-            working.loc[working["_subject_key"].duplicated(), "_subject_key"]
-            .astype(str)
-            .tolist()
+            working.loc[working["_subject_key"].duplicated(), "_subject_key"].astype(str).tolist()
         )
         raise ValueError(f"Duplicate subject ids in behavior CSV: {duplicated[:10]}")
 
@@ -342,18 +321,12 @@ def project_liu_component_scores(
         if observed_raw.empty:
             raise ValueError(f"No observed values available for {column}")
         is_continuous = column in continuous_columns
-        raw_impute_values[column] = _impute_value(
-            observed_raw, continuous=is_continuous
-        )
+        raw_impute_values[column] = _impute_value(observed_raw, continuous=is_continuous)
 
         transformed_column = pd.Series(np.nan, index=working.index, dtype=float)
         if is_continuous:
-            transformed_observed = inverse_gaussian_rank_transform(
-                observed_raw.astype(float)
-            )
-            transformed_column.loc[observed_raw.index] = transformed_observed.astype(
-                float
-            )
+            transformed_observed = inverse_gaussian_rank_transform(observed_raw.astype(float))
+            transformed_column.loc[observed_raw.index] = transformed_observed.astype(float)
         else:
             transformed_column.loc[observed_raw.index] = observed_raw.astype(float)
 
@@ -384,17 +357,9 @@ def project_liu_component_scores(
         per_subject_missing_columns: dict[str, list[str]] = {}
         imputed_cell_count = 0
     else:
-        selected_subject_keys = [
-            str(subject_id).strip()
-            for subject_id in selected_subject_ids
-            if str(subject_id).strip()
-        ]
+        selected_subject_keys = [str(subject_id).strip() for subject_id in selected_subject_ids if str(subject_id).strip()]
         subject_lookup = working.set_index("_subject_key", drop=False)
-        missing_subject_ids = [
-            subject_id
-            for subject_id in selected_subject_keys
-            if subject_id not in subject_lookup.index
-        ]
+        missing_subject_ids = [subject_id for subject_id in selected_subject_keys if subject_id not in subject_lookup.index]
         if missing_subject_ids:
             raise ValueError(
                 "Selected subject ids are missing from the behavior CSV: "
@@ -404,11 +369,7 @@ def project_liu_component_scores(
         selected_subject_order_source = "explicit_subject_list"
         per_subject_missing_columns = {}
         imputed_cell_count = 0
-        residual_selected = (
-            residuals.set_index(working["_subject_key"])
-            .loc[selected_subject_keys]
-            .copy()
-        )
+        residual_selected = residuals.set_index(working["_subject_key"]).loc[selected_subject_keys].copy()
         raw_selected = selected.set_index("_subject_key", drop=False)
         for subject_id in selected_subject_keys:
             missing_columns = [
@@ -419,48 +380,35 @@ def project_liu_component_scores(
             if missing_columns:
                 per_subject_missing_columns[subject_id] = missing_columns
             for column in missing_columns:
-                residual_selected.at[subject_id, column] = residual_impute_values[
-                    column
-                ]
+                residual_selected.at[subject_id, column] = residual_impute_values[column]
                 raw_selected.at[subject_id, column] = raw_impute_values[column]
                 imputed_cell_count += 1
         selected = raw_selected.reset_index(drop=True)
         residuals = residual_selected.reset_index(drop=True)
 
     if selected_subject_ids is None:
-        residual_matrix = residuals.loc[
-            complete_cases.index, EXPECTED_BEHAVIOR_COLUMNS
-        ].to_numpy(dtype=float)
-    else:
-        residual_matrix = residuals.loc[:, EXPECTED_BEHAVIOR_COLUMNS].to_numpy(
+        residual_matrix = residuals.loc[complete_cases.index, EXPECTED_BEHAVIOR_COLUMNS].to_numpy(
             dtype=float
         )
+    else:
+        residual_matrix = residuals.loc[:, EXPECTED_BEHAVIOR_COLUMNS].to_numpy(dtype=float)
     projected = residual_matrix @ demixing_matrix.T
 
     score_df = pd.DataFrame(
         {
             subject_id_column: selected_subject_keys,
-            "ICA_Cognition": projected[
-                :, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_Cognition"]
-            ],
-            "ICA_TobaccoUse": projected[
-                :, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_TobaccoUse"]
-            ],
+            "ICA_Cognition": projected[:, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_Cognition"]],
+            "ICA_TobaccoUse": projected[:, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_TobaccoUse"]],
             "ICA_PersonalityEmotion": projected[
                 :, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_PersonalityEmotion"]
             ],
-            "ICA_IllicitDrugUse": projected[
-                :, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_IllicitDrugUse"]
-            ],
-            "ICA_MentalHealth": projected[
-                :, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_MentalHealth"]
-            ],
+            "ICA_IllicitDrugUse": projected[:, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_IllicitDrugUse"]],
+            "ICA_MentalHealth": projected[:, COMPONENT_COLUMN_TO_ROW_INDEX["ICA_MentalHealth"]],
         }
     )
 
     unique_counts = {
-        column: int(complete_cases[column].nunique(dropna=True))
-        for column in EXPECTED_BEHAVIOR_COLUMNS
+        column: int(complete_cases[column].nunique(dropna=True)) for column in EXPECTED_BEHAVIOR_COLUMNS
     }
     provenance = {
         "line_name": "liu_component_autoresearch",
@@ -496,17 +444,11 @@ def project_liu_component_scores(
             "continuous_columns": continuous_columns,
             "subject_selection_mode": selected_subject_order_source,
             "selected_subject_list_path": (
-                None
-                if selected_subject_list_path is None
-                else str(selected_subject_list_path)
+                None if selected_subject_list_path is None else str(selected_subject_list_path)
             ),
-            "requested_subject_count": (
-                None if selected_subject_ids is None else len(selected_subject_ids)
-            ),
+            "requested_subject_count": None if selected_subject_ids is None else len(selected_subject_ids),
             "missing_subject_ids_from_behavior": missing_subject_ids,
-            "subjects_with_missing_items_before_imputation_count": len(
-                per_subject_missing_columns
-            ),
+            "subjects_with_missing_items_before_imputation_count": len(per_subject_missing_columns),
             "subjects_with_missing_items_before_imputation": per_subject_missing_columns,
             "imputed_cell_count": imputed_cell_count,
             "raw_imputation_strategy": {
@@ -524,9 +466,7 @@ def project_liu_component_scores(
             component_column: {
                 "row_index": row_index,
                 "top_weight_hints": COMPONENT_TOP_WEIGHT_HINTS[component_column],
-                "top_weight_items": top_weight_items_for_row(
-                    demixing_matrix, header3_names, row_index
-                ),
+                "top_weight_items": top_weight_items_for_row(demixing_matrix, header3_names, row_index),
             }
             for component_column, row_index in COMPONENT_COLUMN_TO_ROW_INDEX.items()
         },

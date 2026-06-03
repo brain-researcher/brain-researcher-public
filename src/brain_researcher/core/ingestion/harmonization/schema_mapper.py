@@ -1,13 +1,12 @@
 """Schema mapping for cross-dataset harmonization."""
 
-import json
 import logging
-from dataclasses import dataclass
+import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import numpy as np
+from typing import Dict, List, Any, Optional, Tuple, Union
+from dataclasses import dataclass
 import pandas as pd
+import numpy as np
 from fuzzywuzzy import fuzz, process
 
 logger = logging.getLogger(__name__)
@@ -16,7 +15,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FieldMapping:
     """Represents a field mapping between datasets."""
-
     source_field: str
     target_field: str
     transform_func: Optional[callable] = None
@@ -43,54 +41,39 @@ class SchemaMapper:
 
         # Common field mappings across neuroimaging datasets
         self.common_mappings = {
-            "subject_id": [
-                "sub",
-                "subject",
-                "participant_id",
-                "id",
-                "subject_id",
-                "SubjectID",
-                "Subject",
-                "subj_id",
-            ],
-            "session": ["ses", "session", "visit", "timepoint", "wave", "Session"],
-            "age": ["age", "Age", "age_years", "age_at_scan", "AgeAtScan"],
-            "sex": ["sex", "gender", "Sex", "Gender", "biological_sex"],
-            "handedness": ["handedness", "hand", "Handedness", "dominant_hand"],
-            "diagnosis": [
-                "diagnosis",
-                "dx",
-                "Diagnosis",
-                "clinical_diagnosis",
-                "group",
-            ],
+            'subject_id': ['sub', 'subject', 'participant_id', 'id', 'subject_id', 'SubjectID', 'Subject', 'subj_id'],
+            'session': ['ses', 'session', 'visit', 'timepoint', 'wave', 'Session'],
+            'age': ['age', 'Age', 'age_years', 'age_at_scan', 'AgeAtScan'],
+            'sex': ['sex', 'gender', 'Sex', 'Gender', 'biological_sex'],
+            'handedness': ['handedness', 'hand', 'Handedness', 'dominant_hand'],
+            'diagnosis': ['diagnosis', 'dx', 'Diagnosis', 'clinical_diagnosis', 'group']
         }
 
         # BIDS to other dataset mappings
         self.bids_mappings = {
-            "OpenNeuro": {
-                "participant_id": "sub",
-                "age": "age",
-                "sex": "sex",
-                "session": "ses",
+            'OpenNeuro': {
+                'participant_id': 'sub',
+                'age': 'age',
+                'sex': 'sex',
+                'session': 'ses'
             },
-            "HCP": {
-                "participant_id": "Subject",
-                "age": "Age_in_Yrs",
-                "sex": "Gender",
-                "handedness": "Handedness",
+            'HCP': {
+                'participant_id': 'Subject',
+                'age': 'Age_in_Yrs',
+                'sex': 'Gender',
+                'handedness': 'Handedness'
             },
-            "ABCD": {
-                "participant_id": "subjectkey",
-                "age": "interview_age",
-                "sex": "sex",
-                "session": "eventname",
-            },
+            'ABCD': {
+                'participant_id': 'subjectkey',
+                'age': 'interview_age',
+                'sex': 'sex',
+                'session': 'eventname'
+            }
         }
 
-    def map_schemas(
-        self, source_schema: Dict[str, Any], target_format: str = "BIDS"
-    ) -> Dict[str, FieldMapping]:
+    def map_schemas(self,
+                   source_schema: Dict[str, Any],
+                   target_format: str = 'BIDS') -> Dict[str, FieldMapping]:
         """Map source schema to target format.
 
         Args:
@@ -107,7 +90,9 @@ class SchemaMapper:
             # Try exact match first
             if source_field in target_schema:
                 mappings[source_field] = FieldMapping(
-                    source_field=source_field, target_field=source_field, confidence=1.0
+                    source_field=source_field,
+                    target_field=source_field,
+                    confidence=1.0
                 )
                 continue
 
@@ -118,9 +103,7 @@ class SchemaMapper:
                 continue
 
             # Try fuzzy matching
-            fuzzy_match = self._fuzzy_match_field(
-                source_field, list(target_schema.keys())
-            )
+            fuzzy_match = self._fuzzy_match_field(source_field, list(target_schema.keys()))
             if fuzzy_match:
                 mappings[source_field] = fuzzy_match
                 continue
@@ -133,9 +116,9 @@ class SchemaMapper:
         logger.info(f"Mapped {len(mappings)} fields from source to {target_format}")
         return mappings
 
-    def apply_mappings(
-        self, data: pd.DataFrame, mappings: Dict[str, FieldMapping]
-    ) -> pd.DataFrame:
+    def apply_mappings(self,
+                      data: pd.DataFrame,
+                      mappings: Dict[str, FieldMapping]) -> pd.DataFrame:
         """Apply schema mappings to data.
 
         Args:
@@ -166,7 +149,8 @@ class SchemaMapper:
 
         return mapped_data
 
-    def create_mapping_profile(self, datasets: List[str]) -> Dict[str, Any]:
+    def create_mapping_profile(self,
+                              datasets: List[str]) -> Dict[str, Any]:
         """Create mapping profile for multiple datasets.
 
         Args:
@@ -176,19 +160,19 @@ class SchemaMapper:
             Mapping profile with compatibility scores
         """
         profile = {
-            "datasets": datasets,
-            "compatibility_matrix": {},
-            "common_fields": [],
-            "mapping_quality": {},
+            'datasets': datasets,
+            'compatibility_matrix': {},
+            'common_fields': [],
+            'mapping_quality': {}
         }
 
         # Build compatibility matrix
         for source in datasets:
-            profile["compatibility_matrix"][source] = {}
+            profile['compatibility_matrix'][source] = {}
             for target in datasets:
                 if source != target:
                     score = self._calculate_compatibility(source, target)
-                    profile["compatibility_matrix"][source][target] = score
+                    profile['compatibility_matrix'][source][target] = score
 
         # Find common fields across all datasets
         all_fields = []
@@ -197,19 +181,16 @@ class SchemaMapper:
             all_fields.extend(list(schema.keys()))
 
         field_counts = pd.Series(all_fields).value_counts()
-        profile["common_fields"] = field_counts[
-            field_counts == len(datasets)
-        ].index.tolist()
+        profile['common_fields'] = field_counts[field_counts == len(datasets)].index.tolist()
 
         # Assess mapping quality
         for dataset in datasets:
-            profile["mapping_quality"][dataset] = self._assess_mapping_quality(dataset)
+            profile['mapping_quality'][dataset] = self._assess_mapping_quality(dataset)
 
         return profile
 
-    def harmonize_field_names(
-        self, datasets: Dict[str, pd.DataFrame]
-    ) -> Dict[str, pd.DataFrame]:
+    def harmonize_field_names(self,
+                             datasets: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
         """Harmonize field names across multiple datasets.
 
         Args:
@@ -228,14 +209,15 @@ class SchemaMapper:
             if name == reference_dataset:
                 harmonized[name] = data.copy()
                 self._dataset_schemas[name] = {
-                    col: {"type": str(harmonized[name][col].dtype)}
+                    col: {'type': str(harmonized[name][col].dtype)}
                     for col in harmonized[name].columns
                 }
                 continue
 
             # Map to reference schema
             mappings = self._map_to_reference(
-                source_schema=set(data.columns), reference_schema=reference_schema
+                source_schema=set(data.columns),
+                reference_schema=reference_schema
             )
 
             # Apply mappings
@@ -246,16 +228,16 @@ class SchemaMapper:
 
             harmonized[name] = harmonized_data
             self._dataset_schemas[name] = {
-                col: {"type": str(harmonized_data[col].dtype)}
+                col: {'type': str(harmonized_data[col].dtype)}
                 for col in harmonized_data.columns
             }
 
         logger.info(f"Harmonized field names across {len(datasets)} datasets")
         return harmonized
 
-    def validate_mapping(
-        self, mapping: Dict[str, FieldMapping], data: pd.DataFrame
-    ) -> Dict[str, Any]:
+    def validate_mapping(self,
+                        mapping: Dict[str, FieldMapping],
+                        data: pd.DataFrame) -> Dict[str, Any]:
         """Validate schema mapping against actual data.
 
         Args:
@@ -266,21 +248,19 @@ class SchemaMapper:
             Validation results
         """
         validation_results = {
-            "valid": True,
-            "coverage": 0.0,
-            "missing_fields": [],
-            "type_mismatches": [],
-            "warnings": [],
+            'valid': True,
+            'coverage': 0.0,
+            'missing_fields': [],
+            'type_mismatches': [],
+            'warnings': []
         }
 
         # Check field coverage
         mapped_fields = set(m.source_field for m in mapping.values())
         data_fields = set(data.columns)
 
-        validation_results["coverage"] = len(mapped_fields & data_fields) / len(
-            data_fields
-        )
-        validation_results["missing_fields"] = list(data_fields - mapped_fields)
+        validation_results['coverage'] = len(mapped_fields & data_fields) / len(data_fields)
+        validation_results['missing_fields'] = list(data_fields - mapped_fields)
 
         # Check data type compatibility
         for source_field, field_mapping in mapping.items():
@@ -288,67 +268,65 @@ class SchemaMapper:
                 source_dtype = data[source_field].dtype
                 expected_dtype = self._get_expected_dtype(field_mapping.target_field)
 
-                if expected_dtype and not self._compatible_dtypes(
-                    source_dtype, expected_dtype
-                ):
-                    validation_results["type_mismatches"].append(
-                        {
-                            "field": source_field,
-                            "source_type": str(source_dtype),
-                            "expected_type": str(expected_dtype),
-                        }
-                    )
+                if expected_dtype and not self._compatible_dtypes(source_dtype, expected_dtype):
+                    validation_results['type_mismatches'].append({
+                        'field': source_field,
+                        'source_type': str(source_dtype),
+                        'expected_type': str(expected_dtype)
+                    })
 
         # Generate warnings
-        if validation_results["coverage"] < 0.8:
-            validation_results["warnings"].append(
+        if validation_results['coverage'] < 0.8:
+            validation_results['warnings'].append(
                 f"Low field coverage: {validation_results['coverage']:.1%}"
             )
 
-        if validation_results["type_mismatches"]:
-            validation_results["warnings"].append(
+        if validation_results['type_mismatches']:
+            validation_results['warnings'].append(
                 f"Found {len(validation_results['type_mismatches'])} type mismatches"
             )
 
-        validation_results["valid"] = (
-            validation_results["coverage"] > 0.5
-            and len(validation_results["type_mismatches"]) == 0
+        validation_results['valid'] = (
+            validation_results['coverage'] > 0.5 and
+            len(validation_results['type_mismatches']) == 0
         )
 
         return validation_results
 
-    def export_mapping_config(
-        self, mappings: Dict[str, FieldMapping], output_path: str
-    ):
+    def export_mapping_config(self,
+                             mappings: Dict[str, FieldMapping],
+                             output_path: str):
         """Export mapping configuration for reuse.
 
         Args:
             mappings: Field mappings
             output_path: Path to save configuration
         """
-        config = {"version": "1.0", "mappings": []}
+        config = {
+            'version': '1.0',
+            'mappings': []
+        }
 
         for source_field, mapping in mappings.items():
-            config["mappings"].append(
-                {
-                    "source": mapping.source_field,
-                    "target": mapping.target_field,
-                    "confidence": mapping.confidence,
-                    "type": mapping.mapping_type,
-                }
-            )
+            config['mappings'].append({
+                'source': mapping.source_field,
+                'target': mapping.target_field,
+                'confidence': mapping.confidence,
+                'type': mapping.mapping_type
+            })
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path, "w") as f:
+        with open(output_path, 'w') as f:
             json.dump(config, f, indent=2)
 
         logger.info(f"Exported mapping configuration to {output_path}")
 
-    def register_custom_mapping(
-        self, source_format: str, target_format: str, mapping: Dict[str, str]
-    ):
+    def register_custom_mapping(self,
+                              source_format: str,
+                              target_format: str,
+                              mapping: Dict[str, str]):
         """Register custom field mapping.
 
         Args:
@@ -365,33 +343,33 @@ class SchemaMapper:
     def _load_standard_schemas(self) -> Dict[str, Dict[str, Any]]:
         """Load standard schema definitions."""
         return {
-            "BIDS": {
-                "participant_id": {"type": "string", "required": True},
-                "age": {"type": "float", "required": False},
-                "sex": {"type": "string", "required": False, "values": ["M", "F"]},
-                "handedness": {"type": "string", "required": False},
-                "session": {"type": "string", "required": False},
+            'BIDS': {
+                'participant_id': {'type': 'string', 'required': True},
+                'age': {'type': 'float', 'required': False},
+                'sex': {'type': 'string', 'required': False, 'values': ['M', 'F']},
+                'handedness': {'type': 'string', 'required': False},
+                'session': {'type': 'string', 'required': False}
             },
-            "NIDM": {
-                "subject_id": {"type": "string", "required": True},
-                "age_at_scan": {"type": "float", "required": False},
-                "gender": {"type": "string", "required": False},
-            },
+            'NIDM': {
+                'subject_id': {'type': 'string', 'required': True},
+                'age_at_scan': {'type': 'float', 'required': False},
+                'gender': {'type': 'string', 'required': False}
+            }
         }
 
     def _load_mapping_config(self, config_path: str):
         """Load mapping configuration from file."""
         config_path = Path(config_path)
         if config_path.exists():
-            with open(config_path, "r") as f:
+            with open(config_path, 'r') as f:
                 config = json.load(f)
                 # Process and store mappings
-                for mapping in config.get("mappings", []):
-                    self.mappings[mapping["source"]] = FieldMapping(
-                        source_field=mapping["source"],
-                        target_field=mapping["target"],
-                        confidence=mapping.get("confidence", 1.0),
-                        mapping_type=mapping.get("type", "direct"),
+                for mapping in config.get('mappings', []):
+                    self.mappings[mapping['source']] = FieldMapping(
+                        source_field=mapping['source'],
+                        target_field=mapping['target'],
+                        confidence=mapping.get('confidence', 1.0),
+                        mapping_type=mapping.get('type', 'direct')
                     )
 
     def _find_common_mapping(self, field_name: str) -> Optional[FieldMapping]:
@@ -404,14 +382,15 @@ class SchemaMapper:
                     source_field=field_name,
                     target_field=standard_field,
                     confidence=0.9,
-                    mapping_type="common",
+                    mapping_type='common'
                 )
 
         return None
 
-    def _fuzzy_match_field(
-        self, source_field: str, target_fields: List[str], threshold: int = 80
-    ) -> Optional[FieldMapping]:
+    def _fuzzy_match_field(self,
+                          source_field: str,
+                          target_fields: List[str],
+                          threshold: int = 80) -> Optional[FieldMapping]:
         """Find field mapping using fuzzy matching."""
         if not target_fields:
             return None
@@ -424,22 +403,22 @@ class SchemaMapper:
                 source_field=source_field,
                 target_field=match,
                 confidence=score / 100.0,
-                mapping_type="fuzzy",
+                mapping_type='fuzzy'
             )
 
         return None
 
-    def _semantic_match(
-        self, source_field: str, target_schema: Dict[str, Any]
-    ) -> Optional[FieldMapping]:
+    def _semantic_match(self,
+                       source_field: str,
+                       target_schema: Dict[str, Any]) -> Optional[FieldMapping]:
         """Find mapping using semantic similarity."""
         # This would use word embeddings or ontologies
         # For now, use simple keyword matching
 
-        source_keywords = set(source_field.lower().split("_"))
+        source_keywords = set(source_field.lower().split('_'))
 
         for target_field in target_schema:
-            target_keywords = set(target_field.lower().split("_"))
+            target_keywords = set(target_field.lower().split('_'))
 
             # Check for significant overlap
             overlap = source_keywords & target_keywords
@@ -448,7 +427,7 @@ class SchemaMapper:
                     source_field=source_field,
                     target_field=target_field,
                     confidence=0.7,
-                    mapping_type="semantic",
+                    mapping_type='semantic'
                 )
 
         return None
@@ -476,8 +455,8 @@ class SchemaMapper:
         if dataset in self._dataset_schemas:
             return self._dataset_schemas[dataset]
         # Return known schemas or empty dict
-        if dataset == "BIDS":
-            return self.standard_schemas.get("BIDS", {})
+        if dataset == 'BIDS':
+            return self.standard_schemas.get('BIDS', {})
         elif dataset in self.bids_mappings:
             return self.bids_mappings[dataset]
 
@@ -486,9 +465,9 @@ class SchemaMapper:
     def _assess_mapping_quality(self, dataset: str) -> Dict[str, Any]:
         """Assess mapping quality for a dataset."""
         return {
-            "completeness": 0.85,  # Placeholder
-            "accuracy": 0.90,  # Placeholder
-            "consistency": 0.88,  # Placeholder
+            'completeness': 0.85,  # Placeholder
+            'accuracy': 0.90,      # Placeholder
+            'consistency': 0.88    # Placeholder
         }
 
     def _find_reference_schema(self, datasets: Dict[str, pd.DataFrame]) -> str:
@@ -501,9 +480,9 @@ class SchemaMapper:
 
         return max(scores, key=scores.get)
 
-    def _map_to_reference(
-        self, source_schema: set, reference_schema: set
-    ) -> Dict[str, str]:
+    def _map_to_reference(self,
+                         source_schema: set,
+                         reference_schema: set) -> Dict[str, str]:
         """Map source schema to reference schema."""
         mappings = {}
 
@@ -523,11 +502,11 @@ class SchemaMapper:
     def _get_expected_dtype(self, field_name: str) -> Optional[type]:
         """Get expected data type for a field."""
         type_mappings = {
-            "age": float,
-            "participant_id": str,
-            "sex": str,
-            "handedness": str,
-            "diagnosis": str,
+            'age': float,
+            'participant_id': str,
+            'sex': str,
+            'handedness': str,
+            'diagnosis': str
         }
 
         return type_mappings.get(field_name)
@@ -535,11 +514,11 @@ class SchemaMapper:
     def _compatible_dtypes(self, source_dtype: type, expected_dtype: type) -> bool:
         """Check if data types are compatible."""
         # Handle numpy dtypes
-        if "int" in str(source_dtype) and expected_dtype == float:
+        if 'int' in str(source_dtype) and expected_dtype == float:
             return True
-        if "float" in str(source_dtype) and expected_dtype == float:
+        if 'float' in str(source_dtype) and expected_dtype == float:
             return True
-        if "object" in str(source_dtype) and expected_dtype == str:
+        if 'object' in str(source_dtype) and expected_dtype == str:
             return True
 
         return source_dtype == expected_dtype

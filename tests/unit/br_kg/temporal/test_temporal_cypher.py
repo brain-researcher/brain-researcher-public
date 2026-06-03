@@ -7,33 +7,31 @@ This module tests the temporal query functionality including:
 - Predefined query templates
 """
 
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Tuple
-from unittest.mock import Mock, patch
-
 import pytest
+from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
+from typing import Dict, List, Any, Tuple
 
 # Import the modules to test
 try:
     from brain_researcher.services.br_kg.temporal.temporal_cypher import (
-        TEMPORAL_QUERY_TEMPLATES,
         TemporalCypherBuilder,
         TemporalFilter,
         TemporalOperator,
         TemporalQueryType,
+        TEMPORAL_QUERY_TEMPLATES
     )
 except ImportError:
     # Fallback if absolute imports don't work
-    import os
     import sys
-
-    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
     from brain_researcher.services.br_kg.temporal.temporal_cypher import (
-        TEMPORAL_QUERY_TEMPLATES,
         TemporalCypherBuilder,
         TemporalFilter,
         TemporalOperator,
         TemporalQueryType,
+        TEMPORAL_QUERY_TEMPLATES
     )
 
 
@@ -44,7 +42,9 @@ class TestTemporalFilter:
         """Test AT_TIME temporal filter condition."""
         filter_time = datetime(2023, 1, 15, 10, 30, 0)
         temp_filter = TemporalFilter(
-            operator=TemporalOperator.AT_TIME, entity_path="n", time_value=filter_time
+            operator=TemporalOperator.AT_TIME,
+            entity_path="n",
+            time_value=filter_time
         )
 
         condition, params = temp_filter.to_cypher_condition()
@@ -58,7 +58,9 @@ class TestTemporalFilter:
         """Test BEFORE temporal filter condition."""
         before_time = datetime(2023, 1, 10, 12, 0, 0)
         temp_filter = TemporalFilter(
-            operator=TemporalOperator.BEFORE, entity_path="n", time_value=before_time
+            operator=TemporalOperator.BEFORE,
+            entity_path="n",
+            time_value=before_time
         )
 
         condition, params = temp_filter.to_cypher_condition()
@@ -70,7 +72,9 @@ class TestTemporalFilter:
         """Test AFTER temporal filter condition."""
         after_time = datetime(2023, 1, 20, 14, 15, 0)
         temp_filter = TemporalFilter(
-            operator=TemporalOperator.AFTER, entity_path="n", time_value=after_time
+            operator=TemporalOperator.AFTER,
+            entity_path="n",
+            time_value=after_time
         )
 
         condition, params = temp_filter.to_cypher_condition()
@@ -85,7 +89,7 @@ class TestTemporalFilter:
         temp_filter = TemporalFilter(
             operator=TemporalOperator.DURING,
             entity_path="n",
-            time_range=(start_time, end_time),
+            time_range=(start_time, end_time)
         )
 
         condition, params = temp_filter.to_cypher_condition()
@@ -102,7 +106,7 @@ class TestTemporalFilter:
         temp_filter = TemporalFilter(
             operator=TemporalOperator.BETWEEN,
             entity_path="n",
-            time_range=(start_time, end_time),
+            time_range=(start_time, end_time)
         )
 
         condition, params = temp_filter.to_cypher_condition()
@@ -119,7 +123,7 @@ class TestTemporalFilter:
         temp_filter = TemporalFilter(
             operator=TemporalOperator.CREATED,
             entity_path="n",
-            time_range=(start_time, end_time),
+            time_range=(start_time, end_time)
         )
 
         condition, params = temp_filter.to_cypher_condition()
@@ -136,7 +140,7 @@ class TestTemporalFilter:
         temp_filter = TemporalFilter(
             operator=TemporalOperator.CHANGED,
             entity_path="n",
-            time_range=(start_time, end_time),
+            time_range=(start_time, end_time)
         )
 
         condition, params = temp_filter.to_cypher_condition()
@@ -154,7 +158,7 @@ class TestTemporalFilter:
         temp_filter = TemporalFilter(
             operator=TemporalOperator.DELETED,
             entity_path="n",
-            time_range=(start_time, end_time),
+            time_range=(start_time, end_time)
         )
 
         condition, params = temp_filter.to_cypher_condition()
@@ -169,7 +173,9 @@ class TestTemporalFilter:
         """Test custom parameter prefix."""
         filter_time = datetime(2023, 1, 15, 10, 30, 0)
         temp_filter = TemporalFilter(
-            operator=TemporalOperator.AT_TIME, entity_path="n", time_value=filter_time
+            operator=TemporalOperator.AT_TIME,
+            entity_path="n",
+            time_value=filter_time
         )
 
         condition, params = temp_filter.to_cypher_condition("custom")
@@ -179,7 +185,10 @@ class TestTemporalFilter:
 
     def test_no_time_condition(self):
         """Test condition with no time specified."""
-        temp_filter = TemporalFilter(operator=TemporalOperator.AT_TIME, entity_path="n")
+        temp_filter = TemporalFilter(
+            operator=TemporalOperator.AT_TIME,
+            entity_path="n"
+        )
 
         condition, params = temp_filter.to_cypher_condition()
 
@@ -247,7 +256,9 @@ class TestTemporalCypherBuilder:
         properties = {"name": "John", "age": 30}
 
         result = builder.match_temporal_nodes(
-            labels=labels, alias="u", properties=properties
+            labels=labels,
+            alias="u",
+            properties=properties
         )
 
         assert result is builder
@@ -279,15 +290,16 @@ class TestTemporalCypherBuilder:
         builder = TemporalCypherBuilder()
 
         result = builder.match_temporal_relationships(
-            relationship_type="KNOWS", start_alias="a", end_alias="b", rel_alias="r"
+            relationship_type="KNOWS",
+            start_alias="a",
+            end_alias="b",
+            rel_alias="r"
         )
 
         assert result is builder
         assert len(builder.match_patterns) == 1
 
-        expected_pattern = (
-            "(a:TemporalNode)-[r:TEMPORAL_REL {type: 'KNOWS'}]->(b:TemporalNode)"
-        )
+        expected_pattern = "(a:TemporalNode)-[r:TEMPORAL_REL {type: 'KNOWS'}]->(b:TemporalNode)"
         assert builder.match_patterns[0] == expected_pattern
 
     def test_match_temporal_relationships_no_type(self):
@@ -364,10 +376,7 @@ class TestTemporalCypherBuilder:
         condition = builder.where_conditions[0]
         assert "s.created_at < $stable_start_time" in condition
         assert "s.updated_at IS NULL OR s.updated_at < $stable_start_time" in condition
-        assert (
-            "s.transaction_time_end IS NULL OR s.transaction_time_end > $stable_end_time"
-            in condition
-        )
+        assert "s.transaction_time_end IS NULL OR s.transaction_time_end > $stable_end_time" in condition
 
         assert builder.parameters["stable_start_time"] == start_time
         assert builder.parameters["stable_end_time"] == end_time
@@ -438,7 +447,7 @@ class TestTemporalCypherBuilder:
             "n.transaction_time_start",
             "n.transaction_time_end",
             "n.valid_time_start",
-            "n.valid_time_end",
+            "n.valid_time_end"
         ]
 
         for prop in expected_props:
@@ -495,13 +504,12 @@ class TestTemporalCypherBuilder:
         builder = TemporalCypherBuilder()
         snapshot_time = datetime(2023, 1, 15, 12, 0, 0)
 
-        query, params = (
-            builder.snapshot_at(snapshot_time)
-            .match_temporal_nodes(["Person"])
-            .return_entities("n")
-            .limit(10)
-            .build()
-        )
+        query, params = (builder
+                        .snapshot_at(snapshot_time)
+                        .match_temporal_nodes(["Person"])
+                        .return_entities("n")
+                        .limit(10)
+                        .build())
 
         assert "MATCH (n:TemporalNode:`Person`)" in query
         assert "WHERE" in query
@@ -518,24 +526,20 @@ class TestTemporalCypherBuilder:
         start_time = datetime(2023, 1, 1, 0, 0, 0)
         end_time = datetime(2023, 12, 31, 23, 59, 59)
 
-        query, params = (
-            builder.during_interval(start_time, end_time)
-            .match_temporal_nodes(["Document"], alias="d")
-            .match_temporal_relationships("AUTHORED", "u", "d", "r")
-            .where_created_during(start_time, end_time, "d")
-            .where_custom("u.name = $author_name", {"author_name": "Alice"})
-            .return_entities("u", "d")
-            .return_temporal_info("d")
-            .order_by_creation("d", ascending=False)
-            .limit(50)
-            .build()
-        )
+        query, params = (builder
+                        .during_interval(start_time, end_time)
+                        .match_temporal_nodes(["Document"], alias="d")
+                        .match_temporal_relationships("AUTHORED", "u", "d", "r")
+                        .where_created_during(start_time, end_time, "d")
+                        .where_custom("u.name = $author_name", {"author_name": "Alice"})
+                        .return_entities("u", "d")
+                        .return_temporal_info("d")
+                        .order_by_creation("d", ascending=False)
+                        .limit(50)
+                        .build())
 
         assert "MATCH (d:TemporalNode:`Document`)" in query
-        assert (
-            "(u:TemporalNode)-[r:TEMPORAL_REL {type: 'AUTHORED'}]->(d:TemporalNode)"
-            in query
-        )
+        assert "(u:TemporalNode)-[r:TEMPORAL_REL {type: 'AUTHORED'}]->(d:TemporalNode)" in query
         assert "WHERE" in query
         assert "u.name = $author_name" in query
         assert "RETURN u, d" in query
@@ -551,7 +555,9 @@ class TestTemporalCypherBuilder:
         """Test building query without match patterns."""
         builder = TemporalCypherBuilder()
 
-        query, params = builder.where_custom("1=1").build()
+        query, params = (builder
+                        .where_custom("1=1")
+                        .build())
 
         # Should have default return
         assert "RETURN n" in query
@@ -593,7 +599,7 @@ class TestTemporalCypherTemplates:
             "entity_evolution",
             "relationship_evolution",
             "most_changed_entities",
-            "temporal_pattern_match",
+            "temporal_pattern_match"
         ]
 
         for template_name in expected_templates:
@@ -652,7 +658,9 @@ class TestTemporalCypherIntegration:
         properties = {"department": "Engineering"}
 
         query, params = TemporalCypherBuilder.snapshot_query(
-            time=query_time, labels=labels, properties=properties
+            time=query_time,
+            labels=labels,
+            properties=properties
         )
 
         assert "MATCH (n:TemporalNode:`Person`:`Employee`)" in query
@@ -674,7 +682,9 @@ class TestTemporalCypherIntegration:
         end_time = datetime(2023, 12, 31, 23, 59, 59)
 
         query, params = TemporalCypherBuilder.evolution_query(
-            entity_id=entity_id, start_time=start_time, end_time=end_time
+            entity_id=entity_id,
+            start_time=start_time,
+            end_time=end_time
         )
 
         assert "MATCH (n:TemporalNode)" in query
@@ -695,7 +705,9 @@ class TestTemporalCypherIntegration:
         labels = ["Document"]
 
         query, params = TemporalCypherBuilder.change_detection_query(
-            start_time=start_time, end_time=end_time, labels=labels
+            start_time=start_time,
+            end_time=end_time,
+            labels=labels
         )
 
         assert "MATCH (n:TemporalNode:`Document`)" in query
@@ -712,15 +724,17 @@ class TestTemporalCypherIntegration:
         builder = TemporalCypherBuilder()
 
         # Chain multiple operations
-        result = (
-            builder.snapshot_at(datetime(2023, 1, 1))
-            .match_temporal_nodes(["Person"])
-            .where_created_during(datetime(2022, 1, 1), datetime(2022, 12, 31))
-            .return_entities("n")
-            .return_temporal_info("n")
-            .order_by_creation("n")
-            .limit(100)
-        )
+        result = (builder
+                 .snapshot_at(datetime(2023, 1, 1))
+                 .match_temporal_nodes(["Person"])
+                 .where_created_during(
+                     datetime(2022, 1, 1),
+                     datetime(2022, 12, 31)
+                 )
+                 .return_entities("n")
+                 .return_temporal_info("n")
+                 .order_by_creation("n")
+                 .limit(100))
 
         # Should return the same builder instance
         assert result is builder
@@ -746,18 +760,17 @@ class TestTemporalCypherIntegration:
         start_time = datetime(2023, 1, 1, 0, 0, 0)
         end_time = datetime(2023, 1, 31, 23, 59, 59)
 
-        query, params = (
-            builder.snapshot_at(base_time)
-            .match_temporal_nodes(["Person"], alias="p")
-            .where_created_during(start_time, end_time, "p")
-            .where_stable_during(start_time, end_time, "p")
-            .where_custom("p.active = $active", {"active": True})
-            .return_entities("p")
-            .build()
-        )
+        query, params = (builder
+                        .snapshot_at(base_time)
+                        .match_temporal_nodes(["Person"], alias="p")
+                        .where_created_during(start_time, end_time, "p")
+                        .where_stable_during(start_time, end_time, "p")
+                        .where_custom("p.active = $active", {"active": True})
+                        .return_entities("p")
+                        .build())
 
         # Should have multiple WHERE conditions
-        where_section = query[query.index("WHERE") : query.index("RETURN")]
+        where_section = query[query.index("WHERE"):query.index("RETURN")]
         assert where_section.count("AND") >= 3  # Multiple conditions joined
 
         # Should have parameters from all conditions

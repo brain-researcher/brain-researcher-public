@@ -30,9 +30,7 @@ def put(content_hash: str, value: Union[JobHandle, ToolResult]) -> None:
     """Store a result under *content_hash*."""
     with _lock:
         _SESSION_JOBS[content_hash] = value
-    logger.debug(
-        "job_registry: cached %s → %s", content_hash[:12], type(value).__name__
-    )
+    logger.debug("job_registry: cached %s → %s", content_hash[:12], type(value).__name__)
 
 
 def clear() -> int:

@@ -43,9 +43,7 @@ class StatisticalInferenceParameters:
     seed: Optional[int] = None
 
 
-def statistical_inference_from_payload(
-    payload: Dict[str, Any],
-) -> StatisticalInferenceParameters:
+def statistical_inference_from_payload(payload: Dict[str, Any]) -> StatisticalInferenceParameters:
     return StatisticalInferenceParameters(
         data_file=str(payload["data_file"]),
         labels_file=payload.get("labels_file"),
@@ -69,15 +67,9 @@ def statistical_inference_from_payload(
         target_effect_size=payload.get("target_effect_size"),
         correct_multiple=bool(payload.get("correct_multiple", True)),
         correction_method=str(payload.get("correction_method", "fdr")),
-        compute_confidence_regions=bool(
-            payload.get("compute_confidence_regions", True)
-        ),
+        compute_confidence_regions=bool(payload.get("compute_confidence_regions", True)),
         region_method=str(payload.get("region_method", "ellipse")),
-        output_dir=(
-            str(payload["output_dir"])
-            if payload.get("output_dir")
-            else str(Path.cwd() / "statistical_inference")
-        ),
+        output_dir=str(payload["output_dir"]) if payload.get("output_dir") else str(Path.cwd() / "statistical_inference"),
         save_samples=bool(payload.get("save_samples", True)),
         save_intervals=bool(payload.get("save_intervals", True)),
         save_effect_sizes=bool(payload.get("save_effect_sizes", True)),
@@ -101,9 +93,7 @@ def _load_matrix(path: str) -> np.ndarray:
     return np.loadtxt(file_path, delimiter=delimiter)
 
 
-def _bootstrap_samples(
-    data: np.ndarray, n_bootstrap: int, rng: np.random.Generator
-) -> np.ndarray:
+def _bootstrap_samples(data: np.ndarray, n_bootstrap: int, rng: np.random.Generator) -> np.ndarray:
     n_samples = data.shape[0]
     max_bootstrap = max(100, min(n_bootstrap, 4096))
     indices = rng.integers(0, n_samples, size=(max_bootstrap, n_samples))
@@ -190,9 +180,7 @@ def run_statistical_inference(params: StatisticalInferenceParameters) -> Dict[st
 
     power = None
     if params.compute_power and params.target_effect_size is not None:
-        power = _power_estimate(
-            float(params.target_effect_size), data.shape[0], params.confidence_level
-        )
+        power = _power_estimate(float(params.target_effect_size), data.shape[0], params.confidence_level)
 
     summary = {
         "method": params.method,
@@ -222,12 +210,7 @@ def run_statistical_inference(params: StatisticalInferenceParameters) -> Dict[st
 
     if params.compute_confidence_regions:
         region_path = output_dir / "stat_inference_region.json"
-        region_path.write_text(
-            json.dumps(
-                {"method": params.region_method, "status": "placeholder"}, indent=2
-            ),
-            encoding="utf-8",
-        )
+        region_path.write_text(json.dumps({"method": params.region_method, "status": "placeholder"}, indent=2), encoding="utf-8")
         result["confidence_region"] = str(region_path)
 
     return result

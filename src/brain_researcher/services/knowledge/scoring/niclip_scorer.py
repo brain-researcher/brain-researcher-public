@@ -212,8 +212,8 @@ class NiCLIPEvidenceSource(EvidenceSource):
                 term_words = set(term_lower.split())
                 overlap = query_words.intersection(term_words)
                 if overlap:
-                    base_score = (
-                        0.4 * len(overlap) / max(len(query_words), len(term_words))
+                    base_score = 0.4 * len(overlap) / max(
+                        len(query_words), len(term_words)
                     )
                 else:
                     continue  # Skip if no overlap
@@ -273,9 +273,9 @@ class NiCLIPEvidenceSource(EvidenceSource):
                         term=vocab[idx],
                         score=float(dist),  # Cosine similarity
                         vocabulary_index=int(idx),
-                        prior_probability=(
-                            float(priors[idx]) if idx < len(priors) else 0.5
-                        ),
+                        prior_probability=float(priors[idx])
+                        if idx < len(priors)
+                        else 0.5,
                         vocabulary_type=self._config.vocabulary_type,
                     )
                 )
@@ -329,11 +329,7 @@ class NiCLIPEvidenceSource(EvidenceSource):
             return []
 
         # Determine scoring method based on query
-        if (
-            self._config.use_semantic
-            and hasattr(query, "embedding")
-            and query.embedding is not None
-        ):
+        if self._config.use_semantic and hasattr(query, "embedding") and query.embedding is not None:
             concepts = self._score_semantic(query.embedding)
         else:
             concepts = self._score_keyword(query.text)

@@ -149,7 +149,9 @@ def run_psych101_task_fmri_bridge_audit(
             "local_task_ids": _clean_text_list(row.get("local_task_ids")),
             "local_task_names": _clean_text_list(row.get("local_task_names")),
             "canonical_task_ids": _clean_text_list(row.get("canonical_task_ids")),
-            "canonical_task_names": _clean_text_list(row.get("canonical_task_names")),
+            "canonical_task_names": _clean_text_list(
+                row.get("canonical_task_names")
+            ),
             "family_ids": _clean_text_list(row.get("family_ids")),
             "family_names": _clean_text_list(row.get("family_names")),
             "canonical_task_analysis_hits": int(
@@ -159,9 +161,13 @@ def run_psych101_task_fmri_bridge_audit(
             "canonical_brain_region_hits": int(
                 row.get("canonical_brain_region_hits") or 0
             ),
-            "family_task_analysis_hits": int(row.get("family_task_analysis_hits") or 0),
+            "family_task_analysis_hits": int(
+                row.get("family_task_analysis_hits") or 0
+            ),
             "family_contrast_hits": int(row.get("family_contrast_hits") or 0),
-            "family_brain_region_hits": int(row.get("family_brain_region_hits") or 0),
+            "family_brain_region_hits": int(
+                row.get("family_brain_region_hits") or 0
+            ),
         }
         experiment["bridge_status"] = _bridge_status(experiment)
         experiments.append(experiment)

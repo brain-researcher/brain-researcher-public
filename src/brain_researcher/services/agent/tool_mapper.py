@@ -39,9 +39,7 @@ class ToolMapper:
         """
         self.registry = registry
         self.mappings = self._load_mappings()
-        self.fuzzy_threshold = self.mappings.get("settings", {}).get(
-            "fuzzy_threshold", 0.8
-        )
+        self.fuzzy_threshold = self.mappings.get("settings", {}).get("fuzzy_threshold", 0.8)
 
         # Build reverse alias map for fast lookup
         self.alias_to_tool = {}
@@ -68,7 +66,7 @@ class ToolMapper:
         requested_name: str,
         whitelist: Optional[List[str]] = None,
         denylist: Optional[List[str]] = None,
-        trace_id: Optional[str] = None,
+        trace_id: Optional[str] = None
     ) -> Tuple[Optional[str], str]:
         """
         Map requested tool name to registered tool name.
@@ -91,9 +89,7 @@ class ToolMapper:
         # Get all registered tool names if registry available
         registered_names = []
         if self.registry:
-            registered_names = [
-                t.get_tool_name() for t in self.registry.get_all_tools()
-            ]
+            registered_names = [t.get_tool_name() for t in self.registry.get_all_tools()]
 
         # 1. Exact match
         if requested_name in registered_names:
@@ -101,9 +97,7 @@ class ToolMapper:
                 logger.info(f"[{trace_id}] Exact match: {requested_name}")
                 return requested_name, "exact"
             else:
-                logger.warning(
-                    f"[{trace_id}] Tool {requested_name} blocked by constraints"
-                )
+                logger.warning(f"[{trace_id}] Tool {requested_name} blocked by constraints")
                 return None, "blocked"
 
         # 2. Alias match
@@ -111,45 +105,32 @@ class ToolMapper:
             mapped_name = self.alias_to_tool[requested_name]
             if mapped_name in registered_names:
                 if self._check_constraints(mapped_name, whitelist, denylist, trace_id):
-                    logger.info(
-                        f"[{trace_id}] Alias match: {requested_name} -> {mapped_name}"
-                    )
+                    logger.info(f"[{trace_id}] Alias match: {requested_name} -> {mapped_name}")
                     return mapped_name, "alias"
                 else:
-                    logger.warning(
-                        f"[{trace_id}] Tool {mapped_name} blocked by constraints"
-                    )
+                    logger.warning(f"[{trace_id}] Tool {mapped_name} blocked by constraints")
                     return None, "blocked"
             # If alias maps to an unregistered tool, try any registered tool sharing the alias.
             fallback = self._resolve_registered_alias(requested_name, registered_names)
             if fallback:
                 if self._check_constraints(fallback, whitelist, denylist, trace_id):
-                    logger.info(
-                        f"[{trace_id}] Alias fallback: {requested_name} -> {fallback}"
-                    )
+                    logger.info(f"[{trace_id}] Alias fallback: {requested_name} -> {fallback}")
                     return fallback, "alias"
                 logger.warning(f"[{trace_id}] Tool {fallback} blocked by constraints")
                 return None, "blocked"
 
         # 3. Substring match
         for registered in registered_names:
-            if (
-                requested_name.lower() in registered.lower()
-                or registered.lower() in requested_name.lower()
-            ):
+            if requested_name.lower() in registered.lower() or registered.lower() in requested_name.lower():
                 if self._check_constraints(registered, whitelist, denylist, trace_id):
-                    logger.info(
-                        f"[{trace_id}] Substring match: {requested_name} -> {registered}"
-                    )
+                    logger.info(f"[{trace_id}] Substring match: {requested_name} -> {registered}")
                     return registered, "substring"
 
         # 4. Fuzzy match (with threshold)
         best_match, best_score = self._fuzzy_match(requested_name, registered_names)
         if best_match and best_score >= self.fuzzy_threshold:
             if self._check_constraints(best_match, whitelist, denylist, trace_id):
-                logger.info(
-                    f"[{trace_id}] Fuzzy match (score={best_score:.2f}): {requested_name} -> {best_match}"
-                )
+                logger.info(f"[{trace_id}] Fuzzy match (score={best_score:.2f}): {requested_name} -> {best_match}")
                 return best_match, "fuzzy"
             else:
                 logger.warning(f"[{trace_id}] Tool {best_match} blocked by constraints")
@@ -159,9 +140,7 @@ class ToolMapper:
         logger.warning(f"[{trace_id}] No match found for: {requested_name}")
         return None, "not_found"
 
-    def _fuzzy_match(
-        self, requested: str, candidates: List[str]
-    ) -> Tuple[Optional[str], float]:
+    def _fuzzy_match(self, requested: str, candidates: List[str]) -> Tuple[Optional[str], float]:
         """
         Find best fuzzy match for requested name.
 
@@ -190,9 +169,7 @@ class ToolMapper:
 
             requested_words = _normalize_words(requested)
             candidate_words = _normalize_words(candidate)
-            word_overlap = len(requested_words & candidate_words) / max(
-                len(requested_words), 1
-            )
+            word_overlap = len(requested_words & candidate_words) / max(len(requested_words), 1)
 
             # Combined score
             combined_score = max(score, word_overlap)
@@ -208,7 +185,7 @@ class ToolMapper:
         tool_name: str,
         whitelist: Optional[List[str]],
         denylist: Optional[List[str]],
-        trace_id: Optional[str],
+        trace_id: Optional[str]
     ) -> bool:
         """
         Check if tool passes whitelist/denylist constraints.
@@ -285,9 +262,7 @@ class ToolMapper:
 
         # Check tool names and aliases
         for alias, tool_name in self.alias_to_tool.items():
-            if alias in query_lower or any(
-                word in query_lower for word in alias.split("_")
-            ):
+            if alias in query_lower or any(word in query_lower for word in alias.split("_")):
                 if tool_name not in suggestions:
                     suggestions.append(tool_name)
 

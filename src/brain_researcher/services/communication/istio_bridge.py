@@ -11,18 +11,19 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Any, Union, Callable
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Union
+import yaml
 
 import aiohttp
-import httpx
 import kubernetes.client
-import yaml
-from kubernetes import config
 from kubernetes.client.rest import ApiException
+from kubernetes import config
+import httpx
 from prometheus_client.parser import text_string_to_metric_families
 
 from brain_researcher.core.utils.tool import tool
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ServiceMeshConfig:
     """Configuration for Istio service mesh integration"""
-
     namespace: str = "brain-researcher"
     istio_namespace: str = "istio-system"
     mesh_id: str = "brain-researcher-mesh"
@@ -46,7 +46,6 @@ class ServiceMeshConfig:
 @dataclass
 class TrafficPolicy:
     """Traffic management policy configuration"""
-
     service_name: str
     load_balancer: str = "ROUND_ROBIN"  # ROUND_ROBIN, LEAST_CONN, RANDOM, PASSTHROUGH
     connection_pool: Optional[Dict] = None
@@ -56,7 +55,9 @@ class TrafficPolicy:
 
     def to_dict(self) -> Dict:
         """Convert to Kubernetes resource format"""
-        policy = {"loadBalancer": {"simple": self.load_balancer}}
+        policy = {
+            "loadBalancer": {"simple": self.load_balancer}
+        }
 
         if self.connection_pool:
             policy["connectionPool"] = self.connection_pool
@@ -70,7 +71,6 @@ class TrafficPolicy:
 @dataclass
 class SecurityPolicy:
     """Security policy configuration"""
-
     service_name: str
     mtls_mode: str = "STRICT"  # STRICT, PERMISSIVE, DISABLE
     authorization_rules: List[Dict] = None
@@ -104,7 +104,8 @@ class IstioMetrics:
                 params["time"] = time_range
 
             response = await self.client.get(
-                f"{self.prometheus_url}/api/v1/query", params=params
+                f"{self.prometheus_url}/api/v1/query",
+                params=params
             )
             response.raise_for_status()
             return response.json()
@@ -146,7 +147,7 @@ class IstioMetrics:
         overview = {}
 
         # Total request rate across mesh
-        query = "sum(rate(istio_requests_total[5m]))"
+        query = 'sum(rate(istio_requests_total[5m]))'
         overview["total_request_rate"] = await self.query_metric(query)
 
         # Success rate across mesh
@@ -154,11 +155,11 @@ class IstioMetrics:
         overview["overall_success_rate"] = await self.query_metric(query)
 
         # Service count
-        query = "count(count by (destination_service_name)(istio_requests_total))"
+        query = 'count(count by (destination_service_name)(istio_requests_total))'
         overview["service_count"] = await self.query_metric(query)
 
         # Active connections
-        query = "sum(istio_tcp_connections_opened_total) - sum(istio_tcp_connections_closed_total)"
+        query = 'sum(istio_tcp_connections_opened_total) - sum(istio_tcp_connections_closed_total)'
         overview["active_connections"] = await self.query_metric(query)
 
         return overview
@@ -182,16 +183,21 @@ class IstioTracing:
         service: str,
         operation: Optional[str] = None,
         lookback: str = "1h",
-        limit: int = 100,
+        limit: int = 100
     ) -> List[Dict]:
         """Get traces for a service"""
         try:
-            params = {"service": service, "lookback": lookback, "limit": limit}
+            params = {
+                "service": service,
+                "lookback": lookback,
+                "limit": limit
+            }
             if operation:
                 params["operation"] = operation
 
             response = await self.client.get(
-                f"{self.jaeger_url}/api/traces", params=params
+                f"{self.jaeger_url}/api/traces",
+                params=params
             )
             response.raise_for_status()
             return response.json().get("data", [])
@@ -215,7 +221,9 @@ class IstioTracing:
             return []
 
     async def analyze_trace_performance(
-        self, service: str, time_range: str = "1h"
+        self,
+        service: str,
+        time_range: str = "1h"
     ) -> Dict:
         """Analyze performance patterns from traces"""
         traces = await self.get_traces(service, lookback=time_range)
@@ -251,9 +259,7 @@ class IstioTracing:
         return {
             "total_traces": len(traces),
             "total_spans": sum(span_counts),
-            "avg_spans_per_trace": (
-                sum(span_counts) / len(span_counts) if span_counts else 0
-            ),
+            "avg_spans_per_trace": sum(span_counts) / len(span_counts) if span_counts else 0,
             "error_count": error_count,
             "error_rate": error_count / n if n > 0 else 0,
             "duration_stats": {
@@ -262,8 +268,8 @@ class IstioTracing:
                 "mean": sum(durations) / n,
                 "p50": durations[int(n * 0.5)],
                 "p95": durations[int(n * 0.95)],
-                "p99": durations[int(n * 0.99)],
-            },
+                "p99": durations[int(n * 0.99)]
+            }
         }
 
 
@@ -307,7 +313,9 @@ class IstioBridge:
 
     @tool
     async def apply_traffic_policy(
-        self, service_name: str, policy: TrafficPolicy
+        self,
+        service_name: str,
+        policy: TrafficPolicy
     ) -> Dict[str, Any]:
         """Apply traffic management policy to a service"""
         if not self.k8s_client:
@@ -321,12 +329,15 @@ class IstioBridge:
                 "metadata": {
                     "name": f"{service_name}-traffic-policy",
                     "namespace": self.config.namespace,
-                    "labels": {"app": "brain-researcher", "managed-by": "istio-bridge"},
+                    "labels": {
+                        "app": "brain-researcher",
+                        "managed-by": "istio-bridge"
+                    }
                 },
                 "spec": {
                     "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
-                    "trafficPolicy": policy.to_dict(),
-                },
+                    "trafficPolicy": policy.to_dict()
+                }
             }
 
             # Apply using kubectl
@@ -339,7 +350,7 @@ class IstioBridge:
                     version="v1beta1",
                     namespace=self.config.namespace,
                     plural="destinationrules",
-                    name=f"{service_name}-traffic-policy",
+                    name=f"{service_name}-traffic-policy"
                 )
 
                 # Update existing
@@ -349,7 +360,7 @@ class IstioBridge:
                     namespace=self.config.namespace,
                     plural="destinationrules",
                     name=f"{service_name}-traffic-policy",
-                    body=destination_rule,
+                    body=destination_rule
                 )
                 action = "updated"
 
@@ -361,7 +372,7 @@ class IstioBridge:
                         version="v1beta1",
                         namespace=self.config.namespace,
                         plural="destinationrules",
-                        body=destination_rule,
+                        body=destination_rule
                     )
                     action = "created"
                 else:
@@ -370,7 +381,7 @@ class IstioBridge:
             return {
                 "success": True,
                 "action": action,
-                "resource": result["metadata"]["name"],
+                "resource": result["metadata"]["name"]
             }
 
         except Exception as e:
@@ -379,7 +390,9 @@ class IstioBridge:
 
     @tool
     async def apply_security_policy(
-        self, service_name: str, policy: SecurityPolicy
+        self,
+        service_name: str,
+        policy: SecurityPolicy
     ) -> Dict[str, Any]:
         """Apply security policy to a service"""
         if not self.k8s_client:
@@ -396,12 +409,21 @@ class IstioBridge:
                 "metadata": {
                     "name": f"{service_name}-peer-auth",
                     "namespace": self.config.namespace,
-                    "labels": {"app": "brain-researcher", "managed-by": "istio-bridge"},
+                    "labels": {
+                        "app": "brain-researcher",
+                        "managed-by": "istio-bridge"
+                    }
                 },
                 "spec": {
-                    "selector": {"matchLabels": {"app": service_name}},
-                    "mtls": {"mode": policy.mtls_mode},
-                },
+                    "selector": {
+                        "matchLabels": {
+                            "app": service_name
+                        }
+                    },
+                    "mtls": {
+                        "mode": policy.mtls_mode
+                    }
+                }
             }
 
             try:
@@ -410,24 +432,12 @@ class IstioBridge:
                     version="v1beta1",
                     namespace=self.config.namespace,
                     plural="peerauthentications",
-                    body=peer_auth,
+                    body=peer_auth
                 )
-                results.append(
-                    {
-                        "type": "PeerAuthentication",
-                        "action": "created",
-                        "name": result["metadata"]["name"],
-                    }
-                )
+                results.append({"type": "PeerAuthentication", "action": "created", "name": result["metadata"]["name"]})
             except ApiException as e:
                 if e.status == 409:  # Already exists
-                    results.append(
-                        {
-                            "type": "PeerAuthentication",
-                            "action": "exists",
-                            "name": f"{service_name}-peer-auth",
-                        }
-                    )
+                    results.append({"type": "PeerAuthentication", "action": "exists", "name": f"{service_name}-peer-auth"})
                 else:
                     raise
 
@@ -441,13 +451,17 @@ class IstioBridge:
                         "namespace": self.config.namespace,
                         "labels": {
                             "app": "brain-researcher",
-                            "managed-by": "istio-bridge",
-                        },
+                            "managed-by": "istio-bridge"
+                        }
                     },
                     "spec": {
-                        "selector": {"matchLabels": {"app": service_name}},
-                        "rules": policy.authorization_rules,
-                    },
+                        "selector": {
+                            "matchLabels": {
+                                "app": service_name
+                            }
+                        },
+                        "rules": policy.authorization_rules
+                    }
                 }
 
                 try:
@@ -456,24 +470,12 @@ class IstioBridge:
                         version="v1beta1",
                         namespace=self.config.namespace,
                         plural="authorizationpolicies",
-                        body=auth_policy,
+                        body=auth_policy
                     )
-                    results.append(
-                        {
-                            "type": "AuthorizationPolicy",
-                            "action": "created",
-                            "name": result["metadata"]["name"],
-                        }
-                    )
+                    results.append({"type": "AuthorizationPolicy", "action": "created", "name": result["metadata"]["name"]})
                 except ApiException as e:
                     if e.status == 409:
-                        results.append(
-                            {
-                                "type": "AuthorizationPolicy",
-                                "action": "exists",
-                                "name": f"{service_name}-auth-policy",
-                            }
-                        )
+                        results.append({"type": "AuthorizationPolicy", "action": "exists", "name": f"{service_name}-auth-policy"})
                     else:
                         raise
 
@@ -492,7 +494,8 @@ class IstioBridge:
         try:
             # Get metrics
             service_metrics = await self.metrics.get_service_metrics(
-                service_name, self.config.namespace
+                service_name,
+                self.config.namespace
             )
 
             # Get trace analysis if tracing enabled
@@ -511,7 +514,7 @@ class IstioBridge:
                 "health_score": health_score,
                 "metrics": service_metrics,
                 "trace_analysis": trace_analysis,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now().isoformat()
             }
 
         except Exception as e:
@@ -552,10 +555,8 @@ class IstioBridge:
 
         return {
             "score": max(0, int(score)),
-            "status": (
-                "healthy" if score >= 80 else "degraded" if score >= 60 else "unhealthy"
-            ),
-            "factors": factors,
+            "status": "healthy" if score >= 80 else "degraded" if score >= 60 else "unhealthy",
+            "factors": factors
         }
 
     @tool
@@ -585,7 +586,7 @@ class IstioBridge:
                 "services": service_list,
                 "metrics": overview,
                 "config_status": config_status,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now().isoformat()
             }
 
         except Exception as e:
@@ -607,20 +608,16 @@ class IstioBridge:
                 ("DestinationRule", "destinationrules"),
                 ("Gateway", "gateways"),
                 ("PeerAuthentication", "peerauthentications"),
-                ("AuthorizationPolicy", "authorizationpolicies"),
+                ("AuthorizationPolicy", "authorizationpolicies")
             ]
 
             for resource_type, plural in resource_types:
                 try:
                     resources = custom_api.list_namespaced_custom_object(
-                        group=(
-                            "networking.istio.io"
-                            if "authentication" not in plural
-                            else "security.istio.io"
-                        ),
+                        group="networking.istio.io" if "authentication" not in plural else "security.istio.io",
                         version="v1beta1",
                         namespace=self.config.namespace,
-                        plural=plural,
+                        plural=plural
                     )
                     status[resource_type] = len(resources.get("items", []))
                 except ApiException:
@@ -634,7 +631,10 @@ class IstioBridge:
 
     @tool
     async def enable_canary_deployment(
-        self, service_name: str, canary_version: str, traffic_split: int = 10
+        self,
+        service_name: str,
+        canary_version: str,
+        traffic_split: int = 10
     ) -> Dict[str, Any]:
         """Enable canary deployment for a service"""
         if not self.k8s_client:
@@ -653,45 +653,41 @@ class IstioBridge:
                     "labels": {
                         "app": "brain-researcher",
                         "managed-by": "istio-bridge",
-                        "deployment-type": "canary",
-                    },
+                        "deployment-type": "canary"
+                    }
                 },
                 "spec": {
-                    "hosts": [
-                        f"{service_name}.{self.config.namespace}.svc.cluster.local"
-                    ],
+                    "hosts": [f"{service_name}.{self.config.namespace}.svc.cluster.local"],
                     "http": [
                         {
                             "match": [{"headers": {"X-Canary": {"exact": "true"}}}],
-                            "route": [
-                                {
-                                    "destination": {
-                                        "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
-                                        "subset": "canary",
-                                    }
+                            "route": [{
+                                "destination": {
+                                    "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
+                                    "subset": "canary"
                                 }
-                            ],
+                            }]
                         },
                         {
                             "route": [
                                 {
                                     "destination": {
                                         "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
-                                        "subset": "stable",
+                                        "subset": "stable"
                                     },
-                                    "weight": 100 - traffic_split,
+                                    "weight": 100 - traffic_split
                                 },
                                 {
                                     "destination": {
                                         "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
-                                        "subset": "canary",
+                                        "subset": "canary"
                                     },
-                                    "weight": traffic_split,
-                                },
+                                    "weight": traffic_split
+                                }
                             ]
-                        },
-                    ],
-                },
+                        }
+                    ]
+                }
             }
 
             result = custom_api.create_namespaced_custom_object(
@@ -699,7 +695,7 @@ class IstioBridge:
                 version="v1beta1",
                 namespace=self.config.namespace,
                 plural="virtualservices",
-                body=virtual_service,
+                body=virtual_service
             )
 
             return {
@@ -708,7 +704,7 @@ class IstioBridge:
                 "service": service_name,
                 "canary_version": canary_version,
                 "traffic_split": f"{100 - traffic_split}% stable, {traffic_split}% canary",
-                "virtual_service": result["metadata"]["name"],
+                "virtual_service": result["metadata"]["name"]
             }
 
         except Exception as e:
@@ -717,7 +713,9 @@ class IstioBridge:
 
     @tool
     async def update_canary_traffic(
-        self, service_name: str, new_traffic_split: int
+        self,
+        service_name: str,
+        new_traffic_split: int
     ) -> Dict[str, Any]:
         """Update traffic split for canary deployment"""
         if not self.k8s_client:
@@ -733,7 +731,7 @@ class IstioBridge:
                 version="v1beta1",
                 namespace=self.config.namespace,
                 plural="virtualservices",
-                name=vs_name,
+                name=vs_name
             )
 
             # Update traffic weights
@@ -749,14 +747,14 @@ class IstioBridge:
                 namespace=self.config.namespace,
                 plural="virtualservices",
                 name=vs_name,
-                body=existing_vs,
+                body=existing_vs
             )
 
             return {
                 "success": True,
                 "service": service_name,
                 "updated_traffic_split": f"{100 - new_traffic_split}% stable, {new_traffic_split}% canary",
-                "virtual_service": result["metadata"]["name"],
+                "virtual_service": result["metadata"]["name"]
             }
 
         except Exception as e:
@@ -802,15 +800,15 @@ class IstioBridge:
                     "stable": {
                         "request_rate": stable_metrics,
                         "error_rate": stable_errors,
-                        "p95_latency": stable_latency,
+                        "p95_latency": stable_latency
                     },
                     "canary": {
                         "request_rate": canary_metrics,
                         "error_rate": canary_errors,
-                        "p95_latency": canary_latency,
-                    },
+                        "p95_latency": canary_latency
+                    }
                 },
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now().isoformat()
             }
 
         except Exception as e:
@@ -843,7 +841,7 @@ async def apply_brain_researcher_policies():
             ("br_kg-service", "LEAST_CONN"),
             ("agent-service", "ROUND_ROBIN"),
             ("web-ui-service", "LEAST_CONN"),
-            ("orchestrator-service", "ROUND_ROBIN"),
+            ("orchestrator-service", "ROUND_ROBIN")
         ]
 
         for service_name, lb_policy in services:
@@ -853,17 +851,14 @@ async def apply_brain_researcher_policies():
                 load_balancer=lb_policy,
                 connection_pool={
                     "tcp": {"maxConnections": 100, "connectTimeout": "30s"},
-                    "http": {
-                        "http1MaxPendingRequests": 50,
-                        "maxRequestsPerConnection": 10,
-                    },
+                    "http": {"http1MaxPendingRequests": 50, "maxRequestsPerConnection": 10}
                 },
                 circuit_breaker={
                     "consecutiveGatewayErrors": 5,
                     "interval": "30s",
-                    "baseEjectionTime": "30s",
+                    "baseEjectionTime": "30s"
                 },
-                timeout="60s",
+                timeout="60s"
             )
 
             result = await bridge.apply_traffic_policy(service_name, traffic_policy)
@@ -873,20 +868,10 @@ async def apply_brain_researcher_policies():
             security_policy = SecurityPolicy(
                 service_name=service_name,
                 mtls_mode="STRICT",
-                authorization_rules=[
-                    {
-                        "from": [
-                            {
-                                "source": {
-                                    "principals": [
-                                        "cluster.local/ns/brain-researcher/sa/*"
-                                    ]
-                                }
-                            }
-                        ],
-                        "to": [{"operation": {"methods": ["GET", "POST"]}}],
-                    }
-                ],
+                authorization_rules=[{
+                    "from": [{"source": {"principals": ["cluster.local/ns/brain-researcher/sa/*"]}}],
+                    "to": [{"operation": {"methods": ["GET", "POST"]}}]
+                }]
             )
 
             result = await bridge.apply_security_policy(service_name, security_policy)

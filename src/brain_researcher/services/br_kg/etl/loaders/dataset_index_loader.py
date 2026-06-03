@@ -84,9 +84,7 @@ class DatasetIndexLoader:
         if not config_path:
             return {}
         if not config_path.exists():
-            logger.warning(
-                "Config path %s does not exist; continuing with defaults", config_path
-            )
+            logger.warning("Config path %s does not exist; continuing with defaults", config_path)
             return {}
         try:
             with open(config_path, "r", encoding="utf-8") as handle:
@@ -241,9 +239,7 @@ class DatasetIndexLoader:
             )
 
         config_datasets = (
-            self.config.get("oak_mount", {}).get("datasets", {})
-            if isinstance(self.config, dict)
-            else {}
+            self.config.get("oak_mount", {}).get("datasets", {}) if isinstance(self.config, dict) else {}
         )
         dataset_name_norm = normalize_text(dataset_info.get("full_name", ""))
         for key, path_str in config_datasets.items():
@@ -262,9 +258,7 @@ class DatasetIndexLoader:
                     entry["error"] = error
                 candidate_paths.append(entry)
 
-        local_paths = (
-            self.config.get("local", {}) if isinstance(self.config, dict) else {}
-        )
+        local_paths = self.config.get("local", {}) if isinstance(self.config, dict) else {}
         for key, path_str in local_paths.items():
             if not isinstance(path_str, str):
                 continue
@@ -274,11 +268,7 @@ class DatasetIndexLoader:
             if key_norm in (normalize_text(dataset_id), dataset_name_norm):
                 path_obj = Path(path_str).expanduser()
                 exists, error = _safe_path_exists(path_obj)
-                entry = {
-                    "path": str(path_obj),
-                    "exists": exists,
-                    "source": f"local.{key}",
-                }
+                entry = {"path": str(path_obj), "exists": exists, "source": f"local.{key}"}
                 if error:
                     entry["error"] = error
                 candidate_paths.append(entry)
@@ -290,9 +280,7 @@ class DatasetIndexLoader:
 
         return storage_details
 
-    def _match_tasks(
-        self, tasks: Iterable[Any]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+    def _match_tasks(self, tasks: Iterable[Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
         """Match raw task labels to canonical taxonomy entries."""
         matched: List[Dict[str, Any]] = []
         unmatched: List[str] = []
@@ -301,11 +289,7 @@ class DatasetIndexLoader:
             if not isinstance(raw_label, str):
                 continue
             cleaned = raw_label.strip()
-            if (
-                not cleaned
-                or cleaned == "?"
-                or cleaned.lower().startswith("many tasks")
-            ):
+            if not cleaned or cleaned == "?" or cleaned.lower().startswith("many tasks"):
                 unmatched.append(raw_label)
                 continue
 
@@ -360,7 +344,6 @@ class DatasetIndexLoader:
             )
             if created:
                 self.stats["relationships_created"] += 1
-
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Ingest dataset index into BR-KG")

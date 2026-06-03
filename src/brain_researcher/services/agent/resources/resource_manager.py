@@ -12,11 +12,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional, Set, Tuple
 from uuid import uuid4
 
-from brain_researcher.services.agent.resources.queue_manager import (
-    Priority,
-    QueueEntry,
-    QueueManager,
-)
+from brain_researcher.services.agent.resources.queue_manager import QueueManager, QueueEntry, Priority
 from brain_researcher.services.agent.resources.resource_limits import get_tool_profile
 
 logger = logging.getLogger(__name__)
@@ -51,9 +47,7 @@ class ResourceAllocation:
 class ResourcePool:
     """Manages available system resources."""
 
-    def __init__(
-        self, max_cpu_cores: float = 4.0, max_memory_gb: float = 8.0, max_gpus: int = 0
-    ):
+    def __init__(self, max_cpu_cores: float = 4.0, max_memory_gb: float = 8.0, max_gpus: int = 0):
         """
         Initialize resource pool.
 
@@ -79,15 +73,13 @@ class ResourcePool:
             f"{max_memory_gb}GB memory, {max_gpus} GPUs"
         )
 
-    def can_allocate(
-        self, cpu_cores: float, memory_gb: float, gpu_count: int = 0
-    ) -> bool:
+    def can_allocate(self, cpu_cores: float, memory_gb: float, gpu_count: int = 0) -> bool:
         """Check if resources can be allocated."""
         with self._lock:
             return (
-                self.available_cpu >= cpu_cores
-                and self.available_memory >= memory_gb
-                and self.available_gpus >= gpu_count
+                self.available_cpu >= cpu_cores and
+                self.available_memory >= memory_gb and
+                self.available_gpus >= gpu_count
             )
 
     def allocate(self, cpu_cores: float, memory_gb: float, gpu_count: int = 0) -> bool:
@@ -115,9 +107,7 @@ class ResourcePool:
         """Release resources back to pool."""
         with self._lock:
             self.available_cpu = min(self.available_cpu + cpu_cores, self.max_cpu_cores)
-            self.available_memory = min(
-                self.available_memory + memory_gb, self.max_memory_gb
-            )
+            self.available_memory = min(self.available_memory + memory_gb, self.max_memory_gb)
             self.available_gpus = min(self.available_gpus + gpu_count, self.max_gpus)
 
             logger.debug(
@@ -130,13 +120,9 @@ class ResourcePool:
         with self._lock:
             return {
                 "cpu_utilization": (1 - self.available_cpu / self.max_cpu_cores) * 100,
-                "memory_utilization": (1 - self.available_memory / self.max_memory_gb)
-                * 100,
-                "gpu_utilization": (
-                    (1 - self.available_gpus / max(1, self.max_gpus)) * 100
-                    if self.max_gpus > 0
-                    else 0
-                ),
+                "memory_utilization": (1 - self.available_memory / self.max_memory_gb) * 100,
+                "gpu_utilization": (1 - self.available_gpus / max(1, self.max_gpus)) * 100
+                if self.max_gpus > 0 else 0,
             }
 
     def get_available(self) -> Dict[str, float]:
@@ -171,9 +157,7 @@ class ResourceManager:
             max_queue_size: Maximum queue size
         """
         self.pool = ResourcePool(max_cpu_cores, max_memory_gb, max_gpus)
-        self.queue_manager = (
-            QueueManager(max_size=max_queue_size) if enable_queueing else None
-        )
+        self.queue_manager = QueueManager(max_size=max_queue_size) if enable_queueing else None
 
         # Track active allocations
         self.allocations: Dict[str, ResourceAllocation] = {}
@@ -216,15 +200,10 @@ class ResourceManager:
 
         # Check if we can allocate immediately
         with self._lock:
-            if self.pool.can_allocate(
-                profile.cpu_cores, profile.memory_gb, profile.gpu_count
-            ):
+            if self.pool.can_allocate(profile.cpu_cores, profile.memory_gb, profile.gpu_count):
                 return self._allocate_resources(
-                    tool_name,
-                    execution_id,
-                    profile.cpu_cores,
-                    profile.memory_gb,
-                    profile.gpu_count,
+                    tool_name, execution_id,
+                    profile.cpu_cores, profile.memory_gb, profile.gpu_count
                 )
 
         # If queueing is disabled, fail immediately
@@ -254,16 +233,14 @@ class ResourceManager:
                 "cpu_cores": profile.cpu_cores,
                 "memory_gb": profile.memory_gb,
                 "gpu_count": profile.gpu_count,
-            },
+            }
         )
 
         if not self.queue_manager.enqueue(entry):
             logger.error(f"Failed to queue resource request for {tool_name}")
             return None
 
-        logger.info(
-            f"Queued resource request for {tool_name} (execution: {execution_id})"
-        )
+        logger.info(f"Queued resource request for {tool_name} (execution: {execution_id})")
 
         # Wait for resources with timeout
         start_time = time.time()
@@ -351,9 +328,7 @@ class ResourceManager:
                 return False
 
             # Release resources back to pool
-            self.pool.release(
-                allocation.cpu_cores, allocation.memory_gb, allocation.gpu_count
-            )
+            self.pool.release(allocation.cpu_cores, allocation.memory_gb, allocation.gpu_count)
 
             # Mark as released
             allocation.released_at = datetime.now()
@@ -383,7 +358,7 @@ class ResourceManager:
                 lambda e: self.pool.can_allocate(
                     e.resource_request["cpu_cores"],
                     e.resource_request["memory_gb"],
-                    e.resource_request.get("gpu_count", 0),
+                    e.resource_request.get("gpu_count", 0)
                 )
             )
 
@@ -393,7 +368,7 @@ class ResourceManager:
                     entry.execution_id,
                     entry.resource_request["cpu_cores"],
                     entry.resource_request["memory_gb"],
-                    entry.resource_request.get("gpu_count", 0),
+                    entry.resource_request.get("gpu_count", 0)
                 )
 
         return None
@@ -401,15 +376,14 @@ class ResourceManager:
     def can_allocate(self, tool_name: str) -> bool:
         """Check if resources are available for a tool."""
         profile = get_tool_profile(tool_name)
-        return self.pool.can_allocate(
-            profile.cpu_cores, profile.memory_gb, profile.gpu_count
-        )
+        return self.pool.can_allocate(profile.cpu_cores, profile.memory_gb, profile.gpu_count)
 
     def get_status(self) -> Dict:
         """Get current resource manager status."""
         with self._lock:
             active_allocations = [
-                alloc for alloc in self.allocations.values() if alloc.is_active
+                alloc for alloc in self.allocations.values()
+                if alloc.is_active
             ]
 
             return {
@@ -420,16 +394,14 @@ class ResourceManager:
                         "cpu_cores": self.pool.max_cpu_cores,
                         "memory_gb": self.pool.max_memory_gb,
                         "gpus": self.pool.max_gpus,
-                    },
+                    }
                 },
                 "allocations": {
                     "active": len(active_allocations),
                     "total": len(self.allocations),
                     "by_tool": self._get_allocations_by_tool(active_allocations),
                 },
-                "queue": (
-                    self.queue_manager.get_status() if self.queue_manager else None
-                ),
+                "queue": self.queue_manager.get_status() if self.queue_manager else None,
             }
 
     def _get_allocations_by_tool(self, allocations: list) -> Dict[str, int]:
@@ -452,10 +424,7 @@ class ResourceManager:
                     stale_allocations = []
 
                     for alloc_id, alloc in self.allocations.items():
-                        if (
-                            alloc.is_active
-                            and (now - alloc.allocated_at) > max_allocation_time
-                        ):
+                        if alloc.is_active and (now - alloc.allocated_at) > max_allocation_time:
                             logger.warning(
                                 f"Cleaning up stale allocation {alloc_id[:8]} "
                                 f"for {alloc.tool_name} (age: {now - alloc.allocated_at})"

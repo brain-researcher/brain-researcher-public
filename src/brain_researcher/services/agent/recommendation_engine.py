@@ -5,11 +5,11 @@ This module implements a recommendation system that suggests related queries and
 analyses based on user history, popular patterns, and semantic similarity.
 """
 
-import asyncio
 import json
+import asyncio
 import logging
 import time
-from collections import Counter, defaultdict
+from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -128,64 +128,31 @@ class SimilarityEngine:
         """Load domain-specific terms for similarity calculation."""
         return {
             # Brain regions
-            "prefrontal",
-            "parietal",
-            "temporal",
-            "occipital",
-            "cingulate",
-            "amygdala",
-            "hippocampus",
-            "thalamus",
-            "caudate",
-            "putamen",
-            "insula",
-            "cerebellum",
-            "brainstem",
-            "cortex",
-            "subcortical",
+            "prefrontal", "parietal", "temporal", "occipital", "cingulate",
+            "amygdala", "hippocampus", "thalamus", "caudate", "putamen",
+            "insula", "cerebellum", "brainstem", "cortex", "subcortical",
+
             # Tasks and paradigms
-            "nback",
-            "stroop",
-            "oddball",
-            "flanker",
-            "working_memory",
-            "attention",
-            "emotion",
-            "motor",
-            "language",
-            "visual",
+            "nback", "stroop", "oddball", "flanker", "working_memory",
+            "attention", "emotion", "motor", "language", "visual",
+
             # Methods and analyses
-            "glm",
-            "connectivity",
-            "activation",
-            "contrast",
-            "correlation",
-            "classification",
-            "regression",
-            "ica",
-            "pca",
-            "svm",
+            "glm", "connectivity", "activation", "contrast", "correlation",
+            "classification", "regression", "ica", "pca", "svm",
+
             # Modalities
-            "fmri",
-            "bold",
-            "dwi",
-            "dti",
-            "asl",
-            "pet",
-            "eeg",
-            "meg",
+            "fmri", "bold", "dwi", "dti", "asl", "pet", "eeg", "meg",
+
             # Processing
-            "preprocessing",
-            "normalization",
-            "smoothing",
-            "motion_correction",
-            "registration",
-            "segmentation",
-            "parcellation",
+            "preprocessing", "normalization", "smoothing", "motion_correction",
+            "registration", "segmentation", "parcellation"
         }
 
     def calculate_similarity(
-        self, query1: str, query2: str, method: str = "hybrid"
+        self,
+        query1: str,
+        query2: str,
+        method: str = "hybrid"
     ) -> float:
         """
         Calculate similarity between two queries.
@@ -251,9 +218,7 @@ class SimilarityEngine:
         jaccard = intersection / union
 
         # Boost similarity for domain-specific terms
-        domain_overlap = len(
-            words1.intersection(words2).intersection(self.domain_terms)
-        )
+        domain_overlap = len(words1.intersection(words2).intersection(self.domain_terms))
         domain_boost = min(domain_overlap * 0.1, 0.3)  # Max 30% boost
 
         return min(jaccard + domain_boost, 1.0)
@@ -264,9 +229,9 @@ class SimilarityEngine:
             return self.embedding_cache[query]
 
         try:
-            if hasattr(self.embedding_model, "embed_query"):
+            if hasattr(self.embedding_model, 'embed_query'):
                 embedding = np.array(self.embedding_model.embed_query(query))
-            elif hasattr(self.embedding_model, "encode"):
+            elif hasattr(self.embedding_model, 'encode'):
                 embedding = np.array(self.embedding_model.encode([query])[0])
             else:
                 return None
@@ -285,9 +250,7 @@ class PatternAnalyzer:
     def __init__(self):
         """Initialize the pattern analyzer."""
         self.patterns: Dict[str, QueryPattern] = {}
-        self.pattern_transitions: Dict[str, Dict[str, float]] = defaultdict(
-            lambda: defaultdict(float)
-        )
+        self.pattern_transitions: Dict[str, Dict[str, float]] = defaultdict(lambda: defaultdict(float))
 
     def add_query_execution(
         self,
@@ -295,7 +258,7 @@ class PatternAnalyzer:
         tools_used: List[str],
         execution_time: float,
         success: bool,
-        domain: str,
+        domain: str
     ):
         """
         Record a query execution for pattern analysis.
@@ -315,7 +278,7 @@ class PatternAnalyzer:
                 pattern_id=pattern_id,
                 description=self._generate_pattern_description(query, tools_used),
                 template=self._generate_pattern_template(query),
-                domains=[domain],
+                domains=[domain]
             )
 
         pattern = self.patterns[pattern_id]
@@ -328,17 +291,13 @@ class PatternAnalyzer:
         if pattern.frequency == 1:
             pattern.success_rate = 1.0 if success else 0.0
         else:
-            pattern.success_rate = (1 - alpha) * pattern.success_rate + alpha * (
-                1.0 if success else 0.0
-            )
+            pattern.success_rate = (1 - alpha) * pattern.success_rate + alpha * (1.0 if success else 0.0)
 
         # Update execution time (moving average)
         if pattern.frequency == 1:
             pattern.avg_execution_time = execution_time
         else:
-            pattern.avg_execution_time = (
-                1 - alpha
-            ) * pattern.avg_execution_time + alpha * execution_time
+            pattern.avg_execution_time = (1 - alpha) * pattern.avg_execution_time + alpha * execution_time
 
         # Add domain if not present
         if domain not in pattern.domains:
@@ -348,9 +307,7 @@ class PatternAnalyzer:
         if query not in pattern.example_queries and len(pattern.example_queries) < 5:
             pattern.example_queries.append(query)
 
-    def _extract_pattern_id(
-        self, query: str, tools_used: List[str], domain: str
-    ) -> str:
+    def _extract_pattern_id(self, query: str, tools_used: List[str], domain: str) -> str:
         """Extract a pattern ID from query characteristics."""
         # Normalize query to identify pattern
         query_lower = query.lower()
@@ -364,9 +321,7 @@ class PatternAnalyzer:
         # Intent component
         if any(word in query_lower for word in ["compare", "contrast", "difference"]):
             components.append("intent:comparison")
-        elif any(
-            word in query_lower for word in ["correlat", "connect", "relationship"]
-        ):
+        elif any(word in query_lower for word in ["correlat", "connect", "relationship"]):
             components.append("intent:correlation")
         elif any(word in query_lower for word in ["predict", "classify", "decode"]):
             components.append("intent:prediction")
@@ -401,14 +356,13 @@ class PatternAnalyzer:
 
         # Replace common specific terms with placeholders
         replacements = {
-            r"\bds\d+\b": "{dataset}",
-            r"\b\d+\.\d+\b": "{number}",
-            r"\b\w+\.nii\.gz\b": "{file}",
-            r"\b[a-z]+_[a-z]+_[a-z]+\b": "{identifier}",
+            r'\bds\d+\b': '{dataset}',
+            r'\b\d+\.\d+\b': '{number}',
+            r'\b\w+\.nii\.gz\b': '{file}',
+            r'\b[a-z]+_[a-z]+_[a-z]+\b': '{identifier}'
         }
 
         import re
-
         for pattern, replacement in replacements.items():
             template = re.sub(pattern, replacement, template)
 
@@ -419,13 +373,11 @@ class PatternAnalyzer:
         sorted_patterns = sorted(
             self.patterns.values(),
             key=lambda p: p.frequency * p.success_rate,
-            reverse=True,
+            reverse=True
         )
         return sorted_patterns[:limit]
 
-    def find_next_step_patterns(
-        self, current_pattern_id: str
-    ) -> List[Tuple[str, float]]:
+    def find_next_step_patterns(self, current_pattern_id: str) -> List[Tuple[str, float]]:
         """Find patterns that commonly follow the current pattern."""
         if current_pattern_id in self.pattern_transitions:
             transitions = self.pattern_transitions[current_pattern_id]
@@ -471,7 +423,7 @@ class QueryRecommendationEngine:
         query: str,
         user_id: Optional[str] = None,
         limit: int = 5,
-        include_explanations: bool = True,
+        include_explanations: bool = True
     ) -> List[Recommendation]:
         """
         Generate recommendations for a given query.
@@ -488,11 +440,11 @@ class QueryRecommendationEngine:
         recommendations = []
 
         # Get similar queries
-        similar_recs = self._get_similar_queries(query, limit=limit // 2 + 1)
+        similar_recs = self._get_similar_queries(query, limit=limit//2 + 1)
         recommendations.extend(similar_recs)
 
         # Get next-step recommendations
-        next_step_recs = self._get_next_step_recommendations(query, limit=limit // 2)
+        next_step_recs = self._get_next_step_recommendations(query, limit=limit//2)
         recommendations.extend(next_step_recs)
 
         # Get popular recommendations
@@ -556,7 +508,7 @@ class QueryRecommendationEngine:
                     confidence=similarity,
                     reason="Similar to your current query",
                     category="similar",
-                    metadata={"similarity_score": similarity},
+                    metadata={"similarity_score": similarity}
                 )
                 recommendations.append(rec)
 
@@ -678,17 +630,13 @@ class RecommendationService:
             cache_hit = True
             results = cached[:max_results]
         else:
-            results = await self._build_recommendations(
-                query, user_id, context, max_results
-            )
+            results = await self._build_recommendations(query, user_id, context, max_results)
             self._set_cache(cache_key, results)
 
         if include_explanations:
             for rec in results:
                 if not rec.explanation:
-                    rec.explanation = (
-                        f"Suggested based on query similarity to '{query}'."
-                    )
+                    rec.explanation = f"Suggested based on query similarity to '{query}'."
 
         self._record_request_metrics(cache_hit)
         return results
@@ -781,25 +729,13 @@ class RecommendationService:
     ) -> Dict[str, Any]:
         cutoff = datetime.utcnow() - time_period
         user_interactions = [
-            i
-            for i in self._interactions
-            if i.user_id == user_id and i.timestamp >= cutoff
+            i for i in self._interactions if i.user_id == user_id and i.timestamp >= cutoff
         ]
-        scores = [
-            i.satisfaction_score
-            for i in user_interactions
-            if i.satisfaction_score is not None
-        ]
+        scores = [i.satisfaction_score for i in user_interactions if i.satisfaction_score is not None]
         avg_satisfaction = sum(scores) / len(scores) if scores else 0.0
         recommended_queries = [i.recommended_query for i in user_interactions]
-        diversity = (
-            len(set(recommended_queries)) / len(recommended_queries)
-            if recommended_queries
-            else 0.0
-        )
-        coverage = (
-            min(1.0, len(set(recommended_queries)) / 5) if recommended_queries else 0.0
-        )
+        diversity = len(set(recommended_queries)) / len(recommended_queries) if recommended_queries else 0.0
+        coverage = min(1.0, len(set(recommended_queries)) / 5) if recommended_queries else 0.0
         return {
             "average_satisfaction": avg_satisfaction,
             "recommendation_diversity": diversity,
@@ -811,16 +747,10 @@ class RecommendationService:
         segments: Dict[str, List[Dict[str, Any]]] = {"general": []}
         for user_id, profile in self._user_profiles.items():
             interactions = [
-                i
-                for i in self._interactions
-                if i.user_id == user_id and i.timestamp >= cutoff
+                i for i in self._interactions if i.user_id == user_id and i.timestamp >= cutoff
             ]
             avg_satisfaction = (
-                sum(
-                    i.satisfaction_score
-                    for i in interactions
-                    if i.satisfaction_score is not None
-                )
+                sum(i.satisfaction_score for i in interactions if i.satisfaction_score is not None)
                 / len([i for i in interactions if i.satisfaction_score is not None])
                 if interactions
                 else 0.0
@@ -834,12 +764,8 @@ class RecommendationService:
             )
         segment_stats = []
         if segments["general"]:
-            avg_sat = sum(s["avg_satisfaction"] for s in segments["general"]) / len(
-                segments["general"]
-            )
-            avg_exp = sum(s["avg_expertise_level"] for s in segments["general"]) / len(
-                segments["general"]
-            )
+            avg_sat = sum(s["avg_satisfaction"] for s in segments["general"]) / len(segments["general"])
+            avg_exp = sum(s["avg_expertise_level"] for s in segments["general"]) / len(segments["general"])
             segment_stats.append(
                 {
                     "segment": "general",
@@ -879,9 +805,7 @@ class RecommendationService:
         if not trending_up and recent_terms:
             trending_up = sorted(recent_terms, key=recent_terms.get, reverse=True)[:5]
         if not trending_down and earlier_terms:
-            trending_down = sorted(earlier_terms, key=earlier_terms.get, reverse=True)[
-                :5
-            ]
+            trending_down = sorted(earlier_terms, key=earlier_terms.get, reverse=True)[:5]
 
         return {"trending_up": trending_up, "trending_down": trending_down}
 
@@ -899,9 +823,7 @@ class RecommendationService:
         if self.vector_db is not None:
             try:
                 embedding = await self.vector_db.embed_query(query)
-                similar = await self.vector_db.similarity_search(
-                    embedding, k=max_results * 2
-                )
+                similar = await self.vector_db.similarity_search(embedding, k=max_results * 2)
                 for item in similar:
                     results.append(
                         RecommendationResult(
@@ -985,12 +907,7 @@ class RecommendationService:
 
         # Generic fallbacks
         if not results:
-            seed_terms = [
-                "analysis",
-                "preprocessing",
-                "connectivity",
-                "quality control",
-            ]
+            seed_terms = ["analysis", "preprocessing", "connectivity", "quality control"]
             for term in seed_terms:
                 results.append(
                     RecommendationResult(
@@ -1044,9 +961,9 @@ class RecommendationService:
     def _make_cache_key(
         self, query: str, user_id: Optional[str], context: Dict[str, Any]
     ) -> str:
-        context_key = (
-            "|".join(f"{k}={context[k]}" for k in sorted(context)) if context else ""
-        )
+        context_key = "|".join(
+            f"{k}={context[k]}" for k in sorted(context)
+        ) if context else ""
         return f"{user_id}:{query}:{context_key}"
 
     def _set_cache(self, key: str, value: List[RecommendationResult]) -> None:
@@ -1080,9 +997,7 @@ class RecommendationService:
             }
         )
 
-    def _get_next_step_recommendations(
-        self, query: str, limit: int = 2
-    ) -> List[Recommendation]:
+    def _get_next_step_recommendations(self, query: str, limit: int = 2) -> List[Recommendation]:
         """Get recommendations for logical next steps."""
         recommendations = []
 
@@ -1096,7 +1011,7 @@ class RecommendationService:
                     confidence=confidence,
                     reason="Common next step in analysis workflow",
                     category="next_step",
-                    metadata={"workflow_position": "follow_up"},
+                    metadata={"workflow_position": "follow_up"}
                 )
                 recommendations.append(rec)
 
@@ -1105,9 +1020,7 @@ class RecommendationService:
 
         return recommendations
 
-    def _get_popular_recommendations(
-        self, query: str, limit: int = 2
-    ) -> List[Recommendation]:
+    def _get_popular_recommendations(self, query: str, limit: int = 2) -> List[Recommendation]:
         """Get popular queries related to the current domain."""
         recommendations = []
 
@@ -1132,8 +1045,8 @@ class RecommendationService:
                         metadata={
                             "pattern_id": pattern.pattern_id,
                             "frequency": pattern.frequency,
-                            "success_rate": pattern.success_rate,
-                        },
+                            "success_rate": pattern.success_rate
+                        }
                     )
                     recommendations.append(rec)
 
@@ -1143,7 +1056,10 @@ class RecommendationService:
         return recommendations
 
     def _personalize_recommendations(
-        self, recommendations: List[Recommendation], user_id: str, query: str
+        self,
+        recommendations: List[Recommendation],
+        user_id: str,
+        query: str
     ) -> List[Recommendation]:
         """Apply personalization to recommendations based on user profile."""
         if user_id not in self.user_profiles:
@@ -1178,49 +1094,37 @@ class RecommendationService:
 
         # Rule-based next step inference
         if "preprocess" in query_lower:
-            next_steps.extend(
-                [
-                    ("Run GLM analysis on preprocessed data", 0.8),
-                    ("Perform quality control checks", 0.7),
-                ]
-            )
+            next_steps.extend([
+                ("Run GLM analysis on preprocessed data", 0.8),
+                ("Perform quality control checks", 0.7),
+            ])
         elif "glm" in query_lower or "activation" in query_lower:
-            next_steps.extend(
-                [
-                    ("Create statistical maps visualization", 0.8),
-                    ("Perform group-level analysis", 0.7),
-                    ("Extract ROI time series for connectivity", 0.6),
-                ]
-            )
+            next_steps.extend([
+                ("Create statistical maps visualization", 0.8),
+                ("Perform group-level analysis", 0.7),
+                ("Extract ROI time series for connectivity", 0.6),
+            ])
         elif "connectivity" in query_lower:
-            next_steps.extend(
-                [
-                    ("Analyze network properties", 0.8),
-                    ("Compare connectivity between groups", 0.7),
-                ]
-            )
+            next_steps.extend([
+                ("Analyze network properties", 0.8),
+                ("Compare connectivity between groups", 0.7),
+            ])
         elif "classify" in query_lower or "decode" in query_lower:
-            next_steps.extend(
-                [
-                    ("Evaluate classifier performance", 0.9),
-                    ("Create feature importance maps", 0.8),
-                ]
-            )
+            next_steps.extend([
+                ("Evaluate classifier performance", 0.9),
+                ("Create feature importance maps", 0.8),
+            ])
         elif "visualiz" in query_lower:
-            next_steps.extend(
-                [
-                    ("Generate publication-ready figures", 0.7),
-                    ("Create interactive brain plots", 0.6),
-                ]
-            )
+            next_steps.extend([
+                ("Generate publication-ready figures", 0.7),
+                ("Create interactive brain plots", 0.6),
+            ])
         else:
             # Generic next steps
-            next_steps.extend(
-                [
-                    ("Visualize the analysis results", 0.6),
-                    ("Perform statistical testing", 0.5),
-                ]
-            )
+            next_steps.extend([
+                ("Visualize the analysis results", 0.6),
+                ("Perform statistical testing", 0.5),
+            ])
 
         return next_steps
 
@@ -1234,14 +1138,8 @@ class RecommendationService:
             "structural": ["structural", "anatomy", "morphometry", "vbm"],
             "preprocessing": ["preprocess", "motion", "registration", "normalization"],
             "statistics": ["statistics", "test", "comparison", "contrast"],
-            "machine_learning": [
-                "classify",
-                "decode",
-                "predict",
-                "svm",
-                "machine learning",
-            ],
-            "visualization": ["plot", "visualiz", "display", "render"],
+            "machine_learning": ["classify", "decode", "predict", "svm", "machine learning"],
+            "visualization": ["plot", "visualiz", "display", "render"]
         }
 
         for domain, keywords in domain_keywords.items():
@@ -1257,15 +1155,12 @@ class RecommendationService:
             query.count("and") * 0.1,  # Multiple conditions
             query.count("?") * 0.1,  # Multiple questions
             int("compare" in query.lower() or "contrast" in query.lower()) * 0.2,
-            int("machine learning" in query.lower() or "classify" in query.lower())
-            * 0.3,
+            int("machine learning" in query.lower() or "classify" in query.lower()) * 0.3,
         ]
 
         return min(sum(complexity_factors), 1.0)
 
-    def _generate_explanation(
-        self, recommendation: Recommendation, original_query: str
-    ) -> str:
+    def _generate_explanation(self, recommendation: Recommendation, original_query: str) -> str:
         """Generate explanation for why this recommendation was made."""
         if recommendation.category == "similar":
             return f"This query is similar to your current one about {self._infer_domain(original_query)} analysis"
@@ -1283,7 +1178,7 @@ class RecommendationService:
         query: str,
         tools_used: List[str],
         execution_time: float,
-        success: bool,
+        success: bool
     ):
         """
         Update user profile based on query execution.
@@ -1304,15 +1199,17 @@ class RecommendationService:
         domain = self._infer_domain(query)
         if domain not in profile.preferred_domains:
             profile.preferred_domains[domain] = 0.0
-        profile.preferred_domains[domain] = 0.9 * profile.preferred_domains[
-            domain
-        ] + 0.1 * (1.0 if success else 0.5)
+        profile.preferred_domains[domain] = (
+            0.9 * profile.preferred_domains[domain] + 0.1 * (1.0 if success else 0.5)
+        )
 
         # Update tool preferences
         for tool in tools_used:
             if tool not in profile.preferred_tools:
                 profile.preferred_tools[tool] = 0.0
-            profile.preferred_tools[tool] = 0.9 * profile.preferred_tools[tool] + 0.1
+            profile.preferred_tools[tool] = (
+                0.9 * profile.preferred_tools[tool] + 0.1
+            )
 
         # Update complexity preference
         query_complexity = self._estimate_complexity(query)
@@ -1325,9 +1222,7 @@ class RecommendationService:
         # Update common keywords
         keywords = [word.lower() for word in query.split() if len(word) > 3]
         for keyword in keywords:
-            profile.common_keywords[keyword] = (
-                profile.common_keywords.get(keyword, 0) + 1
-            )
+            profile.common_keywords[keyword] = profile.common_keywords.get(keyword, 0) + 1
 
         # Update success rate by category
         category = self._infer_domain(query)
@@ -1335,8 +1230,7 @@ class RecommendationService:
             profile.success_rate_by_category[category] = 0.0
 
         profile.success_rate_by_category[category] = (
-            0.9 * profile.success_rate_by_category[category]
-            + 0.1 * (1.0 if success else 0.0)
+            0.9 * profile.success_rate_by_category[category] + 0.1 * (1.0 if success else 0.0)
         )
 
         profile.last_updated = datetime.now()
@@ -1355,15 +1249,21 @@ class RecommendationService:
         for topic, count in self.trending_topics.items():
             # Simple trending calculation (could be more sophisticated)
             trend_score = count / max(1, (now - datetime.now()).days + 1)
-            trending.append(
-                {"topic": topic, "count": count, "trend_score": trend_score}
-            )
+            trending.append({
+                "topic": topic,
+                "count": count,
+                "trend_score": trend_score
+            })
 
         trending.sort(key=lambda x: x["trend_score"], reverse=True)
         return trending[:limit]
 
     def add_query_feedback(
-        self, query: str, recommended_query: str, user_id: Optional[str], helpful: bool
+        self,
+        query: str,
+        recommended_query: str,
+        user_id: Optional[str],
+        helpful: bool
     ):
         """
         Record feedback on a recommendation.
@@ -1379,9 +1279,7 @@ class RecommendationService:
 
         if helpful:
             # Increase similarity threshold for similar recommendations
-            similarity = self.similarity_engine.calculate_similarity(
-                query, recommended_query
-            )
+            similarity = self.similarity_engine.calculate_similarity(query, recommended_query)
             logger.info(f"Positive feedback: similarity={similarity:.3f}")
         else:
             logger.info("Negative feedback recorded")
@@ -1391,7 +1289,8 @@ class RecommendationService:
 
 # Factory function
 def create_recommendation_engine(
-    embedding_model=None, history_store=None
+    embedding_model=None,
+    history_store=None
 ) -> QueryRecommendationEngine:
     """
     Create a query recommendation engine instance.

@@ -61,6 +61,16 @@ from brain_researcher.services.review.check_routing import (
     routing_shadow_report,
     select_checks,
 )
+
+# --------------------------------------------------------------------------- #
+# Canonical correctness tuple.
+#
+# Reconstructed from the SAME imports distill_review.distill_scientific_review_records
+# uses to build its local `_correctness_checks` tuple (see distill_review.py
+# import block ~L521-L635 and the tuple ~L689-L786). Kept in the same order.
+# `test_canonical_tuple_matches_router_universe` guards against drift.
+# --------------------------------------------------------------------------- #
+
 from brain_researcher.services.review.checks.artifact_structure import (
     cluster_peak_cardinality_check,
     cluster_table_count_consistency_check,
@@ -174,16 +184,6 @@ from brain_researcher.services.review.checks.task_construct_validity import (
 from brain_researcher.services.review.checks.value_domain import (
     value_domain_contract_violation_check,
 )
-
-# --------------------------------------------------------------------------- #
-# Canonical correctness tuple.
-#
-# Reconstructed from the SAME imports distill_review.distill_scientific_review_records
-# uses to build its local `_correctness_checks` tuple (see distill_review.py
-# import block ~L521-L635 and the tuple ~L689-L786). Kept in the same order.
-# `test_canonical_tuple_matches_router_universe` guards against drift.
-# --------------------------------------------------------------------------- #
-
 
 CheckFn = Callable[[CodeReviewBundle], "ReviewFinding | None"]
 
@@ -567,11 +567,13 @@ def test_routing_keeps_safety_floor(name: str) -> None:
     # The safety floor groups are always active.
     assert ALWAYS_ON_GROUPS <= decision.active_groups
 
-    floor_checks = {n for n in ALL_CHECK_NAMES if classify_check(n) in ALWAYS_ON_GROUPS}
+    floor_checks = {
+        n for n in ALL_CHECK_NAMES if classify_check(n) in ALWAYS_ON_GROUPS
+    }
     dropped_floor = floor_checks - selected
-    assert (
-        not dropped_floor
-    ), f"[{name}] routing dropped safety-floor checks: {sorted(dropped_floor)}"
+    assert not dropped_floor, (
+        f"[{name}] routing dropped safety-floor checks: {sorted(dropped_floor)}"
+    )
     # None of the floor checks may ever appear in `skipped`.
     assert not (floor_checks & set(decision.skipped)), (
         f"[{name}] safety-floor checks appear in skipped map: "
@@ -603,9 +605,9 @@ def test_routing_keeps_everything_when_no_family_signal() -> None:
         stats_metrics={"corr_has_nan": True, "corr_symmetric": False},
     )
     decision = select_checks(bundle, ALL_CHECK_NAMES, log=False)
-    assert (
-        not decision.skipped
-    ), f"no-family-signal bundle dropped checks: {sorted(decision.skipped)}"
+    assert not decision.skipped, (
+        f"no-family-signal bundle dropped checks: {sorted(decision.skipped)}"
+    )
     assert set(decision.selected) == set(ALL_CHECK_NAMES)
 
 
@@ -693,10 +695,9 @@ def test_routing_can_drop_on_mislabeled_bundle() -> None:
         stats_metrics={"corr_has_nan": True, "corr_symmetric": False},
     )
     fired = _fire(_NAME_TO_FN, bundle)
-    assert {
-        "corr_has_nan_check",
-        "corr_symmetric_check",
-    } <= fired, "expected FC checks to fire on the mislabeled bundle"
+    assert {"corr_has_nan_check", "corr_symmetric_check"} <= fired, (
+        "expected FC checks to fire on the mislabeled bundle"
+    )
 
     decision = select_checks(bundle, ALL_CHECK_NAMES, log=False)
     selected = set(decision.selected)
@@ -716,5 +717,7 @@ def test_routing_can_drop_on_mislabeled_bundle() -> None:
         "corr_positive_semidefinite_check",
         "corr_region_count_check",
     }
-    floor_checks = {n for n in ALL_CHECK_NAMES if classify_check(n) in ALWAYS_ON_GROUPS}
+    floor_checks = {
+        n for n in ALL_CHECK_NAMES if classify_check(n) in ALWAYS_ON_GROUPS
+    }
     assert not (dropped_firing & floor_checks)

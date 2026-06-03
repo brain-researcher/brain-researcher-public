@@ -49,7 +49,6 @@ def kg_list_concepts():
         logger,
         neo4j_db,
     )
-
     try:
         _neo4j_required()
         q = request.args.get("q", "").strip().lower()
@@ -145,7 +144,6 @@ def kg_get_concept(concept_id: str):
         logger,
         neo4j_db,
     )
-
     try:
         _neo4j_required()
         cypher = """
@@ -216,7 +214,6 @@ def kg_concept_evidence(concept_id: str):
         neo4j_db,
         performance_monitor,
     )
-
     try:
         _neo4j_required()
         try:
@@ -253,10 +250,9 @@ def kg_concept_evidence(concept_id: str):
         try:
             confidence_min = float(confidence_min_raw)
         except (TypeError, ValueError):
-            return (
-                jsonify({"error": "confidence_min must be a float between 0 and 1"}),
-                400,
-            )
+            return jsonify(
+                {"error": "confidence_min must be a float between 0 and 1"}
+            ), 400
         if confidence_min < 0 or confidence_min > 1:
             return jsonify({"error": "confidence_min must be between 0 and 1"}), 400
         try:
@@ -422,9 +418,7 @@ def kg_concept_evidence(concept_id: str):
                 datasets_rows = neo4j_db.execute_query(
                     """
                     MATCH (c)
-                    WHERE """
-                    + _onvoc_concept_match_clause("c")
-                    + """
+                    WHERE """ + _onvoc_concept_match_clause("c") + """
                     CALL {
                       WITH c
                       MATCH (c)-[dr]-(d)
@@ -1111,7 +1105,6 @@ def kg_concept_evidence_paths(concept_id: str):
         _parse_evidence_paths_query_params,
         logger,
     )
-
     try:
         _neo4j_required()
         try:
@@ -1180,7 +1173,6 @@ def kg_concept_summary(concept_id: str):
         neo4j_db,
         performance_monitor,
     )
-
     try:
         _neo4j_required()
 
@@ -1945,7 +1937,6 @@ def kg_concepts_tree():
         logger,
         neo4j_db,
     )
-
     try:
         _neo4j_required()
         max_depth = int(request.args.get("max_depth", 3))
@@ -2037,7 +2028,6 @@ def kg_concept_children(concept_id):
         neo4j_db,
         using_neo4j_backend,
     )
-
     scheme = request.args.get("scheme", "ONVOC")
 
     if not using_neo4j_backend:
@@ -2091,20 +2081,10 @@ def register(bp):
     Called by app.py on every (re)import so a freshly-created kg_bp gets the
     routes even when this module is already cached in sys.modules.
     """
-    bp.add_url_rule("/concepts", methods=["GET"], view_func=kg_list_concepts)
-    bp.add_url_rule("/concept/<concept_id>", methods=["GET"], view_func=kg_get_concept)
-    bp.add_url_rule(
-        "/concept/<concept_id>/evidence", methods=["GET"], view_func=kg_concept_evidence
-    )
-    bp.add_url_rule(
-        "/concept/<concept_id>/evidence/paths",
-        methods=["GET"],
-        view_func=kg_concept_evidence_paths,
-    )
-    bp.add_url_rule(
-        "/concept/<concept_id>/summary", methods=["GET"], view_func=kg_concept_summary
-    )
-    bp.add_url_rule("/concepts/tree", methods=["GET"], view_func=kg_concepts_tree)
-    bp.add_url_rule(
-        "/concept/<concept_id>/children", methods=["GET"], view_func=kg_concept_children
-    )
+    bp.add_url_rule('/concepts', methods=['GET'], view_func=kg_list_concepts)
+    bp.add_url_rule('/concept/<concept_id>', methods=['GET'], view_func=kg_get_concept)
+    bp.add_url_rule('/concept/<concept_id>/evidence', methods=['GET'], view_func=kg_concept_evidence)
+    bp.add_url_rule('/concept/<concept_id>/evidence/paths', methods=['GET'], view_func=kg_concept_evidence_paths)
+    bp.add_url_rule('/concept/<concept_id>/summary', methods=['GET'], view_func=kg_concept_summary)
+    bp.add_url_rule('/concepts/tree', methods=['GET'], view_func=kg_concepts_tree)
+    bp.add_url_rule('/concept/<concept_id>/children', methods=['GET'], view_func=kg_concept_children)

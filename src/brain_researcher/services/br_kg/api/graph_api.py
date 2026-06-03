@@ -362,10 +362,9 @@ def get_subgraph():
 
         # Validate parameters
         if not node_label or not node_name:
-            return (
-                jsonify({"error": "Missing required parameters: label and name"}),
-                400,
-            )
+            return jsonify(
+                {"error": "Missing required parameters: label and name"}
+            ), 400
 
         if depth < 1 or depth > 3:
             return jsonify({"error": "Depth must be between 1 and 3"}), 400
@@ -377,10 +376,9 @@ def get_subgraph():
         nodes = db.find_nodes(labels=node_label, properties={"name": node_name})
 
         if not nodes:
-            return (
-                jsonify({"error": f"No {node_label} found with name: {node_name}"}),
-                404,
-            )
+            return jsonify(
+                {"error": f"No {node_label} found with name: {node_name}"}
+            ), 404
 
         # Get the first matching node
         start_node_id = nodes[0][0]
@@ -452,10 +450,9 @@ def get_stats():
         return jsonify(stats)
     except Exception as e:
         logger.error(f"Error getting stats: {str(e)}")
-        return (
-            jsonify({"error": "Failed to get database statistics", "message": str(e)}),
-            500,
-        )
+        return jsonify(
+            {"error": "Failed to get database statistics", "message": str(e)}
+        ), 500
 
 
 @app.route("/api/evidence_pack", methods=["GET", "POST"])
@@ -526,7 +523,9 @@ def behavior_to_fmri_retrieval_endpoint():
             max_paths=int(payload.get("max_paths", 20)),
             max_regions_per_map=int(payload.get("max_regions_per_map", 8)),
             max_behavior_neighbors=int(payload.get("max_behavior_neighbors", 4)),
-            min_behavior_similarity=float(payload.get("min_behavior_similarity", 0.0)),
+            min_behavior_similarity=float(
+                payload.get("min_behavior_similarity", 0.0)
+            ),
             db=get_db(),
         )
     except ValueError as exc:
@@ -629,10 +628,9 @@ def publication_niclip_embedding(pub_id: str):
         pub_id
     )
     if not study_id:
-        return (
-            jsonify({"error": "Publication not found or missing study identifiers"}),
-            404,
-        )
+        return jsonify(
+            {"error": "Publication not found or missing study identifiers"}
+        ), 404
 
     kind = request.args.get("kind", "text")
     include_vector = _truthy(request.args.get("include_vector", "false"))
@@ -916,15 +914,12 @@ def not_found(e):
 def internal_error(e):
     """500 error handler"""
     logger.error(f"Internal server error: {str(e)}")
-    return (
-        jsonify(
-            {
-                "error": "Internal server error",
-                "message": "An unexpected error occurred",
-            }
-        ),
-        500,
-    )
+    return jsonify(
+        {
+            "error": "Internal server error",
+            "message": "An unexpected error occurred",
+        }
+    ), 500
 
 
 def find_free_port():

@@ -12,20 +12,15 @@ Provides commands for:
 import asyncio
 import json
 from datetime import datetime, timezone
-from typing import List, Optional, Union
-
+from typing import Optional, List, Union
 import typer
 from rich.console import Console
-from rich.panel import Panel
-from rich.syntax import Syntax
 from rich.table import Table
+from rich.panel import Panel
 from rich.tree import Tree
+from rich.syntax import Syntax
 
-from brain_researcher.cli.utils.http_client import (
-    api_get_sync,
-    api_post_sync,
-    api_stream,
-)
+from brain_researcher.cli.utils.http_client import api_get_sync, api_post_sync, api_stream
 
 app = typer.Typer(help="Job and run inspection commands")
 console = Console()
@@ -92,12 +87,8 @@ def format_confidence(value: Optional[float]) -> str:
 
 @app.command("ls")
 def list_jobs(
-    state: Optional[str] = typer.Option(
-        None, "--state", "-s", help="Filter by state (running, succeeded, failed, etc.)"
-    ),
-    limit: int = typer.Option(
-        50, "--limit", "-n", help="Maximum number of jobs to show"
-    ),
+    state: Optional[str] = typer.Option(None, "--state", "-s", help="Filter by state (running, succeeded, failed, etc.)"),
+    limit: int = typer.Option(50, "--limit", "-n", help="Maximum number of jobs to show"),
 ):
     """
     List recent jobs.
@@ -110,7 +101,11 @@ def list_jobs(
     """
     try:
         # Build search request payload
-        search_payload = {"limit": limit, "sort_by": "created_at", "sort_desc": True}
+        search_payload = {
+            "limit": limit,
+            "sort_by": "created_at",
+            "sort_desc": True
+        }
         if state:
             search_payload["status"] = [state]
 
@@ -124,11 +119,7 @@ def list_jobs(
             return
 
         # Create table with Plan Status column
-        table = Table(
-            title=f"Recent Jobs ({len(jobs)} of {total} total)",
-            show_header=True,
-            header_style="bold magenta",
-        )
+        table = Table(title=f"Recent Jobs ({len(jobs)} of {total} total)", show_header=True, header_style="bold magenta")
         table.add_column("Job ID", style="cyan", no_wrap=True)
         table.add_column("State", style="yellow")
         table.add_column("Tool", style="green")
@@ -155,9 +146,7 @@ def list_jobs(
 
             # Extract plan status from plan_summary
             plan_summary = job.get("plan_summary", {})
-            plan_status = (
-                plan_summary.get("plan_status", "N/A") if plan_summary else "N/A"
-            )
+            plan_status = plan_summary.get("plan_status", "N/A") if plan_summary else "N/A"
 
             table.add_row(
                 job.get("id", ""),
@@ -165,7 +154,7 @@ def list_jobs(
                 job.get("tool", "N/A"),
                 prompt,
                 plan_status,
-                format_timestamp(job.get("created_at", 0)),
+                format_timestamp(job.get("created_at", 0))
             )
 
         console.print(table)
@@ -205,9 +194,7 @@ def inspect_job(
         if prompt:
             info_lines.append(f"[bold]Prompt:[/bold] {prompt}")
 
-        console.print(
-            Panel("\n".join(info_lines), title="Job Information", border_style="cyan")
-        )
+        console.print(Panel("\n".join(info_lines), title="Job Information", border_style="cyan"))
 
         # Timing panel
         timing_lines = [
@@ -215,25 +202,15 @@ def inspect_job(
         ]
 
         if job.get("queued_at"):
-            timing_lines.append(
-                f"[bold]Queued:[/bold] {format_timestamp(job.get('queued_at'))}"
-            )
+            timing_lines.append(f"[bold]Queued:[/bold] {format_timestamp(job.get('queued_at'))}")
         if job.get("claimed_at"):
-            timing_lines.append(
-                f"[bold]Claimed:[/bold] {format_timestamp(job.get('claimed_at'))}"
-            )
+            timing_lines.append(f"[bold]Claimed:[/bold] {format_timestamp(job.get('claimed_at'))}")
         if job.get("started_at"):
-            timing_lines.append(
-                f"[bold]Started:[/bold] {format_timestamp(job.get('started_at'))}"
-            )
+            timing_lines.append(f"[bold]Started:[/bold] {format_timestamp(job.get('started_at'))}")
         if job.get("completed_at"):
-            timing_lines.append(
-                f"[bold]Completed:[/bold] {format_timestamp(job.get('completed_at'))}"
-            )
+            timing_lines.append(f"[bold]Completed:[/bold] {format_timestamp(job.get('completed_at'))}")
 
-        console.print(
-            Panel("\n".join(timing_lines), title="Timing", border_style="blue")
-        )
+        console.print(Panel("\n".join(timing_lines), title="Timing", border_style="blue"))
 
         # Plan summary panel if available
         plan_summary = job.get("plan_summary")
@@ -249,13 +226,7 @@ def inspect_job(
                 f"[bold]Plan Confidence:[/bold] {format_confidence(plan_conf)}",
                 f"[bold]POR Token:[/bold] {'Set' if plan_summary.get('por_token_set') else 'Not set'}",
             ]
-            console.print(
-                Panel(
-                    "\n".join(plan_lines),
-                    title="Plan of Record",
-                    border_style="magenta",
-                )
-            )
+            console.print(Panel("\n".join(plan_lines), title="Plan of Record", border_style="magenta"))
 
         # Error panel if failed
         error = job.get("error")
@@ -265,16 +236,14 @@ def inspect_job(
         # Show planner info if available
         try:
             plan = api_get_sync(f"/api/jobs/{job_id}/plan")
-            console.print(
-                Panel(
-                    f"[bold]Intent:[/bold] {plan.get('intent', 'N/A')}\n"
-                    f"[bold]Chosen Tool:[/bold] {plan.get('chosen', {}).get('tool_name', 'N/A')} "
-                    f"(score: {plan.get('chosen', {}).get('score', 0):.2f})\n"
-                    f"[bold]Candidates:[/bold] {len(plan.get('candidates', []))}",
-                    title="Planner Trace",
-                    border_style="green",
-                )
-            )
+            console.print(Panel(
+                f"[bold]Intent:[/bold] {plan.get('intent', 'N/A')}\n"
+                f"[bold]Chosen Tool:[/bold] {plan.get('chosen', {}).get('tool_name', 'N/A')} "
+                f"(score: {plan.get('chosen', {}).get('score', 0):.2f})\n"
+                f"[bold]Candidates:[/bold] {len(plan.get('candidates', []))}",
+                title="Planner Trace",
+                border_style="green"
+            ))
             console.print(f"\n[dim]View full plan:[/dim] br runs plan {job_id}")
         except:
             pass  # Plan not available
@@ -312,9 +281,7 @@ def view_plan(
         # Create candidates table
         candidates = plan.get("candidates", [])
         if candidates:
-            table = Table(
-                title="Candidate Tools", show_header=True, header_style="bold magenta"
-            )
+            table = Table(title="Candidate Tools", show_header=True, header_style="bold magenta")
             table.add_column("Rank", justify="right", style="dim")
             table.add_column("Tool ID", style="cyan")
             table.add_column("Name", style="green")
@@ -338,7 +305,7 @@ def view_plan(
                     candidate.get("tool_name", ""),
                     f"{candidate.get('score', 0):.2f}",
                     f"[{preflight_style}]{preflight}[/{preflight_style}]",
-                    candidate.get("reason", ""),
+                    candidate.get("reason", "")
                 )
 
             console.print(table)
@@ -347,9 +314,7 @@ def view_plan(
         chosen = plan.get("chosen")
         if chosen:
             console.print(f"\n[bold green]✓ Selected Tool[/bold green]")
-            console.print(
-                f"  [bold]Tool:[/bold] {chosen.get('tool_name')} ({chosen.get('tool_id')})"
-            )
+            console.print(f"  [bold]Tool:[/bold] {chosen.get('tool_name')} ({chosen.get('tool_id')})")
             console.print(f"  [bold]Score:[/bold] {chosen.get('score', 0):.2f}")
             console.print(f"  [bold]Image:[/bold] {chosen.get('image', 'N/A')}")
             console.print(f"  [bold]Reason:[/bold] {chosen.get('reason', 'N/A')}")
@@ -364,21 +329,15 @@ def view_plan(
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}")
         if "404" in str(e):
-            console.print(
-                f"[yellow]Tip:[/yellow] This job may not have used the planner"
-            )
+            console.print(f"[yellow]Tip:[/yellow] This job may not have used the planner")
         raise typer.Exit(1)
 
 
 @app.command("logs")
 def view_logs(
     job_id: str = typer.Argument(..., help="Job ID"),
-    follow: bool = typer.Option(
-        False, "--follow", "-f", help="Stream logs in real-time"
-    ),
-    stream_type: str = typer.Option(
-        "all", "--stream", "-s", help="Log stream: stdout, stderr, or all"
-    ),
+    follow: bool = typer.Option(False, "--follow", "-f", help="Stream logs in real-time"),
+    stream_type: str = typer.Option("all", "--stream", "-s", help="Log stream: stdout, stderr, or all"),
 ):
     """
     View or stream job logs.
@@ -391,9 +350,7 @@ def view_logs(
     try:
         if follow:
             # Stream logs in real-time
-            console.print(
-                f"[dim]Streaming logs for {job_id} (Ctrl+C to stop)...[/dim]\n"
-            )
+            console.print(f"[dim]Streaming logs for {job_id} (Ctrl+C to stop)...[/dim]\n")
 
             async def stream_logs():
                 params = {"follow": "true"}
@@ -401,9 +358,7 @@ def view_logs(
                     params["stream"] = stream_type
 
                 try:
-                    async for line in api_stream(
-                        f"/api/jobs/{job_id}/logs/stream", params=params
-                    ):
+                    async for line in api_stream(f"/api/jobs/{job_id}/logs/stream", params=params):
                         if line.strip():
                             try:
                                 log_data = json.loads(line)
@@ -485,7 +440,7 @@ def list_artifacts(
             table.add_row(
                 file_info.get("name", ""),
                 format_file_size(file_info.get("size", 0)),
-                file_info.get("modified", "N/A"),
+                file_info.get("modified", "N/A")
             )
 
         console.print(table)
@@ -494,9 +449,7 @@ def list_artifacts(
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}")
         if "404" in str(e):
-            console.print(
-                f"[yellow]Tip:[/yellow] Job may not have completed or run directory not available"
-            )
+            console.print(f"[yellow]Tip:[/yellow] Job may not have completed or run directory not available")
         raise typer.Exit(1)
 
 

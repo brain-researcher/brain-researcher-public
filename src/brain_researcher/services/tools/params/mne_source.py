@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any, Dict, Optional, Tuple
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -81,9 +81,7 @@ def _ensure_exists(path: Optional[str]) -> Optional[str]:
     return str(p)
 
 
-def mne_source_inverse_from_payload(
-    payload: Dict[str, Any],
-) -> MNESourceInverseParameters:
+def mne_source_inverse_from_payload(payload: Dict[str, Any]) -> MNESourceInverseParameters:
     baseline = payload.get("baseline", (None, 0))
     if baseline is not None:
         baseline = tuple(baseline)
@@ -207,9 +205,7 @@ def _load_evoked_data(
         evoked = mne.read_evokeds(_ensure_exists(evoked_file), verbose=False)[0]
         return evoked, raw, epochs
     if epochs_file:
-        epochs = mne.read_epochs(
-            _ensure_exists(epochs_file), preload=True, verbose=False
-        )
+        epochs = mne.read_epochs(_ensure_exists(epochs_file), preload=True, verbose=False)
         evoked = epochs.average()
         return evoked, raw, epochs
     if raw_file:
@@ -248,11 +244,7 @@ def _load_bem(mne, bem_file: Optional[str], info):
 def run_mne_source_inverse(params: MNESourceInverseParameters) -> Dict[str, Any]:
     configure_mne_environment()
     import mne
-    from mne.minimum_norm import (
-        apply_inverse,
-        make_inverse_operator,
-        write_inverse_operator,
-    )
+    from mne.minimum_norm import make_inverse_operator, apply_inverse, write_inverse_operator
 
     output_dir = _prepare_output_dir(params.output_dir)
     Path(params.subjects_dir).mkdir(parents=True, exist_ok=True)
@@ -306,9 +298,7 @@ def run_mne_source_inverse(params: MNESourceInverseParameters) -> Dict[str, Any]
         noise_cov = mne.read_cov(_ensure_exists(params.noise_cov_file))
     elif epochs is not None:
         tmin, tmax = (None, None) if params.baseline is None else params.baseline
-        noise_cov = mne.compute_covariance(
-            epochs, tmin=tmin, tmax=tmax, method="empirical"
-        )
+        noise_cov = mne.compute_covariance(epochs, tmin=tmin, tmax=tmax, method="empirical")
     elif raw is not None:
         noise_cov = mne.compute_raw_covariance(raw, verbose=False)
     else:
@@ -341,9 +331,7 @@ def run_mne_source_inverse(params: MNESourceInverseParameters) -> Dict[str, Any]
                 pick_ori = None
         except Exception:
             pick_ori = params.pick_ori
-        stc = apply_inverse(
-            evoked, inv, lambda2, method=params.method, pick_ori=pick_ori, verbose=False
-        )
+        stc = apply_inverse(evoked, inv, lambda2, method=params.method, pick_ori=pick_ori, verbose=False)
     except Exception:
         fallback_used = True
         inv = None
@@ -402,7 +390,7 @@ def run_mne_source_inverse(params: MNESourceInverseParameters) -> Dict[str, Any]
 def run_mne_beamformer(params: MNEBeamformerParameters) -> Dict[str, Any]:
     configure_mne_environment()
     import mne
-    from mne.beamformer import apply_lcmv, make_lcmv
+    from mne.beamformer import make_lcmv, apply_lcmv
 
     output_dir = _prepare_output_dir(params.output_dir)
     Path(params.subjects_dir).mkdir(parents=True, exist_ok=True)
@@ -574,9 +562,7 @@ def run_mne_dipole(params: MNEDipoleParameters) -> Dict[str, Any]:
     min_dist_m = params.min_dist / 1000.0
     fallback_used = False
     try:
-        dip, residual = mne.fit_dipole(
-            evoked, cov, bem, trans=trans, min_dist=min_dist_m
-        )
+        dip, residual = mne.fit_dipole(evoked, cov, bem, trans=trans, min_dist=min_dist_m)
     except Exception:
         fallback_used = True
         data = evoked.data

@@ -170,7 +170,7 @@ def test_dry_run_materializes_episode_commands(tmp_path: Path) -> None:
         opencode_bin="opencode",
         claude_mcp_config=ROOT / ".mcp.json",
         br_mcp_surface="prod",
-        br_mcp_http_url="https://brain-researcher.com/mcp",
+        br_mcp_http_url="https://${PUBLIC_HOSTNAME}/mcp",
         allow_opencode_with_br_without_mcp=False,
     )
 
@@ -333,7 +333,7 @@ def test_skip_existing_records_reuses_and_scores_frozen_stdout(tmp_path: Path) -
         opencode_bin="opencode",
         claude_mcp_config=ROOT / ".mcp.json",
         br_mcp_surface="prod",
-        br_mcp_http_url="https://brain-researcher.com/mcp",
+        br_mcp_http_url="https://${PUBLIC_HOSTNAME}/mcp",
         allow_opencode_with_br_without_mcp=False,
     )
 
@@ -401,7 +401,7 @@ def test_skip_existing_records_scores_empty_action_trace_as_failure(tmp_path: Pa
         opencode_bin="opencode",
         claude_mcp_config=ROOT / ".mcp.json",
         br_mcp_surface="prod",
-        br_mcp_http_url="https://brain-researcher.com/mcp",
+        br_mcp_http_url="https://${PUBLIC_HOSTNAME}/mcp",
         allow_opencode_with_br_without_mcp=False,
     )
 
@@ -498,7 +498,7 @@ def test_write_prod_mcp_runtime_uses_temp_remote_configs(tmp_path: Path) -> None
     opencode_home, claude_config = runner.write_prod_mcp_runtime(
         tmp_path,
         token="secret-token",
-        http_url="https://brain-researcher.com/mcp",
+        http_url="https://${PUBLIC_HOSTNAME}/mcp",
     )
 
     opencode_config = json.loads((opencode_home / "opencode" / "opencode.json").read_text())
@@ -507,7 +507,7 @@ def test_write_prod_mcp_runtime_uses_temp_remote_configs(tmp_path: Path) -> None
     assert opencode_home == tmp_path / "xdg"
     prod = opencode_config["mcp"]["brain-researcher-prod"]
     assert prod["type"] == "remote"
-    assert prod["url"] == "https://brain-researcher.com/mcp"
+    assert prod["url"] == "https://${PUBLIC_HOSTNAME}/mcp"
     assert prod["headers"]["Authorization"] == "Bearer secret-token"
     assert (
         claude_payload["mcpServers"]["brain-researcher-prod"]["headers"]["Authorization"]

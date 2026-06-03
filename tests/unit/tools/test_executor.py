@@ -281,8 +281,8 @@ class TestExecuteTool:
         with patch(
             "brain_researcher.services.tools.executor.UnifiedToolRegistry"
         ) as MockRegistry:
-            MockRegistry.return_value.get_toolspec_by_name.side_effect = lambda name: (
-                mapped_spec if name == "python.fetch_atlas.run" else None
+            MockRegistry.return_value.get_toolspec_by_name.side_effect = (
+                lambda name: mapped_spec if name == "python.fetch_atlas.run" else None
             )
             with patch(
                 "brain_researcher.services.tools.executor.resolve_runtime_tool_ids",
@@ -507,10 +507,12 @@ class TestExecuteTool:
         with patch(
             "brain_researcher.services.tools.executor.UnifiedToolRegistry"
         ) as MockRegistry:
-            MockRegistry.return_value.get_toolspec_by_name.side_effect = lambda name: (
-                unresolved_spec
+            MockRegistry.return_value.get_toolspec_by_name.side_effect = (
+                lambda name: unresolved_spec
                 if name == "fmri.connectivity_client.light"
-                else resolved_spec if name == "connectivity_matrix" else None
+                else resolved_spec
+                if name == "connectivity_matrix"
+                else None
             )
             with patch(
                 "brain_researcher.services.tools.executor.resolve_runtime_tool_ids",

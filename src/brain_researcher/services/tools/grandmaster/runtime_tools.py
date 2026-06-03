@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -437,7 +438,6 @@ def query_neuromaps_tool(
     - If neither is provided, fall back to MNI152 template (keeps backward compat).
     """
     import tempfile
-
     import nibabel as nib
     from nilearn import datasets
 
@@ -451,7 +451,11 @@ def query_neuromaps_tool(
     def _default_local_dir() -> Path:
         # project_root/data/br-kg/raw/neuromaps
         return (
-            Path(__file__).resolve().parents[5] / "data" / "br_kg" / "raw" / "neuromaps"
+            Path(__file__).resolve().parents[5]
+            / "data"
+            / "br_kg"
+            / "raw"
+            / "neuromaps"
         )
 
     def _pick_local(
@@ -778,7 +782,6 @@ def individual_parcellation_tool(
       - provenance.json with tool/input/reference-context metadata.
     """
     from itertools import combinations
-
     from sklearn.decomposition import NMF, PCA
     from sklearn.metrics import adjusted_rand_score
 
@@ -1046,7 +1049,7 @@ def visual_feature_decoder_tool(
       - ridge (regression)
       - logistic / logistic_regression (classification)
     """
-    from sklearn.linear_model import LogisticRegression, Ridge
+    from sklearn.linear_model import Ridge, LogisticRegression
     from sklearn.metrics import (
         accuracy_score,
         balanced_accuracy_score,
@@ -1429,7 +1432,7 @@ def process_cifti_tool(
     Minimal volume-to-surface projection using nilearn.surface.vol_to_surf.
     If hemi=both, writes left/right with suffixes.
     """
-    from nilearn import datasets, surface
+    from nilearn import surface, datasets
 
     vol = _ensure_path(volume_img)
     fsavg = datasets.fetch_surf_fsaverage(mesh=surf_mesh)
@@ -1468,8 +1471,8 @@ def map_volume_to_surface_tool(
     writes the sampled texture as a GIFTI functional data file for downstream
     neuromaps/spin-test utilities.
     """
-    import nibabel as nib
     from nilearn import surface as nilearn_surface
+    import nibabel as nib
 
     vol_path = _ensure_path(volume)
     mesh_path = _ensure_path(surface)
@@ -1632,9 +1635,9 @@ def compare_surface_maps_tool(
     from nilearn import image
 
     try:
-        from neuromaps.datasets import fetch_fsaverage, fetch_fslr
-        from neuromaps.nulls import alexander_bloch
         from neuromaps.stats import compare_images
+        from neuromaps.nulls import alexander_bloch
+        from neuromaps.datasets import fetch_fsaverage, fetch_fslr
     except ImportError as exc:  # pragma: no cover - only hit if neuromaps missing
         raise ImportError(
             "compare_surface_maps requires neuromaps; install `neuromaps` to use spin tests."
@@ -1986,11 +1989,9 @@ def glm_first_level_batch_tool(
         "status": "success",
         "outputs": {
             # Backward compatible: for single subject, return the full list.
-            "zmaps": (
-                selected_maps
-                if len(subject_records) > 1
-                else per_subject[0]["available_zmaps"]
-            ),
+            "zmaps": selected_maps
+            if len(subject_records) > 1
+            else per_subject[0]["available_zmaps"],
             "selected_zmaps": selected_maps,
             "first_level_dirs": [p["output_dir"] for p in per_subject],
             "resolved_inputs_manifest": manifest_path,

@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 class SearchMode(Enum):
     """Search modes."""
-
     EXACT = "exact"
     CONTAINS = "contains"
     FUZZY = "fuzzy"
@@ -24,7 +23,6 @@ class SearchMode(Enum):
 @dataclass
 class SearchResult:
     """Search result item."""
-
     node_id: str
     node_type: str
     score: float
@@ -45,7 +43,11 @@ class SearchEngine:
         """Build search index from database."""
         # In a production system, this would use Elasticsearch or similar
         # For now, we'll implement in-memory indexing
-        self.index = {"nodes": {}, "text_index": {}, "type_index": {}}
+        self.index = {
+            "nodes": {},
+            "text_index": {},
+            "type_index": {}
+        }
 
         # Index all nodes
         for node_type in ["Concept", "Task", "Region", "Dataset", "Publication"]:
@@ -55,7 +57,10 @@ class SearchEngine:
     def _index_node(self, node_id: str, node_type: str, properties: Dict[str, Any]):
         """Index a single node."""
         # Store node
-        self.index["nodes"][node_id] = {"type": node_type, "properties": properties}
+        self.index["nodes"][node_id] = {
+            "type": node_type,
+            "properties": properties
+        }
 
         # Add to type index
         if node_type not in self.index["type_index"]:
@@ -86,7 +91,7 @@ class SearchEngine:
         # Simple tokenization - could be enhanced with NLP
         text = text.lower()
         # Remove punctuation and split
-        tokens = re.findall(r"\b\w+\b", text)
+        tokens = re.findall(r'\b\w+\b', text)
         return tokens
 
     def search(
@@ -96,7 +101,7 @@ class SearchEngine:
         fields: Optional[List[str]] = None,
         mode: SearchMode = SearchMode.CONTAINS,
         limit: int = 100,
-        min_score: float = 0.0,
+        min_score: float = 0.0
     ) -> List[SearchResult]:
         """
         Search for nodes matching query.
@@ -136,7 +141,10 @@ class SearchEngine:
         return results[:limit]
 
     def _search_exact(
-        self, query: str, node_types: Optional[List[str]], fields: Optional[List[str]]
+        self,
+        query: str,
+        node_types: Optional[List[str]],
+        fields: Optional[List[str]]
     ) -> List[SearchResult]:
         """Exact match search."""
         results = []
@@ -156,20 +164,21 @@ class SearchEngine:
                     matched_fields.append(field)
 
             if matched_fields:
-                results.append(
-                    SearchResult(
-                        node_id=node_id,
-                        node_type=node_data["type"],
-                        score=1.0,
-                        matched_fields=matched_fields,
-                        properties=node_data["properties"],
-                    )
-                )
+                results.append(SearchResult(
+                    node_id=node_id,
+                    node_type=node_data["type"],
+                    score=1.0,
+                    matched_fields=matched_fields,
+                    properties=node_data["properties"]
+                ))
 
         return results
 
     def _search_contains(
-        self, query: str, node_types: Optional[List[str]], fields: Optional[List[str]]
+        self,
+        query: str,
+        node_types: Optional[List[str]],
+        fields: Optional[List[str]]
     ) -> List[SearchResult]:
         """Contains search (substring matching)."""
         results = []
@@ -192,12 +201,8 @@ class SearchEngine:
                     if query in value_lower:
                         matched_fields.append(field)
                         # Score based on position and frequency
-                        position_score = 1.0 - (
-                            value_lower.index(query) / len(value_lower)
-                        )
-                        frequency_score = value_lower.count(query) / len(
-                            value_lower.split()
-                        )
+                        position_score = 1.0 - (value_lower.index(query) / len(value_lower))
+                        frequency_score = value_lower.count(query) / len(value_lower.split())
                         field_score = (position_score + frequency_score) / 2
 
                         # Boost score for certain fields
@@ -209,18 +214,18 @@ class SearchEngine:
                         total_score += field_score
 
             if matched_fields:
-                results.append(
-                    SearchResult(
-                        node_id=node_id,
-                        node_type=node_data["type"],
-                        score=min(total_score, 1.0),
-                        matched_fields=matched_fields,
-                        properties=node_data["properties"],
-                        highlight=self._generate_highlights(
-                            node_data["properties"], matched_fields, query
-                        ),
+                results.append(SearchResult(
+                    node_id=node_id,
+                    node_type=node_data["type"],
+                    score=min(total_score, 1.0),
+                    matched_fields=matched_fields,
+                    properties=node_data["properties"],
+                    highlight=self._generate_highlights(
+                        node_data["properties"],
+                        matched_fields,
+                        query
                     )
-                )
+                ))
 
         return results
 
@@ -228,7 +233,7 @@ class SearchEngine:
         self,
         query_tokens: List[str],
         node_types: Optional[List[str]],
-        fields: Optional[List[str]],
+        fields: Optional[List[str]]
     ) -> List[SearchResult]:
         """Fuzzy search using token matching."""
         results = {}
@@ -238,7 +243,10 @@ class SearchEngine:
             if token in self.index["text_index"]:
                 for node_id, field in self.index["text_index"][token]:
                     if node_id not in results:
-                        results[node_id] = {"matched_fields": set(), "score": 0.0}
+                        results[node_id] = {
+                            "matched_fields": set(),
+                            "score": 0.0
+                        }
                     results[node_id]["matched_fields"].add(field)
                     results[node_id]["score"] += 1.0 / len(query_tokens)
 
@@ -257,20 +265,21 @@ class SearchEngine:
                 if not match_data["matched_fields"]:
                     continue
 
-            search_results.append(
-                SearchResult(
-                    node_id=node_id,
-                    node_type=node_data["type"],
-                    score=match_data["score"],
-                    matched_fields=list(match_data["matched_fields"]),
-                    properties=node_data["properties"],
-                )
-            )
+            search_results.append(SearchResult(
+                node_id=node_id,
+                node_type=node_data["type"],
+                score=match_data["score"],
+                matched_fields=list(match_data["matched_fields"]),
+                properties=node_data["properties"]
+            ))
 
         return search_results
 
     def _search_regex(
-        self, pattern: str, node_types: Optional[List[str]], fields: Optional[List[str]]
+        self,
+        pattern: str,
+        node_types: Optional[List[str]],
+        fields: Optional[List[str]]
     ) -> List[SearchResult]:
         """Regular expression search."""
         results = []
@@ -296,20 +305,21 @@ class SearchEngine:
                     matched_fields.append(field)
 
             if matched_fields:
-                results.append(
-                    SearchResult(
-                        node_id=node_id,
-                        node_type=node_data["type"],
-                        score=0.8,  # Fixed score for regex matches
-                        matched_fields=matched_fields,
-                        properties=node_data["properties"],
-                    )
-                )
+                results.append(SearchResult(
+                    node_id=node_id,
+                    node_type=node_data["type"],
+                    score=0.8,  # Fixed score for regex matches
+                    matched_fields=matched_fields,
+                    properties=node_data["properties"]
+                ))
 
         return results
 
     def _generate_highlights(
-        self, properties: Dict[str, Any], matched_fields: List[str], query: str
+        self,
+        properties: Dict[str, Any],
+        matched_fields: List[str],
+        query: str
     ) -> Dict[str, str]:
         """Generate highlighted snippets for matched fields."""
         highlights = {}
@@ -319,14 +329,19 @@ class SearchEngine:
             if isinstance(value, str):
                 # Simple highlighting with markers
                 highlighted = value.replace(
-                    query, f"<mark>{query}</mark>", 1  # Only highlight first occurrence
+                    query,
+                    f"<mark>{query}</mark>",
+                    1  # Only highlight first occurrence
                 )
                 highlights[field] = highlighted
 
         return highlights
 
     def suggest(
-        self, prefix: str, node_types: Optional[List[str]] = None, limit: int = 10
+        self,
+        prefix: str,
+        node_types: Optional[List[str]] = None,
+        limit: int = 10
     ) -> List[str]:
         """
         Generate search suggestions based on prefix.
@@ -368,7 +383,7 @@ class SearchEngine:
             "total_nodes": len(self.index["nodes"]),
             "total_tokens": len(self.index["text_index"]),
             "nodes_by_type": {},
-            "avg_tokens_per_node": 0,
+            "avg_tokens_per_node": 0
         }
 
         # Count by type
@@ -376,7 +391,9 @@ class SearchEngine:
             stats["nodes_by_type"][node_type] = len(node_ids)
 
         # Calculate average tokens
-        total_tokens = sum(len(nodes) for nodes in self.index["text_index"].values())
+        total_tokens = sum(
+            len(nodes) for nodes in self.index["text_index"].values()
+        )
         if stats["total_nodes"] > 0:
             stats["avg_tokens_per_node"] = total_tokens / stats["total_nodes"]
 
@@ -405,7 +422,9 @@ def add_search_to_schema(schema_builder):
     @schema_builder.query
     @strawberry.field
     def search(
-        query: str, node_types: Optional[List[str]] = None, limit: int = 100
+        query: str,
+        node_types: Optional[List[str]] = None,
+        limit: int = 100
     ) -> List[SearchResultType]:
         """Search across all nodes."""
         import json
@@ -415,7 +434,11 @@ def add_search_to_schema(schema_builder):
         db = get_db()
         engine = SearchEngine(db)
 
-        results = engine.search(query, node_types=node_types, limit=limit)
+        results = engine.search(
+            query,
+            node_types=node_types,
+            limit=limit
+        )
 
         return [
             SearchResultType(
@@ -423,14 +446,17 @@ def add_search_to_schema(schema_builder):
                 node_type=r.node_type,
                 score=r.score,
                 matched_fields=r.matched_fields,
-                properties=json.dumps(r.properties),
+                properties=json.dumps(r.properties)
             )
             for r in results
         ]
 
     @schema_builder.query
     @strawberry.field
-    def search_suggestions(prefix: str, limit: int = 10) -> List[str]:
+    def search_suggestions(
+        prefix: str,
+        limit: int = 10
+    ) -> List[str]:
         """Get search suggestions."""
         from brain_researcher.services.br_kg.db.bootstrap import get_db
 

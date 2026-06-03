@@ -15,12 +15,10 @@ class SMRIParcellationStatsArgs(BaseModel):
 
     surfaces_dir: str = Field(description="Path to FreeSurfer surfaces directory")
     stats_type: str = Field(
-        default="thickness",
-        description="Statistic to compute (thickness, volume, area)",
+        default="thickness", description="Statistic to compute (thickness, volume, area)"
     )
     parcellation: str = Field(
-        default="aparc",
-        description="Parcellation scheme (aparc, aparc.a2009s, DKT, etc.)",
+        default="aparc", description="Parcellation scheme (aparc, aparc.a2009s, DKT, etc.)"
     )
     output_dir: Optional[str] = Field(
         default=None, description="Directory for exported statistics"
@@ -58,9 +56,7 @@ class SMRIParcellationStatsTool(NeuroToolWrapper):
             "stats_type": args.stats_type,
         }
 
-        return ToolResult(
-            status="success", data={"outputs": outputs, "summary": summary}
-        )
+        return ToolResult(status="success", data={"outputs": outputs, "summary": summary})
 
 
 class SMRIParcellationStatsTools:

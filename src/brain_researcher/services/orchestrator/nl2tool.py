@@ -18,8 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 try:  # pragma: no cover - optional dependency in slim environments
-    from jsonschema import ValidationError
-    from jsonschema import validate as jsonschema_validate
+    from jsonschema import ValidationError, validate as jsonschema_validate
 except Exception:  # pragma: no cover
     ValidationError = None  # type: ignore
     jsonschema_validate = None  # type: ignore
@@ -60,11 +59,9 @@ class ToolDecision:
 
     def to_metadata(self) -> Dict[str, Any]:
         data = {
-            "pipeline": (
-                self.pipeline.value
-                if isinstance(self.pipeline, PipelineType)
-                else self.pipeline
-            ),
+            "pipeline": self.pipeline.value
+            if isinstance(self.pipeline, PipelineType)
+            else self.pipeline,
             "tool": self.tool,
             "confidence": self.confidence,
             "parameters": self.parameters,

@@ -107,9 +107,7 @@ class _ExecutionGraph:
         for step in self.nodes.values():
             for dep in step.depends_on or []:
                 if dep not in self.nodes:
-                    raise ValueError(
-                        f"Step '{step.step_id}' depends on unknown step '{dep}'"
-                    )
+                    raise ValueError(f"Step '{step.step_id}' depends on unknown step '{dep}'")
                 self.in_degree[step.step_id] += 1
                 self.children[dep].append(step.step_id)
 
@@ -144,9 +142,7 @@ class _ExecutionRunner:
             self.todo.put(sid)
             self._queued.add(sid)
 
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=self.graph.max_concurrency
-        ) as pool:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.graph.max_concurrency) as pool:
             futures = []
             while not self._all_done():
                 self._enqueue_ready()
@@ -172,9 +168,7 @@ class _ExecutionRunner:
             else:
                 concurrent.futures.wait(futures)
 
-        state = (
-            WorkflowState.SUCCEEDED if self.fail_error is None else WorkflowState.FAILED
-        )
+        state = WorkflowState.SUCCEEDED if self.fail_error is None else WorkflowState.FAILED
         return WorkflowResult(
             state=state,
             error=self.fail_error,
@@ -183,10 +177,7 @@ class _ExecutionRunner:
 
     def _all_done(self) -> bool:
         with self.lock:
-            return (
-                len(self.step_results) == len(self.graph.nodes)
-                or self.fail_error is not None
-            )
+            return len(self.step_results) == len(self.graph.nodes) or self.fail_error is not None
 
     def _enqueue_ready(self) -> None:
         with self.lock:
@@ -219,24 +210,13 @@ class _ExecutionRunner:
         resolved_params = self._resolve(step.parameters)
         if step.metadata and isinstance(step.metadata.get("consumes"), dict):
             for param_name, ctx_key in step.metadata.get("consumes", {}).items():
-                if (
-                    param_name not in resolved_params
-                    or resolved_params[param_name] is None
-                ):
+                if param_name not in resolved_params or resolved_params[param_name] is None:
                     if ctx_key in self.ctx:
                         resolved_params[param_name] = self.ctx[ctx_key]
 
         # Retry loop
-        retries = (
-            int(step.metadata.get("retries", 0))
-            if isinstance(step.metadata, dict)
-            else 0
-        )
-        delay = (
-            float(step.metadata.get("retry_delay", DEFAULT_RETRY_DELAY))
-            if isinstance(step.metadata, dict)
-            else DEFAULT_RETRY_DELAY
-        )
+        retries = int(step.metadata.get("retries", 0)) if isinstance(step.metadata, dict) else 0
+        delay = float(step.metadata.get("retry_delay", DEFAULT_RETRY_DELAY)) if isinstance(step.metadata, dict) else DEFAULT_RETRY_DELAY
         attempt = 0
         status = "error"
         error = None
@@ -245,10 +225,7 @@ class _ExecutionRunner:
 
         while attempt <= retries:
             attempt += 1
-            self._emit(
-                "step_started",
-                {"step_id": step.step_id, "tool": step.tool_name, "attempt": attempt},
-            )
+            self._emit("step_started", {"step_id": step.step_id, "tool": step.tool_name, "attempt": attempt})
             try:
                 result, status, error = self._execute_tool(step, resolved_params)
             except Exception as exc:  # pragma: no cover
@@ -286,9 +263,7 @@ class _ExecutionRunner:
         if status not in {"success", "succeeded"}:
             taxonomy = None
             if isinstance(result, dict):
-                taxonomy = result.get("error_taxonomy") or result.get(
-                    "metadata", {}
-                ).get("error_taxonomy")
+                taxonomy = result.get("error_taxonomy") or result.get("metadata", {}).get("error_taxonomy")
             if taxonomy is None:
                 taxonomy_obj = classify_failure(status="error", error_message=error)
                 taxonomy = taxonomy_obj.to_dict()
@@ -297,9 +272,7 @@ class _ExecutionRunner:
                 step_result["error_category"] = taxonomy.get("category")
                 step_result["is_retryable"] = taxonomy.get("is_retryable")
                 step_result["recovery_strategy"] = taxonomy.get("recovery_action")
-                step_result["recovery_suggestions"] = taxonomy.get(
-                    "recovery_suggestions"
-                )
+                step_result["recovery_suggestions"] = taxonomy.get("recovery_suggestions")
 
         # Success path: merge outputs into ctx
         if status in {"success", "succeeded"}:
@@ -307,11 +280,7 @@ class _ExecutionRunner:
             if isinstance(result, dict):
                 data = result.get("data", result)
                 if isinstance(data, dict):
-                    outputs = (
-                        data.get("outputs")
-                        if isinstance(data.get("outputs"), dict)
-                        else None
-                    )
+                    outputs = data.get("outputs") if isinstance(data.get("outputs"), dict) else None
             if outputs:
                 with self.lock:
                     self.ctx.update(outputs)
@@ -361,9 +330,7 @@ class _ExecutionRunner:
             "step_id": step.step_id,
         }
         if isinstance(step.metadata, dict):
-            execution_context["runtime_kind"] = step.metadata.get(
-                "runtime_kind", "container"
-            )
+            execution_context["runtime_kind"] = step.metadata.get("runtime_kind", "container")
             execution_context["step_metadata"] = step.metadata
         workflow_meta = (
             self.graph.workflow.metadata
@@ -406,16 +373,8 @@ class _ExecutionRunner:
                 **params,
             )
 
-        status = (
-            result.get("status", "unknown")
-            if isinstance(result, dict)
-            else getattr(result, "status", "unknown")
-        )
-        error = (
-            result.get("error")
-            if isinstance(result, dict)
-            else getattr(result, "error", None)
-        )
+        status = result.get("status", "unknown") if isinstance(result, dict) else getattr(result, "status", "unknown")
+        error = result.get("error") if isinstance(result, dict) else getattr(result, "error", None)
         return result, status, error
 
     def _overall_timeout(self) -> float | None:

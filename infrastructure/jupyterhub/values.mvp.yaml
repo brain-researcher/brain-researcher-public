@@ -35,7 +35,7 @@ hub:
       login_service: "Brain Researcher"
       client_id: "CHANGE_ME_OIDC_CLIENT_ID"
       client_secret: "CHANGE_ME_OIDC_CLIENT_SECRET"
-      oauth_callback_url: "https://hub.brain-researcher.com/hub/oauth_callback"
+      oauth_callback_url: "https://hub.${PUBLIC_HOSTNAME}/hub/oauth_callback"
       authorize_url: "https://accounts.google.com/o/oauth2/v2/auth"
       token_url: "https://oauth2.googleapis.com/token"
       userdata_url: "https://openidconnect.googleapis.com/v1/userinfo"
@@ -165,12 +165,12 @@ ingress:
   enabled: true
   ingressClassName: traefik
   hosts:
-    - hub.brain-researcher.com
+    - hub.${PUBLIC_HOSTNAME}
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   tls:
     - hosts:
-        - hub.brain-researcher.com
+        - hub.${PUBLIC_HOSTNAME}
       secretName: brain-researcher-hub-tls
 
 cull:

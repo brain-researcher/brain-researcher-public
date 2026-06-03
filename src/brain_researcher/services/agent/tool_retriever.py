@@ -1027,15 +1027,13 @@ class ToolRetriever:
     def get_all_families(self) -> List[dict]:
         """Get all ToolFamilies with their tool counts."""
         with self.driver.session() as session:
-            result = session.run(
-                """
+            result = session.run("""
                 MATCH (f:ToolFamily)
                 OPTIONAL MATCH (t:Tool)-[:BELONGS_TO_FAMILY]->(f)
                 WITH f, count(t) AS tool_count
                 RETURN f.id AS id, f.name AS name, tool_count
                 ORDER BY tool_count DESC
-            """
-            )
+            """)
             return [dict(r) for r in result]
 
     def select_families_by_query(

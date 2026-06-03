@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-
 from brain_researcher.services.mcp import runstore
 
 
@@ -73,9 +72,7 @@ def test_kg_probe_schema_exposes_enum_and_handler_rejects_unknown_type():
     assert "unsupported probe_type" in rejected["error"]
 
 
-def test_memory_write_unsupported_card_type_lists_supported_types(
-    tmp_path, monkeypatch
-):
+def test_memory_write_unsupported_card_type_lists_supported_types(tmp_path, monkeypatch):
     srv = _configure_run_root(monkeypatch, tmp_path)
 
     resp = srv.memory_write("not_a_card_type", {})

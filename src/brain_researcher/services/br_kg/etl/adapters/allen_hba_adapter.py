@@ -9,11 +9,7 @@ class AllenHBAAdapter(EvidenceAdapter):
     """Adapter providing Allen Human Brain Atlas gene expression summaries."""
 
     def __init__(self, *, data_path: Optional[str] = None) -> None:
-        super().__init__(
-            data_path=data_path,
-            default_source="allen_hba",
-            default_score_key="expression",
-        )
+        super().__init__(data_path=data_path, default_source="allen_hba", default_score_key="expression")
 
     def fetch(
         self,

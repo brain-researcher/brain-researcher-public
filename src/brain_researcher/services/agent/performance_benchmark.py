@@ -4,24 +4,22 @@ Validates optimizations and measures performance improvements.
 """
 
 import asyncio
-import json
 import logging
-import statistics
 import time
+import psutil
+import GPUtil
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
-import GPUtil
-import psutil
+from typing import Any, Dict, List, Optional, Callable, Tuple
+import statistics
+import json
 
 logger = logging.getLogger(__name__)
 
 
 class BenchmarkType(Enum):
     """Types of benchmarks to run."""
-
     LATENCY = "latency"
     THROUGHPUT = "throughput"
     MEMORY = "memory"
@@ -33,7 +31,6 @@ class BenchmarkType(Enum):
 @dataclass
 class BenchmarkResult:
     """Result from a benchmark run."""
-
     benchmark_type: BenchmarkType
     tool_name: str
     execution_mode: str
@@ -50,7 +47,6 @@ class BenchmarkResult:
 @dataclass
 class ComparisonResult:
     """Comparison between baseline and optimized execution."""
-
     tool_name: str
     baseline: BenchmarkResult
     optimized: BenchmarkResult
@@ -69,7 +65,7 @@ class PerformanceBenchmark:
 
         # System monitoring
         self.cpu_count = psutil.cpu_count()
-        self.total_memory = psutil.virtual_memory().total / (1024**3)  # GB
+        self.total_memory = psutil.virtual_memory().total / (1024 ** 3)  # GB
 
         try:
             self.gpus = GPUtil.getGPUs()
@@ -78,14 +74,12 @@ class PerformanceBenchmark:
             self.gpu_available = False
             self.gpus = []
 
-    async def benchmark_tool(
-        self,
-        tool_func: Callable,
-        test_inputs: List[Dict[str, Any]],
-        execution_mode: str = "baseline",
-        warmup_runs: int = 2,
-        benchmark_runs: int = 10,
-    ) -> BenchmarkResult:
+    async def benchmark_tool(self,
+                            tool_func: Callable,
+                            test_inputs: List[Dict[str, Any]],
+                            execution_mode: str = "baseline",
+                            warmup_runs: int = 2,
+                            benchmark_runs: int = 10) -> BenchmarkResult:
         """Benchmark a single tool execution.
 
         Args:
@@ -117,7 +111,7 @@ class PerformanceBenchmark:
             test_input = test_inputs[i % len(test_inputs)]
 
             # Memory before
-            mem_before = psutil.Process().memory_info().rss / (1024**2)  # MB
+            mem_before = psutil.Process().memory_info().rss / (1024 ** 2)  # MB
             gpu_mem_before = self._get_gpu_memory() if self.gpu_available else 0
 
             # Execute and time
@@ -132,7 +126,7 @@ class PerformanceBenchmark:
             durations.append(duration)
 
             # Memory after
-            mem_after = psutil.Process().memory_info().rss / (1024**2)
+            mem_after = psutil.Process().memory_info().rss / (1024 ** 2)
             gpu_mem_after = self._get_gpu_memory() if self.gpu_available else 0
 
             memory_usage.append(mem_after - mem_before)
@@ -141,11 +135,7 @@ class PerformanceBenchmark:
 
         # Calculate statistics
         avg_duration = statistics.mean(durations)
-        throughput = (
-            (1000 / avg_duration) * len(test_inputs[0])
-            if isinstance(test_inputs[0], list)
-            else 1000 / avg_duration
-        )
+        throughput = (1000 / avg_duration) * len(test_inputs[0]) if isinstance(test_inputs[0], list) else 1000 / avg_duration
         avg_memory = statistics.mean(memory_usage) if memory_usage else 0
         avg_gpu_memory = statistics.mean(gpu_memory) if gpu_memory else None
 
@@ -161,22 +151,18 @@ class PerformanceBenchmark:
             metadata={
                 "min_duration": min(durations),
                 "max_duration": max(durations),
-                "std_duration": (
-                    statistics.stdev(durations) if len(durations) > 1 else 0
-                ),
-                "runs": benchmark_runs,
-            },
+                "std_duration": statistics.stdev(durations) if len(durations) > 1 else 0,
+                "runs": benchmark_runs
+            }
         )
 
         self.results.append(result)
         return result
 
-    async def benchmark_parallel_execution(
-        self,
-        tool_func: Callable,
-        test_inputs: List[Dict[str, Any]],
-        parallel_degrees: List[int] = [1, 2, 4, 8, 16],
-    ) -> Dict[int, BenchmarkResult]:
+    async def benchmark_parallel_execution(self,
+                                          tool_func: Callable,
+                                          test_inputs: List[Dict[str, Any]],
+                                          parallel_degrees: List[int] = [1, 2, 4, 8, 16]) -> Dict[int, BenchmarkResult]:
         """Benchmark parallel execution with different degrees of parallelism.
 
         Args:
@@ -195,9 +181,7 @@ class PerformanceBenchmark:
 
             tasks = []
             for i in range(min(degree, len(test_inputs))):
-                task = asyncio.create_task(
-                    self._execute_tool(tool_func, test_inputs[i])
-                )
+                task = asyncio.create_task(self._execute_tool(tool_func, test_inputs[i]))
                 tasks.append(task)
 
             await asyncio.gather(*tasks, return_exceptions=True)
@@ -211,7 +195,7 @@ class PerformanceBenchmark:
                 execution_mode=f"parallel_{degree}",
                 duration_ms=duration,
                 throughput=throughput,
-                metadata={"parallel_degree": degree},
+                metadata={"parallel_degree": degree}
             )
 
             results[degree] = result
@@ -219,13 +203,11 @@ class PerformanceBenchmark:
 
         return results
 
-    async def benchmark_cache_efficiency(
-        self,
-        tool_func: Callable,
-        cache_manager: Any,
-        test_inputs: List[Dict[str, Any]],
-        repeat_factor: int = 3,
-    ) -> BenchmarkResult:
+    async def benchmark_cache_efficiency(self,
+                                        tool_func: Callable,
+                                        cache_manager: Any,
+                                        test_inputs: List[Dict[str, Any]],
+                                        repeat_factor: int = 3) -> BenchmarkResult:
         """Benchmark cache efficiency.
 
         Args:
@@ -267,11 +249,7 @@ class PerformanceBenchmark:
 
                 total_duration += (time.perf_counter() - start_time) * 1000
 
-        hit_rate = (
-            cache_hits / (cache_hits + cache_misses)
-            if (cache_hits + cache_misses) > 0
-            else 0
-        )
+        hit_rate = cache_hits / (cache_hits + cache_misses) if (cache_hits + cache_misses) > 0 else 0
 
         result = BenchmarkResult(
             benchmark_type=BenchmarkType.CACHE_EFFICIENCY,
@@ -282,19 +260,17 @@ class PerformanceBenchmark:
             metadata={
                 "cache_hits": cache_hits,
                 "cache_misses": cache_misses,
-                "repeat_factor": repeat_factor,
-            },
+                "repeat_factor": repeat_factor
+            }
         )
 
         self.results.append(result)
         return result
 
-    async def benchmark_memory_usage(
-        self,
-        tool_func: Callable,
-        test_inputs: List[Dict[str, Any]],
-        measure_peak: bool = True,
-    ) -> BenchmarkResult:
+    async def benchmark_memory_usage(self,
+                                    tool_func: Callable,
+                                    test_inputs: List[Dict[str, Any]],
+                                    measure_peak: bool = True) -> BenchmarkResult:
         """Benchmark memory usage.
 
         Args:
@@ -309,7 +285,7 @@ class PerformanceBenchmark:
 
         # Get baseline memory
         process = psutil.Process()
-        baseline_memory = process.memory_info().rss / (1024**2)  # MB
+        baseline_memory = process.memory_info().rss / (1024 ** 2)  # MB
 
         peak_memory = baseline_memory
         memory_samples = []
@@ -318,7 +294,7 @@ class PerformanceBenchmark:
         async def monitor_memory():
             nonlocal peak_memory
             while monitoring:
-                current_memory = process.memory_info().rss / (1024**2)
+                current_memory = process.memory_info().rss / (1024 ** 2)
                 memory_samples.append(current_memory)
                 peak_memory = max(peak_memory, current_memory)
                 await asyncio.sleep(0.1)
@@ -336,14 +312,8 @@ class PerformanceBenchmark:
         await monitor_task
 
         # Calculate memory statistics
-        avg_memory = (
-            statistics.mean(memory_samples) if memory_samples else baseline_memory
-        )
-        memory_increase = (
-            peak_memory - baseline_memory
-            if measure_peak
-            else avg_memory - baseline_memory
-        )
+        avg_memory = statistics.mean(memory_samples) if memory_samples else baseline_memory
+        memory_increase = peak_memory - baseline_memory if measure_peak else avg_memory - baseline_memory
 
         result = BenchmarkResult(
             benchmark_type=BenchmarkType.MEMORY,
@@ -355,20 +325,18 @@ class PerformanceBenchmark:
                 "baseline_memory": baseline_memory,
                 "peak_memory": peak_memory,
                 "avg_memory": avg_memory,
-                "samples": len(memory_samples),
-            },
+                "samples": len(memory_samples)
+            }
         )
 
         self.results.append(result)
         return result
 
-    async def compare_execution_modes(
-        self,
-        tool_func: Callable,
-        baseline_executor: Callable,
-        optimized_executor: Callable,
-        test_inputs: List[Dict[str, Any]],
-    ) -> ComparisonResult:
+    async def compare_execution_modes(self,
+                                     tool_func: Callable,
+                                     baseline_executor: Callable,
+                                     optimized_executor: Callable,
+                                     test_inputs: List[Dict[str, Any]]) -> ComparisonResult:
         """Compare baseline vs optimized execution.
 
         Args:
@@ -386,28 +354,22 @@ class PerformanceBenchmark:
         baseline_result = await self.benchmark_tool(
             lambda args: baseline_executor(tool_func, args),
             test_inputs,
-            execution_mode="baseline",
+            execution_mode="baseline"
         )
 
         # Benchmark optimized
         optimized_result = await self.benchmark_tool(
             lambda args: optimized_executor(tool_func, args),
             test_inputs,
-            execution_mode="optimized",
+            execution_mode="optimized"
         )
 
         # Calculate improvements
-        speedup = (
-            baseline_result.duration_ms / optimized_result.duration_ms
-            if optimized_result.duration_ms > 0
-            else 1.0
-        )
+        speedup = baseline_result.duration_ms / optimized_result.duration_ms if optimized_result.duration_ms > 0 else 1.0
 
         memory_reduction = 0.0
         if baseline_result.memory_mb and optimized_result.memory_mb:
-            memory_reduction = (
-                baseline_result.memory_mb - optimized_result.memory_mb
-            ) / baseline_result.memory_mb
+            memory_reduction = (baseline_result.memory_mb - optimized_result.memory_mb) / baseline_result.memory_mb
 
         # Generate summary
         summary = f"Speedup: {speedup:.2f}x, Memory reduction: {memory_reduction:.1%}"
@@ -420,19 +382,17 @@ class PerformanceBenchmark:
             optimized=optimized_result,
             speedup=speedup,
             memory_reduction=memory_reduction,
-            improvement_summary=summary,
+            improvement_summary=summary
         )
 
         self.comparisons.append(comparison)
         return comparison
 
-    async def validate_thread_safety(
-        self,
-        tool_func: Callable,
-        test_input: Dict[str, Any],
-        num_threads: int = 10,
-        iterations: int = 100,
-    ) -> bool:
+    async def validate_thread_safety(self,
+                                    tool_func: Callable,
+                                    test_input: Dict[str, Any],
+                                    num_threads: int = 10,
+                                    iterations: int = 100) -> bool:
         """Validate thread safety of tool execution.
 
         Args:
@@ -471,17 +431,15 @@ class PerformanceBenchmark:
             inconsistent = sum(1 for r in results if str(r) != first_result)
 
             if inconsistent > len(results) * 0.1:  # Allow 10% variation
-                logger.warning(
-                    f"Result inconsistency detected: {inconsistent}/{len(results)}"
-                )
+                logger.warning(f"Result inconsistency detected: {inconsistent}/{len(results)}")
                 return False
 
         logger.info(f"Thread safety validation passed for {tool_func.__name__}")
         return True
 
-    async def benchmark_scalability(
-        self, tool_func: Callable, input_sizes: List[int] = [10, 100, 1000, 10000]
-    ) -> Dict[int, BenchmarkResult]:
+    async def benchmark_scalability(self,
+                                  tool_func: Callable,
+                                  input_sizes: List[int] = [10, 100, 1000, 10000]) -> Dict[int, BenchmarkResult]:
         """Benchmark scalability with different input sizes.
 
         Args:
@@ -495,13 +453,13 @@ class PerformanceBenchmark:
 
         for size in input_sizes:
             # Generate test data of appropriate size
-            test_inputs = [
-                self._generate_test_input(size) for _ in range(min(10, size))
-            ]
+            test_inputs = [self._generate_test_input(size) for _ in range(min(10, size))]
 
             # Benchmark with this size
             result = await self.benchmark_tool(
-                tool_func, test_inputs, execution_mode=f"size_{size}"
+                tool_func,
+                test_inputs,
+                execution_mode=f"size_{size}"
             )
 
             results[size] = result
@@ -547,7 +505,6 @@ class PerformanceBenchmark:
     def _generate_cache_key(self, tool_name: str, args: Dict[str, Any]) -> str:
         """Generate cache key for tool execution."""
         import hashlib
-
         key_data = json.dumps({"tool": tool_name, "args": args}, sort_keys=True)
         return hashlib.sha256(key_data.encode()).hexdigest()
 
@@ -557,7 +514,10 @@ class PerformanceBenchmark:
 
         return {
             "data": np.random.randn(size, 100).tolist(),  # size x 100 matrix
-            "params": {"size": size, "test": True},
+            "params": {
+                "size": size,
+                "test": True
+            }
         }
 
     def generate_report(self) -> str:
@@ -625,7 +585,7 @@ class PerformanceBenchmark:
             "system": {
                 "cpus": self.cpu_count,
                 "memory_gb": self.total_memory,
-                "gpu_available": self.gpu_available,
+                "gpu_available": self.gpu_available
             },
             "results": [
                 {
@@ -637,7 +597,7 @@ class PerformanceBenchmark:
                     "memory_mb": r.memory_mb,
                     "cache_hit_rate": r.cache_hit_rate,
                     "error_rate": r.error_rate,
-                    "metadata": r.metadata,
+                    "metadata": r.metadata
                 }
                 for r in self.results
             ],
@@ -646,10 +606,10 @@ class PerformanceBenchmark:
                     "tool": c.tool_name,
                     "speedup": c.speedup,
                     "memory_reduction": c.memory_reduction,
-                    "summary": c.improvement_summary,
+                    "summary": c.improvement_summary
                 }
                 for c in self.comparisons
-            ],
+            ]
         }
 
         with open(filepath, "w") as f:

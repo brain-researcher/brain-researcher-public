@@ -658,9 +658,7 @@ class TestResolveNiwrapMetadata:
         assert "skull_strip_mri" in intents
         assert "fsl.bet.run" in niwrap_id
 
-    def test_resolve_niwrap_metadata_runtime_canonical_id_prefers_descriptor_alias(
-        self,
-    ):
+    def test_resolve_niwrap_metadata_runtime_canonical_id_prefers_descriptor_alias(self):
         """Runtime canonical ids resolve to NiWrap descriptor aliases."""
         from brain_researcher.services.tools.catalog_loader import (
             load_niwrap_mapping,
@@ -1092,9 +1090,7 @@ class TestHighLevelExposurePolicy:
         assert "ml_cross_validation" in exposed
         assert "validation_metrics" in exposed
 
-    def test_discoverable_only_validation_and_cv_tools_stay_hidden_from_agent_surface(
-        self,
-    ):
+    def test_discoverable_only_validation_and_cv_tools_stay_hidden_from_agent_surface(self):
         """New discoverable retrieval helpers should not widen the default chat surface."""
         from brain_researcher.services.tools.catalog_loader import load_exposed_tools
 

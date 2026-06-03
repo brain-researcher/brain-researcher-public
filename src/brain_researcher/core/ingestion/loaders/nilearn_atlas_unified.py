@@ -220,7 +220,9 @@ class NilearnAtlasUnifiedLoader:
             hemisphere = (
                 "left"
                 if hemisphere_code.upper() == "LH"
-                else "right" if hemisphere_code.upper() == "RH" else None
+                else "right"
+                if hemisphere_code.upper() == "RH"
+                else None
             )
             network = parts[2]
             try:

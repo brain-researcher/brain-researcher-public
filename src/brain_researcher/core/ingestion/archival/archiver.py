@@ -1,24 +1,23 @@
 """Data archival system for long-term storage and retrieval."""
 
-import gzip
-import hashlib
+import os
 import json
 import logging
-import os
 import shutil
-import sqlite3
 import tarfile
-from datetime import datetime, timedelta
-from enum import Enum
+import gzip
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime, timedelta
+import hashlib
+import sqlite3
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
 
 class ArchiveStatus(Enum):
     """Archive status states."""
-
     PENDING = "pending"
     ARCHIVING = "archiving"
     ARCHIVED = "archived"
@@ -30,7 +29,6 @@ class ArchiveStatus(Enum):
 
 class CompressionLevel(Enum):
     """Compression levels for archival."""
-
     NONE = 0
     FAST = 1
     BALANCED = 6
@@ -40,12 +38,10 @@ class CompressionLevel(Enum):
 class DataArchiver:
     """Manages long-term data archival and retrieval."""
 
-    def __init__(
-        self,
-        archive_dir: str = "/data/archives",
-        staging_dir: str = "/tmp/staging",
-        db_path: str = "/data/archive_catalog.db",
-    ):
+    def __init__(self,
+                 archive_dir: str = "/data/archives",
+                 staging_dir: str = "/tmp/staging",
+                 db_path: str = "/data/archive_catalog.db"):
         """Initialize data archiver.
 
         Args:
@@ -71,8 +67,7 @@ class DataArchiver:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS archives (
                 archive_id TEXT PRIMARY KEY,
                 dataset_name TEXT NOT NULL,
@@ -87,11 +82,9 @@ class DataArchiver:
                 status TEXT,
                 metadata TEXT
             )
-        """
-        )
+        """)
 
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS retrieval_history (
                 retrieval_id TEXT PRIMARY KEY,
                 archive_id TEXT,
@@ -100,20 +93,17 @@ class DataArchiver:
                 user TEXT,
                 FOREIGN KEY (archive_id) REFERENCES archives (archive_id)
             )
-        """
-        )
+        """)
 
         conn.commit()
         conn.close()
 
-    def archive_dataset(
-        self,
-        dataset_path: str,
-        dataset_name: Optional[str] = None,
-        retention_days: Optional[int] = None,
-        compression: Optional[CompressionLevel] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    def archive_dataset(self,
+                       dataset_path: str,
+                       dataset_name: Optional[str] = None,
+                       retention_days: Optional[int] = None,
+                       compression: Optional[CompressionLevel] = None,
+                       metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Archive a dataset for long-term storage.
 
         Args:
@@ -171,18 +161,18 @@ class DataArchiver:
 
             # Store in catalog
             archive_info = {
-                "archive_id": archive_id,
-                "dataset_name": dataset_name,
-                "source_path": str(dataset_path),
-                "archive_path": str(final_path),
-                "size_bytes": final_path.stat().st_size,
-                "checksum": checksum,
-                "compression_type": compression.name,
-                "compression_ratio": compression_ratio,
-                "archived_at": archived_at.isoformat(),
-                "expires_at": expires_at.isoformat(),
-                "status": ArchiveStatus.ARCHIVED.value,
-                "metadata": json.dumps(metadata or {}),
+                'archive_id': archive_id,
+                'dataset_name': dataset_name,
+                'source_path': str(dataset_path),
+                'archive_path': str(final_path),
+                'size_bytes': final_path.stat().st_size,
+                'checksum': checksum,
+                'compression_type': compression.name,
+                'compression_ratio': compression_ratio,
+                'archived_at': archived_at.isoformat(),
+                'expires_at': expires_at.isoformat(),
+                'status': ArchiveStatus.ARCHIVED.value,
+                'metadata': json.dumps(metadata or {})
             }
 
             self._store_archive_info(archive_info)
@@ -199,12 +189,10 @@ class DataArchiver:
             self._cleanup_staging(archive_id)
             raise
 
-    def retrieve_archive(
-        self,
-        archive_id: str,
-        restore_path: Optional[str] = None,
-        user: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    def retrieve_archive(self,
+                        archive_id: str,
+                        restore_path: Optional[str] = None,
+                        user: Optional[str] = None) -> Dict[str, Any]:
         """Retrieve an archived dataset.
 
         Args:
@@ -223,7 +211,7 @@ class DataArchiver:
         if not archive_info:
             raise ValueError(f"Archive not found: {archive_id}")
 
-        if archive_info["status"] == ArchiveStatus.EXPIRED.value:
+        if archive_info['status'] == ArchiveStatus.EXPIRED.value:
             raise ValueError(f"Archive has expired: {archive_id}")
 
         # Update status
@@ -239,13 +227,13 @@ class DataArchiver:
             restore_path.mkdir(parents=True, exist_ok=True)
 
             # Copy from archive
-            archive_file = Path(archive_info["archive_path"])
+            archive_file = Path(archive_info['archive_path'])
 
             if not archive_file.exists():
                 raise FileNotFoundError(f"Archive file not found: {archive_file}")
 
             # Decompress if needed
-            if archive_info["compression_type"] != "NONE":
+            if archive_info['compression_type'] != 'NONE':
                 self._decompress_archive(archive_file, restore_path)
             else:
                 if archive_file.is_dir():
@@ -255,16 +243,16 @@ class DataArchiver:
 
             # Verify checksum
             restored_checksum = self._calculate_checksum(restore_path)
-            if restored_checksum != archive_info["checksum"]:
+            if restored_checksum != archive_info['checksum']:
                 logger.warning("Checksum mismatch during retrieval")
 
             # Log retrieval
             retrieval_info = {
-                "retrieval_id": self._generate_archive_id(),
-                "archive_id": archive_id,
-                "retrieved_at": datetime.now().isoformat(),
-                "restored_path": str(restore_path),
-                "user": user or "unknown",
+                'retrieval_id': self._generate_archive_id(),
+                'archive_id': archive_id,
+                'retrieved_at': datetime.now().isoformat(),
+                'restored_path': str(restore_path),
+                'user': user or 'unknown'
             }
 
             self._log_retrieval(retrieval_info)
@@ -280,9 +268,9 @@ class DataArchiver:
             self._update_archive_status(archive_id, ArchiveStatus.ERROR)
             raise
 
-    def list_archives(
-        self, status: Optional[ArchiveStatus] = None, dataset_name: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def list_archives(self,
+                     status: Optional[ArchiveStatus] = None,
+                     dataset_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """List archived datasets.
 
         Args:
@@ -314,8 +302,8 @@ class DataArchiver:
         for row in cursor.fetchall():
             archive = dict(zip(columns, row))
             # Parse metadata
-            if archive.get("metadata"):
-                archive["metadata"] = json.loads(archive["metadata"])
+            if archive.get('metadata'):
+                archive['metadata'] = json.loads(archive['metadata'])
             archives.append(archive)
 
         conn.close()
@@ -330,13 +318,10 @@ class DataArchiver:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT archive_id FROM archives
             WHERE expires_at < ? AND status != ?
-        """,
-            (datetime.now().isoformat(), ArchiveStatus.EXPIRED.value),
-        )
+        """, (datetime.now().isoformat(), ArchiveStatus.EXPIRED.value))
 
         expired = [row[0] for row in cursor.fetchall()]
 
@@ -380,7 +365,7 @@ class DataArchiver:
         for archive_id in expired:
             try:
                 archive_info = self._get_archive_info(archive_id)
-                archive_path = Path(archive_info["archive_path"])
+                archive_path = Path(archive_info['archive_path'])
 
                 if archive_path.exists():
                     size = archive_path.stat().st_size
@@ -398,10 +383,10 @@ class DataArchiver:
                 failed.append(archive_id)
 
         return {
-            "purged": purged,
-            "failed": failed,
-            "space_freed_bytes": space_freed,
-            "space_freed_gb": space_freed / (1024**3),
+            'purged': purged,
+            'failed': failed,
+            'space_freed_bytes': space_freed,
+            'space_freed_gb': space_freed / (1024**3)
         }
 
     def get_storage_stats(self) -> Dict[str, Any]:
@@ -418,33 +403,29 @@ class DataArchiver:
         total_archives = cursor.fetchone()[0]
 
         # Storage by status
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT status, COUNT(*), SUM(size_bytes)
             FROM archives
             GROUP BY status
-        """
-        )
+        """)
 
         status_stats = {}
         total_size = 0
 
         for status, count, size in cursor.fetchall():
             status_stats[status] = {
-                "count": count,
-                "size_bytes": size or 0,
-                "size_gb": (size or 0) / (1024**3),
+                'count': count,
+                'size_bytes': size or 0,
+                'size_gb': (size or 0) / (1024**3)
             }
-            total_size += size or 0
+            total_size += (size or 0)
 
         # Average compression ratio
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT AVG(compression_ratio)
             FROM archives
             WHERE compression_type != 'NONE'
-        """
-        )
+        """)
         avg_compression = cursor.fetchone()[0] or 1.0
 
         conn.close()
@@ -455,15 +436,15 @@ class DataArchiver:
         total_space = archive_stats.f_blocks * archive_stats.f_frsize
 
         return {
-            "total_archives": total_archives,
-            "status_breakdown": status_stats,
-            "total_size_bytes": total_size,
-            "total_size_gb": total_size / (1024**3),
-            "average_compression_ratio": avg_compression,
-            "disk_free_bytes": free_space,
-            "disk_free_gb": free_space / (1024**3),
-            "disk_total_gb": total_space / (1024**3),
-            "disk_usage_percent": (1 - free_space / total_space) * 100,
+            'total_archives': total_archives,
+            'status_breakdown': status_stats,
+            'total_size_bytes': total_size,
+            'total_size_gb': total_size / (1024**3),
+            'average_compression_ratio': avg_compression,
+            'disk_free_bytes': free_space,
+            'disk_free_gb': free_space / (1024**3),
+            'disk_total_gb': total_space / (1024**3),
+            'disk_usage_percent': (1 - free_space/total_space) * 100
         }
 
     # Private helper methods
@@ -485,11 +466,13 @@ class DataArchiver:
 
         return staged_dir
 
-    def _compress_data(self, data_path: Path, compression: CompressionLevel) -> Path:
+    def _compress_data(self,
+                      data_path: Path,
+                      compression: CompressionLevel) -> Path:
         """Compress data for archival."""
-        archive_path = data_path.with_suffix(".tar.gz")
+        archive_path = data_path.with_suffix('.tar.gz')
 
-        with tarfile.open(archive_path, "w:gz", compresslevel=compression.value) as tar:
+        with tarfile.open(archive_path, 'w:gz', compresslevel=compression.value) as tar:
             tar.add(data_path, arcname=data_path.name)
 
         # Remove uncompressed data
@@ -502,7 +485,7 @@ class DataArchiver:
 
     def _decompress_archive(self, archive_path: Path, restore_path: Path):
         """Decompress archived data."""
-        with tarfile.open(archive_path, "r:gz") as tar:
+        with tarfile.open(archive_path, 'r:gz') as tar:
             tar.extractall(restore_path)
 
     def _calculate_checksum(self, path: Path) -> str:
@@ -510,22 +493,22 @@ class DataArchiver:
         md5 = hashlib.md5()
 
         if path.is_file():
-            with open(path, "rb") as f:
-                for chunk in iter(lambda: f.read(8192), b""):
+            with open(path, 'rb') as f:
+                for chunk in iter(lambda: f.read(8192), b''):
                     md5.update(chunk)
         else:
             # Checksum of directory contents
-            for file in sorted(path.rglob("*")):
+            for file in sorted(path.rglob('*')):
                 if file.is_file():
-                    with open(file, "rb") as f:
-                        for chunk in iter(lambda: f.read(8192), b""):
+                    with open(file, 'rb') as f:
+                        for chunk in iter(lambda: f.read(8192), b''):
                             md5.update(chunk)
 
         return md5.hexdigest()
 
-    def _calculate_compression_ratio(
-        self, original: Path | int, compressed: Path
-    ) -> float:
+    def _calculate_compression_ratio(self,
+                                    original: Path | int,
+                                    compressed: Path) -> float:
         """Calculate compression ratio."""
         if isinstance(original, (int, float)):
             original_size = int(original)
@@ -549,32 +532,29 @@ class DataArchiver:
         if path.is_file():
             return path.stat().st_size
 
-        return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
+        return sum(f.stat().st_size for f in path.rglob('*') if f.is_file())
 
     def _store_archive_info(self, info: Dict[str, Any]):
         """Store archive information in catalog."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             INSERT INTO archives VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-            (
-                info["archive_id"],
-                info["dataset_name"],
-                info["source_path"],
-                info["archive_path"],
-                info["size_bytes"],
-                info["checksum"],
-                info["compression_type"],
-                info["compression_ratio"],
-                info["archived_at"],
-                info["expires_at"],
-                info["status"],
-                info["metadata"],
-            ),
-        )
+        """, (
+            info['archive_id'],
+            info['dataset_name'],
+            info['source_path'],
+            info['archive_path'],
+            info['size_bytes'],
+            info['checksum'],
+            info['compression_type'],
+            info['compression_ratio'],
+            info['archived_at'],
+            info['expires_at'],
+            info['status'],
+            info['metadata']
+        ))
 
         conn.commit()
         conn.close()
@@ -595,8 +575,8 @@ class DataArchiver:
         info = dict(zip(columns, row))
 
         # Parse metadata
-        if info.get("metadata"):
-            info["metadata"] = json.loads(info["metadata"])
+        if info.get('metadata'):
+            info['metadata'] = json.loads(info['metadata'])
 
         conn.close()
         return info
@@ -606,13 +586,10 @@ class DataArchiver:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             UPDATE archives SET status = ?
             WHERE archive_id = ?
-        """,
-            (status.value, archive_id),
-        )
+        """, (status.value, archive_id))
 
         conn.commit()
         conn.close()
@@ -622,18 +599,15 @@ class DataArchiver:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             INSERT INTO retrieval_history VALUES (?, ?, ?, ?, ?)
-        """,
-            (
-                retrieval_info["retrieval_id"],
-                retrieval_info["archive_id"],
-                retrieval_info["retrieved_at"],
-                retrieval_info["restored_path"],
-                retrieval_info["user"],
-            ),
-        )
+        """, (
+            retrieval_info['retrieval_id'],
+            retrieval_info['archive_id'],
+            retrieval_info['retrieved_at'],
+            retrieval_info['restored_path'],
+            retrieval_info['user']
+        ))
 
         conn.commit()
         conn.close()

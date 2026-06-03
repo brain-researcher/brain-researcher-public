@@ -70,17 +70,12 @@ def mni_to_label(
     # Convert MNI mm to voxel indices
     mni_coord = np.array([x, y, z, 1.0])
     voxel_coord = inv_affine @ mni_coord
-    i, j, k = (
-        int(round(voxel_coord[0])),
-        int(round(voxel_coord[1])),
-        int(round(voxel_coord[2])),
-    )
+    i, j, k = int(round(voxel_coord[0])), int(round(voxel_coord[1])), int(round(voxel_coord[2]))
 
     # Check bounds
     if 0 <= i < data.shape[0] and 0 <= j < data.shape[1] and 0 <= k < data.shape[2]:
         return int(data[i, j, k])
     return 0
-
 
 # Configure logging
 logging.basicConfig(
@@ -140,9 +135,7 @@ class CoordinateRegionMapper:
         logger.info(f"Loading atlas NIfTI for mask mode: {self.atlas}")
         try:
             self.atlas_data, self.atlas_inv_affine = load_atlas_nifti(self.atlas)
-            logger.info(
-                f"Atlas loaded: shape={self.atlas_data.shape}, unique labels={len(np.unique(self.atlas_data)) - 1}"
-            )
+            logger.info(f"Atlas loaded: shape={self.atlas_data.shape}, unique labels={len(np.unique(self.atlas_data)) - 1}")
         except Exception as e:
             logger.error(f"Failed to load atlas NIfTI: {e}")
             raise
@@ -310,9 +303,7 @@ class CoordinateRegionMapper:
                 "confidence": 1.0,  # Direct lookup = 100% confidence
                 "atlas": self.atlas,
                 "label_index": label_idx,
-                "region_name": region_info.get("properties", {}).get(
-                    "name", f"Region_{label_idx}"
-                ),
+                "region_name": region_info.get("properties", {}).get("name", f"Region_{label_idx}"),
                 "created_at": datetime.utcnow().isoformat(),
                 "method": "mask_lookup",
             },
@@ -555,14 +546,7 @@ def main():
 
     # Validate mask mode atlas
     if args.mask_mode:
-        valid_mask_atlases = (
-            "aal",
-            "aal116",
-            "schaefer400",
-            "schaefer",
-            "yeo17",
-            "yeo",
-        )
+        valid_mask_atlases = ("aal", "aal116", "schaefer400", "schaefer", "yeo17", "yeo")
         if args.atlas.lower() not in valid_mask_atlases:
             logger.error(
                 f"Mask mode requires atlas to be one of: {valid_mask_atlases}. Got: {args.atlas}"
@@ -578,14 +562,10 @@ def main():
         try:
             stats = db.get_stats()
             if isinstance(stats, dict):
-                initial_in_region = stats.get("relationship_types", {}).get(
-                    "IN_REGION", 0
-                )
+                initial_in_region = stats.get("relationship_types", {}).get("IN_REGION", 0)
             else:
                 # Fallback: query directly
-                result = db.execute_query(
-                    "MATCH ()-[r:IN_REGION]->() RETURN count(r) as cnt"
-                )
+                result = db.execute_query("MATCH ()-[r:IN_REGION]->() RETURN count(r) as cnt")
                 initial_in_region = result[0]["cnt"] if result else 0
         except Exception:
             initial_in_region = 0
@@ -604,13 +584,9 @@ def main():
             try:
                 final_stats = db.get_stats()
                 if isinstance(final_stats, dict):
-                    final_in_region = final_stats.get("relationship_types", {}).get(
-                        "IN_REGION", 0
-                    )
+                    final_in_region = final_stats.get("relationship_types", {}).get("IN_REGION", 0)
                 else:
-                    result = db.execute_query(
-                        "MATCH ()-[r:IN_REGION]->() RETURN count(r) as cnt"
-                    )
+                    result = db.execute_query("MATCH ()-[r:IN_REGION]->() RETURN count(r) as cnt")
                     final_in_region = result[0]["cnt"] if result else 0
             except Exception:
                 final_in_region = 0

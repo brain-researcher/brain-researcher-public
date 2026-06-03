@@ -4,8 +4,8 @@ These rules complement JSON Schema validation with domain-specific checks.
 """
 
 import re
+from typing import Dict, Any, List, Callable, Optional
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
 
 
 def validate_doi(doi: str) -> bool:
@@ -21,7 +21,7 @@ def validate_doi(doi: str) -> bool:
         return False
 
     # Basic DOI pattern: 10.xxxx/yyyy
-    pattern = r"^10\.\d{4,}(?:\.\d+)*\/[-._;()\/:a-zA-Z0-9]+$"
+    pattern = r'^10\.\d{4,}(?:\.\d+)*\/[-._;()\/:a-zA-Z0-9]+$'
     return bool(re.match(pattern, doi))
 
 
@@ -50,7 +50,11 @@ def coord_in_mni(x: float, y: float, z: float) -> bool:
     Returns:
         True if within reasonable MNI bounds
     """
-    return -100 <= x <= 100 and -140 <= y <= 110 and -80 <= z <= 120
+    return (
+        -100 <= x <= 100 and
+        -140 <= y <= 110 and
+        -80 <= z <= 120
+    )
 
 
 def coord_in_tal(x: float, y: float, z: float) -> bool:
@@ -62,7 +66,11 @@ def coord_in_tal(x: float, y: float, z: float) -> bool:
     Returns:
         True if within reasonable Talairach bounds
     """
-    return -80 <= x <= 80 and -120 <= y <= 90 and -60 <= z <= 90
+    return (
+        -80 <= x <= 80 and
+        -120 <= y <= 90 and
+        -60 <= z <= 90
+    )
 
 
 def validate_bids_path(path: str) -> bool:
@@ -79,25 +87,21 @@ def validate_bids_path(path: str) -> bool:
 
     # Basic BIDS patterns
     patterns = [
-        r"^sub-[a-zA-Z0-9]+",  # Subject
-        r"^ses-[a-zA-Z0-9]+",  # Session
-        r"_task-[a-zA-Z0-9]+",  # Task
-        r"_run-[0-9]+",  # Run
+        r'^sub-[a-zA-Z0-9]+',  # Subject
+        r'^ses-[a-zA-Z0-9]+',   # Session
+        r'_task-[a-zA-Z0-9]+',  # Task
+        r'_run-[0-9]+',         # Run
     ]
 
     # Must start with sub-
-    if not name.startswith("sub-"):
+    if not name.startswith('sub-'):
         return False
 
     # Check for valid suffixes
     valid_suffixes = [
-        "_T1w.nii.gz",
-        "_T2w.nii.gz",
-        "_bold.nii.gz",
-        "_dwi.nii.gz",
-        "_fmap.nii.gz",
-        "_events.tsv",
-        ".json",
+        '_T1w.nii.gz', '_T2w.nii.gz', '_bold.nii.gz',
+        '_dwi.nii.gz', '_fmap.nii.gz', '_events.tsv',
+        '.json'
     ]
 
     has_valid_suffix = any(name.endswith(suffix) for suffix in valid_suffixes)
@@ -139,21 +143,8 @@ def validate_bids_naming_convention(filename: str) -> bool:
     """
     # BIDS entity order
     entity_order = [
-        "sub",
-        "ses",
-        "task",
-        "acq",
-        "ce",
-        "rec",
-        "dir",
-        "run",
-        "mod",
-        "echo",
-        "flip",
-        "inv",
-        "mt",
-        "part",
-        "recording",
+        "sub", "ses", "task", "acq", "ce", "rec", "dir",
+        "run", "mod", "echo", "flip", "inv", "mt", "part", "recording"
     ]
 
     # Extract entities from filename
@@ -161,15 +152,9 @@ def validate_bids_naming_convention(filename: str) -> bool:
 
     if not entities:
         # No entities found - might be a top-level file
-        return filename in [
-            "README",
-            "README.md",
-            "CHANGES",
-            "LICENSE",
-            "dataset_description.json",
-            "participants.tsv",
-            "participants.json",
-        ]
+        return filename in ["README", "README.md", "CHANGES", "LICENSE",
+                           "dataset_description.json", "participants.tsv",
+                           "participants.json"]
 
     # Check entity order
     prev_idx = -1
@@ -253,9 +238,7 @@ def validate_bids_task_events(events: List[Dict[str, Any]]) -> List[str]:
         if "response_time" in event:
             if event["response_time"] is not None:
                 if not isinstance(event["response_time"], (int, float)):
-                    errors.append(
-                        f"Event {i}: 'response_time' must be a number or null"
-                    )
+                    errors.append(f"Event {i}: 'response_time' must be a number or null")
 
     return errors
 
@@ -420,10 +403,8 @@ def validate_coordinates_in_space(obj: Dict[str, Any]) -> bool:
     for coord in coordinates:
         if not all(k in coord for k in ["x", "y", "z"]):
             continue
-        if not (
-            coord_in_mni(coord["x"], coord["y"], coord["z"])
-            or coord_in_tal(coord["x"], coord["y"], coord["z"])
-        ):
+        if not (coord_in_mni(coord["x"], coord["y"], coord["z"]) or
+                coord_in_tal(coord["x"], coord["y"], coord["z"])):
             return False
     return True
 
@@ -703,11 +684,13 @@ VALIDATION_RULES: Dict[str, List[Callable]] = {
     "coordinates": [
         validate_coordinates_in_space,
     ],
+
     "publication": [
         validate_publication_doi,
         validate_publication_pmid,
         validate_publication_year,
     ],
+
     "bids": [
         validate_bids_path_field,
         validate_bids_tr_field,
@@ -717,22 +700,27 @@ VALIDATION_RULES: Dict[str, List[Callable]] = {
         validate_bids_metadata_consistency_field,
         validate_bids_task_events_field,
     ],
+
     "statistics": [
         validate_statistics_threshold_field,
         validate_statistics_smoothing_field,
     ],
+
     "wikidata": [
         validate_wikidata_region_id_field,
         validate_wikidata_parent_id_field,
     ],
+
     "cognitive_atlas": [
         validate_cognitive_atlas_concept_id_field,
         validate_cognitive_atlas_task_id_field,
     ],
+
     "neurovault": [
         validate_neurovault_collection_id_field,
         validate_neurovault_map_id_field,
     ],
+
     "openneuro": [
         validate_openneuro_dataset_id_field,
     ],
@@ -800,10 +788,10 @@ class RuleValidator:
             Descriptive name for the rule
         """
         # Use function name if available
-        if hasattr(rule, "__name__"):
+        if hasattr(rule, '__name__'):
             name = rule.__name__
             # Convert snake_case to readable format
-            name = name.replace("_", " ").replace("field", "").strip()
+            name = name.replace('_', ' ').replace('field', '').strip()
             # Capitalize first letter
             if name:
                 name = name[0].upper() + name[1:] if len(name) > 1 else name.upper()
@@ -827,13 +815,9 @@ class RuleValidator:
                 if not rule(obj):
                     errors.append(f"Validation failed: {rule_name}")
             except KeyError as e:
-                errors.append(
-                    f"Validation error ({rule_name}): Missing required field '{e}'"
-                )
+                errors.append(f"Validation error ({rule_name}): Missing required field '{e}'")
             except TypeError as e:
-                errors.append(
-                    f"Validation error ({rule_name}): Type mismatch - {str(e)}"
-                )
+                errors.append(f"Validation error ({rule_name}): Type mismatch - {str(e)}")
             except Exception as e:
                 errors.append(f"Validation error ({rule_name}): {str(e)}")
 

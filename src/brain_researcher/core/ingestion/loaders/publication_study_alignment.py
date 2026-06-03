@@ -328,11 +328,7 @@ class PublicationStudyAlignmentLinker:
             pmid = _normalize_pmid(text)
             return [pmid] if pmid else []
 
-        if source_field not in {
-            "url",
-            "primary_url",
-            "source_url",
-        } and not _looks_like_url(text):
+        if source_field not in {"url", "primary_url", "source_url"} and not _looks_like_url(text):
             return []
         url = _normalize_url(text)
         return [url] if url else []

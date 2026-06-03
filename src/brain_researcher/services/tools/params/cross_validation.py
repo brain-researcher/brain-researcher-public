@@ -27,9 +27,7 @@ class CrossValidationParameters:
     save_importance: bool
 
 
-def cross_validation_from_payload(
-    payload: Dict[str, object],
-) -> CrossValidationParameters:
+def cross_validation_from_payload(payload: Dict[str, object]) -> CrossValidationParameters:
     """Create parameters from payload."""
 
     metrics = payload.get("metrics") or ["accuracy"]
@@ -59,9 +57,7 @@ def _load_array(path: str) -> np.ndarray:
     raise ValueError(f"Unsupported array format: {path}")
 
 
-def _generate_group_splits(
-    groups: np.ndarray, n_splits: int, rng: np.random.Generator
-) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
+def _generate_group_splits(groups: np.ndarray, n_splits: int, rng: np.random.Generator) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
     unique_groups = np.unique(groups)
     rng.shuffle(unique_groups)
     splits = np.array_split(unique_groups, n_splits)
@@ -75,9 +71,7 @@ def _generate_group_splits(
         yield train_idx, test_idx
 
 
-def _generate_kfold_splits(
-    n_samples: int, n_splits: int, rng: np.random.Generator
-) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
+def _generate_kfold_splits(n_samples: int, n_splits: int, rng: np.random.Generator) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
     indices = rng.permutation(n_samples)
     folds = np.array_split(indices, n_splits)
     for i in range(n_splits):
@@ -115,13 +109,7 @@ def _mean_squared_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.mean((y_true - y_pred) ** 2))
 
 
-def _compute_metrics(
-    task_type: str,
-    metric_names: Sequence[str],
-    y_true: np.ndarray,
-    predictions: np.ndarray,
-    scores: np.ndarray,
-) -> Dict[str, float]:
+def _compute_metrics(task_type: str, metric_names: Sequence[str], y_true: np.ndarray, predictions: np.ndarray, scores: np.ndarray) -> Dict[str, float]:
     metrics: Dict[str, float] = {}
     for metric in metric_names:
         if metric == "accuracy" and task_type.startswith("class"):
@@ -178,24 +166,15 @@ def run_cross_validation(params: CrossValidationParameters) -> Dict[str, Any]:
         all_predictions[test_idx] = preds
         all_scores[test_idx] = scores
 
-        fold_metric = _compute_metrics(
-            params.task_type, params.metrics, y_test, preds, scores
-        )
+        fold_metric = _compute_metrics(params.task_type, params.metrics, y_test, preds, scores)
         fold_metrics.append(fold_metric)
 
-    mean_metrics = {
-        k: float(np.mean([fm.get(k, 0.0) for fm in fold_metrics]))
-        for k in params.metrics
-    }
+    mean_metrics = {k: float(np.mean([fm.get(k, 0.0) for fm in fold_metrics])) for k in params.metrics}
 
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
-        "summary": None,
-        "predictions": None,
-        "feature_importance": None,
-    }
+    outputs: Dict[str, Optional[str]] = {"summary": None, "predictions": None, "feature_importance": None}
     summary = {
         "cv_type": params.cv_type,
         "n_splits": len(splits),

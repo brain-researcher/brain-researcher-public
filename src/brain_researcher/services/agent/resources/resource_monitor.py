@@ -5,14 +5,13 @@ Tracks actual resource usage and provides metrics.
 """
 
 import logging
+import psutil
 import threading
 import time
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Deque, Dict, List, Optional, Tuple
-
-import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -102,26 +101,16 @@ class ResourceMetrics:
 
         # Update averages
         if self.snapshots:
-            self.avg_cpu_percent = sum(s.cpu_percent for s in self.snapshots) / len(
-                self.snapshots
-            )
-            self.avg_memory_mb = sum(s.memory_mb for s in self.snapshots) / len(
-                self.snapshots
-            )
+            self.avg_cpu_percent = sum(s.cpu_percent for s in self.snapshots) / len(self.snapshots)
+            self.avg_memory_mb = sum(s.memory_mb for s in self.snapshots) / len(self.snapshots)
 
         # Update I/O totals (using deltas from first snapshot)
         if len(self.snapshots) > 1:
             first = self.snapshots[0]
             self.total_disk_read_mb = snapshot.disk_io_read_mb - first.disk_io_read_mb
-            self.total_disk_write_mb = (
-                snapshot.disk_io_write_mb - first.disk_io_write_mb
-            )
-            self.total_network_sent_mb = (
-                snapshot.network_sent_mb - first.network_sent_mb
-            )
-            self.total_network_recv_mb = (
-                snapshot.network_recv_mb - first.network_recv_mb
-            )
+            self.total_disk_write_mb = snapshot.disk_io_write_mb - first.disk_io_write_mb
+            self.total_network_sent_mb = snapshot.network_sent_mb - first.network_sent_mb
+            self.total_network_recv_mb = snapshot.network_recv_mb - first.network_recv_mb
 
     def finalize(self):
         """Mark metrics as complete."""
@@ -139,9 +128,7 @@ class ResourceMetrics:
             "avg_memory_mb": round(self.avg_memory_mb, 2),
             "total_disk_read_mb": round(self.total_disk_read_mb, 2),
             "total_disk_write_mb": round(self.total_disk_write_mb, 2),
-            "total_network_mb": round(
-                self.total_network_sent_mb + self.total_network_recv_mb, 2
-            ),
+            "total_network_mb": round(self.total_network_sent_mb + self.total_network_recv_mb, 2),
             "snapshot_count": len(self.snapshots),
         }
 
@@ -217,9 +204,7 @@ class ResourceMonitor:
 
             self.active_metrics[execution_id] = metrics
 
-            logger.debug(
-                f"Started tracking resources for {tool_name} (exec: {execution_id[:8]})"
-            )
+            logger.debug(f"Started tracking resources for {tool_name} (exec: {execution_id[:8]})")
             return metrics
 
     def stop_tracking(self, execution_id: str) -> Optional[ResourceMetrics]:
@@ -297,17 +282,12 @@ class ResourceMonitor:
             stats = {
                 "count": len(metrics_list),
                 "total_duration_seconds": sum(m.duration_seconds for m in metrics_list),
-                "avg_duration_seconds": sum(m.duration_seconds for m in metrics_list)
-                / len(metrics_list),
-                "avg_cpu_percent": sum(m.avg_cpu_percent for m in metrics_list)
-                / len(metrics_list),
-                "avg_memory_mb": sum(m.avg_memory_mb for m in metrics_list)
-                / len(metrics_list),
+                "avg_duration_seconds": sum(m.duration_seconds for m in metrics_list) / len(metrics_list),
+                "avg_cpu_percent": sum(m.avg_cpu_percent for m in metrics_list) / len(metrics_list),
+                "avg_memory_mb": sum(m.avg_memory_mb for m in metrics_list) / len(metrics_list),
                 "peak_cpu_percent": max(m.peak_cpu_percent for m in metrics_list),
                 "peak_memory_mb": max(m.peak_memory_mb for m in metrics_list),
-                "total_disk_io_mb": sum(
-                    m.total_disk_read_mb + m.total_disk_write_mb for m in metrics_list
-                ),
+                "total_disk_io_mb": sum(m.total_disk_read_mb + m.total_disk_write_mb for m in metrics_list),
             }
 
             # Group by tool if not filtered
@@ -321,12 +301,9 @@ class ResourceMonitor:
                 stats["by_tool"] = {
                     tool: {
                         "count": len(tool_metrics),
-                        "avg_duration": sum(m.duration_seconds for m in tool_metrics)
-                        / len(tool_metrics),
-                        "avg_cpu": sum(m.avg_cpu_percent for m in tool_metrics)
-                        / len(tool_metrics),
-                        "avg_memory": sum(m.avg_memory_mb for m in tool_metrics)
-                        / len(tool_metrics),
+                        "avg_duration": sum(m.duration_seconds for m in tool_metrics) / len(tool_metrics),
+                        "avg_cpu": sum(m.avg_cpu_percent for m in tool_metrics) / len(tool_metrics),
+                        "avg_memory": sum(m.avg_memory_mb for m in tool_metrics) / len(tool_metrics),
                     }
                     for tool, tool_metrics in by_tool.items()
                 }
@@ -409,11 +386,7 @@ class ResourceMonitor:
                         "Consider optimizing or limiting concurrent executions."
                     )
 
-        return (
-            recommendations
-            if recommendations
-            else ["System resources are well-utilized"]
-        )
+        return recommendations if recommendations else ["System resources are well-utilized"]
 
     def export_metrics(self) -> List[Dict]:
         """Export all historical metrics as list of dictionaries."""

@@ -85,8 +85,6 @@ RETIRED_ARCHIVE_RELOCATIONS = {
 }
 
 RELOCATED_PATHS = {
-    "src/brain_researcher/docs/AUTH_WIRING.md": "docs/internal/AUTH_WIRING.md",
-    "src/brain_researcher/docs/SUPABASE_CONTROL_PLANE.md": "docs/internal/SUPABASE_CONTROL_PLANE.md",
     "src/brain_researcher/infrastructure/cdn/scripts/deploy-cdn.sh": (
         "scripts/deployment/deploy_cdn.sh"
     ),
@@ -99,12 +97,7 @@ RELOCATED_PATHS = {
     "src/brain_researcher/services/gateway/br_kg_proxy.py": (
         "src/brain_researcher/legacy/gateway/br_kg_proxy.py"
     ),
-    "src/brain_researcher/services/br_kg/examples": "examples/br-kg",
     "src/brain_researcher/services/br_kg/scripts": "scripts/br-kg",
-    "src/brain_researcher/services/agent/examples/quick_demo.py": "examples/agent/quick_demo.py",
-    "src/brain_researcher/services/agent/INTEGRATION_IMPLEMENTATION.md": (
-        "docs/archive/services/agent/INTEGRATION_IMPLEMENTATION.md"
-    ),
     "src/brain_researcher/services/agent/launch_agent.py": (
         "scripts/root_legacy/launch_agent.py"
     ),
@@ -158,15 +151,6 @@ RELOCATED_PATHS = {
     ),
     "src/brain_researcher/services/api_gateway/requirements.txt": (
         "src/brain_researcher/legacy/api_gateway/requirements.txt"
-    ),
-    "src/brain_researcher/services/orchestrator/CONTRACTS.md": (
-        "docs/archive/services/orchestrator/CONTRACTS.md"
-    ),
-    "src/brain_researcher/services/orchestrator/IMPLEMENTATION_SUMMARY.md": (
-        "docs/archive/services/orchestrator/IMPLEMENTATION_SUMMARY.md"
-    ),
-    "src/brain_researcher/services/orchestrator/UI_CONTRACTS_UPDATE.md": (
-        "docs/archive/services/orchestrator/UI_CONTRACTS_UPDATE.md"
     ),
     "src/brain_researcher/services/agent/tool_mappings.yaml": (
         "configs/catalog/tool_mappings.yaml"

@@ -45,9 +45,7 @@ class FakeGraphDB:
                     for k, v in props.items()
                     if k in {"name", "pmid", "doi", "concept_id", "x", "y", "z"}
                 } or {k: v for k, v in props.items() if k != "labels"}
-                digest_input = (
-                    f"{'-'.join(label_list)}-{json.dumps(key_props, sort_keys=True)}"
-                )
+                digest_input = f"{'-'.join(label_list)}-{json.dumps(key_props, sort_keys=True)}"
                 node_id = hashlib.md5(digest_input.encode()).hexdigest()
 
         stored = dict(props)

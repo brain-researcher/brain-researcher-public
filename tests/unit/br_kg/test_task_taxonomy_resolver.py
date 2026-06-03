@@ -121,9 +121,7 @@ def test_ensure_canonical_task_is_idempotent_for_family_linkage():
 
 def test_ensure_canonical_task_keeps_fallback_passthrough_behavior():
     db = FakeGraphDB()
-    fallback_node_id = db.create_node(
-        "Task", {"id": "existing-task", "name": "Existing Task"}
-    )
+    fallback_node_id = db.create_node("Task", {"id": "existing-task", "name": "Existing Task"})
     resolver = _build_resolver(db)
 
     match_result = TaskMatchResult(

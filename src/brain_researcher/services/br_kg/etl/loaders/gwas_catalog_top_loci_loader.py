@@ -124,9 +124,7 @@ def _ordered_unique(values: Sequence[str]) -> list[str]:
     return out
 
 
-def _structured_node_row(
-    node_id: str, labels: Sequence[str], properties: Mapping[str, Any]
-) -> dict[str, Any]:
+def _structured_node_row(node_id: str, labels: Sequence[str], properties: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "node_id": node_id,
         "labels": tuple(labels),
@@ -152,21 +150,15 @@ def _association_sort_key(association: TopLocusAssociation) -> tuple[float, str]
     return (association.p_value, association.rsid)
 
 
-def _is_stronger(
-    candidate: TopLocusAssociation, incumbent: TopLocusAssociation
-) -> bool:
+def _is_stronger(candidate: TopLocusAssociation, incumbent: TopLocusAssociation) -> bool:
     if candidate.p_value != incumbent.p_value:
         return candidate.p_value < incumbent.p_value
     candidate_gene_count = len(candidate.genes)
     incumbent_gene_count = len(incumbent.genes)
     if candidate_gene_count != incumbent_gene_count:
         return candidate_gene_count > incumbent_gene_count
-    candidate_located = (
-        candidate.chromosome is not None and candidate.bp_location is not None
-    )
-    incumbent_located = (
-        incumbent.chromosome is not None and incumbent.bp_location is not None
-    )
+    candidate_located = candidate.chromosome is not None and candidate.bp_location is not None
+    incumbent_located = incumbent.chromosome is not None and incumbent.bp_location is not None
     if candidate_located != incumbent_located:
         return candidate_located and not incumbent_located
     return candidate.study_accession < incumbent.study_accession
@@ -187,11 +179,7 @@ def _fetch_study_summaries(
     while len(studies) < max_studies:
         resp = client.get(
             _STUDIES_SEARCH,
-            params={
-                "efoTrait": trait_query,
-                "page": page,
-                "size": min(50, max_studies),
-            },
+            params={"efoTrait": trait_query, "page": page, "size": min(50, max_studies)},
             timeout=timeout,
         )
         resp.raise_for_status()
@@ -294,7 +282,7 @@ def _extract_association(
     p_mantissa = _coerce_float(raw.get("pvalueMantissa"))
     p_exponent = _coerce_int(raw.get("pvalueExponent"))
     if p_value is None and p_mantissa is not None and p_exponent is not None:
-        p_value = p_mantissa * (10**p_exponent)
+        p_value = p_mantissa * (10 ** p_exponent)
     if p_value is None or p_value > GENOME_WIDE_SIGNIFICANCE:
         return None
 
@@ -339,9 +327,7 @@ def _risk_locus_node_properties(association: TopLocusAssociation) -> dict[str, A
     return props
 
 
-def _merge_risk_locus_node(
-    existing: dict[str, Any], candidate: TopLocusAssociation
-) -> None:
+def _merge_risk_locus_node(existing: dict[str, Any], candidate: TopLocusAssociation) -> None:
     props = existing["properties"]
     if candidate.chromosome and not props.get("chromosome"):
         props["chromosome"] = candidate.chromosome
@@ -378,15 +364,7 @@ def fetch_top_loci_snapshot(
 
     queries = disorder_trait_queries or DISORDER_TRAIT_QUERIES
     pmid_to_study_ids = {
-        str(pmid): tuple(
-            sorted(
-                {
-                    _coerce_text(study_id)
-                    for study_id in study_ids
-                    if _coerce_text(study_id)
-                }
-            )
-        )
+        str(pmid): tuple(sorted({_coerce_text(study_id) for study_id in study_ids if _coerce_text(study_id)}))
         for pmid, study_ids in (study_ids_by_pmid or {}).items()
         if _coerce_text(pmid)
     }
@@ -405,9 +383,7 @@ def fetch_top_loci_snapshot(
     try:
         for disease_id, trait_query in queries.items():
             stats["disorders_queried"] += 1
-            logger.info(
-                "GWAS Catalog: querying trait=%r for %s", trait_query, disease_id
-            )
+            logger.info("GWAS Catalog: querying trait=%r for %s", trait_query, disease_id)
 
             study_summaries = _fetch_study_summaries(
                 client,
@@ -440,9 +416,7 @@ def fetch_top_loci_snapshot(
                         timeout,
                     )
                 except httpx.HTTPStatusError:
-                    logger.warning(
-                        "Failed to fetch associations for %s", study.accession_id
-                    )
+                    logger.warning("Failed to fetch associations for %s", study.accession_id)
                     continue
 
                 for raw in raw_associations:
@@ -471,9 +445,7 @@ def fetch_top_loci_snapshot(
                             if current is None or _is_stronger(association, current):
                                 matched_study_edges[key] = association
 
-            disorder_stats["unique_significant_loci_before_cap"] = len(
-                strongest_by_rsid
-            )
+            disorder_stats["unique_significant_loci_before_cap"] = len(strongest_by_rsid)
             selected = sorted(strongest_by_rsid.values(), key=_association_sort_key)[
                 :max_associations_per_disorder
             ]
@@ -522,13 +494,11 @@ def fetch_top_loci_snapshot(
                 if len(aligned_study_ids) == 1:
                     assoc_props["study_id"] = aligned_study_ids[0]
 
-                associated_with_by_key[(locus_id, disease_id)] = (
-                    _structured_relationship_row(
-                        locus_id,
-                        disease_id,
-                        "ASSOCIATED_WITH",
-                        assoc_props,
-                    )
+                associated_with_by_key[(locus_id, disease_id)] = _structured_relationship_row(
+                    locus_id,
+                    disease_id,
+                    "ASSOCIATED_WITH",
+                    assoc_props,
                 )
 
             for (study_id, rsid), association in matched_study_edges.items():
@@ -554,8 +524,7 @@ def fetch_top_loci_snapshot(
                 existing = has_lead_locus_by_key.get(key)
                 if existing is None or (
                     props.get("p_value") is not None
-                    and props["p_value"]
-                    < existing["properties"].get("p_value", float("inf"))
+                    and props["p_value"] < existing["properties"].get("p_value", float("inf"))
                 ):
                     has_lead_locus_by_key[key] = _structured_relationship_row(
                         study_id,
@@ -565,9 +534,7 @@ def fetch_top_loci_snapshot(
                     )
 
             disorder_stats["matched_openmed_study_edges"] = sum(
-                1
-                for (_study_id, rsid) in matched_study_edges
-                if rsid in selected_rank_by_rsid
+                1 for (_study_id, rsid) in matched_study_edges if rsid in selected_rank_by_rsid
             )
             stats["per_disorder"][disease_id] = disorder_stats
     finally:

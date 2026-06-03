@@ -24,9 +24,7 @@ class PyTorchModelArgs(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     data_file: str = Field(description="Input data file (numpy/npz)")
-    labels_file: Optional[str] = Field(
-        default=None, description="Labels file for supervised learning"
-    )
+    labels_file: Optional[str] = Field(default=None, description="Labels file for supervised learning")
     output_dir: Optional[str] = Field(default=None, description="Output directory")
 
     model_type: str = Field(default="3dcnn", description="Model architecture")

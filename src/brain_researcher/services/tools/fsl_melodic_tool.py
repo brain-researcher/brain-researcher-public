@@ -16,20 +16,19 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
 from brain_researcher.services.tools.params import (
     FSLMELODICParameters,
     build_fsl_melodic_command,
 )
-from brain_researcher.services.tools.spec import ToolSpec
+from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
+from brain_researcher.services.tools.spec import ToolSpec
 
 logger = logging.getLogger(__name__)
 
 
 class ICADimensionality(str, Enum):
     """ICA dimensionality estimation methods."""
-
     AUTOMATIC = "automatic"  # Automatic dimensionality estimation
     LAPLACE = "laplace"  # Laplace approximation
     BIC = "bic"  # Bayesian Information Criterion
@@ -40,7 +39,6 @@ class ICADimensionality(str, Enum):
 
 class ApproachType(str, Enum):
     """MELODIC approach types."""
-
     CONCAT = "concat"  # Concatenate across time
     MIGP = "migp"  # MIGP group analysis
     TENSOR = "tensor"  # Tensor decomposition
@@ -49,7 +47,6 @@ class ApproachType(str, Enum):
 
 class NoiseClassification(str, Enum):
     """Noise component classification methods."""
-
     MANUAL = "manual"  # Manual classification
     FIX = "fix"  # FSL FIX automatic classification
     AROMA = "aroma"  # ICA-AROMA
@@ -59,7 +56,6 @@ class NoiseClassification(str, Enum):
 @dataclass
 class MELODICConfig:
     """Configuration for MELODIC analysis."""
-
     approach: ApproachType
     n_components: Optional[int]
     dimensionality: ICADimensionality
@@ -129,48 +125,82 @@ class MELODICArgs(BaseModel):
     input_files: Union[str, List[str]] = Field(
         description="Path to 4D NIfTI file(s) or text file listing multiple inputs"
     )
-    output_dir: str = Field(description="Output directory for MELODIC results")
-    tr: float = Field(description="Repetition time in seconds")
+    output_dir: str = Field(
+        description="Output directory for MELODIC results"
+    )
+    tr: float = Field(
+        description="Repetition time in seconds"
+    )
     approach: ApproachType = Field(
-        default=ApproachType.CONCAT, description="ICA approach (concat, migp, tensor)"
+        default=ApproachType.CONCAT,
+        description="ICA approach (concat, migp, tensor)"
     )
     n_components: Optional[int] = Field(
-        default=None, description="Number of ICA components (None for automatic)"
+        default=None,
+        description="Number of ICA components (None for automatic)"
     )
     dimensionality: ICADimensionality = Field(
         default=ICADimensionality.AUTOMATIC,
-        description="Dimensionality estimation method",
+        description="Dimensionality estimation method"
     )
-    mask: Optional[str] = Field(default=None, description="Brain mask file (optional)")
+    mask: Optional[str] = Field(
+        default=None,
+        description="Brain mask file (optional)"
+    )
     bg_threshold: float = Field(
-        default=10.0, description="Background threshold percentage"
+        default=10.0,
+        description="Background threshold percentage"
     )
-    var_norm: bool = Field(default=True, description="Apply variance normalization")
-    output_all: bool = Field(default=True, description="Output all ICA outputs")
-    generate_report: bool = Field(default=True, description="Generate HTML report")
-    denoise: bool = Field(default=False, description="Apply denoising after ICA")
+    var_norm: bool = Field(
+        default=True,
+        description="Apply variance normalization"
+    )
+    output_all: bool = Field(
+        default=True,
+        description="Output all ICA outputs"
+    )
+    generate_report: bool = Field(
+        default=True,
+        description="Generate HTML report"
+    )
+    denoise: bool = Field(
+        default=False,
+        description="Apply denoising after ICA"
+    )
     noise_components: Optional[List[int]] = Field(
         default=None,
-        description="Manual specification of noise component indices (1-based)",
+        description="Manual specification of noise component indices (1-based)"
     )
 
 
 class DualRegressionArgs(BaseModel):
     """Arguments for dual regression analysis."""
 
-    group_ica_dir: str = Field(description="Path to group MELODIC output directory")
-    subject_files: List[str] = Field(description="List of subject 4D NIfTI files")
-    output_dir: str = Field(description="Output directory for dual regression results")
+    group_ica_dir: str = Field(
+        description="Path to group MELODIC output directory"
+    )
+    subject_files: List[str] = Field(
+        description="List of subject 4D NIfTI files"
+    )
+    output_dir: str = Field(
+        description="Output directory for dual regression results"
+    )
     design_matrix: Optional[str] = Field(
-        default=None, description="Design matrix for group comparison"
+        default=None,
+        description="Design matrix for group comparison"
     )
     contrast_file: Optional[str] = Field(
-        default=None, description="Contrast file for group comparison"
+        default=None,
+        description="Contrast file for group comparison"
     )
     n_permutations: int = Field(
-        default=5000, description="Number of permutations for inference"
+        default=5000,
+        description="Number of permutations for inference"
     )
-    var_norm: bool = Field(default=True, description="Apply variance normalization")
+    var_norm: bool = Field(
+        default=True,
+        description="Apply variance normalization"
+    )
 
 
 def _model_required(model_cls) -> List[str]:
@@ -231,9 +261,7 @@ class FSLMELODICTool(NeuroToolWrapper):
     def get_args_schema(self):
         return MELODICArgs
 
-    def _prepare_input_list(
-        self, input_files: Union[str, List[str]], temp_dir: str
-    ) -> str:
+    def _prepare_input_list(self, input_files: Union[str, List[str]], temp_dir: str) -> str:
         """Prepare input file list for MELODIC."""
         if isinstance(input_files, str):
             # Single file
@@ -241,14 +269,12 @@ class FSLMELODICTool(NeuroToolWrapper):
         else:
             # Multiple files - create text file listing them
             list_file = os.path.join(temp_dir, "input_files.txt")
-            with open(list_file, "w") as f:
+            with open(list_file, 'w') as f:
                 for file_path in input_files:
                     f.write(f"{file_path}\n")
             return list_file
 
-    def _run_melodic(
-        self, config: MELODICConfig, input_target: str | List[str]
-    ) -> Dict[str, Any]:
+    def _run_melodic(self, config: MELODICConfig, input_target: str | List[str]) -> Dict[str, Any]:
         """Build MELODIC command using shared neurocore helpers."""
         if isinstance(input_target, list):
             inputs_tuple = tuple(input_target)
@@ -285,16 +311,19 @@ class FSLMELODICTool(NeuroToolWrapper):
         self,
         melodic_dir: str,
         input_file: str,
-        noise_components: Optional[List[int]] = None,
+        noise_components: Optional[List[int]] = None
     ) -> Dict[str, Any]:
         """Apply denoising using identified noise components."""
         # If no noise components specified, would need automatic classification
         if noise_components is None:
             logger.warning("No noise components specified for denoising")
-            return {"status": "skipped", "reason": "No noise components specified"}
+            return {
+                "status": "skipped",
+                "reason": "No noise components specified"
+            }
 
         # Generate fsl_regfilt command for denoising
-        denoised_file = input_file.replace(".nii", "_denoised.nii")
+        denoised_file = input_file.replace('.nii', '_denoised.nii')
 
         # Convert component indices to comma-separated string
         noise_str = ",".join(str(c) for c in noise_components)
@@ -313,7 +342,7 @@ class FSLMELODICTool(NeuroToolWrapper):
             "command": regfilt_cmd,
             "denoised_file": denoised_file,
             "noise_components": noise_components,
-            "melodic_dir": melodic_dir,
+            "melodic_dir": melodic_dir
         }
 
     def _extract_results(self, melodic_dir: str) -> Dict[str, Any]:
@@ -322,7 +351,7 @@ class FSLMELODICTool(NeuroToolWrapper):
             "melodic_dir": melodic_dir,
             "components": {},
             "stats": {},
-            "report": None,
+            "report": None
         }
 
         # Check for key output files
@@ -353,7 +382,7 @@ class FSLMELODICTool(NeuroToolWrapper):
                 # List threshold z-stat images
                 for zstat_file in Path(stats_dir).glob("thresh_zstat*.nii.gz"):
                     # Extract just the number from the filename
-                    comp_num = zstat_file.stem.split(".")[0].replace("thresh_zstat", "")
+                    comp_num = zstat_file.stem.split('.')[0].replace("thresh_zstat", "")
                     results["stats"][f"component_{comp_num}"] = str(zstat_file)
 
             # HTML report
@@ -383,7 +412,7 @@ class FSLMELODICTool(NeuroToolWrapper):
         generate_report: bool = True,
         denoise: bool = False,
         noise_components: Optional[List[int]] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute FSL MELODIC ICA analysis."""
         try:
@@ -393,7 +422,7 @@ class FSLMELODICTool(NeuroToolWrapper):
                     return ToolResult(
                         status="error",
                         error=f"Input file not found: {input_files}",
-                        data={},
+                        data={}
                     )
             else:
                 for file_path in input_files:
@@ -401,7 +430,7 @@ class FSLMELODICTool(NeuroToolWrapper):
                         return ToolResult(
                             status="error",
                             error=f"Input file not found: {file_path}",
-                            data={},
+                            data={}
                         )
 
             # Create output directory
@@ -423,7 +452,7 @@ class FSLMELODICTool(NeuroToolWrapper):
                     bg_threshold=bg_threshold,
                     var_norm=var_norm,
                     output_all=output_all,
-                    report=generate_report,
+                    report=generate_report
                 )
 
                 # Run MELODIC
@@ -434,7 +463,9 @@ class FSLMELODICTool(NeuroToolWrapper):
                 if denoise:
                     if isinstance(input_files, str):
                         denoise_result = self._apply_denoising(
-                            output_dir, input_files, noise_components
+                            output_dir,
+                            input_files,
+                            noise_components
                         )
                     else:
                         logger.warning("Denoising not applied for multiple input files")
@@ -447,14 +478,21 @@ class FSLMELODICTool(NeuroToolWrapper):
                     "melodic": melodic_result,
                     "results": results,
                     "denoising": denoise_result,
-                    "message": "FSL MELODIC ICA analysis configured successfully",
+                    "message": "FSL MELODIC ICA analysis configured successfully"
                 }
 
-                return ToolResult(status="success", data=final_result)
+                return ToolResult(
+                    status="success",
+                    data=final_result
+                )
 
         except Exception as e:
             logger.error(f"FSL MELODIC analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class DualRegressionTool(NeuroToolWrapper):
@@ -487,7 +525,7 @@ class DualRegressionTool(NeuroToolWrapper):
         contrast_file: Optional[str] = None,
         n_permutations: int = 5000,
         var_norm: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute dual regression analysis."""
         try:
@@ -496,7 +534,7 @@ class DualRegressionTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error=f"Group ICA directory not found: {group_ica_dir}",
-                    data={},
+                    data={}
                 )
 
             # Validate subject files
@@ -505,7 +543,7 @@ class DualRegressionTool(NeuroToolWrapper):
                     return ToolResult(
                         status="error",
                         error=f"Subject file not found: {subject_file}",
-                        data={},
+                        data={}
                     )
 
             # Group ICA maps
@@ -514,7 +552,7 @@ class DualRegressionTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error=f"Group IC file not found: {group_ic}",
-                    data={},
+                    data={}
                 )
 
             # Create output directory after all validation checks so permission
@@ -563,7 +601,7 @@ class DualRegressionTool(NeuroToolWrapper):
                 "group_ica_dir": group_ica_dir,
                 "n_subjects": len(subject_files),
                 "n_permutations": n_permutations,
-                "var_norm": var_norm,
+                "var_norm": var_norm
             }
 
             if design_matrix:
@@ -575,13 +613,17 @@ class DualRegressionTool(NeuroToolWrapper):
                 status="success",
                 data={
                     "dual_regression": results,
-                    "message": "Dual regression analysis configured successfully",
-                },
+                    "message": "Dual regression analysis configured successfully"
+                }
             )
 
         except Exception as e:
             logger.error(f"Dual regression analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 # ---------------------------------------------------------------------------

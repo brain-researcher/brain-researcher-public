@@ -11,10 +11,7 @@ from typing import Sequence
 
 from neo4j import GraphDatabase
 
-from brain_researcher.core.contracts.loop_signals import (
-    LoopSignalBaseV1,
-    parse_loop_signals,
-)
+from brain_researcher.core.contracts.loop_signals import LoopSignalBaseV1, parse_loop_signals
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +110,7 @@ class Neo4jLoopSignalWriter:
                 "stage": signal.stage,
                 "confidence": signal.confidence,
                 "created_at": signal.created_at,
-                "provenance_json": json.dumps(
-                    signal.provenance or {}, ensure_ascii=False
-                ),
+                "provenance_json": json.dumps(signal.provenance or {}, ensure_ascii=False),
                 "payload_json": json.dumps(_select_payload(signal), ensure_ascii=False),
                 "run_id": signal.run_id or run_id,
                 "plan_id": signal.plan_id or plan_id,

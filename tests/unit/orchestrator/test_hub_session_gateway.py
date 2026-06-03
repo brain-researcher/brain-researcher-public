@@ -18,8 +18,6 @@ from brain_researcher.services.orchestrator.studio_session_runtime import (
     StudioRuntimeKind,
     StudioSessionRuntime,
 )
-
-
 @pytest.fixture
 def hub_session_db_path(tmp_path: Path) -> Path:
     return tmp_path / "hub_sessions.sqlite"
@@ -107,10 +105,7 @@ def test_create_get_and_delete_hub_session(hub_session_client: TestClient) -> No
     assert created["session"]["metadata"]["runtime_binding"]["runtime_kind"] == "marimo"
     assert created["handoff"]["runtime_kind"] == "marimo"
     assert created["handoff"]["hub_base_url"] == "https://workspace.example/hub"
-    assert (
-        created["handoff"]["runtime_session_id"]
-        == created["session"]["runtime_session_id"]
-    )
+    assert created["handoff"]["runtime_session_id"] == created["session"]["runtime_session_id"]
     launch_qs = parse_qs(urlparse(created["handoff"]["workspace_url"]).query)
     assert launch_qs["session_id"] == [created["session"]["id"]]
     assert launch_qs["path"] == ["projects/proj_marimo_demo/notebooks/demo.py"]
@@ -138,9 +133,7 @@ def test_create_get_and_delete_hub_session(hub_session_client: TestClient) -> No
     assert deleted["session"]["status"] == "stopped"
 
 
-def test_hub_session_reuses_existing_marimo_runtime(
-    hub_session_client: TestClient,
-) -> None:
+def test_hub_session_reuses_existing_marimo_runtime(hub_session_client: TestClient) -> None:
     first = hub_session_client.post(
         "/api/hub/sessions",
         json={
@@ -195,10 +188,7 @@ def test_hub_workspace_handoff_supports_clean_launch_requests(
     assert handoff["launch_mode"] == "provision_new_runtime"
     assert handoff["runtime_session_id"] is None
     parsed = urlparse(handoff["workspace_url"])
-    assert (
-        f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-        == "https://workspace.example/hub"
-    )
+    assert f"{parsed.scheme}://{parsed.netloc}{parsed.path}" == "https://workspace.example/hub"
     qs = parse_qs(parsed.query)
     assert qs["session_id"] == [created["session"]["id"]]
     assert qs["path"] == ["projects/proj_clean_demo/notebooks/analysis.py"]
@@ -331,9 +321,7 @@ async def test_hub_sessions_do_not_attach_to_existing_jupyter_sessions(
             display_name="Studio Session",
         ),
     )
-    jupyter_runtime = await runtime.get_runtime_session(
-        jupyter_session.runtime_session_id
-    )
+    jupyter_runtime = await runtime.get_runtime_session(jupyter_session.runtime_session_id)
     assert jupyter_runtime is not None
     assert jupyter_runtime.kind == StudioRuntimeKind.JUPYTER
 
@@ -345,9 +333,7 @@ async def test_hub_sessions_do_not_attach_to_existing_jupyter_sessions(
             runtime_kind=StudioRuntimeKind.MARIMO,
         ),
     )
-    marimo_runtime = await runtime.get_runtime_session(
-        marimo_session.runtime_session_id
-    )
+    marimo_runtime = await runtime.get_runtime_session(marimo_session.runtime_session_id)
     assert marimo_runtime is not None
     assert marimo_runtime.kind == StudioRuntimeKind.MARIMO
     assert marimo_session.id != jupyter_session.id
@@ -377,9 +363,7 @@ async def test_marimo_runtime_uses_dedicated_workdir_root(
             runtime_kind=StudioRuntimeKind.MARIMO,
         ),
     )
-    marimo_runtime = await runtime.get_runtime_session(
-        marimo_session.runtime_session_id
-    )
+    marimo_runtime = await runtime.get_runtime_session(marimo_session.runtime_session_id)
 
     assert marimo_runtime is not None
     assert marimo_runtime.kind == StudioRuntimeKind.MARIMO
@@ -426,9 +410,7 @@ def test_hub_session_surfaces_runtime_target_and_reconciles_reuse(
         expected_runtime_url = f"https://workspace.example/hub/br-marimo-{runtime_id}"
         assert target["public_url"] == expected_runtime_url
         assert payload["handoff"]["runtime_target_url"] == expected_runtime_url
-        assert payload["handoff"][
-            "runtime_websocket_url"
-        ] == expected_runtime_url.replace("https://", "wss://", 1)
+        assert payload["handoff"]["runtime_websocket_url"] == expected_runtime_url.replace("https://", "wss://", 1)
         assert payload["handoff"]["runtime_connection_mode"] == "iframe"
         assert payload["handoff"]["runtime_target_ready"] is True
 
@@ -547,7 +529,7 @@ async def test_hub_session_handoff_ignores_jupyter_base_url_template(
 ) -> None:
     monkeypatch.setenv(
         "BR_STUDIO_JUPYTER_BASE_URL_TEMPLATE",
-        "https://hub.brain-researcher.com/user/{owner_user_id}",
+        "https://hub.${PUBLIC_HOSTNAME}/user/{owner_user_id}",
     )
 
     runtime = StudioSessionRuntime(
@@ -571,7 +553,7 @@ async def test_hub_session_handoff_ignores_jupyter_base_url_template(
     assert handoff.runtime_kind == StudioRuntimeKind.MARIMO
     assert handoff.hub_base_url == "https://workspace.example/hub"
     assert handoff.workspace_url.startswith("https://workspace.example/hub?")
-    assert "hub.brain-researcher.com/user/" not in handoff.workspace_url
+    assert "hub.${PUBLIC_HOSTNAME}/user/" not in handoff.workspace_url
 
 
 @pytest.mark.asyncio

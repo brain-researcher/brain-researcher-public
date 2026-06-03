@@ -47,7 +47,7 @@ get_credentials() {
     
     read -p "Enter your Cloudflare API Token: " CF_API_TOKEN
     read -p "Enter your Cloudflare Zone ID: " CF_ZONE_ID
-    read -p "Enter your domain (e.g., brain-researcher.com): " DOMAIN
+    read -p "Enter your domain (e.g., ${PUBLIC_HOSTNAME}): " DOMAIN
     read -p "Enter your origin server IP: " ORIGIN_IP
     
     # Save to terraform.tfvars
@@ -167,7 +167,7 @@ generate_origin_config() {
 server {
     listen 80;
     listen 443 ssl http2;
-    server_name brain-researcher.com www.brain-researcher.com;
+    server_name ${PUBLIC_HOSTNAME} www.${PUBLIC_HOSTNAME};
     
     # SSL configuration (use Cloudflare Origin CA certificate)
     ssl_certificate /etc/nginx/ssl/cloudflare-origin.pem;

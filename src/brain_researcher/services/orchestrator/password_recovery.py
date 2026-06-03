@@ -124,9 +124,7 @@ def repair_missing_password_hashes(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Repair missing password hashes in Orchestrator user store"
-    )
+    parser = argparse.ArgumentParser(description="Repair missing password hashes in Orchestrator user store")
     parser.add_argument(
         "--redis-url",
         default=os.getenv("REDIS_URL", "redis://localhost:6379/0"),

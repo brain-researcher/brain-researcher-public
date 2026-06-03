@@ -258,9 +258,7 @@ class BaseMatcher:
 
         for candidate in candidates.values():
             entity = candidate.entity or {}
-            source_aliases: Dict[str, Sequence[str]] = (
-                entity.get("source_aliases") or {}
-            )
+            source_aliases: Dict[str, Sequence[str]] = entity.get("source_aliases") or {}
             boost = 0.0
 
             for alias_source, aliases in source_aliases.items():
@@ -391,11 +389,7 @@ class BaseMatcher:
             entity_id = self._fuzzy_lookup.get(match_string)
             if not entity_id:
                 continue
-            method = (
-                "fuzzy_label"
-                if normalize_text(match_string) in self._label_index
-                else "fuzzy_alias"
-            )
+            method = "fuzzy_label" if normalize_text(match_string) in self._label_index else "fuzzy_alias"
             confidence = 0.85 * (score / 100)
             self._register_candidate(
                 candidates,

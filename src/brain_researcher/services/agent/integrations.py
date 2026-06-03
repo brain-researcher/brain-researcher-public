@@ -4,39 +4,32 @@ This module provides a unified interface for setting up and managing
 all agent service integrations with the new infrastructure components.
 """
 
-import asyncio
 import logging
+import asyncio
+from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional
 
 # Import all integration components
 try:
-    from brain_researcher.services.agent.deduplication_integration import (
-        AgentDataDeduplication,
-        setup_agent_deduplication,
-    )
-    from brain_researcher.services.agent.error_integration import (
-        IntegrationErrorManager,
-        setup_integration_logging,
-    )
-    from brain_researcher.services.agent.notification_system import (
-        AgentNotificationSystem,
-        setup_agent_notifications,
-    )
-    from brain_researcher.services.agent.plugin_integration import (
-        AgentPluginManager,
-        setup_agent_plugins,
+    from brain_researcher.services.agent.subscription_integration import (
+        AgentSubscriptionManager, setup_agent_subscriptions
     )
     from brain_researcher.services.agent.streaming_integration import (
-        AgentStreamingManager,
-        setup_agent_streaming,
+        AgentStreamingManager, setup_agent_streaming
     )
-    from brain_researcher.services.agent.subscription_integration import (
-        AgentSubscriptionManager,
-        setup_agent_subscriptions,
+    from brain_researcher.services.agent.deduplication_integration import (
+        AgentDataDeduplication, setup_agent_deduplication
     )
-
+    from brain_researcher.services.agent.plugin_integration import (
+        AgentPluginManager, setup_agent_plugins
+    )
+    from brain_researcher.services.agent.notification_system import (
+        AgentNotificationSystem, setup_agent_notifications
+    )
+    from brain_researcher.services.agent.error_integration import (
+        IntegrationErrorManager, setup_integration_logging
+    )
     INTEGRATIONS_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Some agent integrations not available: {e}")
@@ -67,9 +60,7 @@ class IntegrationConfig:
     auto_discover_plugins: bool = True
     enable_tool_deduplication: bool = True
     enable_tool_streaming: bool = True
-    notification_channels: list = field(
-        default_factory=lambda: ["in_chat", "websocket"]
-    )
+    notification_channels: list = field(default_factory=lambda: ["in_chat", "websocket"])
 
     # Performance settings
     max_concurrent_operations: int = 100
@@ -108,7 +99,7 @@ class AgentIntegrationManager:
             "deduplication": False,
             "plugins": False,
             "notifications": False,
-            "error_handling": False,
+            "error_handling": False
         }
 
         # Statistics
@@ -116,16 +107,14 @@ class AgentIntegrationManager:
             "initialized_at": None,
             "integrations_enabled": 0,
             "integrations_failed": 0,
-            "total_operations": 0,
+            "total_operations": 0
         }
 
-    async def initialize_all(
-        self,
-        subscription_system=None,
-        redis_client=None,
-        neo4j_driver=None,
-        agent_state_machine=None,
-    ) -> bool:
+    async def initialize_all(self,
+                           subscription_system=None,
+                           redis_client=None,
+                           neo4j_driver=None,
+                           agent_state_machine=None) -> bool:
         """Initialize all enabled integrations.
 
         Args:
@@ -160,9 +149,7 @@ class AgentIntegrationManager:
             # Initialize subscription system
             if self.config.enable_subscriptions and subscription_system:
                 total_count += 1
-                if await self._initialize_subscriptions(
-                    subscription_system, redis_client
-                ):
+                if await self._initialize_subscriptions(subscription_system, redis_client):
                     success_count += 1
 
             # Initialize streaming
@@ -174,9 +161,7 @@ class AgentIntegrationManager:
             # Initialize deduplication
             if self.config.enable_deduplication:
                 total_count += 1
-                if await self._initialize_deduplication(
-                    neo4j_driver, redis_client, agent_state_machine
-                ):
+                if await self._initialize_deduplication(neo4j_driver, redis_client, agent_state_machine):
                     success_count += 1
 
             # Initialize plugins
@@ -200,9 +185,7 @@ class AgentIntegrationManager:
             self.stats["integrations_failed"] = total_count - success_count
 
             success = success_count > 0
-            logger.info(
-                f"Integration initialization completed: {success_count}/{total_count} successful"
-            )
+            logger.info(f"Integration initialization completed: {success_count}/{total_count} successful")
 
             return success
 
@@ -216,7 +199,7 @@ class AgentIntegrationManager:
         try:
             self.error_manager = setup_integration_logging(
                 self.redis_client,
-                None,  # Will be set later when notification system is available
+                None  # Will be set later when notification system is available
             )
 
             self.initialization_status["error_handling"] = True
@@ -227,15 +210,13 @@ class AgentIntegrationManager:
             logger.error(f"Failed to initialize error handling: {e}")
             return False
 
-    async def _initialize_subscriptions(
-        self, subscription_system, redis_client
-    ) -> bool:
+    async def _initialize_subscriptions(self, subscription_system, redis_client) -> bool:
         """Initialize subscription integration."""
         try:
             self.subscription_manager = await setup_agent_subscriptions(
                 None,  # agent_state_machine will be set later
                 subscription_system,
-                redis_client,
+                redis_client
             )
 
             self.initialization_status["subscriptions"] = True
@@ -250,7 +231,9 @@ class AgentIntegrationManager:
         """Initialize streaming integration."""
         try:
             self.streaming_manager = await setup_agent_streaming(
-                agent_state_machine, self.config.kafka_config, redis_client
+                agent_state_machine,
+                self.config.kafka_config,
+                redis_client
             )
 
             self.initialization_status["streaming"] = True
@@ -261,13 +244,13 @@ class AgentIntegrationManager:
             logger.error(f"Failed to initialize streaming: {e}")
             return False
 
-    async def _initialize_deduplication(
-        self, neo4j_driver, redis_client, agent_state_machine
-    ) -> bool:
+    async def _initialize_deduplication(self, neo4j_driver, redis_client, agent_state_machine) -> bool:
         """Initialize deduplication integration."""
         try:
             self.deduplication_manager = await setup_agent_deduplication(
-                agent_state_machine, neo4j_driver, redis_client
+                agent_state_machine,
+                neo4j_driver,
+                redis_client
             )
 
             self.initialization_status["deduplication"] = True
@@ -281,17 +264,16 @@ class AgentIntegrationManager:
     async def _initialize_plugins(self, agent_state_machine) -> bool:
         """Initialize plugin integration."""
         try:
-            from brain_researcher.services.agent.plugin_integration import (
-                AgentPluginConfig,
-            )
+            from brain_researcher.services.agent.plugin_integration import AgentPluginConfig
 
             plugin_config = AgentPluginConfig(
                 auto_discover=self.config.auto_discover_plugins,
-                plugin_directory=self.config.plugin_directory,
+                plugin_directory=self.config.plugin_directory
             )
 
             self.plugin_manager = await setup_agent_plugins(
-                agent_state_machine, plugin_config
+                agent_state_machine,
+                plugin_config
             )
 
             self.initialization_status["plugins"] = True
@@ -306,7 +288,9 @@ class AgentIntegrationManager:
         """Initialize notification system."""
         try:
             self.notification_system = await setup_agent_notifications(
-                self.subscription_manager, self.error_manager, redis_client
+                self.subscription_manager,
+                self.error_manager,
+                redis_client
             )
 
             # Update error manager with notification system
@@ -354,27 +338,12 @@ class AgentIntegrationManager:
 
             # Register plugin tools
             if self.plugin_manager:
-                from brain_researcher.services.agent.plugin_integration import (
-                    register_plugins_with_tools,
-                )
-
+                from brain_researcher.services.agent.plugin_integration import register_plugins_with_tools
                 count = await register_plugins_with_tools(
-                    type(
-                        "MockAgent",
-                        (),
-                        {
-                            "plugin_tool_registry": type(
-                                "MockRegistry",
-                                (),
-                                {
-                                    "register_all_plugins": lambda tr: len(
-                                        self.plugin_manager.plugin_tools
-                                    )
-                                },
-                            )()
-                        },
-                    )(),
-                    tool_registry,
+                    type('MockAgent', (), {'plugin_tool_registry':
+                        type('MockRegistry', (), {'register_all_plugins':
+                            lambda tr: len(self.plugin_manager.plugin_tools)})()})(),
+                    tool_registry
                 )
                 logger.info(f"Registered {count} plugin tools")
 
@@ -390,22 +359,15 @@ class AgentIntegrationManager:
         if self.subscription_manager:
             try:
                 # Subscribe to analysis events
-                from brain_researcher.services.agent.subscription_integration import (
-                    subscribe_agent_to_analysis_events,
-                )
-
-                await subscribe_agent_to_analysis_events(
-                    self.subscription_manager, thread_id
-                )
+                from brain_researcher.services.agent.subscription_integration import subscribe_agent_to_analysis_events
+                await subscribe_agent_to_analysis_events(self.subscription_manager, thread_id)
 
                 logger.info(f"Subscribed thread {thread_id} to events")
 
             except Exception as e:
                 logger.error(f"Error subscribing thread {thread_id}: {e}")
 
-    async def notify_analysis_started(
-        self, thread_id: str, analysis_type: str, analysis_id: str
-    ):
+    async def notify_analysis_started(self, thread_id: str, analysis_type: str, analysis_id: str):
         """Send analysis started notification.
 
         Args:
@@ -415,19 +377,15 @@ class AgentIntegrationManager:
         """
         if self.notification_system:
             try:
-                from brain_researcher.services.agent.notification_system import (
-                    notify_analysis_started,
-                )
-
+                from brain_researcher.services.agent.notification_system import notify_analysis_started
                 await notify_analysis_started(
                     self.notification_system, thread_id, analysis_type, analysis_id
                 )
             except Exception as e:
                 logger.error(f"Error sending analysis started notification: {e}")
 
-    async def notify_analysis_completed(
-        self, thread_id: str, analysis_type: str, analysis_id: str, result_summary: str
-    ):
+    async def notify_analysis_completed(self, thread_id: str, analysis_type: str,
+                                      analysis_id: str, result_summary: str):
         """Send analysis completed notification.
 
         Args:
@@ -438,16 +396,9 @@ class AgentIntegrationManager:
         """
         if self.notification_system:
             try:
-                from brain_researcher.services.agent.notification_system import (
-                    notify_analysis_completed,
-                )
-
+                from brain_researcher.services.agent.notification_system import notify_analysis_completed
                 await notify_analysis_completed(
-                    self.notification_system,
-                    thread_id,
-                    analysis_type,
-                    analysis_id,
-                    result_summary,
+                    self.notification_system, thread_id, analysis_type, analysis_id, result_summary
                 )
             except Exception as e:
                 logger.error(f"Error sending analysis completed notification: {e}")
@@ -468,39 +419,29 @@ class AgentIntegrationManager:
                 "deduplication_enabled": self.config.enable_deduplication,
                 "plugins_enabled": self.config.enable_plugins,
                 "notifications_enabled": self.config.enable_notifications,
-                "error_handling_enabled": self.config.enable_error_handling,
+                "error_handling_enabled": self.config.enable_error_handling
             },
-            "component_stats": {},
+            "component_stats": {}
         }
 
         # Add component-specific statistics
         if self.subscription_manager:
-            status["component_stats"][
-                "subscriptions"
-            ] = self.subscription_manager.get_statistics()
+            status["component_stats"]["subscriptions"] = self.subscription_manager.get_statistics()
 
         if self.streaming_manager:
-            status["component_stats"][
-                "streaming"
-            ] = self.streaming_manager.get_statistics()
+            status["component_stats"]["streaming"] = self.streaming_manager.get_statistics()
 
         if self.deduplication_manager:
-            status["component_stats"][
-                "deduplication"
-            ] = self.deduplication_manager.get_statistics()
+            status["component_stats"]["deduplication"] = self.deduplication_manager.get_statistics()
 
         if self.plugin_manager:
             status["component_stats"]["plugins"] = self.plugin_manager.get_statistics()
 
         if self.notification_system:
-            status["component_stats"][
-                "notifications"
-            ] = self.notification_system.get_statistics()
+            status["component_stats"]["notifications"] = self.notification_system.get_statistics()
 
         if self.error_manager:
-            status["component_stats"][
-                "error_handling"
-            ] = self.error_manager.get_error_statistics()
+            status["component_stats"]["error_handling"] = self.error_manager.get_error_statistics()
 
         return status
 
@@ -526,7 +467,7 @@ async def setup_full_agent_integration(
     redis_client=None,
     neo4j_driver=None,
     kafka_config=None,
-    config: Optional[IntegrationConfig] = None,
+    config: Optional[IntegrationConfig] = None
 ) -> AgentIntegrationManager:
     """Set up full agent integration with all components.
 
@@ -548,7 +489,7 @@ async def setup_full_agent_integration(
     success = await manager.initialize_all(
         subscription_system=subscription_system,
         redis_client=redis_client,
-        neo4j_driver=neo4j_driver,
+        neo4j_driver=neo4j_driver
     )
 
     if success:
@@ -562,7 +503,7 @@ async def setup_full_agent_integration(
 def create_integration_config(
     enable_all: bool = True,
     kafka_bootstrap_servers: str = "localhost:9092",
-    plugin_directory: str = "./plugins",
+    plugin_directory: str = "./plugins"
 ) -> IntegrationConfig:
     """Create a standard integration configuration.
 
@@ -581,11 +522,9 @@ def create_integration_config(
         enable_plugins=enable_all,
         enable_notifications=enable_all,
         enable_error_handling=enable_all,
-        kafka_config=(
-            {"bootstrap_servers": kafka_bootstrap_servers} if enable_all else None
-        ),
+        kafka_config={"bootstrap_servers": kafka_bootstrap_servers} if enable_all else None,
         plugin_directory=plugin_directory,
         auto_discover_plugins=enable_all,
         enable_tool_deduplication=enable_all,
-        enable_tool_streaming=enable_all,
+        enable_tool_streaming=enable_all
     )

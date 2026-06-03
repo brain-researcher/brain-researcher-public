@@ -44,9 +44,7 @@ DEFAULT_DATASET = os.getenv("BR_KG_VIZ_DEFAULT_DATASET", "openneuro/ds000114").s
 def _parse_path_list(env_name: str, defaults: Sequence[Path]) -> List[Path]:
     raw = os.getenv(env_name, "").strip()
     if raw:
-        candidates = [
-            Path(item).expanduser() for item in raw.split(os.pathsep) if item.strip()
-        ]
+        candidates = [Path(item).expanduser() for item in raw.split(os.pathsep) if item.strip()]
     else:
         candidates = list(defaults)
 
@@ -164,11 +162,7 @@ def _resolve_template_file(template: Optional[str] = None) -> Optional[Path]:
     for root in _existing_dirs(TEMPLATE_ROOTS):
         for name in names:
             candidate = (root / name).resolve()
-            if (
-                candidate.exists()
-                and _is_within_root(candidate, root)
-                and candidate.is_file()
-            ):
+            if candidate.exists() and _is_within_root(candidate, root) and candidate.is_file():
                 return candidate
     return None
 
@@ -206,11 +200,7 @@ def _resolve_dataset_dir(dataset_id: Optional[str]) -> Tuple[str, Optional[Path]
         normalized = _sanitize_dataset_id(dataset_id)
         for root in _existing_dirs(DATASET_ROOTS):
             candidate = (root / normalized).resolve()
-            if (
-                candidate.exists()
-                and candidate.is_dir()
-                and _is_within_root(candidate, root)
-            ):
+            if candidate.exists() and candidate.is_dir() and _is_within_root(candidate, root):
                 return normalized, candidate
         return normalized, None
 
@@ -243,9 +233,7 @@ def _normalize_session(raw: Optional[str]) -> Optional[str]:
     return value if value.startswith("ses-") else f"ses-{value}"
 
 
-def _resolve_scope_dir(
-    dataset_dir: Path, subject: Optional[str], session: Optional[str]
-) -> Optional[Path]:
+def _resolve_scope_dir(dataset_dir: Path, subject: Optional[str], session: Optional[str]) -> Optional[Path]:
     scope = dataset_dir
 
     if subject:
@@ -304,15 +292,7 @@ def _select_dataset_files(
             ]
         )
 
-    overlay_patterns.extend(
-        [
-            "*zmap*.nii.gz",
-            "*tmap*.nii.gz",
-            "*stat*.nii.gz",
-            "*_bold.nii.gz",
-            "*_bold.nii",
-        ]
-    )
+    overlay_patterns.extend(["*zmap*.nii.gz", "*tmap*.nii.gz", "*stat*.nii.gz", "*_bold.nii.gz", "*_bold.nii"])
     overlay_file = _find_first_matching(scope_dir, overlay_patterns)
 
     if overlay_file is None and volume_file is not None:
@@ -325,11 +305,7 @@ def _resolve_job_dir(job_id: str) -> Optional[Path]:
     safe_job_id = _sanitize_segment(job_id, label="job_id")
     for root in _existing_dirs(JOB_ROOTS):
         candidate = (root / safe_job_id).resolve()
-        if (
-            candidate.exists()
-            and candidate.is_dir()
-            and _is_within_root(candidate, root)
-        ):
+        if candidate.exists() and candidate.is_dir() and _is_within_root(candidate, root):
             return candidate
     return None
 
@@ -342,9 +318,7 @@ def _safe_join(root: Path, relpath: str) -> Path:
     return candidate
 
 
-def _resolve_job_file(
-    job_dir: Path, *, kind: str, overlay_name: Optional[str], relpath: Optional[str]
-) -> Optional[Path]:
+def _resolve_job_file(job_dir: Path, *, kind: str, overlay_name: Optional[str], relpath: Optional[str]) -> Optional[Path]:
     if relpath:
         candidate = _safe_join(job_dir, relpath)
         return candidate if _is_nifti(candidate) else None
@@ -540,9 +514,7 @@ def list_available_datasets():
             )
 
         subjects = sorted(
-            path.name
-            for path in dataset_dir.glob("sub-*")
-            if path.exists() and path.is_dir()
+            path.name for path in dataset_dir.glob("sub-*") if path.exists() and path.is_dir()
         )
         return jsonify(
             {

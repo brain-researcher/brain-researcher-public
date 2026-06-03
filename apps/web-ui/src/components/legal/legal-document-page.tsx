@@ -69,10 +69,10 @@ export function LegalDocumentPage({
                   If you have questions about these policies or want help with your account,
                   contact{' '}
                   <a
-                    href="mailto:support@brain-researcher.com"
+                    href="mailto:support@${PUBLIC_HOSTNAME}"
                     className="font-medium text-primary underline"
                   >
-                    support@brain-researcher.com
+                    support@${PUBLIC_HOSTNAME}
                   </a>
                   .
                 </p>

@@ -8,9 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from brain_researcher.services.agent.code_tool_registry import CodeTool
-from brain_researcher.services.agent.code_tools.utils import (
-    validate_path as _validate_path,
-)
+from brain_researcher.services.agent.code_tools.utils import validate_path as _validate_path
 
 logger = logging.getLogger(__name__)
 
@@ -76,12 +74,14 @@ class CodeSearchTool(CodeTool):
             # Try ripgrep first, fall back to grep
             try:
                 return self._search_with_rg(
-                    query, glob_pattern, max_matches, context_lines, case_sensitive, cwd
+                    query, glob_pattern, max_matches, context_lines,
+                    case_sensitive, cwd
                 )
             except FileNotFoundError:
                 logger.debug("ripgrep not found, falling back to grep")
                 return self._search_with_grep(
-                    query, glob_pattern, max_matches, context_lines, case_sensitive, cwd
+                    query, glob_pattern, max_matches, context_lines,
+                    case_sensitive, cwd
                 )
 
         except Exception as exc:
@@ -130,13 +130,11 @@ class CodeSearchTool(CodeTool):
                 data = json.loads(line)
                 if data.get("type") == "match":
                     match_data = data["data"]
-                    matches.append(
-                        {
-                            "path": match_data["path"]["text"],
-                            "line_number": match_data["line_number"],
-                            "line": match_data["lines"]["text"].rstrip(),
-                        }
-                    )
+                    matches.append({
+                        "path": match_data["path"]["text"],
+                        "line_number": match_data["line_number"],
+                        "line": match_data["lines"]["text"].rstrip(),
+                    })
             except (json.JSONDecodeError, KeyError):
                 continue
 
@@ -188,13 +186,11 @@ class CodeSearchTool(CodeTool):
         for line in result.stdout.splitlines()[:max_matches]:
             parts = line.split(":", 2)
             if len(parts) >= 3:
-                matches.append(
-                    {
-                        "path": parts[0],
-                        "line_number": int(parts[1]) if parts[1].isdigit() else 0,
-                        "line": parts[2],
-                    }
-                )
+                matches.append({
+                    "path": parts[0],
+                    "line_number": int(parts[1]) if parts[1].isdigit() else 0,
+                    "line": parts[2],
+                })
 
         return {
             "status": "success",

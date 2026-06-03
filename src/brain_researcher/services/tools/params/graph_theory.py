@@ -54,18 +54,9 @@ def graph_theory_from_payload(payload: Dict[str, object]) -> GraphTheoryParamete
         threshold_method=str(payload.get("threshold_method", "proportional")),
         threshold_value=payload.get("threshold_value"),
         compute_basic_metrics=bool(payload.get("compute_basic_metrics", True)),
-        basic_metrics=list(
-            payload.get(
-                "basic_metrics", ["degree", "strength", "clustering", "path_length"]
-            )
-        ),
+        basic_metrics=list(payload.get("basic_metrics", ["degree", "strength", "clustering", "path_length"])),
         compute_centrality=bool(payload.get("compute_centrality", True)),
-        centrality_metrics=list(
-            payload.get(
-                "centrality_metrics",
-                ["betweenness", "eigenvector", "pagerank", "closeness"],
-            )
-        ),
+        centrality_metrics=list(payload.get("centrality_metrics", ["betweenness", "eigenvector", "pagerank", "closeness"])),
         detect_communities=bool(payload.get("detect_communities", True)),
         community_method=str(payload.get("community_method", "louvain")),
         detect_hubs=bool(payload.get("detect_hubs", True)),
@@ -73,9 +64,7 @@ def graph_theory_from_payload(payload: Dict[str, object]) -> GraphTheoryParamete
         compute_rich_club=bool(payload.get("compute_rich_club", False)),
         compute_small_world=bool(payload.get("compute_small_world", True)),
         compute_efficiency=bool(payload.get("compute_efficiency", True)),
-        efficiency_types=list(
-            payload.get("efficiency_types", ["global", "local", "nodal"])
-        ),
+        efficiency_types=list(payload.get("efficiency_types", ["global", "local", "nodal"])),
         test_robustness=bool(payload.get("test_robustness", False)),
         removal_fraction=float(payload.get("removal_fraction", 0.5)),
         permutation_test=bool(payload.get("permutation_test", False)),
@@ -100,9 +89,7 @@ def _load_matrix(path: str) -> np.ndarray:
     raise ValueError(f"Unsupported connectivity format for {path}")
 
 
-def _threshold_matrix(
-    matrix: np.ndarray, method: str, value: Optional[float]
-) -> np.ndarray:
+def _threshold_matrix(matrix: np.ndarray, method: str, value: Optional[float]) -> np.ndarray:
     adj = matrix.copy()
     if method == "absolute" and value is not None:
         adj[np.abs(adj) < value] = 0.0
@@ -162,11 +149,7 @@ def _basic_metrics(adj: np.ndarray, metrics: List[str]) -> Dict[str, Dict[str, f
             "std": float(np.std(coeff)),
         }
     if "path_length" in metrics:
-        density = (
-            float(np.count_nonzero(adj) / (adj.shape[0] * (adj.shape[0] - 1)))
-            if adj.shape[0] > 1
-            else 0.0
-        )
+        density = float(np.count_nonzero(adj) / (adj.shape[0] * (adj.shape[0] - 1))) if adj.shape[0] > 1 else 0.0
         path_estimate = float(1.0 / (density + 1e-6))
         out["path_length"] = {"estimate": path_estimate}
     return out
@@ -198,9 +181,7 @@ def _centrality(metrics: List[str], adj: np.ndarray) -> Dict[str, Dict[str, floa
     return out
 
 
-def _community_assignments(
-    adj: np.ndarray, rng: np.random.Generator, method: str
-) -> Dict[str, object]:
+def _community_assignments(adj: np.ndarray, rng: np.random.Generator, method: str) -> Dict[str, object]:
     n = adj.shape[0]
     n_comm = max(2, int(np.sqrt(n) // 1))
     assignments = rng.integers(0, n_comm, size=n)
@@ -277,9 +258,7 @@ def run_graph_theory(params: GraphTheoryParameters) -> Dict[str, object]:
     if params.compute_efficiency:
         metrics["efficiency"] = _efficiency(adj, params.efficiency_types)
     if params.compute_small_world:
-        density = float(np.count_nonzero(adj)) / max(
-            adj.shape[0] * (adj.shape[0] - 1), 1
-        )
+        density = float(np.count_nonzero(adj)) / max(adj.shape[0] * (adj.shape[0] - 1), 1)
         metrics["small_world"] = {"sigma_estimate": float(1 + density)}
     if params.compute_rich_club:
         metrics["rich_club"] = _rich_club(adj)

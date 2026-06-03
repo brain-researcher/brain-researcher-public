@@ -76,7 +76,9 @@ def test_singular_covariance_sidecar_propagates_and_blocks(tmp_path):
     base = np.linspace(-1.0, 1.0, 200)
     time_series = np.column_stack([base, base, base, base])
     tool = StructuralEquationModelingTool()
-    result = tool._run(time_series=time_series, lag_order=1, output_dir=str(tmp_path))
+    result = tool._run(
+        time_series=time_series, lag_order=1, output_dir=str(tmp_path)
+    )
     assert result["status"] == "success"
 
     sidecar = tmp_path / "value_domain_diagnostics.json"

@@ -5,16 +5,16 @@ Implements automated ICA artifact classification and removal for fMRI data
 using machine learning classifiers trained on hand-labeled components.
 """
 
-import json
 import logging
+import json
 import os
-import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
+import subprocess
 
 from pydantic import BaseModel, Field
-
 from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
+
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
     ToolResult,
@@ -32,53 +32,61 @@ class FSLFIXArgs(BaseModel):
     )
     training_data: str = Field(
         default="Standard",
-        description="Training dataset to use (Standard, HCP_hp2000, WhII_MB6, etc.) or path to custom .RData",
+        description="Training dataset to use (Standard, HCP_hp2000, WhII_MB6, etc.) or path to custom .RData"
     )
     threshold: float = Field(
         default=20.0,
-        description="Classification threshold (0-100, higher = more aggressive)",
+        description="Classification threshold (0-100, higher = more aggressive)"
     )
 
     # Output options
     output_dir: Optional[str] = Field(
-        default=None, description="Output directory (default: in-place in FEAT dir)"
+        default=None,
+        description="Output directory (default: in-place in FEAT dir)"
     )
 
     # Classification options
     motion_cleanup: bool = Field(
-        default=True, description="Apply aggressive motion cleanup"
+        default=True,
+        description="Apply aggressive motion cleanup"
     )
     highpass: Optional[float] = Field(
-        default=None, description="High-pass filter cutoff in seconds (e.g., 150)"
+        default=None,
+        description="High-pass filter cutoff in seconds (e.g., 150)"
     )
 
     # Training options (for custom training)
     train_mode: bool = Field(
-        default=False, description="Train new classifier instead of applying existing"
+        default=False,
+        description="Train new classifier instead of applying existing"
     )
     hand_labels_file: Optional[str] = Field(
         default=None,
-        description="File containing hand labels for training ([1 2 3 ...] for noise)",
+        description="File containing hand labels for training ([1 2 3 ...] for noise)"
     )
 
     # Advanced options
     feature_extraction: bool = Field(
-        default=True, description="Extract features for classification"
+        default=True,
+        description="Extract features for classification"
     )
     multi_run_mode: bool = Field(
-        default=False, description="Multi-run FIX mode for multiple sessions"
+        default=False,
+        description="Multi-run FIX mode for multiple sessions"
     )
     leave_one_out: bool = Field(
         default=False,
-        description="Use leave-one-out cross-validation for threshold selection",
+        description="Use leave-one-out cross-validation for threshold selection"
     )
 
     # Performance options
     use_gpu: bool = Field(
-        default=False, description="Use GPU acceleration if available"
+        default=False,
+        description="Use GPU acceleration if available"
     )
     n_threads: Optional[int] = Field(
-        default=None, description="Number of threads for parallel processing"
+        default=None,
+        description="Number of threads for parallel processing"
     )
 
 
@@ -144,13 +152,13 @@ class FSLFIXTool(NeuroToolWrapper):
         self.fix_available = False
 
         # Check FSL
-        fsl_dir = os.environ.get("FSLDIR")
+        fsl_dir = os.environ.get('FSLDIR')
         if fsl_dir and os.path.exists(fsl_dir):
             self.fsl_available = True
             self.fsl_dir = fsl_dir
 
             # Check for FIX
-            fix_path = os.path.join(fsl_dir, "bin", "fix")
+            fix_path = os.path.join(fsl_dir, 'bin', 'fix')
             if os.path.exists(fix_path):
                 self.fix_available = True
                 logger.info(f"FSL FIX available at {fix_path}")
@@ -193,7 +201,7 @@ class FSLFIXTool(NeuroToolWrapper):
         required_files = [
             melodic_dir / "melodic_IC.nii.gz",
             melodic_dir / "melodic_mix",
-            melodic_dir / "melodic_FTmix",
+            melodic_dir / "melodic_FTmix"
         ]
 
         for req_file in required_files:
@@ -210,7 +218,7 @@ class FSLFIXTool(NeuroToolWrapper):
             "HCP_hp2000": "HCP_hp2000.RData",
             "WhII_MB6": "WhII_MB6.RData",
             "WhII_Standard": "WhII_Standard.RData",
-            "UKBiobank": "UKBiobank.RData",
+            "UKBiobank": "UKBiobank.RData"
         }
 
         if training_data in standard_datasets:
@@ -245,28 +253,29 @@ class FSLFIXTool(NeuroToolWrapper):
                     cmd,
                     capture_output=True,
                     text=True,
-                    env={**os.environ, "FSLDIR": self.fsl_dir},
+                    env={**os.environ, 'FSLDIR': self.fsl_dir}
                 )
 
                 if result.returncode == 0:
                     # Parse feature file
                     feature_file = Path(melodic_dir) / "fix" / "features.txt"
                     if feature_file.exists():
-                        with open(feature_file, "r") as f:
+                        with open(feature_file, 'r') as f:
                             lines = f.readlines()
                             features["n_components"] = len(lines)
                             features["feature_file"] = str(feature_file)
 
-                    logger.info(
-                        f"Extracted features for {features.get('n_components', 0)} components"
-                    )
+                    logger.info(f"Extracted features for {features.get('n_components', 0)} components")
         except Exception as e:
             logger.warning(f"Feature extraction failed: {e}")
 
         return features
 
     def _train_classifier(
-        self, feat_dirs: List[str], hand_labels: List[str], output_file: str
+        self,
+        feat_dirs: List[str],
+        hand_labels: List[str],
+        output_file: str
     ) -> bool:
         """Train new FIX classifier."""
         if not self.fix_available:
@@ -276,18 +285,21 @@ class FSLFIXTool(NeuroToolWrapper):
         try:
             # Create training list file
             training_list = Path(output_file).parent / "training_list.txt"
-            with open(training_list, "w") as f:
+            with open(training_list, 'w') as f:
                 for feat_dir, labels in zip(feat_dirs, hand_labels):
                     f.write(f"{feat_dir} {labels}\n")
 
             # Run FIX training
-            cmd = ["fix", "-t", str(training_list), "-o", output_file]
+            cmd = [
+                "fix", "-t", str(training_list),
+                "-o", output_file
+            ]
 
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                env={**os.environ, "FSLDIR": self.fsl_dir},
+                env={**os.environ, 'FSLDIR': self.fsl_dir}
             )
 
             if result.returncode == 0:
@@ -307,7 +319,7 @@ class FSLFIXTool(NeuroToolWrapper):
         training_data: str,
         threshold: float,
         motion_cleanup: bool = True,
-        highpass: Optional[float] = None,
+        highpass: Optional[float] = None
     ) -> Dict[str, Any]:
         """Apply FIX cleanup to remove artifacts."""
         results = {}
@@ -343,7 +355,7 @@ class FSLFIXTool(NeuroToolWrapper):
                 cmd,
                 capture_output=True,
                 text=True,
-                env={**os.environ, "FSLDIR": self.fsl_dir},
+                env={**os.environ, 'FSLDIR': self.fsl_dir}
             )
 
             if result.returncode == 0:
@@ -351,13 +363,12 @@ class FSLFIXTool(NeuroToolWrapper):
 
                 # Parse output for classification results
                 if "classified as noise" in result.stdout:
-                    lines = result.stdout.split("\n")
+                    lines = result.stdout.split('\n')
                     for line in lines:
                         if "classified as noise" in line:
                             # Extract component numbers
                             import re
-
-                            noise_comps = re.findall(r"\d+", line)
+                            noise_comps = re.findall(r'\d+', line)
                             results["noise_components"] = [int(c) for c in noise_comps]
                             results["n_noise"] = len(noise_comps)
 
@@ -366,9 +377,7 @@ class FSLFIXTool(NeuroToolWrapper):
                 if cleaned_file.exists():
                     results["cleaned_data"] = str(cleaned_file)
 
-                logger.info(
-                    f"FIX cleanup successful: {results.get('n_noise', 0)} noise components removed"
-                )
+                logger.info(f"FIX cleanup successful: {results.get('n_noise', 0)} noise components removed")
             else:
                 results["status"] = "failed"
                 results["error"] = result.stderr
@@ -396,7 +405,7 @@ class FSLFIXTool(NeuroToolWrapper):
         leave_one_out: bool = False,
         use_gpu: bool = False,
         n_threads: Optional[int] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute FSL FIX artifact removal."""
         try:
@@ -404,7 +413,9 @@ class FSLFIXTool(NeuroToolWrapper):
             valid, melodic_dir = self._validate_feat_dir(feat_dir)
             if not valid:
                 return ToolResult(
-                    status="error", error=melodic_dir, data={}  # Contains error message
+                    status="error",
+                    error=melodic_dir,  # Contains error message
+                    data={}
                 )
 
             # Set output directory
@@ -418,7 +429,7 @@ class FSLFIXTool(NeuroToolWrapper):
                 "feat_dir": feat_dir,
                 "melodic_dir": melodic_dir,
                 "threshold": threshold,
-                "training_data": training_data,
+                "training_data": training_data
             }
 
             # Training mode
@@ -427,19 +438,19 @@ class FSLFIXTool(NeuroToolWrapper):
                     return ToolResult(
                         status="error",
                         error="Hand labels file required for training mode",
-                        data={},
+                        data={}
                     )
 
                 # Load hand labels
-                with open(hand_labels_file, "r") as f:
+                with open(hand_labels_file, 'r') as f:
                     hand_labels = f.read().strip()
 
                 # Train classifier
-                training_output = (
-                    output_path / f"custom_training_{Path(feat_dir).name}.RData"
-                )
+                training_output = output_path / f"custom_training_{Path(feat_dir).name}.RData"
                 success = self._train_classifier(
-                    [feat_dir], [hand_labels], str(training_output)
+                    [feat_dir],
+                    [hand_labels],
+                    str(training_output)
                 )
 
                 if success:
@@ -450,12 +461,14 @@ class FSLFIXTool(NeuroToolWrapper):
                         status="success",
                         data={
                             "outputs": results,
-                            "message": f"Successfully trained FIX classifier: {training_output}",
-                        },
+                            "message": f"Successfully trained FIX classifier: {training_output}"
+                        }
                     )
                 else:
                     return ToolResult(
-                        status="error", error="Failed to train FIX classifier", data={}
+                        status="error",
+                        error="Failed to train FIX classifier",
+                        data={}
                     )
 
             # Feature extraction
@@ -468,7 +481,11 @@ class FSLFIXTool(NeuroToolWrapper):
 
             # Apply FIX cleanup
             cleanup_results = self._apply_cleanup(
-                feat_dir, training_path, threshold, motion_cleanup, highpass
+                feat_dir,
+                training_path,
+                threshold,
+                motion_cleanup,
+                highpass
             )
 
             results.update(cleanup_results)
@@ -480,12 +497,12 @@ class FSLFIXTool(NeuroToolWrapper):
                 "threshold": threshold,
                 "motion_cleanup": motion_cleanup,
                 "highpass_filter": highpass,
-                "results": cleanup_results,
+                "results": cleanup_results
             }
 
             # Save report
             report_file = output_path / "fix_report.json"
-            with open(report_file, "w") as f:
+            with open(report_file, 'w') as f:
                 json.dump(report, f, indent=2)
 
             # Determine status
@@ -496,35 +513,37 @@ class FSLFIXTool(NeuroToolWrapper):
                         "outputs": {
                             "cleaned_data": cleanup_results.get("cleaned_data"),
                             "report": str(report_file),
-                            "noise_components": cleanup_results.get(
-                                "noise_components", []
-                            ),
+                            "noise_components": cleanup_results.get("noise_components", [])
                         },
                         "statistics": {
                             "n_noise_components": cleanup_results.get("n_noise", 0),
-                            "threshold_used": threshold,
+                            "threshold_used": threshold
                         },
-                        "message": f"FIX cleanup completed: {cleanup_results.get('n_noise', 0)} noise components removed",
-                    },
+                        "message": f"FIX cleanup completed: {cleanup_results.get('n_noise', 0)} noise components removed"
+                    }
                 )
             elif cleanup_results.get("status") == "command_generated":
                 return ToolResult(
                     status="success",
                     data={
                         "command": cleanup_results["command"],
-                        "message": "FIX command generated (FSL not available for execution)",
-                    },
+                        "message": "FIX command generated (FSL not available for execution)"
+                    }
                 )
             else:
                 return ToolResult(
                     status="error",
                     error=cleanup_results.get("error", "FIX cleanup failed"),
-                    data=results,
+                    data=results
                 )
 
         except Exception as e:
             logger.error(f"FIX processing failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class FSLFIXMultiRunTool(NeuroToolWrapper):
@@ -551,7 +570,8 @@ class FSLFIXMultiRunTool(NeuroToolWrapper):
                 description="List of FEAT directories to process together"
             )
             feat_dir: Optional[str] = Field(
-                default=None, description="Not used in multi-run mode"
+                default=None,
+                description="Not used in multi-run mode"
             )
 
         return MultiRunArgs
@@ -562,7 +582,7 @@ class FSLFIXMultiRunTool(NeuroToolWrapper):
         training_data: str = "Standard",
         threshold: float = 20.0,
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute multi-run FIX processing."""
         try:
@@ -584,18 +604,13 @@ class FSLFIXMultiRunTool(NeuroToolWrapper):
                     training_data=training_data,
                     threshold=threshold,
                     output_dir=str(output_path / f"run_{i:03d}"),
-                    **kwargs,
+                    **kwargs
                 )
 
                 if result.status == "success":
                     all_results.append(result.data)
-                    if (
-                        "outputs" in result.data
-                        and "noise_components" in result.data["outputs"]
-                    ):
-                        all_noise_components.append(
-                            result.data["outputs"]["noise_components"]
-                        )
+                    if "outputs" in result.data and "noise_components" in result.data["outputs"]:
+                        all_noise_components.append(result.data["outputs"]["noise_components"])
                 else:
                     logger.warning(f"Failed to process run {i+1}: {result.error}")
 
@@ -605,11 +620,11 @@ class FSLFIXMultiRunTool(NeuroToolWrapper):
                 "n_processed": len(all_results),
                 "training_data": training_data,
                 "threshold": threshold,
-                "runs": all_results,
+                "runs": all_results
             }
 
             summary_file = output_path / "multirun_summary.json"
-            with open(summary_file, "w") as f:
+            with open(summary_file, 'w') as f:
                 json.dump(summary, f, indent=2)
 
             return ToolResult(
@@ -618,14 +633,18 @@ class FSLFIXMultiRunTool(NeuroToolWrapper):
                     "outputs": {
                         "summary": str(summary_file),
                         "n_runs_processed": len(all_results),
-                        "output_dir": str(output_path),
+                        "output_dir": str(output_path)
                     },
-                    "message": f"Processed {len(all_results)}/{len(feat_dirs)} runs successfully",
-                },
+                    "message": f"Processed {len(all_results)}/{len(feat_dirs)} runs successfully"
+                }
             )
 
         except Exception as e:
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class FSLFIXTools:

@@ -5,7 +5,6 @@ converts them into tool definitions with JSON Schema validation.
 
 Moved from: archive/mcp_server/adapters/boutiques_loader.py
 """
-
 from __future__ import annotations
 
 import json
@@ -332,9 +331,7 @@ def build_tool_definition(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
     # Build tool definition
     tool_def = {
         "name": descriptor.tool_name,
-        "description": boutiques.get(
-            "description", f"{descriptor.app} from {descriptor.package}"
-        ),
+        "description": boutiques.get("description", f"{descriptor.app} from {descriptor.package}"),
         "input_schema": input_schema,
         "output_schema": output_schema,
         "tags": tags,
@@ -346,9 +343,7 @@ def build_tool_definition(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
             "passports": passports,
             "alias": descriptor.tool_alias,
             "boutiques_inputs": inputs,  # Preserve for command rendering
-            "container": (
-                descriptor.container.__dict__ if descriptor.container else None
-            ),
+            "container": descriptor.container.__dict__ if descriptor.container else None,
             "resources": resources,
         },
     }
@@ -383,9 +378,7 @@ def _build_output_schema(outputs: List[Dict[str, Any]]) -> Dict[str, Any]:
         if output_id:
             properties[output_id] = {
                 "type": "string",
-                "description": output.get(
-                    "description", output.get("name", "Output file")
-                ),
+                "description": output.get("description", output.get("name", "Output file")),
                 "format": "uri-reference",
             }
 
@@ -465,15 +458,7 @@ def _infer_resource_hints(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
 
 def _infer_cpu_requirement(inputs: List[Dict], command_line: str) -> Dict[str, int]:
     """Infer CPU core requirements."""
-    threading_keywords = [
-        "thread",
-        "parallel",
-        "cores",
-        "cpu",
-        "proc",
-        "jobs",
-        "nthreads",
-    ]
+    threading_keywords = ["thread", "parallel", "cores", "cpu", "proc", "jobs", "nthreads"]
 
     has_threading = False
     for input_spec in inputs:
@@ -481,10 +466,8 @@ def _infer_cpu_requirement(inputs: List[Dict], command_line: str) -> Dict[str, i
         input_name = input_spec.get("name", "").lower()
         input_desc = input_spec.get("description", "").lower()
 
-        if any(
-            kw in input_id or kw in input_name or kw in input_desc
-            for kw in threading_keywords
-        ):
+        if any(kw in input_id or kw in input_name or kw in input_desc
+               for kw in threading_keywords):
             has_threading = True
             break
 
@@ -497,9 +480,7 @@ def _infer_cpu_requirement(inputs: List[Dict], command_line: str) -> Dict[str, i
         return {"min": 1, "max": 1, "default": 1}
 
 
-def _infer_memory_requirement(
-    package: str, app_name: str, command_line: str
-) -> Dict[str, float]:
+def _infer_memory_requirement(package: str, app_name: str, command_line: str) -> Dict[str, float]:
     """Infer memory requirements in GB."""
     package_defaults = {
         "freesurfer": {"min": 4.0, "recommended": 8.0},

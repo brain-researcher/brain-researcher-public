@@ -5,31 +5,24 @@ Comprehensive REST API for survey management including creation, distribution,
 response collection, and analytics for neuroimaging research studies.
 """
 
-import inspect
-import logging
-import uuid
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
-
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
 from sqlalchemy.orm import Session
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta
+import uuid
+import logging
+import inspect
+from pydantic import BaseModel, Field
 
-from .auth import get_current_user
 from .database import get_db
-from .survey_insights import SurveyInsightsEngine
 from .survey_models import (
-    Survey,
-    SurveyDistribution,
-    SurveyInsight,
-    SurveyQuestion,
-    SurveyResponse,
-    SurveyResponseAnalytics,
-    SurveyTemplate,
-    SurveyTrigger,
-    create_survey_tables,
+    Survey, SurveyResponse, SurveyQuestion, SurveyDistribution,
+    SurveyTrigger, SurveyInsight, SurveyResponseAnalytics,
+    SurveyTemplate, create_survey_tables
 )
+from .survey_insights import SurveyInsightsEngine
 from .survey_triggers import SurveyTriggerManager
+from .auth import get_current_user
 
 # Initialize router
 router = APIRouter(prefix="/api/v1/surveys", tags=["surveys"])
@@ -92,67 +85,47 @@ async def _dep_current_user():
 # Pydantic models for API requests/responses
 class SurveyCreateRequest(BaseModel):
     """Request model for creating a new survey"""
-
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    category: str = Field(
-        ...,
-        description="Survey category (e.g., 'cognitive_assessment', 'user_feedback')",
-    )
-    questions: List[Dict[str, Any]] = Field(
-        ..., description="List of questions with metadata"
-    )
-    settings: Dict[str, Any] = Field(
-        default_factory=dict, description="Survey settings and configuration"
-    )
+    category: str = Field(..., description="Survey category (e.g., 'cognitive_assessment', 'user_feedback')")
+    questions: List[Dict[str, Any]] = Field(..., description="List of questions with metadata")
+    settings: Dict[str, Any] = Field(default_factory=dict, description="Survey settings and configuration")
     target_audience: Optional[str] = None
-    distribution_type: str = Field(
-        default="manual", description="Distribution type: manual, scheduled, triggered"
-    )
+    distribution_type: str = Field(default="manual", description="Distribution type: manual, scheduled, triggered")
     schedule_config: Optional[Dict[str, Any]] = None
     trigger_config: Optional[Dict[str, Any]] = None
 
-
 class SurveyUpdateRequest(BaseModel):
     """Request model for updating an existing survey"""
-
     title: Optional[str] = None
     description: Optional[str] = None
     questions: Optional[List[Dict[str, Any]]] = None
     settings: Optional[Dict[str, Any]] = None
     status: Optional[str] = None
 
-
 class SurveyResponseRequest(BaseModel):
     """Request model for submitting survey responses"""
-
     survey_id: str
     participant_id: Optional[str] = None
-    responses: Dict[str, Any] = Field(
-        ..., description="Question ID to response mapping"
-    )
+    responses: Dict[str, Any] = Field(..., description="Question ID to response mapping")
     metadata: Optional[Dict[str, Any]] = None
     session_data: Optional[Dict[str, Any]] = None
 
-
 class SurveyAnalyticsRequest(BaseModel):
     """Request model for analytics queries"""
-
     survey_ids: Optional[List[str]] = None
     date_range: Optional[Dict[str, str]] = None
     metrics: List[str] = Field(default=["response_rate", "completion_rate", "insights"])
     filters: Optional[Dict[str, Any]] = None
 
-
 # Survey Management Endpoints
-
 
 @router.post("/", response_model=Dict[str, Any])
 async def create_survey(
     request: SurveyCreateRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(_dep_db),
-    current_user=Depends(_dep_current_user),
+    current_user = Depends(_dep_current_user),
 ):
     """
     Create a new survey with questions and configuration.
@@ -173,7 +146,7 @@ async def create_survey(
             target_audience=request.target_audience,
             settings=request.settings,
             status="draft",
-            created_at=datetime.utcnow(),
+            created_at=datetime.utcnow()
         )
         db.add(survey)
 
@@ -188,7 +161,7 @@ async def create_survey(
                 validation_rules=question_data.get("validation", {}),
                 order_index=i,
                 required=question_data.get("required", False),
-                neuroimaging_context=question_data.get("neuroimaging_context", {}),
+                neuroimaging_context=question_data.get("neuroimaging_context", {})
             )
             db.add(question)
 
@@ -200,7 +173,7 @@ async def create_survey(
                 distribution_type=request.distribution_type,
                 schedule_config=request.schedule_config,
                 target_criteria={"audience": request.target_audience},
-                status="pending",
+                status="pending"
             )
             db.add(distribution)
 
@@ -208,7 +181,8 @@ async def create_survey(
             if request.distribution_type == "triggered" and request.trigger_config:
                 trigger_manager = SurveyTriggerManager()
                 background_tasks.add_task(
-                    trigger_manager.setup_trigger, survey_id, request.trigger_config
+                    trigger_manager.setup_trigger,
+                    survey_id, request.trigger_config
                 )
 
         db.commit()
@@ -219,16 +193,13 @@ async def create_survey(
             "survey_id": survey_id,
             "status": "created",
             "message": "Survey created successfully",
-            "distribution_setup": request.distribution_type != "manual",
+            "distribution_setup": request.distribution_type != "manual"
         }
 
     except Exception as e:
         logger.error(f"Error creating survey: {str(e)}")
         db.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Failed to create survey: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Failed to create survey: {str(e)}")
 
 @router.get("/", response_model=List[Dict[str, Any]])
 async def list_surveys(
@@ -237,7 +208,7 @@ async def list_surveys(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: Session = Depends(_dep_db),
-    current_user=Depends(_dep_current_user),
+    current_user = Depends(_dep_current_user),
 ):
     """List surveys with filtering and pagination"""
     try:
@@ -255,35 +226,27 @@ async def list_surveys(
         result = []
         for survey in surveys:
             # Get question count
-            question_count = (
-                db.query(SurveyQuestion)
-                .filter(SurveyQuestion.survey_id == survey.id)
-                .count()
-            )
+            question_count = db.query(SurveyQuestion).filter(
+                SurveyQuestion.survey_id == survey.id
+            ).count()
 
             # Get response count
-            response_count = (
-                db.query(SurveyResponse)
-                .filter(SurveyResponse.survey_id == survey.id)
-                .count()
-            )
+            response_count = db.query(SurveyResponse).filter(
+                SurveyResponse.survey_id == survey.id
+            ).count()
 
-            result.append(
-                {
-                    "id": survey.id,
-                    "title": survey.title,
-                    "description": survey.description,
-                    "category": survey.category,
-                    "status": survey.status,
-                    "created_at": survey.created_at.isoformat(),
-                    "updated_at": (
-                        survey.updated_at.isoformat() if survey.updated_at else None
-                    ),
-                    "question_count": question_count,
-                    "response_count": response_count,
-                    "target_audience": survey.target_audience,
-                }
-            )
+            result.append({
+                "id": survey.id,
+                "title": survey.title,
+                "description": survey.description,
+                "category": survey.category,
+                "status": survey.status,
+                "created_at": survey.created_at.isoformat(),
+                "updated_at": survey.updated_at.isoformat() if survey.updated_at else None,
+                "question_count": question_count,
+                "response_count": response_count,
+                "target_audience": survey.target_audience
+            })
 
         return result
 
@@ -291,9 +254,7 @@ async def list_surveys(
         logger.error(f"Error listing surveys: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to list surveys: {str(e)}")
 
-
 # Template Management Endpoints
-
 
 @router.get("/templates", response_model=List[Dict[str, Any]])
 async def list_survey_templates(
@@ -332,9 +293,7 @@ async def list_survey_templates(
 
     except Exception as e:
         logger.error("Error listing templates: %s", str(e))
-        raise HTTPException(
-            status_code=500, detail=f"Failed to list templates: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to list templates: {str(e)}")
 
 
 @router.get("/{survey_id}", response_model=Dict[str, Any])
@@ -343,7 +302,7 @@ async def get_survey(
     include_questions: bool = Query(True),
     include_analytics: bool = Query(False),
     db: Session = Depends(_dep_db),
-    current_user=Depends(_dep_current_user),
+    current_user = Depends(_dep_current_user),
 ):
     """Get detailed survey information."""
     try:
@@ -351,9 +310,7 @@ async def get_survey(
         try:
             uuid.UUID(survey_id)
         except ValueError as e:
-            raise HTTPException(
-                status_code=400, detail="Invalid survey_id format"
-            ) from e
+            raise HTTPException(status_code=400, detail="Invalid survey_id format") from e
 
         survey = db.query(Survey).filter(Survey.id == survey_id).first()
         if not survey:
@@ -395,22 +352,16 @@ async def get_survey(
 
         if include_analytics:
             # Get basic analytics
-            response_count = (
-                db.query(SurveyResponse)
-                .filter(SurveyResponse.survey_id == survey_id)
-                .count()
-            )
+            response_count = db.query(SurveyResponse).filter(
+                SurveyResponse.survey_id == survey_id
+            ).count()
 
             completion_rate = 0
             if response_count > 0:
-                completed_responses = (
-                    db.query(SurveyResponse)
-                    .filter(
-                        SurveyResponse.survey_id == survey_id,
-                        SurveyResponse.completion_status == "completed",
-                    )
-                    .count()
-                )
+                completed_responses = db.query(SurveyResponse).filter(
+                    SurveyResponse.survey_id == survey_id,
+                    SurveyResponse.completion_status == "completed",
+                ).count()
                 completion_rate = (completed_responses / response_count) * 100
 
             result["analytics"] = {
@@ -426,13 +377,12 @@ async def get_survey(
         logger.error("Error getting survey %s: %s", survey_id, str(e))
         raise HTTPException(status_code=500, detail=f"Failed to get survey: {str(e)}")
 
-
 @router.put("/{survey_id}", response_model=Dict[str, str])
 async def update_survey(
     survey_id: str,
     request: SurveyUpdateRequest,
     db: Session = Depends(_dep_db),
-    current_user=Depends(_dep_current_user),
+    current_user = Depends(_dep_current_user),
 ):
     """Update an existing survey"""
     try:
@@ -470,7 +420,7 @@ async def update_survey(
                     validation_rules=question_data.get("validation", {}),
                     order_index=i,
                     required=question_data.get("required", False),
-                    neuroimaging_context=question_data.get("neuroimaging_context", {}),
+                    neuroimaging_context=question_data.get("neuroimaging_context", {})
                 )
                 db.add(question)
 
@@ -485,13 +435,9 @@ async def update_survey(
     except Exception as e:
         logger.error(f"Error updating survey {survey_id}: {str(e)}")
         db.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Failed to update survey: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Failed to update survey: {str(e)}")
 
 # Response Collection Endpoints
-
 
 @router.post("/responses", response_model=Dict[str, Any])
 async def submit_response(
@@ -521,7 +467,7 @@ async def submit_response(
             response_metadata=request.metadata or {},
             session_data=request.session_data or {},
             completion_status="completed",
-            submitted_at=datetime.utcnow(),
+            submitted_at=datetime.utcnow()
         )
         db.add(response)
         db.commit()
@@ -529,7 +475,8 @@ async def submit_response(
         # Trigger insights generation in background
         insights_engine = SurveyInsightsEngine()
         background_tasks.add_task(
-            insights_engine.process_new_response, request.survey_id, response_id
+            insights_engine.process_new_response,
+            request.survey_id, response_id
         )
 
         logger.info(f"Received response {response_id} for survey {request.survey_id}")
@@ -537,7 +484,7 @@ async def submit_response(
         return {
             "response_id": response_id,
             "status": "submitted",
-            "message": "Response submitted successfully",
+            "message": "Response submitted successfully"
         }
 
     except HTTPException:
@@ -545,10 +492,7 @@ async def submit_response(
     except Exception as e:
         logger.error(f"Error submitting response: {str(e)}")
         db.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Failed to submit response: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Failed to submit response: {str(e)}")
 
 @router.get("/{survey_id}/responses", response_model=List[Dict[str, Any]])
 async def get_survey_responses(
@@ -557,7 +501,7 @@ async def get_survey_responses(
     offset: int = Query(0, ge=0),
     include_analytics: bool = Query(False),
     db: Session = Depends(_dep_db),
-    current_user=Depends(_dep_current_user),
+    current_user = Depends(_dep_current_user),
 ):
     """Get responses for a specific survey"""
     try:
@@ -565,13 +509,9 @@ async def get_survey_responses(
         if not survey:
             raise HTTPException(status_code=404, detail="Survey not found")
 
-        responses = (
-            db.query(SurveyResponse)
-            .filter(SurveyResponse.survey_id == survey_id)
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+        responses = db.query(SurveyResponse).filter(
+            SurveyResponse.survey_id == survey_id
+        ).offset(offset).limit(limit).all()
 
         result = []
         for response in responses:
@@ -590,9 +530,7 @@ async def get_survey_responses(
                     "completion_time": (response.response_metadata or {}).get(
                         "completion_time_seconds"
                     ),
-                    "quality_score": (response.response_metadata or {}).get(
-                        "quality_score"
-                    ),
+                    "quality_score": (response.response_metadata or {}).get("quality_score"),
                 }
 
             result.append(response_data)
@@ -603,19 +541,15 @@ async def get_survey_responses(
         raise
     except Exception as e:
         logger.error(f"Error getting responses for survey {survey_id}: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get responses: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Failed to get responses: {str(e)}")
 
 # Analytics and Insights Endpoints
-
 
 @router.post("/analytics", response_model=Dict[str, Any])
 async def get_survey_analytics(
     request: SurveyAnalyticsRequest,
     db: Session = Depends(_dep_db),
-    current_user=Depends(_dep_current_user),
+    current_user = Depends(_dep_current_user),
 ):
     """Get comprehensive analytics for surveys"""
     try:
@@ -625,48 +559,47 @@ async def get_survey_analytics(
         survey_ids = request.survey_ids
         if not survey_ids:
             user_id = _user_id(current_user) or "unknown"
-            user_surveys = db.query(Survey).filter(Survey.creator_id == user_id).all()
+            user_surveys = db.query(Survey).filter(
+                Survey.creator_id == user_id
+            ).all()
             survey_ids = [s.id for s in user_surveys]
 
         analytics_data = {}
 
         for metric in request.metrics:
             if metric == "response_rate":
-                analytics_data["response_rates"] = (
-                    await insights_engine.calculate_response_rates(survey_ids, db)
+                analytics_data["response_rates"] = await insights_engine.calculate_response_rates(
+                    survey_ids, db
                 )
             elif metric == "completion_rate":
-                analytics_data["completion_rates"] = (
-                    await insights_engine.calculate_completion_rates(survey_ids, db)
+                analytics_data["completion_rates"] = await insights_engine.calculate_completion_rates(
+                    survey_ids, db
                 )
             elif metric == "insights":
                 analytics_data["insights"] = await insights_engine.generate_insights(
                     survey_ids, db
                 )
             elif metric == "demographics":
-                analytics_data["demographics"] = (
-                    await insights_engine.analyze_demographics(survey_ids, db)
+                analytics_data["demographics"] = await insights_engine.analyze_demographics(
+                    survey_ids, db
                 )
 
         return {
             "analytics": analytics_data,
             "generated_at": datetime.utcnow().isoformat(),
-            "survey_count": len(survey_ids),
+            "survey_count": len(survey_ids)
         }
 
     except Exception as e:
         logger.error(f"Error generating analytics: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate analytics: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Failed to generate analytics: {str(e)}")
 
 @router.get("/{survey_id}/insights", response_model=Dict[str, Any])
 async def get_survey_insights(
     survey_id: str,
     insight_type: Optional[str] = None,
     db: Session = Depends(_dep_db),
-    current_user=Depends(_dep_current_user),
+    current_user = Depends(_dep_current_user),
 ):
     """Get AI-generated insights for a specific survey"""
     try:
@@ -682,7 +615,7 @@ async def get_survey_insights(
         return {
             "survey_id": survey_id,
             "insights": insights,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.utcnow().isoformat()
         }
 
     except HTTPException:
@@ -691,12 +624,11 @@ async def get_survey_insights(
         logger.error(f"Error getting insights for survey {survey_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get insights: {str(e)}")
 
-
 @router.post("/{survey_id}/publish", response_model=Dict[str, str])
 async def publish_survey(
     survey_id: str,
     db: Session = Depends(_dep_db),
-    current_user=Depends(_dep_current_user),
+    current_user = Depends(_dep_current_user),
 ):
     """Publish a survey and make it active"""
     try:
@@ -705,15 +637,14 @@ async def publish_survey(
             raise HTTPException(status_code=404, detail="Survey not found")
 
         # Validate survey is ready for publishing
-        question_count = (
-            db.query(SurveyQuestion)
-            .filter(SurveyQuestion.survey_id == survey_id)
-            .count()
-        )
+        question_count = db.query(SurveyQuestion).filter(
+            SurveyQuestion.survey_id == survey_id
+        ).count()
 
         if question_count == 0:
             raise HTTPException(
-                status_code=400, detail="Cannot publish survey without questions"
+                status_code=400,
+                detail="Cannot publish survey without questions"
             )
 
         survey.status = "active"
@@ -731,10 +662,7 @@ async def publish_survey(
     except Exception as e:
         logger.error(f"Error publishing survey {survey_id}: {str(e)}")
         db.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Failed to publish survey: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Failed to publish survey: {str(e)}")
 
 # Initialize database tables on module import
 try:

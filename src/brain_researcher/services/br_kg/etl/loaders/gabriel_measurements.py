@@ -244,12 +244,8 @@ def _flatten_method_signals(record_method: Mapping[str, Any]) -> dict[str, Any]:
 
     return {
         "preregistration": _method_block_status(record_method.get("preregistration")),
-        "preregistration_quote": _method_block_quote(
-            record_method.get("preregistration")
-        ),
-        "preregistration_section": _method_block_section(
-            record_method.get("preregistration")
-        ),
+        "preregistration_quote": _method_block_quote(record_method.get("preregistration")),
+        "preregistration_section": _method_block_section(record_method.get("preregistration")),
         "threshold_correction_reported": _method_block_status(threshold_block),
         "threshold_correction_quote": _method_block_quote(threshold_block),
         "threshold_correction_section": _method_block_section(threshold_block),
@@ -444,14 +440,10 @@ def compute_method_rigor(signals: Mapping[str, Any]) -> float:
     target_type = _normalize_target_type(
         signals.get("target_type") or signals.get("type")
     )
-    method_section = (
-        str(signals.get("method_section") or signals.get("section") or "")
-        .strip()
-        .lower()
-    )
-    method_quote = str(
-        signals.get("method_quote") or signals.get("quote") or ""
-    ).strip()
+    method_section = str(
+        signals.get("method_section") or signals.get("section") or ""
+    ).strip().lower()
+    method_quote = str(signals.get("method_quote") or signals.get("quote") or "").strip()
     section = method_section
     has_quote = bool(method_quote)
 

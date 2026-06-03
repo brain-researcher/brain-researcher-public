@@ -235,7 +235,9 @@ class NiclipEngine:
         model = self._ensure_model()
         if model is None:
             raise RuntimeError("NiCLIP model not available")
-        return model.predict_from_nifti(nifti_path, top_k=top_k, use_bayes=use_bayes)
+        return model.predict_from_nifti(
+            nifti_path, top_k=top_k, use_bayes=use_bayes
+        )
 
     def search(
         self,
@@ -261,9 +263,7 @@ class NiclipEngine:
                     "item": vocab[idx],
                     "similarity": float(dist),
                     "vocabulary_index": int(idx),
-                    "prior_probability": (
-                        float(priors[idx]) if idx < len(priors) else None
-                    ),
+                    "prior_probability": float(priors[idx]) if idx < len(priors) else None,
                 }
             )
         return results

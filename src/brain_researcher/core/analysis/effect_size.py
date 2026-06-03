@@ -65,11 +65,7 @@ def _iter_labels(mask_data: np.ndarray) -> List[tuple[str, np.ndarray]]:
     labels: List[tuple[str, np.ndarray]] = []
     if mask_data.ndim == 3:
         uniq = np.unique(mask_data)
-        if (
-            np.array_equal(uniq, [0, 1])
-            or np.array_equal(uniq, [0])
-            or np.array_equal(uniq, [1])
-        ):
+        if np.array_equal(uniq, [0, 1]) or np.array_equal(uniq, [0]) or np.array_equal(uniq, [1]):
             labels.append(("mask", mask_data > 0.5))
         else:
             # integer labels
@@ -86,7 +82,7 @@ def _iter_labels(mask_data: np.ndarray) -> List[tuple[str, np.ndarray]]:
 
 def partial_r2_from_t(t_values: np.ndarray, df: float) -> np.ndarray:
     """Compute partial R² from t and degrees of freedom."""
-    return (t_values**2) / (t_values**2 + df)
+    return (t_values ** 2) / (t_values ** 2 + df)
 
 
 def roi_summary(
@@ -164,24 +160,14 @@ def roi_summary(
                 )
                 continue
 
-            mean_beta = (
-                float(np.nanmean(beta_data[mask])) if beta_data is not None else None
-            )
+            mean_beta = float(np.nanmean(beta_data[mask])) if beta_data is not None else None
             mean_t = float(np.nanmean(t_data[mask])) if t_data is not None else None
             mean_z = float(np.nanmean(z_data[mask])) if z_data is not None else None
-            baseline_desc = (
-                "baseline: intercept (approx)"
-                if baseline_data is None
-                else "baseline: provided map"
-            )
+            baseline_desc = "baseline: intercept (approx)" if baseline_data is None else "baseline: provided map"
 
             psc = None
             if mean_beta is not None:
-                base = (
-                    np.nanmean(baseline_data[mask])
-                    if baseline_data is not None
-                    else 1.0
-                )
+                base = np.nanmean(baseline_data[mask]) if baseline_data is not None else 1.0
                 if np.isfinite(base) and abs(base) > 1e-12:
                     psc = float(100.0 * mean_beta / base)
 
@@ -193,11 +179,7 @@ def roi_summary(
             if psc_threshold is not None and psc is not None:
                 meaningful = psc >= psc_threshold
             if partial_r2_threshold is not None and pr2 is not None:
-                meaningful = (
-                    pr2 >= partial_r2_threshold
-                    if meaningful is None
-                    else (meaningful and pr2 >= partial_r2_threshold)
-                )
+                meaningful = pr2 >= partial_r2_threshold if meaningful is None else (meaningful and pr2 >= partial_r2_threshold)
 
             summaries.append(
                 RoiEffect(

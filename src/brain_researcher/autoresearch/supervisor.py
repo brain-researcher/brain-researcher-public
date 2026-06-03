@@ -14,6 +14,7 @@ from typing import Any
 from brain_researcher.autoresearch.artifact_schema import resolve_line_paths
 from brain_researcher.autoresearch.critic import run_independent_critic
 from brain_researcher.autoresearch.quality_protocol import GateVerdict, StopReason
+from brain_researcher.core.contracts.llm_router import LLMRouterProtocol
 from brain_researcher.autoresearch.scorer_contract import (
     ScoreResult,
     run_guarded_scorer_command,
@@ -27,8 +28,8 @@ from brain_researcher.autoresearch.startup_validation import (
 from brain_researcher.autoresearch.state_contract import (
     GateCheck,
     HandoffArtifact,
-    RuntimeStateArtifact,
     StageCommit,
+    RuntimeStateArtifact,
     StopArtifact,
     VerdictArtifact,
     append_jsonl_artifact,
@@ -36,7 +37,6 @@ from brain_researcher.autoresearch.state_contract import (
     read_jsonl_artifacts,
     write_json_artifact,
 )
-from brain_researcher.core.contracts.llm_router import LLMRouterProtocol
 
 
 @dataclass(frozen=True)
@@ -91,19 +91,13 @@ class SupervisorConfig:
             line_id=str(payload["line_id"]),
             session_id=str(payload["session_id"]),
             project_root=str(payload["project_root"]),
-            controller_command=tuple(
-                str(item) for item in payload["controller_command"]
-            ),
+            controller_command=tuple(str(item) for item in payload["controller_command"]),
             scorer_name=str(payload["scorer_name"]),
             scorer_args=dict(payload.get("scorer_args") or {}),
             state_root=payload.get("state_root"),
             controller_cwd=payload.get("controller_cwd"),
-            controller_timeout_seconds=int(
-                payload.get("controller_timeout_seconds") or 0
-            ),
-            scorer_command=tuple(
-                str(item) for item in payload.get("scorer_command", [])
-            ),
+            controller_timeout_seconds=int(payload.get("controller_timeout_seconds") or 0),
+            scorer_command=tuple(str(item) for item in payload.get("scorer_command", [])),
             max_cycles=int(payload.get("max_cycles") or 3),
             max_stall_cycles=int(payload.get("max_stall_cycles") or 2),
             max_wall_clock_seconds=int(payload.get("max_wall_clock_seconds") or 3600),
@@ -140,7 +134,9 @@ class SupervisorConfig:
                     every_n_seconds=int(
                         payload["sync_policy"].get("every_n_seconds") or 0
                     ),
-                    on_sigterm=bool(payload["sync_policy"].get("on_sigterm", True)),
+                    on_sigterm=bool(
+                        payload["sync_policy"].get("on_sigterm", True)
+                    ),
                     on_exit=bool(payload["sync_policy"].get("on_exit", True)),
                 )
             ),
@@ -339,9 +335,7 @@ class BoundedSupervisor:
 
     def _write_score_payload(self, cycle: int, score_result: ScoreResult) -> Path:
         path = self.state_root / f"score_cycle_{cycle:02d}.json"
-        self._last_score_payload_path = write_json_artifact(
-            path, score_result.to_dict()
-        )
+        self._last_score_payload_path = write_json_artifact(path, score_result.to_dict())
         return self._last_score_payload_path
 
     def _load_score_result(self, cycle: int) -> ScoreResult:
@@ -374,35 +368,23 @@ class BoundedSupervisor:
             if payload.get("score", 0.0) < 0.05:
                 judgment = GateCheck(
                     passed=False,
-                    reasons=(
-                        "weak-target score is still below the minimum interesting floor",
-                    ),
-                    required_actions=(
-                        "Run at least one higher-signal follow-up before reporting.",
-                    ),
+                    reasons=("weak-target score is still below the minimum interesting floor",),
+                    required_actions=("Run at least one higher-signal follow-up before reporting.",),
                 )
                 decision = GateVerdict.NEEDS_DIAGNOSIS.value
             exploratory_counts = payload.get("exploratory_term_counts") or {}
             if any(int(count) < 1 for count in exploratory_counts.values()):
                 completeness = GateCheck(
                     passed=False,
-                    reasons=(
-                        "null or weak targets still lack a formal exploratory follow-up arm",
-                    ),
-                    required_actions=(
-                        "Open a needs_exploration campaign before generating a report.",
-                    ),
+                    reasons=("null or weak targets still lack a formal exploratory follow-up arm",),
+                    required_actions=("Open a needs_exploration campaign before generating a report.",),
                 )
                 decision = GateVerdict.NEEDS_EXPLORATION.value
             if not payload.get("contract_satisfied", False):
                 completeness = GateCheck(
                     passed=False,
-                    reasons=(
-                        "phase contract is not yet satisfied for null and replicate controls",
-                    ),
-                    required_actions=(
-                        "Finish the required null and replicate runs before promotion.",
-                    ),
+                    reasons=("phase contract is not yet satisfied for null and replicate controls",),
+                    required_actions=("Finish the required null and replicate runs before promotion.",),
                 )
                 decision = GateVerdict.NEEDS_EXPLORATION.value
         elif self.config.scorer_name == "discovery_closed_loop":
@@ -410,21 +392,15 @@ class BoundedSupervisor:
             if payload.get("score_A", 0.0) < 0.1:
                 judgment = GateCheck(
                     passed=False,
-                    reasons=(
-                        "branch quality remains too weak for a defensible discovery claim",
-                    ),
-                    required_actions=(
-                        "Repair the highest-drag branch before promotion.",
-                    ),
+                    reasons=("branch quality remains too weak for a defensible discovery claim",),
+                    required_actions=("Repair the highest-drag branch before promotion.",),
                 )
                 decision = GateVerdict.NEEDS_DIAGNOSIS.value
             if payload.get("score_B", 0.0) < 1.0:
                 completeness = GateCheck(
                     passed=False,
                     reasons=("mandatory KG injection coverage is incomplete",),
-                    required_actions=(
-                        "Replay missing branch/injection pairs before scoring the run.",
-                    ),
+                    required_actions=("Replay missing branch/injection pairs before scoring the run.",),
                 )
                 decision = GateVerdict.NEEDS_EXPLORATION.value
 
@@ -472,17 +448,11 @@ class BoundedSupervisor:
         )
         failed_approaches = verdict.judgment.reasons + verdict.completeness.reasons
         if verdict.decision == GateVerdict.PROCEED.value:
-            next_action = (
-                "Continue with the next bounded cycle or promote the current result."
-            )
+            next_action = "Continue with the next bounded cycle or promote the current result."
         elif verdict.decision == GateVerdict.NEEDS_EXPLORATION.value:
-            next_action = (
-                "Run at least one explicit exploratory follow-up before reporting."
-            )
+            next_action = "Run at least one explicit exploratory follow-up before reporting."
         elif verdict.decision == GateVerdict.NEEDS_DIAGNOSIS.value:
-            next_action = (
-                "Diagnose the main failure axis before opening another campaign."
-            )
+            next_action = "Diagnose the main failure axis before opening another campaign."
         else:
             next_action = "Escalate to human review before continuing."
         return HandoffArtifact(
@@ -495,11 +465,9 @@ class BoundedSupervisor:
             source_artifacts={
                 "state": str(self.state_path),
                 "verdict": str(self.verdict_path),
-                "last_score_payload": (
-                    None
-                    if self._last_score_payload_path is None
-                    else str(self._last_score_payload_path)
-                ),
+                "last_score_payload": None
+                if self._last_score_payload_path is None
+                else str(self._last_score_payload_path),
             },
         )
 
@@ -540,9 +508,7 @@ class BoundedSupervisor:
             strict_biological_motion=self.config.strict_biological_motion,
         )
         validation_payload = validation.to_dict()
-        write_json_artifact(
-            self.state_root / "startup_validation.json", validation_payload
-        )
+        write_json_artifact(self.state_root / "startup_validation.json", validation_payload)
         if not validation.passed:
             verdict = VerdictArtifact(
                 line_id=self.config.line_id,
@@ -550,9 +516,7 @@ class BoundedSupervisor:
                 correctness=GateCheck(
                     passed=False,
                     reasons=tuple(issue.message for issue in validation.issues),
-                    required_actions=(
-                        "Fix startup validation failures before launch.",
-                    ),
+                    required_actions=("Fix startup validation failures before launch.",),
                 ),
                 judgment=GateCheck(passed=True),
                 completeness=GateCheck(passed=True),
@@ -592,9 +556,7 @@ class BoundedSupervisor:
                 resume_cycle=0,
                 resume_stage="done",
                 artifact_paths={
-                    "startup_validation": str(
-                        self.state_root / "startup_validation.json"
-                    ),
+                    "startup_validation": str(self.state_root / "startup_validation.json"),
                     "verdict": str(self.verdict_path),
                     "stop": str(self.stop_path),
                 },
@@ -624,7 +586,9 @@ class BoundedSupervisor:
                         "name": requirement.name,
                         "description": requirement.description,
                         "optional": requirement.optional,
-                        "validator_command": list(requirement.validator_command or ()),
+                        "validator_command": list(
+                            requirement.validator_command or ()
+                        ),
                     }
                     for requirement in self.config.secret_requirements
                 ],
@@ -654,9 +618,7 @@ class BoundedSupervisor:
         while cycle <= self.config.max_cycles:
             if self._stop_requested:
                 break
-            if (
-                time.monotonic() - self.start_time
-            ) >= self.config.max_wall_clock_seconds:
+            if (time.monotonic() - self.start_time) >= self.config.max_wall_clock_seconds:
                 break
 
             if stage == "controller":
@@ -760,9 +722,9 @@ class BoundedSupervisor:
         stop = StopArtifact(
             line_id=self.config.line_id,
             session_id=self.config.session_id,
-            final_status=(
-                "completed" if stop_reason == StopReason.COMPLETED.value else "blocked"
-            ),
+            final_status="completed"
+            if stop_reason == StopReason.COMPLETED.value
+            else "blocked",
             stop_reason=stop_reason,
             total_cycles=cycle if "cycle" in locals() else 0,
             stall_count=self.stall_count,

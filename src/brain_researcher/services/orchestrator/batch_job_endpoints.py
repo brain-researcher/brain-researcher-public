@@ -5,21 +5,17 @@ retry mechanisms, and cancellation with cleanup.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel
 
 from .enhanced_job_manager import (
-    BatchJobRequest,
-    DependencyRule,
-    JobCancellationRequest,
-    JobCleanupAction,
-    RetryConfig,
-    enhanced_job_manager,
+    enhanced_job_manager, BatchJobRequest, JobCancellationRequest,
+    RetryConfig, DependencyRule, JobCleanupAction
 )
+from .websocket_endpoints import broadcast_job_update, JobUpdateMessage
 from .models import JobStatus
-from .websocket_endpoints import JobUpdateMessage, broadcast_job_update
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +27,8 @@ router = APIRouter(prefix="/api/batch-jobs", tags=["batch-jobs"])
 # Request/Response Models
 # ============================================================================
 
-
 class BatchJobResponse(BaseModel):
     """Response for batch job creation."""
-
     batch_id: str
     job_ids: List[str]
     total_jobs: int
@@ -44,7 +38,6 @@ class BatchJobResponse(BaseModel):
 
 class JobRetryRequest(BaseModel):
     """Request to retry a job."""
-
     job_id: str
     force: bool = False
     retry_config: Optional[RetryConfig] = None
@@ -52,7 +45,6 @@ class JobRetryRequest(BaseModel):
 
 class JobDependencyRequest(BaseModel):
     """Request to add dependencies to a job."""
-
     job_id: str
     dependencies: List[DependencyRule]
 
@@ -61,10 +53,10 @@ class JobDependencyRequest(BaseModel):
 # Batch Job Management Endpoints
 # ============================================================================
 
-
 @router.post("/create", response_model=BatchJobResponse)
 async def create_batch_jobs(
-    request: BatchJobRequest, background_tasks: BackgroundTasks
+    request: BatchJobRequest,
+    background_tasks: BackgroundTasks
 ):
     """Create a batch of jobs with dependency management."""
     try:
@@ -73,16 +65,14 @@ async def create_batch_jobs(
         # Estimate completion time based on job complexity
         estimated_minutes = len(result["job_ids"]) * 2  # 2 minutes per job estimate
 
-        logger.info(
-            f"Created batch {result['batch_id']} with {result['total_jobs']} jobs"
-        )
+        logger.info(f"Created batch {result['batch_id']} with {result['total_jobs']} jobs")
 
         return BatchJobResponse(
             batch_id=result["batch_id"],
             job_ids=result["job_ids"],
             total_jobs=result["total_jobs"],
             dependency_mode=result["dependency_mode"],
-            estimated_completion_minutes=estimated_minutes,
+            estimated_completion_minutes=estimated_minutes
         )
 
     except Exception as e:
@@ -106,7 +96,7 @@ async def cancel_batch_jobs(
     batch_id: str,
     reason: str = "Batch cancelled by user",
     cancel_running_jobs: bool = True,
-    cleanup_actions: List[JobCleanupAction] = [],
+    cleanup_actions: List[JobCleanupAction] = []
 ):
     """Cancel all jobs in a batch."""
     batch_status = enhanced_job_manager.get_batch_status(batch_id)
@@ -120,23 +110,19 @@ async def cancel_batch_jobs(
     for job_id in batch_status["job_ids"]:
         try:
             job = enhanced_job_manager.get_job(job_id)
-            if job and (
-                cancel_running_jobs or job["status"] not in [JobStatus.RUNNING]
-            ):
+            if job and (cancel_running_jobs or job["status"] not in [JobStatus.RUNNING]):
                 cancellation_request = JobCancellationRequest(
                     job_id=job_id,
                     reason=f"Batch {batch_id} cancelled: {reason}",
                     cleanup_actions=cleanup_actions,
-                    cancel_dependent_jobs=True,
+                    cancel_dependent_jobs=True
                 )
 
                 result = await enhanced_job_manager.cancel_job(cancellation_request)
                 if result["status"] == "cancelled":
                     cancelled_jobs.append(job_id)
                 else:
-                    failed_cancellations.append(
-                        {"job_id": job_id, "reason": result.get("reason", "Unknown")}
-                    )
+                    failed_cancellations.append({"job_id": job_id, "reason": result.get("reason", "Unknown")})
 
         except Exception as e:
             failed_cancellations.append({"job_id": job_id, "reason": str(e)})
@@ -146,7 +132,7 @@ async def cancel_batch_jobs(
         "cancelled_jobs": cancelled_jobs,
         "failed_cancellations": failed_cancellations,
         "total_cancelled": len(cancelled_jobs),
-        "total_failed": len(failed_cancellations),
+        "total_failed": len(failed_cancellations)
     }
 
 
@@ -154,9 +140,11 @@ async def cancel_batch_jobs(
 # Individual Job Management Endpoints
 # ============================================================================
 
-
 @router.post("/jobs/{job_id}/cancel")
-async def cancel_job_enhanced(job_id: str, request: JobCancellationRequest):
+async def cancel_job_enhanced(
+    job_id: str,
+    request: JobCancellationRequest
+):
     """Cancel a job with enhanced cleanup options."""
     try:
         result = await enhanced_job_manager.cancel_job(request)
@@ -196,9 +184,7 @@ async def add_job_dependencies(request: JobDependencyRequest):
 
     # Add dependencies
     existing_deps = enhanced_job_manager.job_dependencies.get(request.job_id, [])
-    enhanced_job_manager.job_dependencies[request.job_id] = (
-        existing_deps + request.dependencies
-    )
+    enhanced_job_manager.job_dependencies[request.job_id] = existing_deps + request.dependencies
 
     # Update dependent job tracking
     for dep in request.dependencies:
@@ -207,9 +193,7 @@ async def add_job_dependencies(request: JobDependencyRequest):
     return {
         "job_id": request.job_id,
         "dependencies_added": len(request.dependencies),
-        "total_dependencies": len(
-            enhanced_job_manager.job_dependencies[request.job_id]
-        ),
+        "total_dependencies": len(enhanced_job_manager.job_dependencies[request.job_id])
     }
 
 
@@ -228,14 +212,13 @@ async def get_job_dependencies(job_id: str):
         "dependencies": [dep.model_dump() for dep in dependencies],
         "dependent_jobs": dependents,
         "dependency_count": len(dependencies),
-        "dependent_count": len(dependents),
+        "dependent_count": len(dependents)
     }
 
 
 # ============================================================================
 # Job Queue Management
 # ============================================================================
-
 
 @router.get("/queue/status")
 async def get_queue_status():
@@ -248,14 +231,12 @@ async def get_queue_status():
         status = job["status"]
         if status not in jobs_by_status:
             jobs_by_status[status] = []
-        jobs_by_status[status].append(
-            {
-                "job_id": job_id,
-                "created_at": job["created_at"].isoformat(),
-                "priority": job.get("priority", "normal"),
-                "retry_count": job.get("retry_count", 0),
-            }
-        )
+        jobs_by_status[status].append({
+            "job_id": job_id,
+            "created_at": job["created_at"].isoformat(),
+            "priority": job.get("priority", "normal"),
+            "retry_count": job.get("retry_count", 0)
+        })
 
     return {
         "statistics": stats,
@@ -264,7 +245,7 @@ async def get_queue_status():
             job_id: retry_time.isoformat()
             for job_id, retry_time in enhanced_job_manager.retry_schedules.items()
         },
-        "active_cleanup_tasks": list(enhanced_job_manager.cleanup_tasks.keys()),
+        "active_cleanup_tasks": list(enhanced_job_manager.cleanup_tasks.keys())
     }
 
 
@@ -286,14 +267,13 @@ async def get_job_detailed(job_id: str):
         "dependent_jobs": dependents,
         "retry_config": retry_config.model_dump() if retry_config else None,
         "next_retry_at": next_retry.isoformat() if next_retry else None,
-        "has_active_cleanup": job_id in enhanced_job_manager.cleanup_tasks,
+        "has_active_cleanup": job_id in enhanced_job_manager.cleanup_tasks
     }
 
 
 # ============================================================================
 # Statistics and Monitoring
 # ============================================================================
-
 
 @router.get("/statistics")
 async def get_enhanced_statistics():
@@ -323,20 +303,20 @@ async def get_enhanced_statistics():
         **stats,
         "average_job_age_hours": avg_job_age_hours,
         "retry_distribution": retry_distribution,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.utcnow().isoformat()
     }
 
 
 @router.get("/batches")
 async def list_batches(
-    limit: int = 50, offset: int = 0, include_completed: bool = True
+    limit: int = 50,
+    offset: int = 0,
+    include_completed: bool = True
 ):
     """List all batch jobs with pagination."""
     all_batches = []
 
-    for batch_id in list(enhanced_job_manager.batch_jobs.keys())[
-        offset : offset + limit
-    ]:
+    for batch_id in list(enhanced_job_manager.batch_jobs.keys())[offset:offset+limit]:
         batch_status = enhanced_job_manager.get_batch_status(batch_id)
         if batch_status:
             # Filter out completed batches if requested
@@ -351,7 +331,7 @@ async def list_batches(
         "batches": all_batches,
         "total_count": len(enhanced_job_manager.batch_jobs),
         "limit": limit,
-        "offset": offset,
+        "offset": offset
     }
 
 
@@ -359,10 +339,10 @@ async def list_batches(
 # Utility Endpoints
 # ============================================================================
 
-
 @router.post("/cleanup/completed")
 async def cleanup_completed_jobs(
-    older_than_hours: int = 24, keep_failed_jobs: bool = True
+    older_than_hours: int = 24,
+    keep_failed_jobs: bool = True
 ):
     """Clean up completed jobs older than specified time."""
     cutoff_time = datetime.utcnow() - timedelta(hours=older_than_hours)
@@ -405,7 +385,7 @@ async def cleanup_completed_jobs(
     return {
         "removed_jobs": removed_count,
         "cutoff_time": cutoff_time.isoformat(),
-        "remaining_jobs": len(enhanced_job_manager.jobs),
+        "remaining_jobs": len(enhanced_job_manager.jobs)
     }
 
 
@@ -416,13 +396,10 @@ async def get_job_manager_health():
 
     # Calculate health indicators
     total_jobs = stats.get("active_jobs", 0)
-    failed_jobs = len(
-        [
-            job
-            for job in enhanced_job_manager.jobs.values()
-            if job["status"] == JobStatus.FAILED
-        ]
-    )
+    failed_jobs = len([
+        job for job in enhanced_job_manager.jobs.values()
+        if job["status"] == JobStatus.FAILED
+    ])
 
     health_score = 100
     issues = []
@@ -435,14 +412,10 @@ async def get_job_manager_health():
             issues.append(f"High failure rate: {failure_rate:.1%}")
 
     # Check for stuck retries
-    stuck_retries = len(
-        [
-            job_id
-            for job_id, retry_time in enhanced_job_manager.retry_schedules.items()
-            if (datetime.utcnow() - retry_time).total_seconds()
-            > 3600  # Stuck for over 1 hour
-        ]
-    )
+    stuck_retries = len([
+        job_id for job_id, retry_time in enhanced_job_manager.retry_schedules.items()
+        if (datetime.utcnow() - retry_time).total_seconds() > 3600  # Stuck for over 1 hour
+    ])
 
     if stuck_retries > 0:
         health_score -= 20
@@ -451,9 +424,7 @@ async def get_job_manager_health():
     # Check for excessive cleanup tasks
     if len(enhanced_job_manager.cleanup_tasks) > 10:
         health_score -= 10
-        issues.append(
-            f"High cleanup task count: {len(enhanced_job_manager.cleanup_tasks)}"
-        )
+        issues.append(f"High cleanup task count: {len(enhanced_job_manager.cleanup_tasks)}")
 
     status = "healthy"
     if health_score < 70:
@@ -466,5 +437,5 @@ async def get_job_manager_health():
         "health_score": max(0, health_score),
         "issues": issues,
         "statistics": stats,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.utcnow().isoformat()
     }

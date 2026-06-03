@@ -347,7 +347,9 @@ class CognitiveAtlasLoader:
 
 def main():
     """Main entry point for the Cognitive Atlas loader."""
-    parser = argparse.ArgumentParser(description="Load Cognitive Atlas data into BR-KG")
+    parser = argparse.ArgumentParser(
+        description="Load Cognitive Atlas data into BR-KG"
+    )
     parser.add_argument(
         "--db-path",
         type=str,

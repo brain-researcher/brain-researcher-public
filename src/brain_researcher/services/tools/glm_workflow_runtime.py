@@ -8,6 +8,7 @@ from typing import Any, Sequence
 import nibabel as nib
 import pandas as pd
 
+
 _MNI_SPACE_PREFERENCE = [
     "MNI152NLin2009cAsym",
     "MNI152NLin6Asym",
@@ -147,9 +148,7 @@ def _list_subject_dirs(root: Path) -> list[Path]:
     return sorted(path for path in root.glob("sub-*") if path.is_dir())
 
 
-def _preferred_bold_key(
-    path: Path, *, requested_space: str | None
-) -> tuple[int, int, str]:
+def _preferred_bold_key(path: Path, *, requested_space: str | None) -> tuple[int, int, str]:
     name = path.name
     if requested_space and f"space-{requested_space}" in name:
         space_rank = 0
@@ -352,11 +351,7 @@ def resolve_task_glm_group_inputs(
         [record.get("events") for record in subject_records]
     )
     resolved_tr = next(
-        (
-            record.get("t_r")
-            for record in subject_records
-            if record.get("t_r") is not None
-        ),
+        (record.get("t_r") for record in subject_records if record.get("t_r") is not None),
         None,
     )
     return {
@@ -366,9 +361,7 @@ def resolve_task_glm_group_inputs(
         "n_subjects": len(subject_records),
         "participant_label": [record["subject"][4:] for record in subject_records],
         "task": task,
-        "bids_dir": (
-            str(Path(str(bids_dir)).expanduser().resolve()) if bids_dir else None
-        ),
+        "bids_dir": str(Path(str(bids_dir)).expanduser().resolve()) if bids_dir else None,
         "fmriprep_dir": (
             str(canonical_fmriprep_root(fmriprep_dir)) if fmriprep_dir else None
         ),

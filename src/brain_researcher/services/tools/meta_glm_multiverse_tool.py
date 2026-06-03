@@ -23,9 +23,7 @@ from brain_researcher.services.tools.tool_base import CachedToolWrapper, ToolRes
 class GLMMultiverseArgs(BaseModel):
     dataset_id: str = Field(description="Dataset id (e.g., ds000001)")
     task: str = Field(description="Task name (e.g., balloonanalogrisktask)")
-    max_models: int = Field(
-        default=5, description="Number of multiverse variants to generate"
-    )
+    max_models: int = Field(default=5, description="Number of multiverse variants to generate")
     dry_run: bool = Field(default=False, description="Plan only; do not run FitLins")
 
 
@@ -75,9 +73,7 @@ class GLMMultiverseTool(CachedToolWrapper):
 
         # Convergence outputs: keep near analyses
         # Read datasets_folder from path_config.json
-        path_config = (
-            repo_root / "external" / "openneuro_glmfitlins" / "path_config.json"
-        )
+        path_config = repo_root / "external" / "openneuro_glmfitlins" / "path_config.json"
         datasets_folder = None
         if path_config.exists():
             try:

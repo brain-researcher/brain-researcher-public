@@ -13,14 +13,11 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
-from neo4j import GraphDatabase
 from nibabel.affines import apply_affine
+from neo4j import GraphDatabase
 
 from brain_researcher.services.br_kg.etl.yeo17_features import Yeo17Feature
-from brain_researcher.services.br_kg.etl.yeo17_writer import (
-    WriterConfig,
-    write_sparse_edges,
-)
+from brain_researcher.services.br_kg.etl.yeo17_writer import WriterConfig, write_sparse_edges
 from brain_researcher.services.br_kg.spatial.neuromaps_assets import (
     NeuromapsAssets,
     resolve_neuromaps_assets,
@@ -71,30 +68,23 @@ class NeurosynthDecoder:
         if self.lda_dir and self.lda_dir.exists():
             self._load_lda_variants()
         elif self.lda_dir:
-            logger.warning("Configured LDA directory %s does not exist", self.lda_dir)
+            logger.warning(
+                "Configured LDA directory %s does not exist", self.lda_dir
+            )
 
     # ------------------------------------------------------------------
     def _load_term_matrix(self) -> None:
-        features_path = (
-            self.data_dir
-            / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
-        )
-        vocab_path = (
-            self.data_dir / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
-        )
+        features_path = self.data_dir / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
+        vocab_path = self.data_dir / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
         if not features_path.exists() or not vocab_path.exists():
-            raise FileNotFoundError(
-                f"Missing Neurosynth feature files under {self.data_dir}"
-            )
+            raise FileNotFoundError(f"Missing Neurosynth feature files under {self.data_dir}")
         logger.info("Loading Neurosynth term feature matrix from %s", features_path)
         self._term_matrix = sp.load_npz(features_path).tocsc()
         with vocab_path.open("r", encoding="utf-8") as f:
             vocab = [line.strip() for line in f]
         self._term_index = {term.lower(): idx for idx, term in enumerate(vocab)}
         self._terms = vocab
-        logger.info(
-            "Loaded %d terms; matrix shape=%s", len(vocab), self._term_matrix.shape
-        )
+        logger.info("Loaded %d terms; matrix shape=%s", len(vocab), self._term_matrix.shape)
 
     def _load_metadata(self) -> None:
         metadata_path = self.data_dir / "data-neurosynth_version-7_metadata.tsv.gz"
@@ -132,15 +122,11 @@ class NeurosynthDecoder:
                 continue
             variant_name = variant_dir.name
             prefix = f"data-neurosynth_version-7_vocab-{variant_name}"
-            features_path = (
-                variant_dir / f"{prefix}_source-abstract_type-weight_features.npz"
-            )
+            features_path = variant_dir / f"{prefix}_source-abstract_type-weight_features.npz"
             metadata_path = variant_dir / f"{prefix}_metadata.json"
             keys_path = variant_dir / f"{prefix}_keys.tsv"
             if not features_path.exists():
-                logger.warning(
-                    "Skipping LDA variant %s (missing %s)", variant_name, features_path
-                )
+                logger.warning("Skipping LDA variant %s (missing %s)", variant_name, features_path)
                 continue
             try:
                 matrix = sp.load_npz(features_path).tocsr()
@@ -188,8 +174,7 @@ class NeurosynthDecoder:
             )
         if not self._lda_variants:
             logger.warning(
-                "LDA directory %s is configured but no variants were loaded",
-                self.lda_dir,
+                "LDA directory %s is configured but no variants were loaded", self.lda_dir
             )
 
     def _get_lda_variant(self, variant_name: str) -> _LdaVariant:
@@ -198,9 +183,7 @@ class NeurosynthDecoder:
         key = variant_name.strip()
         match = self._lda_variants.get(key) or self._lda_variants.get(key.lower())
         if not match:
-            available = sorted(
-                {variant.name for variant in self._lda_variants.values()}
-            )
+            available = sorted({variant.name for variant in self._lda_variants.values()})
             raise ValueError(
                 f"Unknown LDA variant {variant_name}. Available: {available}"
             )
@@ -354,11 +337,7 @@ class NeurosynthDecoder:
         ijk = np.rint(apply_affine(self._inv_affine, coord)).astype(int)
         if np.any(ijk < 0):
             return 0
-        if (
-            ijk[0] >= self._label_shape[0]
-            or ijk[1] >= self._label_shape[1]
-            or ijk[2] >= self._label_shape[2]
-        ):
+        if ijk[0] >= self._label_shape[0] or ijk[1] >= self._label_shape[1] or ijk[2] >= self._label_shape[2]:
             return 0
         return int(self._label_data[ijk[0], ijk[1], ijk[2]])
 

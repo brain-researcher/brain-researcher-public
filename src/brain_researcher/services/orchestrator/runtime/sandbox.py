@@ -202,17 +202,13 @@ def build_sandbox_config(
 
     # Mount /cvmfs as read-only (if exists and enabled)
     if allow_cvmfs and os.path.exists("/cvmfs"):
-        mounts.append(
-            MountSpec(host_path="/cvmfs", container_path="/cvmfs", read_only=True)
-        )
+        mounts.append(MountSpec(host_path="/cvmfs", container_path="/cvmfs", read_only=True))
         config.allowed_paths.append("/cvmfs")
         logger.debug("Added /cvmfs as read-only mount")
 
     # Mount /ref as read-only (if exists and enabled)
     if allow_ref and os.path.exists("/ref"):
-        mounts.append(
-            MountSpec(host_path="/ref", container_path="/ref", read_only=True)
-        )
+        mounts.append(MountSpec(host_path="/ref", container_path="/ref", read_only=True))
         config.allowed_paths.append("/ref")
         logger.debug("Added /ref as read-only mount")
 
@@ -238,18 +234,14 @@ def build_sandbox_config(
                 logger.warning(f"Input path does not exist: {input_path}")
 
         for input_dir in sorted(input_dirs):
-            mounts.append(
-                MountSpec(host_path=input_dir, container_path=input_dir, read_only=True)
-            )
+            mounts.append(MountSpec(host_path=input_dir, container_path=input_dir, read_only=True))
             config.allowed_paths.append(input_dir)
             logger.debug(f"Added {input_dir} as read-only mount")
 
     # Mount run_dir/outputs as read-write (only writable location)
     outputs_dir = os.path.join(run_dir, "outputs")
     Path(outputs_dir).mkdir(parents=True, exist_ok=True)
-    mounts.append(
-        MountSpec(host_path=outputs_dir, container_path="/outputs", read_only=False)
-    )
+    mounts.append(MountSpec(host_path=outputs_dir, container_path="/outputs", read_only=False))
     config.allowed_paths.append("/outputs")
     logger.debug(f"Added {outputs_dir} → /outputs as read-write mount")
 

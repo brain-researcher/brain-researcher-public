@@ -105,39 +105,16 @@ markdown_extensions:
 # Navigation
 nav:
   - Home: index.md
-  - Getting Started:
-      - Installation: getting-started/installation.md
-      - Quick Start: getting-started/quickstart.md
-      - Configuration: getting-started/configuration.md
-  - User Guide:
-      - CLI Usage: user-guide/cli.md
-      - Natural Language Interface: user-guide/chat.md
-      - Data Management: user-guide/data-management.md
-      - Analysis Tools: user-guide/analysis-tools.md
-      - Knowledge Graph: user-guide/knowledge-graph.md
-  - API Reference:
-      - Overview: api/overview.md
-      - REST API: api/rest.md
-      - Python API: api/python.md
-      - CLI Reference: api/cli-reference.md
-  - Development:
-      - Contributing: development/contributing.md
-      - Architecture: development/architecture.md
-      - Code Standards: development/code-standards.md
-      - Testing: development/testing.md
-      - Docker: development/docker.md
-  - Tutorials:
-      - Basic fMRI Analysis: tutorials/basic-fmri.md
-      - Using the Knowledge Graph: tutorials/knowledge-graph.md
-      - Custom Tool Development: tutorials/custom-tools.md
-      - LLM Integration: tutorials/llm-integration.md
-  - Migration:
-      - From Scripts to CLI: migration/cli-migration.md
-      - Legacy Code: migration/legacy.md
-  - About:
-      - Changelog: about/changelog.md
-      - License: about/license.md
-      - Support: about/support.md
+  - MCP: mcp.md
+  - Operations: OPERATIONS.md
+  - Architecture: architecture/overview.md
+  - BR-KG:
+      - Tool Schema: services/br-kg/kg_tool_schema.md
+      - GABRIEL Pipeline: services/br-kg/gabriel_full_pipeline.md
+      - GABRIEL Quickstart: services/br-kg/gabriel_sample_quickstart.md
+  - Release:
+      - Public KG Dump: release/public_kg_dump.md
+      - OSS Preview Gate: release/oss_preview_release_gate_2026-05-28.md
 
 # Extra configuration
 extra:
@@ -149,10 +126,6 @@ extra:
   version:
     provider: mike
     default: stable
-
-# Extra CSS
-extra_css:
-  - stylesheets/extra.css
 
 # Extra JavaScript
 extra_javascript:

@@ -12,7 +12,7 @@ import tempfile
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 class DesignType(str, Enum):
     """SPM design types."""
-
     ONE_SAMPLE_T = "one_sample_t"
     TWO_SAMPLE_T = "two_sample_t"
     PAIRED_T = "paired_t"
@@ -38,7 +37,6 @@ class DesignType(str, Enum):
 
 class CorrectionType(str, Enum):
     """Multiple comparison correction methods."""
-
     NONE = "none"
     FWE = "FWE"  # Family-wise error
     FDR = "FDR"  # False discovery rate
@@ -47,7 +45,6 @@ class CorrectionType(str, Enum):
 
 class NormalizationMethod(str, Enum):
     """SPM normalization methods."""
-
     EPI = "epi"
     UNIFIED = "unified"
     DARTEL = "dartel"
@@ -56,7 +53,6 @@ class NormalizationMethod(str, Enum):
 
 class SegmentationMethod(str, Enum):
     """SPM segmentation methods."""
-
     STANDARD = "standard"
     UNIFIED = "unified"
     NEW_SEGMENT = "new_segment"
@@ -65,7 +61,6 @@ class SegmentationMethod(str, Enum):
 @dataclass
 class SPM12Config:
     """Base configuration for SPM12 execution."""
-
     matlab_cmd: str = "matlab"
     spm_path: str = "/opt/spm12"
     mcr_path: Optional[str] = None  # For compiled SPM
@@ -76,31 +71,59 @@ class SPM12Config:
         """Get MATLAB command for running SPM."""
         if self.use_standalone and self.mcr_path:
             # Use compiled SPM with MCR
-            return [os.path.join(self.spm_path, "run_spm12.sh"), self.mcr_path, "batch"]
+            return [
+                os.path.join(self.spm_path, "run_spm12.sh"),
+                self.mcr_path,
+                "batch"
+            ]
         else:
             # Use MATLAB
-            return [self.matlab_cmd, "-nodisplay", "-nosplash", "-nodesktop", "-r"]
+            return [
+                self.matlab_cmd,
+                "-nodisplay",
+                "-nosplash",
+                "-nodesktop",
+                "-r"
+            ]
 
 
 # SPM12 Statistical Analysis Tool
 class SPM12StatisticalArgs(BaseModel):
     """Arguments for SPM12 statistical analysis."""
 
-    images: List[str] = Field(description="List of NIfTI images for analysis")
-    design_type: DesignType = Field(description="Type of statistical design")
-    output_dir: str = Field(description="Output directory for results")
+    images: List[str] = Field(
+        description="List of NIfTI images for analysis"
+    )
+    design_type: DesignType = Field(
+        description="Type of statistical design"
+    )
+    output_dir: str = Field(
+        description="Output directory for results"
+    )
     covariates: Optional[Dict[str, List[float]]] = Field(
-        default=None, description="Covariates for the model"
+        default=None,
+        description="Covariates for the model"
     )
     contrasts: Dict[str, List[float]] = Field(
-        default=None, description="Contrast definitions"
+        default=None,
+        description="Contrast definitions"
     )
-    mask: Optional[str] = Field(default=None, description="Explicit mask image")
+    mask: Optional[str] = Field(
+        default=None,
+        description="Explicit mask image"
+    )
     correction: CorrectionType = Field(
-        default=CorrectionType.FWE, description="Multiple comparison correction"
+        default=CorrectionType.FWE,
+        description="Multiple comparison correction"
     )
-    threshold: float = Field(default=0.05, description="Statistical threshold")
-    extent_threshold: int = Field(default=0, description="Cluster extent threshold")
+    threshold: float = Field(
+        default=0.05,
+        description="Statistical threshold"
+    )
+    extent_threshold: int = Field(
+        default=0,
+        description="Cluster extent threshold"
+    )
 
 
 class SPM12StatisticalTool(NeuroToolWrapper):
@@ -133,7 +156,7 @@ class SPM12StatisticalTool(NeuroToolWrapper):
         contrasts: Dict[str, List[float]],
         mask: Optional[str],
         correction: CorrectionType,
-        threshold: float,
+        threshold: float
     ) -> str:
         """Generate SPM batch script for statistical analysis."""
 
@@ -205,20 +228,14 @@ matlabbatch{{1}}.spm.stats.factorial_design.cov({i}).iCC = 1;
 matlabbatch{{1}}.spm.stats.factorial_design.masking.em = {{'{mask},1'}};
 """
 
-        script += (
-            """
+        script += """
 % Model Estimation
-matlabbatch{2}.spm.stats.fmri_est.spmmat = {fullfile('"""
-            + output_dir
-            + """', 'SPM.mat')};
+matlabbatch{2}.spm.stats.fmri_est.spmmat = {fullfile('""" + output_dir + """', 'SPM.mat')};
 matlabbatch{2}.spm.stats.fmri_est.method.Classical = 1;
 
 % Contrast Manager
-matlabbatch{3}.spm.stats.con.spmmat = {fullfile('"""
-            + output_dir
-            + """', 'SPM.mat')};
+matlabbatch{3}.spm.stats.con.spmmat = {fullfile('""" + output_dir + """', 'SPM.mat')};
 """
-        )
 
         # Add contrasts
         if contrasts:
@@ -229,20 +246,16 @@ matlabbatch{{3}}.spm.stats.con.consess{{{i}}}.tcon.weights = {weights};
 matlabbatch{{3}}.spm.stats.con.consess{{{i}}}.tcon.sessrep = 'none';
 """
 
-        script += (
-            """
+        script += """
 % Run batch
 spm_jobman('run', matlabbatch);
 
 % Generate results report
-spm_results_ui('Setup', fullfile('"""
-            + output_dir
-            + """', 'SPM.mat'));
+spm_results_ui('Setup', fullfile('""" + output_dir + """', 'SPM.mat'));
 
 disp('SPM12 Statistical Analysis Complete');
 exit;
 """
-        )
 
         return script
 
@@ -257,7 +270,7 @@ exit;
         correction: CorrectionType = CorrectionType.FWE,
         threshold: float = 0.05,
         extent_threshold: int = 0,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute SPM12 statistical analysis."""
         try:
@@ -265,7 +278,9 @@ exit;
             for img in images:
                 if not os.path.exists(img):
                     return ToolResult(
-                        status="error", error=f"Image not found: {img}", data={}
+                        status="error",
+                        error=f"Image not found: {img}",
+                        data={}
                     )
 
             # Create output directory
@@ -273,19 +288,14 @@ exit;
 
             # Generate batch script
             script = self._generate_batch_script(
-                images,
-                design_type,
-                output_dir,
-                covariates,
-                contrasts,
-                mask,
-                correction,
-                threshold,
+                images, design_type, output_dir,
+                covariates, contrasts, mask,
+                correction, threshold
             )
 
             # Save script
             script_file = os.path.join(output_dir, "spm_batch.m")
-            with open(script_file, "w") as f:
+            with open(script_file, 'w') as f:
                 f.write(script)
 
             # Generate command
@@ -300,23 +310,11 @@ exit;
             # Expected outputs
             expected_outputs = {
                 "spm_mat": os.path.join(output_dir, "SPM.mat"),
-                "contrasts": (
-                    [
-                        os.path.join(output_dir, f"con_{i:04d}.nii")
-                        for i in range(1, len(contrasts) + 1)
-                    ]
-                    if contrasts
-                    else []
-                ),
-                "t_maps": (
-                    [
-                        os.path.join(output_dir, f"spmT_{i:04d}.nii")
-                        for i in range(1, len(contrasts) + 1)
-                    ]
-                    if contrasts
-                    else []
-                ),
-                "batch_script": script_file,
+                "contrasts": [os.path.join(output_dir, f"con_{i:04d}.nii")
+                             for i in range(1, len(contrasts) + 1)] if contrasts else [],
+                "t_maps": [os.path.join(output_dir, f"spmT_{i:04d}.nii")
+                          for i in range(1, len(contrasts) + 1)] if contrasts else [],
+                "batch_script": script_file
             }
 
             return ToolResult(
@@ -327,19 +325,22 @@ exit;
                     "expected_outputs": expected_outputs,
                     "design_type": design_type.value,
                     "n_images": len(images),
-                    "message": "SPM12 batch script generated. Execute the command to run analysis.",
-                },
+                    "message": "SPM12 batch script generated. Execute the command to run analysis."
+                }
             )
 
         except Exception as e:
             logger.error(f"SPM12 statistical analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 # SPM12 DCM (Dynamic Causal Modeling) Tool
 class DCMModelType(str, Enum):
     """DCM model types."""
-
     BILINEAR = "bilinear"
     NONLINEAR = "nonlinear"
     TWO_STATE = "two_state"
@@ -353,17 +354,26 @@ class SPM12DCMArgs(BaseModel):
         description="VOI time series files for each region"
     )
     model_type: DCMModelType = Field(
-        default=DCMModelType.BILINEAR, description="Type of DCM model"
+        default=DCMModelType.BILINEAR,
+        description="Type of DCM model"
     )
-    a_matrix: List[List[int]] = Field(description="Intrinsic connectivity matrix (A)")
+    a_matrix: List[List[int]] = Field(
+        description="Intrinsic connectivity matrix (A)"
+    )
     b_matrix: Optional[Dict[str, List[List[int]]]] = Field(
-        default=None, description="Modulatory connectivity matrices (B)"
+        default=None,
+        description="Modulatory connectivity matrices (B)"
     )
     c_matrix: Optional[List[List[int]]] = Field(
-        default=None, description="Driving input matrix (C)"
+        default=None,
+        description="Driving input matrix (C)"
     )
-    tr: float = Field(description="Repetition time in seconds")
-    output_dir: str = Field(description="Output directory for DCM results")
+    tr: float = Field(
+        description="Repetition time in seconds"
+    )
+    output_dir: str = Field(
+        description="Output directory for DCM results"
+    )
 
 
 class SPM12DCMTool(NeuroToolWrapper):
@@ -394,7 +404,7 @@ class SPM12DCMTool(NeuroToolWrapper):
         b_matrix: Optional[Dict[str, List[List[int]]]],
         c_matrix: Optional[List[List[int]]],
         tr: float,
-        output_dir: str,
+        output_dir: str
     ) -> str:
         """Generate SPM batch script for DCM analysis."""
 
@@ -512,7 +522,7 @@ exit;
         output_dir: str,
         b_matrix: Optional[Dict[str, List[List[int]]]] = None,
         c_matrix: Optional[List[List[int]]] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute SPM12 DCM analysis."""
         try:
@@ -520,7 +530,9 @@ exit;
             for name, file in voi_timeseries.items():
                 if not os.path.exists(file):
                     return ToolResult(
-                        status="error", error=f"VOI file not found: {file}", data={}
+                        status="error",
+                        error=f"VOI file not found: {file}",
+                        data={}
                     )
 
             # Create output directory
@@ -528,12 +540,13 @@ exit;
 
             # Generate DCM script
             script = self._generate_dcm_script(
-                voi_timeseries, model_type, a_matrix, b_matrix, c_matrix, tr, output_dir
+                voi_timeseries, model_type, a_matrix,
+                b_matrix, c_matrix, tr, output_dir
             )
 
             # Save script
             script_file = os.path.join(output_dir, "dcm_batch.m")
-            with open(script_file, "w") as f:
+            with open(script_file, 'w') as f:
                 f.write(script)
 
             # Generate command
@@ -553,17 +566,21 @@ exit;
                     "expected_outputs": {
                         "dcm_results": os.path.join(output_dir, "DCM_results.mat"),
                         "dcm_report": os.path.join(output_dir, "DCM_report.png"),
-                        "parameters": os.path.join(output_dir, "dcm_parameters.json"),
+                        "parameters": os.path.join(output_dir, "dcm_parameters.json")
                     },
                     "model_type": model_type.value,
                     "n_regions": len(voi_timeseries),
-                    "message": "DCM script generated. Execute the command to run analysis.",
-                },
+                    "message": "DCM script generated. Execute the command to run analysis."
+                }
             )
 
         except Exception as e:
             logger.error(f"DCM analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 # SPM12 VBM (Voxel-Based Morphometry) Tool
@@ -573,18 +590,24 @@ class SPM12VBMArgs(BaseModel):
     structural_images: List[str] = Field(
         description="List of T1-weighted structural images"
     )
-    output_dir: str = Field(description="Output directory for VBM results")
+    output_dir: str = Field(
+        description="Output directory for VBM results"
+    )
     segmentation_method: SegmentationMethod = Field(
-        default=SegmentationMethod.UNIFIED, description="Segmentation method to use"
+        default=SegmentationMethod.UNIFIED,
+        description="Segmentation method to use"
     )
     modulation: bool = Field(
-        default=True, description="Apply modulation to preserve tissue volumes"
+        default=True,
+        description="Apply modulation to preserve tissue volumes"
     )
     smoothing_fwhm: float = Field(
-        default=8.0, description="Smoothing kernel FWHM in mm"
+        default=8.0,
+        description="Smoothing kernel FWHM in mm"
     )
     create_dartel: bool = Field(
-        default=False, description="Create DARTEL template from subjects"
+        default=False,
+        description="Create DARTEL template from subjects"
     )
 
 
@@ -615,7 +638,7 @@ class SPM12VBMTool(NeuroToolWrapper):
         segmentation_method: SegmentationMethod,
         modulation: bool,
         smoothing_fwhm: float,
-        create_dartel: bool,
+        create_dartel: bool
     ) -> str:
         """Generate SPM batch script for VBM analysis."""
 
@@ -644,18 +667,14 @@ matlabbatch{1}.spm.spatial.preproc.channel.vols = {
 """
             for img in structural_images:
                 script += f"    '{img},1'\n"
-            script += (
-                """};
+            script += """};
 matlabbatch{1}.spm.spatial.preproc.channel.biasreg = 0.001;
 matlabbatch{1}.spm.spatial.preproc.channel.biasfwhm = 60;
 matlabbatch{1}.spm.spatial.preproc.tissue(1).tpm = {fullfile(spm('dir'), 'tpm', 'TPM.nii,1')};
 matlabbatch{1}.spm.spatial.preproc.tissue(1).ngaus = 1;
-matlabbatch{1}.spm.spatial.preproc.tissue(1).native = [1 """
-                + ("1" if modulation else "0")
-                + """];
+matlabbatch{1}.spm.spatial.preproc.tissue(1).native = [1 """ + ("1" if modulation else "0") + """];
 matlabbatch{1}.spm.spatial.preproc.tissue(1).warped = [0 0];
 """
-            )
 
         if create_dartel:
             script += """
@@ -705,7 +724,7 @@ exit;
         modulation: bool = True,
         smoothing_fwhm: float = 8.0,
         create_dartel: bool = False,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute SPM12 VBM analysis."""
         try:
@@ -715,7 +734,7 @@ exit;
                     return ToolResult(
                         status="error",
                         error=f"Structural image not found: {img}",
-                        data={},
+                        data={}
                     )
 
             # Create output directories
@@ -726,17 +745,14 @@ exit;
 
             # Generate VBM script
             script = self._generate_vbm_script(
-                structural_images,
-                output_dir,
-                segmentation_method,
-                modulation,
-                smoothing_fwhm,
-                create_dartel,
+                structural_images, output_dir,
+                segmentation_method, modulation,
+                smoothing_fwhm, create_dartel
             )
 
             # Save script
             script_file = os.path.join(output_dir, "vbm_batch.m")
-            with open(script_file, "w") as f:
+            with open(script_file, 'w') as f:
                 f.write(script)
 
             # Generate command
@@ -757,21 +773,21 @@ exit;
                         "gray_matter": os.path.join(output_dir, "gray_matter"),
                         "white_matter": os.path.join(output_dir, "white_matter"),
                         "csf": os.path.join(output_dir, "csf"),
-                        "dartel_template": (
-                            os.path.join(output_dir, "Template_6.nii")
-                            if create_dartel
-                            else None
-                        ),
+                        "dartel_template": os.path.join(output_dir, "Template_6.nii") if create_dartel else None
                     },
                     "n_subjects": len(structural_images),
                     "smoothing": f"{smoothing_fwhm}mm",
-                    "message": "VBM script generated. Execute the command to run analysis.",
-                },
+                    "message": "VBM script generated. Execute the command to run analysis."
+                }
             )
 
         except Exception as e:
             logger.error(f"VBM analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 # Tool collection for registration
@@ -781,4 +797,8 @@ class SPM12Tools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all SPM12 tools."""
-        return [SPM12StatisticalTool(), SPM12DCMTool(), SPM12VBMTool()]
+        return [
+            SPM12StatisticalTool(),
+            SPM12DCMTool(),
+            SPM12VBMTool()
+        ]

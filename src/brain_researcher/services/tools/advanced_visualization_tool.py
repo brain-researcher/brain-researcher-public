@@ -28,12 +28,8 @@ class AdvancedVisualizationArgs(BaseModel):
     data_type: str = Field(default="auto", description="Data type hint")
     plot_type: str = Field(default="auto", description="Visualization type")
     figure_format: str = Field(default="png", description="Figure file format")
-    interactive_backend: str = Field(
-        default="plotly", description="Interactive backend"
-    )
-    glass_display_mode: Optional[str] = Field(
-        default=None, description="Display mode for glass brain"
-    )
+    interactive_backend: str = Field(default="plotly", description="Interactive backend")
+    glass_display_mode: Optional[str] = Field(default=None, description="Display mode for glass brain")
     seed: Optional[int] = Field(default=None, description="Random seed")
 
 
@@ -44,7 +40,9 @@ class AdvancedVisualizationTool(NeuroToolWrapper):
         return "advanced_visualization"
 
     def get_tool_description(self) -> str:
-        return "Generate static or interactive visualizations for neuroimaging data."
+        return (
+            "Generate static or interactive visualizations for neuroimaging data."
+        )
 
     def get_args_schema(self):
         return AdvancedVisualizationArgs
@@ -56,9 +54,7 @@ class AdvancedVisualizationTool(NeuroToolWrapper):
             if "output_dir" not in payload:
                 payload["output_dir"] = str(Path.cwd() / "visualizations")
 
-            params: AdvancedVisualizationParameters = (
-                advanced_visualization_from_payload(payload)
-            )
+            params: AdvancedVisualizationParameters = advanced_visualization_from_payload(payload)
             results = run_advanced_visualization(params)
             return ToolResult(status="success", data=results)
         except Exception as exc:  # pragma: no cover

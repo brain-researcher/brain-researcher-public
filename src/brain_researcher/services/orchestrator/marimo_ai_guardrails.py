@@ -88,9 +88,7 @@ def _build_speculative_br_call_reply(
 
     if verified_names:
         sample = ", ".join(sorted(verified_names)[:8])
-        lines.append(
-            f"Verified Brain Researcher tool names seen in this run: {sample}."
-        )
+        lines.append(f"Verified Brain Researcher tool names seen in this run: {sample}.")
     else:
         lines.append("No exact Brain Researcher tool name was verified in this run.")
 
@@ -132,11 +130,7 @@ async def _emit_buffered_text(
         return
 
     text_chunk_id = next(
-        (
-            getattr(chunk, "id", None)
-            for chunk in buffered_text_chunks
-            if getattr(chunk, "id", None)
-        ),
+        (getattr(chunk, "id", None) for chunk in buffered_text_chunks if getattr(chunk, "id", None)),
         f"br_guardrail_{uuid.uuid4().hex}",
     )
     yield TextStartChunk(id=text_chunk_id)
@@ -178,9 +172,7 @@ async def wrap_br_tool_name_guardrail_stream(
                 tool_call_names,
                 tool_outputs,
             )
-            async for text_chunk in _emit_buffered_text(
-                buffered_text_chunks, replacement_text
-            ):
+            async for text_chunk in _emit_buffered_text(buffered_text_chunks, replacement_text):
                 yield text_chunk
             buffered_text_chunks.clear()
             text_parts.clear()
@@ -195,7 +187,5 @@ async def wrap_br_tool_name_guardrail_stream(
             tool_call_names,
             tool_outputs,
         )
-        async for text_chunk in _emit_buffered_text(
-            buffered_text_chunks, replacement_text
-        ):
+        async for text_chunk in _emit_buffered_text(buffered_text_chunks, replacement_text):
             yield text_chunk

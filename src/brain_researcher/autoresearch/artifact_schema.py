@@ -82,9 +82,7 @@ class ArtifactPaths:
             "manifests_root": str(self.manifests_root),
             "inputs_root": str(self.inputs_root),
             "sources_root": str(self.sources_root),
-            "prompts_root": (
-                None if self.prompts_root is None else str(self.prompts_root)
-            ),
+            "prompts_root": None if self.prompts_root is None else str(self.prompts_root),
             "scored_ledgers": [str(path) for path in self.scored_ledgers],
             "alias_line_roots": [str(path) for path in self.alias_line_roots],
             "alias_project_roots": [str(path) for path in self.alias_project_roots],
@@ -102,9 +100,7 @@ def resolve_data_root(data_root: Path | str | None = None) -> Path:
     return _normalize_path(data_root or DEFAULT_DATA_ROOT)
 
 
-def canonical_line_root(
-    line_id: LineId, *, data_root: Path | str | None = None
-) -> Path:
+def canonical_line_root(line_id: LineId, *, data_root: Path | str | None = None) -> Path:
     spec = line_spec(line_id)
     return resolve_data_root(data_root) / RESEARCH_ROOT_NAME / spec.canonical_name
 

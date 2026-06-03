@@ -169,9 +169,7 @@ async def get_session(request: Request):
                 "name": user.full_name,
                 "image": user.picture,
                 "provider": user.auth_provider,
-                "roles": [
-                    user.role.value if hasattr(user.role, "value") else user.role
-                ],
+                "roles": [user.role.value if hasattr(user.role, "value") else user.role],
             },
         }
 
@@ -293,7 +291,6 @@ async def ensure_oauth_user(request: Request):
         email = data.get("email")
         if not email:
             from fastapi.responses import JSONResponse
-
             return JSONResponse({"error": "Email is required"}, status_code=400)
 
         user, created = await _user_store.upsert_oauth_user(
@@ -307,23 +304,19 @@ async def ensure_oauth_user(request: Request):
             await _grant_initial_account_credits(user.id, "auth.ensure_user")
 
         from fastapi.responses import JSONResponse
-
-        return JSONResponse(
-            {
-                "success": True,
-                "user_id": user.id,
-                "email": user.email,
-                "name": user.full_name,
-                "role": user.role.value if hasattr(user.role, "value") else user.role,
-                "provider": data.get("provider"),
-                "created": created,
-            }
-        )
+        return JSONResponse({
+            "success": True,
+            "user_id": user.id,
+            "email": user.email,
+            "name": user.full_name,
+            "role": user.role.value if hasattr(user.role, "value") else user.role,
+            "provider": data.get("provider"),
+            "created": created,
+        })
 
     except Exception as e:
         logger.error(f"ensure-user error: {e}")
         from fastapi.responses import JSONResponse
-
         return JSONResponse({"error": "Failed to ensure user"}, status_code=500)
 
 
@@ -343,9 +336,7 @@ async def list_users_for_admin(
     if not include_inactive:
         users = [user for user in users if bool(getattr(user, "is_active", True))]
 
-    users.sort(
-        key=lambda item: (item.created_at is not None, item.created_at), reverse=True
-    )
+    users.sort(key=lambda item: (item.created_at is not None, item.created_at), reverse=True)
     total = len(users)
     page = users[offset : offset + limit]
 

@@ -282,9 +282,7 @@ def _extract_tags(payload: Mapping[str, Any]) -> tuple[str, ...]:
 def _parse_markdown_table_lines(lines: Sequence[str]) -> list[dict[str, str]]:
     if not lines:
         return []
-    rows = [
-        line for line in lines if line.strip().startswith("|") and line.count("|") >= 2
-    ]
+    rows = [line for line in lines if line.strip().startswith("|") and line.count("|") >= 2]
     if len(rows) < 2:
         return []
     headers = [cell.strip() for cell in rows[0].strip().strip("|").split("|")]
@@ -635,9 +633,7 @@ def _population_signal_texts(
 
 
 def _rule_matches(rule: PopulationRule, signal_texts: Sequence[str]) -> bool:
-    matched = any(
-        pattern.search(text) for text in signal_texts for pattern in rule.patterns
-    )
+    matched = any(pattern.search(text) for text in signal_texts for pattern in rule.patterns)
     if not matched:
         return False
     return not any(
@@ -671,14 +667,9 @@ def _infer_population_descriptors(
         seen.add(descriptor.node_id)
         descriptors.append(descriptor)
 
-    if any(
-        descriptor.node_id in {"population:eas", "population:sas"}
-        for descriptor in descriptors
-    ):
+    if any(descriptor.node_id in {"population:eas", "population:sas"} for descriptor in descriptors):
         descriptors = [
-            descriptor
-            for descriptor in descriptors
-            if descriptor.node_id != "population:asian"
+            descriptor for descriptor in descriptors if descriptor.node_id != "population:asian"
         ]
         seen = {descriptor.node_id for descriptor in descriptors}
 
@@ -776,10 +767,7 @@ def _normalize_trait_fragment(fragment: str) -> str | None:
         return None
     if text.isupper() and text not in _TRAIT_ACRONYM_WHITELIST:
         return None
-    if (
-        any(token in lowered for token in ("factor", "score", "scale", "audit"))
-        and " " not in lowered
-    ):
+    if any(token in lowered for token in ("factor", "score", "scale", "audit")) and " " not in lowered:
         return None
     return text
 
@@ -855,9 +843,7 @@ def _fetch_dataset_splits(
     return tuple(out)
 
 
-def _first_row_example(
-    first_rows_payload: Mapping[str, Any] | None,
-) -> dict[str, Any] | None:
+def _first_row_example(first_rows_payload: Mapping[str, Any] | None) -> dict[str, Any] | None:
     if not first_rows_payload:
         return None
     rows = first_rows_payload.get("rows")
@@ -872,9 +858,7 @@ def _first_row_example(
     return dict(row)
 
 
-def _source_files_from_first_row(
-    first_row: Mapping[str, Any] | None,
-) -> tuple[str, ...]:
+def _source_files_from_first_row(first_row: Mapping[str, Any] | None) -> tuple[str, ...]:
     if not first_row:
         return ()
     values = []
@@ -914,17 +898,9 @@ def _study_row_to_metadata(
     config_info: Mapping[str, Any] | None = None,
     first_row_example: Mapping[str, Any] | None = None,
 ) -> OpenMedPGCStudyMetadata:
-    config_name = (
-        _table_cell_text(row.get("Config")) or _table_cell_text(row.get("config")) or ""
-    )
-    phenotype = (
-        _table_cell_text(row.get("Phenotype"))
-        or _table_cell_text(row.get("phenotype"))
-        or ""
-    )
-    journal = _table_cell_text(row.get("Journal")) or _table_cell_text(
-        row.get("journal")
-    )
+    config_name = _table_cell_text(row.get("Config")) or _table_cell_text(row.get("config")) or ""
+    phenotype = _table_cell_text(row.get("Phenotype")) or _table_cell_text(row.get("phenotype")) or ""
+    journal = _table_cell_text(row.get("Journal")) or _table_cell_text(row.get("journal"))
     year = _normalize_year(row.get("Year") or row.get("year"))
     pmid = _extract_pmid(row.get("PubMed") or row.get("PMID") or row.get("pmid"))
     rows = _coerce_int(row.get("Rows") or row.get("rows"))
@@ -1020,9 +996,7 @@ def _extract_config_names(
                     if config_name:
                         config_names.append(config_name)
     for row in readme_rows:
-        config_name = _table_cell_text(row.get("Config")) or _table_cell_text(
-            row.get("config")
-        )
+        config_name = _table_cell_text(row.get("Config")) or _table_cell_text(row.get("config"))
         if config_name:
             config_names.append(config_name)
     for split in dataset_splits:
@@ -1041,9 +1015,7 @@ def fetch_openmed_pgc_dataset_metadata(
     owns_client = client is None
     client = client or httpx.Client(timeout=timeout, follow_redirects=True)
     try:
-        api_payload = _get_json(
-            client, HF_DATASET_API_URL.format(dataset_id=dataset_id)
-        )
+        api_payload = _get_json(client, HF_DATASET_API_URL.format(dataset_id=dataset_id))
         readme_text = _get_text(client, _dataset_readme_url(dataset_id))
         dataset_splits = _fetch_dataset_splits(client, dataset_id)
         readme_rows = _extract_subset_table(readme_text)
@@ -1058,9 +1030,7 @@ def fetch_openmed_pgc_dataset_metadata(
         studies: list[OpenMedPGCStudyMetadata] = []
         row_by_config = {}
         for row in readme_rows:
-            config_name = _table_cell_text(row.get("Config")) or _table_cell_text(
-                row.get("config")
-            )
+            config_name = _table_cell_text(row.get("Config")) or _table_cell_text(row.get("config"))
             if config_name:
                 row_by_config[config_name] = row
 
@@ -1082,9 +1052,7 @@ def fetch_openmed_pgc_dataset_metadata(
                 config_info = dict(config_info)
                 config_info.setdefault("hf_splits", splits_by_config[config_name])
             try:
-                first_rows_payload = _fetch_config_first_rows(
-                    client, dataset_id, config_name
-                )
+                first_rows_payload = _fetch_config_first_rows(client, dataset_id, config_name)
                 first_row_example = _first_row_example(first_rows_payload)
             except Exception:
                 first_row_example = None
@@ -1100,8 +1068,7 @@ def fetch_openmed_pgc_dataset_metadata(
             )
 
         return OpenMedPGCDatasetMetadata(
-            dataset_id=_coerce_text(_first_present(api_payload, ("id", "datasetId")))
-            or dataset_id,
+            dataset_id=_coerce_text(_first_present(api_payload, ("id", "datasetId"))) or dataset_id,
             title=title,
             license=dataset_license,
             tags=_extract_tags(api_payload),
@@ -1134,9 +1101,7 @@ def fetch_openmed_pgc_collection_metadata(
     client = client or httpx.Client(timeout=timeout, follow_redirects=True)
     try:
         datasets = [
-            fetch_openmed_pgc_dataset_metadata(
-                dataset_id, client=client, timeout=timeout
-            )
+            fetch_openmed_pgc_dataset_metadata(dataset_id, client=client, timeout=timeout)
             for dataset_id in dataset_ids
         ]
     finally:
@@ -1151,9 +1116,7 @@ def fetch_openmed_pgc_collection_metadata(
     )
 
 
-def _node_row(
-    node_id: str, labels: Sequence[str], properties: Mapping[str, Any]
-) -> dict[str, Any]:
+def _node_row(node_id: str, labels: Sequence[str], properties: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "node_id": node_id,
         "labels": list(labels),
@@ -1197,13 +1160,9 @@ def _population_descriptor_node_row(
     )
 
 
-def _population_rows_for_study(
-    study: OpenMedPGCStudyMetadata,
-) -> tuple[dict[str, Any], ...]:
+def _population_rows_for_study(study: OpenMedPGCStudyMetadata) -> tuple[dict[str, Any], ...]:
     descriptors = study.population_descriptors or ()
-    return tuple(
-        _population_descriptor_node_row(descriptor) for descriptor in descriptors
-    )
+    return tuple(_population_descriptor_node_row(descriptor) for descriptor in descriptors)
 
 
 def _publication_node_row(study: OpenMedPGCStudyMetadata) -> dict[str, Any] | None:
@@ -1220,7 +1179,9 @@ def _publication_node_row(study: OpenMedPGCStudyMetadata) -> dict[str, Any] | No
             "source": "openmed_pgc_hf_loader",
             "source_dataset_id": study.dataset_id,
             "url": (
-                f"https://pubmed.ncbi.nlm.nih.gov/{study.pmid}/" if study.pmid else None
+                f"https://pubmed.ncbi.nlm.nih.gov/{study.pmid}/"
+                if study.pmid
+                else None
             ),
         },
     )
@@ -1299,9 +1260,7 @@ def openmed_pgc_snapshot_to_graph_inputs(
                     "ancestry_hints": list(study.ancestry_hints),
                     "population_ids": population_ids,
                     "population_hints": population_names,
-                    "feature_names": sorted(
-                        (study.config_info.get("features") or {}).keys()
-                    ),
+                    "feature_names": sorted((study.config_info.get("features") or {}).keys()),
                     **sample_size_fields,
                 },
             )
@@ -1386,9 +1345,7 @@ def openmed_pgc_snapshot_to_graph_inputs(
                 if edge_key in seen_edges:
                     continue
                 seen_edges.add(edge_key)
-                relationship_rows.append(
-                    _relationship_row(start_id, end_id, rel_type, props)
-                )
+                relationship_rows.append(_relationship_row(start_id, end_id, rel_type, props))
 
     return OpenMedPGCGraphSnapshot(
         collection_metadata=collection,

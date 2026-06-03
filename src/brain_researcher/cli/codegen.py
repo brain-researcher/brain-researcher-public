@@ -6,22 +6,17 @@ import typer
 from brain_researcher.services.agent.codegen.render import render_result_for_chat
 from brain_researcher.services.tools.llm_router_tool import CodingAgentTool
 
+
 app = typer.Typer(help="Direct coding agent entrypoint (code_agent).")
 
 
 @app.command()
 def run(
     task: str = typer.Argument(..., help="Coding task (bugfix/refactor/write tests)."),
-    paths: List[str] = typer.Option(
-        None, "--paths", "-p", help="Files/dirs to focus on", show_default=False
-    ),
-    tests: List[str] = typer.Option(
-        None, "--tests", "-t", help="Test commands to run", show_default=False
-    ),
+    paths: List[str] = typer.Option(None, "--paths", "-p", help="Files/dirs to focus on", show_default=False),
+    tests: List[str] = typer.Option(None, "--tests", "-t", help="Test commands to run", show_default=False),
     apply: bool = typer.Option(False, "--apply", help="Apply patches to repo"),
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Preview apply without writing"
-    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview apply without writing"),
     max_iters: int = typer.Option(3, "--max-iters", help="Max codegen iterations"),
     json_output: bool = typer.Option(False, "--json", help="Emit raw JSON result"),
 ):
@@ -42,13 +37,7 @@ def run(
 
     data = result.data or {}
     if json_output:
-        typer.echo(
-            json.dumps(
-                {"status": result.status, "data": data, "error": result.error},
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
+        typer.echo(json.dumps({"status": result.status, "data": data, "error": result.error}, ensure_ascii=False, indent=2))
         raise typer.Exit(code=0 if result.status == "success" else 1)
 
     if data.get("summary"):
@@ -68,10 +57,7 @@ def run(
 
 
 def _to_codegen_result(data: dict):
-    from brain_researcher.services.agent.codegen.context import (
-        CodegenResult,
-        ExecutionResult,
-    )
+    from brain_researcher.services.agent.codegen.context import CodegenResult, ExecutionResult
 
     exec_res = None
     if data.get("exec_stdout") is not None or data.get("exec_stderr") is not None:

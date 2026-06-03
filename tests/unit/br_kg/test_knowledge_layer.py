@@ -4,21 +4,20 @@ Tests the KnowledgeAggregator, KnowledgePlanner, and evidence source adapters.
 """
 
 import asyncio
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime
 
 from brain_researcher.services.br_kg.knowledge import (
-    AggregatedEvidence,
-    AggregatorConfig,
-    EvidenceConfidence,
     KnowledgeAggregator,
+    AggregatorConfig,
+    KnowledgePlanner,
+    PlannerConfig,
+    AggregatedEvidence,
     KnowledgeItem,
     KnowledgePlan,
-    KnowledgePlanner,
     PlanIntent,
-    PlannerConfig,
+    EvidenceConfidence,
 )
 
 
@@ -175,13 +174,9 @@ class TestKnowledgeAggregator:
         mock_source = AsyncMock()
         mock_source.source_id = "mock_source"
         mock_source.is_available = AsyncMock(return_value=True)
-        mock_source.search = AsyncMock(
-            return_value=[
-                KnowledgeItem(
-                    id="mock:1", source_id="mock_source", title="Mock Result", score=0.9
-                )
-            ]
-        )
+        mock_source.search = AsyncMock(return_value=[
+            KnowledgeItem(id="mock:1", source_id="mock_source", title="Mock Result", score=0.9)
+        ])
 
         # Test _query_source directly since gather() only queries predefined source lists
         items = await aggregator._query_source(
@@ -328,9 +323,8 @@ class TestPlanCache:
         assert key_different != key1_normalized
 
     def test_cache_ttl(self):
-        import time
-
         from brain_researcher.services.br_kg.knowledge.planner import PlanCache
+        import time
 
         cache = PlanCache(ttl_seconds=1)  # 1 second TTL
 
@@ -353,10 +347,7 @@ class TestToolRouterKnowledgeIntegration:
 
     def test_rank_with_knowledge_evidence(self):
         """Test that tool ranking boosts tools matching evidence."""
-        from brain_researcher.services.agent.tool_router import (
-            RoutingToolView,
-            ToolRouter,
-        )
+        from brain_researcher.services.agent.tool_router import ToolRouter, RoutingToolView
         from brain_researcher.services.tools.tool_registry import ToolRegistry
 
         # Create minimal registry for testing
@@ -413,9 +404,8 @@ class TestChatOrchestratorKnowledgeIntegration:
 
     def test_knowledge_layer_can_be_disabled(self):
         """Test that knowledge layer can be disabled."""
-        from unittest.mock import MagicMock
-
         from brain_researcher.services.agent.chat_orchestrator import ChatOrchestrator
+        from unittest.mock import MagicMock
 
         mock_router = MagicMock()
         mock_router.route_chat = MagicMock(return_value=MagicMock(text="test response"))
@@ -432,9 +422,8 @@ class TestChatOrchestratorKnowledgeIntegration:
 
     def test_structured_context_includes_evidence(self):
         """Test that structured context includes knowledge evidence."""
-        from unittest.mock import MagicMock
-
         from brain_researcher.services.agent.chat_orchestrator import ChatOrchestrator
+        from unittest.mock import MagicMock
 
         mock_router = MagicMock()
         orchestrator = ChatOrchestrator(

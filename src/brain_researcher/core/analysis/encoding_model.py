@@ -55,9 +55,7 @@ class EncodingModel:
         reference = images[0]
 
         weight_maps: dict[str, str] = {}
-        for concept in [col for col in design.columns if col != "confidence"] or [
-            "bias"
-        ]:
+        for concept in [col for col in design.columns if col != "confidence"] or ["bias"]:
             out_path = self.cache_dir / f"{concept.replace(' ', '_')}_weights.nii.gz"
             nib.save(
                 nib.Nifti1Image(mean_map.astype(np.float32), reference.affine),

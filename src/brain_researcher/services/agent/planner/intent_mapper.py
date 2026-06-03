@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from ..preflight import PreflightReport, run_preflight
 from ..tool_catalog_loader import get_tool_index, load_niwrap_containers
+from ..preflight import run_preflight, PreflightReport
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,9 @@ def choose_tool(
                 reason="Container image not configured",
             )
             candidates.append(candidate)
-            logger.debug(f"Candidate {tool_entry.id}: no image configured")
+            logger.debug(
+                f"Candidate {tool_entry.id}: no image configured"
+            )
             continue
 
         # Run preflight checks
@@ -216,7 +218,8 @@ def choose_tool(
         if candidate.preflight_ok:
             chosen = candidate
             logger.info(
-                f"Chosen tool: {candidate.tool_id} " f"(score={candidate.score:.3f})"
+                f"Chosen tool: {candidate.tool_id} "
+                f"(score={candidate.score:.3f})"
             )
             break
 

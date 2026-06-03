@@ -217,11 +217,7 @@ def test_behavior_to_fmri_retrieval_combines_direct_and_behavior_neighbor(monkey
         region_name="Salience",
         region_weight=0.91,
         path_nodes=[
-            {
-                "id": source_task["id"],
-                "labels": ["Task"],
-                "properties": {"name": "go/no-go"},
-            },
+            {"id": source_task["id"], "labels": ["Task"], "properties": {"name": "go/no-go"}},
             {"id": "ta:go-no-go", "labels": ["TaskAnalysis"], "properties": {}},
             {"id": "map:go-no-go", "labels": ["StatsMap"], "properties": {}},
         ],
@@ -255,21 +251,9 @@ def test_behavior_to_fmri_retrieval_combines_direct_and_behavior_neighbor(monkey
         region_name="Control",
         region_weight=0.73,
         path_nodes=[
-            {
-                "id": neighbor_task["id"],
-                "labels": ["Task"],
-                "properties": {"name": "stop signal"},
-            },
-            {
-                "id": "tf_inhibition",
-                "labels": ["TaskFamily"],
-                "properties": {"name": "Response inhibition"},
-            },
-            {
-                "id": "task:stop-signal-canonical",
-                "labels": ["Task"],
-                "properties": {"name": "stop signal task"},
-            },
+            {"id": neighbor_task["id"], "labels": ["Task"], "properties": {"name": "stop signal"}},
+            {"id": "tf_inhibition", "labels": ["TaskFamily"], "properties": {"name": "Response inhibition"}},
+            {"id": "task:stop-signal-canonical", "labels": ["Task"], "properties": {"name": "stop signal task"}},
             {"id": "ta:stop-signal", "labels": ["TaskAnalysis"], "properties": {}},
             {"id": "map:stop-signal", "labels": ["StatsMap"], "properties": {}},
         ],
@@ -329,7 +313,9 @@ def test_behavior_to_fmri_retrieval_combines_direct_and_behavior_neighbor(monkey
     assert result["summary"]["item_count"] == 2
     assert result["items"][0]["retrieval_methods"] == ["direct_task"]
     assert result["items"][0]["dataset_ids"] == ["ds:go-no-go"]
-    assert result["items"][1]["retrieval_methods"] == ["behavior_similar_family_bridge"]
+    assert result["items"][1]["retrieval_methods"] == [
+        "behavior_similar_family_bridge"
+    ]
     assert result["items"][1]["behavior_similarity_max"] == 0.8
     assert result["items"][1]["dataset_ids"] == ["ds:stop-signal"]
 

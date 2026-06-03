@@ -37,10 +37,10 @@ class CodeToolRegistry:
     def _register_default_tools(self) -> None:
         """Register the minimal code tool set."""
         from brain_researcher.services.agent.code_tools import (
+            ReadFileTool,
+            ReadDirTool,
             ApplyPatchTool,
             CodeSearchTool,
-            ReadDirTool,
-            ReadFileTool,
             RunTestsTool,
             SandboxRunTool,
         )

@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 class PlanState(str, Enum):
     """Plan execution state workflow."""
-
     BACKLOG = "backlog"
     IN_PROGRESS = "in_progress"
     DONE = "done"
@@ -39,9 +38,9 @@ OUTCOME_TO_STATE = {
 
 # State display info
 STATE_INFO = {
-    PlanState.BACKLOG: {"emoji": "\u23f3", "label": "Backlog"},  # hourglass
+    PlanState.BACKLOG: {"emoji": "\u23f3", "label": "Backlog"},      # hourglass
     PlanState.IN_PROGRESS: {"emoji": "\u25b6\ufe0f", "label": "In Progress"},  # play
-    PlanState.DONE: {"emoji": "\u2705", "label": "Done"},  # checkmark
+    PlanState.DONE: {"emoji": "\u2705", "label": "Done"},            # checkmark
     PlanState.CANCELLED: {"emoji": "\u274c", "label": "Cancelled"},  # X mark
 }
 
@@ -49,18 +48,18 @@ STATE_INFO = {
 # PII patterns to redact
 PII_PATTERNS = [
     # Email addresses
-    (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "[EMAIL]"),
+    (r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '[EMAIL]'),
     # SSN-like patterns
-    (r"\b\d{3}-\d{2}-\d{4}\b", "[SSN]"),
+    (r'\b\d{3}-\d{2}-\d{4}\b', '[SSN]'),
     # Subject/participant IDs (common in neuroimaging)
-    (r"\b(?:sub|subject)[-_]?\d+\b", "[SUBJECT_ID]", re.IGNORECASE),
+    (r'\b(?:sub|subject)[-_]?\d+\b', '[SUBJECT_ID]', re.IGNORECASE),
     # Session IDs
-    (r"\b(?:ses|session)[-_]?\d+\b", "[SESSION_ID]", re.IGNORECASE),
+    (r'\b(?:ses|session)[-_]?\d+\b', '[SESSION_ID]', re.IGNORECASE),
     # Home directory paths (Unix)
-    (r"/home/[a-zA-Z0-9_]+/", "/home/[USER]/"),
-    (r"/Users/[a-zA-Z0-9_]+/", "/Users/[USER]/"),
+    (r'/home/[a-zA-Z0-9_]+/', '/home/[USER]/'),
+    (r'/Users/[a-zA-Z0-9_]+/', '/Users/[USER]/'),
     # Windows user paths
-    (r"C:\\Users\\[a-zA-Z0-9_]+\\", "[WIN_USER_PATH]"),
+    (r'C:\\Users\\[a-zA-Z0-9_]+\\', '[WIN_USER_PATH]'),
 ]
 
 
@@ -151,9 +150,7 @@ class PlanLogger:
             loop.create_task(coro)
         except RuntimeError:
             # No running event loop - use thread-based approach
-            logger.info(
-                f"No running event loop, falling back to thread for: {description}"
-            )
+            logger.info(f"No running event loop, falling back to thread for: {description}")
             import threading
 
             def _run():
@@ -211,9 +208,7 @@ class PlanLogger:
         Returns:
             Path to the created markdown file
         """
-        plan_id = plan.get(
-            "plan_id", f"plan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
+        plan_id = plan.get("plan_id", f"plan_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         timestamp = datetime.now()
         query = plan.get("query", "N/A")
 
@@ -345,9 +340,7 @@ class PlanLogger:
             provider = issue_ref.get("provider")
             issue_id = issue_ref["issue_id"]
 
-            if provider and provider != getattr(
-                self.issue_tracker, "provider", provider
-            ):
+            if provider and provider != getattr(self.issue_tracker, "provider", provider):
                 logger.debug(
                     "Skipping tracker state update for plan %s: provider mismatch (%s != %s)",
                     plan_id,
@@ -358,11 +351,7 @@ class PlanLogger:
 
             comment = None
             if state == PlanState.DONE:
-                comment = (
-                    f"Execution completed in {execution_time_ms}ms"
-                    if execution_time_ms
-                    else "Execution completed"
-                )
+                comment = f"Execution completed in {execution_time_ms}ms" if execution_time_ms else "Execution completed"
             elif state == PlanState.CANCELLED and error_message:
                 comment = f"Execution failed: {error_message}"
 
@@ -459,21 +448,19 @@ class PlanLogger:
         if plan_memory_id:
             lines.append(f"**Memory ID**: {plan_memory_id}")
 
-        lines.extend(
-            [
-                "",
-                "---",
-                "",
-                "## Query",
-                "",
-                f"> {query}",
-                "",
-                "---",
-                "",
-                "## Execution Steps",
-                "",
-            ]
-        )
+        lines.extend([
+            "",
+            "---",
+            "",
+            "## Query",
+            "",
+            f"> {query}",
+            "",
+            "---",
+            "",
+            "## Execution Steps",
+            "",
+        ])
 
         for i, step in enumerate(steps, 1):
             step_id = step.get("step_id") or step.get("id") or f"step_{i}"
@@ -481,27 +468,23 @@ class PlanLogger:
             description = step.get("description", "")
             tool_args = step.get("tool_args") or step.get("args", {})
 
-            lines.extend(
-                [
-                    f"### Step {i}: {tool_name}",
-                    "",
-                    f"**ID**: `{step_id}`",
-                ]
-            )
+            lines.extend([
+                f"### Step {i}: {tool_name}",
+                "",
+                f"**ID**: `{step_id}`",
+            ])
 
             if description:
                 lines.append(f"**Description**: {description}")
 
-            lines.extend(
-                [
-                    "",
-                    "**Arguments**:",
-                    "```json",
-                    json.dumps(tool_args, indent=2, default=str),
-                    "```",
-                    "",
-                ]
-            )
+            lines.extend([
+                "",
+                "**Arguments**:",
+                "```json",
+                json.dumps(tool_args, indent=2, default=str),
+                "```",
+                "",
+            ])
 
             deps = step.get("dependencies", [])
             if deps:
@@ -514,16 +497,14 @@ class PlanLogger:
                 lines.append("")
 
         # Execution outcome section
-        lines.extend(
-            [
-                "---",
-                "",
-                "## Execution Outcome",
-                "",
-                f"**Status**: {state_info['emoji']} `{state_info['label']}`",
-                "",
-            ]
-        )
+        lines.extend([
+            "---",
+            "",
+            "## Execution Outcome",
+            "",
+            f"**Status**: {state_info['emoji']} `{state_info['label']}`",
+            "",
+        ])
 
         if state == PlanState.BACKLOG:
             lines.append("_Waiting for execution to start._")
@@ -549,9 +530,10 @@ class PlanLogger:
             lines.append("")
 
         # Metadata
-        tools_used = list(
-            set(step.get("tool_name") or step.get("tool", "unknown") for step in steps)
-        )
+        tools_used = list(set(
+            step.get("tool_name") or step.get("tool", "unknown")
+            for step in steps
+        ))
 
         metadata = {
             "plan_id": plan_id,
@@ -561,17 +543,15 @@ class PlanLogger:
             "confidence_score": plan.get("confidence_score"),
         }
 
-        lines.extend(
-            [
-                "---",
-                "",
-                "## Metadata",
-                "",
-                "```json",
-                json.dumps(metadata, indent=2),
-                "```",
-            ]
-        )
+        lines.extend([
+            "---",
+            "",
+            "## Metadata",
+            "",
+            "```json",
+            json.dumps(metadata, indent=2),
+            "```",
+        ])
 
         return "\n".join(lines)
 
@@ -602,15 +582,13 @@ class PlanLogger:
         if error_message:
             # Redact PII from error message
             safe_error = redact_pii(error_message)
-            new_outcome_lines.extend(
-                [
-                    "",
-                    "**Error**:",
-                    "```",
-                    safe_error,
-                    "```",
-                ]
-            )
+            new_outcome_lines.extend([
+                "",
+                "**Error**:",
+                "```",
+                safe_error,
+                "```",
+            ])
 
         new_outcome_lines.append("")
 
@@ -618,9 +596,9 @@ class PlanLogger:
 
         # Also update the State in the header
         content = re.sub(
-            r"\*\*State\*\*: [^\n]+",
+            r'\*\*State\*\*: [^\n]+',
             f"**State**: {state_info['emoji']} `{state_info['label']}`",
-            content,
+            content
         )
 
         # Replace the outcome section

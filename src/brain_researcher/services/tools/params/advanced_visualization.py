@@ -24,9 +24,7 @@ class AdvancedVisualizationParameters:
     seed: Optional[int]
 
 
-def advanced_visualization_from_payload(
-    payload: Dict[str, Any],
-) -> AdvancedVisualizationParameters:
+def advanced_visualization_from_payload(payload: Dict[str, Any]) -> AdvancedVisualizationParameters:
     """Create parameters from payload dict."""
 
     return AdvancedVisualizationParameters(
@@ -51,9 +49,7 @@ def _load_array(path: Path) -> np.ndarray:
     return np.asarray([[path.stat().st_size]])
 
 
-def run_advanced_visualization(
-    params: AdvancedVisualizationParameters,
-) -> Dict[str, Any]:
+def run_advanced_visualization(params: AdvancedVisualizationParameters) -> Dict[str, Any]:
     """Generate placeholder visualization artefacts and summary metadata."""
 
     data_path = Path(params.data_file)
@@ -87,10 +83,7 @@ def run_advanced_visualization(
 
     viz_path = output_dir / f"visualization.{ext}"
     if ext == "html":
-        viz_path.write_text(
-            "<html><body><h1>Visualization Placeholder</h1></body></html>",
-            encoding="utf-8",
-        )
+        viz_path.write_text("<html><body><h1>Visualization Placeholder</h1></body></html>", encoding="utf-8")
     else:
         # Write a small binary placeholder to mimic an image file.
         payload = f"Visualization placeholder for {params.plot_type}".encode("utf-8")

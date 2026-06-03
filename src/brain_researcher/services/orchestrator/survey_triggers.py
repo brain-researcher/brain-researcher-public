@@ -6,20 +6,19 @@ and neuroimaging analysis milestones.
 """
 
 import asyncio
-import inspect
-import json
-import logging
-import uuid
-from contextlib import contextmanager
-from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Callable
+import logging
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+import json
+import uuid
+import inspect
+from contextlib import contextmanager
 
 from sqlalchemy.orm import Session
-
 from .database import get_db
-from .survey_models import Survey, SurveyDistribution, SurveyNotification, SurveyTrigger
+from .survey_models import Survey, SurveyTrigger, SurveyNotification, SurveyDistribution
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +47,8 @@ def _get_db_session():
 
     yield db_source
 
-
 class TriggerType(Enum):
     """Types of survey triggers"""
-
     ANALYSIS_COMPLETE = "analysis_complete"
     DATA_UPLOAD = "data_upload"
     STUDY_MILESTONE = "study_milestone"
@@ -62,20 +59,16 @@ class TriggerType(Enum):
     COMPLETION_RATE = "completion_rate"
     NEUROIMAGING_PIPELINE = "neuroimaging_pipeline"
 
-
 class TriggerStatus(Enum):
     """Trigger execution status"""
-
     ACTIVE = "active"
     PAUSED = "paused"
     EXPIRED = "expired"
     ERROR = "error"
 
-
 @dataclass
 class TriggerEvent:
     """Represents a trigger event"""
-
     event_type: str
     event_data: Dict[str, Any]
     user_id: Optional[str] = None
@@ -88,7 +81,6 @@ class TriggerEvent:
             self.timestamp = datetime.utcnow()
         if self.metadata is None:
             self.metadata = {}
-
 
 class SurveyTriggerManager:
     """Manages automated survey triggers and distribution"""
@@ -103,23 +95,32 @@ class SurveyTriggerManager:
 
         # Analysis completion triggers
         self.register_handler(
-            TriggerType.ANALYSIS_COMPLETE.value, self._handle_analysis_complete
+            TriggerType.ANALYSIS_COMPLETE.value,
+            self._handle_analysis_complete
         )
 
         # Data upload triggers
-        self.register_handler(TriggerType.DATA_UPLOAD.value, self._handle_data_upload)
+        self.register_handler(
+            TriggerType.DATA_UPLOAD.value,
+            self._handle_data_upload
+        )
 
         # Study milestone triggers
         self.register_handler(
-            TriggerType.STUDY_MILESTONE.value, self._handle_study_milestone
+            TriggerType.STUDY_MILESTONE.value,
+            self._handle_study_milestone
         )
 
         # Time-based triggers
-        self.register_handler(TriggerType.TIME_BASED.value, self._handle_time_based)
+        self.register_handler(
+            TriggerType.TIME_BASED.value,
+            self._handle_time_based
+        )
 
         # Neuroimaging pipeline triggers
         self.register_handler(
-            TriggerType.NEUROIMAGING_PIPELINE.value, self._handle_pipeline_event
+            TriggerType.NEUROIMAGING_PIPELINE.value,
+            self._handle_pipeline_event
         )
 
     def register_handler(self, event_type: str, handler: Callable):
@@ -187,26 +188,20 @@ class SurveyTriggerManager:
 
             for trigger_id, trigger_data in matching_triggers.items():
                 try:
-                    survey_id = await self._execute_trigger(
-                        trigger_id, trigger_data, event
-                    )
+                    survey_id = await self._execute_trigger(trigger_id, trigger_data, event)
                     if survey_id:
                         triggered_surveys.append(survey_id)
                 except Exception as e:
                     logger.error(f"Error executing trigger {trigger_id}: {e}")
 
-            logger.info(
-                f"Event {event.event_type} triggered {len(triggered_surveys)} surveys"
-            )
+            logger.info(f"Event {event.event_type} triggered {len(triggered_surveys)} surveys")
 
         except Exception as e:
             logger.error(f"Error processing event {event.event_type}: {e}")
 
         return list(set(triggered_surveys))  # Remove duplicates
 
-    async def _find_matching_triggers(
-        self, event: TriggerEvent
-    ) -> Dict[str, Dict[str, Any]]:
+    async def _find_matching_triggers(self, event: TriggerEvent) -> Dict[str, Dict[str, Any]]:
         """Find triggers that match the given event"""
         matching = {}
 
@@ -228,9 +223,7 @@ class SurveyTriggerManager:
 
         return matching
 
-    async def _evaluate_trigger_conditions(
-        self, conditions: Dict[str, Any], event: TriggerEvent
-    ) -> bool:
+    async def _evaluate_trigger_conditions(self, conditions: Dict[str, Any], event: TriggerEvent) -> bool:
         """Evaluate if event matches trigger conditions"""
 
         # User-based conditions
@@ -271,9 +264,7 @@ class SurveyTriggerManager:
 
         return True
 
-    async def _evaluate_time_conditions(
-        self, time_conditions: Dict[str, Any], event: TriggerEvent
-    ) -> bool:
+    async def _evaluate_time_conditions(self, time_conditions: Dict[str, Any], event: TriggerEvent) -> bool:
         """Evaluate time-based trigger conditions"""
 
         # Day of week
@@ -304,9 +295,7 @@ class SurveyTriggerManager:
 
         return True
 
-    async def _execute_trigger(
-        self, trigger_id: str, trigger_data: Dict[str, Any], event: TriggerEvent
-    ) -> Optional[str]:
+    async def _execute_trigger(self, trigger_id: str, trigger_data: Dict[str, Any], event: TriggerEvent) -> Optional[str]:
         """Execute a trigger and distribute survey"""
 
         try:
@@ -316,9 +305,7 @@ class SurveyTriggerManager:
             # Update trigger record
             with _get_db_session() as db:
                 trigger = (
-                    db.query(SurveyTrigger)
-                    .filter(SurveyTrigger.id == trigger_id)
-                    .first()
+                    db.query(SurveyTrigger).filter(SurveyTrigger.id == trigger_id).first()
                 )
                 if trigger:
                     trigger.last_triggered_at = datetime.utcnow()
@@ -342,9 +329,7 @@ class SurveyTriggerManager:
                 survey_id, participants, distribution["id"], config
             )
 
-            logger.info(
-                f"Executed trigger {trigger_id} for survey {survey_id}, {len(participants)} participants"
-            )
+            logger.info(f"Executed trigger {trigger_id} for survey {survey_id}, {len(participants)} participants")
 
             return survey_id
 
@@ -352,9 +337,7 @@ class SurveyTriggerManager:
             logger.error(f"Error executing trigger {trigger_id}: {e}")
             return None
 
-    async def _get_target_participants(
-        self, config: Dict[str, Any], event: TriggerEvent
-    ) -> List[str]:
+    async def _get_target_participants(self, config: Dict[str, Any], event: TriggerEvent) -> List[str]:
         """Get target participants for triggered survey"""
         participants = []
 
@@ -385,13 +368,8 @@ class SurveyTriggerManager:
 
         return list(set(participants))  # Remove duplicates
 
-    async def _create_triggered_distribution(
-        self,
-        survey_id: str,
-        participants: List[str],
-        config: Dict[str, Any],
-        event: TriggerEvent,
-    ) -> Dict[str, Any]:
+    async def _create_triggered_distribution(self, survey_id: str, participants: List[str],
+                                           config: Dict[str, Any], event: TriggerEvent) -> Dict[str, Any]:
         """Create a distribution record for triggered survey"""
 
         with _get_db_session() as db:
@@ -419,13 +397,8 @@ class SurveyTriggerManager:
                 db.rollback()
                 raise
 
-    async def _send_survey_notifications(
-        self,
-        survey_id: str,
-        participants: List[str],
-        distribution_id: str,
-        config: Dict[str, Any],
-    ):
+    async def _send_survey_notifications(self, survey_id: str, participants: List[str],
+                                       distribution_id: str, config: Dict[str, Any]):
         """Send survey notifications to participants"""
 
         notification_config = config.get("notifications", {})
@@ -442,9 +415,7 @@ class SurveyTriggerManager:
                         survey_id=survey_id,
                         participant_id=participant_id,
                         notification_type="invitation",
-                        title=notification_config.get(
-                            "title", f"Survey: {survey.title}"
-                        ),
+                        title=notification_config.get("title", f"Survey: {survey.title}"),
                         message=notification_config.get(
                             "message",
                             "You have been invited to participate in a survey.",
@@ -452,9 +423,7 @@ class SurveyTriggerManager:
                         delivery_method=notification_config.get("method", "email"),
                         delivery_config=notification_config.get("delivery_config", {}),
                         scheduled_for=datetime.utcnow()
-                        + timedelta(
-                            minutes=notification_config.get("delay_minutes", 0)
-                        ),
+                        + timedelta(minutes=notification_config.get("delay_minutes", 0)),
                     )
 
                     db.add(notification)
@@ -477,14 +446,9 @@ class SurveyTriggerManager:
         # Check if this is a significant analysis completion
         analysis_data = event.event_data
 
-        if analysis_data.get("analysis_type") in [
-            "group_analysis",
-            "statistical_analysis",
-        ]:
+        if analysis_data.get("analysis_type") in ["group_analysis", "statistical_analysis"]:
             # Trigger post-analysis feedback survey
-            post_analysis_surveys = await self._get_surveys_by_category(
-                "post_analysis_feedback"
-            )
+            post_analysis_surveys = await self._get_surveys_by_category("post_analysis_feedback")
             triggered_surveys.extend(post_analysis_surveys)
 
         if analysis_data.get("quality_score", 0) < 0.7:
@@ -523,16 +487,12 @@ class SurveyTriggerManager:
 
         if milestone_type == "participant_enrolled":
             # Trigger baseline assessment
-            baseline_surveys = await self._get_surveys_by_category(
-                "baseline_assessment"
-            )
+            baseline_surveys = await self._get_surveys_by_category("baseline_assessment")
             triggered_surveys.extend(baseline_surveys)
 
         elif milestone_type == "scanning_complete":
             # Trigger post-scan feedback
-            post_scan_surveys = await self._get_surveys_by_category(
-                "post_scan_feedback"
-            )
+            post_scan_surveys = await self._get_surveys_by_category("post_scan_feedback")
             triggered_surveys.extend(post_scan_surveys)
 
         elif milestone_type == "study_complete":
@@ -576,16 +536,12 @@ class SurveyTriggerManager:
 
         elif pipeline_stage == "first_level_complete":
             # Trigger first-level analysis feedback
-            first_level_surveys = await self._get_surveys_by_category(
-                "first_level_feedback"
-            )
+            first_level_surveys = await self._get_surveys_by_category("first_level_feedback")
             triggered_surveys.extend(first_level_surveys)
 
         elif pipeline_stage == "group_analysis_complete":
             # Trigger group analysis validation
-            group_surveys = await self._get_surveys_by_category(
-                "group_analysis_validation"
-            )
+            group_surveys = await self._get_surveys_by_category("group_analysis_validation")
             triggered_surveys.extend(group_surveys)
 
         return triggered_surveys
@@ -596,22 +552,16 @@ class SurveyTriggerManager:
         """Get active survey IDs by category"""
         with _get_db_session() as db:
             try:
-                surveys = (
-                    db.query(Survey)
-                    .filter(
-                        Survey.category == category,
-                        Survey.status == "active",
-                    )
-                    .all()
-                )
+                surveys = db.query(Survey).filter(
+                    Survey.category == category,
+                    Survey.status == "active",
+                ).all()
                 return [s.id for s in surveys]
             except Exception as e:
                 logger.error(f"Error getting surveys by category {category}: {e}")
                 return []
 
-    async def _get_active_surveys_with_reminders(
-        self, reminder_frequency: str
-    ) -> List[str]:
+    async def _get_active_surveys_with_reminders(self, reminder_frequency: str) -> List[str]:
         """Get surveys that have reminder settings"""
         with _get_db_session() as db:
             try:
@@ -636,9 +586,7 @@ class SurveyTriggerManager:
         # This would integrate with a task scheduler like Celery
         # For now, just log the scheduled trigger
         scheduled_time = datetime.utcnow() + timedelta(minutes=delay_minutes)
-        logger.info(
-            f"Scheduled delayed trigger for {scheduled_time} with event {event.event_type}"
-        )
+        logger.info(f"Scheduled delayed trigger for {scheduled_time} with event {event.event_type}")
 
     # Management methods
 
@@ -685,21 +633,17 @@ class SurveyTriggerManager:
         with _get_db_session() as db:
             try:
                 total_triggers = db.query(SurveyTrigger).count()
-                active_triggers = (
-                    db.query(SurveyTrigger)
-                    .filter(SurveyTrigger.status == "active")
-                    .count()
-                )
+                active_triggers = db.query(SurveyTrigger).filter(
+                    SurveyTrigger.status == "active"
+                ).count()
 
                 # Get trigger counts by type
                 trigger_types = db.query(SurveyTrigger.trigger_type).distinct().all()
                 type_counts = {}
                 for (trigger_type,) in trigger_types:
-                    count = (
-                        db.query(SurveyTrigger)
-                        .filter(SurveyTrigger.trigger_type == trigger_type)
-                        .count()
-                    )
+                    count = db.query(SurveyTrigger).filter(
+                        SurveyTrigger.trigger_type == trigger_type
+                    ).count()
                     type_counts[trigger_type] = count
 
                 return {
@@ -712,38 +656,32 @@ class SurveyTriggerManager:
                 logger.error(f"Error getting trigger statistics: {e}")
                 return {}
 
-
 # Global trigger manager instance
 trigger_manager = SurveyTriggerManager()
 
 # Convenience functions for external use
 
-
-async def trigger_survey_event(
-    event_type: str, event_data: Dict[str, Any], user_id: Optional[str] = None, **kwargs
-) -> List[str]:
+async def trigger_survey_event(event_type: str, event_data: Dict[str, Any],
+                             user_id: Optional[str] = None, **kwargs) -> List[str]:
     """Convenience function to trigger survey events"""
     event = TriggerEvent(
-        event_type=event_type, event_data=event_data, user_id=user_id, **kwargs
+        event_type=event_type,
+        event_data=event_data,
+        user_id=user_id,
+        **kwargs
     )
     return await trigger_manager.process_event(event)
 
-
-async def setup_analysis_complete_trigger(
-    survey_id: str, analysis_types: List[str] = None
-):
+async def setup_analysis_complete_trigger(survey_id: str, analysis_types: List[str] = None):
     """Set up trigger for analysis completion"""
     config = {
         "type": TriggerType.ANALYSIS_COMPLETE.value,
         "conditions": {
             "event_data": {
-                "analysis_type": {
-                    "operator": "contains",
-                    "value": analysis_types or ["any"],
-                }
+                "analysis_type": {"operator": "contains", "value": analysis_types or ["any"]}
             }
         },
         "targeting": {"from_event": True},
-        "notifications": {"enabled": True, "method": "email"},
+        "notifications": {"enabled": True, "method": "email"}
     }
     return await trigger_manager.setup_trigger(survey_id, config)

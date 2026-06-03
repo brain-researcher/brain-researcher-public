@@ -14,7 +14,6 @@ CLI (does NOT run automatically — invoke explicitly):
     python -m brain_researcher.services.br_kg.etl.loaders.fmri_methods_concept_loader \
         --yaml data/neuro_methods_kb.yaml [--dry-run]
 """
-
 from __future__ import annotations
 
 import argparse
@@ -33,9 +32,7 @@ def build_concept_records(yaml_path: str | Path) -> list[dict[str, Any]]:
         if not isinstance(rule, dict) or not rule.get("id"):
             continue
         triggers = rule.get("triggers") or {}
-        keywords = [
-            str(k) for k in (triggers.get("query_keywords") or []) if str(k).strip()
-        ]
+        keywords = [str(k) for k in (triggers.get("query_keywords") or []) if str(k).strip()]
         records.append(
             {
                 "id": f"method_{rule['id']}",
@@ -64,11 +61,7 @@ def load(db: Any, yaml_path: str | Path) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--yaml", default="data/neuro_methods_kb.yaml")
-    ap.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="parse + print records, do NOT touch the DB",
-    )
+    ap.add_argument("--dry-run", action="store_true", help="parse + print records, do NOT touch the DB")
     args = ap.parse_args(argv)
 
     records = build_concept_records(args.yaml)

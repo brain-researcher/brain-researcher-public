@@ -26,7 +26,6 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from brain_researcher.services.br_kg.query_service import KGNodeSummary
 
-
 def _select_ood_verification_support_seed(
     *,
     touched_seeds: Sequence[str] | None,
@@ -82,9 +81,7 @@ def _select_ood_verification_support_seed(
     ranked.sort()
     return ranked[0][3]
 
-
 _HYPOTHESIS_PRIORITY1_SIMILARITY_FLOOR = 0.70
-
 
 def _hypothesis_query_tokens(search_terms: Sequence[str]) -> set[str]:
     # Lazy import to avoid an import cycle (query_service imports this module).
@@ -95,7 +92,6 @@ def _hypothesis_query_tokens(search_terms: Sequence[str]) -> set[str]:
         for token in _tokenize_query(term):
             tokens.add(token)
     return tokens
-
 
 def _hypothesis_entity_overlap_count(
     entity: KGNodeSummary,
@@ -118,7 +114,6 @@ def _hypothesis_entity_overlap_count(
     )
     label_tokens = set(_tokenize_ood_label(label))
     return len(label_tokens.intersection(query_tokens))
-
 
 def _hypothesis_entity_type_priority(node_type: str | None) -> float:
     # Lazy import to avoid an import cycle (query_service imports this module).
@@ -146,7 +141,6 @@ def _hypothesis_entity_type_priority(node_type: str | None) -> float:
         "Coordinate": 0.2,
     }.get(canonical, 1.5)
 
-
 def _hypothesis_grounding_priority(entity: KGNodeSummary) -> int:
     # Lazy import to avoid an import cycle (query_service imports this module).
     from brain_researcher.services.br_kg.query_service import (
@@ -162,19 +156,18 @@ def _hypothesis_grounding_priority(entity: KGNodeSummary) -> int:
         return 1
     if canonical in _HYPOTHESIS_GROUNDING_PRIORITY_2:
         return 2
-    if canonical in _HYPOTHESIS_GROUNDING_PRIORITY_3 or kg_id.startswith(
-        "ds:openneuro:"
+    if (
+        canonical in _HYPOTHESIS_GROUNDING_PRIORITY_3
+        or kg_id.startswith("ds:openneuro:")
     ):
         return 3
     return 2
-
 
 def _hypothesis_grounding_similarity(entity: KGNodeSummary) -> float:
     # Lazy import to avoid an import cycle (query_service imports this module).
     from brain_researcher.services.br_kg.query_service import _safe_float
 
     return _safe_float(entity.score, 0.0)
-
 
 def _hypothesis_grounding_sort_priority(entity: KGNodeSummary) -> int:
     priority = _hypothesis_grounding_priority(entity)
@@ -185,7 +178,6 @@ def _hypothesis_grounding_sort_priority(entity: KGNodeSummary) -> int:
     ):
         return 2
     return priority
-
 
 def _select_traversal_seeds(
     seeds: Sequence[str],
@@ -234,7 +226,6 @@ def _select_traversal_seeds(
         return ordered
     return ordered[:max_traversal_seeds]
 
-
 def _ood_focus_terms(label: str, *, limit: int = 3) -> list[str]:
     # Lazy import to avoid an import cycle (query_service imports this module).
     from brain_researcher.services.br_kg.query_service import _tokenize_ood_label
@@ -245,7 +236,6 @@ def _ood_focus_terms(label: str, *, limit: int = 3) -> list[str]:
     ranked = sorted(set(tokens), key=lambda token: (-len(token), token))
     return ranked[:limit]
 
-
 def _ood_compact_label(label: str, *, max_words: int = 8) -> str:
     text = re.sub(r"\s+", " ", str(label or "").strip())
     if not text:
@@ -254,7 +244,6 @@ def _ood_compact_label(label: str, *, max_words: int = 8) -> str:
     if len(words) <= max_words:
         return text
     return " ".join(words[:max_words]).rstrip(" ,;:") + "..."
-
 
 _OOD_DUPLICATE_LABEL_TOKENS = {
     "candidate",
@@ -275,7 +264,6 @@ _OOD_DUPLICATE_LABEL_TOKENS = {
     "assessments",
 }
 
-
 def _ood_candidate_family_tokens(label: str) -> set[str]:
     # Lazy import to avoid an import cycle (query_service imports this module).
     from brain_researcher.services.br_kg.query_service import _tokenize_ood_label
@@ -285,7 +273,6 @@ def _ood_candidate_family_tokens(label: str) -> set[str]:
         for token in _tokenize_ood_label(label)
         if token not in _OOD_DUPLICATE_LABEL_TOKENS
     }
-
 
 def _ood_labels_are_near_duplicates(label_a: str, label_b: str) -> bool:
     compact_a = _ood_compact_label(label_a, max_words=12).lower()
@@ -308,7 +295,6 @@ def _ood_labels_are_near_duplicates(label_a: str, label_b: str) -> bool:
         return True
     return len(shared) >= 4 and min(len(tokens_a), len(tokens_b)) >= 4
 
-
 _OOD_WEAK_VARIANT_TOKENS = frozenset(
     {
         "activation",
@@ -327,10 +313,8 @@ _OOD_WEAK_VARIANT_TOKENS = frozenset(
     }
 )
 
-
 def _ood_normalize_clause(value: Any) -> str:
     return " ".join(str(value or "").strip().split()).rstrip(" .")
-
 
 def _ood_family_overlap_stats(
     anchor_label: str,
@@ -346,7 +330,6 @@ def _ood_family_overlap_stats(
     )
     return anchor_tokens, candidate_tokens, shared, overlap
 
-
 def _ood_distinctive_candidate_tokens(
     anchor_label: str,
     candidate_label: str,
@@ -360,7 +343,6 @@ def _ood_distinctive_candidate_tokens(
         for token in candidate_tokens.difference(anchor_tokens)
         if token not in _OOD_WEAK_VARIANT_TOKENS
     }
-
 
 def _ood_budget_exhausted(deadline_monotonic: float | None) -> bool:
     if deadline_monotonic is None:

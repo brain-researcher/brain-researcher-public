@@ -8,23 +8,23 @@ import asyncio
 import json
 import logging
 import time
-import traceback
-import uuid
-from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from typing import Dict, List, Optional, Any, Set, Callable, Union
+from dataclasses import dataclass, asdict, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+import uuid
+import traceback
 
-from .breakpoint_manager import Breakpoint, BreakpointManager, BreakpointType
+from .breakpoint_manager import BreakpointManager, Breakpoint, BreakpointType
 from .inspector import Inspector, StackFrame
-from .trace_analyzer import EventType, ExecutionEvent, TraceAnalyzer
+from .trace_analyzer import TraceAnalyzer, ExecutionEvent, EventType
+
 
 logger = logging.getLogger(__name__)
 
 
 class ExecutionState(str, Enum):
     """Possible execution states"""
-
     RUNNING = "running"
     PAUSED = "paused"
     STEPPING = "stepping"
@@ -35,7 +35,6 @@ class ExecutionState(str, Enum):
 
 class StepType(str, Enum):
     """Types of stepping operations"""
-
     STEP_OVER = "step_over"
     STEP_INTO = "step_into"
     STEP_OUT = "step_out"
@@ -45,7 +44,6 @@ class StepType(str, Enum):
 @dataclass
 class DAGNode:
     """Represents a node in the DAG"""
-
     node_id: str
     node_type: str
     function: Callable
@@ -56,14 +54,13 @@ class DAGNode:
     def to_dict(self) -> Dict:
         data = asdict(self)
         # Remove function from serialization
-        data.pop("function", None)
+        data.pop('function', None)
         return data
 
 
 @dataclass
 class DAGDefinition:
     """Defines a complete DAG for execution"""
-
     dag_id: str
     name: str
     description: str
@@ -111,7 +108,6 @@ class DAGDefinition:
 @dataclass
 class ExecutionContext:
     """Context for DAG execution"""
-
     dag_definition: DAGDefinition
     session_id: str
     variables: Dict[str, Any] = field(default_factory=dict)
@@ -130,7 +126,6 @@ class ExecutionContext:
 @dataclass
 class DebugConfig:
     """Configuration for debug session"""
-
     session_id: str
     dag_id: str
     enable_tracing: bool = True
@@ -147,9 +142,10 @@ class DebugConfig:
 class DebugSession:
     """Manages a single debugging session"""
 
-    def __init__(
-        self, session_id: str, dag_definition: DAGDefinition, debug_config: DebugConfig
-    ):
+    def __init__(self,
+                 session_id: str,
+                 dag_definition: DAGDefinition,
+                 debug_config: DebugConfig):
         self.session_id = session_id
         self.dag_definition = dag_definition
         self.debug_config = debug_config
@@ -180,31 +176,27 @@ class DebugSession:
         self.on_pause: Optional[Callable] = None
         self.on_step: Optional[Callable] = None
 
-    def set_callbacks(
-        self,
-        on_node_enter: Callable = None,
-        on_node_exit: Callable = None,
-        on_pause: Callable = None,
-        on_step: Callable = None,
-    ):
+    def set_callbacks(self,
+                     on_node_enter: Callable = None,
+                     on_node_exit: Callable = None,
+                     on_pause: Callable = None,
+                     on_step: Callable = None):
         """Set debug event callbacks"""
         self.on_node_enter = on_node_enter
         self.on_node_exit = on_node_exit
         self.on_pause = on_pause
         self.on_step = on_step
 
-    async def add_breakpoint(
-        self,
-        node_id: str,
-        condition: Optional[str] = None,
-        hit_count: Optional[int] = None,
-    ) -> str:
+    async def add_breakpoint(self,
+                           node_id: str,
+                           condition: Optional[str] = None,
+                           hit_count: Optional[int] = None) -> str:
         """Add a breakpoint"""
         breakpoint = await self.breakpoint_manager.add_breakpoint(
             node_id=node_id,
             breakpoint_type=BreakpointType.NODE,
             condition=condition,
-            hit_count=hit_count,
+            hit_count=hit_count
         )
         return breakpoint.breakpoint_id
 
@@ -215,23 +207,19 @@ class DebugSession:
     def get_current_state(self) -> Dict:
         """Get current debugging state"""
         return {
-            "session_id": self.session_id,
-            "dag_id": self.dag_definition.dag_id,
-            "execution_state": self.execution_state.value,
-            "current_node": self.execution_context.current_node,
-            "current_level": self.execution_context.current_level,
-            "current_level_index": self.execution_context.current_level_index,
-            "variables": self.execution_context.variables,
-            "node_results": self.execution_context.node_results,
-            "execution_stack": self.execution_context.execution_stack,
-            "breakpoints": [
-                bp.to_dict() for bp in self.breakpoint_manager.get_all_breakpoints()
-            ],
-            "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
-            "error": self.error,
+            'session_id': self.session_id,
+            'dag_id': self.dag_definition.dag_id,
+            'execution_state': self.execution_state.value,
+            'current_node': self.execution_context.current_node,
+            'current_level': self.execution_context.current_level,
+            'current_level_index': self.execution_context.current_level_index,
+            'variables': self.execution_context.variables,
+            'node_results': self.execution_context.node_results,
+            'execution_stack': self.execution_context.execution_stack,
+            'breakpoints': [bp.to_dict() for bp in self.breakpoint_manager.get_all_breakpoints()],
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'error': self.error
         }
 
 
@@ -251,15 +239,16 @@ class WorkflowDebugger:
 
         logger.info("Workflow debugger initialized")
 
-    async def start_debug_session(
-        self, dag_definition: DAGDefinition, debug_config: Optional[DebugConfig] = None
-    ) -> str:
+    async def start_debug_session(self,
+                                dag_definition: DAGDefinition,
+                                debug_config: Optional[DebugConfig] = None) -> str:
         """Start a new debug session"""
         session_id = f"debug_session_{int(time.time())}_{uuid.uuid4().hex[:8]}"
 
         if debug_config is None:
             debug_config = DebugConfig(
-                session_id=session_id, dag_id=dag_definition.dag_id
+                session_id=session_id,
+                dag_id=dag_definition.dag_id
             )
         else:
             debug_config.session_id = session_id
@@ -271,9 +260,7 @@ class WorkflowDebugger:
         # Store session
         self.active_sessions[session_id] = session
 
-        logger.info(
-            f"Started debug session {session_id} for DAG {dag_definition.dag_id}"
-        )
+        logger.info(f"Started debug session {session_id} for DAG {dag_definition.dag_id}")
         return session_id
 
     async def stop_debug_session(self, session_id: str) -> bool:
@@ -293,7 +280,7 @@ class WorkflowDebugger:
 
         # Trim history if needed
         if len(self.session_history) > self.max_history_size:
-            self.session_history = self.session_history[-self.max_history_size // 2 :]
+            self.session_history = self.session_history[-self.max_history_size // 2:]
 
         # Remove from active sessions
         del self.active_sessions[session_id]
@@ -334,15 +321,13 @@ class WorkflowDebugger:
 
         # Record start event
         if session.trace_analyzer:
-            await session.trace_analyzer.record_event(
-                ExecutionEvent(
-                    event_id=str(uuid.uuid4()),
-                    event_type=EventType.EXECUTION_START,
-                    node_id="__dag_start__",
-                    timestamp=datetime.utcnow(),
-                    metadata={"dag_id": context.dag_definition.dag_id},
-                )
-            )
+            await session.trace_analyzer.record_event(ExecutionEvent(
+                event_id=str(uuid.uuid4()),
+                event_type=EventType.EXECUTION_START,
+                node_id="__dag_start__",
+                timestamp=datetime.utcnow(),
+                metadata={"dag_id": context.dag_definition.dag_id}
+            ))
 
         try:
             # Execute levels in order
@@ -368,15 +353,13 @@ class WorkflowDebugger:
         finally:
             # Record end event
             if session.trace_analyzer:
-                await session.trace_analyzer.record_event(
-                    ExecutionEvent(
-                        event_id=str(uuid.uuid4()),
-                        event_type=EventType.EXECUTION_END,
-                        node_id="__dag_end__",
-                        timestamp=datetime.utcnow(),
-                        metadata={"dag_id": context.dag_definition.dag_id},
-                    )
-                )
+                await session.trace_analyzer.record_event(ExecutionEvent(
+                    event_id=str(uuid.uuid4()),
+                    event_type=EventType.EXECUTION_END,
+                    node_id="__dag_end__",
+                    timestamp=datetime.utcnow(),
+                    metadata={"dag_id": context.dag_definition.dag_id}
+                ))
 
     async def _debug_execute_node(self, session: DebugSession, node_id: str):
         """Execute a single node with debugging"""
@@ -389,19 +372,18 @@ class WorkflowDebugger:
         try:
             # Record node entry event
             if session.trace_analyzer:
-                await session.trace_analyzer.record_event(
-                    ExecutionEvent(
-                        event_id=str(uuid.uuid4()),
-                        event_type=EventType.NODE_ENTER,
-                        node_id=node_id,
-                        timestamp=datetime.utcnow(),
-                        metadata={"node_type": node.node_type},
-                    )
-                )
+                await session.trace_analyzer.record_event(ExecutionEvent(
+                    event_id=str(uuid.uuid4()),
+                    event_type=EventType.NODE_ENTER,
+                    node_id=node_id,
+                    timestamp=datetime.utcnow(),
+                    metadata={"node_type": node.node_type}
+                ))
 
             # Check for breakpoints before execution
             should_break = await session.breakpoint_manager.should_break(
-                node_id=node_id, context=context.variables
+                node_id=node_id,
+                context=context.variables
             )
 
             if should_break:
@@ -428,34 +410,30 @@ class WorkflowDebugger:
 
                 # Record success event
                 if session.trace_analyzer:
-                    await session.trace_analyzer.record_event(
-                        ExecutionEvent(
-                            event_id=str(uuid.uuid4()),
-                            event_type=EventType.NODE_SUCCESS,
-                            node_id=node_id,
-                            timestamp=datetime.utcnow(),
-                            metadata={
-                                "execution_time": time.time() - start_time,
-                                "result_type": type(result).__name__,
-                            },
-                        )
-                    )
+                    await session.trace_analyzer.record_event(ExecutionEvent(
+                        event_id=str(uuid.uuid4()),
+                        event_type=EventType.NODE_SUCCESS,
+                        node_id=node_id,
+                        timestamp=datetime.utcnow(),
+                        metadata={
+                            "execution_time": time.time() - start_time,
+                            "result_type": type(result).__name__
+                        }
+                    ))
 
             except Exception as e:
                 # Record error event
                 if session.trace_analyzer:
-                    await session.trace_analyzer.record_event(
-                        ExecutionEvent(
-                            event_id=str(uuid.uuid4()),
-                            event_type=EventType.NODE_ERROR,
-                            node_id=node_id,
-                            timestamp=datetime.utcnow(),
-                            metadata={
-                                "error": str(e),
-                                "traceback": traceback.format_exc(),
-                            },
-                        )
-                    )
+                    await session.trace_analyzer.record_event(ExecutionEvent(
+                        event_id=str(uuid.uuid4()),
+                        event_type=EventType.NODE_ERROR,
+                        node_id=node_id,
+                        timestamp=datetime.utcnow(),
+                        metadata={
+                            "error": str(e),
+                            "traceback": traceback.format_exc()
+                        }
+                    ))
 
                 # Break on error if configured
                 if session.debug_config.break_on_error:
@@ -470,23 +448,21 @@ class WorkflowDebugger:
         finally:
             # Record node exit event
             if session.trace_analyzer:
-                await session.trace_analyzer.record_event(
-                    ExecutionEvent(
-                        event_id=str(uuid.uuid4()),
-                        event_type=EventType.NODE_EXIT,
-                        node_id=node_id,
-                        timestamp=datetime.utcnow(),
-                        metadata={},
-                    )
-                )
+                await session.trace_analyzer.record_event(ExecutionEvent(
+                    event_id=str(uuid.uuid4()),
+                    event_type=EventType.NODE_EXIT,
+                    node_id=node_id,
+                    timestamp=datetime.utcnow(),
+                    metadata={}
+                ))
 
             # Remove from execution stack
             if context.execution_stack and context.execution_stack[-1] == node_id:
                 context.execution_stack.pop()
 
-    def _prepare_node_parameters(
-        self, context: ExecutionContext, node: DAGNode
-    ) -> Dict[str, Any]:
+    def _prepare_node_parameters(self,
+                                context: ExecutionContext,
+                                node: DAGNode) -> Dict[str, Any]:
         """Prepare parameters for node execution"""
         params = {}
 
@@ -525,29 +501,26 @@ class WorkflowDebugger:
         await session._pause_event.wait()
 
         # Reset execution state based on step type
-        if session._current_step_type in [
-            StepType.STEP_OVER,
-            StepType.STEP_INTO,
-            StepType.STEP_OUT,
-        ]:
+        if session._current_step_type in [StepType.STEP_OVER, StepType.STEP_INTO, StepType.STEP_OUT]:
             session.execution_state = ExecutionState.STEPPING
         else:
             session.execution_state = ExecutionState.RUNNING
 
-    async def _handle_error_breakpoint(
-        self, session: DebugSession, node_id: str, error: Exception
-    ):
+    async def _handle_error_breakpoint(self,
+                                     session: DebugSession,
+                                     node_id: str,
+                                     error: Exception):
         """Handle error breakpoint"""
         logger.info(f"Error breakpoint hit at node {node_id}: {error}")
 
         session.execution_state = ExecutionState.PAUSED
 
         # Add error to context for inspection
-        session.execution_context.variables["__last_error__"] = {
-            "error": str(error),
-            "type": type(error).__name__,
-            "node_id": node_id,
-            "traceback": traceback.format_exc(),
+        session.execution_context.variables['__last_error__'] = {
+            'error': str(error),
+            'type': type(error).__name__,
+            'node_id': node_id,
+            'traceback': traceback.format_exc()
         }
 
         # Call pause callback

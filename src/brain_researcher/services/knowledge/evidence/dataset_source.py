@@ -115,7 +115,8 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
             # Apply filters
             if query.modality:
                 modality_match = any(
-                    query.modality.lower() in str(m).lower() for m in record.modalities
+                    query.modality.lower() in str(m).lower()
+                    for m in record.modalities
                 )
                 if not modality_match:
                     continue

@@ -11,24 +11,22 @@ This module provides comprehensive budget management including:
 """
 
 import asyncio
-import json
 import logging
+from typing import Dict, List, Optional, Any, Tuple, Union, Callable
+from dataclasses import dataclass, field
+from enum import Enum
+from datetime import datetime, timedelta, date
+import json
+from decimal import Decimal, ROUND_HALF_UP
+import redis
 import threading
 from collections import defaultdict
-from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
-from decimal import ROUND_HALF_UP, Decimal
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
-import redis
 
 logger = logging.getLogger(__name__)
 
 
 class BudgetPeriod(Enum):
     """Budget period types"""
-
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
@@ -39,16 +37,14 @@ class BudgetPeriod(Enum):
 
 class BudgetType(Enum):
     """Budget constraint types"""
-
-    HARD_LIMIT = "hard_limit"  # Strict enforcement, stop execution
-    SOFT_LIMIT = "soft_limit"  # Warning only, allow override
-    ADVISORY = "advisory"  # Information only
-    PREDICTIVE = "predictive"  # Based on projected spending
+    HARD_LIMIT = "hard_limit"      # Strict enforcement, stop execution
+    SOFT_LIMIT = "soft_limit"      # Warning only, allow override
+    ADVISORY = "advisory"          # Information only
+    PREDICTIVE = "predictive"      # Based on projected spending
 
 
 class AlertSeverity(Enum):
     """Alert severity levels"""
-
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -61,7 +57,6 @@ AlertLevel = AlertSeverity
 
 class SpendingCategory(Enum):
     """Spending categories for tracking"""
-
     COMPUTE = "compute"
     STORAGE = "storage"
     NETWORK = "network"
@@ -76,7 +71,6 @@ class SpendingCategory(Enum):
 @dataclass
 class Budget:
     """Budget configuration"""
-
     budget_id: str
     name: str
     total_amount: Decimal
@@ -107,7 +101,6 @@ class Budget:
 @dataclass
 class SpendingRecord:
     """Individual spending record"""
-
     record_id: str
     budget_id: str
     amount: Decimal
@@ -132,7 +125,6 @@ class SpendingRecord:
 @dataclass
 class BudgetAlert:
     """Budget alert"""
-
     alert_id: str
     budget_id: str
     severity: AlertSeverity
@@ -158,7 +150,6 @@ class BudgetAlert:
 @dataclass
 class BudgetDecision:
     """Budget approval/denial decision"""
-
     approved: bool
     remaining_budget: Decimal
     estimated_cost: Decimal
@@ -210,7 +201,7 @@ class SpendingTracker:
                 "billing_period": record.billing_period,
                 "provider": record.provider or "",
                 "region": record.region or "",
-                "tags": json.dumps(record.tags),
+                "tags": json.dumps(record.tags)
             }
 
             self.redis.hmset(record_key, record_data)
@@ -228,15 +219,11 @@ class SpendingTracker:
         self.redis.hincrbyfloat(budget_key, "total", float(record.amount))
 
         # Category totals
-        category_key = (
-            f"spending:budget:{record.budget_id}:category:{record.category.value}"
-        )
+        category_key = f"spending:budget:{record.budget_id}:category:{record.category.value}"
         self.redis.hincrbyfloat(category_key, "total", float(record.amount))
 
         # Period totals
-        period_key = (
-            f"spending:budget:{record.budget_id}:period:{record.billing_period}"
-        )
+        period_key = f"spending:budget:{record.budget_id}:period:{record.billing_period}"
         self.redis.hincrbyfloat(period_key, "total", float(record.amount))
 
         # Daily tracking for burn rate calculation
@@ -256,9 +243,7 @@ class SpendingTracker:
         total = self.redis.hget(budget_key, "total")
         return Decimal(total or "0")
 
-    def get_category_spending(
-        self, budget_id: str, category: SpendingCategory
-    ) -> Decimal:
+    def get_category_spending(self, budget_id: str, category: SpendingCategory) -> Decimal:
         """Get spending for specific category"""
         category_key = f"spending:budget:{budget_id}:category:{category.value}"
         total = self.redis.hget(category_key, "total")
@@ -283,9 +268,7 @@ class SpendingTracker:
 
         return total_spending / valid_days
 
-    def get_spending_history(
-        self, budget_id: str, days: int = 30
-    ) -> List[Dict[str, Any]]:
+    def get_spending_history(self, budget_id: str, days: int = 30) -> List[Dict[str, Any]]:
         """Get daily spending history"""
         history = []
 
@@ -294,9 +277,10 @@ class SpendingTracker:
             daily_key = f"spending:budget:{budget_id}:daily:{day.isoformat()}"
             daily_total = self.redis.hget(daily_key, "total")
 
-            history.append(
-                {"date": day.isoformat(), "spending": float(daily_total or 0)}
-            )
+            history.append({
+                "date": day.isoformat(),
+                "spending": float(daily_total or 0)
+            })
 
         return list(reversed(history))  # Return chronological order
 
@@ -311,16 +295,15 @@ class AlertSystem:
             "info": timedelta(hours=4),
             "warning": timedelta(hours=2),
             "critical": timedelta(minutes=30),
-            "emergency": timedelta(minutes=10),
+            "emergency": timedelta(minutes=10)
         }
 
     def add_alert_callback(self, callback: Callable[[BudgetAlert], None]) -> None:
         """Add callback for alert notifications"""
         self.alert_callbacks.append(callback)
 
-    def trigger_alert(
-        self, budget: Budget, current_spending: Decimal, threshold_percentage: float
-    ) -> Optional[BudgetAlert]:
+    def trigger_alert(self, budget: Budget, current_spending: Decimal,
+                     threshold_percentage: float) -> Optional[BudgetAlert]:
         """Trigger budget alert if conditions are met"""
 
         current_percentage = float(current_spending / budget.total_amount * 100)
@@ -347,11 +330,9 @@ class AlertSystem:
             severity=severity,
             threshold_percentage=threshold_percentage,
             current_percentage=current_percentage,
-            message=self._create_alert_message(
-                budget, current_spending, threshold_percentage
-            ),
+            message=self._create_alert_message(budget, current_spending, threshold_percentage),
             current_spending=current_spending,
-            budget_amount=budget.total_amount,
+            budget_amount=budget.total_amount
         )
 
         # Store alert
@@ -369,40 +350,31 @@ class AlertSystem:
     def _should_suppress_alert(self, alert_key: str, severity: AlertSeverity) -> bool:
         """Check if alert should be suppressed due to recent similar alert"""
 
-        suppression_period = self.suppression_rules.get(
-            severity.value, timedelta(hours=1)
-        )
+        suppression_period = self.suppression_rules.get(severity.value, timedelta(hours=1))
 
         # Simple implementation - in practice would use Redis or database
         # For now, just check if we've seen this alert recently
         return False  # Simplified - always allow alerts
 
-    def _create_alert_message(
-        self, budget: Budget, current_spending: Decimal, threshold_percentage: float
-    ) -> str:
+    def _create_alert_message(self, budget: Budget, current_spending: Decimal,
+                             threshold_percentage: float) -> str:
         """Create human-readable alert message"""
 
         percentage_used = current_spending / budget.total_amount * 100
         remaining = budget.total_amount - current_spending
 
         if threshold_percentage >= 95:
-            return (
-                f"EMERGENCY: Budget '{budget.name}' is {percentage_used:.1f}% spent "
-                f"(${current_spending:.2f} of ${budget.total_amount:.2f}). "
-                f"Only ${remaining:.2f} remaining!"
-            )
+            return (f"EMERGENCY: Budget '{budget.name}' is {percentage_used:.1f}% spent "
+                   f"(${current_spending:.2f} of ${budget.total_amount:.2f}). "
+                   f"Only ${remaining:.2f} remaining!")
         elif threshold_percentage >= 80:
-            return (
-                f"CRITICAL: Budget '{budget.name}' is {percentage_used:.1f}% spent. "
-                f"${remaining:.2f} remaining."
-            )
+            return (f"CRITICAL: Budget '{budget.name}' is {percentage_used:.1f}% spent. "
+                   f"${remaining:.2f} remaining.")
         elif threshold_percentage >= 50:
-            return (
-                f"WARNING: Budget '{budget.name}' is {percentage_used:.1f}% spent. "
-                f"${remaining:.2f} remaining."
-            )
+            return (f"WARNING: Budget '{budget.name}' is {percentage_used:.1f}% spent. "
+                   f"${remaining:.2f} remaining.")
         else:
-            return f"INFO: Budget '{budget.name}' is {percentage_used:.1f}% spent."
+            return (f"INFO: Budget '{budget.name}' is {percentage_used:.1f}% spent.")
 
     def acknowledge_alert(self, alert_id: str, acknowledged_by: str) -> bool:
         """Acknowledge an alert"""
@@ -427,7 +399,7 @@ class BudgetManager:
         self.auto_actions = {
             "emergency": self._emergency_actions,
             "critical": self._critical_actions,
-            "warning": self._warning_actions,
+            "warning": self._warning_actions
         }
 
         # Budget predictors
@@ -440,10 +412,8 @@ class BudgetManager:
         """Create a new budget"""
         self.budgets[budget.budget_id] = budget
 
-        logger.info(
-            f"Created budget '{budget.name}' (${budget.total_amount}) "
-            f"for period {budget.period.value}"
-        )
+        logger.info(f"Created budget '{budget.name}' (${budget.total_amount}) "
+                   f"for period {budget.period.value}")
 
         return budget.budget_id
 
@@ -452,14 +422,8 @@ class BudgetManager:
         budget.budget_id = f"project_{project_id}"
         return self.create_budget(budget)
 
-    def record_spending(
-        self,
-        budget_id: str,
-        amount: Decimal,
-        category: SpendingCategory,
-        description: str,
-        **kwargs,
-    ) -> str:
+    def record_spending(self, budget_id: str, amount: Decimal, category: SpendingCategory,
+                       description: str, **kwargs) -> str:
         """Record spending against a budget"""
 
         if budget_id not in self.budgets:
@@ -472,7 +436,7 @@ class BudgetManager:
             amount=amount,
             category=category,
             description=description,
-            **kwargs,
+            **kwargs
         )
 
         # Determine billing period
@@ -485,15 +449,11 @@ class BudgetManager:
         # Check for alerts
         self._check_budget_alerts(budget_id)
 
-        logger.info(
-            f"Recorded ${amount} spending for budget {budget_id}: {description}"
-        )
+        logger.info(f"Recorded ${amount} spending for budget {budget_id}: {description}")
 
         return record.record_id
 
-    async def check_budget(
-        self, budget_id: str, estimated_cost: Decimal
-    ) -> BudgetDecision:
+    async def check_budget(self, budget_id: str, estimated_cost: Decimal) -> BudgetDecision:
         """Check if spending is approved within budget constraints"""
 
         if budget_id not in self.budgets:
@@ -501,7 +461,7 @@ class BudgetManager:
                 approved=False,
                 remaining_budget=Decimal("0"),
                 estimated_cost=estimated_cost,
-                decision_reason="Budget not found",
+                decision_reason="Budget not found"
             )
 
         budget = self.budgets[budget_id]
@@ -516,8 +476,8 @@ class BudgetManager:
                     remaining_budget=remaining_budget,
                     estimated_cost=estimated_cost,
                     decision_reason=f"Hard budget limit exceeded. "
-                    f"${estimated_cost} requested, ${remaining_budget} available.",
-                    risk_level="high",
+                                  f"${estimated_cost} requested, ${remaining_budget} available.",
+                    risk_level="high"
                 )
 
         elif budget.budget_type == BudgetType.SOFT_LIMIT:
@@ -529,8 +489,8 @@ class BudgetManager:
                     remaining_budget=remaining_budget,
                     estimated_cost=estimated_cost,
                     decision_reason=f"Soft limit exceeded by ${overage}. "
-                    f"Consider approval or budget adjustment.",
-                    risk_level="medium",
+                                  f"Consider approval or budget adjustment.",
+                    risk_level="medium"
                 )
 
         # Check category limits
@@ -541,15 +501,11 @@ class BudgetManager:
                 remaining_budget=remaining_budget,
                 estimated_cost=estimated_cost,
                 decision_reason=category_violation,
-                risk_level=(
-                    "medium" if budget.budget_type == BudgetType.SOFT_LIMIT else "high"
-                ),
+                risk_level="medium" if budget.budget_type == BudgetType.SOFT_LIMIT else "high"
             )
 
         # Predictive analysis
-        projected_impact = await self._analyze_projected_impact(
-            budget_id, estimated_cost
-        )
+        projected_impact = await self._analyze_projected_impact(budget_id, estimated_cost)
 
         return BudgetDecision(
             approved=True,
@@ -557,12 +513,10 @@ class BudgetManager:
             estimated_cost=estimated_cost,
             decision_reason="Spending approved within budget limits",
             risk_level="low",
-            projected_end_date_impact=projected_impact.get("projected_end_date"),
+            projected_end_date_impact=projected_impact.get("projected_end_date")
         )
 
-    def generate_budget_report(
-        self, budget_id: str, period: str = "current"
-    ) -> Dict[str, Any]:
+    def generate_budget_report(self, budget_id: str, period: str = "current") -> Dict[str, Any]:
         """Generate comprehensive budget report"""
 
         if budget_id not in self.budgets:
@@ -587,7 +541,7 @@ class BudgetManager:
             if spent > 0:
                 category_breakdown[category.value] = {
                     "spent": float(spent),
-                    "percentage": float(spent / budget.total_amount * 100),
+                    "percentage": float(spent / budget.total_amount * 100)
                 }
 
         # Top consumers (simplified)
@@ -597,39 +551,37 @@ class BudgetManager:
         spending_history = self.spending_tracker.get_spending_history(budget_id)
 
         # Recommendations
-        recommendations = self._generate_recommendations(
-            budget, current_spending, burn_rate
-        )
+        recommendations = self._generate_recommendations(budget, current_spending, burn_rate)
 
         return {
             "budget_id": budget_id,
             "budget_name": budget.name,
             "period": budget.period.value,
             "budget_type": budget.budget_type.value,
+
             # Financial summary
             "total_budget": float(budget.total_amount),
             "spent": float(current_spending),
             "remaining": float(remaining_budget),
             "percentage_used": float(current_spending / budget.total_amount * 100),
+
             # Burn rate analysis
             "daily_burn_rate": float(burn_rate),
             "projected_days_remaining": days_remaining,
             "projected_overrun": days_remaining is not None and days_remaining < 30,
+
             # Breakdowns
             "category_breakdown": category_breakdown,
             "top_consumers": top_consumers,
             "spending_history": spending_history,
+
             # Recommendations
             "recommendations": recommendations,
+
             # Metadata
             "generated_at": datetime.now().isoformat(),
-            "alert_count": len(
-                [
-                    a
-                    for a in self.alerts.active_alerts.values()
-                    if a.budget_id == budget_id
-                ]
-            ),
+            "alert_count": len([a for a in self.alerts.active_alerts.values()
+                              if a.budget_id == budget_id])
         }
 
     def _check_budget_alerts(self, budget_id: str) -> None:
@@ -644,9 +596,7 @@ class BudgetManager:
             if current_percentage >= threshold:
                 self.alerts.trigger_alert(budget, current_spending, threshold)
 
-    def _check_category_limits(
-        self, budget: Budget, estimated_cost: Decimal
-    ) -> Optional[str]:
+    def _check_category_limits(self, budget: Budget, estimated_cost: Decimal) -> Optional[str]:
         """Check if spending violates category limits"""
 
         # This would need category information from the spending request
@@ -657,17 +607,13 @@ class BudgetManager:
             )
 
             if current_category_spending + estimated_cost > limit:
-                return (
-                    f"Category limit exceeded for {category.value}. "
-                    f"${current_category_spending + estimated_cost} would exceed "
-                    f"limit of ${limit}"
-                )
+                return (f"Category limit exceeded for {category.value}. "
+                       f"${current_category_spending + estimated_cost} would exceed "
+                       f"limit of ${limit}")
 
         return None
 
-    async def _analyze_projected_impact(
-        self, budget_id: str, estimated_cost: Decimal
-    ) -> Dict[str, Any]:
+    async def _analyze_projected_impact(self, budget_id: str, estimated_cost: Decimal) -> Dict[str, Any]:
         """Analyze projected impact of spending on budget timeline"""
 
         burn_rate = self.spending_tracker.get_daily_burn_rate(budget_id)
@@ -675,25 +621,17 @@ class BudgetManager:
 
         # Current projections
         current_spending = self.spending_tracker.get_current_spending(budget_id)
-        remaining_after_spending = (
-            budget.total_amount - current_spending - estimated_cost
-        )
+        remaining_after_spending = budget.total_amount - current_spending - estimated_cost
 
         if burn_rate > 0:
             days_remaining = remaining_after_spending / burn_rate
-            projected_end_date = datetime.now().date() + timedelta(
-                days=int(days_remaining)
-            )
+            projected_end_date = datetime.now().date() + timedelta(days=int(days_remaining))
         else:
             projected_end_date = None
 
         return {
             "projected_end_date": projected_end_date,
-            "impact_days": (
-                int((estimated_cost / burn_rate).to_integral_value())
-                if burn_rate > 0
-                else 0
-            ),
+            "impact_days": int((estimated_cost / burn_rate).to_integral_value()) if burn_rate > 0 else 0
         }
 
     def _get_billing_period(self, period: BudgetPeriod) -> str:
@@ -716,9 +654,7 @@ class BudgetManager:
         else:  # PROJECT
             return "project"
 
-    def _get_top_consumers(
-        self, budget_id: str, limit: int = 5
-    ) -> List[Dict[str, Any]]:
+    def _get_top_consumers(self, budget_id: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Get top spending consumers (simplified)"""
 
         # This would query actual spending records
@@ -726,40 +662,31 @@ class BudgetManager:
         return [
             {"type": "compute", "amount": 150.50, "percentage": 35.2},
             {"type": "storage", "amount": 89.25, "percentage": 20.8},
-            {"type": "analysis", "amount": 67.80, "percentage": 15.8},
+            {"type": "analysis", "amount": 67.80, "percentage": 15.8}
         ]
 
-    def _generate_recommendations(
-        self, budget: Budget, current_spending: Decimal, burn_rate: Decimal
-    ) -> List[str]:
+    def _generate_recommendations(self, budget: Budget, current_spending: Decimal,
+                                burn_rate: Decimal) -> List[str]:
         """Generate budget optimization recommendations"""
 
         recommendations = []
         percentage_used = current_spending / budget.total_amount * 100
 
         if percentage_used > 80:
-            recommendations.append(
-                "Budget is nearly exhausted. Consider increasing budget or optimizing spending."
-            )
+            recommendations.append("Budget is nearly exhausted. Consider increasing budget or optimizing spending.")
 
         if burn_rate > budget.total_amount / 30:  # Burning through budget in < 30 days
-            recommendations.append(
-                "Current burn rate is high. Review spending patterns and optimize resource usage."
-            )
+            recommendations.append("Current burn rate is high. Review spending patterns and optimize resource usage.")
 
         if budget.budget_type == BudgetType.SOFT_LIMIT and percentage_used > 100:
-            recommendations.append(
-                "Budget has been exceeded. Consider moving to hard limits or adjusting budget."
-            )
+            recommendations.append("Budget has been exceeded. Consider moving to hard limits or adjusting budget.")
 
         # Add more sophisticated recommendations
-        recommendations.extend(
-            [
-                "Consider using spot instances for 30-70% cost savings on compute workloads",
-                "Review storage usage and archive old datasets",
-                "Optimize analysis pipelines to reduce compute time",
-            ]
-        )
+        recommendations.extend([
+            "Consider using spot instances for 30-70% cost savings on compute workloads",
+            "Review storage usage and archive old datasets",
+            "Optimize analysis pipelines to reduce compute time"
+        ])
 
         return recommendations
 
@@ -813,9 +740,8 @@ class BudgetManager:
 class BurnRatePredictor:
     """Predicts future burn rate based on historical patterns"""
 
-    def predict_burn_rate(
-        self, spending_history: List[Dict[str, Any]], days_ahead: int = 7
-    ) -> Decimal:
+    def predict_burn_rate(self, spending_history: List[Dict[str, Any]],
+                         days_ahead: int = 7) -> Decimal:
         """Predict burn rate for next N days"""
 
         if len(spending_history) < 3:
@@ -848,7 +774,7 @@ if __name__ == "__main__":
         period=BudgetPeriod.MONTHLY,
         budget_type=BudgetType.SOFT_LIMIT,
         start_date=date.today(),
-        alert_thresholds=[50.0, 75.0, 90.0, 95.0],
+        alert_thresholds=[50.0, 75.0, 90.0, 95.0]
     )
 
     budget_manager.create_budget(test_budget)
@@ -858,20 +784,21 @@ if __name__ == "__main__":
         test_budget.budget_id,
         Decimal("150.50"),
         SpendingCategory.COMPUTE,
-        "fMRIPrep preprocessing for 10 subjects",
+        "fMRIPrep preprocessing for 10 subjects"
     )
 
     budget_manager.record_spending(
         test_budget.budget_id,
         Decimal("89.25"),
         SpendingCategory.STORAGE,
-        "Dataset storage for 1 month",
+        "Dataset storage for 1 month"
     )
 
     # Check budget status
     async def test_budget_check():
         decision = await budget_manager.check_budget(
-            test_budget.budget_id, Decimal("200.00")
+            test_budget.budget_id,
+            Decimal("200.00")
         )
 
         print(f"Budget Decision: {'APPROVED' if decision.approved else 'DENIED'}")
@@ -880,7 +807,6 @@ if __name__ == "__main__":
 
     # Generate report
     import asyncio
-
     asyncio.run(test_budget_check())
 
     report = budget_manager.generate_budget_report(test_budget.budget_id)
@@ -892,7 +818,7 @@ if __name__ == "__main__":
     print(f"Remaining: ${report['remaining']:.2f}")
     print(f"Daily Burn Rate: ${report['daily_burn_rate']:.2f}")
 
-    if report["recommendations"]:
+    if report['recommendations']:
         print("\nRecommendations:")
-        for rec in report["recommendations"]:
+        for rec in report['recommendations']:
             print(f"  - {rec}")

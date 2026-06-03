@@ -40,9 +40,7 @@ def test_execute_traversal_query_applies_neo4j_timeout(monkeypatch):
     monkeypatch.setattr(mhq, "Neo4jQuery", _FakeNeo4jQuery)
 
     engine = mhq.MultiHopQueryEngine(_FakeDB(captured))
-    constraints = mhq.TraversalConstraints(
-        max_depth=2, max_results=5, query_timeout_ms=2500
-    )
+    constraints = mhq.TraversalConstraints(max_depth=2, max_results=5, query_timeout_ms=2500)
 
     result = engine._execute_traversal_query(
         "RETURN 1 AS x",
@@ -62,9 +60,7 @@ def test_execute_traversal_query_without_timeout_uses_plain_query(monkeypatch):
     monkeypatch.setattr(mhq, "Neo4jQuery", None)
 
     engine = mhq.MultiHopQueryEngine(_FakeDB(captured))
-    constraints = mhq.TraversalConstraints(
-        max_depth=1, max_results=3, query_timeout_ms=None
-    )
+    constraints = mhq.TraversalConstraints(max_depth=1, max_results=3, query_timeout_ms=None)
 
     result = engine._execute_traversal_query(
         "RETURN 1 AS x",

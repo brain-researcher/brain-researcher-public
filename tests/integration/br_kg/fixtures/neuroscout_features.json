@@ -1,4 +1,0 @@
-[
-  {"contrast_id": "contrast:movie-vs-rest", "feature": "luminance", "value": 0.72, "unit": "z"},
-  {"contrast_id": "contrast:movie-vs-rest", "feature": "speech_presence", "value": 0.56}
-]

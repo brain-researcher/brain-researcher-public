@@ -115,7 +115,9 @@ def run_guarded_scorer_command(
     payload = parse_json_stdout(completed.stdout)
     after = snapshot_tracked_tree(resolved_roots)
     changed_paths = {
-        path for path in set(before) | set(after) if before.get(path) != after.get(path)
+        path
+        for path in set(before) | set(after)
+        if before.get(path) != after.get(path)
     }
     disallowed = sorted(path for path in changed_paths if path not in allowed)
     if disallowed:
@@ -166,9 +168,7 @@ def score_predictive_weak_targets(
                 best_r2[target] = float(score)
 
     target_scores = {target: best_r2.get(target, baseline) for target in weak_targets}
-    mean_r2 = (
-        sum(target_scores.values()) / len(weak_targets) if weak_targets else baseline
-    )
+    mean_r2 = sum(target_scores.values()) / len(weak_targets) if weak_targets else baseline
     score = max(0.0, min(1.0, (mean_r2 - baseline) / (reference - baseline)))
     contract_ok = all(
         null_counts.get(target, 0) >= min_nulls
@@ -234,20 +234,14 @@ def score_discovery_closed_loop(
         and call.get("injection_point") in mandatory_injections
         and not call.get("fallback")
     }
-    branch_ids = [
-        str(branch.get("branch_id")) for branch in branches if branch.get("branch_id")
-    ]
-    resolved_expected = list(
-        expected_branches
-        or branch_ids
-        or [
-            "tom",
-            "language",
-            "auditory",
-            "math",
-            "ibc_rsvp_language",
-        ]
-    )
+    branch_ids = [str(branch.get("branch_id")) for branch in branches if branch.get("branch_id")]
+    resolved_expected = list(expected_branches or branch_ids or [
+        "tom",
+        "language",
+        "auditory",
+        "math",
+        "ibc_rsvp_language",
+    ])
     total_mandatory = len(resolved_expected) * len(mandatory_injections)
     n_called = sum(
         1

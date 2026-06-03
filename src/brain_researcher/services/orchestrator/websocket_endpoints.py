@@ -10,24 +10,19 @@ import os
 import uuid
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Query,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+from .websocket_manager import (
+    websocket_pool, WebSocketMessage, MessageType, Connection
+)
+from .models import JobStatus, Job, Notification
 from .dashboard_endpoints import build_dashboard_metrics_response
 from .job_management_endpoints import _get_router_job
-from .models import Job, JobStatus, Notification
 from .pipeline_graph import build_job_graph_snapshot
-from .websocket_manager import Connection, MessageType, WebSocketMessage, websocket_pool
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +35,8 @@ DASHBOARD_WS_INTERVAL_SECONDS = float(os.getenv("DASHBOARD_WS_INTERVAL_SECONDS",
 # WebSocket Models
 # ============================================================================
 
-
 class NotificationMessage(BaseModel):
     """Notification message structure."""
-
     id: str
     type: str
     title: str
@@ -56,7 +49,6 @@ class NotificationMessage(BaseModel):
 
 class JobUpdateMessage(BaseModel):
     """Job update message structure."""
-
     job_id: str
     status: JobStatus
     progress: float
@@ -68,7 +60,6 @@ class JobUpdateMessage(BaseModel):
 
 class ChatMessage(BaseModel):
     """Chat message structure."""
-
     thread_id: str
     message_id: str
     role: str  # "user" or "assistant"
@@ -96,7 +87,6 @@ notification_queues: Dict[str, asyncio.Queue] = {}  # user_id -> notification qu
 # Connection Event Handlers
 # ============================================================================
 
-
 async def handle_new_connection(connection: Connection):
     """Handle new WebSocket connection."""
     logger.info(f"New WebSocket connection: {connection.connection_id}")
@@ -108,8 +98,8 @@ async def handle_new_connection(connection: Connection):
             "type": "welcome",
             "title": "Connected",
             "message": f"WebSocket connection established (ID: {connection.connection_id})",
-            "timestamp": datetime.utcnow().isoformat(),
-        },
+            "timestamp": datetime.utcnow().isoformat()
+        }
     )
     await connection.send_message(welcome_message)
 
@@ -125,10 +115,8 @@ async def handle_connection_closed(connection: Connection):
 
     # Clean up chat streams
     connection_chat_streams = [
-        thread_id
-        for thread_id, queue in active_chat_streams.items()
-        if hasattr(queue, "connection_id")
-        and queue.connection_id == connection.connection_id
+        thread_id for thread_id, queue in active_chat_streams.items()
+        if hasattr(queue, 'connection_id') and queue.connection_id == connection.connection_id
     ]
     for thread_id in connection_chat_streams:
         del active_chat_streams[thread_id]
@@ -154,8 +142,8 @@ async def handle_custom_message(connection: Connection, message: WebSocketMessag
                     data={
                         "action": "job_subscribed",
                         "job_id": job_id,
-                        "status": "subscribed",
-                    },
+                        "status": "subscribed"
+                    }
                 )
                 await connection.send_message(response)
 
@@ -203,9 +191,7 @@ async def _send_dashboard_snapshot(connection_id: str) -> bool:
     return await websocket_pool.send_to_connection(connection_id, message)
 
 
-async def _dashboard_metrics_loop(
-    connection_id: str, interval_seconds: float = DASHBOARD_WS_INTERVAL_SECONDS
-):
+async def _dashboard_metrics_loop(connection_id: str, interval_seconds: float = DASHBOARD_WS_INTERVAL_SECONDS):
     """Periodically refresh dashboard data for a connected client."""
     try:
         while True:
@@ -227,6 +213,7 @@ async def _send_ws_json(connection: Connection, payload: Dict[str, Any]) -> bool
     except Exception as exc:
         logger.error("Failed to send WS payload: %s", exc)
         return False
+
 
 
 def _extract_v1_subscribe(message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -270,13 +257,9 @@ async def websocket_dashboard_updates(
 
             v1_payload = _extract_v1_subscribe(message_dict)
             if v1_payload:
-                request_id = v1_payload.get("request_id") or message_dict.get(
-                    "request_id"
-                )
+                request_id = v1_payload.get("request_id") or message_dict.get("request_id")
                 stream_id = "dashboard"
-                applied_limits = (v1_payload.get("streams") or [{}])[0].get(
-                    "limits"
-                ) or {}
+                applied_limits = (v1_payload.get("streams") or [{}])[0].get("limits") or {}
                 await _send_ws_json(
                     websocket_pool.connections[connection_id],
                     {
@@ -325,7 +308,7 @@ async def websocket_dashboard_updates(
 async def websocket_notifications(
     websocket: WebSocket,
     user_id: Optional[str] = Query(None),
-    token: Optional[str] = Query(None),
+    token: Optional[str] = Query(None)
 ):
     """
     WebSocket endpoint for real-time notifications with connection management
@@ -337,7 +320,7 @@ async def websocket_notifications(
         connection_id = await websocket_pool.add_connection(
             websocket,
             user_id=user_id,
-            metadata={"endpoint": "notifications", "token": token},
+            metadata={"endpoint": "notifications", "token": token}
         )
 
         # Subscribe to notifications channel
@@ -359,13 +342,9 @@ async def websocket_notifications(
 
                 v1_payload = _extract_v1_subscribe(message_dict)
                 if v1_payload:
-                    request_id = v1_payload.get("request_id") or message_dict.get(
-                        "request_id"
-                    )
+                    request_id = v1_payload.get("request_id") or message_dict.get("request_id")
                     stream_id = f"notifications:{user_id or 'anonymous'}"
-                    applied_limits = (v1_payload.get("streams") or [{}])[0].get(
-                        "limits"
-                    ) or {}
+                    applied_limits = (v1_payload.get("streams") or [{}])[0].get("limits") or {}
                     await _send_ws_json(
                         websocket_pool.connections[connection_id],
                         {
@@ -397,14 +376,14 @@ async def websocket_notifications(
 
     finally:
         if connection_id:
-            await websocket_pool.disconnect(
-                connection_id, "Notifications WebSocket closed"
-            )
+            await websocket_pool.disconnect(connection_id, "Notifications WebSocket closed")
 
 
 @router.websocket("/jobs/{job_id}")
 async def websocket_job_updates(
-    websocket: WebSocket, job_id: str, user_id: Optional[str] = Query(None)
+    websocket: WebSocket,
+    job_id: str,
+    user_id: Optional[str] = Query(None)
 ):
     """
     WebSocket endpoint for real-time job updates with detailed progress tracking.
@@ -418,7 +397,7 @@ async def websocket_job_updates(
         connection_id = await websocket_pool.add_connection(
             websocket,
             user_id=user_id,
-            metadata={"endpoint": "job_updates", "job_id": job_id},
+            metadata={"endpoint": "job_updates", "job_id": job_id}
         )
 
         # Subscribe to job-specific channel (legacy compatibility)
@@ -433,8 +412,8 @@ async def websocket_job_updates(
                 "job_id": job_id,
                 "status": "connected",
                 "message": "Connected to job updates",
-                "timestamp": datetime.utcnow().isoformat(),
-            },
+                "timestamp": datetime.utcnow().isoformat()
+            }
         )
         await websocket_pool.send_to_connection(connection_id, initial_message)
 
@@ -451,9 +430,7 @@ async def websocket_job_updates(
                 v1_payload = _extract_v1_subscribe(message_dict)
                 if v1_payload:
                     streams = v1_payload.get("streams") or []
-                    request_id = v1_payload.get("request_id") or message_dict.get(
-                        "request_id"
-                    )
+                    request_id = v1_payload.get("request_id") or message_dict.get("request_id")
                     stream = next(
                         (s for s in streams if s.get("stream") == "job"),
                         None,
@@ -539,14 +516,14 @@ async def websocket_job_updates(
         await websocket.close(code=1011, reason=f"Setup failed: {str(e)}")
     finally:
         if connection_id:
-            await websocket_pool.disconnect(
-                connection_id, "Job updates WebSocket closed"
-            )
+            await websocket_pool.disconnect(connection_id, "Job updates WebSocket closed")
 
 
 @router.websocket("/chat/{thread_id}")
 async def websocket_chat_stream(
-    websocket: WebSocket, thread_id: str, user_id: Optional[str] = Query(None)
+    websocket: WebSocket,
+    thread_id: str,
+    user_id: Optional[str] = Query(None)
 ):
     """
     WebSocket endpoint for streaming chat responses with real-time updates.
@@ -557,7 +534,7 @@ async def websocket_chat_stream(
         connection_id = await websocket_pool.add_connection(
             websocket,
             user_id=user_id,
-            metadata={"endpoint": "chat_stream", "thread_id": thread_id},
+            metadata={"endpoint": "chat_stream", "thread_id": thread_id}
         )
 
         # Subscribe to thread-specific channel
@@ -577,8 +554,8 @@ async def websocket_chat_stream(
                 "type": "chat_connected",
                 "thread_id": thread_id,
                 "status": "ready",
-                "timestamp": datetime.utcnow().isoformat(),
-            },
+                "timestamp": datetime.utcnow().isoformat()
+            }
         )
         await websocket_pool.send_to_connection(connection_id, confirmation_message)
 
@@ -593,9 +570,7 @@ async def websocket_chat_stream(
                     # Handle chat-specific messages
                     if message_data.get("type") == "user_message":
                         # Process user message and start streaming response
-                        await handle_user_chat_message(
-                            thread_id, message_data, connection_id
-                        )
+                        await handle_user_chat_message(thread_id, message_data, connection_id)
 
                     else:
                         # Handle other message types through pool
@@ -603,11 +578,10 @@ async def websocket_chat_stream(
 
                 except json.JSONDecodeError:
                     error_message = WebSocketMessage(
-                        type=MessageType.ERROR, data={"error": "Invalid JSON format"}
+                        type=MessageType.ERROR,
+                        data={"error": "Invalid JSON format"}
                     )
-                    await websocket_pool.send_to_connection(
-                        connection_id, error_message
-                    )
+                    await websocket_pool.send_to_connection(connection_id, error_message)
 
         except WebSocketDisconnect:
             logger.info(f"Chat stream WebSocket disconnected: {connection_id}")
@@ -624,27 +598,25 @@ async def websocket_chat_stream(
         if thread_id in active_chat_streams:
             del active_chat_streams[thread_id]
         if connection_id:
-            await websocket_pool.disconnect(
-                connection_id, "Chat stream WebSocket closed"
-            )
+            await websocket_pool.disconnect(connection_id, "Chat stream WebSocket closed")
 
 
 # ============================================================================
 # Message Broadcasting Functions
 # ============================================================================
 
-
 async def broadcast_notification(
     user_id: Optional[str] = None,
     notification: NotificationMessage = None,
-    system_wide: bool = False,
+    system_wide: bool = False
 ):
     """Broadcast notification to WebSocket clients."""
     if not notification:
         return
 
     message = WebSocketMessage(
-        type=MessageType.NOTIFICATION, data=notification.model_dump()
+        type=MessageType.NOTIFICATION,
+        data=notification.model_dump()
     )
 
     if system_wide:
@@ -656,19 +628,29 @@ async def broadcast_notification(
         await websocket_pool.broadcast_to_channel(f"notifications:{user_id}", message)
 
 
-async def broadcast_job_update(job_id: str, update: JobUpdateMessage):
+async def broadcast_job_update(
+    job_id: str,
+    update: JobUpdateMessage
+):
     """Broadcast job update to subscribed WebSocket clients."""
     message = WebSocketMessage(
-        type=MessageType.DATA, channel=f"jobs:{job_id}", data=update.model_dump()
+        type=MessageType.DATA,
+        channel=f"jobs:{job_id}",
+        data=update.model_dump()
     )
 
     await websocket_pool.broadcast_to_channel(f"jobs:{job_id}", message)
 
 
-async def stream_chat_message(thread_id: str, message: ChatMessage):
+async def stream_chat_message(
+    thread_id: str,
+    message: ChatMessage
+):
     """Stream chat message to WebSocket clients."""
     ws_message = WebSocketMessage(
-        type=MessageType.DATA, channel=f"chat:{thread_id}", data=message.model_dump()
+        type=MessageType.DATA,
+        channel=f"chat:{thread_id}",
+        data=message.model_dump()
     )
 
     await websocket_pool.broadcast_to_channel(f"chat:{thread_id}", ws_message)
@@ -678,9 +660,10 @@ async def stream_chat_message(thread_id: str, message: ChatMessage):
 # Chat Message Handling
 # ============================================================================
 
-
 async def handle_user_chat_message(
-    thread_id: str, message_data: Dict[str, Any], connection_id: str
+    thread_id: str,
+    message_data: Dict[str, Any],
+    connection_id: str
 ):
     """Handle user chat message and start streaming response."""
     try:
@@ -695,7 +678,7 @@ async def handle_user_chat_message(
             content=user_message,
             timestamp=datetime.utcnow(),
             is_streaming=False,
-            is_complete=True,
+            is_complete=True
         )
         await stream_chat_message(thread_id, user_chat_msg)
 
@@ -706,7 +689,7 @@ async def handle_user_chat_message(
         logger.error(f"Error handling user chat message: {str(e)}")
         error_message = WebSocketMessage(
             type=MessageType.ERROR,
-            data={"error": f"Failed to process message: {str(e)}"},
+            data={"error": f"Failed to process message: {str(e)}"}
         )
         await websocket_pool.send_to_connection(connection_id, error_message)
 
@@ -737,7 +720,7 @@ async def simulate_streaming_response(thread_id: str, user_message: str):
                 content=accumulated_content.strip(),
                 timestamp=datetime.utcnow(),
                 is_streaming=not is_complete,
-                is_complete=is_complete,
+                is_complete=is_complete
             )
 
             await stream_chat_message(thread_id, chat_message)
@@ -755,7 +738,7 @@ async def simulate_streaming_response(thread_id: str, user_message: str):
             content=f"Sorry, I encountered an error: {str(e)}",
             timestamp=datetime.utcnow(),
             is_streaming=False,
-            is_complete=True,
+            is_complete=True
         )
         await stream_chat_message(thread_id, error_chat_msg)
 
@@ -763,7 +746,6 @@ async def simulate_streaming_response(thread_id: str, user_message: str):
 # ============================================================================
 # HTTP Endpoints for WebSocket Management
 # ============================================================================
-
 
 @router.get("/status")
 async def get_websocket_status():
@@ -776,28 +758,10 @@ async def get_websocket_status():
         "active_job_subscriptions": len(job_subscribers),
         "active_chat_streams": len(active_chat_streams),
         "channels": {
-            "notifications": len(
-                [
-                    c
-                    for c in websocket_pool.connections_by_channel.keys()
-                    if c.startswith("notifications:")
-                ]
-            ),
-            "jobs": len(
-                [
-                    c
-                    for c in websocket_pool.connections_by_channel.keys()
-                    if c.startswith("jobs:")
-                ]
-            ),
-            "chat": len(
-                [
-                    c
-                    for c in websocket_pool.connections_by_channel.keys()
-                    if c.startswith("chat:")
-                ]
-            ),
-        },
+            "notifications": len([c for c in websocket_pool.connections_by_channel.keys() if c.startswith("notifications:")]),
+            "jobs": len([c for c in websocket_pool.connections_by_channel.keys() if c.startswith("jobs:")]),
+            "chat": len([c for c in websocket_pool.connections_by_channel.keys() if c.startswith("chat:")])
+        }
     }
 
 
@@ -808,7 +772,7 @@ async def broadcast_notification_endpoint(
     user_id: Optional[str] = None,
     system_wide: bool = False,
     priority: str = "normal",
-    data: Optional[Dict[str, Any]] = None,
+    data: Optional[Dict[str, Any]] = None
 ):
     """HTTP endpoint to broadcast notifications via WebSocket."""
     notification = NotificationMessage(
@@ -818,7 +782,7 @@ async def broadcast_notification_endpoint(
         message=message,
         priority=priority,
         data=data,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.utcnow()
     )
 
     await broadcast_notification(user_id, notification, system_wide)
@@ -833,7 +797,7 @@ async def broadcast_job_update_endpoint(
     progress: float,
     current_step: Optional[str] = None,
     message: Optional[str] = None,
-    artifacts: Optional[List[Dict[str, Any]]] = None,
+    artifacts: Optional[List[Dict[str, Any]]] = None
 ):
     """HTTP endpoint to broadcast job updates via WebSocket."""
     job_update = JobUpdateMessage(
@@ -843,7 +807,7 @@ async def broadcast_job_update_endpoint(
         current_step=current_step,
         message=message,
         artifacts=artifacts or [],
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.utcnow()
     )
 
     await broadcast_job_update(job_id, job_update)
@@ -865,10 +829,10 @@ async def list_connections(user_id: Optional[str] = None):
                     "last_activity": conn.last_activity.isoformat(),
                     "subscriptions": list(conn.subscriptions),
                     "message_count": conn.message_count,
-                    "state": conn.state.value,
+                    "state": conn.state.value
                 }
                 for conn in connections
-            ],
+            ]
         }
     else:
         stats = websocket_pool.get_stats()
@@ -881,7 +845,7 @@ async def list_connections(user_id: Optional[str] = None):
             "connections_by_channel": {
                 channel: len(conn_ids)
                 for channel, conn_ids in websocket_pool.connections_by_channel.items()
-            },
+            }
         }
 
 
@@ -958,7 +922,6 @@ async def websocket_test_page():
 # ============================================================================
 # Initialization
 # ============================================================================
-
 
 async def initialize_websocket_infrastructure():
     """Initialize WebSocket infrastructure."""

@@ -251,9 +251,7 @@ def materialize_explicit_part_of_from_dataframe(
     atlas_slug = slugify(atlas)
     nodes = _collect_brainregions(db, atlas_slug=atlas_slug)
     if not nodes:
-        logger.info(
-            "No BrainRegion nodes found for atlas %s; skipping explicit pass", atlas
-        )
+        logger.info("No BrainRegion nodes found for atlas %s; skipping explicit pass", atlas)
         summary.rows_skipped = int(len(df.index))
         return summary
 
@@ -293,9 +291,7 @@ def materialize_explicit_part_of_from_dataframe(
             if parent_id:
                 break
 
-        hierarchy_type = (
-            "network" if slugify(parent_col) == "network_parent" else "anatomical"
-        )
+        hierarchy_type = "network" if slugify(parent_col) == "network_parent" else "anatomical"
 
         if not parent_id:
             parent_id = f"atlas:{atlas_slug}:parent:{slugify(parent_name)}"
@@ -352,9 +348,7 @@ def _infer_yeo17_family(node_id: str, data: dict[str, Any]) -> str | None:
 
     label_index = _parse_int(data.get("label_index"))
     if label_index is None:
-        match = re.search(
-            r"yeo17:(\d{2})", _node_id(node_id, data), flags=re.IGNORECASE
-        )
+        match = re.search(r"yeo17:(\d{2})", _node_id(node_id, data), flags=re.IGNORECASE)
         if match:
             label_index = int(match.group(1))
     if label_index is None:
@@ -440,8 +434,7 @@ def materialize_schaefer_network_part_of(
     schaefer_nodes = [
         (node_id, data)
         for node_id, data in nodes
-        if "schaefer"
-        in (
+        if "schaefer" in (
             string_or_none(data.get("atlas_slug"))
             or string_or_none(data.get("atlas"))
             or node_id

@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List
 
-import nibabel as nib
 import numpy as np
+import nibabel as nib
 import pandas as pd
 from scipy import stats
 
@@ -20,10 +20,7 @@ class StatisticalAnalyzer:
             return self._run_glm(request)
         if analysis_type == "group_comparison":
             return self._run_group_comparison(request)
-        return {
-            "success": False,
-            "error": f"Unsupported analysis_type '{analysis_type}'",
-        }
+        return {"success": False, "error": f"Unsupported analysis_type '{analysis_type}'"}
 
     def _run_glm(self, request: Dict[str, Any]) -> Dict[str, Any]:
         data_paths = request.get("data_paths") or []
@@ -95,10 +92,7 @@ class StatisticalAnalyzer:
                 group2_paths = groups[group2_name]
 
         if not group1_paths or not group2_paths:
-            return {
-                "success": False,
-                "error": "Group comparison requires two groups of images.",
-            }
+            return {"success": False, "error": "Group comparison requires two groups of images."}
 
         g1 = np.stack([nib.load(p).get_fdata() for p in group1_paths], axis=0)
         g2 = np.stack([nib.load(p).get_fdata() for p in group2_paths], axis=0)
@@ -153,9 +147,7 @@ class StatisticalAnalyzer:
 
         return {"success": True, "results": results}
 
-    def _apply_correction(
-        self, p_map: np.ndarray, method: str, alpha: float = 0.05
-    ) -> np.ndarray:
+    def _apply_correction(self, p_map: np.ndarray, method: str, alpha: float = 0.05) -> np.ndarray:
         flat = p_map.reshape(-1)
         n = len(flat)
 

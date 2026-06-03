@@ -16,9 +16,7 @@ from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResu
 class MetaCombineArgs(BaseModel):
     """Arguments for meta-analysis map combination."""
 
-    stat_map: str = Field(
-        description="Aligned statistical map to include in combination"
-    )
+    stat_map: str = Field(description="Aligned statistical map to include in combination")
     method: str = Field(
         default="fixed_effects",
         description="Combination method: 'fixed_effects', 'random_effects', 'stouffer', 'fisher'",

@@ -39,11 +39,7 @@ class ImprovedNiCLIPSpatialMapper:
     ) -> list[dict[str, Any]]:
         if not self._loaded:
             return [
-                {
-                    "coordinate": tuple(coord),
-                    "error": "Mapper not loaded",
-                    "concepts": [],
-                }
+                {"coordinate": tuple(coord), "error": "Mapper not loaded", "concepts": []}
                 for coord in coordinates
             ]
         payload = self._backend.map_with_metadata(

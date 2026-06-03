@@ -262,11 +262,9 @@ class ResolveReferenceMapTool(NeuroToolWrapper):
                 "space": args.space or primary.get("space") or "",
                 "canonical_space": primary.get("space") or "",
                 "space_kind": "volume",
-                "source_dataset": (
-                    "openneuro_glmfitlins"
-                    if primary.get("source") == "openneuro_registry"
-                    else primary.get("derivative_kind") or ""
-                ),
+                "source_dataset": "openneuro_glmfitlins"
+                if primary.get("source") == "openneuro_registry"
+                else primary.get("derivative_kind") or "",
                 "description_key": primary.get("contrast") or "",
                 "contrast": primary.get("contrast") or "",
                 "dataset_id": primary.get("dataset_id") or "",

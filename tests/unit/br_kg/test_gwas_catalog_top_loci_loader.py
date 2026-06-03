@@ -111,10 +111,9 @@ class TestFetchTopLociSnapshot:
 
         assert len(snapshot.node_rows) == 2
         assert len(snapshot.relationship_rows) == 2
-        assert {row["node_id"] for row in snapshot.node_rows} == {
-            "locus:rs111",
-            "locus:rs222",
-        }
+        assert {
+            row["node_id"] for row in snapshot.node_rows
+        } == {"locus:rs111", "locus:rs222"}
         for row in snapshot.node_rows:
             assert row["labels"] == ("RiskLocus",)
             assert row["properties"]["source"] == "gwas_catalog_top_loci_loader"
@@ -146,22 +145,13 @@ class TestFetchTopLociSnapshot:
             request_delay=0,
         )
 
-        assoc_rows = [
-            row
-            for row in snapshot.relationship_rows
-            if row["rel_type"] == "ASSOCIATED_WITH"
-        ]
+        assoc_rows = [row for row in snapshot.relationship_rows if row["rel_type"] == "ASSOCIATED_WITH"]
         assert len(assoc_rows) == 2
         kept = {(row["start_id"], row["properties"]["rank"]) for row in assoc_rows}
         assert kept == {("locus:rs_best", 1), ("locus:rs_other", 2)}
-        assert all(
-            row["properties"]["p_value"] <= GENOME_WIDE_SIGNIFICANCE
-            for row in assoc_rows
-        )
+        assert all(row["properties"]["p_value"] <= GENOME_WIDE_SIGNIFICANCE for row in assoc_rows)
 
-    def test_keeps_strongest_duplicate_association_and_emits_study_provenance(
-        self,
-    ) -> None:
+    def test_keeps_strongest_duplicate_association_and_emits_study_provenance(self) -> None:
         weaker = _make_association(rsid="rs555", pvalue=2e-8, gene="GEN_WEAK")
         stronger = _make_association(rsid="rs555", pvalue=1e-12, gene="GEN_STRONG")
 
@@ -194,24 +184,13 @@ class TestFetchTopLociSnapshot:
             request_delay=0,
         )
 
-        assoc_rows = [
-            row
-            for row in snapshot.relationship_rows
-            if row["rel_type"] == "ASSOCIATED_WITH"
-        ]
-        lead_rows = [
-            row
-            for row in snapshot.relationship_rows
-            if row["rel_type"] == "HAS_LEAD_LOCUS"
-        ]
+        assoc_rows = [row for row in snapshot.relationship_rows if row["rel_type"] == "ASSOCIATED_WITH"]
+        lead_rows = [row for row in snapshot.relationship_rows if row["rel_type"] == "HAS_LEAD_LOCUS"]
 
         assert len(assoc_rows) == 1
         assert assoc_rows[0]["properties"]["p_value"] == 1e-12
         assert assoc_rows[0]["properties"]["study_accession"] == "GCST000002"
-        assert (
-            assoc_rows[0]["properties"]["study_id"]
-            == "study:openmed_pgc_schizophrenia:study2"
-        )
+        assert assoc_rows[0]["properties"]["study_id"] == "study:openmed_pgc_schizophrenia:study2"
 
         assert len(lead_rows) == 2
         assert {row["start_id"] for row in lead_rows} == {
@@ -242,11 +221,7 @@ class TestFetchTopLociSnapshot:
         )
 
         assert len(snapshot.node_rows) == 1
-        assoc_rows = [
-            row
-            for row in snapshot.relationship_rows
-            if row["rel_type"] == "ASSOCIATED_WITH"
-        ]
+        assoc_rows = [row for row in snapshot.relationship_rows if row["rel_type"] == "ASSOCIATED_WITH"]
         assert len(assoc_rows) == 2
         assert {row["end_id"] for row in assoc_rows} == {
             "disease:schizophrenia",
@@ -271,9 +246,7 @@ class TestFetchTopLociSnapshot:
             if "findByEfoTrait" in url:
                 return httpx.Response(200, json=_studies_response(["GCST000001"]))
             if "associations" in url:
-                return httpx.Response(
-                    200, json=_associations_response([bad_assoc, good_assoc])
-                )
+                return httpx.Response(200, json=_associations_response([bad_assoc, good_assoc]))
             return httpx.Response(404, json={})
 
         client = httpx.Client(transport=httpx.MockTransport(handler))

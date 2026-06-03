@@ -21,9 +21,7 @@ class RecoveryAgent:
         context: Optional[Dict[str, Any]] = None,
     ) -> RecoveryProposal:
         failed = set(failed_tools or [])
-        clean_fallbacks = [
-            tool for tool in (fallback_tools or []) if tool and tool not in failed
-        ]
+        clean_fallbacks = [tool for tool in (fallback_tools or []) if tool and tool not in failed]
 
         if adjusted_params:
             return RecoveryProposal(

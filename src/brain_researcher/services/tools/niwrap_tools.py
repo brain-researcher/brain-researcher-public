@@ -7,7 +7,6 @@ This module provides three agent-facing tools for interacting with NiWrap:
 
 These tools wrap the unified tools package (services/tools/niwrap/).
 """
-
 from __future__ import annotations
 
 import logging
@@ -36,10 +35,13 @@ class NiWrapSearchArgs(BaseModel):
     )
     package: Optional[str] = Field(
         default=None,
-        description="Filter by package name (e.g., 'afni', 'fsl', 'ants', 'freesurfer')",
+        description="Filter by package name (e.g., 'afni', 'fsl', 'ants', 'freesurfer')"
     )
     limit: int = Field(
-        default=8, ge=1, le=50, description="Maximum number of results to return"
+        default=8,
+        ge=1,
+        le=50,
+        description="Maximum number of results to return"
     )
 
 
@@ -67,11 +69,12 @@ class NiWrapExecuteArgs(BaseModel):
         description="Parameter name-value mapping for the tool"
     )
     preview: bool = Field(
-        default=False, description="If true, only return the command without executing"
+        default=False,
+        description="If true, only return the command without executing"
     )
     execute: Optional[bool] = Field(
         default=None,
-        description="If explicitly true, execute; if false, force preview. If None, inferred from preview flag.",
+        description="If explicitly true, execute; if false, force preview. If None, inferred from preview flag."
     )
 
 
@@ -139,30 +142,26 @@ class NiWrapSearchTool(NeuroToolWrapper):
 
             for tool_def in all_tools:
                 # Filter by package if specified
-                if package and not tool_def["name"].startswith(f"{package}."):
+                if package and not tool_def['name'].startswith(f"{package}."):
                     continue
 
                 # Search in name, description, and tags
-                name = tool_def.get("name", "").lower()
-                description = tool_def.get("description", "").lower()
-                tags = [t.lower() for t in tool_def.get("tags", [])]
+                name = tool_def.get('name', '').lower()
+                description = tool_def.get('description', '').lower()
+                tags = [t.lower() for t in tool_def.get('tags', [])]
 
-                if (
-                    query_lower in name
-                    or query_lower in description
-                    or any(query_lower in tag for tag in tags)
-                ):
+                if (query_lower in name or
+                    query_lower in description or
+                    any(query_lower in tag for tag in tags)):
 
                     # Extract summary info
-                    metadata = tool_def.get("metadata", {})
-                    matches.append(
-                        {
-                            "name": tool_def["name"],
-                            "package": metadata.get("package", "unknown"),
-                            "description": tool_def.get("description", "")[:200],
-                            "tags": tool_def.get("tags", []),
-                        }
-                    )
+                    metadata = tool_def.get('metadata', {})
+                    matches.append({
+                        "name": tool_def['name'],
+                        "package": metadata.get('package', 'unknown'),
+                        "description": tool_def.get('description', '')[:200],
+                        "tags": tool_def.get('tags', []),
+                    })
 
                     if len(matches) >= limit:
                         break
@@ -239,39 +238,39 @@ class NiWrapSchemaTool(NeuroToolWrapper):
                 )
 
             # Extract schema information
-            metadata = tool_def.get("metadata", {})
-            boutiques_inputs = metadata.get("boutiques_inputs", [])
-            resources = metadata.get("resources", {})
+            metadata = tool_def.get('metadata', {})
+            boutiques_inputs = metadata.get('boutiques_inputs', [])
+            resources = metadata.get('resources', {})
 
             # Separate required and optional parameters
             required_params = []
             optional_params = []
 
             for input_spec in boutiques_inputs:
-                input_id = input_spec.get("id")
+                input_id = input_spec.get('id')
                 if not input_id:
                     continue
 
                 param_info = {
                     "id": input_id,
-                    "type": input_spec.get("type", "String"),
-                    "description": input_spec.get("description", ""),
-                    "command_flag": input_spec.get("command-line-flag"),
+                    "type": input_spec.get('type', 'String'),
+                    "description": input_spec.get('description', ''),
+                    "command_flag": input_spec.get('command-line-flag'),
                 }
 
                 # Add constraints if present
-                if "minimum" in input_spec:
-                    param_info["minimum"] = input_spec["minimum"]
-                if "maximum" in input_spec:
-                    param_info["maximum"] = input_spec["maximum"]
-                if "value-choices" in input_spec:
-                    param_info["choices"] = input_spec["value-choices"]
-                if "default-value" in input_spec:
-                    param_info["default"] = input_spec["default-value"]
+                if 'minimum' in input_spec:
+                    param_info['minimum'] = input_spec['minimum']
+                if 'maximum' in input_spec:
+                    param_info['maximum'] = input_spec['maximum']
+                if 'value-choices' in input_spec:
+                    param_info['choices'] = input_spec['value-choices']
+                if 'default-value' in input_spec:
+                    param_info['default'] = input_spec['default-value']
 
                 # Categorize
-                is_optional = input_spec.get("optional", False)
-                if input_spec.get("type") == "Flag":
+                is_optional = input_spec.get('optional', False)
+                if input_spec.get('type') == 'Flag':
                     is_optional = True
 
                 if is_optional:
@@ -283,13 +282,13 @@ class NiWrapSchemaTool(NeuroToolWrapper):
                 status="success",
                 data={
                     "tool": tool_name,
-                    "description": tool_def.get("description", ""),
-                    "package": metadata.get("package"),
-                    "version": metadata.get("version"),
+                    "description": tool_def.get('description', ''),
+                    "package": metadata.get('package'),
+                    "version": metadata.get('version'),
                     "required": required_params,
                     "optional": optional_params,
                     "resource_hints": resources,
-                    "command_template": metadata.get("command_line", ""),
+                    "command_template": metadata.get('command_line', ''),
                 },
             )
 
@@ -333,8 +332,8 @@ class NiWrapExecuteTool(NeuroToolWrapper):
         """Execute a tool with given parameters."""
         try:
             from brain_researcher.services.tools.niwrap import (
-                execute_niwrap_tool,
                 get_tool_by_name,
+                execute_niwrap_tool,
                 preview_niwrap_tool,
             )
         except ImportError as e:
@@ -374,10 +373,8 @@ class NiWrapExecuteTool(NeuroToolWrapper):
             exec_result = execute_niwrap_tool(tool_def, parameters)
 
             # Check for execution errors
-            if exec_result.get("exit_code", -1) != 0:
-                error_msg = exec_result.get("error") or exec_result.get(
-                    "stderr", "Unknown error"
-                )
+            if exec_result.get('exit_code', -1) != 0:
+                error_msg = exec_result.get('error') or exec_result.get('stderr', 'Unknown error')
                 return ToolResult(
                     status="error",
                     error=error_msg,

@@ -4,15 +4,15 @@ This module provides real-time tracking and analysis of graph evolution,
 detecting patterns, trends, and significant changes over time.
 """
 
-import asyncio
-import json
 import logging
-import statistics
-from collections import defaultdict, deque
-from dataclasses import asdict, dataclass, field
+import asyncio
+from typing import Dict, List, Any, Optional, Tuple, Set, Callable
+from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from collections import defaultdict, deque
+import statistics
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class EvolutionEvent:
             "new_value": self.new_value,
             "change_magnitude": self.change_magnitude,
             "related_entities": self.related_entities,
-            "metadata": self.metadata,
+            "metadata": self.metadata
         }
 
     @classmethod
@@ -99,7 +99,7 @@ class EvolutionEvent:
             new_value=data.get("new_value"),
             change_magnitude=data.get("change_magnitude", 0.0),
             related_entities=data.get("related_entities", []),
-            metadata=data.get("metadata", {}),
+            metadata=data.get("metadata", {})
         )
 
 
@@ -144,15 +144,11 @@ class EvolutionPattern:
         # Basic metrics
         self.metrics["event_count"] = len(self.events)
         self.metrics["entity_count"] = len(self.entities_involved)
-        self.metrics["duration_seconds"] = (
-            self.duration.total_seconds() if self.duration else 0
-        )
+        self.metrics["duration_seconds"] = self.duration.total_seconds() if self.duration else 0
 
         # Rate metrics
         if self.duration and self.duration.total_seconds() > 0:
-            self.metrics["event_rate"] = (
-                len(self.events) / self.duration.total_seconds()
-            )
+            self.metrics["event_rate"] = len(self.events) / self.duration.total_seconds()
 
         # Change magnitude metrics
         magnitudes = [e.change_magnitude for e in self.events if e.change_magnitude > 0]
@@ -167,9 +163,7 @@ class EvolutionPattern:
             event_types[event.event_type.value] += 1
 
         self.metrics["event_type_distribution"] = dict(event_types)
-        self.metrics["primary_event_type"] = (
-            max(event_types, key=event_types.get) if event_types else None
-        )
+        self.metrics["primary_event_type"] = max(event_types, key=event_types.get) if event_types else None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -178,15 +172,13 @@ class EvolutionPattern:
             "pattern_type": self.pattern_type.value,
             "start_time": self.start_time.isoformat(),
             "end_time": self.end_time.isoformat() if self.end_time else None,
-            "duration_seconds": (
-                self.duration.total_seconds() if self.duration else None
-            ),
+            "duration_seconds": self.duration.total_seconds() if self.duration else None,
             "entities_involved": list(self.entities_involved),
             "events": [e.to_dict() for e in self.events],
             "metrics": self.metrics,
             "confidence_score": self.confidence_score,
             "significance_score": self.significance_score,
-            "description": self.description,
+            "description": self.description
         }
 
 
@@ -197,7 +189,7 @@ class EvolutionAnalyzer:
         self,
         pattern_detection_window: timedelta = timedelta(hours=1),
         min_events_for_pattern: int = 3,
-        significance_threshold: float = 0.5,
+        significance_threshold: float = 0.5
     ):
         """Initialize evolution analyzer.
 
@@ -219,7 +211,7 @@ class EvolutionAnalyzer:
             "events_analyzed": 0,
             "patterns_detected": 0,
             "patterns_by_type": defaultdict(int),
-            "avg_pattern_duration": 0.0,
+            "avg_pattern_duration": 0.0
         }
 
     def analyze_events(self, events: List[EvolutionEvent]) -> List[EvolutionPattern]:
@@ -261,8 +253,7 @@ class EvolutionAnalyzer:
 
         # Filter by significance
         significant_patterns = [
-            p
-            for p in detected_patterns
+            p for p in detected_patterns
             if p.significance_score >= self.significance_threshold
         ]
 
@@ -274,21 +265,19 @@ class EvolutionAnalyzer:
         return significant_patterns
 
     def _detect_growth_pattern(
-        self, current_event: EvolutionEvent, all_events: List[EvolutionEvent]
+        self,
+        current_event: EvolutionEvent,
+        all_events: List[EvolutionEvent]
     ) -> Optional[EvolutionPattern]:
         """Detect growth patterns."""
-        if current_event.event_type not in [
-            EvolutionEventType.NODE_BIRTH,
-            EvolutionEventType.EDGE_BIRTH,
-        ]:
+        if current_event.event_type not in [EvolutionEventType.NODE_BIRTH, EvolutionEventType.EDGE_BIRTH]:
             return None
 
         # Look for similar events in recent time window
         window_start = current_event.timestamp - self.pattern_window
 
         similar_events = [
-            e
-            for e in all_events
+            e for e in all_events
             if e.event_type == current_event.event_type
             and window_start <= e.timestamp <= current_event.timestamp
         ]
@@ -299,9 +288,7 @@ class EvolutionAnalyzer:
         # Check for consistent growth rate
         time_diffs = []
         for i in range(1, len(similar_events)):
-            time_diff = (
-                similar_events[i].timestamp - similar_events[i - 1].timestamp
-            ).total_seconds()
+            time_diff = (similar_events[i].timestamp - similar_events[i-1].timestamp).total_seconds()
             time_diffs.append(time_diff)
 
         if not time_diffs:
@@ -321,7 +308,7 @@ class EvolutionAnalyzer:
             pattern_id=f"growth_{current_event.timestamp.isoformat()}",
             pattern_type=PatternType.GROWTH,
             start_time=similar_events[0].timestamp,
-            end_time=current_event.timestamp,
+            end_time=current_event.timestamp
         )
 
         for event in similar_events:
@@ -329,15 +316,15 @@ class EvolutionAnalyzer:
 
         pattern.calculate_metrics()
         pattern.confidence_score = consistency
-        pattern.significance_score = min(
-            1.0, len(similar_events) / 10.0
-        )  # More events = more significant
+        pattern.significance_score = min(1.0, len(similar_events) / 10.0)  # More events = more significant
         pattern.description = f"Growth pattern with {len(similar_events)} {current_event.event_type.value} events"
 
         return pattern
 
     def _detect_burst_pattern(
-        self, current_event: EvolutionEvent, all_events: List[EvolutionEvent]
+        self,
+        current_event: EvolutionEvent,
+        all_events: List[EvolutionEvent]
     ) -> Optional[EvolutionPattern]:
         """Detect burst patterns (sudden spikes in activity)."""
         # Look at short time window around current event
@@ -347,7 +334,8 @@ class EvolutionAnalyzer:
 
         # Count events in burst window
         burst_events = [
-            e for e in all_events if window_start <= e.timestamp <= window_end
+            e for e in all_events
+            if window_start <= e.timestamp <= window_end
         ]
 
         if len(burst_events) < self.min_events:
@@ -360,7 +348,8 @@ class EvolutionAnalyzer:
         history_end = window_start
 
         historical_events = [
-            e for e in all_events if history_start <= e.timestamp <= history_end
+            e for e in all_events
+            if history_start <= e.timestamp <= history_end
         ]
 
         # Calculate normal rate and burst rate
@@ -374,7 +363,7 @@ class EvolutionAnalyzer:
         burst_rate = len(burst_events) / burst_duration_hours
 
         # Check if burst rate is significantly higher than normal
-        burst_factor = burst_rate / normal_rate if normal_rate > 0 else float("inf")
+        burst_factor = burst_rate / normal_rate if normal_rate > 0 else float('inf')
 
         if burst_factor < 3.0:  # Must be at least 3x normal rate
             return None
@@ -384,7 +373,7 @@ class EvolutionAnalyzer:
             pattern_id=f"burst_{current_event.timestamp.isoformat()}",
             pattern_type=PatternType.BURST,
             start_time=window_start,
-            end_time=window_end,
+            end_time=window_end
         )
 
         for event in burst_events:
@@ -402,7 +391,9 @@ class EvolutionAnalyzer:
         return pattern
 
     def _detect_cascade_pattern(
-        self, current_event: EvolutionEvent, all_events: List[EvolutionEvent]
+        self,
+        current_event: EvolutionEvent,
+        all_events: List[EvolutionEvent]
     ) -> Optional[EvolutionPattern]:
         """Detect cascade patterns (sequential propagation of changes)."""
         if not current_event.related_entities:
@@ -416,9 +407,7 @@ class EvolutionAnalyzer:
         potential_cascade = []
 
         # Start with current event
-        cascade_entities = set(
-            [current_event.entity_id] + current_event.related_entities
-        )
+        cascade_entities = set([current_event.entity_id] + current_event.related_entities)
         potential_cascade.append(current_event)
 
         # Look backwards for connected events
@@ -430,13 +419,10 @@ class EvolutionAnalyzer:
                 continue
 
             # Check if this event is connected to the cascade
-            if event.entity_id in cascade_entities or any(
-                entity in cascade_entities for entity in event.related_entities
-            ):
+            if (event.entity_id in cascade_entities or
+                any(entity in cascade_entities for entity in event.related_entities)):
 
-                potential_cascade.insert(
-                    0, event
-                )  # Insert at beginning to maintain order
+                potential_cascade.insert(0, event)  # Insert at beginning to maintain order
                 cascade_entities.add(event.entity_id)
                 cascade_entities.update(event.related_entities)
 
@@ -454,7 +440,7 @@ class EvolutionAnalyzer:
             pattern_id=f"cascade_{current_event.timestamp.isoformat()}",
             pattern_type=PatternType.CASCADE,
             start_time=potential_cascade[0].timestamp,
-            end_time=current_event.timestamp,
+            end_time=current_event.timestamp
         )
 
         for event in potential_cascade:
@@ -466,14 +452,14 @@ class EvolutionAnalyzer:
 
         pattern.confidence_score = cascade_score
         pattern.significance_score = min(1.0, len(potential_cascade) / 8.0)
-        pattern.description = (
-            f"Cascade pattern affecting {len(cascade_entities)} entities"
-        )
+        pattern.description = f"Cascade pattern affecting {len(cascade_entities)} entities"
 
         return pattern
 
     def _detect_oscillation_pattern(
-        self, current_event: EvolutionEvent, all_events: List[EvolutionEvent]
+        self,
+        current_event: EvolutionEvent,
+        all_events: List[EvolutionEvent]
     ) -> Optional[EvolutionPattern]:
         """Detect oscillation patterns (periodic changes)."""
         if not current_event.entity_id:
@@ -481,7 +467,8 @@ class EvolutionAnalyzer:
 
         # Look for events affecting the same entity
         entity_events = [
-            e for e in all_events if e.entity_id == current_event.entity_id
+            e for e in all_events
+            if e.entity_id == current_event.entity_id
         ]
 
         if len(entity_events) < self.min_events * 2:  # Need more events for oscillation
@@ -502,7 +489,7 @@ class EvolutionAnalyzer:
                         pattern_id=f"oscillation_{current_event.entity_id}_{event_type.value}",
                         pattern_type=PatternType.OSCILLATION,
                         start_time=type_events[0].timestamp,
-                        end_time=type_events[-1].timestamp,
+                        end_time=type_events[-1].timestamp
                     )
 
                     for event in type_events:
@@ -510,9 +497,7 @@ class EvolutionAnalyzer:
 
                     pattern.calculate_metrics()
                     pattern.metrics["oscillation_score"] = oscillation_score
-                    pattern.metrics["period_estimate"] = (
-                        self._estimate_oscillation_period(type_events)
-                    )
+                    pattern.metrics["period_estimate"] = self._estimate_oscillation_period(type_events)
 
                     pattern.confidence_score = oscillation_score
                     pattern.significance_score = min(1.0, len(type_events) / 6.0)
@@ -530,7 +515,7 @@ class EvolutionAnalyzer:
         # Check temporal progression
         temporal_score = 1.0
         for i in range(1, len(events)):
-            time_diff = (events[i].timestamp - events[i - 1].timestamp).total_seconds()
+            time_diff = (events[i].timestamp - events[i-1].timestamp).total_seconds()
             if time_diff <= 0:  # Events should progress forward in time
                 temporal_score *= 0.5
 
@@ -544,11 +529,8 @@ class EvolutionAnalyzer:
             next_event = events[i + 1]
 
             # Check if events are connected through entities or related entities
-            if next_event.entity_id in (
-                [curr_event.entity_id] + curr_event.related_entities
-            ) or curr_event.entity_id in (
-                [next_event.entity_id] + next_event.related_entities
-            ):
+            if (next_event.entity_id in ([curr_event.entity_id] + curr_event.related_entities) or
+                curr_event.entity_id in ([next_event.entity_id] + next_event.related_entities)):
                 connected_pairs += 1
 
         if total_pairs > 0:
@@ -564,7 +546,7 @@ class EvolutionAnalyzer:
         # Calculate intervals between events
         intervals = []
         for i in range(1, len(events)):
-            interval = (events[i].timestamp - events[i - 1].timestamp).total_seconds()
+            interval = (events[i].timestamp - events[i-1].timestamp).total_seconds()
             intervals.append(interval)
 
         if not intervals:
@@ -576,23 +558,21 @@ class EvolutionAnalyzer:
             return 0.0
 
         variance = statistics.variance(intervals) if len(intervals) > 1 else 0
-        coefficient_of_variation = (variance**0.5) / mean_interval
+        coefficient_of_variation = (variance ** 0.5) / mean_interval
 
         # Lower coefficient of variation = more regular = higher oscillation score
         regularity_score = max(0.0, 1.0 - coefficient_of_variation)
 
         return regularity_score
 
-    def _estimate_oscillation_period(
-        self, events: List[EvolutionEvent]
-    ) -> Optional[float]:
+    def _estimate_oscillation_period(self, events: List[EvolutionEvent]) -> Optional[float]:
         """Estimate the period of oscillation in seconds."""
         if len(events) < 2:
             return None
 
         intervals = []
         for i in range(1, len(events)):
-            interval = (events[i].timestamp - events[i - 1].timestamp).total_seconds()
+            interval = (events[i].timestamp - events[i-1].timestamp).total_seconds()
             intervals.append(interval)
 
         if intervals:
@@ -610,7 +590,7 @@ class EvolutionAnalyzer:
                 "patterns_by_type": {},
                 "avg_duration": 0.0,
                 "avg_confidence": 0.0,
-                "avg_significance": 0.0,
+                "avg_significance": 0.0
             }
 
         # Calculate statistics
@@ -634,7 +614,7 @@ class EvolutionAnalyzer:
             "avg_duration": statistics.mean(durations) if durations else 0.0,
             "avg_confidence": statistics.mean(confidences),
             "avg_significance": statistics.mean(significances),
-            "stats": dict(self.stats),
+            "stats": dict(self.stats)
         }
 
 
@@ -645,7 +625,7 @@ class GraphEvolutionTracker:
         self,
         history_size: int = 10000,
         analysis_interval: timedelta = timedelta(minutes=5),
-        auto_analyze: bool = True,
+        auto_analyze: bool = True
     ):
         """Initialize graph evolution tracker.
 
@@ -679,7 +659,7 @@ class GraphEvolutionTracker:
             "events_by_type": defaultdict(int),
             "entities_tracked": 0,
             "patterns_detected": 0,
-            "last_analysis_time": None,
+            "last_analysis_time": None
         }
 
     def add_event(self, event: EvolutionEvent):
@@ -697,18 +677,14 @@ class GraphEvolutionTracker:
 
             # Trim entity history if too long
             if len(self.events_by_entity[event.entity_id]) > 1000:
-                self.events_by_entity[event.entity_id] = self.events_by_entity[
-                    event.entity_id
-                ][-500:]
+                self.events_by_entity[event.entity_id] = self.events_by_entity[event.entity_id][-500:]
 
         # Update statistics
         self.stats["total_events"] += 1
         self.stats["events_by_type"][event.event_type.value] += 1
         self.stats["entities_tracked"] = len(self.events_by_entity)
 
-        logger.debug(
-            f"Added evolution event: {event.event_type.value} for {event.entity_id}"
-        )
+        logger.debug(f"Added evolution event: {event.event_type.value} for {event.entity_id}")
 
     def add_events(self, events: List[EvolutionEvent]):
         """Add multiple evolution events.
@@ -777,9 +753,7 @@ class GraphEvolutionTracker:
 
         # Filter out patterns we've already detected
         existing_pattern_ids = {p.pattern_id for p in self.detected_patterns}
-        truly_new_patterns = [
-            p for p in new_patterns if p.pattern_id not in existing_pattern_ids
-        ]
+        truly_new_patterns = [p for p in new_patterns if p.pattern_id not in existing_pattern_ids]
 
         # Add new patterns
         self.detected_patterns.extend(truly_new_patterns)
@@ -823,7 +797,10 @@ class GraphEvolutionTracker:
         """
         cutoff_time = datetime.now() - time_window
 
-        return [event for event in self.event_history if event.timestamp >= cutoff_time]
+        return [
+            event for event in self.event_history
+            if event.timestamp >= cutoff_time
+        ]
 
     def get_patterns_by_type(self, pattern_type: PatternType) -> List[EvolutionPattern]:
         """Get patterns of specific type.
@@ -879,27 +856,17 @@ class GraphEvolutionTracker:
             entity_id: len(events)
             for entity_id, events in self.events_by_entity.items()
         }
-        most_active = sorted(entity_activity.items(), key=lambda x: x[1], reverse=True)[
-            :10
-        ]
+        most_active = sorted(entity_activity.items(), key=lambda x: x[1], reverse=True)[:10]
 
         return {
             "tracking_duration_seconds": tracking_duration.total_seconds(),
-            "earliest_event": (
-                earliest_event.timestamp.isoformat() if earliest_event else None
-            ),
-            "latest_event": (
-                latest_event.timestamp.isoformat() if latest_event else None
-            ),
+            "earliest_event": earliest_event.timestamp.isoformat() if earliest_event else None,
+            "latest_event": latest_event.timestamp.isoformat() if latest_event else None,
             "event_history_size": len(self.event_history),
             "most_active_entities": most_active,
             "pattern_summary": pattern_summary,
             "stats": dict(self.stats),
-            "last_analysis_time": (
-                self.stats["last_analysis_time"].isoformat()
-                if self.stats["last_analysis_time"]
-                else None
-            ),
+            "last_analysis_time": self.stats["last_analysis_time"].isoformat() if self.stats["last_analysis_time"] else None
         }
 
     def export_evolution_data(self) -> Dict[str, Any]:
@@ -915,7 +882,7 @@ class GraphEvolutionTracker:
                 entity_id: [event.to_dict() for event in events]
                 for entity_id, events in self.events_by_entity.items()
             },
-            "summary": self.get_evolution_summary(),
+            "summary": self.get_evolution_summary()
         }
 
     def clear_history(self):
@@ -930,23 +897,21 @@ class GraphEvolutionTracker:
             "events_by_type": defaultdict(int),
             "entities_tracked": 0,
             "patterns_detected": 0,
-            "last_analysis_time": None,
+            "last_analysis_time": None
         }
 
         logger.info("Cleared evolution history")
 
 
 # Integration with CDC processor
-def integrate_evolution_tracker_with_cdc(
-    evolution_tracker: GraphEvolutionTracker, cdc_processor
-):
+def integrate_evolution_tracker_with_cdc(evolution_tracker: GraphEvolutionTracker, cdc_processor):
     """Integrate evolution tracker with CDC processor.
 
     Args:
         evolution_tracker: Evolution tracker instance
         cdc_processor: CDC processor instance
     """
-    from ..streaming.cdc_processor import ChangeType, GraphChangeEvent
+    from ..streaming.cdc_processor import GraphChangeEvent, ChangeType
 
     def convert_cdc_to_evolution_event(cdc_event: GraphChangeEvent) -> EvolutionEvent:
         """Convert CDC event to evolution event."""
@@ -962,9 +927,7 @@ def integrate_evolution_tracker_with_cdc(
             ChangeType.RELATIONSHIP_UPDATED: EvolutionEventType.EDGE_PROPERTY_CHANGE,
         }
 
-        evolution_type = type_mapping.get(
-            cdc_event.change_type, EvolutionEventType.NODE_PROPERTY_CHANGE
-        )
+        evolution_type = type_mapping.get(cdc_event.change_type, EvolutionEventType.NODE_PROPERTY_CHANGE)
 
         # Calculate change magnitude
         change_magnitude = 0.0
@@ -997,8 +960,8 @@ def integrate_evolution_tracker_with_cdc(
                 "transaction_id": cdc_event.transaction_id,
                 "user_id": cdc_event.user_id,
                 "session_id": cdc_event.session_id,
-                **cdc_event.metadata,
-            },
+                **cdc_event.metadata
+            }
         )
 
     def cdc_event_handler(cdc_event: GraphChangeEvent):

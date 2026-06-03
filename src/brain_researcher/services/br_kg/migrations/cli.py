@@ -3,16 +3,15 @@ CLI for database migrations.
 Provides commands for creating, running, and managing migrations.
 """
 
+import click
 import json
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
-
-import click
 from rich.console import Console
+from rich.table import Table
 from rich.panel import Panel
 from rich.syntax import Syntax
-from rich.table import Table
+from datetime import datetime
 
 from brain_researcher.services.br_kg.migrations import MigrationManager
 
@@ -26,10 +25,9 @@ def cli():
 
 
 @cli.command()
-@click.argument("name")
-@click.option(
-    "--dir", "-d", "migrations_dir", default="migrations", help="Migrations directory"
-)
+@click.argument('name')
+@click.option('--dir', '-d', 'migrations_dir', default='migrations',
+              help='Migrations directory')
 def create(name: str, migrations_dir: str):
     """
     Create a new migration file.
@@ -40,7 +38,7 @@ def create(name: str, migrations_dir: str):
     manager = MigrationManager(migrations_dir=migrations_dir)
 
     # Sanitize name
-    name = name.lower().replace(" ", "_").replace("-", "_")
+    name = name.lower().replace(' ', '_').replace('-', '_')
 
     # Create migration
     file_path = manager.create_migration(name)
@@ -49,19 +47,19 @@ def create(name: str, migrations_dir: str):
     console.print(f"\nEdit the file to implement your migration:")
 
     # Show template
-    with open(file_path, "r") as f:
+    with open(file_path, 'r') as f:
         content = f.read()
         syntax = Syntax(content, "python", line_numbers=True, theme="monokai")
         console.print(syntax)
 
 
 @cli.command()
-@click.option("--target", "-t", help="Target version to migrate to")
-@click.option("--db", "-d", "db_path", default="br_kg_graph.db", help="Database path")
-@click.option(
-    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
-)
-@click.option("--dry-run", is_flag=True, help="Show what would be done")
+@click.option('--target', '-t', help='Target version to migrate to')
+@click.option('--db', '-d', 'db_path', default='br_kg_graph.db',
+              help='Database path')
+@click.option('--dir', 'migrations_dir', default='migrations',
+              help='Migrations directory')
+@click.option('--dry-run', is_flag=True, help='Show what would be done')
 def migrate(target: Optional[str], db_path: str, migrations_dir: str, dry_run: bool):
     """
     Run pending migrations.
@@ -80,18 +78,16 @@ def migrate(target: Optional[str], db_path: str, migrations_dir: str, dry_run: b
         console.print("\n[yellow]DRY RUN MODE - No changes will be made[/yellow]\n")
 
     # Show current status
-    console.print(
-        Panel(
-            f"Database: {status['database']}\n"
-            f"Applied: {status['applied']}\n"
-            f"Pending: {status['pending']}\n"
-            f"Total: {status['total']}",
-            title="Migration Status",
-            border_style="blue",
-        )
-    )
+    console.print(Panel(
+        f"Database: {status['database']}\n"
+        f"Applied: {status['applied']}\n"
+        f"Pending: {status['pending']}\n"
+        f"Total: {status['total']}",
+        title="Migration Status",
+        border_style="blue"
+    ))
 
-    if status["pending"] == 0:
+    if status['pending'] == 0:
         console.print("\n[green]✓[/green] All migrations are up to date!")
         return
 
@@ -101,10 +97,10 @@ def migrate(target: Optional[str], db_path: str, migrations_dir: str, dry_run: b
     table.add_column("Version", style="cyan")
     table.add_column("Description")
 
-    for migration in status["pending_migrations"]:
-        if target and migration["version"] > target:
+    for migration in status['pending_migrations']:
+        if target and migration['version'] > target:
             break
-        table.add_row(migration["version"], migration["description"])
+        table.add_row(migration['version'], migration['description'])
 
     console.print(table)
 
@@ -130,12 +126,12 @@ def migrate(target: Optional[str], db_path: str, migrations_dir: str, dry_run: b
 
 
 @cli.command()
-@click.option("--steps", "-s", default=1, help="Number of migrations to rollback")
-@click.option("--db", "-d", "db_path", default="br_kg_graph.db", help="Database path")
-@click.option(
-    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
-)
-@click.option("--force", is_flag=True, help="Skip confirmation")
+@click.option('--steps', '-s', default=1, help='Number of migrations to rollback')
+@click.option('--db', '-d', 'db_path', default='br_kg_graph.db',
+              help='Database path')
+@click.option('--dir', 'migrations_dir', default='migrations',
+              help='Migrations directory')
+@click.option('--force', is_flag=True, help='Skip confirmation')
 def rollback(steps: int, db_path: str, migrations_dir: str, force: bool):
     """
     Rollback last N migrations.
@@ -148,7 +144,7 @@ def rollback(steps: int, db_path: str, migrations_dir: str, force: bool):
 
     # Get applied migrations
     status = manager.status()
-    applied = status["applied_migrations"]
+    applied = status['applied_migrations']
 
     if not applied:
         console.print("[yellow]No migrations to rollback[/yellow]")
@@ -164,10 +160,12 @@ def rollback(steps: int, db_path: str, migrations_dir: str, force: bool):
     table.add_column("Status")
 
     for migration in to_rollback:
-        applied_at = datetime.fromisoformat(migration["applied_at"]).strftime(
-            "%Y-%m-%d %H:%M"
+        applied_at = datetime.fromisoformat(migration['applied_at']).strftime("%Y-%m-%d %H:%M")
+        table.add_row(
+            migration['version'],
+            applied_at,
+            migration['status']
         )
-        table.add_row(migration["version"], applied_at, migration["status"])
 
     console.print(table)
 
@@ -185,20 +183,18 @@ def rollback(steps: int, db_path: str, migrations_dir: str, force: bool):
         success = manager.rollback(steps=steps)
 
     if success:
-        console.print(
-            f"\n[green]✓[/green] Rolled back {steps} migration(s) successfully!"
-        )
+        console.print(f"\n[green]✓[/green] Rolled back {steps} migration(s) successfully!")
     else:
         console.print("\n[red]✗[/red] Rollback failed! Check logs for details.")
         raise click.Exit(1)
 
 
 @cli.command()
-@click.option("--db", "-d", "db_path", default="br_kg_graph.db", help="Database path")
-@click.option(
-    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
-)
-@click.option("--json", "as_json", is_flag=True, help="Output as JSON")
+@click.option('--db', '-d', 'db_path', default='br_kg_graph.db',
+              help='Database path')
+@click.option('--dir', 'migrations_dir', default='migrations',
+              help='Migrations directory')
+@click.option('--json', 'as_json', is_flag=True, help='Output as JSON')
 def status(db_path: str, migrations_dir: str, as_json: bool):
     """
     Show migration status.
@@ -215,19 +211,17 @@ def status(db_path: str, migrations_dir: str, as_json: bool):
         return
 
     # Show summary
-    console.print(
-        Panel(
-            f"Database: {status['database']}\n"
-            f"Applied: {status['applied']}\n"
-            f"Pending: {status['pending']}\n"
-            f"Total: {status['total']}",
-            title="Migration Status",
-            border_style="blue",
-        )
-    )
+    console.print(Panel(
+        f"Database: {status['database']}\n"
+        f"Applied: {status['applied']}\n"
+        f"Pending: {status['pending']}\n"
+        f"Total: {status['total']}",
+        title="Migration Status",
+        border_style="blue"
+    ))
 
     # Show applied migrations
-    if status["applied_migrations"]:
+    if status['applied_migrations']:
         console.print("\n[bold]Applied Migrations:[/bold]")
         table = Table(show_header=True, header_style="bold green")
         table.add_column("Version", style="cyan")
@@ -235,41 +229,39 @@ def status(db_path: str, migrations_dir: str, as_json: bool):
         table.add_column("Execution Time")
         table.add_column("Status")
 
-        for migration in status["applied_migrations"]:
-            applied_at = datetime.fromisoformat(migration["applied_at"]).strftime(
-                "%Y-%m-%d %H:%M"
-            )
+        for migration in status['applied_migrations']:
+            applied_at = datetime.fromisoformat(migration['applied_at']).strftime("%Y-%m-%d %H:%M")
             exec_time = f"{migration['execution_time']:.2f}s"
 
-            status_style = "green" if migration["status"] == "applied" else "red"
+            status_style = "green" if migration['status'] == 'applied' else "red"
 
             table.add_row(
-                migration["version"],
+                migration['version'],
                 applied_at,
                 exec_time,
-                f"[{status_style}]{migration['status']}[/{status_style}]",
+                f"[{status_style}]{migration['status']}[/{status_style}]"
             )
 
         console.print(table)
 
     # Show pending migrations
-    if status["pending_migrations"]:
+    if status['pending_migrations']:
         console.print("\n[bold]Pending Migrations:[/bold]")
         table = Table(show_header=True, header_style="bold yellow")
         table.add_column("Version", style="cyan")
         table.add_column("Description")
 
-        for migration in status["pending_migrations"]:
-            table.add_row(migration["version"], migration["description"])
+        for migration in status['pending_migrations']:
+            table.add_row(migration['version'], migration['description'])
 
         console.print(table)
 
 
 @cli.command()
-@click.option("--db", "-d", "db_path", default="br_kg_graph.db", help="Database path")
-@click.option(
-    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
-)
+@click.option('--db', '-d', 'db_path', default='br_kg_graph.db',
+              help='Database path')
+@click.option('--dir', 'migrations_dir', default='migrations',
+              help='Migrations directory')
 def verify(db_path: str, migrations_dir: str):
     """
     Verify migration checksums.
@@ -304,21 +296,17 @@ def verify(db_path: str, migrations_dir: str):
     if all_valid:
         console.print("\n[green]✓[/green] All checksums are valid!")
     else:
-        console.print(
-            "\n[red]✗[/red] Some migrations have been modified after being applied!"
-        )
-        console.print(
-            "[yellow]This could cause issues. Consider creating new migrations instead.[/yellow]"
-        )
+        console.print("\n[red]✗[/red] Some migrations have been modified after being applied!")
+        console.print("[yellow]This could cause issues. Consider creating new migrations instead.[/yellow]")
         raise click.Exit(1)
 
 
 @cli.command()
-@click.option("--db", "-d", "db_path", default="br_kg_graph.db", help="Database path")
-@click.option(
-    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
-)
-@click.option("--force", is_flag=True, help="Skip confirmation")
+@click.option('--db', '-d', 'db_path', default='br_kg_graph.db',
+              help='Database path')
+@click.option('--dir', 'migrations_dir', default='migrations',
+              help='Migrations directory')
+@click.option('--force', is_flag=True, help='Skip confirmation')
 def reset(db_path: str, migrations_dir: str, force: bool):
     """
     Reset all migrations (DANGEROUS!).
@@ -330,7 +318,7 @@ def reset(db_path: str, migrations_dir: str, force: bool):
     # Get status
     status = manager.status()
 
-    if status["applied"] == 0:
+    if status['applied'] == 0:
         console.print("[yellow]No migrations to reset[/yellow]")
         return
 
@@ -358,5 +346,5 @@ def reset(db_path: str, migrations_dir: str, force: bool):
         raise click.Exit(1)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     cli()

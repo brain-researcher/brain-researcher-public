@@ -157,7 +157,7 @@ Auto-generated from `src/brain_researcher/services/shared/planner/models.py`:
 ## Documentation
 
 For detailed information, see:
-- [Developer Guide](development/planner_catalog.md)
+- [Catalog README](catalog_README.md)
 - [Catalog Loader API](../src/brain_researcher/services/agent/planner/catalog_loader.py)
 - [Unit Tests](../tests/unit/planner/)
 
@@ -196,4 +196,4 @@ For detailed information, see:
 For issues or questions:
 - Check validation output: `python scripts/ci/validate_capabilities.py`
 - Run tests: `pytest tests/unit/planner/ -v`
-- See [Developer Guide](../../docs/development/planner_catalog.md)
+- See [Catalog README](catalog_README.md)

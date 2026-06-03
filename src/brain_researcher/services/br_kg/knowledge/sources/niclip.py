@@ -198,9 +198,9 @@ class NiCLIPEvidenceSource(BaseEvidenceSource):
                         metadata={
                             "vocabulary_type": vocab_type,
                             "vocabulary_index": idx,
-                            "prior_probability": (
-                                float(priors[idx]) if idx < len(priors) else 0.5
-                            ),
+                            "prior_probability": float(priors[idx])
+                            if idx < len(priors)
+                            else 0.5,
                         },
                     )
                 )
@@ -261,9 +261,9 @@ class NiCLIPEvidenceSource(BaseEvidenceSource):
                             "vocabulary_type": vocabulary_type,
                             "vocabulary_index": int(idx),
                             "cosine_similarity": score,
-                            "prior_probability": (
-                                float(priors[idx]) if idx < len(priors) else 0.5
-                            ),
+                            "prior_probability": float(priors[idx])
+                            if idx < len(priors)
+                            else 0.5,
                         },
                     )
                 )

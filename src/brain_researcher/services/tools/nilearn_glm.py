@@ -6,11 +6,11 @@ analysis using Nilearn, with full parameter schemas, examples, and metadata for
 proper LLM function calling.
 """
 
-import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
-
+from typing import Dict, Any, List, Optional, Union
 from pydantic import BaseModel, Field
+from pathlib import Path
+import logging
+from brain_researcher.services.tools.result import ToolResult
 
 from brain_researcher.services.tools.params import (
     GLMFirstLevelParameters,
@@ -20,9 +20,8 @@ from brain_researcher.services.tools.params import (
     run_glm_first_level,
     run_glm_second_level,
 )
-from brain_researcher.services.tools.result import ToolResult
-from brain_researcher.services.tools.spec import ToolExample
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper
+from brain_researcher.services.tools.spec import ToolExample
 
 logger = logging.getLogger(__name__)
 

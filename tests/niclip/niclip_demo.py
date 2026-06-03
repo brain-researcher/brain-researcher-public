@@ -5,13 +5,12 @@ NiCLIP Integration Demo
 Shows how to use the new NiCLIP-based task classification in your code.
 """
 
-from brain_researcher.services.br_kg.etl.mappers.niclip_task_mapper import get_mapper
 from brain_researcher.services.br_kg.utils.vocab_loader import (
     get_task_concepts,
     get_task_process_name,
-    search_similar_tasks,
+    search_similar_tasks
 )
-
+from brain_researcher.services.br_kg.etl.mappers.niclip_task_mapper import get_mapper
 
 def demo_direct_usage():
     """Demo: Direct usage of NiCLIP functions"""
@@ -32,7 +31,6 @@ def demo_direct_usage():
     similar = search_similar_tasks("working memory", top_k=5)
     for match in similar:
         print(f"  - {match['task']} (score: {match['score']:.2f})")
-
 
 def demo_mapper_usage():
     """Demo: Using the mapper directly for advanced features"""
@@ -58,11 +56,8 @@ def demo_mapper_usage():
 
         # Show unmapped concepts
         unmapped = mapper.get_unmapped_concepts()
-        print(
-            f"\n⚠️  Unmapped concepts: {len(unmapped)} out of {len(mapper.concept_to_process) + len(unmapped)}"
-        )
+        print(f"\n⚠️  Unmapped concepts: {len(unmapped)} out of {len(mapper.concept_to_process) + len(unmapped)}")
         print(f"  Examples: {unmapped[:5]}")
-
 
 def demo_integration():
     """Demo: How to integrate with existing code"""
@@ -70,7 +65,12 @@ def demo_integration():
     print("=" * 50)
 
     # Example: Process a list of tasks from an experiment
-    experiment_tasks = ["2-back task", "emotional faces", "finger tapping", "rest"]
+    experiment_tasks = [
+        "2-back task",
+        "emotional faces",
+        "finger tapping",
+        "rest"
+    ]
 
     print("\nExperiment Task Analysis:")
     task_categories = {}
@@ -81,8 +81,8 @@ def demo_integration():
         if not concepts:
             # Try searching for similar
             similar = search_similar_tasks(task, top_k=1)
-            if similar and similar[0]["score"] > 0.5:
-                task = similar[0]["task"]
+            if similar and similar[0]['score'] > 0.5:
+                task = similar[0]['task']
                 concepts = get_task_concepts(task)
 
         # Get process
@@ -102,7 +102,6 @@ def demo_integration():
     for process, tasks in task_categories.items():
         print(f"  {process}: {', '.join(tasks)}")
 
-
 def demo_process_mapping():
     """Demo: Understanding the 6 cognitive processes"""
     print("\n\n🧠 Demo 4: Cognitive Process Categories")
@@ -114,18 +113,15 @@ def demo_process_mapping():
         summary = mapper.get_classification_summary()
 
         print("\nNiCLIP Cognitive Process Categories:")
-        for process_id, info in summary["processes"].items():
+        for process_id, info in summary['processes'].items():
             print(f"\n{process_id}: {info['name']}")
             print(f"  Tasks: {info['task_count']}")
             print(f"  Example concepts: {', '.join(info['example_concepts'][:3])}...")
             print(f"  Example tasks: {', '.join(info['example_tasks'][:2])}...")
 
-
 if __name__ == "__main__":
     print("🎯 NiCLIP Integration Demo")
-    print(
-        "This shows how to use NiCLIP's scientifically validated task classifications\n"
-    )
+    print("This shows how to use NiCLIP's scientifically validated task classifications\n")
 
     demo_direct_usage()
     demo_mapper_usage()

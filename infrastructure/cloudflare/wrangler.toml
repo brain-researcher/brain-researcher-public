@@ -9,7 +9,7 @@ compatibility_date = "2025-01-01"
 [env.production]
 account_id = "YOUR_ACCOUNT_ID"
 workers_dev = false
-route = { pattern = "*.brain-researcher.com/*", zone_id = "YOUR_ZONE_ID" }
+route = { pattern = "*.${PUBLIC_HOSTNAME}/*", zone_id = "YOUR_ZONE_ID" }
 
 # KV Namespaces for edge caching
 [[env.production.kv_namespaces]]
@@ -29,7 +29,7 @@ bucket_name = "brain-researcher-assets"
 # Environment variables
 [env.production.vars]
 ENVIRONMENT = "production"
-API_ENDPOINT = "https://api.brain-researcher.com"
+API_ENDPOINT = "https://api.${PUBLIC_HOSTNAME}"
 CACHE_TTL = "3600"
 
 # Development environment

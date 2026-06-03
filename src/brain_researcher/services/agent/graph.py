@@ -36,11 +36,9 @@ from brain_researcher.services.agent.error_handling import (
 from brain_researcher.services.agent.issue_tracker import create_issue_tracker_backend
 from brain_researcher.services.agent.parallel_executor import (
     ResourceType,
-)
-from brain_researcher.services.agent.parallel_executor import Task as ParallelTask
-from brain_researcher.services.agent.parallel_executor import (
     create_parallel_orchestrator,
 )
+from brain_researcher.services.agent.parallel_executor import Task as ParallelTask
 from brain_researcher.services.agent.plan_logger import create_plan_logger
 from brain_researcher.services.agent.plan_memory import create_plan_memory
 from brain_researcher.services.agent.planning import PlanningEngine
@@ -130,7 +128,7 @@ class AgentState(TypedDict):
 
     # Memory-signal routing (set externally or by prior execute step)
     hypothesis_cards: list[dict[str, Any]] | None
-    execution_mode: str | None  # "standard" | "conflict_resolution"
+    execution_mode: str | None   # "standard" | "conflict_resolution"
     conflict_hint: str | None
 
 
@@ -146,18 +144,9 @@ class CoreStateMachine:
     - Parallel execution orchestration (AGENT-015)
     """
 
-    def __init__(
-        self,
-        llm=None,
-        checkpointer=None,
-        use_planning_engine=True,
-        memory_path=None,
-        cache_manager=None,
-        cache_policy=CachePolicy.MODERATE,
-        enable_parallel_execution=True,
-        parallel_workers=4,
-        resume_checkpoint_id: str | None = None,
-    ):
+    def __init__(self, llm=None, checkpointer=None, use_planning_engine=True, memory_path=None,
+                 cache_manager=None, cache_policy=CachePolicy.MODERATE, enable_parallel_execution=True,
+                 parallel_workers=4, resume_checkpoint_id: str | None = None):
         """
         Initialize the core state machine.
 
@@ -202,9 +191,7 @@ class CoreStateMachine:
             )
             logger.info("Plan memory system initialized (MVP)")
         except Exception as e:
-            logger.warning(
-                f"Failed to initialize plan memory system: {e}, proceeding without it"
-            )
+            logger.warning(f"Failed to initialize plan memory system: {e}, proceeding without it")
             self.plan_memory = None
             self.complexity_gate = None
             self.plan_logger = None
@@ -214,9 +201,7 @@ class CoreStateMachine:
 
         # Initialize parallel execution components
         if self.enable_parallel_execution:
-            self.parallel_orchestrator = create_parallel_orchestrator(
-                max_workers=parallel_workers
-            )
+            self.parallel_orchestrator = create_parallel_orchestrator(max_workers=parallel_workers)
             self.dependency_resolver = create_dependency_resolver()
             logger.info(f"Parallel execution enabled with {parallel_workers} workers")
         else:
@@ -232,7 +217,6 @@ class CoreStateMachine:
         else:
             try:
                 from brain_researcher.services.agent.llm import get_llm
-
                 self.llm = get_llm()
                 logger.info("Initialized LLM from configured factory")
             except Exception as e:
@@ -282,7 +266,7 @@ class CoreStateMachine:
             {
                 "execute": "execute",
                 "error": "error",
-            },
+            }
         )
 
         workflow.add_conditional_edges(
@@ -291,7 +275,7 @@ class CoreStateMachine:
             {
                 "review": "review",
                 "error": "error",
-            },
+            }
         )
 
         workflow.add_conditional_edges(
@@ -301,7 +285,7 @@ class CoreStateMachine:
                 "complete": END,
                 "plan": "plan",  # Revision needed
                 "error": "error",
-            },
+            }
         )
 
         workflow.add_conditional_edges(
@@ -311,7 +295,7 @@ class CoreStateMachine:
                 "plan": "plan",  # Retry from planning
                 "execute": "execute",  # Retry execution
                 "end": END,  # Max attempts reached
-            },
+            }
         )
 
         return workflow
@@ -340,7 +324,8 @@ class CoreStateMachine:
 
         # Extract query
         human_messages = [
-            msg for msg in state.get("messages", []) if isinstance(msg, HumanMessage)
+            msg for msg in state.get("messages", [])
+            if isinstance(msg, HumanMessage)
         ]
 
         if not human_messages:
@@ -355,32 +340,21 @@ class CoreStateMachine:
         complexity_result = None
         if self.complexity_gate:
             try:
-                complexity_result = self.complexity_gate.assess(
-                    query,
-                    {
-                        "user_id": user_id,
-                        "workspace_id": workspace_id,
-                    },
-                )
+                complexity_result = self.complexity_gate.assess(query, {
+                    "user_id": user_id,
+                    "workspace_id": workspace_id,
+                })
                 state["complexity_result"] = {
                     "level": complexity_result.level,
                     "confidence": complexity_result.confidence,
                     "reason": complexity_result.reason,
                 }
-                logger.info(
-                    f"Complexity assessment: {complexity_result.level} (confidence={complexity_result.confidence:.2f})"
-                )
+                logger.info(f"Complexity assessment: {complexity_result.level} (confidence={complexity_result.confidence:.2f})")
             except Exception as e:
-                logger.warning(
-                    f"Complexity gate failed: {e}, proceeding with full planning"
-                )
+                logger.warning(f"Complexity gate failed: {e}, proceeding with full planning")
 
         # Step 2: Route based on complexity
-        if (
-            complexity_result
-            and complexity_result.level == "simple"
-            and complexity_result.suggested_tool
-        ):
+        if complexity_result and complexity_result.level == "simple" and complexity_result.suggested_tool:
             # FAST PATH: Simple query with suggested tool
             plan = self._create_simple_plan(query, complexity_result.suggested_tool)
             state["plan"] = plan
@@ -388,17 +362,13 @@ class CoreStateMachine:
             state["plan_source"] = "complexity_gate_simple"
 
             # Record to memory and log
-            self._record_and_log_plan(
-                plan, user_id, workspace_id, query, complexity_result, state
-            )
+            self._record_and_log_plan(plan, user_id, workspace_id, query, complexity_result, state)
 
             state["previous_phase"] = state.get("current_phase")
             state["current_phase"] = StatePhase.PLAN
 
             state["messages"].append(
-                AIMessage(
-                    content=f"Simple query detected - using {complexity_result.suggested_tool}"
-                )
+                AIMessage(content=f"Simple query detected - using {complexity_result.suggested_tool}")
             )
             return state
 
@@ -413,9 +383,7 @@ class CoreStateMachine:
                     # Found a similar successful plan - could adapt it
                     # For MVP, we just log and proceed with fresh planning
                     # Plan adaptation will be added in Slice 2
-                    logger.info(
-                        f"Found similar plan with {similar_plans[0]['similarity']:.2f} similarity"
-                    )
+                    logger.info(f"Found similar plan with {similar_plans[0]['similarity']:.2f} similarity")
                     state["similar_plan_found"] = similar_plans[0]["plan_id"]
             except Exception as e:
                 logger.warning(f"Plan memory lookup failed: {e}")
@@ -424,36 +392,27 @@ class CoreStateMachine:
         if self.use_planning_engine and self.planning_engine:
             loop = asyncio.new_event_loop()
             try:
-                result = loop.run_until_complete(
-                    self._plan_with_engine_and_record(
-                        state, query, user_id, workspace_id, complexity_result
-                    )
-                )
+                result = loop.run_until_complete(self._plan_with_engine_and_record(state, query, user_id, workspace_id, complexity_result))
                 return result
             finally:
                 loop.close()
         else:
-            return self._plan_state_sync_with_record(
-                state, query, user_id, workspace_id, complexity_result
-            )
+            return self._plan_state_sync_with_record(state, query, user_id, workspace_id, complexity_result)
 
     def _create_simple_plan(self, query: str, tool_name: str) -> dict:
         """Create a simple single-step plan for direct tool execution."""
         import uuid
-
         return {
             "plan_id": f"simple_{uuid.uuid4().hex[:12]}",
             "query": query,
-            "steps": [
-                {
-                    "step_id": "step_1",
-                    "step_number": 1,
-                    "tool_name": tool_name,
-                    "tool_args": {},  # Will be inferred during execution
-                    "description": f"Execute {tool_name} for: {query[:50]}...",
-                    "dependencies": [],
-                }
-            ],
+            "steps": [{
+                "step_id": "step_1",
+                "step_number": 1,
+                "tool_name": tool_name,
+                "tool_args": {},  # Will be inferred during execution
+                "description": f"Execute {tool_name} for: {query[:50]}...",
+                "dependencies": [],
+            }],
             "source": "complexity_gate_simple",
             "objectives": [f"Execute {tool_name} query"],
             "success_criteria": ["Tool execution succeeded"],
@@ -466,7 +425,7 @@ class CoreStateMachine:
         workspace_id: str,
         query: str,
         complexity_result,
-        state: AgentState,
+        state: AgentState
     ):
         """Record plan to memory and log to markdown."""
         plan_id = plan.get("plan_id")
@@ -479,12 +438,8 @@ class CoreStateMachine:
                     user_id=user_id,
                     workspace_id=workspace_id,
                     query=query,
-                    complexity_level=(
-                        complexity_result.level if complexity_result else None
-                    ),
-                    complexity_reason=(
-                        complexity_result.reason if complexity_result else None
-                    ),
+                    complexity_level=complexity_result.level if complexity_result else None,
+                    complexity_reason=complexity_result.reason if complexity_result else None,
                 )
                 state["plan_memory_id"] = memory_id
                 logger.info(f"Plan recorded to memory: {memory_id}")
@@ -504,9 +459,7 @@ class CoreStateMachine:
 
                 # Update memory with markdown path
                 if self.plan_memory and state.get("plan_memory_id"):
-                    self.plan_memory.update_markdown_path(
-                        state["plan_memory_id"], md_path
-                    )
+                    self.plan_memory.update_markdown_path(state["plan_memory_id"], md_path)
 
                 logger.info(f"Plan logged to: {md_path}")
             except Exception as e:
@@ -518,7 +471,7 @@ class CoreStateMachine:
         query: str,
         user_id: str,
         workspace_id: str,
-        complexity_result,
+        complexity_result
     ) -> AgentState:
         """Use planning engine and record the result."""
         # Call the existing planning engine logic
@@ -529,9 +482,7 @@ class CoreStateMachine:
             plan = state["plan"]
             plan["query"] = query
             plan["plan_id"] = plan.get("plan_id", f"engine_{uuid4().hex[:12]}")
-            self._record_and_log_plan(
-                plan, user_id, workspace_id, query, complexity_result, state
-            )
+            self._record_and_log_plan(plan, user_id, workspace_id, query, complexity_result, state)
             state["plan_source"] = "planning_engine"
 
         return state
@@ -542,11 +493,10 @@ class CoreStateMachine:
         query: str,
         user_id: str,
         workspace_id: str,
-        complexity_result,
+        complexity_result
     ) -> AgentState:
         """Sync planning with recording."""
         import uuid
-
         state = self._plan_state_sync(state)
 
         # Record and log if planning succeeded
@@ -554,9 +504,7 @@ class CoreStateMachine:
             plan = state["plan"]
             plan["query"] = query
             plan["plan_id"] = plan.get("plan_id", f"sync_{uuid.uuid4().hex[:12]}")
-            self._record_and_log_plan(
-                plan, user_id, workspace_id, query, complexity_result, state
-            )
+            self._record_and_log_plan(plan, user_id, workspace_id, query, complexity_result, state)
             state["plan_source"] = "sync_planning"
 
         return state
@@ -580,7 +528,8 @@ class CoreStateMachine:
         try:
             # Extract query
             human_messages = [
-                msg for msg in state["messages"] if isinstance(msg, HumanMessage)
+                msg for msg in state["messages"]
+                if isinstance(msg, HumanMessage)
             ]
 
             if not human_messages:
@@ -595,7 +544,9 @@ class CoreStateMachine:
             }
 
             cache_key = self.cache_manager.key_generator.generate_key(
-                query, context=cache_context, key_type=CacheKeyType.PLANNING_RESULT
+                query,
+                context=cache_context,
+                key_type=CacheKeyType.PLANNING_RESULT
             )
 
             # Check cache first
@@ -613,7 +564,7 @@ class CoreStateMachine:
                     execution_plan,
                     ttl_seconds=1800,  # 30 minutes
                     key_type=CacheKeyType.PLANNING_RESULT,
-                    tags={"planning", "query_based"},
+                    tags={"planning", "query_based"}
                 )
                 logger.info("Generated and cached new planning result")
 
@@ -626,17 +577,15 @@ class CoreStateMachine:
                         "description": step.description,
                         "tool": step.tool_name,
                         "args": step.tool_args,
-                        "expected_output": step.expected_output,
+                        "expected_output": step.expected_output
                     }
                     for step in execution_plan.steps
                 ],
-                "success_criteria": execution_plan.success_criteria,
+                "success_criteria": execution_plan.success_criteria
             }
 
             if not plan["steps"]:
-                logger.warning(
-                    "Planning engine returned empty plan, falling back to sync planning"
-                )
+                logger.warning("Planning engine returned empty plan, falling back to sync planning")
                 return self._plan_state_sync(state)
 
             state["plan"] = plan
@@ -644,9 +593,7 @@ class CoreStateMachine:
 
             # Add AI message about the plan
             state["messages"].append(
-                AIMessage(
-                    content=f"Generated execution plan with {len(plan['steps'])} steps in {execution_plan.total_estimated_time:.1f}s estimated time"
-                )
+                AIMessage(content=f"Generated execution plan with {len(plan['steps'])} steps in {execution_plan.total_estimated_time:.1f}s estimated time")
             )
 
             logger.info(f"Planning Engine generated {len(plan['steps'])} steps")
@@ -676,7 +623,8 @@ class CoreStateMachine:
         try:
             # Extract the latest human message
             human_messages = [
-                msg for msg in state["messages"] if isinstance(msg, HumanMessage)
+                msg for msg in state["messages"]
+                if isinstance(msg, HumanMessage)
             ]
 
             if not human_messages:
@@ -746,15 +694,16 @@ class CoreStateMachine:
                     "success_criteria": ["criterion1", "criterion2"]
                 }}
                 """.format(
-                house_rules=house_rules if house_rules else "",
-                conflict_section=conflict_section,
-                planning_policy_section=planning_policy_section,
-            )
+                    house_rules=house_rules if house_rules else "",
+                    conflict_section=conflict_section,
+                    planning_policy_section=planning_policy_section,
+                )
             system_prompt = system_prompt.replace("{", "{{").replace("}", "}}")
 
-            planning_prompt = ChatPromptTemplate.from_messages(
-                [("system", system_prompt), ("human", "{query}")]
-            )
+            planning_prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                ("human", "{query}")
+            ])
 
             # Generate plan
             prompt_value = planning_prompt.invoke({"query": query})
@@ -767,11 +716,8 @@ class CoreStateMachine:
 
             # Parse plan (with error handling)
             import json
-
             try:
-                plan_content = (
-                    response.content if hasattr(response, "content") else response
-                )
+                plan_content = response.content if hasattr(response, "content") else response
                 # Extract JSON from response if wrapped in markdown
                 if "```json" in plan_content:
                     plan_content = plan_content.split("```json")[1].split("```")[0]
@@ -789,10 +735,10 @@ class CoreStateMachine:
                             "description": "Process query with available tools",
                             "tool": "task_to_concept_mapping",
                             "args": {},
-                            "expected_output": "Analysis results",
+                            "expected_output": "Analysis results"
                         }
                     ],
-                    "success_criteria": ["Provide meaningful neuroscience insights"],
+                    "success_criteria": ["Provide meaningful neuroscience insights"]
                 }
 
             state["plan"] = plan
@@ -800,9 +746,7 @@ class CoreStateMachine:
 
             # Add AI message about the plan
             state["messages"].append(
-                AIMessage(
-                    content=f"Created execution plan with {len(plan['steps'])} steps"
-                )
+                AIMessage(content=f"Created execution plan with {len(plan['steps'])} steps")
             )
 
             logger.info(f"Plan created with {len(plan['steps'])} steps")
@@ -835,11 +779,9 @@ class CoreStateMachine:
                 raise ValueError("No plan steps to execute")
 
             # Determine execution strategy
-            if (
-                self.enable_parallel_execution
-                and self.parallel_orchestrator
-                and len(plan_steps) > 1
-            ):
+            if (self.enable_parallel_execution and
+                self.parallel_orchestrator and
+                len(plan_steps) > 1):
                 # Use parallel execution
                 execution_results = self._execute_parallel(plan_steps, state)
             else:
@@ -850,8 +792,7 @@ class CoreStateMachine:
 
             # Add execution summary to messages
             successful_tools = [
-                name
-                for name, result in execution_results.items()
+                name for name, result in execution_results.items()
                 if result.get("status") == "success"
             ]
 
@@ -868,9 +809,7 @@ class CoreStateMachine:
 
         return state
 
-    def _execute_parallel(
-        self, plan_steps: list[dict[str, Any]], state: AgentState
-    ) -> dict[str, Any]:
+    def _execute_parallel(self, plan_steps: list[dict[str, Any]], state: AgentState) -> dict[str, Any]:
         """
         Execute plan steps in parallel using the orchestrator.
 
@@ -894,7 +833,7 @@ class CoreStateMachine:
                 tool_args=step.get("args", {}),
                 dependencies=step.get("dependencies", []),
                 estimated_duration=step.get("estimated_duration", 60.0),
-                resource_requirements=self._infer_resource_requirements(tool_name),
+                resource_requirements=self._infer_resource_requirements(tool_name)
             )
             tasks.append(task)
 
@@ -902,9 +841,7 @@ class CoreStateMachine:
         try:
             execution_graph = self.dependency_resolver.resolve(tasks)
         except Exception as e:
-            logger.warning(
-                f"Failed to resolve dependencies for parallel execution: {e}, falling back to sequential"
-            )
+            logger.warning(f"Failed to resolve dependencies for parallel execution: {e}, falling back to sequential")
             return self._execute_sequential(plan_steps, state)
 
         # Execute in parallel
@@ -915,16 +852,13 @@ class CoreStateMachine:
             from brain_researcher.services.agent.execution_status import (
                 ExecutionTracker,
             )
-
             tracker = ExecutionTracker(execution_id=f"parallel_{int(time.time())}")
 
             # Run parallel execution
             loop = asyncio.new_event_loop()
             try:
                 parallel_result = loop.run_until_complete(
-                    self.parallel_orchestrator.execute_parallel(
-                        execution_graph, tracker
-                    )
+                    self.parallel_orchestrator.execute_parallel(execution_graph, tracker)
                 )
 
                 # Convert parallel results back to expected format
@@ -936,17 +870,17 @@ class CoreStateMachine:
                     if task_id in parallel_result["results"]:
                         execution_results[tool_name] = {
                             "status": "success",
-                            "result": parallel_result["results"][task_id],
+                            "result": parallel_result["results"][task_id]
                         }
                     elif task_id in parallel_result["errors"]:
                         execution_results[tool_name] = {
                             "status": "error",
-                            "error": parallel_result["errors"][task_id],
+                            "error": parallel_result["errors"][task_id]
                         }
                     else:
                         execution_results[tool_name] = {
                             "status": "unknown",
-                            "error": "No result found",
+                            "error": "No result found"
                         }
 
                 # Log performance metrics
@@ -967,9 +901,7 @@ class CoreStateMachine:
             logger.error(f"Parallel execution failed: {e}, falling back to sequential")
             return self._execute_sequential(plan_steps, state)
 
-    def _execute_sequential(
-        self, plan_steps: list[dict[str, Any]], state: AgentState
-    ) -> dict[str, Any]:
+    def _execute_sequential(self, plan_steps: list[dict[str, Any]], state: AgentState) -> dict[str, Any]:
         """
         Execute plan steps sequentially (fallback method).
 
@@ -996,7 +928,7 @@ class CoreStateMachine:
                 logger.warning(f"Tool {tool_name} not found, skipping")
                 execution_results[tool_name] = {
                     "status": "skipped",
-                    "reason": "Tool not found",
+                    "reason": "Tool not found"
                 }
                 continue
 
@@ -1005,15 +937,13 @@ class CoreStateMachine:
                 tool_cache_key = self.cache_manager.key_generator.generate_key(
                     f"tool_{tool_name}",
                     context=tool_args,
-                    key_type=CacheKeyType.TOOL_EXECUTION,
+                    key_type=CacheKeyType.TOOL_EXECUTION
                 )
 
                 # Check cache for tool result
                 use_cache = not hasattr(tool, "mock_calls")
                 cached_result = (
-                    self.cache_manager._get_from_cache(tool_cache_key)
-                    if use_cache
-                    else None
+                    self.cache_manager._get_from_cache(tool_cache_key) if use_cache else None
                 )
                 status = "success"
                 if cached_result is not None:
@@ -1044,17 +974,20 @@ class CoreStateMachine:
                             result,
                             ttl_seconds=900,  # 15 minutes for tool results
                             key_type=CacheKeyType.TOOL_EXECUTION,
-                            tags={"tools", tool_name},
+                            tags={"tools", tool_name}
                         )
                         logger.info(f"Tool {tool_name} executed and cached")
 
-                execution_results[tool_name] = {"status": status, "result": result}
+                execution_results[tool_name] = {
+                    "status": status,
+                    "result": result
+                }
 
             except Exception as tool_error:
                 logger.error(f"Tool {tool_name} failed: {tool_error}")
                 execution_results[tool_name] = {
                     "status": "error",
-                    "error": str(tool_error),
+                    "error": str(tool_error)
                 }
 
         return execution_results
@@ -1082,35 +1015,27 @@ class CoreStateMachine:
         tool_name_lower = tool_name.lower()
 
         if "fmriprep" in tool_name_lower or "preprocessing" in tool_name_lower:
-            requirements.extend(
-                [
-                    ResourceRequirement(ResourceType.CPU, 4.0, "cores", 3),
-                    ResourceRequirement(ResourceType.MEMORY, 16.0, "GB", 3),
-                    ResourceRequirement(ResourceType.STORAGE, 50.0, "GB", 2),
-                ]
-            )
+            requirements.extend([
+                ResourceRequirement(ResourceType.CPU, 4.0, "cores", 3),
+                ResourceRequirement(ResourceType.MEMORY, 16.0, "GB", 3),
+                ResourceRequirement(ResourceType.STORAGE, 50.0, "GB", 2)
+            ])
         elif "glm" in tool_name_lower or "analysis" in tool_name_lower:
-            requirements.extend(
-                [
-                    ResourceRequirement(ResourceType.CPU, 2.0, "cores", 2),
-                    ResourceRequirement(ResourceType.MEMORY, 8.0, "GB", 2),
-                ]
-            )
+            requirements.extend([
+                ResourceRequirement(ResourceType.CPU, 2.0, "cores", 2),
+                ResourceRequirement(ResourceType.MEMORY, 8.0, "GB", 2)
+            ])
         elif "connectivity" in tool_name_lower or "network" in tool_name_lower:
-            requirements.extend(
-                [
-                    ResourceRequirement(ResourceType.CPU, 2.0, "cores", 2),
-                    ResourceRequirement(ResourceType.MEMORY, 4.0, "GB", 2),
-                ]
-            )
+            requirements.extend([
+                ResourceRequirement(ResourceType.CPU, 2.0, "cores", 2),
+                ResourceRequirement(ResourceType.MEMORY, 4.0, "GB", 2)
+            ])
         else:
             # Default requirements for unknown tools
-            requirements.extend(
-                [
-                    ResourceRequirement(ResourceType.CPU, 1.0, "cores", 1),
-                    ResourceRequirement(ResourceType.MEMORY, 2.0, "GB", 1),
-                ]
-            )
+            requirements.extend([
+                ResourceRequirement(ResourceType.CPU, 1.0, "cores", 1),
+                ResourceRequirement(ResourceType.MEMORY, 2.0, "GB", 1)
+            ])
 
         return requirements
 
@@ -1135,11 +1060,8 @@ class CoreStateMachine:
             success_criteria = plan.get("success_criteria", [])
 
             # Create review prompt
-            review_prompt = ChatPromptTemplate.from_messages(
-                [
-                    (
-                        "system",
-                        """You are reviewing the execution results of a neuroscience analysis.
+            review_prompt = ChatPromptTemplate.from_messages([
+                ("system", """You are reviewing the execution results of a neuroscience analysis.
 
                 Evaluate:
                 1. Were the success criteria met?
@@ -1156,15 +1078,14 @@ class CoreStateMachine:
                     "revision_reason": "..." (if revision needed),
                     "summary": "Brief summary of results"
                 }}
-                """,
-                    ),
-                    ("human", "Results: {results}\nCriteria: {criteria}"),
-                ]
-            )
+                """),
+                ("human", "Results: {results}\nCriteria: {criteria}")
+            ])
 
-            prompt_value = review_prompt.invoke(
-                {"results": str(execution_results), "criteria": str(success_criteria)}
-            )
+            prompt_value = review_prompt.invoke({
+                "results": str(execution_results),
+                "criteria": str(success_criteria)
+            })
             input_data = (
                 prompt_value.to_messages()
                 if hasattr(prompt_value, "to_messages")
@@ -1174,11 +1095,8 @@ class CoreStateMachine:
 
             # Parse review feedback
             import json
-
             try:
-                review_content = (
-                    response.content if hasattr(response, "content") else response
-                )
+                review_content = response.content if hasattr(response, "content") else response
                 if "```json" in review_content:
                     review_content = review_content.split("```json")[1].split("```")[0]
                 elif "```" in review_content:
@@ -1192,7 +1110,7 @@ class CoreStateMachine:
                     "completeness": 80,
                     "accuracy_confidence": 85,
                     "needs_revision": False,
-                    "summary": "Analysis completed successfully",
+                    "summary": "Analysis completed successfully"
                 }
 
             state["review_feedback"] = review_feedback
@@ -1223,7 +1141,10 @@ class CoreStateMachine:
         return state
 
     def _record_plan_outcome(
-        self, state: AgentState, outcome: str, error_message: str = None
+        self,
+        state: AgentState,
+        outcome: str,
+        error_message: str = None
     ):
         """
         Record plan execution outcome for learning.
@@ -1239,7 +1160,6 @@ class CoreStateMachine:
 
         # Calculate execution time
         import time
-
         started_at = state.get("started_at")
         execution_time_ms = None
         if started_at:
@@ -1298,7 +1218,7 @@ class CoreStateMachine:
                 "phase": state.get("previous_phase"),
                 "plan_steps": state.get("plan_steps"),
                 "selected_tools": state.get("selected_tools"),
-            },
+            }
         )
 
         # Increment recovery attempts
@@ -1308,15 +1228,9 @@ class CoreStateMachine:
         state["error_recovery_attempts"] = current_attempt
 
         # Get recovery strategy
-        recovery_strategy = error_handler.recovery_strategies.get(
-            error_context.category
-        )
+        recovery_strategy = error_handler.recovery_strategies.get(error_context.category)
 
-        if (
-            current_attempt < max_attempts
-            and recovery_strategy
-            and recovery_strategy.can_retry
-        ):
+        if current_attempt < max_attempts and recovery_strategy and recovery_strategy.can_retry:
             logger.info(
                 f"Attempting recovery ({attempts + 1}/{max_attempts}) "
                 f"for {error_context.category.value} error"
@@ -1330,9 +1244,7 @@ class CoreStateMachine:
                 )
 
             state["messages"].append(
-                SystemMessage(
-                    content=f"⚠️ {recovery_msg}\n\nAttempting automatic recovery..."
-                )
+                SystemMessage(content=f"⚠️ {recovery_msg}\n\nAttempting automatic recovery...")
             )
 
             # Clear error for retry
@@ -1343,7 +1255,7 @@ class CoreStateMachine:
                 ErrorSeverity.LOW: "ℹ️",
                 ErrorSeverity.MEDIUM: "⚠️",
                 ErrorSeverity.HIGH: "❌",
-                ErrorSeverity.CRITICAL: "🚨",
+                ErrorSeverity.CRITICAL: "🚨"
             }
 
             emoji = severity_emoji.get(error_context.severity, "❌")
@@ -1375,7 +1287,9 @@ class CoreStateMachine:
         priority = top_card.get("claim_memory_priority", "none")
         if priority == "conflict_resolution":
             state["execution_mode"] = "conflict_resolution"
-            state["conflict_hint"] = str(top_card.get("claim_memory_reason") or "")
+            state["conflict_hint"] = str(
+                top_card.get("claim_memory_reason") or ""
+            )
         elif state.get("execution_mode") == "conflict_resolution":
             state["conflict_hint"] = str(state.get("conflict_hint") or "")
         else:
@@ -1395,9 +1309,7 @@ class CoreStateMachine:
             return "error"
         return "review"
 
-    def _route_from_review(
-        self, state: AgentState
-    ) -> Literal["complete", "plan", "error"]:
+    def _route_from_review(self, state: AgentState) -> Literal["complete", "plan", "error"]:
         """Route from review state based on review results."""
         if state.get("error"):
             return "error"
@@ -1421,13 +1333,7 @@ class CoreStateMachine:
         # Default to retrying from plan
         return "plan"
 
-    async def arun(
-        self,
-        query: str,
-        thread_id: str | None = None,
-        resume_checkpoint_id: str | None = None,
-        **kwargs,
-    ):
+    async def arun(self, query: str, thread_id: str | None = None, resume_checkpoint_id: str | None = None, **kwargs):
         """
         Run the state machine asynchronously.
 
@@ -1482,9 +1388,7 @@ class CoreStateMachine:
             if thread_id not in storage or not storage[thread_id]:
                 return None
             checkpoint_ns = next(iter(storage[thread_id].keys()))
-            cfg = {
-                "configurable": {"thread_id": thread_id, "checkpoint_ns": checkpoint_ns}
-            }
+            cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": checkpoint_ns}}
             checkpoint_tuple = self.checkpointer.get_tuple(cfg)
             if checkpoint_tuple and checkpoint_tuple.config:
                 return checkpoint_tuple.config["configurable"].get("checkpoint_id")
@@ -1533,6 +1437,7 @@ class CoreStateMachine:
         result = self.app.invoke(initial_state, config)
         return result
 
+
     def _init_memory_system(self, memory_path=None):
         """
         Initialize the memory system for context injection.
@@ -1553,10 +1458,7 @@ class CoreStateMachine:
                 possible_paths = [
                     Path("memory/"),  # Current directory
                     Path(__file__).parents[4] / "memory",  # Project root
-                    Path.home()
-                    / "projects"
-                    / "brain_researcher"
-                    / "memory",  # Absolute fallback
+                    Path.home() / "projects" / "brain_researcher" / "memory"  # Absolute fallback
                 ]
 
                 for path in possible_paths:
@@ -1567,9 +1469,7 @@ class CoreStateMachine:
             if memory_path and Path(memory_path).exists():
                 self.memory_store = MemoryStore(memory_path)
                 self.memory_selector = MemorySelector(self.memory_store)
-                logger.info(
-                    f"Memory system initialized with {len(self.memory_store.memories)} memories"
-                )
+                logger.info(f"Memory system initialized with {len(self.memory_store.memories)} memories")
             else:
                 logger.info("Memory system not initialized (no memory directory found)")
 
@@ -1592,14 +1492,10 @@ class CoreStateMachine:
                 for root in readable_roots
             )
             if has_runtime_memory:
-                self.derived_memory_store = DerivedMemoryStore(
-                    run_root=primary_run_root
-                )
+                self.derived_memory_store = DerivedMemoryStore(run_root=primary_run_root)
                 logger.info("Derived memory store initialized for planning retrieval")
             else:
-                logger.info(
-                    "Derived memory store not initialized (no runtime cards found)"
-                )
+                logger.info("Derived memory store not initialized (no runtime cards found)")
         except Exception as exc:
             logger.warning(f"Failed to initialize derived memory store: {exc}")
 
@@ -1624,9 +1520,7 @@ class CoreStateMachine:
             task = " ".join(str(card.get("task_description") or "").strip().split())
             if not task:
                 continue
-            status = (
-                " ".join(str(card.get("status") or "").strip().split()) or "unknown"
-            )
+            status = " ".join(str(card.get("status") or "").strip().split()) or "unknown"
             fragments = [f"Similar run ({status}): {task}"]
 
             worked = self._first_memory_line(card.get("what_worked"))
@@ -1687,9 +1581,7 @@ class CoreStateMachine:
                 normalized_task,
             )
 
-        if any(
-            isinstance(card, dict) and card.get("score") is not None for card in cards
-        ):
+        if any(isinstance(card, dict) and card.get("score") is not None for card in cards):
             cards = [
                 card
                 for card in cards
@@ -1728,7 +1620,7 @@ class CoreStateMachine:
                     task=query,
                     context=context,
                     k=5,  # Top 5 memories
-                    min_confidence=0.3,
+                    min_confidence=0.3
                 )
 
                 if memories:
@@ -1785,7 +1677,7 @@ class CoreStateMachine:
         self,
         pattern: str | None = None,
         tags: set | None = None,
-        key_type: CacheKeyType | None = None,
+        key_type: CacheKeyType | None = None
     ) -> int:
         """
         Invalidate cache entries.
@@ -1799,7 +1691,9 @@ class CoreStateMachine:
             Number of keys invalidated
         """
         return self.cache_manager.invalidate(
-            pattern=pattern, tags=tags, key_type=key_type
+            pattern=pattern,
+            tags=tags,
+            key_type=key_type
         )
 
     def warm_cache(self, common_queries: list[str]):
@@ -1816,9 +1710,7 @@ class CoreStateMachine:
                 # Use synchronous run for cache warming
                 self.run(query, thread_id=f"warmup_{hash(query)}")
             except Exception as e:
-                logger.warning(
-                    f"Failed to warm cache for query: {query[:50]}... Error: {e}"
-                )
+                logger.warning(f"Failed to warm cache for query: {query[:50]}... Error: {e}")
 
         logger.info("Cache warming completed")
 

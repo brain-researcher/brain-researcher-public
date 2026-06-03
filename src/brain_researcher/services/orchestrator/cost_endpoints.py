@@ -10,46 +10,30 @@ This module provides FastAPI endpoints for advanced cost optimization including:
 - Savings recommendations
 """
 
-import asyncio
-import csv
-import io
-import json
-import logging
-from datetime import date, datetime, timedelta
-from decimal import Decimal
-from typing import Any, Dict, List, Optional, Union
-
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, validator
-
-from ..agent.budget_manager import (
-    Budget,
-    BudgetAlert,
-    BudgetDecision,
-    BudgetManager,
-    BudgetPeriod,
-    BudgetType,
-    SpendingCategory,
-    SpendingRecord,
-)
+from typing import Dict, List, Optional, Any, Union
+import asyncio
+import logging
+from datetime import datetime, date, timedelta
+from decimal import Decimal
+import json
+import io
+import csv
 
 # Import cost optimization components
 from ..agent.cost_predictor import (
-    ComplexityLevel,
-    CostPrediction,
-    CostPredictor,
-    HistoricalJob,
-    JobSpecification,
-    JobType,
+    CostPredictor, JobSpecification, JobType, ComplexityLevel,
+    CostPrediction, HistoricalJob
 )
 from ..agent.spot_optimizer import (
-    BiddingStrategy,
-    CloudProvider,
-    InstanceType,
-    ResourceRequirements,
-    SpotInstanceOptimizer,
-    SpotRecommendation,
+    SpotInstanceOptimizer, ResourceRequirements, CloudProvider,
+    InstanceType, BiddingStrategy, SpotRecommendation
+)
+from ..agent.budget_manager import (
+    BudgetManager, Budget, BudgetPeriod, BudgetType, SpendingCategory,
+    BudgetDecision, BudgetAlert, SpendingRecord
 )
 
 logger = logging.getLogger(__name__)
@@ -67,29 +51,20 @@ budget_manager = None  # Will be initialized with proper Redis client
 # Pydantic models for API contracts
 class JobSpecificationRequest(BaseModel):
     """Request model for job specification"""
-
     job_type: str = Field(..., description="Type of neuroimaging job")
     n_subjects: int = Field(..., ge=1, description="Number of subjects")
-    n_sessions: int = Field(
-        default=1, ge=1, description="Number of sessions per subject"
-    )
+    n_sessions: int = Field(default=1, ge=1, description="Number of sessions per subject")
     n_runs: int = Field(default=1, ge=1, description="Number of runs per session")
     file_size_gb: float = Field(default=0.0, ge=0, description="Total file size in GB")
 
     # Processing requirements
-    preprocessing_steps: List[str] = Field(
-        default=[], description="List of preprocessing steps"
-    )
-    analysis_methods: List[str] = Field(
-        default=[], description="Analysis methods to apply"
-    )
+    preprocessing_steps: List[str] = Field(default=[], description="List of preprocessing steps")
+    analysis_methods: List[str] = Field(default=[], description="Analysis methods to apply")
     smoothing_fwhm: float = Field(default=0.0, ge=0, description="Smoothing FWHM")
 
     # Resource requirements
     cpu_cores: int = Field(default=4, ge=1, le=128, description="Required CPU cores")
-    memory_gb: float = Field(
-        default=16.0, ge=1, le=1024, description="Required memory in GB"
-    )
+    memory_gb: float = Field(default=16.0, ge=1, le=1024, description="Required memory in GB")
     storage_gb: float = Field(default=100.0, ge=1, description="Required storage in GB")
     gpu_required: bool = Field(default=False, description="Whether GPU is required")
 
@@ -97,21 +72,16 @@ class JobSpecificationRequest(BaseModel):
     complexity_level: str = Field(default="medium", description="Job complexity level")
     quality_level: str = Field(default="standard", description="Quality level")
     priority: str = Field(default="normal", description="Job priority")
-    software_stack: List[str] = Field(
-        default=[], description="Required software packages"
-    )
+    software_stack: List[str] = Field(default=[], description="Required software packages")
 
     # Optional metadata
-    deadline: Optional[str] = Field(
-        default=None, description="Job deadline (ISO format)"
-    )
+    deadline: Optional[str] = Field(default=None, description="Job deadline (ISO format)")
     user_id: Optional[str] = Field(default=None, description="User identifier")
     project_id: Optional[str] = Field(default=None, description="Project identifier")
 
 
 class ResourceRequirementsRequest(BaseModel):
     """Request model for resource requirements"""
-
     cpu_cores: int = Field(..., ge=1, le=128)
     memory_gb: float = Field(..., ge=1, le=1024)
     storage_gb: float = Field(..., ge=1)
@@ -127,52 +97,35 @@ class ResourceRequirementsRequest(BaseModel):
 
 class CostEstimationRequest(BaseModel):
     """Request for cost estimation"""
-
     job_specification: JobSpecificationRequest
     backend: str = Field(default="aws", description="Cloud backend")
-    confidence_level: float = Field(
-        default=0.95, ge=0.5, le=0.99, description="Confidence level for intervals"
-    )
-    include_alternatives: bool = Field(
-        default=True, description="Include alternative configurations"
-    )
+    confidence_level: float = Field(default=0.95, ge=0.5, le=0.99, description="Confidence level for intervals")
+    include_alternatives: bool = Field(default=True, description="Include alternative configurations")
 
 
 class SpotOptimizationRequest(BaseModel):
     """Request for spot instance optimization"""
-
     resource_requirements: ResourceRequirementsRequest
-    duration_hours: float = Field(
-        ..., gt=0, description="Expected job duration in hours"
-    )
+    duration_hours: float = Field(..., gt=0, description="Expected job duration in hours")
     budget: Optional[float] = Field(default=None, description="Budget constraint")
-    preferred_providers: List[str] = Field(
-        default=[], description="Preferred cloud providers"
-    )
+    preferred_providers: List[str] = Field(default=[], description="Preferred cloud providers")
     bidding_strategy: str = Field(default="dynamic", description="Bidding strategy")
 
 
 class BudgetRequest(BaseModel):
     """Request to create or update budget"""
-
     name: str = Field(..., description="Budget name")
     total_amount: float = Field(..., gt=0, description="Total budget amount")
     period: str = Field(..., description="Budget period")
-    budget_type: str = Field(
-        default="soft_limit", description="Budget enforcement type"
-    )
+    budget_type: str = Field(default="soft_limit", description="Budget enforcement type")
 
     # Time configuration
     start_date: str = Field(..., description="Start date (YYYY-MM-DD)")
     end_date: Optional[str] = Field(default=None, description="End date (YYYY-MM-DD)")
 
     # Alert configuration
-    alert_thresholds: List[float] = Field(
-        default=[50.0, 80.0, 95.0], description="Alert thresholds (%)"
-    )
-    notification_emails: List[str] = Field(
-        default=[], description="Notification email addresses"
-    )
+    alert_thresholds: List[float] = Field(default=[50.0, 80.0, 95.0], description="Alert thresholds (%)")
+    notification_emails: List[str] = Field(default=[], description="Notification email addresses")
 
     # Optional configuration
     auto_renew: bool = Field(default=False, description="Auto-renew budget")
@@ -181,7 +134,6 @@ class BudgetRequest(BaseModel):
 
 class SpendingRecordRequest(BaseModel):
     """Request to record spending"""
-
     budget_id: str = Field(..., description="Budget identifier")
     amount: float = Field(..., gt=0, description="Spending amount")
     category: str = Field(..., description="Spending category")
@@ -198,7 +150,6 @@ class SpendingRecordRequest(BaseModel):
 # Response models
 class CostPredictionResponse(BaseModel):
     """Cost prediction response"""
-
     estimated_cost: float
     confidence_interval: tuple
     confidence_level: float
@@ -220,7 +171,6 @@ class CostPredictionResponse(BaseModel):
 
 class SpotRecommendationResponse(BaseModel):
     """Spot instance recommendation response"""
-
     provider: str
     region: str
     availability_zone: str
@@ -247,7 +197,6 @@ class SpotRecommendationResponse(BaseModel):
 
 class BudgetResponse(BaseModel):
     """Budget response"""
-
     budget_id: str
     name: str
     total_amount: float
@@ -261,7 +210,6 @@ class BudgetResponse(BaseModel):
 
 class BudgetStatusResponse(BaseModel):
     """Budget status response"""
-
     budget_id: str
     budget_name: str
     total_budget: float
@@ -276,7 +224,6 @@ class BudgetStatusResponse(BaseModel):
 
 class CostReportResponse(BaseModel):
     """Cost report response"""
-
     period: str
     total_budget: float
     spent: float
@@ -291,7 +238,6 @@ class CostReportResponse(BaseModel):
 
 
 # API Endpoints
-
 
 @router.post("/estimate", response_model=CostPredictionResponse)
 async def estimate_cost(request: CostEstimationRequest):
@@ -311,21 +257,17 @@ async def estimate_cost(request: CostEstimationRequest):
             memory_gb=request.job_specification.memory_gb,
             storage_gb=request.job_specification.storage_gb,
             gpu_required=request.job_specification.gpu_required,
-            complexity_level=ComplexityLevel(
-                request.job_specification.complexity_level
-            ),
+            complexity_level=ComplexityLevel(request.job_specification.complexity_level),
             quality_level=request.job_specification.quality_level,
             priority=request.job_specification.priority,
             software_stack=request.job_specification.software_stack,
             user_id=request.job_specification.user_id,
-            project_id=request.job_specification.project_id,
+            project_id=request.job_specification.project_id
         )
 
         # Parse deadline if provided
         if request.job_specification.deadline:
-            job_spec.deadline = datetime.fromisoformat(
-                request.job_specification.deadline
-            )
+            job_spec.deadline = datetime.fromisoformat(request.job_specification.deadline)
 
         # Get cost prediction
         prediction = cost_predictor.predict_job_cost(
@@ -335,9 +277,7 @@ async def estimate_cost(request: CostEstimationRequest):
         # Generate alternative configurations if requested
         alternatives = []
         if request.include_alternatives:
-            alternatives = await _generate_alternative_configurations(
-                job_spec, request.backend
-            )
+            alternatives = await _generate_alternative_configurations(job_spec, request.backend)
 
         return CostPredictionResponse(
             estimated_cost=prediction.estimated_cost,
@@ -350,7 +290,7 @@ async def estimate_cost(request: CostEstimationRequest):
             duration_confidence_interval=prediction.duration_confidence_interval,
             cost_optimization_suggestions=prediction.cost_optimization_suggestions,
             alternative_configurations=alternatives,
-            prediction_timestamp=datetime.now().isoformat(),
+            prediction_timestamp=datetime.now().isoformat()
         )
 
     except ValueError as e:
@@ -374,7 +314,7 @@ async def optimize_spot_instances(request: SpotOptimizationRequest):
             fsl_required=request.resource_requirements.fsl_required,
             freesurfer_required=request.resource_requirements.freesurfer_required,
             matlab_required=request.resource_requirements.matlab_required,
-            cuda_required=request.resource_requirements.cuda_required,
+            cuda_required=request.resource_requirements.cuda_required
         )
 
         # Convert providers
@@ -394,34 +334,30 @@ async def optimize_spot_instances(request: SpotOptimizationRequest):
         # Convert to response format
         response_recommendations = []
         for rec in recommendations:
-            response_recommendations.append(
-                SpotRecommendationResponse(
-                    provider=rec.provider.value,
-                    region=rec.region,
-                    availability_zone=rec.availability_zone,
-                    instance_type=rec.instance_type,
-                    current_price=rec.current_price,
-                    on_demand_price=rec.on_demand_price,
-                    savings_percentage=rec.savings_percentage,
-                    interruption_probability=rec.interruption_probability,
-                    price_volatility=rec.price_volatility,
-                    availability_score=rec.availability_score,
-                    expected_cost=rec.expected_cost,
-                    risk_adjusted_cost=rec.risk_adjusted_cost,
-                    total_cost_with_interruptions=rec.total_cost_with_interruptions,
-                    recommendation_confidence=rec.recommendation_confidence,
-                    instance_specs=rec.instance_specs,
-                    suitability_score=rec.suitability_score,
-                )
-            )
+            response_recommendations.append(SpotRecommendationResponse(
+                provider=rec.provider.value,
+                region=rec.region,
+                availability_zone=rec.availability_zone,
+                instance_type=rec.instance_type,
+                current_price=rec.current_price,
+                on_demand_price=rec.on_demand_price,
+                savings_percentage=rec.savings_percentage,
+                interruption_probability=rec.interruption_probability,
+                price_volatility=rec.price_volatility,
+                availability_score=rec.availability_score,
+                expected_cost=rec.expected_cost,
+                risk_adjusted_cost=rec.risk_adjusted_cost,
+                total_cost_with_interruptions=rec.total_cost_with_interruptions,
+                recommendation_confidence=rec.recommendation_confidence,
+                instance_specs=rec.instance_specs,
+                suitability_score=rec.suitability_score
+            ))
 
         return response_recommendations
 
     except Exception as e:
         logger.error(f"Error optimizing spot instances: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Spot optimization failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Spot optimization failed: {str(e)}")
 
 
 @router.post("/budget", response_model=BudgetResponse)
@@ -442,7 +378,7 @@ async def create_budget(request: BudgetRequest):
             alert_thresholds=request.alert_thresholds,
             auto_renew=request.auto_renew,
             rollover_unused=request.rollover_unused,
-            notification_emails=request.notification_emails,
+            notification_emails=request.notification_emails
         )
 
         if request.end_date:
@@ -460,13 +396,11 @@ async def create_budget(request: BudgetRequest):
             start_date=budget.start_date.isoformat(),
             end_date=budget.end_date.isoformat() if budget.end_date else None,
             alert_thresholds=budget.alert_thresholds,
-            created_at=budget.created_at.isoformat(),
+            created_at=budget.created_at.isoformat()
         )
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid budget configuration: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid budget configuration: {str(e)}")
     except Exception as e:
         logger.error(f"Error creating budget: {e}")
         raise HTTPException(status_code=500, detail=f"Budget creation failed: {str(e)}")
@@ -506,7 +440,7 @@ async def get_budget_status(budget_id: str):
             daily_burn_rate=summary["daily_burn_rate"],
             projected_days_remaining=summary.get("projected_days_remaining"),
             alert_count=summary["alert_count"],
-            status=status,
+            status=status
         )
 
     except HTTPException:
@@ -533,29 +467,25 @@ async def record_spending(request: SpendingRecordRequest):
             job_id=request.job_id,
             user_id=request.user_id,
             provider=request.provider,
-            region=request.region,
+            region=request.region
         )
 
         return {
             "record_id": record_id,
             "message": "Spending recorded successfully",
             "amount": request.amount,
-            "budget_id": request.budget_id,
+            "budget_id": request.budget_id
         }
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid spending record: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid spending record: {str(e)}")
     except Exception as e:
         logger.error(f"Error recording spending: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/report/{budget_id}", response_model=CostReportResponse)
-async def get_cost_report(
-    budget_id: str, period: str = Query(default="current", description="Report period")
-):
+async def get_cost_report(budget_id: str, period: str = Query(default="current", description="Report period")):
     """Generate comprehensive cost report"""
     try:
         if not budget_manager:
@@ -577,7 +507,7 @@ async def get_cost_report(
             top_consumers=report["top_consumers"],
             spending_history=report["spending_history"],
             recommendations=report["recommendations"],
-            generated_at=report["generated_at"],
+            generated_at=report["generated_at"]
         )
 
     except HTTPException:
@@ -594,9 +524,7 @@ async def check_budget_approval(budget_id: str, estimated_cost: float):
         if not budget_manager:
             raise HTTPException(status_code=503, detail="Budget manager not available")
 
-        decision = await budget_manager.check_budget(
-            budget_id, Decimal(str(estimated_cost))
-        )
+        decision = await budget_manager.check_budget(budget_id, Decimal(str(estimated_cost)))
 
         return {
             "approved": decision.approved,
@@ -605,11 +533,7 @@ async def check_budget_approval(budget_id: str, estimated_cost: float):
             "decision_reason": decision.decision_reason,
             "risk_level": decision.risk_level,
             "alternative_suggestions": decision.alternative_suggestions,
-            "projected_end_date_impact": (
-                decision.projected_end_date_impact.isoformat()
-                if decision.projected_end_date_impact
-                else None
-            ),
+            "projected_end_date_impact": decision.projected_end_date_impact.isoformat() if decision.projected_end_date_impact else None
         }
 
     except Exception as e:
@@ -618,21 +542,16 @@ async def check_budget_approval(budget_id: str, estimated_cost: float):
 
 
 @router.get("/savings/analysis")
-async def analyze_savings(
-    on_demand_cost: float,
-    spot_cost: float,
-    interruption_probability: float = Query(default=0.0, ge=0, le=1),
-):
+async def analyze_savings(on_demand_cost: float, spot_cost: float,
+                         interruption_probability: float = Query(default=0.0, ge=0, le=1)):
     """Analyze potential savings from spot instances"""
     try:
-        savings = spot_optimizer.calculate_savings(
-            on_demand_cost, spot_cost, interruption_probability
-        )
+        savings = spot_optimizer.calculate_savings(on_demand_cost, spot_cost, interruption_probability)
 
         return {
             "savings_analysis": savings,
             "recommendation": _get_savings_recommendation(savings),
-            "risk_assessment": _assess_savings_risk(savings),
+            "risk_assessment": _assess_savings_risk(savings)
         }
 
     except Exception as e:
@@ -648,47 +567,37 @@ async def get_cost_recommendations(job_type: str, budget: Optional[float] = None
         recommendations = []
 
         if job_type in ["preprocessing", "first_level_analysis"]:
-            recommendations.extend(
-                [
-                    "Use spot instances for batch preprocessing jobs",
-                    "Consider CPU-optimized instances for FSL/FreeSurfer workflows",
-                    "Enable data compression to reduce storage costs",
-                ]
-            )
+            recommendations.extend([
+                "Use spot instances for batch preprocessing jobs",
+                "Consider CPU-optimized instances for FSL/FreeSurfer workflows",
+                "Enable data compression to reduce storage costs"
+            ])
         elif job_type in ["group_analysis", "connectivity_analysis"]:
-            recommendations.extend(
-                [
-                    "Use memory-optimized instances for large group analyses",
-                    "Consider reserved instances for long-running studies",
-                    "Implement result caching to avoid recomputation",
-                ]
-            )
+            recommendations.extend([
+                "Use memory-optimized instances for large group analyses",
+                "Consider reserved instances for long-running studies",
+                "Implement result caching to avoid recomputation"
+            ])
         elif job_type == "machine_learning":
-            recommendations.extend(
-                [
-                    "Use GPU instances only when necessary",
-                    "Consider preemptible instances for training jobs",
-                    "Implement checkpointing to handle interruptions",
-                ]
-            )
+            recommendations.extend([
+                "Use GPU instances only when necessary",
+                "Consider preemptible instances for training jobs",
+                "Implement checkpointing to handle interruptions"
+            ])
 
         # Budget-specific recommendations
         if budget:
             if budget < 100:
-                recommendations.append(
-                    "Focus on spot instances and basic instance types"
-                )
+                recommendations.append("Focus on spot instances and basic instance types")
             elif budget > 1000:
-                recommendations.append(
-                    "Consider reserved instances for long-term savings"
-                )
+                recommendations.append("Consider reserved instances for long-term savings")
 
         return {
             "job_type": job_type,
             "budget_constraint": budget,
             "recommendations": recommendations,
             "estimated_savings": "20-70% with spot instances",
-            "generated_at": datetime.now().isoformat(),
+            "generated_at": datetime.now().isoformat()
         }
 
     except Exception as e:
@@ -705,31 +614,28 @@ async def get_budget_alerts(budget_id: str):
 
         # Get alerts for budget
         active_alerts = [
-            alert
-            for alert in budget_manager.alerts.active_alerts.values()
+            alert for alert in budget_manager.alerts.active_alerts.values()
             if alert.budget_id == budget_id
         ]
 
         alerts_data = []
         for alert in active_alerts:
-            alerts_data.append(
-                {
-                    "alert_id": alert.alert_id,
-                    "severity": alert.severity.value,
-                    "threshold_percentage": alert.threshold_percentage,
-                    "current_percentage": alert.current_percentage,
-                    "message": alert.message,
-                    "triggered_at": alert.triggered_at.isoformat(),
-                    "acknowledged": alert.acknowledged,
-                    "acknowledged_by": alert.acknowledged_by,
-                    "auto_actions_triggered": alert.auto_actions_triggered,
-                }
-            )
+            alerts_data.append({
+                "alert_id": alert.alert_id,
+                "severity": alert.severity.value,
+                "threshold_percentage": alert.threshold_percentage,
+                "current_percentage": alert.current_percentage,
+                "message": alert.message,
+                "triggered_at": alert.triggered_at.isoformat(),
+                "acknowledged": alert.acknowledged,
+                "acknowledged_by": alert.acknowledged_by,
+                "auto_actions_triggered": alert.auto_actions_triggered
+            })
 
         return {
             "budget_id": budget_id,
             "active_alerts": alerts_data,
-            "alert_count": len(alerts_data),
+            "alert_count": len(alerts_data)
         }
 
     except Exception as e:
@@ -759,9 +665,7 @@ async def acknowledge_alert(alert_id: str, acknowledged_by: str):
 
 
 @router.get("/export/spending/{budget_id}")
-async def export_spending_data(
-    budget_id: str, format: str = Query(default="csv", description="Export format")
-):
+async def export_spending_data(budget_id: str, format: str = Query(default="csv", description="Export format")):
     """Export spending data"""
     try:
         if not budget_manager:
@@ -784,9 +688,7 @@ async def export_spending_data(
             return StreamingResponse(
                 io.BytesIO(output.getvalue().encode()),
                 media_type="text/csv",
-                headers={
-                    "Content-Disposition": f"attachment; filename=spending_{budget_id}.csv"
-                },
+                headers={"Content-Disposition": f"attachment; filename=spending_{budget_id}.csv"}
             )
         else:
             # JSON format
@@ -799,10 +701,7 @@ async def export_spending_data(
 
 # Helper functions
 
-
-async def _generate_alternative_configurations(
-    job_spec: JobSpecification, backend: str
-) -> List[Dict[str, Any]]:
+async def _generate_alternative_configurations(job_spec: JobSpecification, backend: str) -> List[Dict[str, Any]]:
     """Generate alternative configurations for cost optimization"""
 
     alternatives = []
@@ -814,7 +713,7 @@ async def _generate_alternative_configurations(
             "description": "Use spot instances for 50-80% cost savings",
             "changes": ["Use spot instances", "Add fault tolerance"],
             "estimated_savings": "50-80%",
-            "trade_offs": ["Potential interruptions", "Longer completion time"],
+            "trade_offs": ["Potential interruptions", "Longer completion time"]
         }
         alternatives.append(spot_config)
 
@@ -823,11 +722,9 @@ async def _generate_alternative_configurations(
         cpu_config = {
             "name": "CPU-Optimized Configuration",
             "description": "Reduce CPU cores and increase memory efficiency",
-            "changes": [
-                f"Reduce CPU cores from {job_spec.cpu_cores} to {job_spec.cpu_cores//2}"
-            ],
+            "changes": [f"Reduce CPU cores from {job_spec.cpu_cores} to {job_spec.cpu_cores//2}"],
             "estimated_savings": "20-40%",
-            "trade_offs": ["Longer execution time", "Same result quality"],
+            "trade_offs": ["Longer execution time", "Same result quality"]
         }
         alternatives.append(cpu_config)
 
@@ -838,7 +735,7 @@ async def _generate_alternative_configurations(
             "description": "Use compressed storage and cleanup intermediate files",
             "changes": ["Enable compression", "Cleanup intermediate files"],
             "estimated_savings": "10-30%",
-            "trade_offs": ["Slightly longer I/O", "Manual cleanup required"],
+            "trade_offs": ["Slightly longer I/O", "Manual cleanup required"]
         }
         alternatives.append(storage_config)
 
@@ -874,9 +771,7 @@ def _assess_savings_risk(savings: Dict[str, Any]) -> Dict[str, str]:
         risk_description = "Some chance of interruption - implement checkpointing"
     elif interruption_prob < 0.5:
         risk_level = "High"
-        risk_description = (
-            "High chance of interruption - only for fault-tolerant workloads"
-        )
+        risk_description = "High chance of interruption - only for fault-tolerant workloads"
     else:
         risk_level = "Very High"
         risk_description = "Very high chance of interruption - not recommended"
@@ -887,6 +782,6 @@ def _assess_savings_risk(savings: Dict[str, Any]) -> Dict[str, str]:
         "mitigation_strategies": [
             "Implement checkpointing",
             "Use multiple availability zones",
-            "Set up automated restart",
-        ],
+            "Set up automated restart"
+        ]
     }

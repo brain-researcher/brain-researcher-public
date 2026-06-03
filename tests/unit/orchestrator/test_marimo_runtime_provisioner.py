@@ -21,8 +21,8 @@ from brain_researcher.services.orchestrator.marimo_runtime_provisioner import (
 
 
 def test_ingress_route_uses_host_and_path_from_public_url() -> None:
-    assert _ingress_route("https://brain-researcher.com/hub/br-marimo-demo") == (
-        "brain-researcher.com",
+    assert _ingress_route("https://${PUBLIC_HOSTNAME}/hub/br-marimo-demo") == (
+        "${PUBLIC_HOSTNAME}",
         "/hub/br-marimo-demo",
     )
 
@@ -74,14 +74,14 @@ def test_marimo_ingress_annotations_honor_env_override(monkeypatch) -> None:
 
 
 def test_public_base_path_ignores_scheme_and_host() -> None:
-    assert _public_base_path("https://brain-researcher.com/hub/br-marimo-demo") == (
+    assert _public_base_path("https://${PUBLIC_HOSTNAME}/hub/br-marimo-demo") == (
         "/hub/br-marimo-demo"
     )
 
 
 def test_runtime_health_probe_path_uses_public_base_path() -> None:
     assert (
-        _runtime_health_probe_path("https://brain-researcher.com/hub/br-marimo-demo")
+        _runtime_health_probe_path("https://${PUBLIC_HOSTNAME}/hub/br-marimo-demo")
         == "/hub/br-marimo-demo/health"
     )
     assert _runtime_health_probe_path(None) == "/health"
@@ -98,7 +98,7 @@ def test_marimo_launch_command_appends_base_url_when_public_url_present() -> Non
         notebook_abs="/home/br_user/work/notebooks/br_quickstart.py",
         template_source="/app/notebooks/templates/br_quickstart.py",
         marimo_port=2718,
-        public_url="https://brain-researcher.com/hub/br-marimo-demo",
+        public_url="https://${PUBLIC_HOSTNAME}/hub/br-marimo-demo",
     )
 
     assert "marimo edit '/home/br_user/work/notebooks/br_quickstart.py'" in command
@@ -107,13 +107,11 @@ def test_marimo_launch_command_appends_base_url_when_public_url_present() -> Non
     assert "--host 0.0.0.0 --port 2718 ${AUTH_ARGS}" in command
     assert "AUTH_ARGS='--no-token'" in command
     assert "--base-url '/hub/br-marimo-demo'" in command
-    assert "--proxy 'brain-researcher.com:443'" in command
+    assert "--proxy '${PUBLIC_HOSTNAME}:443'" in command
 
 
 def test_marimo_runtime_uses_start_script_entrypoint() -> None:
-    assert (
-        MARIMO_RUNTIME_START_SCRIPT == "/app/scripts/runtime/start_marimo_singleuser.sh"
-    )
+    assert MARIMO_RUNTIME_START_SCRIPT == "/app/scripts/runtime/start_marimo_singleuser.sh"
 
 
 def test_kubernetes_runtime_pod_disables_service_account_token_automount(
@@ -166,7 +164,7 @@ def test_kubernetes_runtime_pod_disables_service_account_token_automount(
         mount_root="/home/br_user/work",
         notebook_abs="/home/br_user/work/notebooks/br_quickstart.py",
         volume_kind="emptyDir",
-        public_url="https://brain-researcher.com/hub/br-marimo-rt-demo",
+        public_url="https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo",
     )
 
     assert core_v1.created is not None
@@ -257,7 +255,7 @@ def test_ensure_pod_recreates_drifted_pod(image, env_names) -> None:
         mount_root="/home/br_user/work",
         notebook_abs="/home/br_user/work/notebooks/br_quickstart.py",
         volume_kind="emptyDir",
-        public_url="https://brain-researcher.com/hub/br-marimo-rt-demo",
+        public_url="https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo",
     )
 
     # Drifted pod is deleted (next ensure_target poll recreates it fresh) and
@@ -298,7 +296,7 @@ def test_ensure_pod_reuses_matching_pod() -> None:
         mount_root="/home/br_user/work",
         notebook_abs="/home/br_user/work/notebooks/br_quickstart.py",
         volume_kind="emptyDir",
-        public_url="https://brain-researcher.com/hub/br-marimo-rt-demo",
+        public_url="https://${PUBLIC_HOSTNAME}/hub/br-marimo-rt-demo",
     )
 
     # A pod on the desired image carrying the skew env-pin is reused as-is.
@@ -399,7 +397,7 @@ def test_runtime_env_values_include_managed_ai_settings(monkeypatch) -> None:
     monkeypatch.setenv("BR_MCP_HTTP_URL", "http://brain-researcher-mcp:7000/mcp")
     monkeypatch.setenv(
         "BR_MARIMO_RUNTIME_AI_BASE_URL",
-        "https://llm.brain-researcher.com/v1",
+        "https://llm.${PUBLIC_HOSTNAME}/v1",
     )
     monkeypatch.setenv("BR_MARIMO_RUNTIME_AI_API_KEY", "runtime-ai-token")
     monkeypatch.setenv("BR_MARIMO_RUNTIME_AI_PROVIDER_NAME", "brain-researcher")
@@ -424,7 +422,7 @@ def test_runtime_env_values_include_managed_ai_settings(monkeypatch) -> None:
     env = _marimo_runtime_env_values(spec)
 
     assert env["BR_MARIMO_AI_PROVIDER_NAME"] == "brain-researcher"
-    assert env["BR_MARIMO_AI_BASE_URL"] == "https://llm.brain-researcher.com/v1"
+    assert env["BR_MARIMO_AI_BASE_URL"] == "https://llm.${PUBLIC_HOSTNAME}/v1"
     assert env["BR_MARIMO_AI_API_KEY"] == "runtime-ai-token"
     assert env["BR_MARIMO_AI_MODE"] == "agent"
     assert env["BR_MARIMO_AI_CHAT_MODEL"] == "gemini-3-flash-preview"
@@ -528,7 +526,7 @@ def test_runtime_env_values_include_taskbeacon_seed_when_requested(monkeypatch) 
 
 
 def test_json_list_env_ignores_invalid_payloads(monkeypatch) -> None:
-    monkeypatch.setenv("BR_MARIMO_RUNTIME_EXTRA_VOLUMES_JSON", '{"bad":true}')
+    monkeypatch.setenv("BR_MARIMO_RUNTIME_EXTRA_VOLUMES_JSON", "{\"bad\":true}")
 
     assert _json_list_env("BR_MARIMO_RUNTIME_EXTRA_VOLUMES_JSON") == []
 
@@ -591,9 +589,7 @@ def _demo_spec():
     )
 
 
-def test_kubernetes_runtime_creates_workspace_pvc_when_template_set(
-    monkeypatch,
-) -> None:
+def test_kubernetes_runtime_creates_workspace_pvc_when_template_set(monkeypatch) -> None:
     if not provisioner.KUBERNETES_AVAILABLE:
         pytest.skip("kubernetes client is not installed")
     monkeypatch.delenv("BR_MARIMO_RUNTIME_EXTRA_VOLUMES_JSON", raising=False)
@@ -643,7 +639,9 @@ def test_kubernetes_runtime_creates_workspace_pvc_when_template_set(
     assert pvc.spec.access_modes == ["ReadWriteOnce"]
     assert pvc.spec.resources.requests["storage"] == "5Gi"
     assert pvc.spec.storage_class_name == "local-path"
-    ws_vol = next(v for v in core.created_pod.spec.volumes if v.name == "workspace")
+    ws_vol = next(
+        v for v in core.created_pod.spec.volumes if v.name == "workspace"
+    )
     assert ws_vol.persistent_volume_claim is not None
     assert ws_vol.persistent_volume_claim.claim_name == expected_claim
     assert ws_vol.empty_dir is None
@@ -687,6 +685,8 @@ def test_kubernetes_runtime_uses_emptydir_when_no_pvc_template(monkeypatch) -> N
     )
 
     assert core.pvc_calls == 0
-    ws_vol = next(v for v in core.created_pod.spec.volumes if v.name == "workspace")
+    ws_vol = next(
+        v for v in core.created_pod.spec.volumes if v.name == "workspace"
+    )
     assert ws_vol.empty_dir is not None
     assert ws_vol.persistent_volume_claim is None

@@ -103,7 +103,7 @@ families:
         evidence_paths:
           - configs/datasets/catalog.v1.jsonl
           - configs/datasets/catalog.schema.json
-          - docs/datasets/catalog_schema.md
+          - docs/services/br-kg/kg_tool_schema.md
         notes:
           dataset_count: 1693
           datasets_with_phenotype_summary: 305

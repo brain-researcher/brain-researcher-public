@@ -28,28 +28,16 @@ class MultipleComparisonArgs(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    p_values_file: Optional[str] = Field(
-        default=None, description="Path to raw p-values array"
-    )
-    p_values_array: Optional[Any] = Field(
-        default=None, description="Inline p-values array"
-    )
-    statistic_file: Optional[str] = Field(
-        default=None, description="Optional statistic map for metadata"
-    )
+    p_values_file: Optional[str] = Field(default=None, description="Path to raw p-values array")
+    p_values_array: Optional[Any] = Field(default=None, description="Inline p-values array")
+    statistic_file: Optional[str] = Field(default=None, description="Optional statistic map for metadata")
     method: str = Field(default="fdr_bh", description="Correction method")
     alpha: float = Field(default=0.05, description="Significance threshold")
     fdr_method: str = Field(default="indep", description="FDR dependency assumption")
     two_stage: bool = Field(default=False, description="Use two-stage FDR procedure")
-    mask_file: Optional[str] = Field(
-        default=None, description="Mask limiting correction scope"
-    )
-    smoothness: Optional[float] = Field(
-        default=None, description="Smoothness estimate for RFT"
-    )
-    cluster_threshold: Optional[float] = Field(
-        default=None, description="Cluster-forming threshold"
-    )
+    mask_file: Optional[str] = Field(default=None, description="Mask limiting correction scope")
+    smoothness: Optional[float] = Field(default=None, description="Smoothness estimate for RFT")
+    cluster_threshold: Optional[float] = Field(default=None, description="Cluster-forming threshold")
     connectivity: str = Field(default="faces", description="Neighbourhood definition")
     min_cluster_size: int = Field(default=1, description="Minimum cluster size")
     tfce_e: float = Field(default=0.5, description="TFCE extent parameter")
@@ -58,9 +46,7 @@ class MultipleComparisonArgs(BaseModel):
     save_corrected: bool = Field(default=True, description="Persist corrected values")
     save_mask: bool = Field(default=True, description="Persist significance mask")
     save_report: bool = Field(default=True, description="Persist summary report")
-    return_arrays: bool = Field(
-        default=False, description="Return numpy arrays in response"
-    )
+    return_arrays: bool = Field(default=False, description="Return numpy arrays in response")
 
 
 class MultipleComparisonTool(NeuroToolWrapper):
@@ -85,9 +71,7 @@ class MultipleComparisonTool(NeuroToolWrapper):
             if "output_dir" not in payload:
                 payload["output_dir"] = str(Path.cwd() / "multiple_comparison")
 
-            params: MultipleComparisonParameters = multiple_comparison_from_payload(
-                payload
-            )
+            params: MultipleComparisonParameters = multiple_comparison_from_payload(payload)
             results = run_multiple_comparison(params)
             return ToolResult(status="success", data=results)
         except Exception as exc:  # pragma: no cover

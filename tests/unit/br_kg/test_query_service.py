@@ -1453,9 +1453,9 @@ def test_verify_hypothesis_supported_claim_first(monkeypatch):
             {
                 "publication": pub,
                 "matched_entity": query_service._node_summary_payload(entity),
-                "mention_type": (
-                    "MENTIONS_REGION" if entity.node_type == "Region" else "MENTIONS"
-                ),
+                "mention_type": "MENTIONS_REGION"
+                if entity.node_type == "Region"
+                else "MENTIONS",
                 "mention_props": {
                     "mention_strength": 0.82,
                     "claim_strength": 0.79,
@@ -3672,19 +3672,17 @@ def test_verify_hypothesis_task_family_fallback_supports_single_entity(monkeypat
     monkeypatch.setattr(
         query_service,
         "neighbors",
-        lambda kg_id, **kwargs: (
-            [
-                {
-                    "kg_id": family.kg_id,
-                    "label": family.label,
-                    "node_type": family.node_type,
-                    "score": 0.88,
-                    "relation": "BELONGS_TO_FAMILY",
-                }
-            ]
-            if kg_id == task.kg_id
-            else []
-        ),
+        lambda kg_id, **kwargs: [
+            {
+                "kg_id": family.kg_id,
+                "label": family.label,
+                "node_type": family.node_type,
+                "score": 0.88,
+                "relation": "BELONGS_TO_FAMILY",
+            }
+        ]
+        if kg_id == task.kg_id
+        else [],
     )
 
     def fake_collect(entity, *, limit, client):
@@ -3799,19 +3797,17 @@ def test_verify_hypothesis_task_family_fallback_recovers_shared_evidence(monkeyp
     monkeypatch.setattr(
         query_service,
         "neighbors",
-        lambda kg_id, **kwargs: (
-            [
-                {
-                    "kg_id": family.kg_id,
-                    "label": family.label,
-                    "node_type": family.node_type,
-                    "score": 0.88,
-                    "relation": "BELONGS_TO_FAMILY",
-                }
-            ]
-            if kg_id == task.kg_id
-            else []
-        ),
+        lambda kg_id, **kwargs: [
+            {
+                "kg_id": family.kg_id,
+                "label": family.label,
+                "node_type": family.node_type,
+                "score": 0.88,
+                "relation": "BELONGS_TO_FAMILY",
+            }
+        ]
+        if kg_id == task.kg_id
+        else [],
     )
 
     def fake_collect(entity, *, limit, client):
@@ -4241,19 +4237,17 @@ def test_verify_hypothesis_expanded_family_union_has_lower_confidence_cap(monkey
     monkeypatch.setattr(
         query_service,
         "neighbors",
-        lambda kg_id, **kwargs: (
-            [
-                {
-                    "kg_id": family.kg_id,
-                    "label": family.label,
-                    "node_type": family.node_type,
-                    "score": 0.88,
-                    "relation": "BELONGS_TO_FAMILY",
-                }
-            ]
-            if kg_id == task.kg_id
-            else []
-        ),
+        lambda kg_id, **kwargs: [
+            {
+                "kg_id": family.kg_id,
+                "label": family.label,
+                "node_type": family.node_type,
+                "score": 0.88,
+                "relation": "BELONGS_TO_FAMILY",
+            }
+        ]
+        if kg_id == task.kg_id
+        else [],
     )
 
     def fake_collect(entity, *, limit, client):

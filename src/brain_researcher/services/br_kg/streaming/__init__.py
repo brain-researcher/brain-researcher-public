@@ -11,8 +11,8 @@ Key Components:
 """
 
 from .cdc_processor import CDCProcessor, GraphChangeEvent
-from .kafka_integration import KafkaConsumer, KafkaProducer, StreamConfig
-from .stream_processor import AggregationRule, EventWindow, StreamProcessor
+from .kafka_integration import KafkaProducer, KafkaConsumer, StreamConfig
+from .stream_processor import StreamProcessor, EventWindow, AggregationRule
 
 __all__ = [
     "CDCProcessor",
@@ -22,5 +22,5 @@ __all__ = [
     "StreamConfig",
     "StreamProcessor",
     "EventWindow",
-    "AggregationRule",
+    "AggregationRule"
 ]

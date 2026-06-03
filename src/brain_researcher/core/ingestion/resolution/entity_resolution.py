@@ -5,27 +5,25 @@ Identifies and resolves duplicate entities across different data sources
 using machine learning and rule-based approaches.
 """
 
-import hashlib
-import json
-import pickle
 import re
-from collections import defaultdict
+import hashlib
+from typing import Dict, List, Optional, Set, Tuple, Any
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
-
 import numpy as np
-import pandas as pd
-from fuzzywuzzy import fuzz
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from fuzzywuzzy import fuzz
+import pandas as pd
+from collections import defaultdict
+import json
+import pickle
+from pathlib import Path
 
 
 class EntityType(Enum):
     """Types of entities to resolve"""
-
     RESEARCHER = "researcher"
     INSTITUTION = "institution"
     PUBLICATION = "publication"
@@ -37,7 +35,6 @@ class EntityType(Enum):
 
 class MatchConfidence(Enum):
     """Confidence levels for entity matches"""
-
     EXACT = 1.0
     HIGH = 0.9
     MEDIUM = 0.7
@@ -48,7 +45,6 @@ class MatchConfidence(Enum):
 @dataclass
 class Entity:
     """Represents an entity to be resolved"""
-
     entity_id: str
     entity_type: EntityType
     name: str
@@ -75,7 +71,6 @@ class Entity:
 @dataclass
 class EntityMatch:
     """Represents a match between two entities"""
-
     entity1_id: str
     entity2_id: str
     confidence: float
@@ -90,7 +85,6 @@ class EntityMatch:
 @dataclass
 class ResolvedEntity:
     """Represents a resolved (merged) entity"""
-
     resolved_id: str
     entity_type: EntityType
     canonical_name: str
@@ -110,7 +104,7 @@ class EntityResolver:
         similarity_threshold: float = 0.7,
         blocking_enabled: bool = True,
         ml_enabled: bool = True,
-        rules_path: Optional[Path] = None,
+        rules_path: Optional[Path] = None
     ):
         """
         Initialize entity resolver
@@ -137,7 +131,9 @@ class EntityResolver:
 
         # ML components
         self.vectorizer = TfidfVectorizer(
-            analyzer="char_wb", ngram_range=(2, 4), max_features=1000
+            analyzer='char_wb',
+            ngram_range=(2, 4),
+            max_features=1000
         )
         self.feature_vectors = None
 
@@ -159,7 +155,9 @@ class EntityResolver:
         return entity.entity_id
 
     def resolve_entities(
-        self, entity_type: Optional[EntityType] = None, batch_size: int = 1000
+        self,
+        entity_type: Optional[EntityType] = None,
+        batch_size: int = 1000
     ) -> List[ResolvedEntity]:
         """
         Resolve entities of given type
@@ -173,8 +171,7 @@ class EntityResolver:
         """
         # Filter entities by type
         entities_to_resolve = [
-            e
-            for e in self.entities.values()
+            e for e in self.entities.values()
             if entity_type is None or e.entity_type == entity_type
         ]
 
@@ -197,7 +194,9 @@ class EntityResolver:
         return resolved
 
     def find_duplicates(
-        self, entity: Entity, limit: int = 10
+        self,
+        entity: Entity,
+        limit: int = 10
     ) -> List[Tuple[Entity, float]]:
         """
         Find potential duplicates for an entity
@@ -226,7 +225,10 @@ class EntityResolver:
         return matches[:limit]
 
     def resolve_pair(
-        self, entity1_id: str, entity2_id: str, force: bool = False
+        self,
+        entity1_id: str,
+        entity2_id: str,
+        force: bool = False
     ) -> Optional[ResolvedEntity]:
         """
         Resolve two specific entities
@@ -255,14 +257,16 @@ class EntityResolver:
         return self._merge_entities([entity1, entity2], match.confidence)
 
     def _find_all_matches(
-        self, entities: List[Entity], batch_size: int
+        self,
+        entities: List[Entity],
+        batch_size: int
     ) -> List[EntityMatch]:
         """Find all matches between entities"""
         matches = []
 
         # Process in batches for memory efficiency
         for i in range(0, len(entities), batch_size):
-            batch = entities[i : i + batch_size]
+            batch = entities[i:i + batch_size]
 
             if self.blocking_enabled:
                 # Use blocking to reduce comparisons
@@ -273,7 +277,7 @@ class EntityResolver:
             else:
                 # Compare all pairs (expensive)
                 for j, entity1 in enumerate(batch):
-                    for entity2 in batch[j + 1 :]:
+                    for entity2 in batch[j + 1:]:
                         match = self._match_entities(entity1, entity2)
                         if match.is_confident_match:
                             matches.append(match)
@@ -308,7 +312,7 @@ class EntityResolver:
         matches = []
 
         for i, entity1 in enumerate(block):
-            for entity2 in block[i + 1 :]:
+            for entity2 in block[i + 1:]:
                 match = self._match_entities(entity1, entity2)
                 if match.is_confident_match:
                     matches.append(match)
@@ -318,7 +322,9 @@ class EntityResolver:
     def _match_entities(self, entity1: Entity, entity2: Entity) -> EntityMatch:
         """Match two entities"""
         match = EntityMatch(
-            entity1_id=entity1.entity_id, entity2_id=entity2.entity_id, confidence=0.0
+            entity1_id=entity1.entity_id,
+            entity2_id=entity2.entity_id,
+            confidence=0.0
         )
 
         # Check exact matches first
@@ -341,7 +347,10 @@ class EntityResolver:
         return match
 
     def _check_exact_match(
-        self, entity1: Entity, entity2: Entity, match: EntityMatch
+        self,
+        entity1: Entity,
+        entity2: Entity,
+        match: EntityMatch
     ) -> bool:
         """Check for exact matches"""
         # Check external IDs
@@ -361,7 +370,10 @@ class EntityResolver:
         return False
 
     def _apply_matching_rules(
-        self, entity1: Entity, entity2: Entity, match: EntityMatch
+        self,
+        entity1: Entity,
+        entity2: Entity,
+        match: EntityMatch
     ) -> float:
         """Apply rule-based matching"""
         confidence = 0.0
@@ -380,30 +392,27 @@ class EntityResolver:
 
         # Type-specific rules
         if entity1.entity_type == EntityType.RESEARCHER:
-            confidence = max(
-                confidence, self._match_researchers(entity1, entity2, match)
-            )
+            confidence = max(confidence, self._match_researchers(entity1, entity2, match))
         elif entity1.entity_type == EntityType.PUBLICATION:
-            confidence = max(
-                confidence, self._match_publications(entity1, entity2, match)
-            )
+            confidence = max(confidence, self._match_publications(entity1, entity2, match))
 
         return confidence
 
     def _match_researchers(
-        self, entity1: Entity, entity2: Entity, match: EntityMatch
+        self,
+        entity1: Entity,
+        entity2: Entity,
+        match: EntityMatch
     ) -> float:
         """Apply researcher-specific matching rules"""
         confidence = 0.0
 
         # Check institution
         if "institution" in entity1.attributes and "institution" in entity2.attributes:
-            inst_sim = (
-                fuzz.ratio(
-                    entity1.attributes["institution"], entity2.attributes["institution"]
-                )
-                / 100.0
-            )
+            inst_sim = fuzz.ratio(
+                entity1.attributes["institution"],
+                entity2.attributes["institution"]
+            ) / 100.0
             if inst_sim > 0.8:
                 match.match_reasons.append("Same institution")
                 confidence = max(confidence, 0.7)
@@ -420,28 +429,27 @@ class EntityResolver:
         return confidence
 
     def _match_publications(
-        self, entity1: Entity, entity2: Entity, match: EntityMatch
+        self,
+        entity1: Entity,
+        entity2: Entity,
+        match: EntityMatch
     ) -> float:
         """Apply publication-specific matching rules"""
         confidence = 0.0
 
         # Check title similarity
         if "title" in entity1.attributes and "title" in entity2.attributes:
-            title_sim = (
-                fuzz.ratio(entity1.attributes["title"], entity2.attributes["title"])
-                / 100.0
-            )
+            title_sim = fuzz.ratio(
+                entity1.attributes["title"],
+                entity2.attributes["title"]
+            ) / 100.0
             if title_sim > 0.95:
                 match.match_reasons.append("Nearly identical titles")
                 confidence = max(confidence, 0.95)
 
         # Check year and authors
         same_year = entity1.attributes.get("year") == entity2.attributes.get("year")
-        if (
-            same_year
-            and "authors" in entity1.attributes
-            and "authors" in entity2.attributes
-        ):
+        if same_year and "authors" in entity1.attributes and "authors" in entity2.attributes:
             authors1 = set(entity1.attributes["authors"])
             authors2 = set(entity2.attributes["authors"])
             if len(authors1 & authors2) > len(authors1) * 0.7:
@@ -494,7 +502,7 @@ class EntityResolver:
         entity_id: str,
         graph: Dict[str, Set[str]],
         visited: Set[str],
-        cluster: Set[str],
+        cluster: Set[str]
     ):
         """DFS to find connected component"""
         visited.add(entity_id)
@@ -521,7 +529,9 @@ class EntityResolver:
         return self._merge_entities(entities, avg_confidence)
 
     def _merge_entities(
-        self, entities: List[Entity], confidence: float
+        self,
+        entities: List[Entity],
+        confidence: float
     ) -> ResolvedEntity:
         """Merge multiple entities into one"""
         # Select canonical name (most common or longest)
@@ -563,7 +573,7 @@ class EntityResolver:
             all_names=all_names,
             all_attributes=all_attributes,
             all_external_ids=all_external_ids,
-            confidence=confidence,
+            confidence=confidence
         )
 
     def _get_candidates(self, entity: Entity) -> List[Entity]:
@@ -621,12 +631,17 @@ class EntityResolver:
             "resolution_rate": len(self.resolved_entities) / max(len(self.entities), 1),
             "confidence_distribution": self._get_confidence_distribution(),
             "entities_by_type": self._count_by_type(),
-            "top_merged_entities": self._get_top_merged(),
+            "top_merged_entities": self._get_top_merged()
         }
 
     def _get_confidence_distribution(self) -> Dict[str, int]:
         """Get distribution of match confidences"""
-        distribution = {"exact": 0, "high": 0, "medium": 0, "low": 0}
+        distribution = {
+            "exact": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0
+        }
 
         for match in self.matches:
             if match.confidence >= MatchConfidence.EXACT.value:
@@ -651,14 +666,12 @@ class EntityResolver:
         """Get top merged entities by source count"""
         merged = []
         for resolved in self.resolved_entities.values():
-            merged.append(
-                {
-                    "canonical_name": resolved.canonical_name,
-                    "source_count": len(resolved.source_entities),
-                    "confidence": resolved.confidence,
-                    "type": resolved.entity_type.value,
-                }
-            )
+            merged.append({
+                "canonical_name": resolved.canonical_name,
+                "source_count": len(resolved.source_entities),
+                "confidence": resolved.confidence,
+                "type": resolved.entity_type.value
+            })
 
         merged.sort(key=lambda x: x["source_count"], reverse=True)
         return merged[:limit]
@@ -667,29 +680,20 @@ class EntityResolver:
 # Custom exceptions
 class EntityResolutionException(Exception):
     """Base exception for entity resolution errors"""
-
     pass
-
 
 class EntityNotFoundException(EntityResolutionException):
     """Entity not found"""
-
     pass
-
 
 class InvalidEntityTypeException(EntityResolutionException):
     """Invalid entity type"""
-
     pass
-
 
 class ResolutionFailedException(EntityResolutionException):
     """Entity resolution failed"""
-
     pass
-
 
 class InsufficientConfidenceException(EntityResolutionException):
     """Insufficient confidence for resolution"""
-
     pass

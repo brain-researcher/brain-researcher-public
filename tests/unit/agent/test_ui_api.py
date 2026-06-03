@@ -2,11 +2,10 @@
 
 import json
 import os
-import uuid
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-
 import pytest
+import uuid
+from unittest.mock import patch, MagicMock
+from pathlib import Path
 
 
 @pytest.fixture(autouse=True)
@@ -47,7 +46,6 @@ def reset_singletons():
 def app():
     """Create a Flask app with the ui_api blueprint."""
     from flask import Flask
-
     from brain_researcher.services.agent.ui_api import ui_api
 
     app = Flask(__name__)

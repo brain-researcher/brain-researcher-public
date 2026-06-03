@@ -4,9 +4,8 @@ Version: 003_add_performance_indexes
 Created: 2025-08-18
 """
 
-import sqlite3
-
 from brain_researcher.services.br_kg.migrations import Migration
+import sqlite3
 
 
 class Migration_003(Migration):
@@ -17,7 +16,7 @@ class Migration_003(Migration):
     def __init__(self):
         super().__init__(
             version="003_add_performance_indexes",
-            description="Add performance indexes for common queries",
+            description="Add performance indexes for common queries"
         )
 
     def up(self, db):
@@ -31,54 +30,43 @@ class Migration_003(Migration):
 
         try:
             # Composite indexes for common query patterns
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_nodes_type_created
                 ON nodes(node_type, created_at DESC)
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_relationships_composite
                 ON relationships(source_id, target_id, rel_type)
-            """
-            )
+            """)
 
             # Full-text search preparation (SQLite FTS5)
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
                     id UNINDEXED,
                     node_type UNINDEXED,
                     content,
                     tokenize='porter unicode61'
                 )
-            """
-            )
+            """)
 
             # Populate FTS table from existing nodes
-            conn.execute(
-                """
+            conn.execute("""
                 INSERT OR IGNORE INTO nodes_fts (id, node_type, content)
                 SELECT id, node_type, properties FROM nodes
-            """
-            )
+            """)
 
             # Create trigger to keep FTS in sync
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TRIGGER IF NOT EXISTS nodes_fts_insert
                 AFTER INSERT ON nodes
                 BEGIN
                     INSERT INTO nodes_fts (id, node_type, content)
                     VALUES (new.id, new.node_type, new.properties);
                 END
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TRIGGER IF NOT EXISTS nodes_fts_update
                 AFTER UPDATE ON nodes
                 BEGIN
@@ -86,18 +74,15 @@ class Migration_003(Migration):
                     SET content = new.properties
                     WHERE id = new.id;
                 END
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TRIGGER IF NOT EXISTS nodes_fts_delete
                 AFTER DELETE ON nodes
                 BEGIN
                     DELETE FROM nodes_fts WHERE id = old.id;
                 END
-            """
-            )
+            """)
 
             conn.commit()
             print("✓ Created performance indexes and FTS")

@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+
 CODING_STOPWORDS = {
     "the",
     "and",
@@ -162,9 +163,7 @@ def _extract_terms(prompt: str, max_terms: int = 5) -> List[str]:
     return seen
 
 
-def _run_ripgrep(
-    terms: List[str], repo_root: Path, max_matches: int = 60
-) -> List[Dict[str, str]]:
+def _run_ripgrep(terms: List[str], repo_root: Path, max_matches: int = 60) -> List[Dict[str, str]]:
     if not terms:
         return []
     if not shutil.which("rg"):
@@ -228,9 +227,7 @@ def generate_plan(prompt: str, repo_root: Path) -> CodingPlan:
             break
 
     if top_paths:
-        summary = (
-            f"Identified {len(matches)} matching lines across {len(top_paths)} files."
-        )
+        summary = f"Identified {len(matches)} matching lines across {len(top_paths)} files."
     else:
         summary = "No direct matches found; consider broader search or specifying files explicitly."
 
@@ -248,9 +245,7 @@ def generate_plan(prompt: str, repo_root: Path) -> CodingPlan:
     if not steps:
         steps = ["Clarify desired action"]
 
-    return CodingPlan(
-        intent=intent, terms=terms, matches=matches, summary=summary, steps=steps
-    )
+    return CodingPlan(intent=intent, terms=terms, matches=matches, summary=summary, steps=steps)
 
 
 def summarise_patch(patch: str, preview_lines: int = 20) -> Dict[str, str]:
@@ -333,7 +328,9 @@ def build_follow_up(tool_name: str, missing_params: List[str]) -> str:
     if not missing_params:
         return ""
     if tool_name == "fs.apply_patch":
-        return "I need the diff patch to apply. Paste the patch or describe the changes so I can draft it."
+        return (
+            "I need the diff patch to apply. Paste the patch or describe the changes so I can draft it."
+        )
     if tool_name == "fs.search" and "pattern" in missing_params:
         return "Which pattern should I search for? Provide a regex or text snippet."
     missing_list = ", ".join(missing_params)

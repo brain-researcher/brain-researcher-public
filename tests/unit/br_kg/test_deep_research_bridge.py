@@ -81,9 +81,7 @@ def test_write_gabriel_manifest_builds_source_level_seeds(tmp_path: Path) -> Non
     assert summary["counts"]["papers_with_snippets"] == 2
 
 
-def test_build_source_seeds_merges_sources_after_redirect_resolution(
-    monkeypatch,
-) -> None:
+def test_build_source_seeds_merges_sources_after_redirect_resolution(monkeypatch) -> None:
     text = "First source cites decision-making. Second alias cites decision-making too."
     start_a = text.index("decision-making")
     end_a = start_a + len("decision-making")
@@ -137,9 +135,7 @@ def test_build_source_seeds_merges_sources_after_redirect_resolution(
     assert paper["bridge_meta"]["snippet_count"] == 2
 
 
-def test_build_source_seeds_falls_back_to_document_snippets_when_annotations_absent() -> (
-    None
-):
+def test_build_source_seeds_falls_back_to_document_snippets_when_annotations_absent() -> None:
     payload = {
         "summary": "Mitochondrial dysfunction may constrain high-cost regulation networks.",
         "documents": [
@@ -172,15 +168,11 @@ def test_build_source_seeds_falls_back_to_document_snippets_when_annotations_abs
     assert len(seeds) == 2
     abstracts = [seed["paper"]["abstract"] for seed in seeds]
     assert all(abstracts)
-    assert any(
-        "high-energy-demand prefrontal regulation" in abstract for abstract in abstracts
-    )
+    assert any("high-energy-demand prefrontal regulation" in abstract for abstract in abstracts)
     assert any("Post-challenge recovery" in abstract for abstract in abstracts)
 
 
-def test_build_source_seeds_replaces_identifier_like_titles_with_generic_source_labels() -> (
-    None
-):
+def test_build_source_seeds_replaces_identifier_like_titles_with_generic_source_labels() -> None:
     payload = {
         "summary": "Mitochondrial signals constrain emotion-regulation networks in depression.",
         "documents": [
@@ -194,17 +186,13 @@ def test_build_source_seeds_replaces_identifier_like_titles_with_generic_source_
                 "doc_id": "doc_2",
                 "title": "Status Page",
                 "url": "https://www.biorxiv.org/content/10.1101/2026.03.01.123456v1",
-                "snippets": [
-                    "Energy production constrains recovery after emotion-regulation demand."
-                ],
+                "snippets": ["Energy production constrains recovery after emotion-regulation demand."],
             },
             {
                 "doc_id": "doc_3",
                 "title": "Nature",
                 "url": "https://example.org/records/abc123def456",
-                "snippets": [
-                    "Venue-only fragments should not survive into provenance."
-                ],
+                "snippets": ["Venue-only fragments should not survive into provenance."],
             },
         ],
         "raw": {},
@@ -247,9 +235,7 @@ def test_build_source_seeds_drops_placeholder_resolved_titles_from_redirects(
                 "doc_id": "doc_3",
                 "title": None,
                 "url": "https://example.org/c",
-                "snippets": [
-                    "Venue-only labels should collapse to generic source labels."
-                ],
+                "snippets": ["Venue-only labels should collapse to generic source labels."],
             },
             {
                 "doc_id": "doc_4",
@@ -295,8 +281,7 @@ def test_build_source_seeds_drops_placeholder_resolved_titles_from_redirects(
     )
 
     titles_by_url = {
-        seed["deep_research_source"]["raw_url"]: seed["paper"]["title"]
-        for seed in seeds
+        seed["deep_research_source"]["raw_url"]: seed["paper"]["title"] for seed in seeds
     }
     assert titles_by_url["https://example.org/a"].startswith("Deep research source")
     assert titles_by_url["https://example.org/b"].startswith("Deep research source")
@@ -320,9 +305,7 @@ def test_build_source_seeds_corrects_mismatched_arxiv_link_via_openalex(
                 "doc_id": "doc_1",
                 "title": "SPD Matrix Learning for Neuroimaging Analysis: Perspectives, Methods, and Challenges",
                 "url": "https://arxiv.org/abs/2401.04561",
-                "snippets": [
-                    "A modern review of SPD matrix learning for neuroimaging."
-                ],
+                "snippets": ["A modern review of SPD matrix learning for neuroimaging."],
             }
         ],
         "raw": {},
@@ -370,9 +353,7 @@ def test_build_source_seeds_drops_mismatched_arxiv_link_without_canonical_match(
                 "doc_id": "doc_1",
                 "title": "SPD Matrix Learning for Neuroimaging Analysis: Perspectives, Methods, and Challenges",
                 "url": "https://arxiv.org/abs/2401.04561",
-                "snippets": [
-                    "A modern review of SPD matrix learning for neuroimaging."
-                ],
+                "snippets": ["A modern review of SPD matrix learning for neuroimaging."],
             }
         ],
         "raw": {},
@@ -412,9 +393,7 @@ def test_build_source_seeds_canonicalizes_arxiv_doi_links_via_arxiv_metadata(
                 "doc_id": "doc_1",
                 "title": "SPD Matrix Learning for Neuroimaging Analysis: Perspectives, Methods, and Challenges",
                 "url": "https://doi.org/10.48550/arXiv.2504.18882",
-                "snippets": [
-                    "A modern review of SPD matrix learning for neuroimaging."
-                ],
+                "snippets": ["A modern review of SPD matrix learning for neuroimaging."],
             }
         ],
         "raw": {},
@@ -428,12 +407,8 @@ def test_build_source_seeds_canonicalizes_arxiv_doi_links_via_arxiv_metadata(
             "url": "https://arxiv.org/abs/2504.18882",
         },
     )
-    monkeypatch.setattr(
-        bridge, "_fetch_openalex_doi_metadata", lambda *args, **kwargs: None
-    )
-    monkeypatch.setattr(
-        bridge, "_fetch_crossref_doi_metadata", lambda *args, **kwargs: None
-    )
+    monkeypatch.setattr(bridge, "_fetch_openalex_doi_metadata", lambda *args, **kwargs: None)
+    monkeypatch.setattr(bridge, "_fetch_crossref_doi_metadata", lambda *args, **kwargs: None)
     monkeypatch.setattr(bridge, "_lookup_openalex_title", lambda *args, **kwargs: None)
 
     seeds = bridge.build_source_seeds(

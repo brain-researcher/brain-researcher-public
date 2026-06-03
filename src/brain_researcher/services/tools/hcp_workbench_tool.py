@@ -32,10 +32,15 @@ class HCPWorkbenchCommand(BaseModel):
     command: str = Field(
         description="Workbench command to execute (e.g., -cifti-smoothing, -volume-to-surface, etc.)"
     )
-    input_file: str = Field(description="Primary input file (CIFTI, GIFTI, or NIfTI)")
-    output_file: str = Field(description="Output file path")
+    input_file: str = Field(
+        description="Primary input file (CIFTI, GIFTI, or NIfTI)"
+    )
+    output_file: str = Field(
+        description="Output file path"
+    )
     additional_args: Optional[Dict[str, Any]] = Field(
-        default=None, description="Additional command-specific arguments"
+        default=None,
+        description="Additional command-specific arguments"
     )
 
 
@@ -44,24 +49,37 @@ class CiftiSmoothingArgs(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    cifti_in: str = Field(description="Input CIFTI file")
-    surface_kernel_size: float = Field(description="Sigma for surface smoothing (mm)")
-    volume_kernel_size: float = Field(description="Sigma for volume smoothing (mm)")
-    direction: str = Field(
-        default="COLUMN", description="Direction to smooth along (COLUMN or ROW)"
+    cifti_in: str = Field(
+        description="Input CIFTI file"
     )
-    cifti_out: str = Field(description="Output smoothed CIFTI file")
+    surface_kernel_size: float = Field(
+        description="Sigma for surface smoothing (mm)"
+    )
+    volume_kernel_size: float = Field(
+        description="Sigma for volume smoothing (mm)"
+    )
+    direction: str = Field(
+        default="COLUMN",
+        description="Direction to smooth along (COLUMN or ROW)"
+    )
+    cifti_out: str = Field(
+        description="Output smoothed CIFTI file"
+    )
     left_surface: Optional[str] = Field(
-        default=None, description="Left hemisphere surface file"
+        default=None,
+        description="Left hemisphere surface file"
     )
     right_surface: Optional[str] = Field(
-        default=None, description="Right hemisphere surface file"
+        default=None,
+        description="Right hemisphere surface file"
     )
     left_corrected_areas: Optional[str] = Field(
-        default=None, description="Left hemisphere vertex area correction file"
+        default=None,
+        description="Left hemisphere vertex area correction file"
     )
     right_corrected_areas: Optional[str] = Field(
-        default=None, description="Right hemisphere vertex area correction file"
+        default=None,
+        description="Right hemisphere vertex area correction file"
     )
 
 
@@ -70,24 +88,34 @@ class VolumeToSurfaceArgs(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    volume_file: str = Field(description="Input volume file (NIfTI)")
-    surface_file: str = Field(description="Surface file to map onto (GIFTI)")
-    metric_out: str = Field(description="Output metric file (GIFTI)")
+    volume_file: str = Field(
+        description="Input volume file (NIfTI)"
+    )
+    surface_file: str = Field(
+        description="Surface file to map onto (GIFTI)"
+    )
+    metric_out: str = Field(
+        description="Output metric file (GIFTI)"
+    )
     method: str = Field(
         default="trilinear",
-        description="Interpolation method (trilinear, enclosing, cubic)",
+        description="Interpolation method (trilinear, enclosing, cubic)"
     )
     ribbon_constrained: bool = Field(
-        default=False, description="Use ribbon-constrained mapping"
+        default=False,
+        description="Use ribbon-constrained mapping"
     )
     inner_surface: Optional[str] = Field(
-        default=None, description="Inner surface for ribbon mapping (white matter)"
+        default=None,
+        description="Inner surface for ribbon mapping (white matter)"
     )
     outer_surface: Optional[str] = Field(
-        default=None, description="Outer surface for ribbon mapping (pial)"
+        default=None,
+        description="Outer surface for ribbon mapping (pial)"
     )
     volume_roi: Optional[str] = Field(
-        default=None, description="Volume ROI to constrain mapping"
+        default=None,
+        description="Volume ROI to constrain mapping"
     )
 
 
@@ -96,19 +124,34 @@ class SurfaceResampleArgs(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    surface_in: str = Field(description="Input surface file")
-    current_sphere: str = Field(description="Current sphere registration")
-    new_sphere: str = Field(description="Target sphere registration")
+    surface_in: str = Field(
+        description="Input surface file"
+    )
+    current_sphere: str = Field(
+        description="Current sphere registration"
+    )
+    new_sphere: str = Field(
+        description="Target sphere registration"
+    )
     method: str = Field(
         default="BARYCENTRIC",
-        description="Resampling method (BARYCENTRIC or ADAP_BARY_AREA)",
+        description="Resampling method (BARYCENTRIC or ADAP_BARY_AREA)"
     )
-    surface_out: str = Field(description="Output resampled surface")
-    area_surfs: bool = Field(default=False, description="Use area correction")
+    surface_out: str = Field(
+        description="Output resampled surface"
+    )
+    area_surfs: bool = Field(
+        default=False,
+        description="Use area correction"
+    )
     current_area: Optional[str] = Field(
-        default=None, description="Current surface area file"
+        default=None,
+        description="Current surface area file"
     )
-    new_area: Optional[str] = Field(default=None, description="New surface area file")
+    new_area: Optional[str] = Field(
+        default=None,
+        description="New surface area file"
+    )
 
 
 class HCPWorkbenchTool(NeuroToolWrapper):
@@ -117,9 +160,7 @@ class HCPWorkbenchTool(NeuroToolWrapper):
     def __init__(self):
         """Initialize HCP Workbench tool."""
         super().__init__()
-        self.workbench_dir = (
-            "/cvmfs/neurodesk.ardc.edu.au/containers/connectomeworkbench_1.5.0_20220914"
-        )
+        self.workbench_dir = "/cvmfs/neurodesk.ardc.edu.au/containers/connectomeworkbench_1.5.0_20220914"
         self.wb_command = None
         self._check_workbench()
 
@@ -134,7 +175,6 @@ class HCPWorkbenchTool(NeuroToolWrapper):
         if not self.wb_command or not Path(self.wb_command).exists():
             logger.warning("HCP Workbench not found via Neurodesk, checking system")
             import shutil
-
             self.wb_command = shutil.which("wb_command")
             if not self.wb_command:
                 logger.error("HCP Workbench not found")
@@ -160,13 +200,15 @@ class HCPWorkbenchTool(NeuroToolWrapper):
         input_file: str,
         output_file: str,
         additional_args: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute generic HCP Workbench command."""
         try:
             if not self.wb_command:
                 return ToolResult(
-                    status="error", error="HCP Workbench not available", data={}
+                    status="error",
+                    error="HCP Workbench not available",
+                    data={}
                 )
 
             # Build command
@@ -185,7 +227,11 @@ class HCPWorkbenchTool(NeuroToolWrapper):
             logger.info(f"Running HCP Workbench command: {' '.join(cmd)}")
 
             # Execute command
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True
+            )
 
             if result.returncode == 0:
                 return ToolResult(
@@ -193,19 +239,23 @@ class HCPWorkbenchTool(NeuroToolWrapper):
                     data={
                         "command": " ".join(cmd),
                         "output_file": output_file,
-                        "message": f"HCP Workbench {command} completed successfully",
-                    },
+                        "message": f"HCP Workbench {command} completed successfully"
+                    }
                 )
             else:
                 return ToolResult(
                     status="error",
                     error=f"HCP Workbench command failed: {result.stderr}",
-                    data={"command": " ".join(cmd)},
+                    data={"command": " ".join(cmd)}
                 )
 
         except Exception as e:
             logger.error(f"HCP Workbench failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class CiftiSmoothingTool(NeuroToolWrapper):
@@ -239,13 +289,15 @@ class CiftiSmoothingTool(NeuroToolWrapper):
         right_surface: Optional[str] = None,
         left_corrected_areas: Optional[str] = None,
         right_corrected_areas: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute CIFTI smoothing."""
         try:
             if not self.workbench.wb_command:
                 return ToolResult(
-                    status="error", error="HCP Workbench not available", data={}
+                    status="error",
+                    error="HCP Workbench not available",
+                    data={}
                 )
 
             # Validate input
@@ -253,7 +305,7 @@ class CiftiSmoothingTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error=f"Input CIFTI file not found: {cifti_in}",
-                    data={},
+                    data={}
                 )
 
             # Build command
@@ -264,7 +316,7 @@ class CiftiSmoothingTool(NeuroToolWrapper):
                 str(surface_kernel_size),
                 str(volume_kernel_size),
                 direction,
-                cifti_out,
+                cifti_out
             ]
 
             # Add optional surface files
@@ -280,7 +332,11 @@ class CiftiSmoothingTool(NeuroToolWrapper):
             logger.info(f"Running CIFTI smoothing: {' '.join(cmd)}")
 
             # Execute command
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True
+            )
 
             if result.returncode == 0:
                 return ToolResult(
@@ -290,19 +346,23 @@ class CiftiSmoothingTool(NeuroToolWrapper):
                         "output_file": cifti_out,
                         "surface_kernel": surface_kernel_size,
                         "volume_kernel": volume_kernel_size,
-                        "message": "CIFTI smoothing completed successfully",
-                    },
+                        "message": "CIFTI smoothing completed successfully"
+                    }
                 )
             else:
                 return ToolResult(
                     status="error",
                     error=f"CIFTI smoothing failed: {result.stderr}",
-                    data={"command": " ".join(cmd)},
+                    data={"command": " ".join(cmd)}
                 )
 
         except Exception as e:
             logger.error(f"CIFTI smoothing failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class VolumeToSurfaceTool(NeuroToolWrapper):
@@ -335,13 +395,15 @@ class VolumeToSurfaceTool(NeuroToolWrapper):
         inner_surface: Optional[str] = None,
         outer_surface: Optional[str] = None,
         volume_roi: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute volume to surface mapping."""
         try:
             if not self.workbench.wb_command:
                 return ToolResult(
-                    status="error", error="HCP Workbench not available", data={}
+                    status="error",
+                    error="HCP Workbench not available",
+                    data={}
                 )
 
             # Validate inputs
@@ -349,14 +411,14 @@ class VolumeToSurfaceTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error=f"Volume file not found: {volume_file}",
-                    data={},
+                    data={}
                 )
 
             if not Path(surface_file).exists():
                 return ToolResult(
                     status="error",
                     error=f"Surface file not found: {surface_file}",
-                    data={},
+                    data={}
                 )
 
             # Build command
@@ -365,7 +427,7 @@ class VolumeToSurfaceTool(NeuroToolWrapper):
                 "-volume-to-surface-mapping",
                 volume_file,
                 surface_file,
-                metric_out,
+                metric_out
             ]
 
             if ribbon_constrained and inner_surface and outer_surface:
@@ -379,7 +441,11 @@ class VolumeToSurfaceTool(NeuroToolWrapper):
             logger.info(f"Running volume to surface mapping: {' '.join(cmd)}")
 
             # Execute command
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True
+            )
 
             if result.returncode == 0:
                 return ToolResult(
@@ -387,22 +453,24 @@ class VolumeToSurfaceTool(NeuroToolWrapper):
                     data={
                         "command": " ".join(cmd),
                         "output_file": metric_out,
-                        "method": (
-                            "ribbon-constrained" if ribbon_constrained else method
-                        ),
-                        "message": "Volume to surface mapping completed successfully",
-                    },
+                        "method": "ribbon-constrained" if ribbon_constrained else method,
+                        "message": "Volume to surface mapping completed successfully"
+                    }
                 )
             else:
                 return ToolResult(
                     status="error",
                     error=f"Volume to surface mapping failed: {result.stderr}",
-                    data={"command": " ".join(cmd)},
+                    data={"command": " ".join(cmd)}
                 )
 
         except Exception as e:
             logger.error(f"Volume to surface mapping failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class SurfaceResampleTool(NeuroToolWrapper):
@@ -435,24 +503,25 @@ class SurfaceResampleTool(NeuroToolWrapper):
         area_surfs: bool = False,
         current_area: Optional[str] = None,
         new_area: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute surface resampling."""
         try:
             if not self.workbench.wb_command:
                 return ToolResult(
-                    status="error", error="HCP Workbench not available", data={}
+                    status="error",
+                    error="HCP Workbench not available",
+                    data={}
                 )
 
             # Validate inputs
-            for f, name in [
-                (surface_in, "surface"),
-                (current_sphere, "current sphere"),
-                (new_sphere, "new sphere"),
-            ]:
+            for f, name in [(surface_in, "surface"), (current_sphere, "current sphere"),
+                           (new_sphere, "new sphere")]:
                 if not Path(f).exists():
                     return ToolResult(
-                        status="error", error=f"{name} file not found: {f}", data={}
+                        status="error",
+                        error=f"{name} file not found: {f}",
+                        data={}
                     )
 
             # Build command
@@ -463,7 +532,7 @@ class SurfaceResampleTool(NeuroToolWrapper):
                 current_sphere,
                 new_sphere,
                 method,
-                surface_out,
+                surface_out
             ]
 
             if area_surfs and current_area and new_area:
@@ -472,7 +541,11 @@ class SurfaceResampleTool(NeuroToolWrapper):
             logger.info(f"Running surface resampling: {' '.join(cmd)}")
 
             # Execute command
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True
+            )
 
             if result.returncode == 0:
                 return ToolResult(
@@ -481,19 +554,23 @@ class SurfaceResampleTool(NeuroToolWrapper):
                         "command": " ".join(cmd),
                         "output_file": surface_out,
                         "method": method,
-                        "message": "Surface resampling completed successfully",
-                    },
+                        "message": "Surface resampling completed successfully"
+                    }
                 )
             else:
                 return ToolResult(
                     status="error",
                     error=f"Surface resampling failed: {result.stderr}",
-                    data={"command": " ".join(cmd)},
+                    data={"command": " ".join(cmd)}
                 )
 
         except Exception as e:
             logger.error(f"Surface resampling failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class HCPWorkbenchTools:
@@ -505,5 +582,5 @@ class HCPWorkbenchTools:
             HCPWorkbenchTool(),
             CiftiSmoothingTool(),
             VolumeToSurfaceTool(),
-            SurfaceResampleTool(),
+            SurfaceResampleTool()
         ]

@@ -5,18 +5,18 @@ event streaming, enabling scalable real-time processing across multiple
 services and geographic regions.
 """
 
+import logging
 import asyncio
 import json
-import logging
-import uuid
-from collections import defaultdict
-from dataclasses import asdict, dataclass, field
+from typing import Dict, List, Any, Optional, Callable, AsyncIterator
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
-from typing import Any, AsyncIterator, Callable, Dict, List, Optional
+import uuid
+from collections import defaultdict
 
 try:
-    from aiokafka import AIOKafkaConsumer, AIOKafkaProducer, ConsumerRecord
+    from aiokafka import AIOKafkaProducer, AIOKafkaConsumer, ConsumerRecord
     from aiokafka.errors import KafkaError
     from kafka.admin import KafkaAdminClient, NewTopic
     from kafka.errors import TopicAlreadyExistsError
@@ -80,13 +80,11 @@ class StreamConfig:
         }
 
         if self.sasl_mechanism:
-            config.update(
-                {
-                    "sasl_mechanism": self.sasl_mechanism,
-                    "sasl_plain_username": self.sasl_plain_username,
-                    "sasl_plain_password": self.sasl_plain_password,
-                }
-            )
+            config.update({
+                "sasl_mechanism": self.sasl_mechanism,
+                "sasl_plain_username": self.sasl_plain_username,
+                "sasl_plain_password": self.sasl_plain_password,
+            })
 
         return config
 
@@ -107,20 +105,17 @@ class StreamConfig:
         }
 
         if self.sasl_mechanism:
-            config.update(
-                {
-                    "sasl_mechanism": self.sasl_mechanism,
-                    "sasl_plain_username": self.sasl_plain_username,
-                    "sasl_plain_password": self.sasl_plain_password,
-                }
-            )
+            config.update({
+                "sasl_mechanism": self.sasl_mechanism,
+                "sasl_plain_username": self.sasl_plain_username,
+                "sasl_plain_password": self.sasl_plain_password,
+            })
 
         return config
 
 
 class KafkaStreamingError(Exception):
     """Kafka streaming related errors."""
-
     pass
 
 
@@ -146,7 +141,7 @@ class KafkaProducer:
             "bytes_sent": 0,
             "send_errors": 0,
             "last_send_time": None,
-            "messages_by_topic": defaultdict(int),
+            "messages_by_topic": defaultdict(int)
         }
 
     async def start(self):
@@ -201,13 +196,13 @@ class KafkaProducer:
                 NewTopic(
                     name=self.config.default_topic,
                     num_partitions=self.config.topic_partitions,
-                    replication_factor=self.config.topic_replication_factor,
+                    replication_factor=self.config.topic_replication_factor
                 ),
                 NewTopic(
                     name=f"{self.config.default_topic}-dlq",
                     num_partitions=1,
-                    replication_factor=self.config.topic_replication_factor,
-                ),
+                    replication_factor=self.config.topic_replication_factor
+                )
             ]
 
             try:
@@ -226,7 +221,7 @@ class KafkaProducer:
         event: GraphChangeEvent,
         topic: Optional[str] = None,
         key: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[Dict[str, str]] = None
     ) -> bool:
         """Send a graph change event to Kafka.
 
@@ -252,20 +247,18 @@ class KafkaProducer:
             "producer_id": str(uuid.uuid4()),
             "sent_at": datetime.now().isoformat(),
             "topic": topic,
-            "key": key,
+            "key": key
         }
 
         # Prepare headers
         kafka_headers = {}
         if headers:
             kafka_headers.update(headers)
-        kafka_headers.update(
-            {
-                "event_type": event.change_type.value,
-                "entity_type": event.entity_type,
-                "timestamp": event.timestamp.isoformat(),
-            }
-        )
+        kafka_headers.update({
+            "event_type": event.change_type.value,
+            "entity_type": event.entity_type,
+            "timestamp": event.timestamp.isoformat()
+        })
 
         try:
             # Send to Kafka
@@ -273,7 +266,7 @@ class KafkaProducer:
                 topic=topic,
                 value=message,
                 key=key,
-                headers=[(k, v.encode()) for k, v in kafka_headers.items()],
+                headers=[(k, v.encode()) for k, v in kafka_headers.items()]
             )
 
             # Update statistics
@@ -293,9 +286,7 @@ class KafkaProducer:
             await self._send_to_dlq(event, topic, str(e))
             return False
 
-    async def _send_to_dlq(
-        self, event: GraphChangeEvent, original_topic: str, error: str
-    ):
+    async def _send_to_dlq(self, event: GraphChangeEvent, original_topic: str, error: str):
         """Send failed event to dead letter queue."""
         dlq_topic = f"{self.config.default_topic}-dlq"
 
@@ -304,12 +295,14 @@ class KafkaProducer:
             "original_topic": original_topic,
             "error": error,
             "failed_at": datetime.now().isoformat(),
-            "producer_id": str(uuid.uuid4()),
+            "producer_id": str(uuid.uuid4())
         }
 
         try:
             await self.producer.send(
-                topic=dlq_topic, value=dlq_message, key=event.event_id
+                topic=dlq_topic,
+                value=dlq_message,
+                key=event.event_id
             )
             logger.info(f"Sent failed event {event.event_id} to DLQ")
         except Exception as e:
@@ -319,7 +312,7 @@ class KafkaProducer:
         self,
         events: List[GraphChangeEvent],
         topic: Optional[str] = None,
-        key_func: Optional[Callable[[GraphChangeEvent], str]] = None,
+        key_func: Optional[Callable[[GraphChangeEvent], str]] = None
     ) -> int:
         """Send a batch of events to Kafka.
 
@@ -350,11 +343,7 @@ class KafkaProducer:
             "is_running": self.is_running,
             "config": asdict(self.config),
             **self.stats,
-            "last_send_time": (
-                self.stats["last_send_time"].isoformat()
-                if self.stats["last_send_time"]
-                else None
-            ),
+            "last_send_time": self.stats["last_send_time"].isoformat() if self.stats["last_send_time"] else None
         }
 
 
@@ -377,12 +366,8 @@ class KafkaConsumer:
         self.is_running = False
 
         # Event handlers
-        self.event_handlers: List[
-            Callable[[GraphChangeEvent, ConsumerRecord], None]
-        ] = []
-        self.batch_handlers: List[
-            Callable[[List[GraphChangeEvent], List[ConsumerRecord]], None]
-        ] = []
+        self.event_handlers: List[Callable[[GraphChangeEvent, ConsumerRecord], None]] = []
+        self.batch_handlers: List[Callable[[List[GraphChangeEvent], List[ConsumerRecord]], None]] = []
         self.error_handlers: List[Callable[[Exception, ConsumerRecord], None]] = []
 
         # Statistics
@@ -392,7 +377,7 @@ class KafkaConsumer:
             "consumption_errors": 0,
             "last_consume_time": None,
             "messages_by_topic": defaultdict(int),
-            "lag_by_partition": {},
+            "lag_by_partition": {}
         }
 
         # Background tasks
@@ -453,11 +438,7 @@ class KafkaConsumer:
                     event_data = record.value
                     if event_data and "_kafka_metadata" in event_data:
                         # Remove Kafka metadata
-                        event_data = {
-                            k: v
-                            for k, v in event_data.items()
-                            if k != "_kafka_metadata"
-                        }
+                        event_data = {k: v for k, v in event_data.items() if k != "_kafka_metadata"}
 
                     event = GraphChangeEvent.from_dict(event_data)
 
@@ -497,9 +478,7 @@ class KafkaConsumer:
         except Exception as e:
             logger.error(f"Error in consumption loop: {e}", exc_info=True)
 
-    async def _process_batch(
-        self, events: List[GraphChangeEvent], records: List[ConsumerRecord]
-    ):
+    async def _process_batch(self, events: List[GraphChangeEvent], records: List[ConsumerRecord]):
         """Process a batch of events."""
         if not events:
             return
@@ -520,9 +499,7 @@ class KafkaConsumer:
             except Exception as e:
                 logger.error(f"Error in error handler: {e}", exc_info=True)
 
-    def add_event_handler(
-        self, handler: Callable[[GraphChangeEvent, ConsumerRecord], None]
-    ):
+    def add_event_handler(self, handler: Callable[[GraphChangeEvent, ConsumerRecord], None]):
         """Add an event handler for individual events.
 
         Args:
@@ -531,9 +508,7 @@ class KafkaConsumer:
         self.event_handlers.append(handler)
         logger.info(f"Added event handler: {handler.__name__}")
 
-    def add_batch_handler(
-        self, handler: Callable[[List[GraphChangeEvent], List[ConsumerRecord]], None]
-    ):
+    def add_batch_handler(self, handler: Callable[[List[GraphChangeEvent], List[ConsumerRecord]], None]):
         """Add a batch handler for processing event batches.
 
         Args:
@@ -577,7 +552,7 @@ class KafkaConsumer:
                     "partition": partition.partition,
                     "current_offset": position,
                     "high_water_mark": high_water_mark.get(partition, 0),
-                    "lag": lag,
+                    "lag": lag
                 }
 
             return lag_info
@@ -596,18 +571,12 @@ class KafkaConsumer:
             "batch_handlers": len(self.batch_handlers),
             "error_handlers": len(self.error_handlers),
             **self.stats,
-            "last_consume_time": (
-                self.stats["last_consume_time"].isoformat()
-                if self.stats["last_consume_time"]
-                else None
-            ),
+            "last_consume_time": self.stats["last_consume_time"].isoformat() if self.stats["last_consume_time"] else None
         }
 
 
 # Integration helpers
-def create_cdc_kafka_integration(
-    cdc_processor, kafka_producer: KafkaProducer
-) -> Callable:
+def create_cdc_kafka_integration(cdc_processor, kafka_producer: KafkaProducer) -> Callable:
     """Create integration between CDC processor and Kafka producer.
 
     Args:
@@ -617,7 +586,6 @@ def create_cdc_kafka_integration(
     Returns:
         Handler function for CDC events
     """
-
     def cdc_to_kafka_handler(event: GraphChangeEvent):
         """Handle CDC events and send to Kafka."""
         asyncio.create_task(kafka_producer.send_event(event))
@@ -628,9 +596,7 @@ def create_cdc_kafka_integration(
     return cdc_to_kafka_handler
 
 
-def create_kafka_subscription_integration(
-    kafka_consumer: KafkaConsumer, subscription_system
-) -> Callable:
+def create_kafka_subscription_integration(kafka_consumer: KafkaConsumer, subscription_system) -> Callable:
     """Create integration between Kafka consumer and subscription system.
 
     Args:
@@ -668,8 +634,8 @@ def create_kafka_subscription_integration(
                 **event.metadata,
                 "kafka_topic": record.topic,
                 "kafka_partition": record.partition,
-                "kafka_offset": record.offset,
-            },
+                "kafka_offset": record.offset
+            }
         )
 
         asyncio.create_task(subscription_system.publish_event(subscription_event))

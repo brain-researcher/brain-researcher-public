@@ -5,20 +5,20 @@ Implements time-frequency decomposition, spectral analysis, and connectivity
 measures for EEG/MEG data using MNE-Python.
 """
 
-import json
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+import json
 import numpy as np
-from pydantic import BaseModel, Field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Tuple
 
+from pydantic import BaseModel, Field
 from brain_researcher.core.utils import configure_mne_environment
 from brain_researcher.services.tools.params import (
     MNETimeFreqParameters,
     mne_timefreq_from_payload,
     run_mne_timefreq,
 )
+
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
     ToolResult,
@@ -31,7 +31,6 @@ configure_mne_environment()
 
 class TFRMethod(str):
     """Time-frequency analysis methods."""
-
     MORLET = "morlet"
     MULTITAPER = "multitaper"
     STOCKWELL = "stockwell"
@@ -41,7 +40,6 @@ class TFRMethod(str):
 
 class ConnectivityMethod(str):
     """Connectivity analysis methods."""
-
     COHERENCE = "coherence"
     COHERENCY = "coherency"
     PLV = "plv"  # Phase Locking Value
@@ -53,7 +51,6 @@ class ConnectivityMethod(str):
 
 class BaselineMode(str):
     """Baseline correction modes."""
-
     MEAN = "mean"
     RATIO = "ratio"
     LOGRATIO = "logratio"
@@ -66,119 +63,156 @@ class MNETimeFreqArgs(BaseModel):
     """Arguments for MNE time-frequency analysis."""
 
     # Input data
-    epochs_file: str = Field(description="Path to epoched data file (.fif format)")
-    output_dir: str = Field(description="Output directory for results")
+    epochs_file: str = Field(
+        description="Path to epoched data file (.fif format)"
+    )
+    output_dir: str = Field(
+        description="Output directory for results"
+    )
 
     # Time-frequency parameters
     method: str = Field(
         default="morlet",
-        description="TFR method: morlet, multitaper, stockwell, hilbert, filter_bank",
+        description="TFR method: morlet, multitaper, stockwell, hilbert, filter_bank"
     )
     freqs: Optional[List[float]] = Field(
         default=None,
-        description="Frequencies of interest (Hz). If None, uses log-spaced 1-40 Hz",
+        description="Frequencies of interest (Hz). If None, uses log-spaced 1-40 Hz"
     )
     freq_min: Optional[float] = Field(
-        default=1.0, description="Minimum frequency for automatic frequency selection"
+        default=1.0,
+        description="Minimum frequency for automatic frequency selection"
     )
     freq_max: Optional[float] = Field(
-        default=40.0, description="Maximum frequency for automatic frequency selection"
+        default=40.0,
+        description="Maximum frequency for automatic frequency selection"
     )
     n_freqs: Optional[int] = Field(
-        default=30, description="Number of frequencies for automatic selection"
+        default=30,
+        description="Number of frequencies for automatic selection"
     )
 
     # Morlet wavelet parameters
     n_cycles: Optional[Union[float, List[float]]] = Field(
         default=7.0,
-        description="Number of cycles in Morlet wavelet. Can vary with frequency",
+        description="Number of cycles in Morlet wavelet. Can vary with frequency"
     )
-    use_fft: bool = Field(default=True, description="Use FFT for convolution (faster)")
+    use_fft: bool = Field(
+        default=True,
+        description="Use FFT for convolution (faster)"
+    )
 
     # Multitaper parameters
     time_bandwidth: float = Field(
-        default=4.0, description="Time-bandwidth product for multitaper"
+        default=4.0,
+        description="Time-bandwidth product for multitaper"
     )
     n_tapers: Optional[int] = Field(
-        default=None, description="Number of tapers (auto-computed if None)"
+        default=None,
+        description="Number of tapers (auto-computed if None)"
     )
 
     # Output type
     output: str = Field(
         default="power",
-        description="Output type: power, phase, complex, itc (inter-trial coherence)",
+        description="Output type: power, phase, complex, itc (inter-trial coherence)"
     )
-    average: bool = Field(default=True, description="Average over epochs")
+    average: bool = Field(
+        default=True,
+        description="Average over epochs"
+    )
     return_itc: bool = Field(
-        default=True, description="Also compute inter-trial coherence"
+        default=True,
+        description="Also compute inter-trial coherence"
     )
 
     # Baseline correction
     baseline: Optional[Tuple[float, float]] = Field(
-        default=(None, 0), description="Baseline interval for correction (tmin, tmax)"
+        default=(None, 0),
+        description="Baseline interval for correction (tmin, tmax)"
     )
     baseline_mode: str = Field(
         default="mean",
-        description="Baseline mode: mean, ratio, logratio, percent, zscore, zlogratio",
+        description="Baseline mode: mean, ratio, logratio, percent, zscore, zlogratio"
     )
 
     # Power spectral density
     compute_psd: bool = Field(
-        default=True, description="Compute power spectral density"
+        default=True,
+        description="Compute power spectral density"
     )
     psd_method: str = Field(
-        default="welch", description="PSD method: welch, multitaper, or periodogram"
+        default="welch",
+        description="PSD method: welch, multitaper, or periodogram"
     )
 
     # Connectivity analysis
     compute_connectivity: bool = Field(
-        default=False, description="Compute connectivity measures"
+        default=False,
+        description="Compute connectivity measures"
     )
     connectivity_method: str = Field(
         default="coherence",
-        description="Connectivity method: coherence, plv, pli, wpli, etc.",
+        description="Connectivity method: coherence, plv, pli, wpli, etc."
     )
     connectivity_pairs: Optional[List[Tuple[str, str]]] = Field(
-        default=None, description="Channel pairs for connectivity (None = all pairs)"
+        default=None,
+        description="Channel pairs for connectivity (None = all pairs)"
     )
 
     # Band power
     compute_band_power: bool = Field(
-        default=True, description="Compute band power in standard bands"
+        default=True,
+        description="Compute band power in standard bands"
     )
     bands: Optional[Dict[str, Tuple[float, float]]] = Field(
         default=None,
-        description="Frequency bands (default: delta, theta, alpha, beta, gamma)",
+        description="Frequency bands (default: delta, theta, alpha, beta, gamma)"
     )
 
     # Visualization
-    plot_tfr: bool = Field(default=True, description="Generate TFR plots")
-    plot_topomap: bool = Field(default=True, description="Generate topographic maps")
+    plot_tfr: bool = Field(
+        default=True,
+        description="Generate TFR plots"
+    )
+    plot_topomap: bool = Field(
+        default=True,
+        description="Generate topographic maps"
+    )
     plot_joint: bool = Field(
-        default=False, description="Generate joint plot (TFR + topomap)"
+        default=False,
+        description="Generate joint plot (TFR + topomap)"
     )
 
     # Channel selection
     picks: Optional[List[str]] = Field(
-        default=None, description="Channels to analyze (None = all channels)"
+        default=None,
+        description="Channels to analyze (None = all channels)"
     )
     combine_channels: bool = Field(
-        default=False, description="Combine channels by averaging"
+        default=False,
+        description="Combine channels by averaging"
     )
 
     # Statistical analysis
     compute_statistics: bool = Field(
-        default=False, description="Compute statistical tests on TFR"
+        default=False,
+        description="Compute statistical tests on TFR"
     )
     stat_threshold: float = Field(
-        default=0.05, description="Statistical significance threshold"
+        default=0.05,
+        description="Statistical significance threshold"
     )
 
     # Export options
     save_format: str = Field(
-        default="hdf5", description="Save format: hdf5, mat, or npz"
+        default="hdf5",
+        description="Save format: hdf5, mat, or npz"
     )
-    save_plots: bool = Field(default=True, description="Save generated plots")
+    save_plots: bool = Field(
+        default=True,
+        description="Save generated plots"
+    )
 
 
 class MNETimeFreqTool(NeuroToolWrapper):
@@ -194,12 +228,9 @@ class MNETimeFreqTool(NeuroToolWrapper):
         try:
             import mne
             from mne.time_frequency import tfr_morlet, tfr_multitaper
-
             self.mne_available = True
             self.mne_version = mne.__version__
-            logger.info(
-                f"MNE-Python {self.mne_version} available for time-frequency analysis"
-            )
+            logger.info(f"MNE-Python {self.mne_version} available for time-frequency analysis")
         except ImportError:
             self.mne_available = False
             logger.warning("MNE-Python not installed for time-frequency analysis")
@@ -225,58 +256,46 @@ class MNETimeFreqTool(NeuroToolWrapper):
             "theta": (4, 8),
             "alpha": (8, 13),
             "beta": (13, 30),
-            "gamma": (30, 100),
+            "gamma": (30, 100)
         }
 
     def _compute_tfr(self, epochs, method, freqs, **kwargs):
         """Compute time-frequency representation."""
         import mne
         from mne.time_frequency import (
-            tfr_array_morlet,
-            tfr_array_multitaper,
-            tfr_morlet,
-            tfr_multitaper,
-            tfr_stockwell,
+            tfr_morlet, tfr_multitaper, tfr_stockwell,
+            tfr_array_morlet, tfr_array_multitaper
         )
 
         if method == "morlet":
-            n_cycles = kwargs.get("n_cycles", 7.0)
-            use_fft = kwargs.get("use_fft", True)
-            output = kwargs.get("output", "power")
-            average = kwargs.get("average", True)
-            return_itc = kwargs.get("return_itc", True)
+            n_cycles = kwargs.get('n_cycles', 7.0)
+            use_fft = kwargs.get('use_fft', True)
+            output = kwargs.get('output', 'power')
+            average = kwargs.get('average', True)
+            return_itc = kwargs.get('return_itc', True)
 
             power, itc = tfr_morlet(
-                epochs,
-                freqs=freqs,
-                n_cycles=n_cycles,
-                use_fft=use_fft,
-                output=output,
-                average=average,
-                return_itc=return_itc,
+                epochs, freqs=freqs, n_cycles=n_cycles,
+                use_fft=use_fft, output=output,
+                average=average, return_itc=return_itc
             )
             return power, itc
 
         elif method == "multitaper":
-            time_bandwidth = kwargs.get("time_bandwidth", 4.0)
-            n_tapers = kwargs.get("n_tapers", None)
-            output = kwargs.get("output", "power")
-            average = kwargs.get("average", True)
-            return_itc = kwargs.get("return_itc", True)
+            time_bandwidth = kwargs.get('time_bandwidth', 4.0)
+            n_tapers = kwargs.get('n_tapers', None)
+            output = kwargs.get('output', 'power')
+            average = kwargs.get('average', True)
+            return_itc = kwargs.get('return_itc', True)
 
             if n_tapers is None:
                 n_tapers = int(2 * time_bandwidth - 1)
 
             power, itc = tfr_multitaper(
-                epochs,
-                freqs=freqs,
-                n_cycles=time_bandwidth,
-                time_bandwidth=time_bandwidth,
-                n_tapers=n_tapers,
-                use_fft=True,
-                output=output,
-                average=average,
-                return_itc=return_itc,
+                epochs, freqs=freqs, n_cycles=time_bandwidth,
+                time_bandwidth=time_bandwidth, n_tapers=n_tapers,
+                use_fft=True, output=output,
+                average=average, return_itc=return_itc
             )
             return power, itc
 
@@ -292,21 +311,20 @@ class MNETimeFreqTool(NeuroToolWrapper):
         import mne
 
         if method == "welch":
-            psd = epochs.compute_psd(method="welch", fmin=0.5, fmax=100)
+            psd = epochs.compute_psd(method='welch', fmin=0.5, fmax=100)
         elif method == "multitaper":
-            psd = epochs.compute_psd(method="multitaper", fmin=0.5, fmax=100)
+            psd = epochs.compute_psd(method='multitaper', fmin=0.5, fmax=100)
         elif method == "periodogram":
             from mne.time_frequency import psd_array_periodogram
-
             data = epochs.get_data()
             freqs, psd_data = psd_array_periodogram(
-                data, epochs.info["sfreq"], fmin=0.5, fmax=100
+                data, epochs.info['sfreq'], fmin=0.5, fmax=100
             )
             # Create PSD object
             from mne.time_frequency import EpochsSpectrum
-
             psd = EpochsSpectrum(
-                epochs.info, psd_data, freqs, "epochs", method="periodogram"
+                epochs.info, psd_data, freqs,
+                'epochs', method='periodogram'
             )
         else:
             raise ValueError(f"Unknown PSD method: {method}")
@@ -321,7 +339,7 @@ class MNETimeFreqTool(NeuroToolWrapper):
         band_powers = {}
 
         # Compute PSD
-        psd = epochs.compute_psd(method="welch")
+        psd = epochs.compute_psd(method='welch')
 
         # Extract band power for each band
         for band_name, (fmin, fmax) in bands.items():
@@ -330,7 +348,7 @@ class MNETimeFreqTool(NeuroToolWrapper):
                 "mean": float(np.mean(band_power)),
                 "std": float(np.std(band_power)),
                 "median": float(np.median(band_power)),
-                "by_channel": band_power.mean(axis=0).tolist(),
+                "by_channel": band_power.mean(axis=0).tolist()
             }
 
         return band_powers
@@ -340,9 +358,7 @@ class MNETimeFreqTool(NeuroToolWrapper):
         try:
             from mne_connectivity import spectral_connectivity_epochs
         except ImportError:
-            logger.warning(
-                "mne-connectivity not installed, skipping connectivity analysis"
-            )
+            logger.warning("mne-connectivity not installed, skipping connectivity analysis")
             return None
 
         if freqs is None:
@@ -355,19 +371,16 @@ class MNETimeFreqTool(NeuroToolWrapper):
             "plv": "plv",
             "pli": "pli",
             "wpli": "wpli",
-            "spectral_connectivity": "coh",
+            "spectral_connectivity": "coh"
         }
 
         mne_method = method_map.get(method, "coh")
 
         # Compute connectivity
         con = spectral_connectivity_epochs(
-            epochs,
-            method=mne_method,
-            fmin=freqs[0],
-            fmax=freqs[-1],
-            faverage=True,
-            verbose=False,
+            epochs, method=mne_method,
+            fmin=freqs[0], fmax=freqs[-1],
+            faverage=True, verbose=False
         )
 
         return con
@@ -375,65 +388,49 @@ class MNETimeFreqTool(NeuroToolWrapper):
     def _generate_plots(self, tfr_power, itc, epochs, output_dir, **kwargs):
         """Generate time-frequency plots."""
         import matplotlib
-
-        matplotlib.use("Agg")
+        matplotlib.use('Agg')
         import matplotlib.pyplot as plt
 
         plot_files = {}
 
         try:
             # TFR plot for selected channels
-            if kwargs.get("plot_tfr", True) and tfr_power is not None:
+            if kwargs.get('plot_tfr', True) and tfr_power is not None:
                 # Average over channels or plot first channel
                 fig = tfr_power.plot(
-                    picks=[0],
-                    baseline=kwargs.get("baseline"),
-                    mode=kwargs.get("baseline_mode", "mean"),
-                    title="Time-Frequency Power",
-                    show=False,
+                    picks=[0], baseline=kwargs.get('baseline'),
+                    mode=kwargs.get('baseline_mode', 'mean'),
+                    title='Time-Frequency Power', show=False
                 )
                 tfr_file = output_dir / "tfr_power.png"
-                (
-                    fig[0].savefig(tfr_file)
-                    if isinstance(fig, list)
-                    else fig.savefig(tfr_file)
-                )
-                plt.close("all")
+                fig[0].savefig(tfr_file) if isinstance(fig, list) else fig.savefig(tfr_file)
+                plt.close('all')
                 plot_files["tfr_power"] = str(tfr_file)
 
             # ITC plot
-            if itc is not None and kwargs.get("return_itc", True):
+            if itc is not None and kwargs.get('return_itc', True):
                 fig = itc.plot(
-                    picks=[0],
-                    baseline=kwargs.get("baseline"),
-                    mode=kwargs.get("baseline_mode", "mean"),
-                    title="Inter-Trial Coherence",
-                    show=False,
+                    picks=[0], baseline=kwargs.get('baseline'),
+                    mode=kwargs.get('baseline_mode', 'mean'),
+                    title='Inter-Trial Coherence', show=False
                 )
                 itc_file = output_dir / "itc.png"
-                (
-                    fig[0].savefig(itc_file)
-                    if isinstance(fig, list)
-                    else fig.savefig(itc_file)
-                )
-                plt.close("all")
+                fig[0].savefig(itc_file) if isinstance(fig, list) else fig.savefig(itc_file)
+                plt.close('all')
                 plot_files["itc"] = str(itc_file)
 
             # Topographic maps at specific times/frequencies
-            if kwargs.get("plot_topomap", True) and tfr_power is not None:
+            if kwargs.get('plot_topomap', True) and tfr_power is not None:
                 # Plot topomap at alpha band peak
                 alpha_freqs = (8, 13)
                 times = [0.2, 0.4, 0.6]  # Example time points
 
                 fig = tfr_power.plot_topomap(
-                    tmin=times[0],
-                    tmax=times[-1],
-                    fmin=alpha_freqs[0],
-                    fmax=alpha_freqs[1],
-                    baseline=kwargs.get("baseline"),
-                    mode=kwargs.get("baseline_mode", "mean"),
-                    title="Alpha Power Topography",
-                    show=False,
+                    tmin=times[0], tmax=times[-1],
+                    fmin=alpha_freqs[0], fmax=alpha_freqs[1],
+                    baseline=kwargs.get('baseline'),
+                    mode=kwargs.get('baseline_mode', 'mean'),
+                    title='Alpha Power Topography', show=False
                 )
                 topo_file = output_dir / "topomap_alpha.png"
                 fig.savefig(topo_file)
@@ -441,11 +438,11 @@ class MNETimeFreqTool(NeuroToolWrapper):
                 plot_files["topomap_alpha"] = str(topo_file)
 
             # Joint plot
-            if kwargs.get("plot_joint", False) and tfr_power is not None:
+            if kwargs.get('plot_joint', False) and tfr_power is not None:
                 fig = tfr_power.plot_joint(
-                    baseline=kwargs.get("baseline"),
-                    mode=kwargs.get("baseline_mode", "mean"),
-                    show=False,
+                    baseline=kwargs.get('baseline'),
+                    mode=kwargs.get('baseline_mode', 'mean'),
+                    show=False
                 )
                 joint_file = output_dir / "joint_plot.png"
                 fig.savefig(joint_file)
@@ -453,10 +450,8 @@ class MNETimeFreqTool(NeuroToolWrapper):
                 plot_files["joint_plot"] = str(joint_file)
 
             # PSD plot
-            if kwargs.get("compute_psd", True):
-                psd = self._compute_psd(
-                    epochs, method=kwargs.get("psd_method", "welch")
-                )
+            if kwargs.get('compute_psd', True):
+                psd = self._compute_psd(epochs, method=kwargs.get('psd_method', 'welch'))
                 fig = psd.plot(average=True, show=False)
                 psd_file = output_dir / "psd.png"
                 fig.savefig(psd_file)
@@ -502,13 +497,15 @@ class MNETimeFreqTool(NeuroToolWrapper):
         stat_threshold: float = 0.05,
         save_format: str = "hdf5",
         save_plots: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute MNE time-frequency analysis."""
         try:
             if not self.mne_available:
                 return ToolResult(
-                    status="error", error="MNE-Python not available", data={}
+                    status="error",
+                    error="MNE-Python not available",
+                    data={}
                 )
 
             if output_dir is None:
@@ -549,15 +546,17 @@ class MNETimeFreqTool(NeuroToolWrapper):
             used_package = results.pop("used_mne_timefreq_package", None)
 
             if used_package is False:
-                logger.info(
-                    "MNE time-frequency package unavailable; fallback routine executed."
-                )
+                logger.info("MNE time-frequency package unavailable; fallback routine executed.")
 
             return ToolResult(status="success", data=results)
 
         except Exception as e:
             logger.error(f"Time-frequency analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class MNETimeFreqTools:
@@ -566,4 +565,6 @@ class MNETimeFreqTools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all MNE time-frequency tools."""
-        return [MNETimeFreqTool()]
+        return [
+            MNETimeFreqTool()
+        ]

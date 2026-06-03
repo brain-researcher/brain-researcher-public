@@ -26,19 +26,19 @@ variable "static_bucket_name" {
 variable "app_domain_name" {
   description = "Domain name of the Next.js application"
   type        = string
-  default     = "app.brain-researcher.com"
+  default     = "app.${PUBLIC_HOSTNAME}"
 }
 
 variable "api_domain_name" {
   description = "Domain name of the API orchestrator"
   type        = string
-  default     = "api.brain-researcher.com"
+  default     = "api.${PUBLIC_HOSTNAME}"
 }
 
 variable "domain_aliases" {
   description = "List of domain aliases for CloudFront distribution"
   type        = list(string)
-  default     = ["brain-researcher.com", "www.brain-researcher.com"]
+  default     = ["${PUBLIC_HOSTNAME}", "www.${PUBLIC_HOSTNAME}"]
 }
 
 variable "ssl_certificate_arn" {

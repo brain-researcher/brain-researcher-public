@@ -7,11 +7,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, List, Optional
 
-from pydantic import field_validator  # Pydantic v2
 from pydantic import (
     BaseModel,
     Field,
     HttpUrl,
+    field_validator,  # Pydantic v2
 )
 
 from brain_researcher.config.paths import get_repo_root

@@ -35,9 +35,7 @@ def _geometric_mean(values: Sequence[float]) -> float:
     return float(math.exp(sum(logs) / len(logs)))
 
 
-def _index_candidates_by_tool(
-    plan_payload: Dict[str, Any],
-) -> Dict[str, Dict[str, Any]]:
+def _index_candidates_by_tool(plan_payload: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     idx: Dict[str, Dict[str, Any]] = {}
     candidates = plan_payload.get("candidates")
     if isinstance(candidates, list):
@@ -80,9 +78,7 @@ def compute_step_confidence(
     evidence_n: Optional[int] = None
 
     if candidate:
-        base_score = _safe_float(
-            candidate.get("final_score", candidate.get("score")), 0.5
-        )
+        base_score = _safe_float(candidate.get("final_score", candidate.get("score")), 0.5)
         hq_score = _safe_float(candidate.get("historical_quality_score"), 0.5)
         latency_score = _safe_float(candidate.get("latency_score"), 0.5)
         preflight_passed = candidate.get("preflight_passed")
@@ -153,16 +149,10 @@ def compute_confidence_summary(
 
     # If no explicit branches, treat current plan as single branch with DAG tools.
     if not branches:
-        steps = (
-            plan_payload.get("dag", {}).get("steps")
-            if isinstance(plan_payload.get("dag"), dict)
-            else None
-        )
+        steps = plan_payload.get("dag", {}).get("steps") if isinstance(plan_payload.get("dag"), dict) else None
         tool_ids = []
         if isinstance(steps, list):
-            tool_ids = [
-                s.get("tool") for s in steps if isinstance(s, dict) and s.get("tool")
-            ]
+            tool_ids = [s.get("tool") for s in steps if isinstance(s, dict) and s.get("tool")]
         chosen_tool = plan_payload.get("chosen_tool")
         if chosen_tool and chosen_tool not in tool_ids:
             tool_ids.insert(0, chosen_tool)
@@ -190,9 +180,7 @@ def compute_confidence_summary(
         if not isinstance(branch, dict):
             continue
         branch_id = str(branch.get("branch_id") or "br:unknown")
-        branch_steps = (
-            branch.get("steps") if isinstance(branch.get("steps"), list) else []
-        )
+        branch_steps = branch.get("steps") if isinstance(branch.get("steps"), list) else []
 
         conf_values: List[float] = []
         for idx, step in enumerate(branch_steps):

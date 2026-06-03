@@ -60,9 +60,7 @@ def test_review_only_overrides_suppress_title_only_in_benchmark_profiles() -> No
     assert "title_only_low_rigor_evidence" not in reasons
 
 
-def test_review_only_overrides_marks_generic_title_concepts_for_candidate_only_lane() -> (
-    None
-):
+def test_review_only_overrides_marks_generic_title_concepts_for_candidate_only_lane() -> None:
     reasons = GabrielMeasurementLoader._apply_review_only_overrides(
         record={
             "evidence": {"section": "title"},
@@ -98,9 +96,7 @@ def test_review_only_overrides_marks_generic_title_concepts_for_candidate_only_l
     assert routing["bucket"] == "title_only_generic_concept"
 
 
-def test_review_only_overrides_marks_expanded_generic_concept_ids_for_candidate_only_lane() -> (
-    None
-):
+def test_review_only_overrides_marks_expanded_generic_concept_ids_for_candidate_only_lane() -> None:
     record = {
         "evidence": {"section": "title"},
         "signals": {"title_only_evidence": True},
@@ -137,9 +133,7 @@ def test_review_only_overrides_marks_expanded_generic_concept_ids_for_candidate_
     assert routing["lane"] == "candidate_only"
 
 
-def test_review_only_overrides_does_not_route_region_title_rows_to_candidate_only_lane() -> (
-    None
-):
+def test_review_only_overrides_does_not_route_region_title_rows_to_candidate_only_lane() -> None:
     reasons = GabrielMeasurementLoader._apply_review_only_overrides(
         record={
             "evidence": {"section": "title"},
@@ -351,11 +345,7 @@ def test_load_candidate_only_queue_skips_non_candidate_rows(tmp_path: Path) -> N
                 "record": {
                     "paper": {"id": "pmid:102", "title": "Task title"},
                     "claim": {"id": "claim:skip-me"},
-                    "target": {
-                        "type": "Task",
-                        "id": "task:go_nogo",
-                        "label": "Go/NoGo",
-                    },
+                    "target": {"type": "Task", "id": "task:go_nogo", "label": "Go/NoGo"},
                     "evidence": {"span_id": "evidence:skip-me", "section": "title"},
                     "run": {"run_id": "candidate-run-102"},
                 },
@@ -448,9 +438,7 @@ def test_load_candidate_only_queue_skips_overlay_conflicts(tmp_path: Path) -> No
     assert claim.get("candidate_lane_present") is None
 
 
-def test_load_candidate_only_queue_requires_explicit_candidate_lane(
-    tmp_path: Path,
-) -> None:
+def test_load_candidate_only_queue_requires_explicit_candidate_lane(tmp_path: Path) -> None:
     queue_path = tmp_path / "review_queue_candidate_only.jsonl"
     queue_path.write_text(
         json.dumps(
@@ -458,15 +446,8 @@ def test_load_candidate_only_queue_requires_explicit_candidate_lane(
                 "record": {
                     "paper": {"id": "pmid:300", "title": "Missing routing"},
                     "claim": {"id": "claim:missing-lane"},
-                    "target": {
-                        "type": "Task",
-                        "id": "task:go_nogo",
-                        "label": "Go/NoGo",
-                    },
-                    "evidence": {
-                        "span_id": "evidence:missing-lane",
-                        "section": "title",
-                    },
+                    "target": {"type": "Task", "id": "task:go_nogo", "label": "Go/NoGo"},
+                    "evidence": {"span_id": "evidence:missing-lane", "section": "title"},
                     "run": {"run_id": "candidate-run-300"},
                 }
             }

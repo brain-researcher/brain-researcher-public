@@ -91,9 +91,7 @@ class MRIQCParameters:
         return {}
 
 
-def build_mriqc_command(
-    params: MRIQCParameters, *, include_executable: bool = True
-) -> list[str]:
+def build_mriqc_command(params: MRIQCParameters, *, include_executable: bool = True) -> list[str]:
     return params.command(include_executable=include_executable)
 
 

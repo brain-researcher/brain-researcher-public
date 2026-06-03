@@ -30,9 +30,7 @@ class RegistrationParameters:
     seed: Optional[int]
 
 
-def _coerce_sequence(
-    values: Optional[Sequence[Any]], default: Sequence[Any]
-) -> Tuple[Any, ...]:
+def _coerce_sequence(values: Optional[Sequence[Any]], default: Sequence[Any]) -> Tuple[Any, ...]:
     if not values:
         values = default
     return tuple(values)
@@ -50,9 +48,7 @@ def registration_from_payload(payload: Dict[str, Any]) -> RegistrationParameters
         metric=str(payload.get("metric", "MI")),
         iterations=_coerce_sequence(payload.get("iterations"), [100, 100, 50]),
         shrink_factors=_coerce_sequence(payload.get("shrink_factors"), [4, 2, 1]),
-        smoothing_sigmas=_coerce_sequence(
-            payload.get("smoothing_sigmas"), [2.0, 1.0, 0.0]
-        ),
+        smoothing_sigmas=_coerce_sequence(payload.get("smoothing_sigmas"), [2.0, 1.0, 0.0]),
         interpolation=str(payload.get("interpolation", "Linear")),
         save_transform=bool(payload.get("save_transform", True)),
         save_warped=bool(payload.get("save_warped", True)),

@@ -19,9 +19,7 @@ class OnDemandRegistry:
         self._ttl: Dict[str, Optional[float]] = {}
         self._cache: Dict[Tuple[str, Tuple[Tuple[str, Any], ...]], CachedResult] = {}
 
-    def register(
-        self, name: str, adapter: Callable[..., Any], ttl_seconds: Optional[int] = None
-    ) -> None:
+    def register(self, name: str, adapter: Callable[..., Any], ttl_seconds: Optional[int] = None) -> None:
         self._adapters[name] = adapter
         self._ttl[name] = float(ttl_seconds) if ttl_seconds else None
 

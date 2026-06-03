@@ -32,7 +32,6 @@ def _has_spd_learn() -> bool:
     if _SPD_LEARN_AVAILABLE is None:
         try:
             import spd_learn  # noqa: F401
-
             _SPD_LEARN_AVAILABLE = True
         except ImportError:
             _SPD_LEARN_AVAILABLE = False
@@ -42,7 +41,6 @@ def _has_spd_learn() -> bool:
 def _has_torch() -> bool:
     try:
         import torch  # noqa: F401
-
         return True
     except ImportError:
         return False
@@ -89,9 +87,7 @@ class CovarianceEstimateParameters:
     diagonal: bool = False
 
 
-def covariance_estimate_from_payload(
-    payload: Dict[str, Any],
-) -> CovarianceEstimateParameters:
+def covariance_estimate_from_payload(payload: Dict[str, Any]) -> CovarianceEstimateParameters:
     return CovarianceEstimateParameters(
         data_file=str(payload["data_file"]),
         output_file=str(payload["output_file"]),
@@ -129,21 +125,18 @@ def run_covariance_estimate(params: CovarianceEstimateParameters) -> Dict[str, A
         if method == "ledoit_wolf":
             try:
                 from sklearn.covariance import LedoitWolf
-
                 cov = LedoitWolf().fit(ts).covariance_
             except ImportError:
                 cov = np.cov(ts, rowvar=False)
         elif method == "oas":
             try:
                 from sklearn.covariance import OAS
-
                 cov = OAS().fit(ts).covariance_
             except ImportError:
                 cov = np.cov(ts, rowvar=False)
         elif method == "shrinkage":
             try:
                 from sklearn.covariance import ShrunkCovariance
-
                 cov = ShrunkCovariance().fit(ts).covariance_
             except ImportError:
                 cov = np.cov(ts, rowvar=False)
@@ -316,9 +309,7 @@ class SPDGeodesicDistanceParameters:
     output_file: Optional[str] = None
 
 
-def spd_geodesic_distance_from_payload(
-    payload: Dict[str, Any],
-) -> SPDGeodesicDistanceParameters:
+def spd_geodesic_distance_from_payload(payload: Dict[str, Any]) -> SPDGeodesicDistanceParameters:
     return SPDGeodesicDistanceParameters(
         matrix_a_file=str(payload["matrix_a_file"]),
         matrix_b_file=str(payload["matrix_b_file"]),
@@ -341,11 +332,9 @@ def run_spd_geodesic_distance(params: SPDGeodesicDistanceParameters) -> Dict[str
 
         if params.metric == "airm":
             from spd_learn.functional import airm_distance
-
             dist = float(airm_distance(a_t, b_t).item())
         elif params.metric == "log_euclidean":
             from spd_learn.functional import log_euclidean_distance
-
             dist = float(log_euclidean_distance(a_t, b_t).item())
         else:
             dist = float(np.linalg.norm(a - b, "fro"))
@@ -562,7 +551,7 @@ def run_spdnet_train(params: SPDNetTrainParameters) -> Dict[str, Any]:
     if _has_spd_learn() and _has_torch():
         import torch
         import torch.nn as nn
-        from spd_learn import EEGSPDNet, SPDNet
+        from spd_learn import SPDNet, EEGSPDNet
 
         data_t = torch.tensor(data_np, dtype=torch.float32)
         labels_t = torch.tensor(labels_np, dtype=torch.long)
@@ -616,14 +605,12 @@ def run_spdnet_train(params: SPDNetTrainParameters) -> Dict[str, Any]:
                 val_preds = val_logits.argmax(dim=1)
                 val_acc = (val_preds == labels_t[val_idx]).float().mean().item()
 
-            history.append(
-                {
-                    "epoch": epoch + 1,
-                    "train_loss": float(loss.item()),
-                    "val_loss": float(val_loss.item()),
-                    "val_accuracy": val_acc,
-                }
-            )
+            history.append({
+                "epoch": epoch + 1,
+                "train_loss": float(loss.item()),
+                "val_loss": float(val_loss.item()),
+                "val_accuracy": val_acc,
+            })
 
         # Save model
         model_path = out_dir / "spdnet_model.pt"

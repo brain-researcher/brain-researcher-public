@@ -39,6 +39,7 @@ from brain_researcher.core.ingestion.graph_factory import (
     GraphDatabaseProtocol,
     GraphFactory,
 )
+from brain_researcher.services.br_kg.graph.graph_factory import create_graph_client
 from brain_researcher.core.ingestion.loaders.allen_brain_unified import (
     AllenBrainUnifiedLoader,
 )
@@ -134,7 +135,6 @@ from brain_researcher.services.br_kg.etl.loaders.nidm_results_loader import (
 from brain_researcher.services.br_kg.etl.loaders.scholarly_metadata_loader import (
     ScholarlyMetadataLoader,
 )
-from brain_researcher.services.br_kg.graph.graph_factory import create_graph_client
 from brain_researcher.services.br_kg.spatial.neuromaps_assets import (
     preferred_neuromaps_root,
 )

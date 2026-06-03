@@ -122,11 +122,7 @@ def _external_review_axes_for_rule(rule: dict[str, Any]) -> list[str]:
         )
     ):
         axes.append("completeness")
-    if tags & {
-        "claim_inflation",
-        "prior_conflict",
-        "controversial_choice",
-    } or layers & {
+    if tags & {"claim_inflation", "prior_conflict", "controversial_choice"} or layers & {
         "claim_validity",
         "construct_validity",
     }:
@@ -152,9 +148,7 @@ def _criterion_from_rule_record(record: Any) -> dict[str, Any] | None:
     if not rule_id:
         return None
     lifecycle_status = str(_record_get(record, "lifecycle_status") or "").strip()
-    implementation_rule_ids = _as_clean_list(
-        _record_get(record, "implementation_rule_ids")
-    )
+    implementation_rule_ids = _as_clean_list(_record_get(record, "implementation_rule_ids"))
     criterion = {
         "rule_id": rule_id,
         "kg_node_id": _review_rule_node_id(rule_id),
@@ -260,9 +254,7 @@ def _fetch_implementation_rule_ids_from_db(
 
 
 @lru_cache(maxsize=8)
-def _fetch_mappings_from_default_db(
-    registry_id: str,
-) -> tuple[KGReviewRuleMapping, ...]:
+def _fetch_mappings_from_default_db(registry_id: str) -> tuple[KGReviewRuleMapping, ...]:
     try:
         from brain_researcher.services.br_kg import query_service
 
@@ -755,12 +747,8 @@ def merge_kg_registry_findings(
             continue
 
         existing = merged[existing_index]
-        kg_evidence = _merge_unique_strings(
-            existing.kg_evidence, kg_finding.kg_evidence
-        )
-        reason_tags = _merge_unique_strings(
-            existing.reason_tags, kg_finding.reason_tags
-        )
+        kg_evidence = _merge_unique_strings(existing.kg_evidence, kg_finding.kg_evidence)
+        reason_tags = _merge_unique_strings(existing.reason_tags, kg_finding.reason_tags)
         merged[existing_index] = existing.model_copy(
             update={
                 "kg_evidence": kg_evidence,
@@ -801,9 +789,7 @@ def evaluate_kg_review_registry(
     catalog_rule_ids = set(implementation_rule_ids)
     if catalog_rule_ids_filter is not None:
         catalog_rule_ids &= set(catalog_rule_ids_filter)
-    executable_rule_ids = (
-        set(mapping_by_impl) | catalog_rule_ids
-    ) & configured_rule_ids
+    executable_rule_ids = (set(mapping_by_impl) | catalog_rule_ids) & configured_rule_ids
     if not executable_rule_ids:
         return [], [
             f"{mapping.kg_rule_id}->{mapping.implementation_rule_id}"

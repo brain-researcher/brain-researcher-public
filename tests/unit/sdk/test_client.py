@@ -206,7 +206,7 @@ class TestBRClientCall:
 
 class TestHTTPTransport:
     def test_http_transport_is_selected_from_env(self, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setenv("BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp")
+        monkeypatch.setenv("BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp")
         monkeypatch.setenv("BR_MCP_AUTH_HEADER", "Bearer explicit-token")
         monkeypatch.setenv("BR_MCP_TOKEN", "ignored-token")
 
@@ -231,7 +231,7 @@ class TestHTTPTransport:
                         timeout=120.0,
                     )
                     stream_ctx.assert_called_once_with(
-                        "https://brain-researcher.com/mcp",
+                        "https://${PUBLIC_HOSTNAME}/mcp",
                         http_client=fake_http_client,
                     )
                     client.close()
@@ -239,7 +239,7 @@ class TestHTTPTransport:
     def test_http_transport_uses_bearer_token_when_no_auth_header(
         self, monkeypatch: pytest.MonkeyPatch
     ):
-        monkeypatch.setenv("BR_MCP_HTTP_URL", "https://brain-researcher.com/mcp")
+        monkeypatch.setenv("BR_MCP_HTTP_URL", "https://${PUBLIC_HOSTNAME}/mcp")
         monkeypatch.delenv("BR_MCP_AUTH_HEADER", raising=False)
         monkeypatch.delenv("BR_MCP_BEARER_TOKEN", raising=False)
         monkeypatch.setenv("BR_MCP_TOKEN", "token-from-env")

@@ -168,7 +168,4 @@ def test_performance_optimizer_covers_canonical_spatial_paths() -> None:
         "MATCH (child:BrainRegion)-[:PART_OF]->(parent:BrainRegion)" in query
         for query in explain_queries
     )
-    assert any(
-        "[:ACTIVATES]" in query and "r:BrainRegion OR r:Region" in query
-        for query in explain_queries
-    )
+    assert any("[:ACTIVATES]" in query and "r:BrainRegion OR r:Region" in query for query in explain_queries)

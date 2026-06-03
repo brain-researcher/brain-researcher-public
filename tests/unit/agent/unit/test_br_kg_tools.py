@@ -11,7 +11,6 @@ import requests
 from brain_researcher.services.tools.br_kg_tools import (
     BehaviorToFMRIRetrievalArgs,
     BehaviorToFMRIRetrievalTool,
-    BRKGTools,
     ContrastToActivationMapArgs,
     ContrastToActivationMapTool,
     CoordinateToConceptArgs,
@@ -22,6 +21,7 @@ from brain_researcher.services.tools.br_kg_tools import (
     GraphQueryTool,
     LiteratureSearchArgs,
     LiteratureSearchTool,
+    BRKGTools,
     TaskMappingArgs,
     TaskMappingTool,
     TaskToConceptTool,
@@ -248,7 +248,9 @@ class TestBehaviorToFMRIRetrievalTool:
         assert result["status"] == "success"
         assert result["data"]["summary"]["item_count"] == 1
         mock_post.assert_called_once()
-        assert mock_post.call_args[0][0].endswith("/api/behavior_to_fmri_retrieval")
+        assert (
+            mock_post.call_args[0][0].endswith("/api/behavior_to_fmri_retrieval")
+        )
 
     @patch("requests.post")
     @patch("requests.get")
@@ -376,11 +378,7 @@ class TestBehaviorToFMRIRetrievalTool:
                     key=lambda item: item["concept"] == "action planning",
                     reverse=True,
                 )
-                return rows, {
-                    "enabled": True,
-                    "available": True,
-                    "backend_active": "none",
-                }
+                return rows, {"enabled": True, "available": True, "backend_active": "none"}
 
         tool = FindRelatedConceptsTool(
             runtime_mapper=FakeRuntimeMapper(),
@@ -401,9 +399,7 @@ class TestBehaviorToFMRIRetrievalTool:
                 {"id": "1", "label": "Concept", "name": "motor cortex"},
                 {"id": "2", "label": "Concept", "name": "movement"},
             ],
-            "edges": [
-                {"source": "1", "target": "2", "type": "related_to", "weight": 0.9}
-            ],
+            "edges": [{"source": "1", "target": "2", "type": "related_to", "weight": 0.9}],
         }
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
@@ -511,7 +507,9 @@ class TestCoordinateToConceptTool:
     @patch(
         "brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper_improved.get_improved_mapper"
     )
-    def test_coordinate_mapping_ignores_hosted_execution_context(self, mock_get_mapper):
+    def test_coordinate_mapping_ignores_hosted_execution_context(
+        self, mock_get_mapper
+    ):
         """Hosted executor context kwargs should not break local tool execution."""
         mock_mapper = Mock()
         mock_mapper._loaded = True
@@ -569,21 +567,13 @@ class TestCoordinateToConceptTool:
         assert result["metadata"]["allow_mock"] is False
         assert result["metadata"]["niclip_data_path_hint"] == "/tmp/niclip-data"
         assert result["metadata"]["niclip_model_path_hint"] == "/tmp/niclip-model.pth"
-        assert (
-            result["metadata"]["path_hints"]["configured_env"]["NICLIP_DATA_PATH"]
-            == "/tmp/niclip-data"
-        )
-        assert (
-            result["metadata"]["path_hints"]["configured_env"]["NICLIP_MODEL_PATH"]
-            == "/tmp/niclip-model.pth"
-        )
+        assert result["metadata"]["path_hints"]["configured_env"]["NICLIP_DATA_PATH"] == "/tmp/niclip-data"
+        assert result["metadata"]["path_hints"]["configured_env"]["NICLIP_MODEL_PATH"] == "/tmp/niclip-model.pth"
 
     @patch(
         "brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper_improved.get_improved_mapper"
     )
-    def test_dependency_metadata_when_mapper_import_fails(
-        self, mock_get_mapper, monkeypatch
-    ):
+    def test_dependency_metadata_when_mapper_import_fails(self, mock_get_mapper, monkeypatch):
         """Mapper import/runtime failures should return structured dependency metadata."""
         monkeypatch.delenv("BR_NICLIP_ALLOW_MOCK", raising=False)
         monkeypatch.setenv("NICLIP_DATA_PATH", "/tmp/niclip-data")
@@ -597,14 +587,9 @@ class TestCoordinateToConceptTool:
         assert result["metadata"]["error_category"] == "dependency"
         assert result["metadata"]["dependency"] == "niclip_mapper"
         assert result["metadata"]["allow_mock"] is False
-        assert (
-            result["metadata"]["path_hints"]["configured_env"]["NICLIP_DATA_PATH"]
-            == "/tmp/niclip-data"
-        )
+        assert result["metadata"]["path_hints"]["configured_env"]["NICLIP_DATA_PATH"] == "/tmp/niclip-data"
         assert result["metadata"]["niclip_data_path_hint"] == "/tmp/niclip-data"
-        assert (
-            result["metadata"]["niclip_model_path_hint"] == "<unset:NICLIP_MODEL_PATH>"
-        )
+        assert result["metadata"]["niclip_model_path_hint"] == "<unset:NICLIP_MODEL_PATH>"
 
     @patch(
         "brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper_improved.get_improved_mapper"
@@ -887,7 +872,6 @@ class TestGraphQueryTool:
         assert result["status"] == "error"
         assert "Graph query failed" in result["error"]
 
-
 class TestContrastToActivationMapTool:
     """Test contrast-to-activation-map tool."""
 
@@ -943,11 +927,7 @@ class TestContrastToActivationMapTool:
                 "error": "No activation map was produced for predicted constructs.",
                 "candidate_terms_tried": ["cognitive control"],
             },
-            "coordinate_to_concept_args": {
-                "coordinates": [],
-                "radius": 10.0,
-                "top_k": 5,
-            },
+            "coordinate_to_concept_args": {"coordinates": [], "radius": 10.0, "top_k": 5},
             "metadata": {"map_threshold": 3.0},
         }
         mock_orchestrator_cls.return_value = mock_orchestrator
@@ -1012,9 +992,7 @@ class TestTaskMappingTool:
     def test_contrast_input_maps_to_nback_concepts(self, mock_matcher_class):
         """Contrast-style n-back input should resolve to working-memory concepts."""
         mock_matcher = Mock()
-        mock_matcher.match_candidates.return_value = [
-            {"label": "n-back", "score": 0.95}
-        ]
+        mock_matcher.match_candidates.return_value = [{"label": "n-back", "score": 0.95}]
         mock_matcher_class.return_value = mock_matcher
 
         tool = TaskMappingTool()
@@ -1047,9 +1025,7 @@ class TestTaskMappingTool:
     def test_runtime_mapping_enrichment(self, mock_matcher_class):
         """Runtime mapper should attach standardized concepts + metadata."""
         mock_matcher = Mock()
-        mock_matcher.match_candidates.return_value = [
-            {"label": "n-back", "score": 0.92}
-        ]
+        mock_matcher.match_candidates.return_value = [{"label": "n-back", "score": 0.92}]
         mock_matcher_class.return_value = mock_matcher
 
         class FakeRuntimeDecision:
@@ -1060,9 +1036,7 @@ class TestTaskMappingTool:
                 self.backend_used = "none"
                 self.onvoc_id = "ONVOC_0000001" if onvoc_label else None
                 self.onvoc_label = onvoc_label
-                self.onvoc_uri = (
-                    "http://example.org/ONVOC_0000001" if onvoc_label else None
-                )
+                self.onvoc_uri = "http://example.org/ONVOC_0000001" if onvoc_label else None
                 self.score = 0.9 if onvoc_label else None
                 self.method = "tree_exact" if onvoc_label else None
 
@@ -1099,9 +1073,7 @@ class TestTaskMappingTool:
     def test_runtime_mapping_fail_open(self, mock_matcher_class):
         """Runtime errors should not break base task mapping behavior."""
         mock_matcher = Mock()
-        mock_matcher.match_candidates.return_value = [
-            {"label": "n-back", "score": 0.92}
-        ]
+        mock_matcher.match_candidates.return_value = [{"label": "n-back", "score": 0.92}]
         mock_matcher_class.return_value = mock_matcher
 
         class BrokenRuntimeMapper:
@@ -1126,18 +1098,16 @@ class TestTaskMappingTool:
         stroop = tool._normalize_task_query("Stroop incongruent > congruent")
         assert "stroop task" in [q.lower() for q in stroop["query_candidates"]]
 
-        stop_signal = tool._normalize_task_query("Stop-signal successful stop > go")
-        assert "stop signal task" in [
-            q.lower() for q in stop_signal["query_candidates"]
-        ]
+        stop_signal = tool._normalize_task_query(
+            "Stop-signal successful stop > go"
+        )
+        assert "stop signal task" in [q.lower() for q in stop_signal["query_candidates"]]
 
     @patch("brain_researcher.services.br_kg.utils.task_matcher.TaskMatcher")
     def test_contrast_mapping_uses_normalized_queries(self, mock_matcher_class):
         """Contrast normalization should drive TaskMatcher to non-generic concepts."""
         with patch.object(
-            TaskMappingTool,
-            "_load_vocab_loader_module",
-            side_effect=ImportError("no vocab"),
+            TaskMappingTool, "_load_vocab_loader_module", side_effect=ImportError("no vocab")
         ):
             mock_matcher = Mock()
 
@@ -1158,19 +1128,14 @@ class TestTaskMappingTool:
         assert "working memory" in result["data"]["concepts"]
         assert result["data"]["matched_task"] == "n-back task"
         assert result["metadata"].get("fallback") is None
-        queried = [
-            call.args[0].lower()
-            for call in mock_matcher.match_candidates.call_args_list
-        ]
+        queried = [call.args[0].lower() for call in mock_matcher.match_candidates.call_args_list]
         assert "2-back task" in queried
         assert "n-back task" in queried
 
     def test_fallback_mapping(self):
         """Test fallback mapping when TaskMatcher not available."""
         with patch.object(
-            TaskMappingTool,
-            "_load_vocab_loader_module",
-            side_effect=ImportError("no vocab"),
+            TaskMappingTool, "_load_vocab_loader_module", side_effect=ImportError("no vocab")
         ):
             with patch(
                 "brain_researcher.services.br_kg.utils.task_matcher.TaskMatcher",

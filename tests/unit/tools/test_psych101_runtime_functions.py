@@ -78,9 +78,7 @@ def test_psych101_prepare_eval_manifest_emits_task_specs(tmp_path: Path) -> None
     assert payload["benchmark_tasks"][0]["schema_version"] == "task-spec-v1"
 
 
-def test_psych101_prepare_eval_manifest_emits_fairness_audit_metadata(
-    tmp_path: Path,
-) -> None:
+def test_psych101_prepare_eval_manifest_emits_fairness_audit_metadata(tmp_path: Path) -> None:
     source = _write_trial_tsv(tmp_path / "psych101.tsv")
     ingest_out = tmp_path / "psych101_trials.csv"
     ingest_result = psych101_ingest(str(source), output_file=str(ingest_out))
@@ -114,15 +112,11 @@ def test_psych101_prepare_eval_manifest_emits_fairness_audit_metadata(
         "ethnicity_group",
     ]
     assert fairness_audit["group_audit"]["missing_group_keys"] == ["missing_col"]
-    assert fairness_audit["group_audit"]["group_counts"]["site"][
-        "participant_counts"
-    ] == {
+    assert fairness_audit["group_audit"]["group_counts"]["site"]["participant_counts"] == {
         "site_a": 2,
         "site_b": 1,
     }
-    assert fairness_audit["group_audit"]["group_counts"]["site"][
-        "underpowered_groups"
-    ] == {
+    assert fairness_audit["group_audit"]["group_counts"]["site"]["underpowered_groups"] == {
         "site_b": 1,
     }
     assert fairness_audit["sample_weight_summary"]["status"] == "resolved"
@@ -134,9 +128,7 @@ def test_psych101_prepare_eval_manifest_emits_fairness_audit_metadata(
         "site",
         "ethnicity_group",
     ]
-    assert (
-        task_metadata["fairness_audit"]["sample_weight_summary"]["status"] == "resolved"
-    )
+    assert task_metadata["fairness_audit"]["sample_weight_summary"]["status"] == "resolved"
 
 
 def test_psych101_import_eval_manifest_registers_tasks(tmp_path: Path) -> None:
@@ -168,9 +160,7 @@ def test_psych101_import_eval_manifest_registers_tasks(tmp_path: Path) -> None:
     assert Path(outputs["benchmark_import_summary"]).exists()
     assert Path(outputs["benchmark_db"]).exists()
 
-    payload = json.loads(
-        Path(outputs["benchmark_import_summary"]).read_text(encoding="utf-8")
-    )
+    payload = json.loads(Path(outputs["benchmark_import_summary"]).read_text(encoding="utf-8"))
     assert payload["dataset_id"] == "psych101-demo"
     assert payload["n_loaded_tasks"] == 2
     assert payload["import_summary"]["added"] == 2
@@ -193,12 +183,9 @@ def test_psych101_import_eval_manifest_registers_tasks(tmp_path: Path) -> None:
         ).fetchone()
         assert task_spec_row is not None
         task_spec = json.loads(task_spec_row[0])
-        assert (
-            task_spec["metadata"]["fairness_audit"]["group_audit"][
-                "requested_group_keys"
-            ]
-            == []
-        )
+        assert task_spec["metadata"]["fairness_audit"]["group_audit"][
+            "requested_group_keys"
+        ] == []
     finally:
         conn.close()
 
@@ -321,9 +308,7 @@ def test_psych101_fetch_hf_snapshot_writes_graph_ready_artifacts(
     assert Path(outputs["graph_plan"]).exists()
     assert Path(outputs["neo4j_ingest_summary"]).exists()
 
-    metadata_payload = json.loads(
-        Path(outputs["dataset_metadata"]).read_text(encoding="utf-8")
-    )
+    metadata_payload = json.loads(Path(outputs["dataset_metadata"]).read_text(encoding="utf-8"))
     assert metadata_payload["repo_id"] == "marcelbinz/Psych-101"
     assert metadata_payload["graph_dataset_metadata"]["n_participants"] == 5
     assert metadata_payload["neo4j_ingest"]["status"] == "success"
@@ -369,25 +354,19 @@ def test_centaur_prepare_task_payloads_emits_feature_pack(tmp_path: Path) -> Non
 
     task_prompt_lines = [
         line
-        for line in Path(outputs["task_prompts"])
-        .read_text(encoding="utf-8")
-        .splitlines()
+        for line in Path(outputs["task_prompts"]).read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     experiment_prompt_lines = [
         line
-        for line in Path(outputs["experiment_prompts"])
-        .read_text(encoding="utf-8")
-        .splitlines()
+        for line in Path(outputs["experiment_prompts"]).read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     assert task_prompt_lines
     assert len(experiment_prompt_lines) == 2
 
 
-def test_centaur_prepare_task_payloads_can_filter_unmapped_records(
-    tmp_path: Path,
-) -> None:
+def test_centaur_prepare_task_payloads_can_filter_unmapped_records(tmp_path: Path) -> None:
     graph_plan = {
         "dataset": {"dataset_id": "psych101-demo", "name": "Psych-101"},
         "experiments": [
@@ -487,9 +466,7 @@ def test_centaur_offline_behavior_embeddings_writes_task_feature_space(
     assert Path(outputs["experiment_embeddings"]).exists()
     assert Path(outputs["neo4j_ingest_summary"]).exists()
 
-    payload = json.loads(
-        Path(outputs["behavior_embeddings"]).read_text(encoding="utf-8")
-    )
+    payload = json.loads(Path(outputs["behavior_embeddings"]).read_text(encoding="utf-8"))
     assert payload["schema_version"] == "centaur-behavior-embeddings-v1"
     assert payload["embedding_property"] == "embedding_centaur_behavior_v1"
     assert payload["backend"] == "hash"

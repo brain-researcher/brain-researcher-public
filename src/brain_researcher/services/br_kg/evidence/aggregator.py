@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 def _get_default_connectors() -> list[EvidenceConnector]:
     """Create default connector instances."""
     from .connectors import (
-        BRKGConnector,
         DatasetConnector,
+        BRKGConnector,
         NeuroStoreConnector,
         PubMedConnector,
         ToolConnector,
@@ -154,9 +154,7 @@ async def gather_evidence(
             bundle.errors[source.value] = error
         else:
             for item in items:
-                item = item.model_copy(
-                    update={"score": _clamp_score(getattr(item, "score", None))}
-                )
+                item = item.model_copy(update={"score": _clamp_score(getattr(item, "score", None))})
                 key = _canon_key(item)
                 if key in seen:
                     continue
@@ -217,16 +215,12 @@ def _infer_sources_from_qur(qur: Any) -> list[EvidenceSource]:
     # Extract entity types
     entity_types = set()
     if hasattr(qur, "entities"):
-        entity_types = {
-            e.get("entity_type") for e in qur.entities if isinstance(e, dict)
-        }
+        entity_types = {e.get("entity_type") for e in qur.entities if isinstance(e, dict)}
 
     query_lower = qur.original_query.lower()
 
     # Dataset entities or resolved datasets
-    if "DATASET" in entity_types or (
-        hasattr(qur, "resolved_datasets") and qur.resolved_datasets
-    ):
+    if "DATASET" in entity_types or (hasattr(qur, "resolved_datasets") and qur.resolved_datasets):
         sources.append(EvidenceSource.DATASET_CATALOG)
 
     # Literature keywords
@@ -235,28 +229,12 @@ def _infer_sources_from_qur(qur: Any) -> list[EvidenceSource]:
         sources.append(EvidenceSource.PUBMED)
 
     # Tool keywords
-    tool_keywords = [
-        "tool",
-        "pipeline",
-        "software",
-        "method",
-        "analysis",
-        "fsl",
-        "spm",
-        "fmriprep",
-    ]
+    tool_keywords = ["tool", "pipeline", "software", "method", "analysis", "fsl", "spm", "fmriprep"]
     if any(kw in query_lower for kw in tool_keywords):
         sources.append(EvidenceSource.TOOL_CATALOG)
 
     # NeuroStore keywords
-    neurostore_keywords = [
-        "activation",
-        "statmap",
-        "coordinate",
-        "mni",
-        "meta-analysis",
-        "peak",
-    ]
+    neurostore_keywords = ["activation", "statmap", "coordinate", "mni", "meta-analysis", "peak"]
     if any(kw in query_lower for kw in neurostore_keywords):
         sources.append(EvidenceSource.NEUROSTORE)
 
@@ -283,9 +261,7 @@ def gather_evidence_sync(
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(
                 asyncio.run,
-                gather_evidence(
-                    query, sources=sources, limit_per_source=limit_per_source
-                ),
+                gather_evidence(query, sources=sources, limit_per_source=limit_per_source),
             )
             return future.result()
     except RuntimeError:

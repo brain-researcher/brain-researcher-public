@@ -10,26 +10,25 @@ import json
 import logging
 import time
 import uuid
-import weakref
 from collections import defaultdict, deque
-from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Set, Callable, Union, Tuple
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from dataclasses import dataclass, asdict
+import weakref
 
-import redis.asyncio as redis
 from pydantic import BaseModel
+import redis.asyncio as redis
 
-from .conflict_resolver import ConflictResolutionStrategy, ConflictResolver
-from .operational_transform import Operation, OperationalTransform, OperationType
-from .state_synchronizer import DocumentState, StateSynchronizer, SyncEvent
+from .operational_transform import OperationalTransform, Operation, OperationType
+from .conflict_resolver import ConflictResolver, ConflictResolutionStrategy
+from .state_synchronizer import StateSynchronizer, DocumentState, SyncEvent
 
 logger = logging.getLogger(__name__)
 
 
 class SessionState(str, Enum):
     """Document session states."""
-
     INITIALIZING = "initializing"
     ACTIVE = "active"
     SYNCING = "syncing"
@@ -40,7 +39,6 @@ class SessionState(str, Enum):
 
 class UserRole(str, Enum):
     """User roles in collaboration."""
-
     OWNER = "owner"
     EDITOR = "editor"
     VIEWER = "viewer"
@@ -49,7 +47,6 @@ class UserRole(str, Enum):
 
 class PermissionLevel(str, Enum):
     """Permission levels for document operations."""
-
     READ = "read"
     WRITE = "write"
     ADMIN = "admin"
@@ -59,7 +56,6 @@ class PermissionLevel(str, Enum):
 @dataclass
 class CollaborativeUser:
     """User information for collaboration sessions."""
-
     user_id: str
     username: str
     role: UserRole
@@ -76,18 +72,9 @@ class CollaborativeUser:
         if self.permissions is None:
             # Set default permissions based on role
             if self.role == UserRole.OWNER:
-                self.permissions = {
-                    PermissionLevel.READ,
-                    PermissionLevel.WRITE,
-                    PermissionLevel.ADMIN,
-                    PermissionLevel.ANNOTATE,
-                }
+                self.permissions = {PermissionLevel.READ, PermissionLevel.WRITE, PermissionLevel.ADMIN, PermissionLevel.ANNOTATE}
             elif self.role == UserRole.EDITOR:
-                self.permissions = {
-                    PermissionLevel.READ,
-                    PermissionLevel.WRITE,
-                    PermissionLevel.ANNOTATE,
-                }
+                self.permissions = {PermissionLevel.READ, PermissionLevel.WRITE, PermissionLevel.ANNOTATE}
             elif self.role == UserRole.ANNOTATOR:
                 self.permissions = {PermissionLevel.READ, PermissionLevel.ANNOTATE}
             else:  # VIEWER
@@ -97,7 +84,6 @@ class CollaborativeUser:
 @dataclass
 class DocumentSession:
     """Document collaboration session."""
-
     session_id: str
     document_id: str
     document_type: str  # text, brain_image, analysis_result, etc.
@@ -111,12 +97,10 @@ class DocumentSession:
     checkpoint_interval: int = 100
     max_operations: int = 1000
     auto_save_interval: int = 30  # seconds
-    conflict_resolution_strategy: ConflictResolutionStrategy = (
-        ConflictResolutionStrategy.LAST_WRITE_WINS
-    )
+    conflict_resolution_strategy: ConflictResolutionStrategy = ConflictResolutionStrategy.LAST_WRITE_WINS
 
     def __post_init__(self):
-        if not hasattr(self, "operation_queue") or not self.operation_queue:
+        if not hasattr(self, 'operation_queue') or not self.operation_queue:
             self.operation_queue = deque(maxlen=self.max_operations)
 
 
@@ -139,7 +123,7 @@ class CollaborationManager:
         session_timeout: int = 3600,  # 1 hour
         presence_timeout: int = 300,  # 5 minutes
         auto_save_interval: int = 30,  # seconds
-        max_concurrent_sessions: int = 100,
+        max_concurrent_sessions: int = 100
     ):
         self.redis_client = redis_client
         self.checkpoint_interval = checkpoint_interval
@@ -155,9 +139,7 @@ class CollaborationManager:
 
         # Session management
         self.active_sessions: Dict[str, DocumentSession] = {}
-        self.user_sessions: Dict[str, Set[str]] = defaultdict(
-            set
-        )  # user_id -> session_ids
+        self.user_sessions: Dict[str, Set[str]] = defaultdict(set)  # user_id -> session_ids
         self.document_sessions: Dict[str, str] = {}  # document_id -> session_id
 
         # Event handlers
@@ -177,7 +159,7 @@ class CollaborationManager:
             "operations_processed": 0,
             "conflicts_resolved": 0,
             "users_active": 0,
-            "documents_active": 0,
+            "documents_active": 0
         }
 
         logger.info("Collaboration manager initialized")
@@ -220,7 +202,7 @@ class CollaborationManager:
         document_type: str,
         owner_id: str,
         initial_state: Optional[Dict[str, Any]] = None,
-        conflict_strategy: ConflictResolutionStrategy = ConflictResolutionStrategy.LAST_WRITE_WINS,
+        conflict_strategy: ConflictResolutionStrategy = ConflictResolutionStrategy.LAST_WRITE_WINS
     ) -> str:
         """Create a new collaboration session for a document."""
 
@@ -250,7 +232,7 @@ class CollaborationManager:
             users={},
             operation_queue=deque(maxlen=1000),
             state_version=0,
-            conflict_resolution_strategy=conflict_strategy,
+            conflict_resolution_strategy=conflict_strategy
         )
 
         # Store session
@@ -264,11 +246,9 @@ class CollaborationManager:
                 version=0,
                 content=initial_state,
                 checksum=self._calculate_checksum(initial_state),
-                timestamp=now,
+                timestamp=now
             )
-            await self.state_synchronizer.initialize_document(
-                document_id, document_state
-            )
+            await self.state_synchronizer.initialize_document(document_id, document_state)
 
         # Update session state
         session.state = SessionState.ACTIVE
@@ -288,9 +268,7 @@ class CollaborationManager:
             except Exception as e:
                 logger.error(f"Session handler error: {str(e)}")
 
-        logger.info(
-            f"Created collaboration session: {session_id} for document: {document_id}"
-        )
+        logger.info(f"Created collaboration session: {session_id} for document: {document_id}")
         return session_id
 
     async def join_session(
@@ -300,7 +278,7 @@ class CollaborationManager:
         username: str,
         connection_id: str,
         role: UserRole = UserRole.EDITOR,
-        avatar_url: Optional[str] = None,
+        avatar_url: Optional[str] = None
     ) -> bool:
         """Add a user to a collaboration session."""
         if session_id not in self.active_sessions:
@@ -318,7 +296,7 @@ class CollaborationManager:
             connection_id=connection_id,
             joined_at=now,
             last_activity=now,
-            avatar_url=avatar_url,
+            avatar_url=avatar_url
         )
 
         # Add user to session
@@ -340,7 +318,11 @@ class CollaborationManager:
         logger.info(f"User {username} joined session {session_id}")
         return True
 
-    async def leave_session(self, session_id: str, user_id: str) -> bool:
+    async def leave_session(
+        self,
+        session_id: str,
+        user_id: str
+    ) -> bool:
         """Remove a user from a collaboration session."""
         if session_id not in self.active_sessions:
             return False
@@ -364,24 +346,23 @@ class CollaborationManager:
         session.updated_at = datetime.utcnow()
 
         # Update statistics
-        self.stats["users_active"] = (
-            len(set().union(*self.user_sessions.values())) if self.user_sessions else 0
-        )
+        self.stats["users_active"] = len(set().union(*self.user_sessions.values())) if self.user_sessions else 0
 
         # Notify other users
         await self._broadcast_user_event(session_id, "user_left", user)
 
         # Close session if no users remain and not owner present
         if not session.users or session.owner_id not in session.users:
-            asyncio.create_task(
-                self._schedule_session_cleanup(session_id, delay=60)
-            )  # 1 minute grace period
+            asyncio.create_task(self._schedule_session_cleanup(session_id, delay=60))  # 1 minute grace period
 
         logger.info(f"User {user.username} left session {session_id}")
         return True
 
     async def process_operation(
-        self, session_id: str, user_id: str, operation: Operation
+        self,
+        session_id: str,
+        user_id: str,
+        operation: Operation
     ) -> Tuple[bool, Optional[Operation]]:
         """
         Process a collaborative operation with operational transformation.
@@ -396,9 +377,7 @@ class CollaborationManager:
 
         # Validate user permissions
         if not await self._check_operation_permission(session, user_id, operation):
-            logger.warning(
-                f"User {user_id} lacks permission for operation in session {session_id}"
-            )
+            logger.warning(f"User {user_id} lacks permission for operation in session {session_id}")
             return False, None
 
         # Update user activity
@@ -407,9 +386,7 @@ class CollaborationManager:
 
         try:
             # Get current document state
-            current_state = await self.state_synchronizer.get_document_state(
-                session.document_id
-            )
+            current_state = await self.state_synchronizer.get_document_state(session.document_id)
             if not current_state:
                 logger.error(f"No state found for document {session.document_id}")
                 return False, None
@@ -420,9 +397,7 @@ class CollaborationManager:
             )
 
             if not transformed_op:
-                logger.warning(
-                    f"Operation transformation failed for session {session_id}"
-                )
+                logger.warning(f"Operation transformation failed for session {session_id}")
                 return False, None
 
             # Apply operation to document state
@@ -431,9 +406,7 @@ class CollaborationManager:
             )
 
             if not new_state:
-                logger.error(
-                    f"Failed to apply operation to document {session.document_id}"
-                )
+                logger.error(f"Failed to apply operation to document {session.document_id}")
                 return False, None
 
             # Add to operation queue
@@ -446,9 +419,7 @@ class CollaborationManager:
                 await self._create_checkpoint(session_id)
 
             # Broadcast operation to other users
-            await self._broadcast_operation(
-                session_id, transformed_op, exclude_user=user_id
-            )
+            await self._broadcast_operation(session_id, transformed_op, exclude_user=user_id)
 
             # Update statistics
             self.stats["operations_processed"] += 1
@@ -466,9 +437,7 @@ class CollaborationManager:
             return True, transformed_op
 
         except Exception as e:
-            logger.error(
-                f"Error processing operation in session {session_id}: {str(e)}"
-            )
+            logger.error(f"Error processing operation in session {session_id}: {str(e)}")
             return False, None
 
     async def update_user_presence(
@@ -477,7 +446,7 @@ class CollaborationManager:
         user_id: str,
         cursor_position: Optional[Dict[str, Any]] = None,
         selection: Optional[Dict[str, Any]] = None,
-        status: Optional[str] = None,
+        status: Optional[str] = None
     ) -> bool:
         """Update user presence information."""
         if session_id not in self.active_sessions:
@@ -505,12 +474,10 @@ class CollaborationManager:
             "cursor_position": user.cursor_position,
             "active_selection": user.active_selection,
             "status": user.status,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.utcnow().isoformat()
         }
 
-        await self._broadcast_presence_update(
-            session_id, presence_data, exclude_user=user_id
-        )
+        await self._broadcast_presence_update(session_id, presence_data, exclude_user=user_id)
 
         # Notify handlers
         for handler in self.presence_handlers:
@@ -532,9 +499,7 @@ class CollaborationManager:
         session = self.active_sessions[session_id]
 
         # Get current document state
-        document_state = await self.state_synchronizer.get_document_state(
-            session.document_id
-        )
+        document_state = await self.state_synchronizer.get_document_state(session.document_id)
 
         return {
             "session_id": session_id,
@@ -556,13 +521,13 @@ class CollaborationManager:
                     "active_selection": user.active_selection,
                     "status": user.status,
                     "avatar_url": user.avatar_url,
-                    "permissions": [p.value for p in user.permissions],
+                    "permissions": [p.value for p in user.permissions]
                 }
                 for uid, user in session.users.items()
             },
             "document_state": document_state.to_dict() if document_state else None,
             "operation_count": len(session.operation_queue),
-            "conflict_resolution_strategy": session.conflict_resolution_strategy.value,
+            "conflict_resolution_strategy": session.conflict_resolution_strategy.value
         }
 
     async def close_session(self, session_id: str) -> bool:
@@ -591,17 +556,13 @@ class CollaborationManager:
             del self.document_sessions[session.document_id]
 
         # Clean up empty user sessions
-        empty_users = [
-            uid for uid, sessions in self.user_sessions.items() if not sessions
-        ]
+        empty_users = [uid for uid, sessions in self.user_sessions.items() if not sessions]
         for uid in empty_users:
             del self.user_sessions[uid]
 
         # Update statistics
         self.stats["documents_active"] = len(self.active_sessions)
-        self.stats["users_active"] = (
-            len(set().union(*self.user_sessions.values())) if self.user_sessions else 0
-        )
+        self.stats["users_active"] = len(set().union(*self.user_sessions.values())) if self.user_sessions else 0
 
         # Notify handlers
         for handler in self.session_handlers:
@@ -622,7 +583,7 @@ class CollaborationManager:
         self,
         session: DocumentSession,
         operation: Operation,
-        current_state: DocumentState,
+        current_state: DocumentState
     ) -> Optional[Operation]:
         """Transform operation using operational transformation algorithm."""
         try:
@@ -645,7 +606,10 @@ class CollaborationManager:
             return None
 
     async def _check_operation_permission(
-        self, session: DocumentSession, user_id: str, operation: Operation
+        self,
+        session: DocumentSession,
+        user_id: str,
+        operation: Operation
     ) -> bool:
         """Check if user has permission to perform operation."""
         if user_id not in session.users:
@@ -659,14 +623,17 @@ class CollaborationManager:
             OperationType.DELETE: PermissionLevel.WRITE,
             OperationType.RETAIN: PermissionLevel.WRITE,
             OperationType.ANNOTATE: PermissionLevel.ANNOTATE,
-            OperationType.FORMAT: PermissionLevel.WRITE,
+            OperationType.FORMAT: PermissionLevel.WRITE
         }
 
         required_permission = permission_map.get(operation.type, PermissionLevel.WRITE)
         return required_permission in user.permissions
 
     async def _broadcast_operation(
-        self, session_id: str, operation: Operation, exclude_user: Optional[str] = None
+        self,
+        session_id: str,
+        operation: Operation,
+        exclude_user: Optional[str] = None
     ):
         """Broadcast operation to all session users except sender."""
         # This will be implemented by the WebSocket layer
@@ -674,7 +641,10 @@ class CollaborationManager:
         pass
 
     async def _broadcast_user_event(
-        self, session_id: str, event_type: str, user: CollaborativeUser
+        self,
+        session_id: str,
+        event_type: str,
+        user: CollaborativeUser
     ):
         """Broadcast user events to session participants."""
         # This will be implemented by the WebSocket layer
@@ -684,7 +654,7 @@ class CollaborationManager:
         self,
         session_id: str,
         presence_data: Dict[str, Any],
-        exclude_user: Optional[str] = None,
+        exclude_user: Optional[str] = None
     ):
         """Broadcast presence updates to session participants."""
         # This will be implemented by the WebSocket layer
@@ -700,7 +670,7 @@ class CollaborationManager:
         session_id: str,
         user_id: str,
         event_type: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: Optional[Dict[str, Any]] = None
     ):
         """Send session event to specific user."""
         # This will be implemented by the WebSocket layer
@@ -715,9 +685,7 @@ class CollaborationManager:
 
         try:
             # Get current state
-            document_state = await self.state_synchronizer.get_document_state(
-                session.document_id
-            )
+            document_state = await self.state_synchronizer.get_document_state(session.document_id)
             if not document_state:
                 return
 
@@ -730,9 +698,7 @@ class CollaborationManager:
             logger.debug(f"Created checkpoint {checkpoint_id} for session {session_id}")
 
         except Exception as e:
-            logger.error(
-                f"Failed to create checkpoint for session {session_id}: {str(e)}"
-            )
+            logger.error(f"Failed to create checkpoint for session {session_id}: {str(e)}")
 
     async def _schedule_session_cleanup(self, session_id: str, delay: int = 60):
         """Schedule session cleanup after delay."""
@@ -756,18 +722,14 @@ class CollaborationManager:
                 stale_sessions = []
                 for session_id, session in self.active_sessions.items():
                     # Check session timeout
-                    if (
-                        now - session.updated_at
-                    ).total_seconds() > self.session_timeout:
+                    if (now - session.updated_at).total_seconds() > self.session_timeout:
                         stale_sessions.append(session_id)
                         continue
 
                     # Check for inactive users
                     inactive_users = []
                     for user_id, user in session.users.items():
-                        if (
-                            now - user.last_activity
-                        ).total_seconds() > self.presence_timeout:
+                        if (now - user.last_activity).total_seconds() > self.presence_timeout:
                             inactive_users.append(user_id)
 
                     # Remove inactive users
@@ -821,8 +783,8 @@ class CollaborationManager:
                                         "user_id": user.user_id,
                                         "username": user.username,
                                         "status": user.status,
-                                        "timestamp": now.isoformat(),
-                                    },
+                                        "timestamp": now.isoformat()
+                                    }
                                 )
                         elif time_since_activity < 60:  # 1 minute
                             if user.status != "online":
@@ -833,8 +795,8 @@ class CollaborationManager:
                                         "user_id": user.user_id,
                                         "username": user.username,
                                         "status": user.status,
-                                        "timestamp": now.isoformat(),
-                                    },
+                                        "timestamp": now.isoformat()
+                                    }
                                 )
 
             except Exception as e:
@@ -843,8 +805,7 @@ class CollaborationManager:
     def _calculate_checksum(self, data: Any) -> str:
         """Calculate checksum for data integrity verification."""
         import hashlib
-
-        data_str = json.dumps(data, sort_keys=True, separators=(",", ":"))
+        data_str = json.dumps(data, sort_keys=True, separators=(',', ':'))
         return hashlib.sha256(data_str.encode()).hexdigest()[:16]
 
     # Event Handler Registration
@@ -869,23 +830,17 @@ class CollaborationManager:
 
     def get_stats(self) -> Dict[str, Any]:
         """Get collaboration manager statistics."""
-        active_users = (
-            len(set().union(*self.user_sessions.values())) if self.user_sessions else 0
-        )
+        active_users = len(set().union(*self.user_sessions.values())) if self.user_sessions else 0
 
         return {
             **self.stats,
             "active_sessions": len(self.active_sessions),
             "active_users": active_users,
-            "total_operations_queued": sum(
-                len(s.operation_queue) for s in self.active_sessions.values()
-            ),
+            "total_operations_queued": sum(len(s.operation_queue) for s in self.active_sessions.values()),
             "session_states": {
-                state.value: sum(
-                    1 for s in self.active_sessions.values() if s.state == state
-                )
+                state.value: sum(1 for s in self.active_sessions.values() if s.state == state)
                 for state in SessionState
-            },
+            }
         }
 
     def get_session_ids(self) -> List[str]:

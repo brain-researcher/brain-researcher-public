@@ -84,9 +84,7 @@ def _dedupe_and_rank_behavior_seed_tasks(
         if existing is None:
             by_id[task_id] = candidate
             continue
-        if _behavior_seed_task_quality(candidate) > _behavior_seed_task_quality(
-            existing
-        ):
+        if _behavior_seed_task_quality(candidate) > _behavior_seed_task_quality(existing):
             by_id[task_id] = candidate
 
     ranked = list(by_id.values())
@@ -267,7 +265,9 @@ def _build_behavior_retrieval_item(
         node for node in (path.get("nodes") or []) if isinstance(node, Mapping)
     ]
     path_relationships = [
-        rel for rel in (path.get("relationships") or []) if isinstance(rel, Mapping)
+        rel
+        for rel in (path.get("relationships") or [])
+        if isinstance(rel, Mapping)
     ]
     method = _classify_behavior_retrieval_method(
         path_nodes=path_nodes,
@@ -458,13 +458,7 @@ def _merge_behavior_retrieval_item(
         reverse=True,
     )
 
-    for key in (
-        "task_analysis_id",
-        "matched_task_id",
-        "matched_task_name",
-        "family_id",
-        "family_name",
-    ):
+    for key in ("task_analysis_id", "matched_task_id", "matched_task_name", "family_id", "family_name"):
         if not existing.get(key) and incoming.get(key):
             existing[key] = incoming.get(key)
     return existing
@@ -498,12 +492,7 @@ def _summarize_behavior_pack_into_items(
             continue
         start = edge.get("start")
         end = edge.get("end")
-        if (
-            not isinstance(start, str)
-            or not isinstance(end, str)
-            or not start
-            or not end
-        ):
+        if not isinstance(start, str) or not isinstance(end, str) or not start or not end:
             continue
         edge_copy = {
             "type": edge.get("type"),

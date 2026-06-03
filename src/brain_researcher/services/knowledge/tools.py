@@ -209,9 +209,7 @@ def _format_results(results: List[EvidenceResult]) -> List[Dict[str, Any]]:
     ]
 
 
-def _parse_source_types(
-    source_strs: Optional[List[str]],
-) -> Optional[List[EvidenceSourceType]]:
+def _parse_source_types(source_strs: Optional[List[str]]) -> Optional[List[EvidenceSourceType]]:
     """Parse source type strings to enums."""
     if not source_strs:
         return None
@@ -650,9 +648,9 @@ def explain(
                 "niclip_concepts": niclip_concepts,
             },
             metadata={
-                "evidence_count": (
-                    plan.evidence_bundle.total_count if plan.evidence_bundle else 0
-                ),
+                "evidence_count": plan.evidence_bundle.total_count
+                if plan.evidence_bundle
+                else 0,
             },
         )
 

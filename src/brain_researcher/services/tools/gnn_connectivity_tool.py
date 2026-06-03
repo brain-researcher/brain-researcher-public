@@ -23,41 +23,28 @@ class GNNConnectivityArgs(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    connectivity_file: Optional[str] = Field(
-        default=None, description="Connectivity matrix path"
-    )
-    timeseries_file: Optional[str] = Field(
-        default=None, description="Optional ROI time series for adjacency construction"
-    )
+    connectivity_file: Optional[str] = Field(default=None, description="Connectivity matrix path")
+    timeseries_file: Optional[str] = Field(default=None, description="Optional ROI time series for adjacency construction")
     output_dir: Optional[str] = Field(default=None, description="Directory for outputs")
     graph_type: str = Field(default="functional", description="Graph type descriptor")
     threshold: Optional[float] = Field(default=None, description="Edge threshold")
-    sparsity: Optional[float] = Field(
-        default=None, description="Target sparsity fraction"
-    )
+    sparsity: Optional[float] = Field(default=None, description="Target sparsity fraction")
     model_type: str = Field(default="gcn", description="Fallback model label")
     n_layers: int = Field(default=2, description="Layer count")
     hidden_dim: int = Field(default=32, description="Embedding dimensionality")
-    task: str = Field(
-        default="node_classification", description="Intended downstream task"
-    )
+    task: str = Field(default="node_classification", description="Intended downstream task")
     n_classes: Optional[int] = Field(default=2, description="Number of classes")
     mode: str = Field(default="train", description="Pipeline mode label")
     epochs: int = Field(default=10, description="Epochs for metadata")
     learning_rate: float = Field(default=0.01, description="Learning rate metadata")
     compute_metrics: bool = Field(default=True, description="Emit graph metrics")
-    metrics: list[str] = Field(
-        default_factory=lambda: ["degree", "clustering", "betweenness", "modularity"],
-        description="Metric list",
-    )
+    metrics: list[str] = Field(default_factory=lambda: ["degree", "clustering", "betweenness", "modularity"], description="Metric list")
     save_model: bool = Field(default=True, description="Persist model metadata")
     save_embeddings: bool = Field(default=True, description="Persist node embeddings")
     save_predictions: bool = Field(default=True, description="Persist prediction array")
     visualize: bool = Field(default=True, description="Generate visual artefacts")
     seed: int = Field(default=42, description="Random seed")
-    use_real_gnn: bool = Field(
-        default=False, description="Use real GNN backend when available"
-    )
+    use_real_gnn: bool = Field(default=False, description="Use real GNN backend when available")
 
 
 class GNNConnectivityTool(NeuroToolWrapper):
@@ -67,9 +54,7 @@ class GNNConnectivityTool(NeuroToolWrapper):
         return "gnn_connectivity"
 
     def get_tool_description(self) -> str:
-        return (
-            "Fallback GNN connectivity analytics with synthetic embeddings and metrics."
-        )
+        return "Fallback GNN connectivity analytics with synthetic embeddings and metrics."
 
     def get_args_schema(self):
         return GNNConnectivityArgs

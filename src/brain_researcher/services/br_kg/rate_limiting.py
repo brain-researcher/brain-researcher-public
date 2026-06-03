@@ -3,23 +3,21 @@ Rate limiting implementation for BR-KG API.
 Implements KG-010: Rate Limiting with token bucket algorithm.
 """
 
-import hashlib
-import json
-import logging
 import time
-from dataclasses import asdict, dataclass
+import json
+from typing import Dict, Optional, Tuple, Any
+from dataclasses import dataclass, asdict
 from enum import Enum
+import hashlib
+import logging
 from functools import wraps
-from typing import Any, Dict, Optional, Tuple
-
-from flask import Response, jsonify, request
+from flask import request, jsonify, Response
 
 logger = logging.getLogger(__name__)
 
 
 class RateLimitType(Enum):
     """Types of rate limiting."""
-
     GLOBAL = "global"  # Global rate limit for all users
     PER_USER = "per_user"  # Per authenticated user
     PER_IP = "per_ip"  # Per IP address
@@ -29,7 +27,6 @@ class RateLimitType(Enum):
 @dataclass
 class RateLimitConfig:
     """Configuration for rate limiting."""
-
     requests_per_minute: int = 60
     requests_per_hour: int = 1000
     burst_size: int = 10  # Allow burst of requests
@@ -43,7 +40,6 @@ class RateLimitConfig:
 @dataclass
 class RateLimitStatus:
     """Status of rate limit for a client."""
-
     allowed: bool
     limit: int
     remaining: int
@@ -55,7 +51,10 @@ class TokenBucket:
     """Token bucket algorithm implementation."""
 
     def __init__(
-        self, capacity: int, refill_rate: float, initial_tokens: Optional[int] = None
+        self,
+        capacity: int,
+        refill_rate: float,
+        initial_tokens: Optional[int] = None
     ):
         """
         Initialize token bucket.
@@ -83,9 +82,7 @@ class TokenBucket:
         self._refill()
 
         if self.tokens >= tokens:
-            self.tokens = max(
-                0, self.tokens - tokens
-            )  # Ensure tokens doesn't go negative
+            self.tokens = max(0, self.tokens - tokens)  # Ensure tokens doesn't go negative
             return True
         return False
 
@@ -127,7 +124,7 @@ class TokenBucket:
             "capacity": self.capacity,
             "refill_rate": self.refill_rate,
             "tokens": self.tokens,
-            "last_refill": self.last_refill,
+            "last_refill": self.last_refill
         }
 
     @classmethod
@@ -136,7 +133,7 @@ class TokenBucket:
         bucket = cls(
             capacity=data["capacity"],
             refill_rate=data["refill_rate"],
-            initial_tokens=data["tokens"],
+            initial_tokens=data["tokens"]
         )
         bucket.last_refill = data["last_refill"]
         return bucket
@@ -145,7 +142,11 @@ class TokenBucket:
 class RateLimiter:
     """Rate limiter with Redis backend."""
 
-    def __init__(self, config: Optional[RateLimitConfig] = None, redis_client=None):
+    def __init__(
+        self,
+        config: Optional[RateLimitConfig] = None,
+        redis_client=None
+    ):
         """
         Initialize rate limiter.
 
@@ -158,21 +159,16 @@ class RateLimiter:
 
         if self.redis is None:
             try:
-                import os
-
                 import redis
-
+                import os
                 redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
                 self.redis = redis.from_url(redis_url)
                 # Test connection
                 self.redis.ping()
                 logger.info(f"Connected to Redis at {redis_url}")
             except Exception as e:
-                logger.warning(
-                    f"Redis not available, using in-memory rate limiting: {e}"
-                )
+                logger.warning(f"Redis not available, using in-memory rate limiting: {e}")
                 import fakeredis
-
                 self.redis = fakeredis.FakeRedis()
 
         # In-memory fallback for non-Redis environments
@@ -182,7 +178,7 @@ class RateLimiter:
         self,
         request_obj=None,
         user_id: Optional[str] = None,
-        api_key: Optional[str] = None,
+        api_key: Optional[str] = None
     ) -> str:
         """
         Get client identifier for rate limiting.
@@ -203,9 +199,7 @@ class RateLimiter:
             return f"key:{key_hash}"
         elif request_obj:
             # Use IP address as fallback
-            ip = request_obj.environ.get(
-                "HTTP_X_FORWARDED_FOR", request_obj.remote_addr
-            )
+            ip = request_obj.environ.get('HTTP_X_FORWARDED_FOR', request_obj.remote_addr)
             return f"ip:{ip}"
         else:
             return "anonymous"
@@ -214,7 +208,11 @@ class RateLimiter:
         """Get Redis key for client and limit type."""
         return f"{self.config.redis_prefix}:{limit_type}:{client_id}"
 
-    def _get_bucket(self, client_id: str, limit_type: str = "minute") -> TokenBucket:
+    def _get_bucket(
+        self,
+        client_id: str,
+        limit_type: str = "minute"
+    ) -> TokenBucket:
         """
         Get or create token bucket for client.
 
@@ -250,14 +248,19 @@ class RateLimiter:
         return TokenBucket(capacity=capacity, refill_rate=refill_rate)
 
     def _save_bucket(
-        self, client_id: str, bucket: TokenBucket, limit_type: str = "minute"
+        self,
+        client_id: str,
+        bucket: TokenBucket,
+        limit_type: str = "minute"
     ):
         """Save token bucket to Redis."""
         redis_key = self._get_redis_key(client_id, limit_type)
 
         try:
             self.redis.setex(
-                redis_key, self.config.ttl_seconds, json.dumps(bucket.to_dict())
+                redis_key,
+                self.config.ttl_seconds,
+                json.dumps(bucket.to_dict())
             )
         except Exception as e:
             logger.warning(f"Error saving to Redis: {e}")
@@ -269,7 +272,7 @@ class RateLimiter:
         request_obj=None,
         user_id: Optional[str] = None,
         api_key: Optional[str] = None,
-        tokens: int = 1,
+        tokens: int = 1
     ) -> RateLimitStatus:
         """
         Check if request is within rate limit.
@@ -296,7 +299,7 @@ class RateLimiter:
                 limit=self.config.requests_per_minute,
                 remaining=int(minute_bucket.tokens),
                 reset_time=int(time.time() + wait_time),
-                retry_after=max(1, int(wait_time)),  # Ensure at least 1 second retry
+                retry_after=max(1, int(wait_time))  # Ensure at least 1 second retry
             )
 
         # Check hour limit
@@ -314,7 +317,7 @@ class RateLimiter:
                 limit=self.config.requests_per_hour,
                 remaining=int(hour_bucket.tokens),
                 reset_time=int(time.time() + wait_time),
-                retry_after=wait_time,
+                retry_after=wait_time
             )
 
         # Save updated buckets
@@ -326,14 +329,14 @@ class RateLimiter:
             allowed=True,
             limit=self.config.requests_per_minute,
             remaining=int(minute_bucket.tokens),
-            reset_time=int(time.time() + 60),
+            reset_time=int(time.time() + 60)
         )
 
     def reset_limit(
         self,
         client_id: Optional[str] = None,
         user_id: Optional[str] = None,
-        api_key: Optional[str] = None,
+        api_key: Optional[str] = None
     ):
         """
         Reset rate limit for a client.
@@ -362,7 +365,7 @@ class RateLimiter:
         self,
         request_obj=None,
         user_id: Optional[str] = None,
-        api_key: Optional[str] = None,
+        api_key: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Get current rate limit status without consuming tokens.
@@ -390,14 +393,14 @@ class RateLimiter:
                 "per_minute": {
                     "limit": self.config.requests_per_minute,
                     "remaining": int(minute_bucket.tokens),
-                    "reset_time": int(time.time() + 60),
+                    "reset_time": int(time.time() + 60)
                 },
                 "per_hour": {
                     "limit": self.config.requests_per_hour,
                     "remaining": int(hour_bucket.tokens),
-                    "reset_time": int(time.time() + 3600),
-                },
-            },
+                    "reset_time": int(time.time() + 3600)
+                }
+            }
         }
 
 
@@ -406,7 +409,7 @@ def rate_limit(
     requests_per_minute: Optional[int] = None,
     requests_per_hour: Optional[int] = None,
     get_user_id=None,
-    get_api_key=None,
+    get_api_key=None
 ):
     """
     Decorator for rate limiting Flask routes.
@@ -420,12 +423,11 @@ def rate_limit(
     Returns:
         Decorated function
     """
-
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             # Get or create rate limiter
-            if not hasattr(decorated_function, "_rate_limiter"):
+            if not hasattr(decorated_function, '_rate_limiter'):
                 config = RateLimitConfig()
                 if requests_per_minute:
                     config.requests_per_minute = requests_per_minute
@@ -441,29 +443,29 @@ def rate_limit(
 
             # Check rate limit
             status = limiter.check_limit(
-                request_obj=request, user_id=user_id, api_key=api_key
+                request_obj=request,
+                user_id=user_id,
+                api_key=api_key
             )
 
             # Add rate limit headers
             def add_headers(response):
-                response.headers["X-RateLimit-Limit"] = str(status.limit)
-                response.headers["X-RateLimit-Remaining"] = str(status.remaining)
-                response.headers["X-RateLimit-Reset"] = str(status.reset_time)
+                response.headers['X-RateLimit-Limit'] = str(status.limit)
+                response.headers['X-RateLimit-Remaining'] = str(status.remaining)
+                response.headers['X-RateLimit-Reset'] = str(status.reset_time)
 
                 if not status.allowed:
-                    response.headers["Retry-After"] = str(status.retry_after)
+                    response.headers['Retry-After'] = str(status.retry_after)
 
                 return response
 
             # Return 429 if rate limited
             if not status.allowed:
-                response = jsonify(
-                    {
-                        "error": "Rate limit exceeded",
-                        "retry_after": status.retry_after,
-                        "reset_time": status.reset_time,
-                    }
-                )
+                response = jsonify({
+                    "error": "Rate limit exceeded",
+                    "retry_after": status.retry_after,
+                    "reset_time": status.reset_time
+                })
                 response.status_code = 429
                 return add_headers(response)
 
@@ -473,11 +475,7 @@ def rate_limit(
             # Add headers to response
             if isinstance(result, tuple):
                 # Handle (data, status_code) return
-                response = (
-                    jsonify(result[0])
-                    if not isinstance(result[0], Response)
-                    else result[0]
-                )
+                response = jsonify(result[0]) if not isinstance(result[0], Response) else result[0]
                 response.status_code = result[1] if len(result) > 1 else 200
                 return add_headers(response)
             elif isinstance(result, Response):
@@ -487,7 +485,6 @@ def rate_limit(
                 return add_headers(response)
 
         return decorated_function
-
     return decorator
 
 
@@ -518,22 +515,24 @@ class RateLimitMiddleware:
     def before_request(self):
         """Check rate limit before request."""
         # Skip rate limiting for static files and health checks
-        if request.path.startswith("/static") or request.path == "/health":
+        if request.path.startswith('/static') or request.path == '/health':
             return
 
         # Extract user ID and API key from headers or auth
         user_id = None
-        api_key = request.headers.get("X-API-Key")
+        api_key = request.headers.get('X-API-Key')
 
         # Check for JWT token (placeholder for KG-009)
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
             # TODO: Decode JWT and extract user_id
             pass
 
         # Check rate limit
         status = self.limiter.check_limit(
-            request_obj=request, user_id=user_id, api_key=api_key
+            request_obj=request,
+            user_id=user_id,
+            api_key=api_key
         )
 
         # Store status for after_request
@@ -541,24 +540,22 @@ class RateLimitMiddleware:
 
         # Return 429 if rate limited
         if not status.allowed:
-            response = jsonify(
-                {
-                    "error": "Rate limit exceeded",
-                    "retry_after": status.retry_after,
-                    "reset_time": status.reset_time,
-                }
-            )
+            response = jsonify({
+                "error": "Rate limit exceeded",
+                "retry_after": status.retry_after,
+                "reset_time": status.reset_time
+            })
             response.status_code = 429
-            response.headers["Retry-After"] = str(status.retry_after)
+            response.headers['Retry-After'] = str(status.retry_after)
             return response
 
     def after_request(self, response):
         """Add rate limit headers after request."""
-        if hasattr(request, "rate_limit_status"):
+        if hasattr(request, 'rate_limit_status'):
             status = request.rate_limit_status
-            response.headers["X-RateLimit-Limit"] = str(status.limit)
-            response.headers["X-RateLimit-Remaining"] = str(status.remaining)
-            response.headers["X-RateLimit-Reset"] = str(status.reset_time)
+            response.headers['X-RateLimit-Limit'] = str(status.limit)
+            response.headers['X-RateLimit-Remaining'] = str(status.remaining)
+            response.headers['X-RateLimit-Reset'] = str(status.reset_time)
 
         return response
 
@@ -568,21 +565,24 @@ def create_rate_limit_endpoints(app):
     """Add rate limit management endpoints to Flask app."""
 
     # Check if endpoints already registered
-    if "get_rate_limit_status" in app.view_functions:
+    if 'get_rate_limit_status' in app.view_functions:
         return  # Already registered, skip
 
     @app.route("/api/rate-limit/status", methods=["GET"])
     def get_rate_limit_status():
         """Get current rate limit status."""
         # Get limiter from app context
-        limiter = getattr(app, "_rate_limiter", None)
+        limiter = getattr(app, '_rate_limiter', None)
         if not limiter:
             limiter = RateLimiter()
             app._rate_limiter = limiter
 
         # Get status
-        api_key = request.headers.get("X-API-Key")
-        status = limiter.get_status(request_obj=request, api_key=api_key)
+        api_key = request.headers.get('X-API-Key')
+        status = limiter.get_status(
+            request_obj=request,
+            api_key=api_key
+        )
 
         return jsonify(status)
 
@@ -599,7 +599,7 @@ def create_rate_limit_endpoints(app):
             return jsonify({"error": "client_id required"}), 400
 
         # Get limiter
-        limiter = getattr(app, "_rate_limiter", None)
+        limiter = getattr(app, '_rate_limiter', None)
         if not limiter:
             limiter = RateLimiter()
             app._rate_limiter = limiter

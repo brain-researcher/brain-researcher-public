@@ -4,9 +4,8 @@ Version: 002_add_audit_logs
 Created: 2025-08-18
 """
 
-import sqlite3
-
 from brain_researcher.services.br_kg.migrations import Migration
+import sqlite3
 
 
 class Migration_002(Migration):
@@ -16,7 +15,8 @@ class Migration_002(Migration):
 
     def __init__(self):
         super().__init__(
-            version="002_add_audit_logs", description="Add audit logging tables"
+            version="002_add_audit_logs",
+            description="Add audit logging tables"
         )
 
     def up(self, db):
@@ -30,8 +30,7 @@ class Migration_002(Migration):
 
         try:
             # Create audit_logs table for general API usage
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS audit_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -45,12 +44,10 @@ class Migration_002(Migration):
                     request_body TEXT,
                     response_size INTEGER
                 )
-            """
-            )
+            """)
 
             # Create data_changes table for tracking modifications
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS data_changes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -62,12 +59,10 @@ class Migration_002(Migration):
                     new_value TEXT,
                     change_reason TEXT
                 )
-            """
-            )
+            """)
 
             # Create query_logs table for tracking complex queries
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS query_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -78,44 +73,33 @@ class Migration_002(Migration):
                     result_count INTEGER,
                     cache_hit BOOLEAN DEFAULT FALSE
                 )
-            """
-            )
+            """)
 
             # Create indexes for efficient querying
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp
                 ON audit_logs(timestamp DESC)
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_audit_logs_user
                 ON audit_logs(user_id)
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_data_changes_entity
                 ON data_changes(entity_type, entity_id)
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_data_changes_timestamp
                 ON data_changes(timestamp DESC)
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_query_logs_user
                 ON query_logs(user_id)
-            """
-            )
+            """)
 
             conn.commit()
             print("✓ Created audit logging tables")

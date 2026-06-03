@@ -18,16 +18,16 @@ class CSPConfig {
                 websocket: ['ws://localhost:3001', 'wss://localhost:3001']
             },
             staging: {
-                app: ['staging.brain-researcher.com'],
-                api: ['api-staging.brain-researcher.com'],
-                cdn: ['cdn-staging.brain-researcher.com'],
-                websocket: ['wss://api-staging.brain-researcher.com']
+                app: ['staging.${PUBLIC_HOSTNAME}'],
+                api: ['api-staging.${PUBLIC_HOSTNAME}'],
+                cdn: ['cdn-staging.${PUBLIC_HOSTNAME}'],
+                websocket: ['wss://api-staging.${PUBLIC_HOSTNAME}']
             },
             production: {
-                app: ['brain-researcher.com', 'www.brain-researcher.com'],
-                api: ['api.brain-researcher.com'],
-                cdn: ['cdn.brain-researcher.com', '*.cloudfront.net'],
-                websocket: ['wss://api.brain-researcher.com']
+                app: ['${PUBLIC_HOSTNAME}', 'www.${PUBLIC_HOSTNAME}'],
+                api: ['api.${PUBLIC_HOSTNAME}'],
+                cdn: ['cdn.${PUBLIC_HOSTNAME}', '*.cloudfront.net'],
+                websocket: ['wss://api.${PUBLIC_HOSTNAME}']
             }
         };
     }

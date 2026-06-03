@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-
 from brain_researcher.core.utils import configure_mne_environment
 
 
@@ -90,9 +89,9 @@ def run_mne_ica(params: MNEICAParameters) -> Dict[str, Any]:
     os.environ.setdefault("NUMBA_DISABLE_CACHING", "1")
     os.environ.setdefault("MNE_HOME", str(Path(params.output_dir)))
 
-    import matplotlib
     import mne
     from scipy import signal
+    import matplotlib
 
     matplotlib.use("Agg")
 
@@ -105,9 +104,7 @@ def run_mne_ica(params: MNEICAParameters) -> Dict[str, Any]:
 
     picks = mne.pick_types(raw.info, eeg=True, meg=True, exclude="bads")
     if params.picks:
-        picks = mne.pick_channels(
-            raw.info["ch_names"], include=list(params.picks), exclude="bads"
-        )
+        picks = mne.pick_channels(raw.info["ch_names"], include=list(params.picks), exclude="bads")
 
     ica = mne.preprocessing.ICA(
         n_components=params.n_components,

@@ -5,11 +5,7 @@ from brain_researcher.services.br_kg.quality.confidence import (
 
 
 def test_support_keys_prioritize_pmid():
-    evidence = {
-        "pmid": "123",
-        "doi": "10.1000/xyz",
-        "dataset_key": "openneuro:ds000001",
-    }
+    evidence = {"pmid": "123", "doi": "10.1000/xyz", "dataset_key": "openneuro:ds000001"}
     keys = support_keys(evidence)
     assert keys == ["pmid:123"]
 

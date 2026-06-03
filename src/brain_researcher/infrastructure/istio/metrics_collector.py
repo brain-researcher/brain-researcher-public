@@ -23,9 +23,7 @@ class MigrationMetricsCollector:
         return duration
 
     def record_operation_result(self, migration_id: str, success: bool) -> None:
-        counts = self._operation_counts.setdefault(
-            migration_id, {"success": 0, "failure": 0}
-        )
+        counts = self._operation_counts.setdefault(migration_id, {"success": 0, "failure": 0})
         if success:
             counts["success"] += 1
         else:
@@ -43,19 +41,10 @@ class MigrationMetricsCollector:
 
     def get_rollback_statistics(self) -> Dict[str, Any]:
         total = len(self._rollback_events)
-        reasons = [
-            event.get("reason")
-            for event in self._rollback_events
-            if event.get("reason")
-        ]
+        reasons = [event.get("reason") for event in self._rollback_events if event.get("reason")]
         avg_time = 0.0
         if total:
-            avg_time = (
-                sum(
-                    event.get("rollback_duration", 0) for event in self._rollback_events
-                )
-                / total
-            )
+            avg_time = sum(event.get("rollback_duration", 0) for event in self._rollback_events) / total
         return {
             "total_rollbacks": total,
             "rollback_reasons": reasons,

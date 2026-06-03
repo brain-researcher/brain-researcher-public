@@ -1,5 +1,5 @@
-from brain_researcher.services.br_kg.evidence import caveats as caveats_module
 from brain_researcher.services.br_kg.search.hybrid_v1 import _detect_evidence_conflicts
+from brain_researcher.services.br_kg.evidence import caveats as caveats_module
 
 
 def test_conflict_detection_semantic():

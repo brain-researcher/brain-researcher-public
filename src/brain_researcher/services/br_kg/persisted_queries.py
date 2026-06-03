@@ -3,14 +3,13 @@ Persisted Query System for BR-KG
 Pre-defined, optimized queries for common operations.
 """
 
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
 
 
 class QueryCategory(Enum):
     """Categories of persisted queries."""
-
     TRAVERSAL = "traversal"
     SEARCH = "search"
     ANALYTICS = "analytics"
@@ -20,7 +19,6 @@ class QueryCategory(Enum):
 @dataclass
 class PersistedQuery:
     """Persisted query definition."""
-
     id: str
     name: str
     description: str
@@ -57,8 +55,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["taskId"],
+        parameters=["taskId"]
     ),
+
     "Q2_PUB_TO_COORDS": PersistedQuery(
         id="Q2_PUB_TO_COORDS",
         name="Publication to Coordinates",
@@ -82,8 +81,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["pmid"],
+        parameters=["pmid"]
     ),
+
     "Q3_CONCEPT_NETWORK": PersistedQuery(
         id="Q3_CONCEPT_NETWORK",
         name="Concept Network",
@@ -103,8 +103,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["conceptId", "depth"],
+        parameters=["conceptId", "depth"]
     ),
+
     "Q4_REGION_TASKS": PersistedQuery(
         id="Q4_REGION_TASKS",
         name="Region to Tasks",
@@ -127,8 +128,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["regionName"],
+        parameters=["regionName"]
     ),
+
     "Q5_DATASET_OVERVIEW": PersistedQuery(
         id="Q5_DATASET_OVERVIEW",
         name="Dataset Overview",
@@ -156,8 +158,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["datasetId"],
+        parameters=["datasetId"]
     ),
+
     "Q6_TASK_PUBLICATIONS": PersistedQuery(
         id="Q6_TASK_PUBLICATIONS",
         name="Task Publications",
@@ -178,8 +181,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["taskName"],
+        parameters=["taskName"]
     ),
+
     "Q7_COACTIVATION": PersistedQuery(
         id="Q7_COACTIVATION",
         name="Region Coactivation",
@@ -202,8 +206,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["regionId", "threshold"],
+        parameters=["regionId", "threshold"]
     ),
+
     "Q8_CONCEPT_HIERARCHY": PersistedQuery(
         id="Q8_CONCEPT_HIERARCHY",
         name="Concept Hierarchy",
@@ -229,8 +234,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["conceptId"],
+        parameters=["conceptId"]
     ),
+
     "Q9_META_ANALYSIS": PersistedQuery(
         id="Q9_META_ANALYSIS",
         name="Meta-Analysis Query",
@@ -254,8 +260,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["conceptName"],
+        parameters=["conceptName"]
     ),
+
     "Q10_PUBLICATION_GRAPH": PersistedQuery(
         id="Q10_PUBLICATION_GRAPH",
         name="Publication Citation Graph",
@@ -278,8 +285,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["pmid", "depth"],
+        parameters=["pmid", "depth"]
     ),
+
     "Q11_TASK_SIMILARITY": PersistedQuery(
         id="Q11_TASK_SIMILARITY",
         name="Similar Tasks",
@@ -306,8 +314,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["taskName", "limit"],
+        parameters=["taskName", "limit"]
     ),
+
     "Q12_COORDINATE_CLUSTERS": PersistedQuery(
         id="Q12_COORDINATE_CLUSTERS",
         name="Coordinate Clusters",
@@ -333,8 +342,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["taskId", "radius"],
+        parameters=["taskId", "radius"]
     ),
+
     "Q13_DATASET_SEARCH": PersistedQuery(
         id="Q13_DATASET_SEARCH",
         name="Dataset Search",
@@ -360,8 +370,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["taskName", "minSubjects", "modality"],
+        parameters=["taskName", "minSubjects", "modality"]
     ),
+
     "Q14_ONTOLOGY_PATH": PersistedQuery(
         id="Q14_ONTOLOGY_PATH",
         name="Ontology Path",
@@ -382,8 +393,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["concept1", "concept2"],
+        parameters=["concept1", "concept2"]
     ),
+
     "Q15_REGION_PARCELLATION": PersistedQuery(
         id="Q15_REGION_PARCELLATION",
         name="Region Parcellation",
@@ -407,8 +419,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["regionName", "atlas"],
+        parameters=["regionName", "atlas"]
     ),
+
     "Q16_TEMPORAL_EVOLUTION": PersistedQuery(
         id="Q16_TEMPORAL_EVOLUTION",
         name="Temporal Evolution",
@@ -430,8 +443,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["conceptName", "startYear", "endYear"],
+        parameters=["conceptName", "startYear", "endYear"]
     ),
+
     "Q17_CROSS_MODAL": PersistedQuery(
         id="Q17_CROSS_MODAL",
         name="Cross-Modal Analysis",
@@ -453,8 +467,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["taskName"],
+        parameters=["taskName"]
     ),
+
     "Q18_AUTHOR_NETWORK": PersistedQuery(
         id="Q18_AUTHOR_NETWORK",
         name="Author Collaboration Network",
@@ -476,8 +491,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["authorName", "depth"],
+        parameters=["authorName", "depth"]
     ),
+
     "Q19_EVIDENCE_LINEAGE": PersistedQuery(
         id="Q19_EVIDENCE_LINEAGE",
         name="Evidence Lineage",
@@ -503,8 +519,9 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["claimId"],
+        parameters=["claimId"]
     ),
+
     "Q20_CONFLICT_DETECTION": PersistedQuery(
         id="Q20_CONFLICT_DETECTION",
         name="Conflict Detection",
@@ -529,8 +546,8 @@ QUERIES: Dict[str, PersistedQuery] = {
             }
         }
         """,
-        parameters=["relationship"],
-    ),
+        parameters=["relationship"]
+    )
 }
 
 
@@ -563,23 +580,19 @@ class PersistedQueryExecutor:
 
         return result
 
-    def list_queries(
-        self, category: Optional[QueryCategory] = None
-    ) -> List[Dict[str, Any]]:
+    def list_queries(self, category: Optional[QueryCategory] = None) -> List[Dict[str, Any]]:
         """List available persisted queries."""
         queries = []
         for query_id, query in QUERIES.items():
             if category is None or query.category == category:
-                queries.append(
-                    {
-                        "id": query.id,
-                        "name": query.name,
-                        "description": query.description,
-                        "category": query.category.value,
-                        "parameters": query.parameters,
-                        "version": query.version,
-                    }
-                )
+                queries.append({
+                    "id": query.id,
+                    "name": query.name,
+                    "description": query.description,
+                    "category": query.category.value,
+                    "parameters": query.parameters,
+                    "version": query.version
+                })
         return queries
 
     def get_query(self, query_id: str) -> Optional[PersistedQuery]:

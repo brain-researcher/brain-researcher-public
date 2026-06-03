@@ -134,8 +134,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Smoke check BR-KG richness endpoints")
     parser.add_argument(
         "--base-url",
-        default="https://brain-researcher.com/kg",
-        help="BR-KG base URL (default: https://brain-researcher.com/kg)",
+        default="https://${PUBLIC_HOSTNAME}/kg",
+        help="BR-KG base URL (default: https://${PUBLIC_HOSTNAME}/kg)",
     )
     parser.add_argument(
         "--sample-size",

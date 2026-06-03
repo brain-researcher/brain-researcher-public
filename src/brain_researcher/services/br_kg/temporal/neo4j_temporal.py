@@ -4,19 +4,18 @@ This module provides temporal database capabilities for Neo4j, including
 time-aware nodes, relationships, and queries for tracking graph evolution.
 """
 
-import json
 import logging
-import uuid
-from dataclasses import asdict, dataclass, field
+import json
+from typing import Dict, List, Any, Optional, Tuple, Union
+from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+import uuid
 
 try:
-    from neo4j import GraphDatabase, Session, Transaction
+    from neo4j import GraphDatabase, Transaction, Session
     from neo4j.exceptions import Neo4jError
     from neo4j.time import DateTime as Neo4jDateTime
-
     NEO4J_AVAILABLE = True
 except ImportError:
     GraphDatabase = None
@@ -62,21 +61,15 @@ class TimeRange:
         """Convert to dictionary."""
         return {
             "start_time": self.start_time.isoformat() if self.start_time else None,
-            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "end_time": self.end_time.isoformat() if self.end_time else None
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TimeRange":
         """Create from dictionary."""
         return cls(
-            start_time=(
-                datetime.fromisoformat(data["start_time"])
-                if data["start_time"]
-                else None
-            ),
-            end_time=(
-                datetime.fromisoformat(data["end_time"]) if data["end_time"] else None
-            ),
+            start_time=datetime.fromisoformat(data["start_time"]) if data["start_time"] else None,
+            end_time=datetime.fromisoformat(data["end_time"]) if data["end_time"] else None
         )
 
 
@@ -107,11 +100,9 @@ class TemporalNode:
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "valid_time": self.valid_time.to_dict() if self.valid_time else None,
-            "transaction_time": (
-                self.transaction_time.to_dict() if self.transaction_time else None
-            ),
+            "transaction_time": self.transaction_time.to_dict() if self.transaction_time else None,
             "version": self.version,
-            "previous_version": self.previous_version,
+            "previous_version": self.previous_version
         }
 
     @classmethod
@@ -122,21 +113,11 @@ class TemporalNode:
             labels=data["labels"],
             properties=data.get("properties", {}),
             created_at=datetime.fromisoformat(data["created_at"]),
-            updated_at=(
-                datetime.fromisoformat(data["updated_at"])
-                if data["updated_at"]
-                else None
-            ),
-            valid_time=(
-                TimeRange.from_dict(data["valid_time"]) if data["valid_time"] else None
-            ),
-            transaction_time=(
-                TimeRange.from_dict(data["transaction_time"])
-                if data["transaction_time"]
-                else None
-            ),
+            updated_at=datetime.fromisoformat(data["updated_at"]) if data["updated_at"] else None,
+            valid_time=TimeRange.from_dict(data["valid_time"]) if data["valid_time"] else None,
+            transaction_time=TimeRange.from_dict(data["transaction_time"]) if data["transaction_time"] else None,
             version=data.get("version", 1),
-            previous_version=data.get("previous_version"),
+            previous_version=data.get("previous_version")
         )
 
 
@@ -171,11 +152,9 @@ class TemporalRelationship:
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "valid_time": self.valid_time.to_dict() if self.valid_time else None,
-            "transaction_time": (
-                self.transaction_time.to_dict() if self.transaction_time else None
-            ),
+            "transaction_time": self.transaction_time.to_dict() if self.transaction_time else None,
             "version": self.version,
-            "previous_version": self.previous_version,
+            "previous_version": self.previous_version
         }
 
     @classmethod
@@ -188,21 +167,11 @@ class TemporalRelationship:
             relationship_type=data["relationship_type"],
             properties=data.get("properties", {}),
             created_at=datetime.fromisoformat(data["created_at"]),
-            updated_at=(
-                datetime.fromisoformat(data["updated_at"])
-                if data["updated_at"]
-                else None
-            ),
-            valid_time=(
-                TimeRange.from_dict(data["valid_time"]) if data["valid_time"] else None
-            ),
-            transaction_time=(
-                TimeRange.from_dict(data["transaction_time"])
-                if data["transaction_time"]
-                else None
-            ),
+            updated_at=datetime.fromisoformat(data["updated_at"]) if data["updated_at"] else None,
+            valid_time=TimeRange.from_dict(data["valid_time"]) if data["valid_time"] else None,
+            transaction_time=TimeRange.from_dict(data["transaction_time"]) if data["transaction_time"] else None,
             version=data.get("version", 1),
-            previous_version=data.get("previous_version"),
+            previous_version=data.get("previous_version")
         )
 
 
@@ -235,13 +204,12 @@ class TemporalQuery:
             "include_history": self.include_history,
             "created_at": self.created_at.isoformat(),
             "executed_at": self.executed_at.isoformat() if self.executed_at else None,
-            "execution_time_ms": self.execution_time_ms,
+            "execution_time_ms": self.execution_time_ms
         }
 
 
 class TemporalError(Exception):
     """Temporal database related errors."""
-
     pass
 
 
@@ -254,7 +222,7 @@ class TemporalNeo4jDB:
         user: str,
         password: str,
         database: Optional[str] = None,
-        enable_temporal_constraints: bool = True,
+        enable_temporal_constraints: bool = True
     ):
         """Initialize temporal Neo4j database.
 
@@ -295,6 +263,7 @@ class TemporalNeo4jDB:
                 # Ensure temporal nodes have required temporal properties
                 "CREATE CONSTRAINT temporal_node_created_at IF NOT EXISTS FOR (n:TemporalNode) REQUIRE n.created_at IS NOT NULL",
                 "CREATE CONSTRAINT temporal_node_version IF NOT EXISTS FOR (n:TemporalNode) REQUIRE n.version IS NOT NULL",
+
                 # Ensure temporal relationships have required properties
                 "CREATE CONSTRAINT temporal_rel_created_at IF NOT EXISTS FOR ()-[r:TEMPORAL_REL]-() REQUIRE r.created_at IS NOT NULL",
                 "CREATE CONSTRAINT temporal_rel_version IF NOT EXISTS FOR ()-[r:TEMPORAL_REL]-() REQUIRE r.version IS NOT NULL",
@@ -306,6 +275,7 @@ class TemporalNeo4jDB:
                 "CREATE INDEX temporal_node_valid_time_start IF NOT EXISTS FOR (n:TemporalNode) ON (n.valid_time_start)",
                 "CREATE INDEX temporal_node_valid_time_end IF NOT EXISTS FOR (n:TemporalNode) ON (n.valid_time_end)",
                 "CREATE INDEX temporal_node_version IF NOT EXISTS FOR (n:TemporalNode) ON (n.version)",
+
                 "CREATE INDEX temporal_rel_created_at IF NOT EXISTS FOR ()-[r:TEMPORAL_REL]-() ON (r.created_at)",
                 "CREATE INDEX temporal_rel_valid_time_start IF NOT EXISTS FOR ()-[r:TEMPORAL_REL]-() ON (r.valid_time_start)",
                 "CREATE INDEX temporal_rel_valid_time_end IF NOT EXISTS FOR ()-[r:TEMPORAL_REL]-() ON (r.valid_time_end)",
@@ -327,7 +297,9 @@ class TemporalNeo4jDB:
         logger.info("Set up temporal schema")
 
     def create_temporal_node(
-        self, node: TemporalNode, transaction_time: Optional[datetime] = None
+        self,
+        node: TemporalNode,
+        transaction_time: Optional[datetime] = None
     ) -> str:
         """Create a temporal node.
 
@@ -351,7 +323,7 @@ class TemporalNeo4jDB:
             "updated_at": node.updated_at,
             "version": node.version,
             "previous_version": node.previous_version,
-            **node.properties,
+            **node.properties
         }
 
         # Add valid time properties if present
@@ -392,7 +364,7 @@ class TemporalNeo4jDB:
         node_id: str,
         properties: Dict[str, Any],
         valid_time: Optional[TimeRange] = None,
-        create_new_version: bool = True,
+        create_new_version: bool = True
     ) -> TemporalNode:
         """Update a temporal node.
 
@@ -431,14 +403,11 @@ class TemporalNeo4jDB:
                 SET n.transaction_time_end = $current_time
                 """
 
-                session.run(
-                    close_query,
-                    {
-                        "node_id": node_id,
-                        "version": current_version,
-                        "current_time": current_time,
-                    },
-                )
+                session.run(close_query, {
+                    "node_id": node_id,
+                    "version": current_version,
+                    "current_time": current_time
+                })
 
                 # Create new version
                 new_props = dict(current_node)
@@ -472,9 +441,7 @@ class TemporalNeo4jDB:
 
                 if new_record:
                     new_node = new_record["n"]
-                    logger.info(
-                        f"Created new version {new_props['version']} of node {node_id}"
-                    )
+                    logger.info(f"Created new version {new_props['version']} of node {node_id}")
 
                     # Convert to TemporalNode
                     return self._neo4j_node_to_temporal(new_node)
@@ -490,14 +457,11 @@ class TemporalNeo4jDB:
                 RETURN n
                 """
 
-                result = session.run(
-                    update_query,
-                    {
-                        "node_id": node_id,
-                        "properties": properties,
-                        "current_time": current_time,
-                    },
-                )
+                result = session.run(update_query, {
+                    "node_id": node_id,
+                    "properties": properties,
+                    "current_time": current_time
+                })
 
                 record = result.single()
                 if record:
@@ -509,7 +473,7 @@ class TemporalNeo4jDB:
     def create_temporal_relationship(
         self,
         relationship: TemporalRelationship,
-        transaction_time: Optional[datetime] = None,
+        transaction_time: Optional[datetime] = None
     ) -> str:
         """Create a temporal relationship.
 
@@ -533,7 +497,7 @@ class TemporalNeo4jDB:
             "updated_at": relationship.updated_at,
             "version": relationship.version,
             "previous_version": relationship.previous_version,
-            **relationship.properties,
+            **relationship.properties
         }
 
         # Add temporal properties
@@ -545,13 +509,9 @@ class TemporalNeo4jDB:
 
         if relationship.transaction_time:
             if relationship.transaction_time.start_time:
-                rel_props["transaction_time_start"] = (
-                    relationship.transaction_time.start_time
-                )
+                rel_props["transaction_time_start"] = relationship.transaction_time.start_time
             if relationship.transaction_time.end_time:
-                rel_props["transaction_time_end"] = (
-                    relationship.transaction_time.end_time
-                )
+                rel_props["transaction_time_end"] = relationship.transaction_time.end_time
 
         with self.driver.session(database=self.database) as session:
             query = """
@@ -563,21 +523,16 @@ class TemporalNeo4jDB:
             RETURN r.id as relationship_id
             """
 
-            result = session.run(
-                query,
-                {
-                    "start_id": relationship.start_node_id,
-                    "end_id": relationship.end_node_id,
-                    "rel_type": relationship.relationship_type,
-                    "props": rel_props,
-                },
-            )
+            result = session.run(query, {
+                "start_id": relationship.start_node_id,
+                "end_id": relationship.end_node_id,
+                "rel_type": relationship.relationship_type,
+                "props": rel_props
+            })
 
             record = result.single()
             if record:
-                logger.info(
-                    f"Created temporal relationship {record['relationship_id']}"
-                )
+                logger.info(f"Created temporal relationship {record['relationship_id']}")
                 return record["relationship_id"]
             else:
                 raise TemporalError("Failed to create temporal relationship")
@@ -588,7 +543,7 @@ class TemporalNeo4jDB:
         properties: Optional[Dict[str, Any]] = None,
         as_of_time: Optional[datetime] = None,
         time_range: Optional[TimeRange] = None,
-        include_history: bool = False,
+        include_history: bool = False
     ) -> List[TemporalNode]:
         """Query temporal nodes with time constraints.
 
@@ -619,25 +574,21 @@ class TemporalNeo4jDB:
 
         # Add temporal filters
         if as_of_time:
-            where_conditions.extend(
-                [
-                    "n.transaction_time_start <= $as_of_time",
-                    "(n.transaction_time_end IS NULL OR n.transaction_time_end > $as_of_time)",
-                ]
-            )
+            where_conditions.extend([
+                "n.transaction_time_start <= $as_of_time",
+                "(n.transaction_time_end IS NULL OR n.transaction_time_end > $as_of_time)"
+            ])
             params["as_of_time"] = as_of_time
 
             if not include_history:
                 # Only get latest version as of the specified time
-                where_conditions.append(
-                    """
+                where_conditions.append("""
                 NOT EXISTS {
                     MATCH (newer:TemporalNode {id: n.id})
                     WHERE newer.version > n.version
                     AND newer.transaction_time_start <= $as_of_time
                 }
-                """
-                )
+                """)
 
         elif time_range:
             if time_range.start_time:
@@ -687,7 +638,7 @@ class TemporalNeo4jDB:
         end_node_id: Optional[str] = None,
         as_of_time: Optional[datetime] = None,
         time_range: Optional[TimeRange] = None,
-        include_history: bool = False,
+        include_history: bool = False
     ) -> List[TemporalRelationship]:
         """Query temporal relationships with time constraints.
 
@@ -721,12 +672,10 @@ class TemporalNeo4jDB:
 
         # Add temporal filters
         if as_of_time:
-            where_conditions.extend(
-                [
-                    "r.transaction_time_start <= $as_of_time",
-                    "(r.transaction_time_end IS NULL OR r.transaction_time_end > $as_of_time)",
-                ]
-            )
+            where_conditions.extend([
+                "r.transaction_time_start <= $as_of_time",
+                "(r.transaction_time_end IS NULL OR r.transaction_time_end > $as_of_time)"
+            ])
             params["as_of_time"] = as_of_time
 
         elif time_range:
@@ -757,7 +706,9 @@ class TemporalNeo4jDB:
 
             for record in result:
                 temporal_rel = self._neo4j_rel_to_temporal(
-                    record["r"], record["start_id"], record["end_id"]
+                    record["r"],
+                    record["start_id"],
+                    record["end_id"]
                 )
 
                 # If not including history, only take first (latest) version
@@ -771,9 +722,7 @@ class TemporalNeo4jDB:
             logger.info(f"Found {len(relationships)} temporal relationships")
             return relationships
 
-    def execute_temporal_query(
-        self, temporal_query: TemporalQuery
-    ) -> List[Dict[str, Any]]:
+    def execute_temporal_query(self, temporal_query: TemporalQuery) -> List[Dict[str, Any]]:
         """Execute a temporal query.
 
         Args:
@@ -789,7 +738,7 @@ class TemporalNeo4jDB:
             temporal_query.cypher,
             temporal_query.as_of_time,
             temporal_query.time_range,
-            temporal_query.include_history,
+            temporal_query.include_history
         )
 
         # Merge parameters
@@ -811,13 +760,9 @@ class TemporalNeo4jDB:
 
             # Update query metadata
             temporal_query.executed_at = datetime.now()
-            temporal_query.execution_time_ms = (
-                temporal_query.executed_at - start_time
-            ).total_seconds() * 1000
+            temporal_query.execution_time_ms = (temporal_query.executed_at - start_time).total_seconds() * 1000
 
-            logger.info(
-                f"Executed temporal query {temporal_query.query_id} in {temporal_query.execution_time_ms:.2f}ms"
-            )
+            logger.info(f"Executed temporal query {temporal_query.query_id} in {temporal_query.execution_time_ms:.2f}ms")
             return records
 
     def _enhance_cypher_with_temporal_constraints(
@@ -825,7 +770,7 @@ class TemporalNeo4jDB:
         cypher: str,
         as_of_time: Optional[datetime],
         time_range: Optional[TimeRange],
-        include_history: bool,
+        include_history: bool
     ) -> str:
         """Enhance Cypher query with temporal constraints."""
         # This is a simplified implementation
@@ -840,31 +785,21 @@ class TemporalNeo4jDB:
                 AND n.transaction_time_start <= $_temporal_as_of_time
                 AND (n.transaction_time_end IS NULL OR n.transaction_time_end > $_temporal_as_of_time)
                 """
-                enhanced = enhanced.replace(
-                    "WHERE", f"WHERE {temporal_constraint.strip()} AND", 1
-                )
+                enhanced = enhanced.replace("WHERE", f"WHERE {temporal_constraint.strip()} AND", 1)
 
             elif time_range:
                 constraints = []
                 if time_range.start_time:
-                    constraints.append(
-                        "n.transaction_time_start >= $_temporal_time_start"
-                    )
+                    constraints.append("n.transaction_time_start >= $_temporal_time_start")
                 if time_range.end_time:
-                    constraints.append(
-                        "n.transaction_time_start <= $_temporal_time_end"
-                    )
+                    constraints.append("n.transaction_time_start <= $_temporal_time_end")
 
                 if constraints:
                     temporal_constraint = " AND ".join(constraints)
-                    enhanced = enhanced.replace(
-                        "WHERE", f"WHERE {temporal_constraint} AND", 1
-                    )
+                    enhanced = enhanced.replace("WHERE", f"WHERE {temporal_constraint} AND", 1)
 
             elif not include_history:
-                enhanced = enhanced.replace(
-                    "WHERE", "WHERE n.transaction_time_end IS NULL AND", 1
-                )
+                enhanced = enhanced.replace("WHERE", "WHERE n.transaction_time_end IS NULL AND", 1)
 
         return enhanced
 
@@ -909,12 +844,10 @@ class TemporalNeo4jDB:
             valid_time=valid_time,
             transaction_time=transaction_time,
             version=version,
-            previous_version=previous_version,
+            previous_version=previous_version
         )
 
-    def _neo4j_rel_to_temporal(
-        self, neo4j_rel, start_id: str, end_id: str
-    ) -> TemporalRelationship:
+    def _neo4j_rel_to_temporal(self, neo4j_rel, start_id: str, end_id: str) -> TemporalRelationship:
         """Convert Neo4j relationship to TemporalRelationship."""
         props = dict(neo4j_rel)
 
@@ -955,7 +888,7 @@ class TemporalNeo4jDB:
             valid_time=valid_time,
             transaction_time=transaction_time,
             version=version,
-            previous_version=previous_version,
+            previous_version=previous_version
         )
 
     def get_node_history(self, node_id: str) -> List[TemporalNode]:
@@ -968,12 +901,11 @@ class TemporalNeo4jDB:
             List of all versions of the node
         """
         return self.query_temporal_nodes(
-            properties={"id": node_id}, include_history=True
+            properties={"id": node_id},
+            include_history=True
         )
 
-    def get_relationship_history(
-        self, relationship_id: str
-    ) -> List[TemporalRelationship]:
+    def get_relationship_history(self, relationship_id: str) -> List[TemporalRelationship]:
         """Get complete history of a relationship.
 
         Args:
@@ -995,7 +927,9 @@ class TemporalNeo4jDB:
             relationships = []
             for record in result:
                 temporal_rel = self._neo4j_rel_to_temporal(
-                    record["r"], record["start_id"], record["end_id"]
+                    record["r"],
+                    record["start_id"],
+                    record["end_id"]
                 )
                 relationships.append(temporal_rel)
 
@@ -1026,9 +960,7 @@ class TemporalNeo4jDB:
             """
 
             version_result = session.run(version_query)
-            version_distribution = {
-                record["version"]: record["count"] for record in version_result
-            }
+            version_distribution = {record["version"]: record["count"] for record in version_result}
 
             # Get temporal range
             range_query = """
@@ -1052,5 +984,5 @@ class TemporalNeo4jDB:
                 "earliest_created": temporal_range["earliest_created"],
                 "latest_created": temporal_range["latest_created"],
                 "earliest_transaction": temporal_range["earliest_transaction"],
-                "latest_transaction": temporal_range["latest_transaction"],
+                "latest_transaction": temporal_range["latest_transaction"]
             }

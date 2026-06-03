@@ -1,19 +1,18 @@
 """Training pipeline for RL optimization in neuroimaging agent."""
 
-import json
-import logging
-import os
-from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
-
 import numpy as np
+import logging
+from typing import Dict, List, Optional, Tuple, Any, Union
+from datetime import datetime, timedelta
+from dataclasses import dataclass, asdict
+from enum import Enum
+import json
+import os
 
-from ...feedback.reward_tracker import RewardTracker
-from .cql_optimizer import CQLOptimizer
 from .iql_optimizer import IQLOptimizer, OfflineDataset
+from .cql_optimizer import CQLOptimizer
 from .reward_model import NeuroimagingRewardModel, RewardMetrics
+from ...feedback.reward_tracker import RewardTracker
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +74,7 @@ class RLTrainingPipeline:
         self,
         config: TrainingConfig,
         reward_tracker: RewardTracker,
-        reward_model: Optional[NeuroimagingRewardModel] = None,
+        reward_model: Optional[NeuroimagingRewardModel] = None
     ):
         self.config = config
         self.reward_tracker = reward_tracker
@@ -92,7 +91,7 @@ class RLTrainingPipeline:
                 expectile=config.iql_expectile,
                 temperature=config.iql_temperature,
                 learning_rate=config.learning_rate,
-                discount=config.discount,
+                discount=config.discount
             )
 
         if config.mode in [TrainingMode.CQL, TrainingMode.BOTH]:
@@ -103,13 +102,13 @@ class RLTrainingPipeline:
                 learning_rate=config.learning_rate,
                 discount=config.discount,
                 tau=config.cql_tau,
-                use_ensemble=config.use_ensemble,
+                use_ensemble=config.use_ensemble
             )
 
         # Training state
         self.training_history = []
         self.current_dataset = OfflineDataset()
-        self.best_performance = float("-inf")
+        self.best_performance = float('-inf')
         self.episodes_trained = 0
 
         # Create checkpoint directory
@@ -121,31 +120,25 @@ class RLTrainingPipeline:
         self,
         min_age_hours: int = 0,
         max_age_hours: int = 168,  # 1 week
-        balance_actions: bool = True,
+        balance_actions: bool = True
     ) -> int:
         """Update dataset with recent reward tracker data."""
         logger.info("Updating training dataset from reward tracker...")
 
         # Get training data from reward tracker
-        states, actions, rewards, next_states, dones, weights = (
-            self.reward_tracker.get_training_data(
-                batch_size=self.config.max_dataset_size,
-                max_age_hours=max_age_hours,
-                balance_actions=balance_actions,
-            )
+        states, actions, rewards, next_states, dones, weights = self.reward_tracker.get_training_data(
+            batch_size=self.config.max_dataset_size,
+            max_age_hours=max_age_hours,
+            balance_actions=balance_actions
         )
 
         if len(states) < self.config.min_dataset_size:
-            logger.warning(
-                f"Insufficient training data: {len(states)} < {self.config.min_dataset_size}"
-            )
+            logger.warning(f"Insufficient training data: {len(states)} < {self.config.min_dataset_size}")
             return 0
 
         # Create new dataset
         self.current_dataset = OfflineDataset()
-        self.current_dataset.add_batch(
-            states, actions, rewards, next_states, dones, weights
-        )
+        self.current_dataset.add_batch(states, actions, rewards, next_states, dones, weights)
 
         # Update reward model baselines
         recent_performance = self._get_recent_performance_data()
@@ -171,14 +164,12 @@ class RLTrainingPipeline:
                 dataset=self.current_dataset,
                 epochs=1,  # Single epoch
                 batch_size=self.config.batch_size,
-                validation_split=self.config.validation_split,
+                validation_split=self.config.validation_split
             )
             results["iql"] = {
                 "q_loss": iql_stats["q_losses"][-1] if iql_stats["q_losses"] else 0,
                 "v_loss": iql_stats["v_losses"][-1] if iql_stats["v_losses"] else 0,
-                "policy_loss": (
-                    iql_stats["policy_losses"][-1] if iql_stats["policy_losses"] else 0
-                ),
+                "policy_loss": iql_stats["policy_losses"][-1] if iql_stats["policy_losses"] else 0
             }
 
         # Train CQL if enabled
@@ -188,16 +179,12 @@ class RLTrainingPipeline:
                 dataset=self.current_dataset,
                 epochs=1,  # Single epoch
                 batch_size=self.config.batch_size,
-                validation_split=self.config.validation_split,
+                validation_split=self.config.validation_split
             )
             results["cql"] = {
                 "q_loss": cql_stats["q_losses"][-1] if cql_stats["q_losses"] else 0,
-                "cql_penalty": (
-                    cql_stats["cql_penalties"][-1] if cql_stats["cql_penalties"] else 0
-                ),
-                "policy_loss": (
-                    cql_stats["policy_losses"][-1] if cql_stats["policy_losses"] else 0
-                ),
+                "cql_penalty": cql_stats["cql_penalties"][-1] if cql_stats["cql_penalties"] else 0,
+                "policy_loss": cql_stats["policy_losses"][-1] if cql_stats["policy_losses"] else 0
             }
 
         training_time = (datetime.utcnow() - start_time).total_seconds()
@@ -207,52 +194,40 @@ class RLTrainingPipeline:
             "episode": self.episodes_trained,
             "dataset_size": len(self.current_dataset),
             "training_time": training_time,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.utcnow().isoformat()
         }
 
-        logger.info(
-            f"Completed training epoch {self.episodes_trained} in {training_time:.2f}s"
-        )
+        logger.info(f"Completed training epoch {self.episodes_trained} in {training_time:.2f}s")
         return results
 
     def evaluate_models(
         self,
         test_states: Optional[np.ndarray] = None,
         test_actions: Optional[np.ndarray] = None,
-        test_rewards: Optional[np.ndarray] = None,
+        test_rewards: Optional[np.ndarray] = None
     ) -> Dict[str, Dict[str, float]]:
         """Evaluate trained models."""
         if test_states is None:
             # Use validation split from current dataset
             val_size = int(len(self.current_dataset) * self.config.validation_split)
-            test_states, test_actions, test_rewards, _, _, _ = (
-                self.current_dataset.sample_batch(val_size)
-            )
+            test_states, test_actions, test_rewards, _, _, _ = self.current_dataset.sample_batch(val_size)
 
         results = {}
 
         # Evaluate IQL
         if self.iql_optimizer:
-            iql_performance = self.iql_optimizer.evaluate_policy(
-                test_states, test_actions, test_rewards
-            )
+            iql_performance = self.iql_optimizer.evaluate_policy(test_states, test_actions, test_rewards)
             results["iql"] = iql_performance
-            logger.info(
-                f"IQL Evaluation - Accuracy: {iql_performance['action_accuracy']:.3f}, "
-                f"Return: {iql_performance['average_return']:.3f}"
-            )
+            logger.info(f"IQL Evaluation - Accuracy: {iql_performance['action_accuracy']:.3f}, "
+                       f"Return: {iql_performance['average_return']:.3f}")
 
         # Evaluate CQL
         if self.cql_optimizer:
-            cql_performance = self.cql_optimizer.evaluate_policy(
-                test_states, test_actions, test_rewards
-            )
+            cql_performance = self.cql_optimizer.evaluate_policy(test_states, test_actions, test_rewards)
             results["cql"] = cql_performance
-            logger.info(
-                f"CQL Evaluation - Accuracy: {cql_performance['action_accuracy']:.3f}, "
-                f"Return: {cql_performance['average_return']:.3f}, "
-                f"Conservative Penalty: {cql_performance['conservative_penalty']:.3f}"
-            )
+            logger.info(f"CQL Evaluation - Accuracy: {cql_performance['action_accuracy']:.3f}, "
+                       f"Return: {cql_performance['average_return']:.3f}, "
+                       f"Conservative Penalty: {cql_performance['conservative_penalty']:.3f}")
 
         return results
 
@@ -260,7 +235,7 @@ class RLTrainingPipeline:
         self,
         max_epochs: Optional[int] = None,
         early_stopping_patience: int = 20,
-        performance_threshold: float = 0.8,
+        performance_threshold: float = 0.8
     ) -> List[TrainingMetrics]:
         """Run the complete training loop."""
         max_epochs = max_epochs or self.config.epochs
@@ -296,9 +271,7 @@ class RLTrainingPipeline:
 
                     # Save best models
                     self.save_models(f"best_epoch_{epoch}")
-                    logger.info(
-                        f"New best performance: {current_performance:.3f} at epoch {epoch}"
-                    )
+                    logger.info(f"New best performance: {current_performance:.3f} at epoch {epoch}")
                 else:
                     early_stopping_counter += 1
 
@@ -309,7 +282,7 @@ class RLTrainingPipeline:
                 train_loss=self._extract_train_loss(train_results),
                 eval_performance=eval_results,
                 dataset_size=len(self.current_dataset),
-                training_time=train_results.get("metadata", {}).get("training_time", 0),
+                training_time=train_results.get("metadata", {}).get("training_time", 0)
             )
 
             training_metrics.append(metrics)
@@ -322,25 +295,22 @@ class RLTrainingPipeline:
 
             # Early stopping
             if early_stopping_counter >= early_stopping_patience:
-                logger.info(
-                    f"Early stopping at epoch {epoch} (no improvement for {early_stopping_patience} epochs)"
-                )
+                logger.info(f"Early stopping at epoch {epoch} (no improvement for {early_stopping_patience} epochs)")
                 break
 
             # Performance threshold check
             if self.best_performance >= performance_threshold:
-                logger.info(
-                    f"Reached performance threshold {performance_threshold} at epoch {epoch}"
-                )
+                logger.info(f"Reached performance threshold {performance_threshold} at epoch {epoch}")
                 break
 
-        logger.info(
-            f"Training completed. Best performance: {self.best_performance:.3f}"
-        )
+        logger.info(f"Training completed. Best performance: {self.best_performance:.3f}")
         return training_metrics
 
     def select_action(
-        self, state: np.ndarray, algorithm: str = "auto", deterministic: bool = False
+        self,
+        state: np.ndarray,
+        algorithm: str = "auto",
+        deterministic: bool = False
     ) -> Tuple[int, Dict[str, Any]]:
         """Select action using trained models.
 
@@ -397,10 +367,10 @@ class RLTrainingPipeline:
             "training_history": [asdict(m) for m in self.training_history],
             "best_performance": self.best_performance,
             "episodes_trained": self.episodes_trained,
-            "dataset_stats": self.current_dataset.get_statistics(),
+            "dataset_stats": self.current_dataset.get_statistics()
         }
 
-        with open(f"{save_path}_metadata.json", "w") as f:
+        with open(f"{save_path}_metadata.json", 'w') as f:
             json.dump(metadata, f, indent=2, default=str)
 
         logger.info(f"Saved models and metadata to {save_path}")
@@ -409,7 +379,7 @@ class RLTrainingPipeline:
     def load_models(self, save_path: str) -> None:
         """Load trained models and metadata."""
         # Load metadata
-        with open(f"{save_path}_metadata.json", "r") as f:
+        with open(f"{save_path}_metadata.json", 'r') as f:
             metadata = json.load(f)
 
         self.best_performance = metadata["best_performance"]
@@ -437,11 +407,7 @@ class RLTrainingPipeline:
         if not self.training_history:
             return {"message": "No training history available"}
 
-        recent_metrics = (
-            self.training_history[-10:]
-            if len(self.training_history) >= 10
-            else self.training_history
-        )
+        recent_metrics = self.training_history[-10:] if len(self.training_history) >= 10 else self.training_history
 
         summary = {
             "total_epochs": len(self.training_history),
@@ -450,7 +416,7 @@ class RLTrainingPipeline:
             "recent_avg_loss": np.mean([m.train_loss for m in recent_metrics]),
             "training_time_total": sum(m.training_time for m in self.training_history),
             "algorithms_enabled": [],
-            "dataset_statistics": self.current_dataset.get_statistics(),
+            "dataset_statistics": self.current_dataset.get_statistics()
         }
 
         if self.iql_optimizer:
@@ -463,19 +429,14 @@ class RLTrainingPipeline:
         if len(self.training_history) >= 5:
             recent_performances = [
                 self._calculate_overall_performance(m.eval_performance)
-                for m in self.training_history[-5:]
-                if m.eval_performance
+                for m in self.training_history[-5:] if m.eval_performance
             ]
 
             if recent_performances:
                 summary["recent_performance_trend"] = {
                     "mean": float(np.mean(recent_performances)),
                     "std": float(np.std(recent_performances)),
-                    "improving": (
-                        recent_performances[-1] > recent_performances[0]
-                        if len(recent_performances) > 1
-                        else False
-                    ),
+                    "improving": recent_performances[-1] > recent_performances[0] if len(recent_performances) > 1 else False
                 }
 
         return summary
@@ -484,13 +445,13 @@ class RLTrainingPipeline:
         self,
         param_ranges: Dict[str, Tuple[float, float]],
         num_trials: int = 20,
-        trial_epochs: int = 10,
+        trial_epochs: int = 10
     ) -> Dict[str, Any]:
         """Optimize hyperparameters using random search."""
         logger.info(f"Starting hyperparameter optimization with {num_trials} trials")
 
         best_params = {}
-        best_score = float("-inf")
+        best_score = float('-inf')
         trial_results = []
 
         original_config = asdict(self.config)
@@ -529,16 +490,16 @@ class RLTrainingPipeline:
             # Calculate trial score
             trial_score = np.mean(trial_metrics) if trial_metrics else 0
 
-            trial_results.append(
-                {"trial": trial, "params": trial_params.copy(), "score": trial_score}
-            )
+            trial_results.append({
+                "trial": trial,
+                "params": trial_params.copy(),
+                "score": trial_score
+            })
 
             if trial_score > best_score:
                 best_score = trial_score
                 best_params = trial_params.copy()
-                logger.info(
-                    f"New best hyperparameters (score: {best_score:.3f}): {best_params}"
-                )
+                logger.info(f"New best hyperparameters (score: {best_score:.3f}): {best_params}")
 
         # Restore original config and apply best parameters
         for param_name, value in original_config.items():
@@ -551,17 +512,13 @@ class RLTrainingPipeline:
 
         self._recreate_optimizers()
 
-        logger.info(
-            f"Hyperparameter optimization completed. Best score: {best_score:.3f}"
-        )
+        logger.info(f"Hyperparameter optimization completed. Best score: {best_score:.3f}")
 
         return {
             "best_params": best_params,
             "best_score": best_score,
             "all_trials": trial_results,
-            "improvement": (
-                best_score - trial_results[0]["score"] if trial_results else 0
-            ),
+            "improvement": best_score - trial_results[0]["score"] if trial_results else 0
         }
 
     # Private methods
@@ -575,7 +532,7 @@ class RLTrainingPipeline:
                 expectile=self.config.iql_expectile,
                 temperature=self.config.iql_temperature,
                 learning_rate=self.config.learning_rate,
-                discount=self.config.discount,
+                discount=self.config.discount
             )
 
         if self.config.mode in [TrainingMode.CQL, TrainingMode.BOTH]:
@@ -586,7 +543,7 @@ class RLTrainingPipeline:
                 learning_rate=self.config.learning_rate,
                 discount=self.config.discount,
                 tau=self.config.cql_tau,
-                use_ensemble=self.config.use_ensemble,
+                use_ensemble=self.config.use_ensemble
             )
 
     def _get_recent_performance_data(self) -> List[Dict]:
@@ -595,9 +552,7 @@ class RLTrainingPipeline:
         # For now, return empty list
         return []
 
-    def _calculate_overall_performance(
-        self, eval_results: Dict[str, Dict[str, float]]
-    ) -> float:
+    def _calculate_overall_performance(self, eval_results: Dict[str, Dict[str, float]]) -> float:
         """Calculate overall performance score from evaluation results."""
         if not eval_results:
             return 0.0
@@ -630,9 +585,7 @@ class RLTrainingPipeline:
             return "iql" if self.iql_optimizer else "cql"
 
         # Look at recent evaluation results
-        recent_evals = [
-            m.eval_performance for m in self.training_history[-5:] if m.eval_performance
-        ]
+        recent_evals = [m.eval_performance for m in self.training_history[-5:] if m.eval_performance]
 
         if not recent_evals:
             return "iql" if self.iql_optimizer else "cql"

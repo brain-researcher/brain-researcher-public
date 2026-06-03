@@ -40,14 +40,9 @@ _USER_BUNDLE_FILE_SPECS: dict[str, tuple[str, str]] = {
     "user_environment_yml": ("environment.yml", "environment.yml"),
     "user_docker_compose_yml": ("docker-compose.yml", "docker-compose.yml"),
     "user_env_example": (".env.example", ".env.example"),
-    "user_quickstart_md": (
-        "docs/getting-started/quickstart.md",
-        "quickstart.md",
-    ),
-    "user_installation_md": (
-        "docs/getting-started/installation.md",
-        "installation.md",
-    ),
+    "user_docs_index_md": ("docs/index.md", "docs_index.md"),
+    "user_mcp_md": ("docs/mcp.md", "mcp.md"),
+    "user_operations_md": ("docs/OPERATIONS.md", "operations.md"),
 }
 
 

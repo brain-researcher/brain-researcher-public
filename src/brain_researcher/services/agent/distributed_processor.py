@@ -6,17 +6,16 @@ Implements distributed execution across multiple nodes for large-scale processin
 import asyncio
 import logging
 import os
-import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Callable, Union
+import time
 
 logger = logging.getLogger(__name__)
 
 # Dynamic imports for optional dependencies
 try:
     import ray
-
     RAY_AVAILABLE = True
 except ImportError:
     RAY_AVAILABLE = False
@@ -26,7 +25,6 @@ try:
     import dask
     import dask.distributed
     from dask.distributed import Client, as_completed
-
     DASK_AVAILABLE = True
 except ImportError:
     DASK_AVAILABLE = False
@@ -35,7 +33,6 @@ except ImportError:
 
 class DistributedBackend(Enum):
     """Available distributed processing backends."""
-
     RAY = "ray"
     DASK = "dask"
     LOCAL = "local"  # Fallback
@@ -44,7 +41,6 @@ class DistributedBackend(Enum):
 @dataclass
 class DistributedConfig:
     """Configuration for distributed processing."""
-
     backend: DistributedBackend = DistributedBackend.LOCAL
     num_workers: int = 4
     memory_per_worker: str = "4GB"
@@ -73,7 +69,7 @@ class DistributedProcessor:
             "completed_tasks": 0,
             "failed_tasks": 0,
             "total_time": 0.0,
-            "worker_utilization": {},
+            "worker_utilization": {}
         }
 
     def _select_backend(self) -> DistributedBackend:
@@ -109,11 +105,9 @@ class DistributedProcessor:
             ray.init(
                 num_cpus=self.config.num_workers,
                 dashboard_port=self.config.dashboard_port,
-                ignore_reinit_error=True,
+                ignore_reinit_error=True
             )
-            logger.info(
-                f"Started local Ray cluster with {self.config.num_workers} workers"
-            )
+            logger.info(f"Started local Ray cluster with {self.config.num_workers} workers")
 
         # Get cluster resources
         resources = ray.cluster_resources()
@@ -136,24 +130,19 @@ class DistributedProcessor:
                 n_workers=self.config.num_workers,
                 threads_per_worker=2,
                 memory_limit=self.config.memory_per_worker,
-                dashboard_address=(
-                    f":{self.config.dashboard_port}"
-                    if self.config.dashboard_port
-                    else None
-                ),
+                dashboard_address=f":{self.config.dashboard_port}" if self.config.dashboard_port else None
             )
             self.client = Client(cluster)
-            logger.info(
-                f"Started local Dask cluster with {self.config.num_workers} workers"
-            )
+            logger.info(f"Started local Dask cluster with {self.config.num_workers} workers")
 
         # Get cluster info
         info = self.client.scheduler_info()
         logger.info(f"Dask cluster workers: {len(info['workers'])}")
 
-    async def execute_distributed(
-        self, func: Callable, inputs: List[Any], batch_size: Optional[int] = None
-    ) -> List[Any]:
+    async def execute_distributed(self,
+                                 func: Callable,
+                                 inputs: List[Any],
+                                 batch_size: Optional[int] = None) -> List[Any]:
         """Execute function across distributed workers.
 
         Args:
@@ -187,9 +176,10 @@ class DistributedProcessor:
 
         return results
 
-    async def _execute_ray(
-        self, func: Callable, inputs: List[Any], batch_size: Optional[int]
-    ) -> List[Any]:
+    async def _execute_ray(self,
+                          func: Callable,
+                          inputs: List[Any],
+                          batch_size: Optional[int]) -> List[Any]:
         """Execute using Ray."""
         if not RAY_AVAILABLE:
             raise RuntimeError("Ray is not available")
@@ -204,7 +194,7 @@ class DistributedProcessor:
             # Process in batches
             futures = []
             for i in range(0, len(inputs), batch_size):
-                batch = inputs[i : i + batch_size]
+                batch = inputs[i:i + batch_size]
                 future = ray_func.remote(batch)
                 futures.append(future)
 
@@ -225,9 +215,10 @@ class DistributedProcessor:
             futures = [ray_func.remote(inp) for inp in inputs]
             return ray.get(futures)
 
-    async def _execute_dask(
-        self, func: Callable, inputs: List[Any], batch_size: Optional[int]
-    ) -> List[Any]:
+    async def _execute_dask(self,
+                           func: Callable,
+                           inputs: List[Any],
+                           batch_size: Optional[int]) -> List[Any]:
         """Execute using Dask."""
         if not DASK_AVAILABLE or not self.client:
             raise RuntimeError("Dask is not available")
@@ -237,7 +228,7 @@ class DistributedProcessor:
             # Process in batches
             futures = []
             for i in range(0, len(inputs), batch_size):
-                batch = inputs[i : i + batch_size]
+                batch = inputs[i:i + batch_size]
                 future = self.client.submit(func, batch)
                 futures.append(future)
 
@@ -256,7 +247,9 @@ class DistributedProcessor:
             futures = [self.client.submit(func, inp) for inp in inputs]
             return self.client.gather(futures)
 
-    async def _execute_local(self, func: Callable, inputs: List[Any]) -> List[Any]:
+    async def _execute_local(self,
+                            func: Callable,
+                            inputs: List[Any]) -> List[Any]:
         """Execute locally as fallback."""
         results = []
         for inp in inputs:
@@ -269,9 +262,10 @@ class DistributedProcessor:
 
         return results
 
-    async def map_reduce(
-        self, map_func: Callable, reduce_func: Callable, inputs: List[Any]
-    ) -> Any:
+    async def map_reduce(self,
+                        map_func: Callable,
+                        reduce_func: Callable,
+                        inputs: List[Any]) -> Any:
         """Execute map-reduce operation.
 
         Args:
@@ -367,7 +361,10 @@ class DistributedProcessor:
 
     def get_cluster_info(self) -> Dict[str, Any]:
         """Get information about the distributed cluster."""
-        info = {"backend": self.backend.value, "metrics": self.metrics.copy()}
+        info = {
+            "backend": self.backend.value,
+            "metrics": self.metrics.copy()
+        }
 
         if self.backend == DistributedBackend.RAY and RAY_AVAILABLE:
             info["ray_resources"] = ray.cluster_resources()
@@ -402,12 +399,10 @@ class DistributedToolExecutor:
         """
         self.processor = processor
 
-    async def execute_tool_batch(
-        self,
-        tool_func: Callable,
-        tool_args: List[Dict[str, Any]],
-        max_parallel: int = 10,
-    ) -> List[Any]:
+    async def execute_tool_batch(self,
+                                tool_func: Callable,
+                                tool_args: List[Dict[str, Any]],
+                                max_parallel: int = 10) -> List[Any]:
         """Execute a tool across multiple inputs in parallel.
 
         Args:
@@ -418,7 +413,6 @@ class DistributedToolExecutor:
         Returns:
             List of results
         """
-
         # Wrapper function for distributed execution
         def execute_single(args):
             try:
@@ -429,14 +423,16 @@ class DistributedToolExecutor:
 
         # Execute distributed
         results = await self.processor.execute_distributed(
-            execute_single, tool_args, batch_size=max_parallel
+            execute_single,
+            tool_args,
+            batch_size=max_parallel
         )
 
         return results
 
-    async def execute_tool_pipeline(
-        self, tools: List[Callable], initial_input: Any
-    ) -> Any:
+    async def execute_tool_pipeline(self,
+                                   tools: List[Callable],
+                                   initial_input: Any) -> Any:
         """Execute a pipeline of tools.
 
         Args:
@@ -459,9 +455,9 @@ class DistributedToolExecutor:
 
         return result
 
-    async def execute_tool_dag(
-        self, dag: Dict[str, Dict[str, Any]], inputs: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def execute_tool_dag(self,
+                              dag: Dict[str, Dict[str, Any]],
+                              inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Execute tools in a DAG structure.
 
         Args:
@@ -503,7 +499,10 @@ class DistributedToolExecutor:
                         node_inputs[dep] = results[dep]
 
                 # Execute node
-                future = self.processor.execute_distributed(tool_func, [node_inputs])
+                future = self.processor.execute_distributed(
+                    tool_func,
+                    [node_inputs]
+                )
                 node_futures.append((node_id, future))
 
             # Collect results

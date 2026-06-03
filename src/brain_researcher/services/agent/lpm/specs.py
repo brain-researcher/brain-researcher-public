@@ -9,7 +9,7 @@ to different backends (AFNI, FSL, ANTs, etc.).
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional
+from typing import Optional, Dict, Any, List
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 

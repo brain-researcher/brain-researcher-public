@@ -3,23 +3,16 @@
 This package provides FSL tools conforming to the NeuroTool interface.
 All tools delegate to existing agent tool implementations to avoid duplication.
 """
-
 from typing import List
 
 from brain_researcher.services.tools.base import NeuroTool
-from brain_researcher.services.tools.fsl.bedpostx import FSLBEDPOSTXPipeline
 from brain_researcher.services.tools.fsl.bet import FSLBETPipeline
-from brain_researcher.services.tools.fsl.feat import (
-    FSLFEATGroupPipeline,
-    FSLFEATPipeline,
-)
-from brain_researcher.services.tools.fsl.fix import (
-    FSLFIXMultiRunPipeline,
-    FSLFIXPipeline,
-)
 from brain_researcher.services.tools.fsl.flirt import FSLFLIRTPipeline
 from brain_researcher.services.tools.fsl.fnirt import FSLFNIRTPipeline
+from brain_researcher.services.tools.fsl.feat import FSLFEATPipeline, FSLFEATGroupPipeline
 from brain_researcher.services.tools.fsl.melodic import FSLMELODICPipeline
+from brain_researcher.services.tools.fsl.bedpostx import FSLBEDPOSTXPipeline
+from brain_researcher.services.tools.fsl.fix import FSLFIXPipeline, FSLFIXMultiRunPipeline
 from brain_researcher.services.tools.fsl.palm import FSLPALMPipeline
 
 

@@ -12,14 +12,13 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-from brain_researcher.services.agent.planning import ResourceType, WorkflowStep
+from brain_researcher.services.agent.planning import WorkflowStep, ResourceType
 
 logger = logging.getLogger(__name__)
 
 
 class CloudProvider(str, Enum):
     """Supported cloud providers."""
-
     AWS = "aws"
     GCP = "gcp"
     AZURE = "azure"
@@ -28,7 +27,6 @@ class CloudProvider(str, Enum):
 
 class InstanceType(str, Enum):
     """Instance type categories."""
-
     GENERAL_PURPOSE = "general_purpose"
     COMPUTE_OPTIMIZED = "compute_optimized"
     MEMORY_OPTIMIZED = "memory_optimized"
@@ -38,7 +36,6 @@ class InstanceType(str, Enum):
 
 class PricingModel(str, Enum):
     """Pricing models for cloud resources."""
-
     ON_DEMAND = "on_demand"
     RESERVED = "reserved"
     SPOT = "spot"
@@ -48,7 +45,6 @@ class PricingModel(str, Enum):
 @dataclass
 class InstanceSpec:
     """Specification for a cloud instance."""
-
     instance_type: InstanceType
     vcpus: int
     memory_gb: float
@@ -65,7 +61,6 @@ class InstanceSpec:
 @dataclass
 class PricingInfo:
     """Pricing information for a resource."""
-
     on_demand_price: float  # $/hour
     reserved_price: Optional[float] = None  # $/hour (1-year term)
     spot_price: Optional[float] = None  # $/hour
@@ -116,7 +111,7 @@ class CostModel:
         min_cpu: float,
         min_memory: float,
         instance_type: Optional[InstanceType] = None,
-        gpu_required: bool = False,
+        gpu_required: bool = False
     ) -> List[Tuple[str, InstanceSpec, PricingInfo]]:
         """
         Get suitable instance options for requirements.
@@ -204,96 +199,88 @@ class AWSCostModel(CostModel):
     def _initialize_catalog(self):
         """Initialize AWS EC2 instance catalog."""
         # General Purpose instances (t3, m5, m6i)
-        self.instance_catalog.update(
-            {
-                "t3.medium": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 4.0, 20.0),
-                    PricingInfo(0.0416, 0.025, 0.0125, 0.10, 0.09),
-                ),
-                "t3.large": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 8.0, 20.0),
-                    PricingInfo(0.0832, 0.050, 0.025, 0.10, 0.09),
-                ),
-                "m5.large": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 8.0, 50.0),
-                    PricingInfo(0.096, 0.058, 0.029, 0.10, 0.09),
-                ),
-                "m5.xlarge": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 4, 16.0, 50.0),
-                    PricingInfo(0.192, 0.115, 0.058, 0.10, 0.09),
-                ),
-                "m5.2xlarge": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 8, 32.0, 50.0),
-                    PricingInfo(0.384, 0.23, 0.115, 0.10, 0.09),
-                ),
-                "m5.4xlarge": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 16, 64.0, 50.0),
-                    PricingInfo(0.768, 0.461, 0.23, 0.10, 0.09),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "t3.medium": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 4.0, 20.0),
+                PricingInfo(0.0416, 0.025, 0.0125, 0.10, 0.09)
+            ),
+            "t3.large": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 8.0, 20.0),
+                PricingInfo(0.0832, 0.050, 0.025, 0.10, 0.09)
+            ),
+            "m5.large": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 8.0, 50.0),
+                PricingInfo(0.096, 0.058, 0.029, 0.10, 0.09)
+            ),
+            "m5.xlarge": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 4, 16.0, 50.0),
+                PricingInfo(0.192, 0.115, 0.058, 0.10, 0.09)
+            ),
+            "m5.2xlarge": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 8, 32.0, 50.0),
+                PricingInfo(0.384, 0.23, 0.115, 0.10, 0.09)
+            ),
+            "m5.4xlarge": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 16, 64.0, 50.0),
+                PricingInfo(0.768, 0.461, 0.23, 0.10, 0.09)
+            ),
+        })
 
         # Compute Optimized instances (c5, c6i)
-        self.instance_catalog.update(
-            {
-                "c5.large": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 2, 4.0, 50.0),
-                    PricingInfo(0.085, 0.051, 0.026, 0.10, 0.09),
-                ),
-                "c5.xlarge": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 4, 8.0, 50.0),
-                    PricingInfo(0.17, 0.102, 0.051, 0.10, 0.09),
-                ),
-                "c5.2xlarge": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 8, 16.0, 50.0),
-                    PricingInfo(0.34, 0.204, 0.102, 0.10, 0.09),
-                ),
-                "c5.4xlarge": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 16, 32.0, 50.0),
-                    PricingInfo(0.68, 0.408, 0.204, 0.10, 0.09),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "c5.large": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 2, 4.0, 50.0),
+                PricingInfo(0.085, 0.051, 0.026, 0.10, 0.09)
+            ),
+            "c5.xlarge": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 4, 8.0, 50.0),
+                PricingInfo(0.17, 0.102, 0.051, 0.10, 0.09)
+            ),
+            "c5.2xlarge": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 8, 16.0, 50.0),
+                PricingInfo(0.34, 0.204, 0.102, 0.10, 0.09)
+            ),
+            "c5.4xlarge": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 16, 32.0, 50.0),
+                PricingInfo(0.68, 0.408, 0.204, 0.10, 0.09)
+            ),
+        })
 
         # Memory Optimized instances (r5, x1e)
-        self.instance_catalog.update(
-            {
-                "r5.large": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 2, 16.0, 50.0),
-                    PricingInfo(0.126, 0.076, 0.038, 0.10, 0.09),
-                ),
-                "r5.xlarge": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 4, 32.0, 50.0),
-                    PricingInfo(0.252, 0.151, 0.076, 0.10, 0.09),
-                ),
-                "r5.2xlarge": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 8, 64.0, 50.0),
-                    PricingInfo(0.504, 0.302, 0.151, 0.10, 0.09),
-                ),
-                "r5.4xlarge": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 16, 128.0, 50.0),
-                    PricingInfo(1.008, 0.605, 0.302, 0.10, 0.09),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "r5.large": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 2, 16.0, 50.0),
+                PricingInfo(0.126, 0.076, 0.038, 0.10, 0.09)
+            ),
+            "r5.xlarge": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 4, 32.0, 50.0),
+                PricingInfo(0.252, 0.151, 0.076, 0.10, 0.09)
+            ),
+            "r5.2xlarge": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 8, 64.0, 50.0),
+                PricingInfo(0.504, 0.302, 0.151, 0.10, 0.09)
+            ),
+            "r5.4xlarge": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 16, 128.0, 50.0),
+                PricingInfo(1.008, 0.605, 0.302, 0.10, 0.09)
+            ),
+        })
 
         # GPU instances (p3, g4dn)
-        self.instance_catalog.update(
-            {
-                "g4dn.xlarge": (
-                    InstanceSpec(InstanceType.GPU_ACCELERATED, 4, 16.0, 125.0, 1),
-                    PricingInfo(0.526, 0.316, 0.158, 0.10, 0.09),
-                ),
-                "g4dn.2xlarge": (
-                    InstanceSpec(InstanceType.GPU_ACCELERATED, 8, 32.0, 225.0, 1),
-                    PricingInfo(0.752, 0.451, 0.226, 0.10, 0.09),
-                ),
-                "p3.2xlarge": (
-                    InstanceSpec(InstanceType.GPU_ACCELERATED, 8, 61.0, 100.0, 1),
-                    PricingInfo(3.06, 1.836, 0.918, 0.10, 0.09),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "g4dn.xlarge": (
+                InstanceSpec(InstanceType.GPU_ACCELERATED, 4, 16.0, 125.0, 1),
+                PricingInfo(0.526, 0.316, 0.158, 0.10, 0.09)
+            ),
+            "g4dn.2xlarge": (
+                InstanceSpec(InstanceType.GPU_ACCELERATED, 8, 32.0, 225.0, 1),
+                PricingInfo(0.752, 0.451, 0.226, 0.10, 0.09)
+            ),
+            "p3.2xlarge": (
+                InstanceSpec(InstanceType.GPU_ACCELERATED, 8, 61.0, 100.0, 1),
+                PricingInfo(3.06, 1.836, 0.918, 0.10, 0.09)
+            ),
+        })
 
     def get_storage_price_per_gb_month(self) -> float:
         """AWS S3 Standard storage pricing."""
@@ -310,66 +297,60 @@ class GCPCostModel(CostModel):
     def _initialize_catalog(self):
         """Initialize GCP Compute Engine instance catalog."""
         # General Purpose (n1, n2, e2)
-        self.instance_catalog.update(
-            {
-                "e2-medium": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 1, 4.0, 10.0),
-                    PricingInfo(0.033, 0.020, 0.010, 0.040, 0.12),
-                ),
-                "n1-standard-2": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 7.5, 10.0),
-                    PricingInfo(0.095, 0.057, 0.029, 0.040, 0.12),
-                ),
-                "n1-standard-4": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 4, 15.0, 10.0),
-                    PricingInfo(0.190, 0.114, 0.057, 0.040, 0.12),
-                ),
-                "n1-standard-8": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 8, 30.0, 10.0),
-                    PricingInfo(0.380, 0.228, 0.114, 0.040, 0.12),
-                ),
-                "n1-standard-16": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 16, 60.0, 10.0),
-                    PricingInfo(0.760, 0.456, 0.228, 0.040, 0.12),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "e2-medium": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 1, 4.0, 10.0),
+                PricingInfo(0.033, 0.020, 0.010, 0.040, 0.12)
+            ),
+            "n1-standard-2": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 7.5, 10.0),
+                PricingInfo(0.095, 0.057, 0.029, 0.040, 0.12)
+            ),
+            "n1-standard-4": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 4, 15.0, 10.0),
+                PricingInfo(0.190, 0.114, 0.057, 0.040, 0.12)
+            ),
+            "n1-standard-8": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 8, 30.0, 10.0),
+                PricingInfo(0.380, 0.228, 0.114, 0.040, 0.12)
+            ),
+            "n1-standard-16": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 16, 60.0, 10.0),
+                PricingInfo(0.760, 0.456, 0.228, 0.040, 0.12)
+            ),
+        })
 
         # Compute Optimized (c2)
-        self.instance_catalog.update(
-            {
-                "c2-standard-4": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 4, 16.0, 10.0),
-                    PricingInfo(0.196, 0.118, 0.059, 0.040, 0.12),
-                ),
-                "c2-standard-8": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 8, 32.0, 10.0),
-                    PricingInfo(0.393, 0.236, 0.118, 0.040, 0.12),
-                ),
-                "c2-standard-16": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 16, 64.0, 10.0),
-                    PricingInfo(0.786, 0.472, 0.236, 0.040, 0.12),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "c2-standard-4": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 4, 16.0, 10.0),
+                PricingInfo(0.196, 0.118, 0.059, 0.040, 0.12)
+            ),
+            "c2-standard-8": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 8, 32.0, 10.0),
+                PricingInfo(0.393, 0.236, 0.118, 0.040, 0.12)
+            ),
+            "c2-standard-16": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 16, 64.0, 10.0),
+                PricingInfo(0.786, 0.472, 0.236, 0.040, 0.12)
+            ),
+        })
 
         # Memory Optimized (n1-highmem, n1-megamem)
-        self.instance_catalog.update(
-            {
-                "n1-highmem-2": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 2, 13.0, 10.0),
-                    PricingInfo(0.118, 0.071, 0.035, 0.040, 0.12),
-                ),
-                "n1-highmem-4": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 4, 26.0, 10.0),
-                    PricingInfo(0.237, 0.142, 0.071, 0.040, 0.12),
-                ),
-                "n1-highmem-8": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 8, 52.0, 10.0),
-                    PricingInfo(0.474, 0.284, 0.142, 0.040, 0.12),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "n1-highmem-2": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 2, 13.0, 10.0),
+                PricingInfo(0.118, 0.071, 0.035, 0.040, 0.12)
+            ),
+            "n1-highmem-4": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 4, 26.0, 10.0),
+                PricingInfo(0.237, 0.142, 0.071, 0.040, 0.12)
+            ),
+            "n1-highmem-8": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 8, 52.0, 10.0),
+                PricingInfo(0.474, 0.284, 0.142, 0.040, 0.12)
+            ),
+        })
 
     def get_storage_price_per_gb_month(self) -> float:
         """GCP Cloud Storage Standard pricing."""
@@ -386,62 +367,56 @@ class AzureCostModel(CostModel):
     def _initialize_catalog(self):
         """Initialize Azure VM instance catalog."""
         # General Purpose (B, D, A series)
-        self.instance_catalog.update(
-            {
-                "Standard_B2s": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 4.0, 8.0),
-                    PricingInfo(0.041, 0.025, 0.012, 0.048, 0.087),
-                ),
-                "Standard_D2s_v3": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 8.0, 16.0),
-                    PricingInfo(0.096, 0.058, 0.029, 0.048, 0.087),
-                ),
-                "Standard_D4s_v3": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 4, 16.0, 32.0),
-                    PricingInfo(0.192, 0.115, 0.058, 0.048, 0.087),
-                ),
-                "Standard_D8s_v3": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 8, 32.0, 64.0),
-                    PricingInfo(0.384, 0.230, 0.115, 0.048, 0.087),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "Standard_B2s": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 4.0, 8.0),
+                PricingInfo(0.041, 0.025, 0.012, 0.048, 0.087)
+            ),
+            "Standard_D2s_v3": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 2, 8.0, 16.0),
+                PricingInfo(0.096, 0.058, 0.029, 0.048, 0.087)
+            ),
+            "Standard_D4s_v3": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 4, 16.0, 32.0),
+                PricingInfo(0.192, 0.115, 0.058, 0.048, 0.087)
+            ),
+            "Standard_D8s_v3": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 8, 32.0, 64.0),
+                PricingInfo(0.384, 0.230, 0.115, 0.048, 0.087)
+            ),
+        })
 
         # Compute Optimized (F series)
-        self.instance_catalog.update(
-            {
-                "Standard_F2s_v2": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 2, 4.0, 16.0),
-                    PricingInfo(0.085, 0.051, 0.026, 0.048, 0.087),
-                ),
-                "Standard_F4s_v2": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 4, 8.0, 32.0),
-                    PricingInfo(0.169, 0.101, 0.051, 0.048, 0.087),
-                ),
-                "Standard_F8s_v2": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 8, 16.0, 64.0),
-                    PricingInfo(0.338, 0.203, 0.101, 0.048, 0.087),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "Standard_F2s_v2": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 2, 4.0, 16.0),
+                PricingInfo(0.085, 0.051, 0.026, 0.048, 0.087)
+            ),
+            "Standard_F4s_v2": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 4, 8.0, 32.0),
+                PricingInfo(0.169, 0.101, 0.051, 0.048, 0.087)
+            ),
+            "Standard_F8s_v2": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 8, 16.0, 64.0),
+                PricingInfo(0.338, 0.203, 0.101, 0.048, 0.087)
+            ),
+        })
 
         # Memory Optimized (E series)
-        self.instance_catalog.update(
-            {
-                "Standard_E2s_v3": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 2, 16.0, 32.0),
-                    PricingInfo(0.126, 0.076, 0.038, 0.048, 0.087),
-                ),
-                "Standard_E4s_v3": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 4, 32.0, 64.0),
-                    PricingInfo(0.252, 0.151, 0.076, 0.048, 0.087),
-                ),
-                "Standard_E8s_v3": (
-                    InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 8, 64.0, 128.0),
-                    PricingInfo(0.504, 0.302, 0.151, 0.048, 0.087),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "Standard_E2s_v3": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 2, 16.0, 32.0),
+                PricingInfo(0.126, 0.076, 0.038, 0.048, 0.087)
+            ),
+            "Standard_E4s_v3": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 4, 32.0, 64.0),
+                PricingInfo(0.252, 0.151, 0.076, 0.048, 0.087)
+            ),
+            "Standard_E8s_v3": (
+                InstanceSpec(InstanceType.MEMORY_OPTIMIZED, 8, 64.0, 128.0),
+                PricingInfo(0.504, 0.302, 0.151, 0.048, 0.087)
+            ),
+        })
 
     def get_storage_price_per_gb_month(self) -> float:
         """Azure Blob Storage Hot tier pricing."""
@@ -458,28 +433,24 @@ class OnPremiseCostModel(CostModel):
     def _initialize_catalog(self):
         """Initialize on-premise instance catalog."""
         # Simplified on-premise instances
-        self.instance_catalog.update(
-            {
-                "workstation_small": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 4, 16.0, 500.0),
-                    PricingInfo(
-                        0.05, 0.05, 0.05, 0.001, 0.0
-                    ),  # Low cost, no spot pricing
-                ),
-                "workstation_medium": (
-                    InstanceSpec(InstanceType.GENERAL_PURPOSE, 8, 32.0, 1000.0),
-                    PricingInfo(0.10, 0.10, 0.10, 0.001, 0.0),
-                ),
-                "server_large": (
-                    InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 16, 64.0, 2000.0),
-                    PricingInfo(0.20, 0.20, 0.20, 0.001, 0.0),
-                ),
-                "gpu_workstation": (
-                    InstanceSpec(InstanceType.GPU_ACCELERATED, 8, 32.0, 1000.0, 1),
-                    PricingInfo(0.50, 0.50, 0.50, 0.001, 0.0),
-                ),
-            }
-        )
+        self.instance_catalog.update({
+            "workstation_small": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 4, 16.0, 500.0),
+                PricingInfo(0.05, 0.05, 0.05, 0.001, 0.0)  # Low cost, no spot pricing
+            ),
+            "workstation_medium": (
+                InstanceSpec(InstanceType.GENERAL_PURPOSE, 8, 32.0, 1000.0),
+                PricingInfo(0.10, 0.10, 0.10, 0.001, 0.0)
+            ),
+            "server_large": (
+                InstanceSpec(InstanceType.COMPUTE_OPTIMIZED, 16, 64.0, 2000.0),
+                PricingInfo(0.20, 0.20, 0.20, 0.001, 0.0)
+            ),
+            "gpu_workstation": (
+                InstanceSpec(InstanceType.GPU_ACCELERATED, 8, 32.0, 1000.0, 1),
+                PricingInfo(0.50, 0.50, 0.50, 0.001, 0.0)
+            ),
+        })
 
     def get_storage_price_per_gb_month(self) -> float:
         """On-premise storage cost (amortized)."""
@@ -506,7 +477,9 @@ class ResourceCostCalculator:
         self.spot_interruption_rate = 0.1  # 10% interruption rate for spot instances
 
     def calculate_step_cost(
-        self, step: WorkflowStep, pricing_model: PricingModel = PricingModel.ON_DEMAND
+        self,
+        step: WorkflowStep,
+        pricing_model: PricingModel = PricingModel.ON_DEMAND
     ) -> Dict[str, float]:
         """
         Calculate cost for a single workflow step.
@@ -525,9 +498,7 @@ class ResourceCostCalculator:
         gpu_req = step.resource_requirements.get("gpu", 0.0) > 0
 
         # Get preferred instance type from tool args
-        preferred_type_str = step.tool_args.get(
-            "preferred_instance_type", "general_purpose"
-        )
+        preferred_type_str = step.tool_args.get("preferred_instance_type", "general_purpose")
         try:
             preferred_type = InstanceType(preferred_type_str)
         except ValueError:
@@ -543,13 +514,15 @@ class ResourceCostCalculator:
             min_cpu=cpu_req,
             min_memory=memory_req,
             instance_type=preferred_type,
-            gpu_required=gpu_req,
+            gpu_required=gpu_req
         )
 
         if not instance_options:
             # Fallback to any suitable instance
             instance_options = self.cost_model.get_instance_options(
-                min_cpu=cpu_req, min_memory=memory_req, gpu_required=gpu_req
+                min_cpu=cpu_req,
+                min_memory=memory_req,
+                gpu_required=gpu_req
             )
 
         if not instance_options:
@@ -573,9 +546,7 @@ class ResourceCostCalculator:
         storage_cost = self.cost_model.get_storage_cost(storage_req, duration_hours)
 
         # Calculate network cost (estimated data transfer)
-        estimated_data_transfer = max(
-            1.0, storage_req * 0.1
-        )  # 10% of storage as network transfer
+        estimated_data_transfer = max(1.0, storage_req * 0.1)  # 10% of storage as network transfer
         network_cost = self.cost_model.get_network_cost(estimated_data_transfer)
 
         total_cost = compute_cost + storage_cost + network_cost
@@ -586,11 +557,13 @@ class ResourceCostCalculator:
             "network": network_cost,
             "total": total_cost,
             "instance_used": instance_name,
-            "pricing_model": pricing_model.value,
+            "pricing_model": pricing_model.value
         }
 
     def calculate_total_cost(
-        self, steps: List[WorkflowStep], consider_parallelism: bool = True
+        self,
+        steps: List[WorkflowStep],
+        consider_parallelism: bool = True
     ) -> float:
         """
         Calculate total cost for a list of workflow steps.
@@ -617,10 +590,7 @@ class ResourceCostCalculator:
 
     def _calculate_parallel_cost(self, steps: List[WorkflowStep]) -> float:
         """Calculate cost considering parallel execution."""
-        from brain_researcher.services.agent.dependency_resolver import (
-            DependencyResolver,
-            Task,
-        )
+        from brain_researcher.services.agent.dependency_resolver import DependencyResolver, Task
 
         resolver = DependencyResolver()
 
@@ -633,7 +603,7 @@ class ResourceCostCalculator:
                 tool_name=step.tool_name,
                 tool_args=step.tool_args,
                 dependencies=step.dependencies,
-                estimated_duration=step.estimated_time_seconds,
+                estimated_duration=step.estimated_time_seconds
             )
             tasks.append(task)
 
@@ -655,14 +625,17 @@ class ResourceCostCalculator:
             return total_cost
 
         except Exception as e:
-            logger.warning(
-                f"Failed to calculate parallel cost: {e}, falling back to sequential"
-            )
+            logger.warning(f"Failed to calculate parallel cost: {e}, falling back to sequential")
             # Fallback to sequential calculation
-            return sum(self.calculate_step_cost(step)["total"] for step in steps)
+            return sum(
+                self.calculate_step_cost(step)["total"]
+                for step in steps
+            )
 
     def estimate_cost_savings(
-        self, steps: List[WorkflowStep], optimization_strategies: List[str]
+        self,
+        steps: List[WorkflowStep],
+        optimization_strategies: List[str]
     ) -> Dict[str, float]:
         """
         Estimate cost savings from various optimization strategies.
@@ -682,15 +655,10 @@ class ResourceCostCalculator:
                 # Enable spot instances for eligible steps
                 spot_cost = 0.0
                 for step in steps:
-                    if step.tool_name.lower() not in [
-                        "preprocessing",
-                        "critical_analysis",
-                    ]:
+                    if step.tool_name.lower() not in ["preprocessing", "critical_analysis"]:
                         step_copy = WorkflowStep(**step.__dict__)
                         step_copy.tool_args["use_spot_instances"] = True
-                        step_costs = self.calculate_step_cost(
-                            step_copy, PricingModel.SPOT
-                        )
+                        step_costs = self.calculate_step_cost(step_copy, PricingModel.SPOT)
                         spot_cost += step_costs["total"]
                     else:
                         step_costs = self.calculate_step_cost(step)
@@ -713,19 +681,18 @@ class ResourceCostCalculator:
 
             elif strategy == "parallelization":
                 # Compare parallel vs sequential costs
-                sequential_cost = self.calculate_total_cost(
-                    steps, consider_parallelism=False
-                )
-                parallel_cost = self.calculate_total_cost(
-                    steps, consider_parallelism=True
-                )
+                sequential_cost = self.calculate_total_cost(steps, consider_parallelism=False)
+                parallel_cost = self.calculate_total_cost(steps, consider_parallelism=True)
                 savings[strategy] = max(0, sequential_cost - parallel_cost)
 
         return savings
 
 
 # Factory functions
-def create_cost_model(provider: CloudProvider, region: str = "us-east-1") -> CostModel:
+def create_cost_model(
+    provider: CloudProvider,
+    region: str = "us-east-1"
+) -> CostModel:
     """
     Create a cost model for the specified provider.
 
@@ -749,7 +716,8 @@ def create_cost_model(provider: CloudProvider, region: str = "us-east-1") -> Cos
 
 
 def create_cost_calculator(
-    provider: CloudProvider = CloudProvider.AWS, region: str = "us-east-1"
+    provider: CloudProvider = CloudProvider.AWS,
+    region: str = "us-east-1"
 ) -> ResourceCostCalculator:
     """
     Create a resource cost calculator.

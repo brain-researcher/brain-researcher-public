@@ -67,7 +67,7 @@ class PluginDataSourceTool(BRKGToolWrapper):
             if not await self._ensure_plugin_active():
                 return {
                     "error": f"Plugin {self.metadata.name} could not be activated",
-                    "status": "failed",
+                    "status": "failed"
                 }
 
             # Extract parameters
@@ -76,21 +76,22 @@ class PluginDataSourceTool(BRKGToolWrapper):
 
             # Fetch data from plugin
             raw_data = await asyncio.to_thread(
-                self.plugin.fetch_data, query=query, limit=limit
+                self.plugin.fetch_data,
+                query=query,
+                limit=limit
             )
 
             # Transform data
             transformed_data = await asyncio.to_thread(
-                self.plugin.transform_data, raw_data
+                self.plugin.transform_data,
+                raw_data
             )
 
             # Validate data
             is_valid, errors = self.plugin.validate_data(transformed_data)
 
             if not is_valid:
-                logger.warning(
-                    f"Data validation failed for plugin {self.metadata.name}: {errors}"
-                )
+                logger.warning(f"Data validation failed for plugin {self.metadata.name}: {errors}")
 
             return {
                 "status": "success",
@@ -98,17 +99,15 @@ class PluginDataSourceTool(BRKGToolWrapper):
                 "plugin_name": self.metadata.name,
                 "data_source_type": self.metadata.data_source_type,
                 "validation_errors": errors if not is_valid else None,
-                "record_count": len(transformed_data),
+                "record_count": len(transformed_data)
             }
 
         except Exception as e:
-            logger.error(
-                f"Error executing plugin {self.metadata.name}: {e}", exc_info=True
-            )
+            logger.error(f"Error executing plugin {self.metadata.name}: {e}", exc_info=True)
             return {
                 "error": str(e),
                 "status": "failed",
-                "plugin_name": self.metadata.name,
+                "plugin_name": self.metadata.name
             }
 
     async def _ensure_plugin_active(self) -> bool:
@@ -127,12 +126,12 @@ class PluginDataSourceTool(BRKGToolWrapper):
         try:
             from langchain_core.tools import StructuredTool
         except ImportError:  # pragma: no cover
-            pass  # Fallback removed as langchain_core is the correct one
+            pass # Fallback removed as langchain_core is the correct one
 
         return StructuredTool.from_function(
             func=self.run,
             name=self.get_tool_name(),
-            description=self.get_tool_description(),
+            description=self.get_tool_description()
         )
 
 
@@ -148,7 +147,9 @@ class AgentPluginManager:
         self.config = config or AgentPluginConfig()
 
         # Create core plugin manager
-        self.plugin_manager = PluginManager(plugin_dir=self.config.plugin_directory)
+        self.plugin_manager = PluginManager(
+            plugin_dir=self.config.plugin_directory
+        )
 
         # Plugin tools
         self.plugin_tools: dict[str, PluginDataSourceTool] = {}
@@ -159,7 +160,7 @@ class AgentPluginManager:
             "plugins_loaded": 0,
             "plugins_active": 0,
             "plugin_executions": 0,
-            "execution_errors": 0,
+            "execution_errors": 0
         }
 
     async def initialize(self) -> bool:
@@ -184,9 +185,7 @@ class AgentPluginManager:
 
                         # Auto-activate if configured
                         if self.config.auto_activate:
-                            plugin_name = plugin_path.split(".")[
-                                -2
-                            ]  # Extract plugin name
+                            plugin_name = plugin_path.split(".")[-2]  # Extract plugin name
                             if self.plugin_manager.activate_plugin(plugin_name):
                                 self.stats["plugins_active"] += 1
 
@@ -212,9 +211,7 @@ class AgentPluginManager:
             except Exception as e:
                 logger.error(f"Error creating tool for plugin {plugin_name}: {e}")
 
-    async def load_plugin(
-        self, plugin_path: str, config: dict[str, Any] | None = None
-    ) -> bool:
+    async def load_plugin(self, plugin_path: str, config: dict[str, Any] | None = None) -> bool:
         """Load a specific plugin.
 
         Args:
@@ -295,7 +292,7 @@ class AgentPluginManager:
         self,
         plugin_name: str,
         query: dict[str, Any] | None = None,
-        limit: int | None = None,
+        limit: int | None = None
     ) -> list[dict[str, Any]]:
         """Execute a plugin to fetch data.
 
@@ -311,7 +308,10 @@ class AgentPluginManager:
             self.stats["plugin_executions"] += 1
 
             data = await asyncio.to_thread(
-                self.plugin_manager.fetch_from_plugin, plugin_name, query, limit
+                self.plugin_manager.fetch_from_plugin,
+                plugin_name,
+                query,
+                limit
             )
 
             logger.debug(f"Executed plugin {plugin_name}, got {len(data)} records")
@@ -361,7 +361,10 @@ class AgentPluginManager:
         return self.plugin_manager.validate_plugin(plugin_path)
 
     def generate_plugin_template(
-        self, name: str, data_source_type: str, output_path: str | None = None
+        self,
+        name: str,
+        data_source_type: str,
+        output_path: str | None = None
     ) -> str:
         """Generate a plugin template.
 
@@ -386,7 +389,7 @@ class AgentPluginManager:
             "core_stats": core_stats,
             "active_plugin_count": len(self.plugin_manager.active_plugins),
             "total_plugin_count": len(self.plugin_manager.plugins),
-            "plugin_tools_count": len(self.plugin_tools),
+            "plugin_tools_count": len(self.plugin_tools)
         }
 
 
@@ -424,9 +427,7 @@ class PluginToolRegistry:
                 logger.debug(f"Registered plugin tool: {tool.get_tool_name()}")
 
             except Exception as e:
-                logger.error(
-                    f"Error registering plugin tool {tool.get_tool_name()}: {e}"
-                )
+                logger.error(f"Error registering plugin tool {tool.get_tool_name()}: {e}")
 
         logger.info(f"Registered {registered_count} plugin tools")
         return registered_count
@@ -479,7 +480,8 @@ class PluginToolRegistry:
 
 # Integration helper functions
 async def setup_agent_plugins(
-    agent_state_machine, config: AgentPluginConfig | None = None
+    agent_state_machine,
+    config: AgentPluginConfig | None = None
 ) -> AgentPluginManager:
     """Set up agent plugin integration.
 
@@ -511,7 +513,10 @@ async def setup_agent_plugins(
     return plugin_manager
 
 
-async def register_plugins_with_tools(agent_state_machine, tool_registry) -> int:
+async def register_plugins_with_tools(
+    agent_state_machine,
+    tool_registry
+) -> int:
     """Register all plugins as tools in the tool registry.
 
     Args:
@@ -521,13 +526,11 @@ async def register_plugins_with_tools(agent_state_machine, tool_registry) -> int
     Returns:
         Number of plugins registered
     """
-    if not hasattr(agent_state_machine, "plugin_tool_registry"):
+    if not hasattr(agent_state_machine, 'plugin_tool_registry'):
         logger.warning("Plugin tool registry not found in agent state machine")
         return 0
 
-    return await agent_state_machine.plugin_tool_registry.register_all_plugins(
-        tool_registry
-    )
+    return await agent_state_machine.plugin_tool_registry.register_all_plugins(tool_registry)
 
 
 # Example plugin implementations
@@ -548,8 +551,8 @@ class ExampleAPIPlugin(DataSourcePlugin):
             supported_formats=["json"],
             configuration_schema={
                 "api_url": {"type": "string", "required": True},
-                "api_key": {"type": "string", "required": False},
-            },
+                "api_key": {"type": "string", "required": False}
+            }
         )
 
     def validate_config(self, config: dict[str, Any]) -> tuple[bool, list[str]]:
@@ -563,7 +566,10 @@ class ExampleAPIPlugin(DataSourcePlugin):
     def connect(self, config: dict[str, Any]) -> bool:
         try:
             # Mock connection
-            self.api_client = {"url": config["api_url"], "key": config.get("api_key")}
+            self.api_client = {
+                "url": config["api_url"],
+                "key": config.get("api_key")
+            }
             self.connected = True
             return True
         except Exception:
@@ -575,7 +581,9 @@ class ExampleAPIPlugin(DataSourcePlugin):
         return True
 
     def fetch_data(
-        self, query: dict[str, Any] | None = None, limit: int | None = None
+        self,
+        query: dict[str, Any] | None = None,
+        limit: int | None = None
     ) -> list[dict[str, Any]]:
         if not self.connected:
             raise RuntimeError("Not connected")
@@ -583,14 +591,12 @@ class ExampleAPIPlugin(DataSourcePlugin):
         # Mock data fetching
         data = []
         for i in range(min(limit or 10, 10)):
-            data.append(
-                {
-                    "id": f"record_{i}",
-                    "title": f"Example Record {i}",
-                    "value": i * 10,
-                    "source": "example_api",
-                }
-            )
+            data.append({
+                "id": f"record_{i}",
+                "title": f"Example Record {i}",
+                "value": i * 10,
+                "source": "example_api"
+            })
 
         return data
 
@@ -599,20 +605,18 @@ class ExampleAPIPlugin(DataSourcePlugin):
         transformed = []
 
         for record in data:
-            transformed.append(
-                {
-                    "entity_id": record["id"],
-                    "entity_type": "example_record",
-                    "title": record["title"],
-                    "properties": {
-                        "value": record["value"],
-                        "source": record["source"],
-                    },
-                    "metadata": {
-                        "plugin": "example_api",
-                        "fetched_at": datetime.now().isoformat(),
-                    },
+            transformed.append({
+                "entity_id": record["id"],
+                "entity_type": "example_record",
+                "title": record["title"],
+                "properties": {
+                    "value": record["value"],
+                    "source": record["source"]
+                },
+                "metadata": {
+                    "plugin": "example_api",
+                    "fetched_at": datetime.now().isoformat()
                 }
-            )
+            })
 
         return transformed

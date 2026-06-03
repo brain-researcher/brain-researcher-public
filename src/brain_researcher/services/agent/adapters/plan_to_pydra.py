@@ -236,9 +236,7 @@ def _generate_shell_task(
     if spec.output_spec:
         for out in spec.output_spec:
             template = out.get("output_file_template", "")
-            field_def = (
-                f'("{out["name"]}", str, {{"output_file_template": "{template}"}})'
-            )
+            field_def = f'("{out["name"]}", str, {{"output_file_template": "{template}"}})'
             output_fields.append(field_def)
     elif step.produces:
         # Fall back to step.produces with io_map translation
@@ -256,7 +254,7 @@ def _generate_shell_task(
 
     # Build the task code
     task_code_lines = [
-        f"    {task_name}_task = ShellCommandTask(",
+        f'    {task_name}_task = ShellCommandTask(',
         f'        name="{task_name}",',
         f'        executable="{executable}",',
     ]
@@ -268,12 +266,10 @@ def _generate_shell_task(
         task_code_lines.append(f'        output_spec=[{", ".join(output_fields)}],')
 
     if container_info:
-        task_code_lines.append(
-            f'        container_info=("docker", "{spec.container_image}"),'
-        )
+        task_code_lines.append(f'        container_info=("docker", "{spec.container_image}"),')
 
-    task_code_lines.append("    )")
-    task_code_lines.append(f"    wf.add({task_name}_task)")
+    task_code_lines.append('    )')
+    task_code_lines.append(f'    wf.add({task_name}_task)')
 
     return import_stmt, "\n".join(task_code_lines), input_field_names, None
 
@@ -334,14 +330,12 @@ def _generate_function_task(
     if func_import:
         task_code_lines.append(f"    # Import: {func_import}")
 
-    task_code_lines.extend(
-        [
-            f"    @pydra.mark.task",
-            f'    @pydra.mark.annotate({{"return": {annotation_str}}})',
-            f"    def {task_name}_func({input_params}):",
-            f'        """Generated function task for {step.tool}."""',
-        ]
-    )
+    task_code_lines.extend([
+        f'    @pydra.mark.task',
+        f'    @pydra.mark.annotate({{"return": {annotation_str}}})',
+        f'    def {task_name}_func({input_params}):',
+        f'        """Generated function task for {step.tool}."""',
+    ])
 
     # Build argument list for call (inputs + params)
     def _fmt_val(val):
@@ -361,36 +355,25 @@ def _generate_function_task(
         call_inputs = ", ".join([f"{i}={i}" for i in input_names])
         call_params = ", ".join(param_args)
         call_all = ", ".join([c for c in [call_inputs, call_params] if c])
-        task_code_lines.append(f"        result = {func_name}({call_all})")
+        task_code_lines.append(f'        result = {func_name}({call_all})')
         if len(output_names) == 1:
-            task_code_lines.append(f"        return result")
+            task_code_lines.append(f'        return result')
         else:
             # Return dict for multiple outputs
-            output_returns = ", ".join(
-                [f'"{o}": result.get("{o}", result)' for o in output_names]
-            )
-            task_code_lines.append(f"        return {{{output_returns}}}")
+            output_returns = ", ".join([f'"{o}": result.get("{o}", result)' for o in output_names])
+            task_code_lines.append(f'        return {{{output_returns}}}')
     else:
         # Identity/passthrough - return first input for each output
         if len(output_names) == 1:
-            task_code_lines.append(
-                f'        return {input_names[0] if input_names else "None"}'
-            )
+            task_code_lines.append(f'        return {input_names[0] if input_names else "None"}')
         else:
-            output_returns = ", ".join(
-                [
-                    f'"{o}": {input_names[0] if input_names else "None"}'
-                    for o in output_names
-                ]
-            )
-            task_code_lines.append(f"        return {{{output_returns}}}")
+            output_returns = ", ".join([f'"{o}": {input_names[0] if input_names else "None"}' for o in output_names])
+            task_code_lines.append(f'        return {{{output_returns}}}')
 
-    task_code_lines.extend(
-        [
-            f"",
-            f'    wf.add({task_name}_func(name="{task_name}"))',
-        ]
-    )
+    task_code_lines.extend([
+        f'',
+        f'    wf.add({task_name}_func(name="{task_name}"))',
+    ])
 
     combined_import = import_stmt
     if func_import:
@@ -424,18 +407,16 @@ def _generate_fallback_task(
     input_params = ", ".join([f"{i}: str" for i in input_fields])
 
     task_code_lines = [
-        f"    # Fallback identity task for unmapped tool: {step.tool}",
-        f"    @pydra.mark.task",
+        f'    # Fallback identity task for unmapped tool: {step.tool}',
+        f'    @pydra.mark.task',
         f'    @pydra.mark.annotate({{"return": {annotation_str}}})',
-        f"    def {task_name}_func({input_params}):",
+        f'    def {task_name}_func({input_params}):',
         f'        """Identity task - passes inputs to outputs."""',
     ]
 
     # Return all outputs mapped from inputs (round-robin if counts differ)
     if len(output_fields) == 1:
-        task_code_lines.append(
-            f'        return {input_fields[0] if input_fields else "None"}'
-        )
+        task_code_lines.append(f'        return {input_fields[0] if input_fields else "None"}')
     else:
         # Map each output to corresponding input (or first input if not enough)
         output_mapping = []
@@ -445,12 +426,10 @@ def _generate_fallback_task(
             output_mapping.append(f'"{out_name}": {in_name}')
         task_code_lines.append(f'        return {{{", ".join(output_mapping)}}}')
 
-    task_code_lines.extend(
-        [
-            f"",
-            f'    wf.add({task_name}_func(name="{task_name}"))',
-        ]
-    )
+    task_code_lines.extend([
+        f'',
+        f'    wf.add({task_name}_func(name="{task_name}"))',
+    ])
 
     warning = f"No Pydra interface mapping for tool '{step.tool}', using fallback identity task"
 
@@ -520,13 +499,9 @@ def _derive_pydra_connections(
 
     # For each consumer, find matching producers and generate connection
     for consumer_step in steps:
-        consumer_task = step_to_task.get(
-            consumer_step.id, _sanitize_task_name(consumer_step.id)
-        )
+        consumer_task = step_to_task.get(consumer_step.id, _sanitize_task_name(consumer_step.id))
         consumer_spec = get_pydra_interface_spec(consumer_step.tool, interface_map)
-        consumer_io_map = (
-            consumer_spec.io_map if consumer_spec and consumer_spec.io_map else {}
-        )
+        consumer_io_map = consumer_spec.io_map if consumer_spec and consumer_spec.io_map else {}
         consumer_consumes_map = consumer_io_map.get("consumes", {})
 
         for res_name, res_type in (consumer_step.consumes or {}).items():
@@ -552,13 +527,9 @@ def _derive_pydra_connections(
                     f"consumer {consumer_step.id} expects '{res_type}'"
                 )
 
-            producer_task = step_to_task.get(
-                producer_step.id, _sanitize_task_name(producer_step.id)
-            )
+            producer_task = step_to_task.get(producer_step.id, _sanitize_task_name(producer_step.id))
             producer_spec = get_pydra_interface_spec(producer_step.tool, interface_map)
-            producer_io_map = (
-                producer_spec.io_map if producer_spec and producer_spec.io_map else {}
-            )
+            producer_io_map = producer_spec.io_map if producer_spec and producer_spec.io_map else {}
             producer_produces_map = producer_io_map.get("produces", {})
 
             # Map logical resource name to Pydra output field name
@@ -616,9 +587,7 @@ def plan_to_pydra_workflow(
             continue
 
         # Convert step to task (now returns 4 elements)
-        import_stmt, task_code, input_fields, warning = _step_to_pydra_task(
-            step, interface_map
-        )
+        import_stmt, task_code, input_fields, warning = _step_to_pydra_task(step, interface_map)
 
         if import_stmt:
             for line in import_stmt.split("\n"):
@@ -669,77 +638,69 @@ def plan_to_pydra_workflow(
         producer_step_id = resource_producer_map.get(res_name)
         if producer_step_id:
             task_name = step_to_task.get(producer_step_id)
-            producer_step = next(
-                (s for s in exported_step_specs if s.id == producer_step_id), None
-            )
+            producer_step = next((s for s in exported_step_specs if s.id == producer_step_id), None)
             if producer_step:
                 spec = get_pydra_interface_spec(producer_step.tool, interface_map)
                 io_map = spec.io_map if spec and spec.io_map else {}
                 produces_map = io_map.get("produces", {})
                 pydra_field = produces_map.get(res_name, "out_file")
-                workflow_outputs.append(
-                    f'("{res_name}", wf.{task_name}.lzout.{pydra_field})'
-                )
+                workflow_outputs.append(f'("{res_name}", wf.{task_name}.lzout.{pydra_field})')
 
     # Build the workflow script
     script_lines = [
-        "#!/usr/bin/env python",
+        '#!/usr/bin/env python',
         '"""',
-        f"Pydra workflow: {workflow_name}",
-        "Generated workflow for neuroimaging pipeline",
+        f'Pydra workflow: {workflow_name}',
+        'Generated workflow for neuroimaging pipeline',
         '"""',
-        "",
-        "# Auto-generated imports",
+        '',
+        '# Auto-generated imports',
         *sorted(imports),
-        "",
-        "",
-        f"def create_{workflow_name}():",
+        '',
+        '',
+        f'def create_{workflow_name}():',
         f'    """Create the {workflow_name} workflow."""',
         f'    # Workflow inputs: {sorted(workflow_inputs) if workflow_inputs else "none (self-contained)"}',
-        f"    wf = Workflow(",
+        f'    wf = Workflow(',
         f'        name="{workflow_name}",',
-        (
-            f"        input_spec={sorted(workflow_inputs)!r},"
-            if workflow_inputs
-            else "        # No external inputs needed (self-contained workflow)"
-        ),
+        f'        input_spec={sorted(workflow_inputs)!r},' if workflow_inputs else '        # No external inputs needed (self-contained workflow)',
         f'        cache_dir="{base_dir}",',
-        f"    )",
-        "",
-        "    # Add tasks",
+        f'    )',
+        '',
+        '    # Add tasks',
     ]
 
     # Add task code blocks
     for task_block in task_code_blocks:
         script_lines.append(task_block)
-        script_lines.append("")
+        script_lines.append('')
 
     # Add connections
     if connection_lines:
-        script_lines.append("    # Connect tasks")
+        script_lines.append('    # Connect tasks')
         script_lines.extend(connection_lines)
-        script_lines.append("")
+        script_lines.append('')
 
     # Set outputs
-    script_lines.append("    # Set workflow outputs")
+    script_lines.append('    # Set workflow outputs')
     if workflow_outputs:
         script_lines.append(f'    wf.set_output([{", ".join(workflow_outputs)}])')
     else:
-        script_lines.append("    # No explicit outputs defined")
+        script_lines.append('    # No explicit outputs defined')
 
-    script_lines.append("")
-    script_lines.append("    return wf")
-    script_lines.append("")
-    script_lines.append("")
+    script_lines.append('')
+    script_lines.append('    return wf')
+    script_lines.append('')
+    script_lines.append('')
     script_lines.append('if __name__ == "__main__":')
-    script_lines.append(f"    wf = create_{workflow_name}()")
+    script_lines.append(f'    wf = create_{workflow_name}()')
     script_lines.append('    print(f"Workflow created: {wf.name}")')
-    script_lines.append("")
-    script_lines.append("    # Run the workflow")
-    script_lines.append("    # To run with specific inputs:")
+    script_lines.append('')
+    script_lines.append('    # Run the workflow')
+    script_lines.append('    # To run with specific inputs:')
     script_lines.append('    # result = wf(in_file="/path/to/input.nii.gz")')
-    script_lines.append("    # print(result.output)")
-    script_lines.append("")
+    script_lines.append('    # print(result.output)')
+    script_lines.append('')
 
     workflow_script = "\n".join(script_lines)
 

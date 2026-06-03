@@ -15,7 +15,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple, Optional, Any
 
 import numpy as np
 import pandas as pd
@@ -48,12 +48,8 @@ class NiCLIPConceptHierarchy:
         """Load NiCLIP embeddings and mappings."""
         try:
             # Import NiCLIP components
-            from brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper import (
-                get_spatial_mapper,
-            )
-            from brain_researcher.services.br_kg.etl.mappers.niclip_task_mapper import (
-                get_mapper,
-            )
+            from brain_researcher.services.br_kg.etl.mappers.niclip_task_mapper import get_mapper
+            from brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper import get_spatial_mapper
 
             # Get task mapper for concept-process mappings
             self.task_mapper = get_mapper()
@@ -87,60 +83,34 @@ class NiCLIPConceptHierarchy:
             "Cognition": {
                 "Perception": {
                     "process_id": "ctp_C1",
-                    "subconcepts": [
-                        "sensory processing",
-                        "perceptual organization",
-                        "feature detection",
-                    ],
-                    "description": "Basic sensory and perceptual processes",
+                    "subconcepts": ["sensory processing", "perceptual organization", "feature detection"],
+                    "description": "Basic sensory and perceptual processes"
                 },
                 "Cognitive Control": {
                     "process_id": "ctp_C3",
-                    "subconcepts": [
-                        "executive function",
-                        "working memory",
-                        "attention",
-                        "inhibition",
-                    ],
-                    "description": "Executive control and working memory processes",
+                    "subconcepts": ["executive function", "working memory", "attention", "inhibition"],
+                    "description": "Executive control and working memory processes"
                 },
                 "Visual Processing": {
                     "process_id": "ctp_C4",
-                    "subconcepts": [
-                        "visual perception",
-                        "object recognition",
-                        "spatial processing",
-                    ],
-                    "description": "Visual information processing",
+                    "subconcepts": ["visual perception", "object recognition", "spatial processing"],
+                    "description": "Visual information processing"
                 },
                 "Language": {
                     "process_id": "ctp_C6",
-                    "subconcepts": [
-                        "speech processing",
-                        "semantic processing",
-                        "syntax",
-                        "reading",
-                    ],
-                    "description": "Language comprehension and production",
+                    "subconcepts": ["speech processing", "semantic processing", "syntax", "reading"],
+                    "description": "Language comprehension and production"
                 },
                 "Motor": {
                     "process_id": "ctp_C7",
-                    "subconcepts": [
-                        "motor control",
-                        "action planning",
-                        "movement execution",
-                    ],
-                    "description": "Motor planning and execution",
+                    "subconcepts": ["motor control", "action planning", "movement execution"],
+                    "description": "Motor planning and execution"
                 },
                 "Emotion": {
                     "process_id": "ctp_C8",
-                    "subconcepts": [
-                        "emotion regulation",
-                        "affective processing",
-                        "mood",
-                    ],
-                    "description": "Emotional and affective processes",
-                },
+                    "subconcepts": ["emotion regulation", "affective processing", "mood"],
+                    "description": "Emotional and affective processes"
+                }
             }
         }
 
@@ -205,7 +175,10 @@ class NiCLIPConceptHierarchy:
         X = np.array([self.concept_embeddings[c] for c in concepts]).reshape(-1, 1)
 
         # Perform hierarchical clustering
-        clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage="ward")
+        clustering = AgglomerativeClustering(
+            n_clusters=n_clusters,
+            linkage='ward'
+        )
         cluster_labels = clustering.fit_predict(X)
 
         # Organize concepts by cluster
@@ -223,7 +196,7 @@ class NiCLIPConceptHierarchy:
             "n_clusters": n_clusters,
             "clusters": clusters,
             "process_mapping": self._map_clusters_to_processes(),
-            "relationships": self._generate_relationships(),
+            "relationships": self._generate_relationships()
         }
 
         return hierarchy
@@ -266,18 +239,16 @@ class NiCLIPConceptHierarchy:
 
             # Create IS_A relationships
             for concept in process_concepts:
-                relationships.append(
-                    {
-                        "source": concept,
-                        "target": process_name.lower(),
-                        "type": "IS_A",
-                        "properties": {
-                            "confidence": 0.9,
-                            "source": "niclip_hierarchy",
-                            "cognitive_process": process_id,
-                        },
+                relationships.append({
+                    "source": concept,
+                    "target": process_name.lower(),
+                    "type": "IS_A",
+                    "properties": {
+                        "confidence": 0.9,
+                        "source": "niclip_hierarchy",
+                        "cognitive_process": process_id
                     }
-                )
+                })
 
         # 2. Cluster-based relationships (related concepts)
         for cluster_id, concepts in self.concept_clusters.items():
@@ -293,55 +264,45 @@ class NiCLIPConceptHierarchy:
 
                 # Create RELATED_TO relationships within cluster
                 for i, concept1 in enumerate(concepts):
-                    for concept2 in concepts[i + 1 :]:
+                    for concept2 in concepts[i+1:]:
                         if concept1 != concept2:
                             # Calculate similarity
-                            sim = (
-                                1.0
-                                - abs(
-                                    self.concept_embeddings[concept1]
-                                    - self.concept_embeddings[concept2]
-                                )
-                                / 10.0
-                            )  # Normalize
+                            sim = 1.0 - abs(
+                                self.concept_embeddings[concept1] -
+                                self.concept_embeddings[concept2]
+                            ) / 10.0  # Normalize
 
-                            relationships.append(
-                                {
-                                    "source": concept1,
-                                    "target": concept2,
-                                    "type": "RELATED_TO",
-                                    "properties": {
-                                        "similarity": float(np.clip(sim, 0, 1)),
-                                        "cluster_id": int(cluster_id),
-                                        "source": "niclip_clustering",
-                                    },
+                            relationships.append({
+                                "source": concept1,
+                                "target": concept2,
+                                "type": "RELATED_TO",
+                                "properties": {
+                                    "similarity": float(np.clip(sim, 0, 1)),
+                                    "cluster_id": int(cluster_id),
+                                    "source": "niclip_clustering"
                                 }
-                            )
+                            })
 
         # 3. Subconcept relationships from process hierarchy
         for process_name, process_info in self.process_hierarchy["Cognition"].items():
             for subconcept in process_info.get("subconcepts", []):
                 # Check if subconcept exists in our concept list
                 matching_concepts = [
-                    c
-                    for c in self.concept_embeddings
-                    if subconcept.lower() in c.lower()
-                    or c.lower() in subconcept.lower()
+                    c for c in self.concept_embeddings
+                    if subconcept.lower() in c.lower() or c.lower() in subconcept.lower()
                 ]
 
                 for concept in matching_concepts:
-                    relationships.append(
-                        {
-                            "source": concept,
-                            "target": process_name.lower(),
-                            "type": "PART_OF",
-                            "properties": {
-                                "confidence": 0.85,
-                                "source": "niclip_hierarchy",
-                                "subconcept_type": subconcept,
-                            },
+                    relationships.append({
+                        "source": concept,
+                        "target": process_name.lower(),
+                        "type": "PART_OF",
+                        "properties": {
+                            "confidence": 0.85,
+                            "source": "niclip_hierarchy",
+                            "subconcept_type": subconcept
                         }
-                    )
+                    })
 
         return relationships
 
@@ -379,16 +340,14 @@ class NiCLIPConceptHierarchy:
                 created += 1
             else:
                 # Find or create nodes
-                source_nodes = list(
-                    self.db.find_nodes(
-                        labels="Concept", properties={"name": rel["source"]}
-                    )
-                )
-                target_nodes = list(
-                    self.db.find_nodes(
-                        labels="Concept", properties={"name": rel["target"]}
-                    )
-                )
+                source_nodes = list(self.db.find_nodes(
+                    labels="Concept",
+                    properties={"name": rel["source"]}
+                ))
+                target_nodes = list(self.db.find_nodes(
+                    labels="Concept",
+                    properties={"name": rel["target"]}
+                ))
 
                 if source_nodes and target_nodes:
                     source_id = source_nodes[0][0]
@@ -398,7 +357,9 @@ class NiCLIPConceptHierarchy:
                     props = rel.get("properties", {})
                     props["created_at"] = datetime.utcnow().isoformat()
 
-                    if self.db.create_edge(source_id, target_id, rel["type"], props):
+                    if self.db.create_edge(
+                        source_id, target_id, rel["type"], props
+                    ):
                         created += 1
 
         logger.info(f"Created {created} hierarchical relationships")
@@ -421,7 +382,7 @@ class NiCLIPConceptHierarchy:
             "cluster_id": None,
             "related_concepts": [],
             "broader_concepts": [],
-            "narrower_concepts": [],
+            "narrower_concepts": []
         }
 
         # Get cognitive process
@@ -447,7 +408,7 @@ class NiCLIPConceptHierarchy:
 def get_hierarchy_builder(db=None):
     """Get or create the singleton hierarchy builder instance."""
     global _hierarchy_builder
-    if "_hierarchy_builder" not in globals():
+    if '_hierarchy_builder' not in globals():
         _hierarchy_builder = NiCLIPConceptHierarchy(db)
     return _hierarchy_builder
 
@@ -471,12 +432,12 @@ def test_concept_hierarchy():
     print(f"   Number of clusters: {hierarchy['n_clusters']}")
 
     print(f"\n🧠 Cognitive Process Mapping:")
-    for cluster_id, process in hierarchy["process_mapping"].items():
-        n_concepts = len(hierarchy["clusters"].get(cluster_id, []))
+    for cluster_id, process in hierarchy['process_mapping'].items():
+        n_concepts = len(hierarchy['clusters'].get(cluster_id, []))
         print(f"   Cluster {cluster_id}: {process} ({n_concepts} concepts)")
 
     print(f"\n🔗 Sample Relationships:")
-    for rel in hierarchy["relationships"][:10]:
+    for rel in hierarchy['relationships'][:10]:
         print(f"   {rel['source']} -[{rel['type']}]-> {rel['target']}")
 
     # Test specific concept

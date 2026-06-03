@@ -1,8 +1,7 @@
 """Visualization API for graph data preparation."""
 
 import time
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Dict, List, Optional, Any, Tuple
 import networkx as nx
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -10,12 +9,12 @@ from pydantic import BaseModel, Field
 from ..algorithms.layouts import LayoutEngine
 from ..utils.aggregation import GraphAggregator
 
+
 router = APIRouter(prefix="/visualization", tags=["visualization"])
 
 
 class GraphFilter(BaseModel):
     """Filter criteria for graph visualization."""
-
     node_properties: Optional[Dict[str, Any]] = Field(default=None)
     edge_types: Optional[List[str]] = Field(default=None)
     min_degree: Optional[int] = Field(default=None)
@@ -24,27 +23,17 @@ class GraphFilter(BaseModel):
 
 class VisualizationRequest(BaseModel):
     """Request for graph visualization."""
-
-    subgraph_query: Optional[str] = Field(
-        default=None, description="Cypher query for subgraph"
-    )
-    node_ids: Optional[List[str]] = Field(
-        default=None, description="Specific nodes to visualize"
-    )
+    subgraph_query: Optional[str] = Field(default=None, description="Cypher query for subgraph")
+    node_ids: Optional[List[str]] = Field(default=None, description="Specific nodes to visualize")
     max_nodes: int = Field(default=1000, description="Maximum nodes to return")
-    layout_algorithm: str = Field(
-        default="force_directed", description="Layout algorithm"
-    )
+    layout_algorithm: str = Field(default="force_directed", description="Layout algorithm")
     filters: Optional[GraphFilter] = Field(default=None)
     aggregate_dense: bool = Field(default=True, description="Aggregate dense regions")
-    density_threshold: float = Field(
-        default=0.7, description="Density threshold for aggregation"
-    )
+    density_threshold: float = Field(default=0.7, description="Density threshold for aggregation")
 
 
 class VisualizationResponse(BaseModel):
     """Response with visualization data."""
-
     nodes: List[Dict[str, Any]]
     edges: List[Dict[str, Any]]
     layout: Dict[str, Tuple[float, float]]
@@ -56,9 +45,10 @@ class GraphFilterEngine:
     """Engine for filtering graph elements."""
 
     @staticmethod
-    def by_node_property(
-        graph: nx.Graph, property_name: str, value: Any, operator: str = "eq"
-    ) -> nx.Graph:
+    def by_node_property(graph: nx.Graph,
+                         property_name: str,
+                         value: Any,
+                         operator: str = "eq") -> nx.Graph:
         """Filter nodes by property value.
 
         Args:
@@ -106,7 +96,7 @@ class GraphFilterEngine:
         filtered_edges = []
 
         for u, v, data in graph.edges(data=True):
-            if data.get("type") in edge_types:
+            if data.get('type') in edge_types:
                 filtered_edges.append((u, v))
 
         # Create subgraph with filtered edges
@@ -117,11 +107,9 @@ class GraphFilterEngine:
         return filtered_graph
 
     @staticmethod
-    def by_degree_range(
-        graph: nx.Graph,
-        min_degree: Optional[int] = None,
-        max_degree: Optional[int] = None,
-    ) -> nx.Graph:
+    def by_degree_range(graph: nx.Graph,
+                       min_degree: Optional[int] = None,
+                       max_degree: Optional[int] = None) -> nx.Graph:
         """Filter nodes by degree range.
 
         Args:
@@ -175,21 +163,20 @@ async def prepare_visualization(request: VisualizationRequest):
             if request.filters.edge_types:
                 graph = filter_engine.by_edge_type(graph, request.filters.edge_types)
 
-            if (
-                request.filters.min_degree is not None
-                or request.filters.max_degree is not None
-            ):
+            if request.filters.min_degree is not None or request.filters.max_degree is not None:
                 graph = filter_engine.by_degree_range(
-                    graph, request.filters.min_degree, request.filters.max_degree
+                    graph,
+                    request.filters.min_degree,
+                    request.filters.max_degree
                 )
 
         # Limit number of nodes
         if len(graph) > request.max_nodes:
             # Take highest degree nodes
-            nodes_by_degree = sorted(
-                graph.nodes(), key=lambda x: graph.degree(x), reverse=True
-            )
-            graph = graph.subgraph(nodes_by_degree[: request.max_nodes])
+            nodes_by_degree = sorted(graph.nodes(),
+                                    key=lambda x: graph.degree(x),
+                                    reverse=True)
+            graph = graph.subgraph(nodes_by_degree[:request.max_nodes])
 
         # Apply aggregation if requested
         aggregation_info = None
@@ -198,9 +185,8 @@ async def prepare_visualization(request: VisualizationRequest):
             graph = aggregator.cluster_dense_regions(graph, request.density_threshold)
             aggregation_info = {
                 "aggregated_clusters": len(aggregator.aggregation_metadata),
-                "original_nodes": sum(
-                    len(v["members"]) for v in aggregator.aggregation_metadata.values()
-                ),
+                "original_nodes": sum(len(v["members"])
+                                     for v in aggregator.aggregation_metadata.values())
             }
 
         # Compute layout
@@ -223,7 +209,11 @@ async def prepare_visualization(request: VisualizationRequest):
 
         edges = []
         for u, v, data in graph.edges(data=True):
-            edges.append({"source": str(u), "target": str(v), **data})
+            edges.append({
+                "source": str(u),
+                "target": str(v),
+                **data
+            })
 
         elapsed = (time.time() - start_time) * 1000
 
@@ -232,7 +222,7 @@ async def prepare_visualization(request: VisualizationRequest):
             edges=edges,
             layout={str(k): v for k, v in layout.items()},
             aggregation_info=aggregation_info,
-            performance_ms=elapsed,
+            performance_ms=elapsed
         )
 
     except Exception as e:
@@ -247,17 +237,17 @@ async def get_available_layouts():
             {
                 "name": "force_directed",
                 "description": "Force-directed layout using Fruchterman-Reingold",
-                "best_for": "General graphs",
+                "best_for": "General graphs"
             },
             {
                 "name": "hierarchical",
                 "description": "Hierarchical layout for tree-like structures",
-                "best_for": "Trees and DAGs",
+                "best_for": "Trees and DAGs"
             },
             {
                 "name": "circular",
                 "description": "Nodes arranged in a circle",
-                "best_for": "Small to medium graphs",
-            },
+                "best_for": "Small to medium graphs"
+            }
         ]
     }

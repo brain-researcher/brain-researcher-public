@@ -3,18 +3,17 @@ Performance testing suite for Brain Researcher UI
 Tests Core Web Vitals, TTI targets, and custom performance metrics
 """
 
-import asyncio
-import json
-import time
-from typing import Any, Dict, List
-from unittest.mock import Mock, patch
-
 import pytest
+import time
+import json
+import asyncio
+from typing import Dict, List, Any
+from unittest.mock import Mock, patch
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 class PerformanceTestSuite:
@@ -24,32 +23,32 @@ class PerformanceTestSuite:
         self.base_url = base_url
         self.driver = None
         self.performance_budgets = {
-            "TTI": 3000,  # Our key target: <3s
-            "LCP": 2500,  # Largest Contentful Paint
-            "FCP": 1800,  # First Contentful Paint
-            "FID": 100,  # First Input Delay
-            "CLS": 0.1,  # Cumulative Layout Shift
-            "bundle_size": 2048,  # KB
-            "initial_load": 3000,  # ms
-            "route_change": 500,  # ms
+            'TTI': 3000,    # Our key target: <3s
+            'LCP': 2500,    # Largest Contentful Paint
+            'FCP': 1800,    # First Contentful Paint
+            'FID': 100,     # First Input Delay
+            'CLS': 0.1,     # Cumulative Layout Shift
+            'bundle_size': 2048,  # KB
+            'initial_load': 3000, # ms
+            'route_change': 500,  # ms
         }
 
     def setup_driver(self) -> webdriver.Chrome:
         """Setup Chrome driver with performance monitoring enabled"""
         options = Options()
-        options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--window-size=1920,1080")
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=1920,1080')
 
         # Enable performance logging
-        options.add_argument("--enable-logging")
-        options.add_argument("--log-level=0")
-        options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
+        options.add_argument('--enable-logging')
+        options.add_argument('--log-level=0')
+        options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
 
         # Network throttling simulation
-        options.add_argument("--force-device-scale-factor=1")
+        options.add_argument('--force-device-scale-factor=1')
 
         return webdriver.Chrome(options=options)
 
@@ -115,7 +114,7 @@ class PerformanceTestSuite:
             EC.any_of(
                 EC.presence_of_element_located((By.CLASS_NAME, "main-content")),
                 EC.presence_of_element_located((By.ID, "root")),
-                EC.presence_of_element_located((By.TAG_NAME, "main")),
+                EC.presence_of_element_located((By.TAG_NAME, "main"))
             )
         )
 
@@ -137,7 +136,7 @@ class PerformanceTestSuite:
         """
 
         timing_details = self.driver.execute_script(timing_script)
-        timing_details["measured_load_time"] = total_load_time
+        timing_details['measured_load_time'] = total_load_time
 
         return timing_details
 
@@ -162,7 +161,7 @@ class PerformanceTestSuite:
                 EC.any_of(
                     EC.presence_of_element_located((By.CLASS_NAME, "page-content")),
                     EC.presence_of_element_located((By.TAG_NAME, "main")),
-                    EC.staleness_of(self.driver.find_element(By.TAG_NAME, "body")),
+                    EC.staleness_of(self.driver.find_element(By.TAG_NAME, "body"))
                 )
             )
 
@@ -176,36 +175,31 @@ class PerformanceTestSuite:
     def analyze_bundle_sizes(self) -> Dict[str, int]:
         """Analyze JavaScript bundle sizes"""
         # Get network logs for resource loading
-        logs = self.driver.get_log("performance")
+        logs = self.driver.get_log('performance')
         bundle_sizes = {}
 
         for entry in logs:
-            message = json.loads(entry["message"])
+            message = json.loads(entry['message'])
 
-            if (
-                message["message"]["method"] == "Network.responseReceived"
-                and message["message"]["params"]["response"]["mimeType"]
-                == "application/javascript"
-            ):
+            if (message['message']['method'] == 'Network.responseReceived' and
+                message['message']['params']['response']['mimeType'] == 'application/javascript'):
 
-                url = message["message"]["params"]["response"]["url"]
+                url = message['message']['params']['response']['url']
 
                 # Categorize bundles
-                if "_next/static/chunks/pages/" in url:
-                    bundle_sizes["pages"] = bundle_sizes.get("pages", 0) + 1
-                elif "_next/static/chunks/" in url:
-                    if "framework" in url:
-                        bundle_sizes["framework"] = bundle_sizes.get("framework", 0) + 1
-                    elif "main" in url:
-                        bundle_sizes["main"] = bundle_sizes.get("main", 0) + 1
+                if '_next/static/chunks/pages/' in url:
+                    bundle_sizes['pages'] = bundle_sizes.get('pages', 0) + 1
+                elif '_next/static/chunks/' in url:
+                    if 'framework' in url:
+                        bundle_sizes['framework'] = bundle_sizes.get('framework', 0) + 1
+                    elif 'main' in url:
+                        bundle_sizes['main'] = bundle_sizes.get('main', 0) + 1
                     else:
-                        bundle_sizes["chunks"] = bundle_sizes.get("chunks", 0) + 1
+                        bundle_sizes['chunks'] = bundle_sizes.get('chunks', 0) + 1
 
         return bundle_sizes
 
-    def test_image_optimization(
-        self, image_urls: List[str]
-    ) -> Dict[str, Dict[str, Any]]:
+    def test_image_optimization(self, image_urls: List[str]) -> Dict[str, Dict[str, Any]]:
         """Test image loading performance and optimization"""
         results = {}
 
@@ -259,21 +253,21 @@ class PerformanceTestSuite:
 
         try:
             results = {
-                "timestamp": time.time(),
-                "test_config": {
-                    "base_url": self.base_url,
-                    "budgets": self.performance_budgets,
+                'timestamp': time.time(),
+                'test_config': {
+                    'base_url': self.base_url,
+                    'budgets': self.performance_budgets
                 },
-                "violations": [],
+                'violations': []
             }
 
             # Test routes to analyze
             test_routes = [
-                "/",
-                "/dashboard",
-                "/charts",
-                "/knowledge-graph",
-                "/datasets",
+                '/',
+                '/dashboard',
+                '/charts',
+                '/knowledge-graph',
+                '/datasets'
             ]
 
             # 1. Test Web Vitals for each route
@@ -285,23 +279,18 @@ class PerformanceTestSuite:
                     web_vitals_results[route] = vitals
 
                     # Check TTI target specifically
-                    if (
-                        "TTI" in vitals
-                        and vitals["TTI"] > self.performance_budgets["TTI"]
-                    ):
-                        results["violations"].append(
-                            {
-                                "type": "TTI_BUDGET_VIOLATION",
-                                "route": route,
-                                "actual": vitals["TTI"],
-                                "budget": self.performance_budgets["TTI"],
-                            }
-                        )
+                    if 'TTI' in vitals and vitals['TTI'] > self.performance_budgets['TTI']:
+                        results['violations'].append({
+                            'type': 'TTI_BUDGET_VIOLATION',
+                            'route': route,
+                            'actual': vitals['TTI'],
+                            'budget': self.performance_budgets['TTI']
+                        })
                 except Exception as e:
                     print(f"Web Vitals test failed for {route}: {e}")
-                    web_vitals_results[route] = {"error": str(e)}
+                    web_vitals_results[route] = {'error': str(e)}
 
-            results["web_vitals"] = web_vitals_results
+            results['web_vitals'] = web_vitals_results
 
             # 2. Test initial load times
             print("Testing initial load times...")
@@ -311,45 +300,36 @@ class PerformanceTestSuite:
                     timing = self.measure_initial_load_time(f"{self.base_url}{route}")
                     load_times[route] = timing
 
-                    if (
-                        timing.get("measured_load_time", 0)
-                        > self.performance_budgets["initial_load"]
-                    ):
-                        results["violations"].append(
-                            {
-                                "type": "LOAD_TIME_VIOLATION",
-                                "route": route,
-                                "actual": timing["measured_load_time"],
-                                "budget": self.performance_budgets["initial_load"],
-                            }
-                        )
+                    if timing.get('measured_load_time', 0) > self.performance_budgets['initial_load']:
+                        results['violations'].append({
+                            'type': 'LOAD_TIME_VIOLATION',
+                            'route': route,
+                            'actual': timing['measured_load_time'],
+                            'budget': self.performance_budgets['initial_load']
+                        })
                 except Exception as e:
                     print(f"Load time test failed for {route}: {e}")
-                    load_times[route] = {"error": str(e)}
+                    load_times[route] = {'error': str(e)}
 
-            results["load_times"] = load_times
+            results['load_times'] = load_times
 
             # 3. Test route change performance
             print("Testing route changes...")
             try:
-                route_changes = self.measure_route_change_performance(
-                    test_routes[1:]
-                )  # Skip home
-                results["route_changes"] = route_changes
+                route_changes = self.measure_route_change_performance(test_routes[1:])  # Skip home
+                results['route_changes'] = route_changes
 
                 for route, time_taken in route_changes.items():
-                    if time_taken > self.performance_budgets["route_change"]:
-                        results["violations"].append(
-                            {
-                                "type": "ROUTE_CHANGE_VIOLATION",
-                                "route": route,
-                                "actual": time_taken,
-                                "budget": self.performance_budgets["route_change"],
-                            }
-                        )
+                    if time_taken > self.performance_budgets['route_change']:
+                        results['violations'].append({
+                            'type': 'ROUTE_CHANGE_VIOLATION',
+                            'route': route,
+                            'actual': time_taken,
+                            'budget': self.performance_budgets['route_change']
+                        })
             except Exception as e:
                 print(f"Route change test failed: {e}")
-                results["route_changes"] = {"error": str(e)}
+                results['route_changes'] = {'error': str(e)}
 
             # 4. Analyze bundle sizes
             print("Analyzing bundle sizes...")
@@ -357,14 +337,14 @@ class PerformanceTestSuite:
                 self.driver.get(self.base_url)
                 time.sleep(3)  # Allow all bundles to load
                 bundle_analysis = self.analyze_bundle_sizes()
-                results["bundle_analysis"] = bundle_analysis
+                results['bundle_analysis'] = bundle_analysis
             except Exception as e:
                 print(f"Bundle analysis failed: {e}")
-                results["bundle_analysis"] = {"error": str(e)}
+                results['bundle_analysis'] = {'error': str(e)}
 
             # 5. Calculate overall performance score
-            results["performance_score"] = self.calculate_performance_score(results)
-            results["tti_target_met"] = self.check_tti_target(results)
+            results['performance_score'] = self.calculate_performance_score(results)
+            results['tti_target_met'] = self.check_tti_target(results)
 
             return results
 
@@ -377,13 +357,13 @@ class PerformanceTestSuite:
         scores = []
 
         # Web Vitals scoring
-        for route, vitals in results.get("web_vitals", {}).items():
-            if isinstance(vitals, dict) and "error" not in vitals:
+        for route, vitals in results.get('web_vitals', {}).items():
+            if isinstance(vitals, dict) and 'error' not in vitals:
                 route_scores = []
 
                 # TTI score (most important)
-                if "TTI" in vitals:
-                    tti = vitals["TTI"]
+                if 'TTI' in vitals:
+                    tti = vitals['TTI']
                     if tti <= 3000:
                         route_scores.append(100)
                     elif tti <= 5000:
@@ -392,8 +372,8 @@ class PerformanceTestSuite:
                         route_scores.append(0)
 
                 # LCP score
-                if "LCP" in vitals:
-                    lcp = vitals["LCP"]
+                if 'LCP' in vitals:
+                    lcp = vitals['LCP']
                     if lcp <= 2500:
                         route_scores.append(100)
                     elif lcp <= 4000:
@@ -402,8 +382,8 @@ class PerformanceTestSuite:
                         route_scores.append(0)
 
                 # FID score
-                if "FID" in vitals:
-                    fid = vitals["FID"]
+                if 'FID' in vitals:
+                    fid = vitals['FID']
                     if fid <= 100:
                         route_scores.append(100)
                     elif fid <= 300:
@@ -412,8 +392,8 @@ class PerformanceTestSuite:
                         route_scores.append(0)
 
                 # CLS score
-                if "CLS" in vitals:
-                    cls = vitals["CLS"]
+                if 'CLS' in vitals:
+                    cls = vitals['CLS']
                     if cls <= 0.1:
                         route_scores.append(100)
                     elif cls <= 0.25:
@@ -425,9 +405,9 @@ class PerformanceTestSuite:
                     scores.extend(route_scores)
 
         # Load time scoring
-        for route, timing in results.get("load_times", {}).items():
-            if isinstance(timing, dict) and "measured_load_time" in timing:
-                load_time = timing["measured_load_time"]
+        for route, timing in results.get('load_times', {}).items():
+            if isinstance(timing, dict) and 'measured_load_time' in timing:
+                load_time = timing['measured_load_time']
                 if load_time <= 3000:
                     scores.append(100)
                 elif load_time <= 5000:
@@ -439,9 +419,9 @@ class PerformanceTestSuite:
 
     def check_tti_target(self, results: Dict[str, Any]) -> bool:
         """Check if TTI <3s target is met across all routes"""
-        for route, vitals in results.get("web_vitals", {}).items():
-            if isinstance(vitals, dict) and "TTI" in vitals:
-                if vitals["TTI"] > 3000:
+        for route, vitals in results.get('web_vitals', {}).items():
+            if isinstance(vitals, dict) and 'TTI' in vitals:
+                if vitals['TTI'] > 3000:
                     return False
         return True
 
@@ -460,12 +440,10 @@ class TestPerformanceOptimization:
         results = performance_suite.run_comprehensive_test()
 
         # Extract TTI violations
-        tti_violations = [
-            v for v in results["violations"] if v["type"] == "TTI_BUDGET_VIOLATION"
-        ]
+        tti_violations = [v for v in results['violations'] if v['type'] == 'TTI_BUDGET_VIOLATION']
 
         assert len(tti_violations) == 0, f"TTI budget violations: {tti_violations}"
-        assert results["tti_target_met"], "TTI <3s target not met across all routes"
+        assert results['tti_target_met'], "TTI <3s target not met across all routes"
 
     @pytest.mark.performance
     def test_web_vitals_budgets(self, performance_suite):
@@ -473,11 +451,8 @@ class TestPerformanceOptimization:
         results = performance_suite.run_comprehensive_test()
 
         # Check for any Web Vitals violations
-        vital_violations = [
-            v
-            for v in results["violations"]
-            if v["type"] in ["TTI_BUDGET_VIOLATION", "LOAD_TIME_VIOLATION"]
-        ]
+        vital_violations = [v for v in results['violations']
+                           if v['type'] in ['TTI_BUDGET_VIOLATION', 'LOAD_TIME_VIOLATION']]
 
         if vital_violations:
             pytest.fail(f"Web Vitals budget violations found: {vital_violations}")
@@ -488,7 +463,7 @@ class TestPerformanceOptimization:
         results = performance_suite.run_comprehensive_test()
 
         min_score = 70  # Minimum acceptable score
-        actual_score = results["performance_score"]
+        actual_score = results['performance_score']
 
         assert actual_score >= min_score, (
             f"Performance score {actual_score} below minimum {min_score}. "
@@ -500,25 +475,21 @@ class TestPerformanceOptimization:
         """Test that client-side route changes are fast"""
         results = performance_suite.run_comprehensive_test()
 
-        route_violations = [
-            v for v in results["violations"] if v["type"] == "ROUTE_CHANGE_VIOLATION"
-        ]
+        route_violations = [v for v in results['violations'] if v['type'] == 'ROUTE_CHANGE_VIOLATION']
 
-        assert (
-            len(route_violations) == 0
-        ), f"Route change performance violations: {route_violations}"
+        assert len(route_violations) == 0, f"Route change performance violations: {route_violations}"
 
     @pytest.mark.performance
     def test_bundle_optimization(self, performance_suite):
         """Test that JavaScript bundles are properly optimized and split"""
         results = performance_suite.run_comprehensive_test()
 
-        bundle_analysis = results.get("bundle_analysis", {})
+        bundle_analysis = results.get('bundle_analysis', {})
 
         # Check that we have proper code splitting
-        assert "framework" in bundle_analysis, "Framework bundle should be split"
-        assert "main" in bundle_analysis, "Main bundle should exist"
-        assert "chunks" in bundle_analysis, "Code should be split into chunks"
+        assert 'framework' in bundle_analysis, "Framework bundle should be split"
+        assert 'main' in bundle_analysis, "Main bundle should exist"
+        assert 'chunks' in bundle_analysis, "Code should be split into chunks"
 
     @pytest.mark.performance
     @pytest.mark.slow
@@ -533,23 +504,21 @@ class TestPerformanceOptimization:
         """Test that images are properly optimized"""
         # Test with some common image scenarios
         test_images = [
-            "/static/brain-scan-sample.jpg",
-            "/static/chart-example.png",
-            "/static/logo.svg",
+            '/static/brain-scan-sample.jpg',
+            '/static/chart-example.png',
+            '/static/logo.svg'
         ]
 
         results = performance_suite.test_image_optimization(test_images)
 
         for url, metrics in results.items():
-            if "error" not in metrics:
+            if 'error' not in metrics:
                 # Images should load within reasonable time
-                assert (
-                    metrics.get("loadTime", 0) < 2000
-                ), f"Image {url} load time too high"
+                assert metrics.get('loadTime', 0) < 2000, f"Image {url} load time too high"
 
                 # Images should be properly sized (not loading massive images)
-                natural_width = metrics.get("naturalWidth", 0)
-                display_width = metrics.get("displayWidth", 0)
+                natural_width = metrics.get('naturalWidth', 0)
+                display_width = metrics.get('displayWidth', 0)
 
                 if natural_width > 0 and display_width > 0:
                     ratio = natural_width / display_width
@@ -561,26 +530,24 @@ if __name__ == "__main__":
     suite = PerformanceTestSuite()
     results = suite.run_comprehensive_test()
 
-    print("\n" + "=" * 50)
+    print("\n" + "="*50)
     print("BRAIN RESEARCHER UI PERFORMANCE TEST RESULTS")
-    print("=" * 50)
+    print("="*50)
 
     print(f"\nOverall Performance Score: {results['performance_score']}/100")
     print(f"TTI Target (<3s) Met: {'✓' if results['tti_target_met'] else '✗'}")
 
-    if results["violations"]:
+    if results['violations']:
         print(f"\nViolations Found: {len(results['violations'])}")
-        for violation in results["violations"]:
-            print(
-                f"  - {violation['type']}: {violation['route']} "
-                f"({violation['actual']:.0f}ms > {violation['budget']}ms)"
-            )
+        for violation in results['violations']:
+            print(f"  - {violation['type']}: {violation['route']} "
+                  f"({violation['actual']:.0f}ms > {violation['budget']}ms)")
     else:
         print("\n✓ No performance budget violations found!")
 
     # Save detailed results
     output_file = f"performance_report_{int(time.time())}.json"
-    with open(output_file, "w") as f:
+    with open(output_file, 'w') as f:
         json.dump(results, f, indent=2)
 
     print(f"\nDetailed results saved to: {output_file}")

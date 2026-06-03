@@ -60,7 +60,11 @@ class ConnectionManager:
         # Active execution trackers
         self.active_executions: Set[str] = set()
 
-    async def connect_websocket(self, websocket: WebSocket, execution_id: str):
+    async def connect_websocket(
+        self,
+        websocket: WebSocket,
+        execution_id: str
+    ):
         """
         Connect a WebSocket client.
 
@@ -79,14 +83,11 @@ class ConnectionManager:
         self.active_executions.add(execution_id)
 
         # Send connection confirmation
-        await self._send_websocket(
-            websocket,
-            {
-                "event": "connected",
-                "execution_id": execution_id,
-                "message": "WebSocket connected successfully",
-            },
-        )
+        await self._send_websocket(websocket, {
+            "event": "connected",
+            "execution_id": execution_id,
+            "message": "WebSocket connected successfully"
+        })
 
         # Send update history if available
         if execution_id in self.update_history:
@@ -95,7 +96,11 @@ class ConnectionManager:
 
         logger.info(f"WebSocket connected for execution {execution_id}")
 
-    async def disconnect_websocket(self, websocket: WebSocket, execution_id: str):
+    async def disconnect_websocket(
+        self,
+        websocket: WebSocket,
+        execution_id: str
+    ):
         """
         Disconnect a WebSocket client.
 
@@ -112,7 +117,10 @@ class ConnectionManager:
 
         logger.info(f"WebSocket disconnected for execution {execution_id}")
 
-    async def create_sse_stream(self, execution_id: str) -> asyncio.Queue:
+    async def create_sse_stream(
+        self,
+        execution_id: str
+    ) -> asyncio.Queue:
         """
         Create an SSE stream for an execution.
 
@@ -133,14 +141,12 @@ class ConnectionManager:
         self.active_executions.add(execution_id)
 
         # Send connection event
-        await queue.put(
-            StatusUpdate(
-                execution_id=execution_id,
-                event="connected",
-                timestamp=asyncio.get_event_loop().time(),
-                data={"message": "SSE stream connected"},
-            )
-        )
+        await queue.put(StatusUpdate(
+            execution_id=execution_id,
+            event="connected",
+            timestamp=asyncio.get_event_loop().time(),
+            data={"message": "SSE stream connected"}
+        ))
 
         # Send update history if available
         if execution_id in self.update_history:
@@ -150,7 +156,11 @@ class ConnectionManager:
         logger.info(f"SSE stream created for execution {execution_id}")
         return queue
 
-    async def close_sse_stream(self, execution_id: str, queue: asyncio.Queue):
+    async def close_sse_stream(
+        self,
+        execution_id: str,
+        queue: asyncio.Queue
+    ):
         """
         Close an SSE stream.
 
@@ -173,7 +183,7 @@ class ConnectionManager:
         execution_id: str,
         event: str,
         data: Dict[str, Any],
-        timestamp: Optional[float] = None,
+        timestamp: Optional[float] = None
     ):
         """
         Broadcast update to all connected clients.
@@ -188,7 +198,7 @@ class ConnectionManager:
             execution_id=execution_id,
             event=event,
             timestamp=timestamp or asyncio.get_event_loop().time(),
-            data=data,
+            data=data
         )
 
         # Store in history
@@ -198,24 +208,20 @@ class ConnectionManager:
 
         # Trim history if needed
         if len(self.update_history[execution_id]) > self.history_limit:
-            self.update_history[execution_id] = self.update_history[execution_id][
-                -self.history_limit :
-            ]
+            self.update_history[execution_id] = \
+                self.update_history[execution_id][-self.history_limit:]
 
         # Broadcast to WebSocket connections
         if execution_id in self.websocket_connections:
             disconnected = set()
             for websocket in self.websocket_connections[execution_id]:
                 try:
-                    await self._send_websocket(
-                        websocket,
-                        {
-                            "event": event,
-                            "data": data,
-                            "timestamp": update.timestamp,
-                            "update_id": update.update_id,
-                        },
-                    )
+                    await self._send_websocket(websocket, {
+                        "event": event,
+                        "data": data,
+                        "timestamp": update.timestamp,
+                        "update_id": update.update_id
+                    })
                 except WebSocketDisconnect:
                     disconnected.add(websocket)
                 except Exception as e:
@@ -234,7 +240,11 @@ class ConnectionManager:
                 except Exception as e:
                     logger.error(f"Failed to send SSE update: {e}")
 
-    async def _send_websocket(self, websocket: WebSocket, data: Dict[str, Any]):
+    async def _send_websocket(
+        self,
+        websocket: WebSocket,
+        data: Dict[str, Any]
+    ):
         """Send data through WebSocket."""
         await websocket.send_json(data)
 
@@ -249,8 +259,10 @@ class ConnectionManager:
             "websocket_connections": sum(
                 len(conns) for conns in self.websocket_connections.values()
             ),
-            "sse_streams": sum(len(queues) for queues in self.sse_queues.values()),
-            "executions_with_history": len(self.update_history),
+            "sse_streams": sum(
+                len(queues) for queues in self.sse_queues.values()
+            ),
+            "executions_with_history": len(self.update_history)
         }
 
     def cleanup_execution(self, execution_id: str):
@@ -279,7 +291,9 @@ class StatusUpdateService:
         self.execution_trackers: Dict[str, Any] = {}  # ExecutionTracker instances
 
     async def register_execution(
-        self, execution_id: str, tracker: Any  # ExecutionTracker
+        self,
+        execution_id: str,
+        tracker: Any  # ExecutionTracker
     ):
         """
         Register an execution tracker.
@@ -296,11 +310,11 @@ class StatusUpdateService:
                 execution_id=execution_id,
                 event=update.get("event", "update"),
                 data=update.get("data", {}),
-                timestamp=update.get("timestamp"),
+                timestamp=update.get("timestamp")
             )
 
         # For AsyncExecutionTracker
-        if hasattr(tracker, "add_listener"):
+        if hasattr(tracker, 'add_listener'):
             await tracker.add_listener(update_callback)
         else:
             tracker.update_callback = update_callback
@@ -330,7 +344,11 @@ class StatusUpdateService:
         """
         return self.execution_trackers.get(execution_id)
 
-    async def handle_websocket(self, websocket: WebSocket, execution_id: str):
+    async def handle_websocket(
+        self,
+        websocket: WebSocket,
+        execution_id: str
+    ):
         """
         Handle WebSocket connection for status updates.
 
@@ -350,9 +368,10 @@ class StatusUpdateService:
                 if data.get("command") == "get_status":
                     tracker = self.get_execution_tracker(execution_id)
                     if tracker:
-                        await websocket.send_json(
-                            {"event": "status", "data": tracker.get_status()}
-                        )
+                        await websocket.send_json({
+                            "event": "status",
+                            "data": tracker.get_status()
+                        })
                 elif data.get("command") == "ping":
                     await websocket.send_json({"event": "pong"})
 
@@ -385,11 +404,7 @@ class StatusUpdateService:
                     yield update.to_sse()
 
                     # Check if execution completed
-                    if update.event in [
-                        "execution_completed",
-                        "execution_failed",
-                        "execution_cancelled",
-                    ]:
+                    if update.event in ["execution_completed", "execution_failed", "execution_cancelled"]:
                         break
 
             except asyncio.CancelledError:
@@ -403,7 +418,7 @@ class StatusUpdateService:
             headers={
                 "Cache-Control": "no-cache",
                 "X-Accel-Buffering": "no",  # Disable Nginx buffering
-            },
+            }
         )
 
 

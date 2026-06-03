@@ -3,19 +3,18 @@
 This module provides fMRIPrep tools conforming to the NeuroTool interface.
 It delegates to the existing agent tool implementation to avoid duplication.
 """
-
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
-from brain_researcher.services.tools.base import ExecutionMode, NeuroTool
+from brain_researcher.services.tools.base import NeuroTool, ExecutionMode
+from brain_researcher.services.tools.result import ToolResult
 from brain_researcher.services.tools.fmriprep_tool import (
+    FMRIPrepTool,
+    FMRIPrepQCTool,
     FMRIPrepArgs,
     FMRIPrepQCArgs,
-    FMRIPrepQCTool,
-    FMRIPrepTool,
 )
-from brain_researcher.services.tools.result import ToolResult
 
 
 class FMRIPrepPipeline(NeuroTool):

@@ -565,9 +565,7 @@ def _normalize_gfs_hit(
     pmcid = _normalize_pmcid(header.get("pmcid") or ids.get("pmcid"))
     pmid = _normalize_pmid(header.get("pmid") or ids.get("pmid"))
     doi = _normalize_doi(header.get("doi") or ids.get("doi"))
-    real_title = _preferred_title(
-        _title_from_text(text), header.get("title"), raw_title
-    )
+    real_title = _preferred_title(_title_from_text(text), header.get("title"), raw_title)
     synthetic_title = None
     if not real_title:
         synthetic_title = _fallback_display_title(text)
@@ -609,7 +607,11 @@ def _retrieved_context_doc_id(ctx: Any, store_name: str) -> Optional[str]:
         file_search_store = (
             getattr(ctx, "file_search_store", None) or store_name or ""
         ).strip()
-        return f"{file_search_store}/files/{title}" if file_search_store else title
+        return (
+            f"{file_search_store}/files/{title}"
+            if file_search_store
+            else title
+        )
 
     return None
 
@@ -630,9 +632,7 @@ def _merge_hits(existing: Dict[str, Any], incoming: Dict[str, Any]) -> Dict[str,
     if not best.get("text") and other.get("text"):
         best["text"] = other["text"]
     best["score"] = (
-        existing.get("score")
-        if existing_score >= incoming_score
-        else incoming.get("score")
+        existing.get("score") if existing_score >= incoming_score else incoming.get("score")
     )
     return best
 
@@ -843,7 +843,6 @@ def search_gfs(
         "n_docs_hit": len(sorted_hits),
         "store_errors": store_errors,
     }
-
 
 def search_gfs_auto(
     query: str,

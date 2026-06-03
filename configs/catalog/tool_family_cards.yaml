@@ -9,7 +9,31 @@ family_cards:
       - Traverse evidence paths in BR-KG
       - Answer graph-based neuroscience questions
     tags: [knowledge, graph, ontology, concept, region, atlas, coordinate, task, evidence, br-kg, neurosynth]
-    canonical_entrypoints: [br_kg.search_nodes, kg_multihop_qa, coordinate_to_concept, find_related_concepts, graph_query]
+    canonical_entrypoints: [graph_query, br_kg.search_nodes, kg_multihop_qa, coordinate_to_concept, find_related_concepts]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: kg_lookup
+    title: KG Lookup
+    summary: Lookup existing BR-KG nodes, concepts, coordinates, ontology terms, and related-neighbor evidence paths.
+    when_to_use:
+      - Search for existing graph nodes or concepts
+      - Find related concepts, regions, tasks, or ontology terms
+      - Map coordinates, atlases, or networks to known KG entities
+      - Answer lookup or traversal questions over BR-KG
+    tags: [knowledge graph lookup, kg lookup, search nodes, graph nodes, related concepts, neighbors, ontology, coordinate, atlas, region, br-kg]
+    canonical_entrypoints: [br_kg.search_nodes, kg_multihop_qa, coordinate_to_concept, find_related_concepts]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: kg_construction
+    title: KG Construction
+    summary: Build, create, extract, or extend knowledge-graph structures from datasets, literature, and connectome-derived evidence.
+    when_to_use:
+      - Build or create a neuroscience knowledge graph
+      - Extract graph triples or evidence links from datasets or papers
+      - Extend KG structure from connectomes, genetics, literature, or behavior
+      - Prepare graph-query inputs for construction or ingestion workflows
+    tags: [knowledge graph construction, kg construction, build knowledge graph, build kg, create graph, create knowledge graph, construct graph, graph construction, extract graph, graph triples, triple extraction, kg ingest, graph ingestion, evidence graph, node edge graph, connectomes, connectome knowledge graph, tractography knowledge graph, tractography-based structural knowledge graph, structural knowledge graph, diffusion knowledge graph, diffusion data knowledge graph, literature-derived graph, dataset-derived graph, gene-brain-behavior, evidence extraction]
+    canonical_entrypoints: [graph_query, kg_multihop_qa, literature_mining]
     query_service_intents: []
     graph_family_ids: []
   - id: hypothesis_generation
@@ -75,7 +99,7 @@ family_cards:
       - Align anatomy to MNI152 or another template
       - Register functional and structural images
       - Run affine or nonlinear registration including ANTs SyN
-    tags: [registration, normalization, alignment, affine, nonlinear, ants, syn, template, mni152, flirt, fnirt]
+    tags: [registration, image registration, coregistration, normalization, spatial normalization, standard space, alignment, affine, affine registration, nonlinear, nonlinear registration, ants, ants syn, syn, template, mni152, epi-to-t1, t1-to-mni, apply transforms, warp field, deformation field, flirt, fnirt]
     canonical_entrypoints: [ants_registration, fsl_fnirt, fsl_flirt]
     query_service_intents: [registration_nonlinear_mri]
     graph_family_ids: [ants, fsl]
@@ -121,7 +145,7 @@ family_cards:
       - Segment T1-weighted anatomy into tissue classes
       - Run FAST-style bias-field correction and tissue segmentation
       - Produce GM, WM, and CSF tissue maps before morphometry or QC
-    tags: [structural segmentation, tissue segmentation, fast, fsl fast, bias field correction, bias correction, gm, wm, csf, t1w segmentation, tissue classes]
+    tags: [structural segmentation, tissue segmentation, fast, fsl fast, bias field correction, bias correction, gm, wm, csf, gray matter, grey matter, white matter, tissue maps, volumetry, t1w segmentation, tissue classes]
     canonical_entrypoints: [fsl_fast, workflow_fastsurfer, spm12_vbm]
     query_service_intents: []
     graph_family_ids: [fsl, freesurfer]
@@ -136,6 +160,17 @@ family_cards:
     canonical_entrypoints: [connectivity_matrix, seed_based_fc]
     query_service_intents: [seed_connectivity]
     graph_family_ids: [fsl]
+  - id: electrophysiology_connectivity
+    title: EEG MEG Connectivity
+    summary: EEG, MEG, and iEEG connectivity analyses such as phase-locking, phase-lag, coherence, and sensor-space connectivity.
+    when_to_use:
+      - Compute phase-locking value or phase-lag connectivity for MEG or EEG
+      - Estimate coherence, PLI, wPLI, or related M/EEG connectivity measures
+      - Analyze sensor-space or epoch-level electrophysiology connectivity
+    tags: [eeg, meg, ieeg, meeg, connectivity, sensor-space connectivity, phase-locking, phase locking, phase lag, pli, wpli, plv, coherence, epochs, mne]
+    canonical_entrypoints: [mne_connectivity, connectivity_measures]
+    query_service_intents: []
+    graph_family_ids: []
   - id: task_glm
     title: Task GLM
     summary: First-level or task-based general linear model analysis for fMRI.
@@ -200,7 +235,7 @@ family_cards:
       - Run VBM or structural morphometry with CAT12 or SPM-style workflows
       - Compare gray or white matter volume across groups
       - Analyze tissue-volume differences or voxel-based morphometry outputs
-    tags: [vbm, voxel-based morphometry, voxel based morphometry, morphometry, structural, cat12, spm, gray matter, grey matter, white matter, gray matter volume, grey matter volume, white matter volume, tissue volume]
+    tags: [vbm, voxel-based morphometry, voxel based morphometry, morphometry, structural, cat12, spm, gray matter, grey matter, white matter, gray matter volume, grey matter volume, white matter volume, tissue volume, cortical layer, cortical layers, cortical layer segmentation, high-resolution anatomy, high-resolution 7t, 7t anatomy]
     canonical_entrypoints: [spm12_vbm]
     query_service_intents: []
     graph_family_ids: [freesurfer, workbench]
@@ -259,6 +294,39 @@ family_cards:
     canonical_entrypoints: [compute_brain_age]
     query_service_intents: [brain_age]
     graph_family_ids: [freesurfer, workbench]
+  - id: brain_simulation
+    title: Brain Simulation
+    summary: Simulate neural mass models, synthetic BOLD/fMRI data, connectome dynamics, and controlled neuroimaging ground-truth datasets.
+    when_to_use:
+      - Simulate BOLD, fMRI, DWI, or lesion datasets with known ground truth
+      - Generate synthetic connectomes, activation maps, or brain network dynamics
+      - Run neural mass, balloon, Kuramoto, Wilson-Cowan, or Jansen-Rit style simulations
+    tags: [brain simulation, neural mass, neural-mass, whole-brain simulation, jansen-rit, wilson-cowan, kuramoto, balloon model, tvb, synthetic bold, synthetic fmri, simulated bold, simulated fc, connectome simulation, synthetic connectivity, controlled ground truth, phantom data]
+    canonical_entrypoints: [brain_simulation, workflow_brain_simulation]
+    query_service_intents: []
+    graph_family_ids: []
+  - id: cortical_reconstruction
+    title: Cortical Reconstruction
+    summary: FreeSurfer/FastSurfer-style cortical reconstruction, surface extraction, cortical thickness, parcellation, and morphometry outputs.
+    when_to_use:
+      - Run recon-all or FastSurfer-style cortical reconstruction
+      - Extract cortical thickness, sulcal depth, curvature, surface area, or parcellation outputs
+      - Produce fsaverage-compatible cortical surfaces before surface analysis
+    tags: [cortical reconstruction, surface reconstruction, freesurfer, fastsurfer, recon-all, recon all, aparc, aseg, cortical thickness, cortical parcellation, pial surface, white surface, fsaverage, gyrification, sulcal depth, curvature, surface area]
+    canonical_entrypoints: [freesurfer_recon_all, workflow_fastsurfer, freesurfer_qc]
+    query_service_intents: []
+    graph_family_ids: [freesurfer]
+  - id: surface_processing
+    title: Surface Processing
+    summary: Surface projection, CIFTI/GIFTI handling, cortical surface resampling, smoothing, gradients, and surface-based map operations.
+    when_to_use:
+      - Project volume data to cortical surfaces or resample surface maps
+      - Work with CIFTI/GIFTI, fsaverage, or HCP Workbench-style surface outputs
+      - Compute surface gradients, spatial correlations, geodesic distances, or surface visualizations
+    tags: [surface projection, volume to surface, volume-to-surface, cortical surface, fsaverage, fslr, cifti, gifti, hcp workbench, surface resample, surface smoothing, surface map, spin permutation, geodesic distance, surface gradient, cortical gradient, myelin map, dscalar]
+    canonical_entrypoints: [surface_projection, workflow_surface_projection_analysis, workflow_spatial_correlation_surface, workflow_connectivity_gradients, viz_stat_maps]
+    query_service_intents: []
+    graph_family_ids: [workbench, freesurfer]
   - id: structural_qc
     title: Structural QC
     summary: Quality assurance reports and QC checks for anatomical and morphometry derivatives.
@@ -279,7 +347,7 @@ family_cards:
       - Run MRIQC-style or preprocessing QC workflows on BOLD data
       - Check brain coverage or gross acquisition problems before downstream analysis
     tags: [qc, quality control, motion qc, temporal snr, tsnr, signal spikes, artifact detection, dvars, framewise displacement, fd, outlier subjects, brain coverage, coverage check, timeseries qc, mriqc, preprocessing qc]
-    canonical_entrypoints: [workflow_preprocessing_qc, workflow_mriqc, mriqc_group_report, motion_quantification]
+    canonical_entrypoints: [mriqc_group_report, workflow_preprocessing_qc, motion_quantification]
     query_service_intents: [motion_correction_fmri]
     graph_family_ids: [fsl, bidsapps]
   - id: visualization
@@ -290,7 +358,7 @@ family_cards:
       - Generate glass-brain plots or activation figures
       - Inspect brain overlays and result figures
       - Produce quick visual summaries of outputs
-    tags: [visualization, stat map, plot, render, overlay, glass brain, activation map, figure]
+    tags: [visualization, interactive, 3d, stat map, plot, render, overlay, activation overlay, brain overlay, glass brain, interactive 3d brain, 3d brain, activation map, figure]
     canonical_entrypoints: [viz_stat_maps]
     query_service_intents: []
     graph_family_ids: [workbench, freesurfer]
@@ -301,7 +369,7 @@ family_cards:
       - Harmonize multi-site datasets
       - Reduce scanner effects
       - Apply ComBat-style harmonization
-    tags: [harmonization, combat, multi-site, scanner effects]
+    tags: [harmonization, combat, neurocombat, multi-site, scanner effects, pipeline harmonization, version harmonization, qsiprep version harmonization, diffusion metric harmonization, diffusion metrics, cortical thickness harmonization, freesurfer harmonization]
     canonical_entrypoints: [data_harmonization]
     query_service_intents: []
     graph_family_ids: []
@@ -312,7 +380,7 @@ family_cards:
       - Detect or segment lesions from structural MRI
       - Run lesion-focused workflows for stroke or clinical datasets
       - Prepare lesion masks before lesion network mapping or downstream analysis
-    tags: [lesion detection, lesion segmentation, lesion mask, stroke lesion, stroke patient, automated lesion, lesion mapping]
+    tags: [lesion detection, lesion segmentation, lesion mask, stroke lesion, stroke patient, automated lesion, lesion mapping, vlsm, voxel lesion symptom mapping, white matter hyperintensity, wmh]
     canonical_entrypoints: [lesion_detection]
     query_service_intents: []
     graph_family_ids: [ants, freesurfer]
@@ -323,7 +391,8 @@ family_cards:
       - Run realtime fMRI pipelines
       - Support neurofeedback or online analysis
       - Process incoming runs incrementally
-    tags: [realtime, neurofeedback, online, streaming, incremental, closed loop]
+      - Use prospective navigator echoes for low-latency online updates
+    tags: [realtime, real-time, neurofeedback, online, streaming, incremental, closed loop, prospective, navigator echoes, navigator, low latency]
     canonical_entrypoints: [realtime_fmri, realtime.pipeline_client]
     query_service_intents: []
     graph_family_ids: []
@@ -349,3 +418,14 @@ family_cards:
     canonical_entrypoints: [fsl_palm, multiple_comparison_correction]
     query_service_intents: []
     graph_family_ids: [fsl]
+  - id: graph_theory
+    title: Graph Theory
+    summary: Network topology and graph-metric analysis for structural or functional connectomes.
+    when_to_use:
+      - Compute graph metrics from structural or functional connectomes
+      - Estimate modularity, clustering, path length, centrality, participation, or rich-club organization
+      - Analyze connectome topology or graph communities rather than KG lookup/construction
+    tags: [graph theory, graph metrics, network topology, modularity, clustering coefficient, path length, degree centrality, participation coefficient, rich club, graph communities, structural connectome, functional connectome, connectome graph]
+    canonical_entrypoints: [workflow_dwi_connectome, workflow_connectivity_gradients, workflow_spd_connectome_analysis, workflow_gnn_classification]
+    query_service_intents: []
+    graph_family_ids: [fsl, mrtrix]

@@ -381,11 +381,9 @@ class SearchOrchestrator:
                     base_score=base_norms[idx],
                     evidence_score=0.0,
                     properties=node.properties or {},
-                    score_breakdown=(
-                        {"base_norm": base_norms[idx], "evidence_norm": 0.0}
-                        if include_score_breakdown
-                        else None
-                    ),
+                    score_breakdown={"base_norm": base_norms[idx], "evidence_norm": 0.0}
+                    if include_score_breakdown
+                    else None,
                 )
                 for idx, node in enumerate(kg_nodes)
             ]

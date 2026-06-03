@@ -27,9 +27,7 @@ class FeatureSelectionParameters:
     save_reduced_data: bool
 
 
-def feature_selection_from_payload(
-    payload: Dict[str, object],
-) -> FeatureSelectionParameters:
+def feature_selection_from_payload(payload: Dict[str, object]) -> FeatureSelectionParameters:
     """Build parameters from payload."""
 
     return FeatureSelectionParameters(
@@ -66,12 +64,7 @@ def _determine_n_features(params: FeatureSelectionParameters, n_total: int) -> i
     return min(50, n_total)
 
 
-def _compute_scores(
-    data: np.ndarray,
-    labels: Optional[np.ndarray],
-    method: str,
-    rng: np.random.Generator,
-) -> np.ndarray:
+def _compute_scores(data: np.ndarray, labels: Optional[np.ndarray], method: str, rng: np.random.Generator) -> np.ndarray:
     if method == "variance":
         return np.var(data, axis=0)
     if labels is not None and method in {"univariate", "mutual_info"}:
@@ -107,12 +100,7 @@ def run_feature_selection(params: FeatureSelectionParameters) -> Dict[str, objec
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
-        "summary": None,
-        "indices": None,
-        "scores": None,
-        "reduced_data": None,
-    }
+    outputs: Dict[str, Optional[str]] = {"summary": None, "indices": None, "scores": None, "reduced_data": None}
 
     summary = {
         "method": params.method,

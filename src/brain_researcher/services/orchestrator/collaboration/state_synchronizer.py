@@ -6,19 +6,18 @@ versioning, conflict detection, and consistency guarantees.
 """
 
 import asyncio
-import hashlib
 import json
 import logging
+import hashlib
 import time
-import uuid
 from collections import defaultdict, deque
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Any, Set, Tuple, Union
+import uuid
 
 import redis.asyncio as redis
-
 from .operational_transform import Operation, OperationType
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 class SyncEventType(str, Enum):
     """Types of synchronization events."""
-
     STATE_UPDATED = "state_updated"
     OPERATION_APPLIED = "operation_applied"
     CHECKPOINT_CREATED = "checkpoint_created"
@@ -39,7 +37,6 @@ class SyncEventType(str, Enum):
 
 class DocumentFormat(str, Enum):
     """Document formats that can be synchronized."""
-
     TEXT = "text"
     JSON = "json"
     BRAIN_IMAGE = "brain_image"
@@ -51,7 +48,6 @@ class DocumentFormat(str, Enum):
 @dataclass
 class DocumentState:
     """Represents the complete state of a document."""
-
     document_id: str
     version: int
     content: Any
@@ -69,25 +65,25 @@ class DocumentState:
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
-        data["timestamp"] = self.timestamp.isoformat()
-        data["operations"] = [op.to_dict() for op in self.operations]
+        data['timestamp'] = self.timestamp.isoformat()
+        data['operations'] = [op.to_dict() for op in self.operations]
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "DocumentState":
+    def from_dict(cls, data: Dict[str, Any]) -> 'DocumentState':
         # Convert timestamp
-        if isinstance(data.get("timestamp"), str):
-            data["timestamp"] = datetime.fromisoformat(data["timestamp"])
+        if isinstance(data.get('timestamp'), str):
+            data['timestamp'] = datetime.fromisoformat(data['timestamp'])
 
         # Convert operations
-        if data.get("operations"):
-            data["operations"] = [Operation.from_dict(op) for op in data["operations"]]
+        if data.get('operations'):
+            data['operations'] = [Operation.from_dict(op) for op in data['operations']]
 
         return cls(**data)
 
     def calculate_checksum(self) -> str:
         """Calculate checksum for the current state."""
-        content_str = json.dumps(self.content, sort_keys=True, separators=(",", ":"))
+        content_str = json.dumps(self.content, sort_keys=True, separators=(',', ':'))
         return hashlib.sha256(content_str.encode()).hexdigest()[:16]
 
     def verify_checksum(self) -> bool:
@@ -98,7 +94,6 @@ class DocumentState:
 @dataclass
 class SyncEvent:
     """Represents a synchronization event."""
-
     event_id: str
     event_type: SyncEventType
     document_id: str
@@ -112,14 +107,13 @@ class SyncEvent:
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
-        data["timestamp"] = self.timestamp.isoformat()
+        data['timestamp'] = self.timestamp.isoformat()
         return data
 
 
 @dataclass
 class ClientState:
     """Tracks the state of a connected client."""
-
     client_id: str
     user_id: str
     document_id: str
@@ -183,7 +177,7 @@ class StateSynchronizer:
             "operations_applied": 0,
             "conflicts_detected": 0,
             "checkpoints_created": 0,
-            "sync_events_processed": 0,
+            "sync_events_processed": 0
         }
 
         logger.info("State synchronizer initialized")
@@ -211,7 +205,9 @@ class StateSynchronizer:
         logger.info("State synchronizer stopped")
 
     async def initialize_document(
-        self, document_id: str, initial_state: DocumentState
+        self,
+        document_id: str,
+        initial_state: DocumentState
     ) -> bool:
         """Initialize a new document for synchronization."""
 
@@ -238,16 +234,17 @@ class StateSynchronizer:
             SyncEventType.STATE_UPDATED,
             document_id,
             "system",
-            {"action": "document_initialized", "version": initial_state.version},
+            {"action": "document_initialized", "version": initial_state.version}
         )
 
-        logger.info(
-            f"Initialized document: {document_id} at version {initial_state.version}"
-        )
+        logger.info(f"Initialized document: {document_id} at version {initial_state.version}")
         return True
 
     async def connect_client(
-        self, client_id: str, user_id: str, document_id: str
+        self,
+        client_id: str,
+        user_id: str,
+        document_id: str
     ) -> Optional[DocumentState]:
         """Connect a client to document synchronization."""
 
@@ -264,7 +261,7 @@ class StateSynchronizer:
             document_id=document_id,
             last_seen_version=current_state.version,
             connection_time=datetime.utcnow(),
-            last_heartbeat=datetime.utcnow(),
+            last_heartbeat=datetime.utcnow()
         )
 
         # Store client state
@@ -279,7 +276,7 @@ class StateSynchronizer:
             SyncEventType.CLIENT_CONNECTED,
             document_id,
             client_id,
-            {"user_id": user_id, "version": current_state.version},
+            {"user_id": user_id, "version": current_state.version}
         )
 
         logger.info(f"Client {client_id} connected to document {document_id}")
@@ -296,9 +293,7 @@ class StateSynchronizer:
 
         # Handle any pending operations
         if client_state.pending_operations:
-            logger.warning(
-                f"Client {client_id} disconnected with {len(client_state.pending_operations)} pending operations"
-            )
+            logger.warning(f"Client {client_id} disconnected with {len(client_state.pending_operations)} pending operations")
             # Could implement recovery mechanism here
 
         # Remove from tracking
@@ -317,14 +312,17 @@ class StateSynchronizer:
             SyncEventType.CLIENT_DISCONNECTED,
             document_id,
             client_id,
-            {"user_id": client_state.user_id},
+            {"user_id": client_state.user_id}
         )
 
         logger.info(f"Client {client_id} disconnected from document {document_id}")
         return True
 
     async def apply_operation(
-        self, document_id: str, operation: Operation, client_id: Optional[str] = None
+        self,
+        document_id: str,
+        operation: Operation,
+        client_id: Optional[str] = None
     ) -> Optional[DocumentState]:
         """Apply an operation to the document state."""
 
@@ -365,21 +363,17 @@ class StateSynchronizer:
                 {
                     "operation_id": operation.id,
                     "operation_type": operation.type.value,
-                    "new_version": new_state.version,
-                },
+                    "new_version": new_state.version
+                }
             )
 
             # Notify other clients
-            await self._notify_state_update(
-                document_id, new_state, exclude_client=client_id
-            )
+            await self._notify_state_update(document_id, new_state, exclude_client=client_id)
 
             return new_state
 
         except Exception as e:
-            logger.error(
-                f"Error applying operation to document {document_id}: {str(e)}"
-            )
+            logger.error(f"Error applying operation to document {document_id}: {str(e)}")
             return None
 
     async def get_document_state(self, document_id: str) -> Optional[DocumentState]:
@@ -387,7 +381,9 @@ class StateSynchronizer:
         return self.document_states.get(document_id)
 
     async def sync_client(
-        self, client_id: str, client_version: int
+        self,
+        client_id: str,
+        client_version: int
     ) -> Optional[Dict[str, Any]]:
         """Synchronize a client to the current document state."""
 
@@ -407,7 +403,10 @@ class StateSynchronizer:
         # Check if client needs update
         if client_version >= current_state.version:
             # Client is up to date
-            return {"status": "up_to_date", "current_version": current_state.version}
+            return {
+                "status": "up_to_date",
+                "current_version": current_state.version
+            }
 
         # Get operations since client's version
         operations_since = await self._get_operations_since_version(
@@ -426,8 +425,8 @@ class StateSynchronizer:
             {
                 "client_version": client_version,
                 "current_version": current_state.version,
-                "operations_count": len(operations_since),
-            },
+                "operations_count": len(operations_since)
+            }
         )
 
         return {
@@ -435,9 +434,7 @@ class StateSynchronizer:
             "current_version": current_state.version,
             "client_version": client_version,
             "operations": [op.to_dict() for op in operations_since],
-            "full_state": (
-                current_state.to_dict() if len(operations_since) > 20 else None
-            ),
+            "full_state": current_state.to_dict() if len(operations_since) > 20 else None
         }
 
     async def handle_client_heartbeat(self, client_id: str) -> bool:
@@ -455,7 +452,7 @@ class StateSynchronizer:
         self,
         document_id: str,
         checkpoint_id: Optional[str] = None,
-        custom_state: Optional[DocumentState] = None,
+        custom_state: Optional[DocumentState] = None
     ) -> bool:
         """Create a manual checkpoint for a document."""
 
@@ -463,12 +460,12 @@ class StateSynchronizer:
             return False
 
         state_to_checkpoint = custom_state or self.document_states[document_id]
-        return await self._create_checkpoint(
-            document_id, state_to_checkpoint, checkpoint_id
-        )
+        return await self._create_checkpoint(document_id, state_to_checkpoint, checkpoint_id)
 
     async def restore_from_checkpoint(
-        self, document_id: str, checkpoint_index: int = -1
+        self,
+        document_id: str,
+        checkpoint_index: int = -1
     ) -> Optional[DocumentState]:
         """Restore document from a checkpoint."""
 
@@ -479,9 +476,7 @@ class StateSynchronizer:
         checkpoints = self.checkpoints[document_id]
 
         if not checkpoints or abs(checkpoint_index) > len(checkpoints):
-            logger.warning(
-                f"Invalid checkpoint index {checkpoint_index} for document {document_id}"
-            )
+            logger.warning(f"Invalid checkpoint index {checkpoint_index} for document {document_id}")
             return None
 
         checkpoint = checkpoints[checkpoint_index]
@@ -501,19 +496,19 @@ class StateSynchronizer:
             {
                 "action": "checkpoint_restored",
                 "checkpoint_version": checkpoint.version,
-                "checkpoint_index": checkpoint_index,
-            },
+                "checkpoint_index": checkpoint_index
+            }
         )
 
-        logger.info(
-            f"Restored document {document_id} from checkpoint at version {checkpoint.version}"
-        )
+        logger.info(f"Restored document {document_id} from checkpoint at version {checkpoint.version}")
         return checkpoint
 
     # Helper methods
 
     async def _apply_operation_to_state(
-        self, current_state: DocumentState, operation: Operation
+        self,
+        current_state: DocumentState,
+        operation: Operation
     ) -> Optional[DocumentState]:
         """Apply an operation to create a new document state."""
 
@@ -522,16 +517,12 @@ class StateSynchronizer:
             new_state = DocumentState(
                 document_id=current_state.document_id,
                 version=current_state.version + 1,
-                content=self._apply_operation_to_content(
-                    current_state.content, operation
-                ),
+                content=self._apply_operation_to_content(current_state.content, operation),
                 checksum="",  # Will be calculated below
                 timestamp=datetime.utcnow(),
                 format=current_state.format,
-                metadata=(
-                    current_state.metadata.copy() if current_state.metadata else {}
-                ),
-                operations=current_state.operations.copy() + [operation],
+                metadata=current_state.metadata.copy() if current_state.metadata else {},
+                operations=current_state.operations.copy() + [operation]
             )
 
             # Calculate checksum
@@ -567,9 +558,7 @@ class StateSynchronizer:
                     text = str(content.get("text", ""))
                     pos = min(operation.position, len(text))
                     new_content = content.copy()
-                    new_content["text"] = (
-                        text[:pos] + str(operation.content or "") + text[pos:]
-                    )
+                    new_content["text"] = text[:pos] + str(operation.content or "") + text[pos:]
                     return new_content
                 elif operation.attributes and "key" in operation.attributes:
                     key = operation.attributes["key"]
@@ -581,19 +570,13 @@ class StateSynchronizer:
                     new_content = content.copy()
                     if "operations" not in new_content:
                         new_content["operations"] = []
-                    new_content["operations"].append(
-                        {
-                            "type": operation.type.value,
-                            "position": operation.position,
-                            "content": operation.content,
-                            "author": operation.author_id,
-                            "timestamp": (
-                                operation.timestamp.isoformat()
-                                if operation.timestamp
-                                else None
-                            ),
-                        }
-                    )
+                    new_content["operations"].append({
+                        "type": operation.type.value,
+                        "position": operation.position,
+                        "content": operation.content,
+                        "author": operation.author_id,
+                        "timestamp": operation.timestamp.isoformat() if operation.timestamp else None
+                    })
                     return new_content
 
         elif operation.type == OperationType.DELETE:
@@ -621,28 +604,22 @@ class StateSynchronizer:
                 new_content = content.copy()
                 if "annotations" not in new_content:
                     new_content["annotations"] = []
-                new_content["annotations"].append(
-                    {
-                        "position": operation.position,
-                        "content": operation.content,
-                        "author": operation.author_id,
-                        "timestamp": (
-                            operation.timestamp.isoformat()
-                            if operation.timestamp
-                            else None
-                        ),
-                    }
-                )
+                new_content["annotations"].append({
+                    "position": operation.position,
+                    "content": operation.content,
+                    "author": operation.author_id,
+                    "timestamp": operation.timestamp.isoformat() if operation.timestamp else None
+                })
                 return new_content
 
         # Return unchanged if operation couldn't be applied
-        logger.warning(
-            f"Could not apply operation {operation.type} to content type {type(content)}"
-        )
+        logger.warning(f"Could not apply operation {operation.type} to content type {type(content)}")
         return content
 
     async def _get_operations_since_version(
-        self, document_id: str, version: int
+        self,
+        document_id: str,
+        version: int
     ) -> List[Operation]:
         """Get all operations applied since a specific version."""
 
@@ -663,7 +640,7 @@ class StateSynchronizer:
         self,
         document_id: str,
         state: DocumentState,
-        checkpoint_id: Optional[str] = None,
+        checkpoint_id: Optional[str] = None
     ) -> bool:
         """Create a checkpoint for the document state."""
 
@@ -676,7 +653,7 @@ class StateSynchronizer:
                 timestamp=state.timestamp,
                 format=state.format,
                 metadata=state.metadata.copy() if state.metadata else {},
-                operations=state.operations.copy(),
+                operations=state.operations.copy()
             )
 
             # Store checkpoint
@@ -687,9 +664,7 @@ class StateSynchronizer:
 
             # Limit number of checkpoints
             if len(self.checkpoints[document_id]) > self.max_checkpoints:
-                self.checkpoints[document_id] = self.checkpoints[document_id][
-                    -self.max_checkpoints :
-                ]
+                self.checkpoints[document_id] = self.checkpoints[document_id][-self.max_checkpoints:]
 
             # Update statistics
             self.stats["checkpoints_created"] += 1
@@ -701,26 +676,22 @@ class StateSynchronizer:
                 "system",
                 {
                     "checkpoint_id": checkpoint_id or f"auto_{state.version}",
-                    "version": state.version,
-                },
+                    "version": state.version
+                }
             )
 
-            logger.debug(
-                f"Created checkpoint for document {document_id} at version {state.version}"
-            )
+            logger.debug(f"Created checkpoint for document {document_id} at version {state.version}")
             return True
 
         except Exception as e:
-            logger.error(
-                f"Failed to create checkpoint for document {document_id}: {str(e)}"
-            )
+            logger.error(f"Failed to create checkpoint for document {document_id}: {str(e)}")
             return False
 
     async def _notify_state_update(
         self,
         document_id: str,
         new_state: DocumentState,
-        exclude_client: Optional[str] = None,
+        exclude_client: Optional[str] = None
     ):
         """Notify clients about state updates."""
 
@@ -744,7 +715,7 @@ class StateSynchronizer:
         event_type: SyncEventType,
         document_id: str,
         client_id: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: Optional[Dict[str, Any]] = None
     ):
         """Log a synchronization event."""
 
@@ -754,7 +725,7 @@ class StateSynchronizer:
             document_id=document_id,
             client_id=client_id,
             timestamp=datetime.utcnow(),
-            data=data,
+            data=data
         )
 
         self.sync_events.append(event)
@@ -783,9 +754,7 @@ class StateSynchronizer:
 
                 # Check for stale clients
                 for client_id, client_state in self.connected_clients.items():
-                    time_since_heartbeat = (
-                        now - client_state.last_heartbeat
-                    ).total_seconds()
+                    time_since_heartbeat = (now - client_state.last_heartbeat).total_seconds()
 
                     if time_since_heartbeat > self.client_timeout:
                         stale_clients.append(client_id)
@@ -806,8 +775,8 @@ class StateSynchronizer:
                         "system",
                         {
                             "active_clients": len(self.connected_clients),
-                            "stale_clients_removed": len(stale_clients),
-                        },
+                            "stale_clients_removed": len(stale_clients)
+                        }
                     )
 
             except Exception as e:
@@ -844,9 +813,7 @@ class StateSynchronizer:
 
                         if client_state.last_seen_version < current_version:
                             # Client is behind - could trigger sync
-                            logger.debug(
-                                f"Client {client_id} is behind (version {client_state.last_seen_version} vs {current_version})"
-                            )
+                            logger.debug(f"Client {client_id} is behind (version {client_state.last_seen_version} vs {current_version})")
 
             except Exception as e:
                 logger.error(f"Sync loop error: {str(e)}")
@@ -875,7 +842,7 @@ class StateSynchronizer:
             "connection_time": client_state.connection_time.isoformat(),
             "last_heartbeat": client_state.last_heartbeat.isoformat(),
             "is_online": client_state.is_online,
-            "pending_operations": len(client_state.pending_operations),
+            "pending_operations": len(client_state.pending_operations)
         }
 
     def get_sync_stats(self) -> Dict[str, Any]:
@@ -883,14 +850,12 @@ class StateSynchronizer:
         return {
             **self.stats,
             "documents_with_checkpoints": len(self.checkpoints),
-            "total_checkpoints": sum(
-                len(checkpoints) for checkpoints in self.checkpoints.values()
-            ),
+            "total_checkpoints": sum(len(checkpoints) for checkpoints in self.checkpoints.values()),
             "recent_events": len(self.sync_events),
             "clients_by_document": {
                 doc_id: len(client_ids)
                 for doc_id, client_ids in self.clients_by_document.items()
-            },
+            }
         }
 
     def get_recent_events(self, limit: int = 50) -> List[Dict[str, Any]]:

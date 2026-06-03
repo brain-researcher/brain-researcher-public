@@ -10,41 +10,23 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Any, Set
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Query,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ValidationError
 
-from ..websocket_manager import (
-    Connection,
-    MessageType,
-    WebSocketMessage,
-    websocket_pool,
-)
-from .brain_annotation_manager import (
-    AnnotationType,
-    BrainAnnotation,
-    BrainAnnotationManager,
-    BrainCoordinate,
-    CoordinateSystem,
-)
+from ..websocket_manager import websocket_pool, WebSocketMessage, MessageType, Connection
 from .collaboration_manager import (
-    CollaborationManager,
-    CollaborativeUser,
-    SessionState,
-    UserRole,
+    CollaborationManager, CollaborativeUser, UserRole, SessionState
 )
-from .conflict_resolver import ConflictResolutionStrategy
 from .operational_transform import Operation, OperationType
-from .state_synchronizer import DocumentFormat, DocumentState, StateSynchronizer
+from .conflict_resolver import ConflictResolutionStrategy
+from .brain_annotation_manager import (
+    BrainAnnotationManager, BrainAnnotation, AnnotationType,
+    BrainCoordinate, CoordinateSystem
+)
+from .state_synchronizer import StateSynchronizer, DocumentState, DocumentFormat
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +42,6 @@ state_synchronizer = StateSynchronizer()
 # ============================================================================
 # WebSocket Message Models
 # ============================================================================
-
 
 class CollaborationMessageType(str):
     """Extended message types for collaboration."""
@@ -100,19 +81,15 @@ class CollaborationMessageType(str):
 
 class JoinSessionRequest(BaseModel):
     """Request to join a collaboration session."""
-
     document_id: str
     document_type: str = "text"
     user_role: UserRole = UserRole.EDITOR
     initial_state: Optional[Dict[str, Any]] = None
-    conflict_resolution_strategy: ConflictResolutionStrategy = (
-        ConflictResolutionStrategy.LAST_WRITE_WINS
-    )
+    conflict_resolution_strategy: ConflictResolutionStrategy = ConflictResolutionStrategy.LAST_WRITE_WINS
 
 
 class OperationMessage(BaseModel):
     """Operation message for collaborative editing."""
-
     operation_id: str
     operation_type: OperationType
     position: int
@@ -124,7 +101,6 @@ class OperationMessage(BaseModel):
 
 class PresenceUpdate(BaseModel):
     """User presence update message."""
-
     cursor_position: Optional[Dict[str, Any]] = None
     selection: Optional[Dict[str, Any]] = None
     status: Optional[str] = None
@@ -132,7 +108,6 @@ class PresenceUpdate(BaseModel):
 
 class AnnotationRequest(BaseModel):
     """Brain annotation request."""
-
     annotation_type: AnnotationType
     title: str
     description: str
@@ -157,7 +132,6 @@ connection_users: Dict[str, Dict[str, Any]] = {}  # connection_id -> user_info
 # WebSocket Connection Handlers
 # ============================================================================
 
-
 async def handle_collaboration_connection(connection: Connection):
     """Handle new collaboration connection."""
     logger.info(f"New collaboration connection: {connection.connection_id}")
@@ -173,10 +147,10 @@ async def handle_collaboration_connection(connection: Connection):
                 "conflict_resolution",
                 "brain_annotations",
                 "state_synchronization",
-                "real_time_presence",
+                "real_time_presence"
             ],
-            "timestamp": datetime.utcnow().isoformat(),
-        },
+            "timestamp": datetime.utcnow().isoformat()
+        }
     )
     await connection.send_message(welcome_message)
 
@@ -195,9 +169,7 @@ async def handle_collaboration_disconnection(connection: Connection):
         del connection_users[connection.connection_id]
 
 
-async def handle_collaboration_message(
-    connection: Connection, message: WebSocketMessage
-):
+async def handle_collaboration_message(connection: Connection, message: WebSocketMessage):
     """Handle collaboration-specific WebSocket messages."""
     try:
         if not message.data:
@@ -232,8 +204,8 @@ async def handle_collaboration_message(
             type=MessageType.ERROR,
             data={
                 "error": f"Failed to process collaboration message: {str(e)}",
-                "original_message_id": message.message_id,
-            },
+                "original_message_id": message.message_id
+            }
         )
         await connection.send_message(error_response)
 
@@ -248,23 +220,20 @@ websocket_pool.add_message_handler("data", handle_collaboration_message)
 # Message Handlers
 # ============================================================================
 
-
 async def _handle_join_session(connection: Connection, data: Dict[str, Any]):
     """Handle join session request."""
     try:
         request = JoinSessionRequest(**data)
 
         # Get user info from connection metadata or data
-        user_id = (
-            data.get("user_id") or connection.user_id or f"user_{uuid.uuid4().hex[:8]}"
-        )
+        user_id = data.get("user_id") or connection.user_id or f"user_{uuid.uuid4().hex[:8]}"
         username = data.get("username", f"User_{user_id[:8]}")
 
         # Store user info
         connection_users[connection.connection_id] = {
             "user_id": user_id,
             "username": username,
-            "role": request.user_role.value,
+            "role": request.user_role.value
         }
 
         # Create or join collaboration session
@@ -273,7 +242,7 @@ async def _handle_join_session(connection: Connection, data: Dict[str, Any]):
             document_type=request.document_type,
             owner_id=user_id,
             initial_state=request.initial_state,
-            conflict_strategy=request.conflict_resolution_strategy,
+            conflict_strategy=request.conflict_resolution_strategy
         )
 
         # Join the session
@@ -282,7 +251,7 @@ async def _handle_join_session(connection: Connection, data: Dict[str, Any]):
             user_id=user_id,
             username=username,
             connection_id=connection.connection_id,
-            role=request.user_role,
+            role=request.user_role
         )
 
         if success:
@@ -293,15 +262,13 @@ async def _handle_join_session(connection: Connection, data: Dict[str, Any]):
             session_connections[session_id].add(connection.connection_id)
 
             # Subscribe to session channel
-            await websocket_pool.subscribe(
-                connection.connection_id, f"collaboration:{session_id}"
-            )
+            await websocket_pool.subscribe(connection.connection_id, f"collaboration:{session_id}")
 
             # Initialize state synchronizer client
             document_state = await state_synchronizer.connect_client(
                 client_id=connection.connection_id,
                 user_id=user_id,
-                document_id=request.document_id,
+                document_id=request.document_id
             )
 
             # Send success response with session state
@@ -313,11 +280,9 @@ async def _handle_join_session(connection: Connection, data: Dict[str, Any]):
                     "message_type": CollaborationMessageType.SESSION_STATE,
                     "session_id": session_id,
                     "session_state": session_state,
-                    "document_state": (
-                        document_state.to_dict() if document_state else None
-                    ),
-                    "status": "joined",
-                },
+                    "document_state": document_state.to_dict() if document_state else None,
+                    "status": "joined"
+                }
             )
             await connection.send_message(response)
 
@@ -329,30 +294,31 @@ async def _handle_join_session(connection: Connection, data: Dict[str, Any]):
                     "user_id": user_id,
                     "username": username,
                     "role": request.user_role.value,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.utcnow().isoformat()
                 },
-                exclude_connection=connection.connection_id,
+                exclude_connection=connection.connection_id
             )
 
         else:
             # Send failure response
             error_response = WebSocketMessage(
                 type=MessageType.ERROR,
-                data={"error": "Failed to join collaboration session"},
+                data={"error": "Failed to join collaboration session"}
             )
             await connection.send_message(error_response)
 
     except ValidationError as e:
         error_response = WebSocketMessage(
             type=MessageType.ERROR,
-            data={"error": f"Invalid join session request: {str(e)}"},
+            data={"error": f"Invalid join session request: {str(e)}"}
         )
         await connection.send_message(error_response)
 
     except Exception as e:
         logger.error(f"Error joining session: {str(e)}")
         error_response = WebSocketMessage(
-            type=MessageType.ERROR, data={"error": f"Failed to join session: {str(e)}"}
+            type=MessageType.ERROR,
+            data={"error": f"Failed to join session: {str(e)}"}
         )
         await connection.send_message(error_response)
 
@@ -387,7 +353,7 @@ async def _handle_operation(connection: Connection, data: Dict[str, Any]):
             attributes=operation_data.get("attributes"),
             author_id=user_id,
             client_version=operation_data.get("client_version", 0),
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.utcnow()
         )
 
         # Process operation through collaboration manager
@@ -403,8 +369,8 @@ async def _handle_operation(connection: Connection, data: Dict[str, Any]):
                     "message_type": CollaborationMessageType.OPERATION_ACK,
                     "operation_id": operation.id,
                     "transformed_operation": transformed_op.to_dict(),
-                    "status": "applied",
-                },
+                    "status": "applied"
+                }
             )
             await connection.send_message(ack_response)
 
@@ -416,9 +382,9 @@ async def _handle_operation(connection: Connection, data: Dict[str, Any]):
                     "operation": transformed_op.to_dict(),
                     "author_id": user_id,
                     "author_name": user_info.get("username", "Unknown"),
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.utcnow().isoformat()
                 },
-                exclude_connection=connection.connection_id,
+                exclude_connection=connection.connection_id
             )
         else:
             # Send rejection
@@ -427,8 +393,8 @@ async def _handle_operation(connection: Connection, data: Dict[str, Any]):
                 data={
                     "message_type": CollaborationMessageType.OPERATION_REJECTED,
                     "operation_id": operation.id,
-                    "reason": "Operation could not be applied",
-                },
+                    "reason": "Operation could not be applied"
+                }
             )
             await connection.send_message(reject_response)
 
@@ -436,7 +402,7 @@ async def _handle_operation(connection: Connection, data: Dict[str, Any]):
         logger.error(f"Error handling operation: {str(e)}")
         error_response = WebSocketMessage(
             type=MessageType.ERROR,
-            data={"error": f"Failed to process operation: {str(e)}"},
+            data={"error": f"Failed to process operation: {str(e)}"}
         )
         await connection.send_message(error_response)
 
@@ -453,7 +419,7 @@ async def _handle_cursor_update(connection: Connection, data: Dict[str, Any]):
     await collaboration_manager.update_user_presence(
         session_id=session_id,
         user_id=user_info.get("user_id", "unknown"),
-        cursor_position=data.get("cursor_position"),
+        cursor_position=data.get("cursor_position")
     )
 
 
@@ -469,7 +435,7 @@ async def _handle_selection_update(connection: Connection, data: Dict[str, Any])
     await collaboration_manager.update_user_presence(
         session_id=session_id,
         user_id=user_info.get("user_id", "unknown"),
-        selection=data.get("selection"),
+        selection=data.get("selection")
     )
 
 
@@ -487,7 +453,7 @@ async def _handle_presence_update(connection: Connection, data: Dict[str, Any]):
         user_id=user_info.get("user_id", "unknown"),
         cursor_position=data.get("cursor_position"),
         selection=data.get("selection"),
-        status=data.get("status"),
+        status=data.get("status")
     )
 
 
@@ -518,9 +484,7 @@ async def _handle_annotation_created(connection: Connection, data: Dict[str, Any
                 x=coord_data["x"],
                 y=coord_data["y"],
                 z=coord_data["z"],
-                coordinate_system=CoordinateSystem(
-                    coord_data.get("coordinate_system", "mni")
-                ),
+                coordinate_system=CoordinateSystem(coord_data.get("coordinate_system", "mni"))
             )
 
         # Create annotation
@@ -532,7 +496,7 @@ async def _handle_annotation_created(connection: Connection, data: Dict[str, Any
             author_id=user_info.get("user_id", "unknown"),
             author_name=user_info.get("username", "Unknown"),
             coordinate=coordinate,
-            **annotation_data.get("properties", {}),
+            **annotation_data.get("properties", {})
         )
 
         # Send acknowledgment
@@ -541,8 +505,8 @@ async def _handle_annotation_created(connection: Connection, data: Dict[str, Any
             data={
                 "message_type": CollaborationMessageType.ANNOTATION_CREATED,
                 "annotation": annotation.to_dict(),
-                "status": "created",
-            },
+                "status": "created"
+            }
         )
         await connection.send_message(ack_response)
 
@@ -552,16 +516,16 @@ async def _handle_annotation_created(connection: Connection, data: Dict[str, Any
             CollaborationMessageType.ANNOTATION_CREATED,
             {
                 "annotation": annotation.to_dict(),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.utcnow().isoformat()
             },
-            exclude_connection=connection.connection_id,
+            exclude_connection=connection.connection_id
         )
 
     except Exception as e:
         logger.error(f"Error creating annotation: {str(e)}")
         error_response = WebSocketMessage(
             type=MessageType.ERROR,
-            data={"error": f"Failed to create annotation: {str(e)}"},
+            data={"error": f"Failed to create annotation: {str(e)}"}
         )
         await connection.send_message(error_response)
 
@@ -581,7 +545,7 @@ async def _handle_annotation_updated(connection: Connection, data: Dict[str, Any
         updated_annotation = await brain_annotation_manager.update_annotation(
             annotation_id=annotation_id,
             user_id=user_info.get("user_id", "unknown"),
-            updates=updates,
+            updates=updates
         )
 
         if updated_annotation:
@@ -591,8 +555,8 @@ async def _handle_annotation_updated(connection: Connection, data: Dict[str, Any
                 data={
                     "message_type": CollaborationMessageType.ANNOTATION_UPDATED,
                     "annotation": updated_annotation.to_dict(),
-                    "status": "updated",
-                },
+                    "status": "updated"
+                }
             )
             await connection.send_message(ack_response)
 
@@ -605,16 +569,16 @@ async def _handle_annotation_updated(connection: Connection, data: Dict[str, Any
                     {
                         "annotation": updated_annotation.to_dict(),
                         "updates": updates,
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.utcnow().isoformat()
                     },
-                    exclude_connection=connection.connection_id,
+                    exclude_connection=connection.connection_id
                 )
 
     except Exception as e:
         logger.error(f"Error updating annotation: {str(e)}")
         error_response = WebSocketMessage(
             type=MessageType.ERROR,
-            data={"error": f"Failed to update annotation: {str(e)}"},
+            data={"error": f"Failed to update annotation: {str(e)}"}
         )
         await connection.send_message(error_response)
 
@@ -630,7 +594,8 @@ async def _handle_annotation_deleted(connection: Connection, data: Dict[str, Any
 
         # Delete annotation
         success = await brain_annotation_manager.delete_annotation(
-            annotation_id=annotation_id, user_id=user_info.get("user_id", "unknown")
+            annotation_id=annotation_id,
+            user_id=user_info.get("user_id", "unknown")
         )
 
         if success:
@@ -640,8 +605,8 @@ async def _handle_annotation_deleted(connection: Connection, data: Dict[str, Any
                 data={
                     "message_type": CollaborationMessageType.ANNOTATION_DELETED,
                     "annotation_id": annotation_id,
-                    "status": "deleted",
-                },
+                    "status": "deleted"
+                }
             )
             await connection.send_message(ack_response)
 
@@ -653,16 +618,16 @@ async def _handle_annotation_deleted(connection: Connection, data: Dict[str, Any
                     CollaborationMessageType.ANNOTATION_DELETED,
                     {
                         "annotation_id": annotation_id,
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.utcnow().isoformat()
                     },
-                    exclude_connection=connection.connection_id,
+                    exclude_connection=connection.connection_id
                 )
 
     except Exception as e:
         logger.error(f"Error deleting annotation: {str(e)}")
         error_response = WebSocketMessage(
             type=MessageType.ERROR,
-            data={"error": f"Failed to delete annotation: {str(e)}"},
+            data={"error": f"Failed to delete annotation: {str(e)}"}
         )
         await connection.send_message(error_response)
 
@@ -674,7 +639,8 @@ async def _handle_sync_state(connection: Connection, data: Dict[str, Any]):
 
         # Synchronize client state
         sync_result = await state_synchronizer.sync_client(
-            client_id=connection.connection_id, client_version=client_version
+            client_id=connection.connection_id,
+            client_version=client_version
         )
 
         if sync_result:
@@ -683,15 +649,16 @@ async def _handle_sync_state(connection: Connection, data: Dict[str, Any]):
                 data={
                     "message_type": CollaborationMessageType.STATE_UPDATE,
                     "sync_result": sync_result,
-                    "timestamp": datetime.utcnow().isoformat(),
-                },
+                    "timestamp": datetime.utcnow().isoformat()
+                }
             )
             await connection.send_message(response)
 
     except Exception as e:
         logger.error(f"Error syncing state: {str(e)}")
         error_response = WebSocketMessage(
-            type=MessageType.ERROR, data={"error": f"Failed to sync state: {str(e)}"}
+            type=MessageType.ERROR,
+            data={"error": f"Failed to sync state: {str(e)}"}
         )
         await connection.send_message(error_response)
 
@@ -699,7 +666,6 @@ async def _handle_sync_state(connection: Connection, data: Dict[str, Any]):
 # ============================================================================
 # Helper Functions
 # ============================================================================
-
 
 async def _leave_collaboration_session(connection_id: str, session_id: str):
     """Leave a collaboration session and cleanup."""
@@ -734,8 +700,8 @@ async def _leave_collaboration_session(connection_id: str, session_id: str):
         {
             "user_id": user_id,
             "username": user_info.get("username", "Unknown"),
-            "timestamp": datetime.utcnow().isoformat(),
-        },
+            "timestamp": datetime.utcnow().isoformat()
+        }
     )
 
 
@@ -743,7 +709,7 @@ async def _broadcast_to_session(
     session_id: str,
     message_type: str,
     data: Dict[str, Any],
-    exclude_connection: Optional[str] = None,
+    exclude_connection: Optional[str] = None
 ):
     """Broadcast message to all participants in a collaboration session."""
 
@@ -751,13 +717,19 @@ async def _broadcast_to_session(
         return
 
     message = WebSocketMessage(
-        type=MessageType.DATA, data={"message_type": message_type, **data}
+        type=MessageType.DATA,
+        data={
+            "message_type": message_type,
+            **data
+        }
     )
 
     # Broadcast through WebSocket pool
     exclude_set = {exclude_connection} if exclude_connection else set()
     await websocket_pool.broadcast_to_channel(
-        f"collaboration:{session_id}", message, exclude_connections=exclude_set
+        f"collaboration:{session_id}",
+        message,
+        exclude_connections=exclude_set
     )
 
 
@@ -765,12 +737,11 @@ async def _broadcast_to_session(
 # WebSocket Endpoints
 # ============================================================================
 
-
 @router.websocket("/session")
 async def websocket_collaboration_session(
     websocket: WebSocket,
     user_id: Optional[str] = Query(None),
-    username: Optional[str] = Query(None),
+    username: Optional[str] = Query(None)
 ):
     """WebSocket endpoint for collaborative sessions."""
     try:
@@ -778,7 +749,10 @@ async def websocket_collaboration_session(
         connection_id = await websocket_pool.add_connection(
             websocket,
             user_id=user_id,
-            metadata={"endpoint": "collaboration_session", "username": username},
+            metadata={
+                "endpoint": "collaboration_session",
+                "username": username
+            }
         )
 
         # Handle incoming messages
@@ -802,7 +776,6 @@ async def websocket_collaboration_session(
 # HTTP Endpoints for Management
 # ============================================================================
 
-
 @router.get("/sessions")
 async def list_collaboration_sessions():
     """List all active collaboration sessions."""
@@ -812,16 +785,14 @@ async def list_collaboration_sessions():
     for session_id in sessions:
         state = await collaboration_manager.get_session_state(session_id)
         if state:
-            session_info.append(
-                {
-                    "session_id": session_id,
-                    "document_id": state["document_id"],
-                    "user_count": len(state["users"]),
-                    "state": state["state"],
-                    "created_at": state["created_at"],
-                    "updated_at": state["updated_at"],
-                }
-            )
+            session_info.append({
+                "session_id": session_id,
+                "document_id": state["document_id"],
+                "user_count": len(state["users"]),
+                "state": state["state"],
+                "created_at": state["created_at"],
+                "updated_at": state["updated_at"]
+            })
 
     return {"sessions": session_info}
 
@@ -853,7 +824,7 @@ async def get_document_annotations(document_id: str):
     return {
         "document_id": document_id,
         "count": len(annotations),
-        "annotations": [ann.to_dict() for ann in annotations],
+        "annotations": [ann.to_dict() for ann in annotations]
     }
 
 
@@ -869,14 +840,13 @@ async def get_collaboration_stats():
         "annotations": annotation_stats,
         "synchronization": sync_stats,
         "active_websocket_connections": len(session_connections),
-        "total_active_sessions": len(active_sessions),
+        "total_active_sessions": len(active_sessions)
     }
 
 
 # ============================================================================
 # Initialization
 # ============================================================================
-
 
 async def initialize_collaboration_infrastructure():
     """Initialize collaboration infrastructure."""

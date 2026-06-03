@@ -23,12 +23,8 @@ class MultimodalFusionArgs(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    structural_file: Optional[str] = Field(
-        default=None, description="Structural modality path"
-    )
-    functional_file: Optional[str] = Field(
-        default=None, description="Functional modality path"
-    )
+    structural_file: Optional[str] = Field(default=None, description="Structural modality path")
+    functional_file: Optional[str] = Field(default=None, description="Functional modality path")
     output_dir: Optional[str] = Field(default=None, description="Output directory")
     fusion_method: str = Field(default="intermediate", description="Fusion strategy")
     n_components: int = Field(default=10, description="Number of fused components")

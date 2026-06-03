@@ -18,7 +18,7 @@ from typing import Any, Iterable, Optional
 
 import numpy as np
 
-from .gnn_models import TORCH_AVAILABLE, GNNConfig, GNNModelType, GNNPredictor
+from .gnn_models import GNNConfig, GNNModelType, GNNPredictor, TORCH_AVAILABLE
 from .graph_embeddings import DEPS_AVAILABLE as GRAPH_EMBEDDING_DEPS_AVAILABLE
 from .graph_embeddings import DEPS_IMPORT_ERROR as GRAPH_EMBEDDING_IMPORT_ERROR
 from .graph_embeddings import EmbeddingConfig, EmbeddingType, GraphEmbedder
@@ -122,9 +122,7 @@ def _group_value(value: Any) -> str | None:
     return text or None
 
 
-def _cosine_similarity(
-    vec_a: Optional[np.ndarray], vec_b: Optional[np.ndarray]
-) -> float:
+def _cosine_similarity(vec_a: Optional[np.ndarray], vec_b: Optional[np.ndarray]) -> float:
     if vec_a is None or vec_b is None:
         return 0.0
     denom = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
@@ -150,9 +148,7 @@ def _compute_binary_auc(labels: list[int], scores: list[float]) -> Optional[floa
     return greater / total if total else None
 
 
-def _compute_average_precision(
-    labels: list[int], scores: list[float]
-) -> Optional[float]:
+def _compute_average_precision(labels: list[int], scores: list[float]) -> Optional[float]:
     positives = sum(labels)
     if positives == 0:
         return None
@@ -167,9 +163,7 @@ def _compute_average_precision(
     return precision_sum / positives if positives else None
 
 
-def _group_ranking_metrics(
-    samples: list[_SampleRecord], scores: list[float]
-) -> dict[str, Optional[float]]:
+def _group_ranking_metrics(samples: list[_SampleRecord], scores: list[float]) -> dict[str, Optional[float]]:
     grouped: dict[tuple[str, str], list[tuple[float, int]]] = defaultdict(list)
     for sample, score in zip(samples, scores):
         grouped[(sample.edge_type, sample.source)].append((score, sample.label))
@@ -195,9 +189,7 @@ def _group_ranking_metrics(
     }
 
 
-def _metric_bundle(
-    samples: list[_SampleRecord], scores: list[float]
-) -> dict[str, Optional[float]]:
+def _metric_bundle(samples: list[_SampleRecord], scores: list[float]) -> dict[str, Optional[float]]:
     labels = [sample.label for sample in samples]
     return {
         "auroc": _compute_binary_auc(labels, scores),
@@ -221,9 +213,7 @@ class StructuralQualityBenchmark:
     ) -> dict[str, Any]:
         normalized = self._normalize_graph(graph_data)
         split_manifest, split_samples = self._build_split_manifest(normalized)
-        probe_model_comparison, score_maps = self._run_probe_models(
-            normalized, split_samples
-        )
+        probe_model_comparison, score_maps = self._run_probe_models(normalized, split_samples)
         graph_diagnostic_report = self._build_graph_diagnostic_report(
             normalized, split_manifest, probe_model_comparison
         )
@@ -236,9 +226,7 @@ class StructuralQualityBenchmark:
 
         result = {
             "benchmark_id": self.config.benchmark_id,
-            "generated_at": (
-                graph_metadata.get("generated_at") if graph_metadata else None
-            ),
+            "generated_at": graph_metadata.get("generated_at") if graph_metadata else None,
             "graph_metadata": graph_metadata or {},
             "config": self.config.to_dict(),
             "graph_diagnostic_report": graph_diagnostic_report,
@@ -260,20 +248,12 @@ class StructuralQualityBenchmark:
 
         for raw_node in graph_data.get("nodes", []):
             if isinstance(raw_node, dict):
-                node_id = (
-                    raw_node.get("id")
-                    or raw_node.get("node_id")
-                    or raw_node.get("name")
-                )
+                node_id = raw_node.get("id") or raw_node.get("node_id") or raw_node.get("name")
                 if node_id is None:
                     continue
                 node_id = str(node_id)
                 nodes.append(node_id)
-                node_type = (
-                    raw_node.get("node_type")
-                    or raw_node.get("type")
-                    or raw_node.get("label")
-                )
+                node_type = raw_node.get("node_type") or raw_node.get("type") or raw_node.get("label")
                 if node_type:
                     node_types[node_id] = str(node_type)
                 properties = dict(raw_node.get("properties") or {})
@@ -314,9 +294,7 @@ class StructuralQualityBenchmark:
             target = str(target)
             if source not in node_set or target not in node_set:
                 continue
-            edges.append(
-                _EdgeRecord(source=source, target=target, edge_type=str(edge_type))
-            )
+            edges.append(_EdgeRecord(source=source, target=target, edge_type=str(edge_type)))
 
         return _NormalizedGraph(
             nodes=nodes,
@@ -337,17 +315,9 @@ class StructuralQualityBenchmark:
             return "underpowered"
         if primary_auroc is None:
             return "underpowered"
-        if (
-            control_margin is not None
-            and primary_auroc >= 0.8
-            and control_margin >= 0.1
-        ):
+        if control_margin is not None and primary_auroc >= 0.8 and control_margin >= 0.1:
             return "strong"
-        if (
-            control_margin is not None
-            and primary_auroc >= 0.65
-            and control_margin >= 0.03
-        ):
+        if control_margin is not None and primary_auroc >= 0.65 and control_margin >= 0.03:
             return "marginal"
         return "weak_or_noisy"
 
@@ -367,22 +337,14 @@ class StructuralQualityBenchmark:
         candidate_edge_types = sorted(edges_by_type.keys())
         if self.config.evaluation_edge_types is not None:
             allowed = set(self.config.evaluation_edge_types)
-            candidate_edge_types = [
-                edge_type for edge_type in candidate_edge_types if edge_type in allowed
-            ]
+            candidate_edge_types = [edge_type for edge_type in candidate_edge_types if edge_type in allowed]
 
-        all_samples: dict[str, list[_SampleRecord]] = {
-            "train": [],
-            "val": [],
-            "test": [],
-        }
+        all_samples: dict[str, list[_SampleRecord]] = {"train": [], "val": [], "test": []}
         per_edge_type: dict[str, Any] = {}
 
         node_ids_by_type: dict[str, list[str]] = defaultdict(list)
         for node_id in normalized.nodes:
-            node_ids_by_type[normalized.node_types.get(node_id, "Unknown")].append(
-                node_id
-            )
+            node_ids_by_type[normalized.node_types.get(node_id, "Unknown")].append(node_id)
 
         for edge_type in candidate_edge_types:
             positives = edges_by_type[edge_type]
@@ -430,12 +392,8 @@ class StructuralQualityBenchmark:
             per_edge_type[edge_type] = {
                 "positive_edges": len(positive_samples),
                 "negative_edges": len(negatives),
-                "source_types": sorted(
-                    {sample.source_type for sample in positive_samples}
-                ),
-                "target_types": sorted(
-                    {sample.target_type for sample in positive_samples}
-                ),
+                "source_types": sorted({sample.source_type for sample in positive_samples}),
+                "target_types": sorted({sample.target_type for sample in positive_samples}),
                 "splits": {
                     split_name: {
                         "positives": sum(1 for sample in values if sample.label == 1),
@@ -486,9 +444,7 @@ class StructuralQualityBenchmark:
         if not candidates:
             return []
 
-        hard_count = min(
-            len(candidates), int(round(count * self.config.hard_negative_ratio))
-        )
+        hard_count = min(len(candidates), int(round(count * self.config.hard_negative_ratio)))
         random_count = max(0, count - hard_count)
 
         scored_candidates = []
@@ -496,9 +452,7 @@ class StructuralQualityBenchmark:
         for candidate_id in candidates:
             candidate_features = normalized.node_features.get(candidate_id)
             score = _cosine_similarity(source_features, candidate_features)
-            score += 0.05 * math.log1p(
-                degrees[source_id] * max(1, degrees[candidate_id])
-            )
+            score += 0.05 * math.log1p(degrees[source_id] * max(1, degrees[candidate_id]))
             scored_candidates.append((candidate_id, score))
         scored_candidates.sort(key=lambda item: item[1], reverse=True)
 
@@ -506,11 +460,7 @@ class StructuralQualityBenchmark:
         for candidate_id, _ in scored_candidates[:hard_count]:
             selected_ids.append((candidate_id, "hard_typed"))
 
-        remaining_pool = [
-            candidate_id
-            for candidate_id in candidates
-            if candidate_id not in {cid for cid, _ in selected_ids}
-        ]
+        remaining_pool = [candidate_id for candidate_id in candidates if candidate_id not in {cid for cid, _ in selected_ids}]
         self._rng.shuffle(remaining_pool)
         for candidate_id in remaining_pool[:random_count]:
             selected_ids.append((candidate_id, "random_typed"))
@@ -529,9 +479,7 @@ class StructuralQualityBenchmark:
             for target_id, negative_kind in selected_ids
         ]
 
-    def _assign_splits(
-        self, samples: list[_SampleRecord]
-    ) -> dict[str, list[_SampleRecord]]:
+    def _assign_splits(self, samples: list[_SampleRecord]) -> dict[str, list[_SampleRecord]]:
         if not samples:
             return {"train": [], "val": [], "test": []}
 
@@ -587,36 +535,23 @@ class StructuralQualityBenchmark:
         models: dict[str, Any] = {}
         score_maps: dict[str, list[float]] = {}
 
-        score_maps["type_prior"] = self._score_with_type_prior(
-            train_samples, eval_samples
-        )
-        score_maps["degree_only"] = self._score_with_degree_only(
-            normalized, eval_samples
-        )
+        score_maps["type_prior"] = self._score_with_type_prior(train_samples, eval_samples)
+        score_maps["degree_only"] = self._score_with_degree_only(normalized, eval_samples)
 
         if normalized.node_features:
-            score_maps["text_cosine"] = self._score_with_text_cosine(
-                normalized, eval_samples
-            )
+            score_maps["text_cosine"] = self._score_with_text_cosine(normalized, eval_samples)
         else:
-            models["text_cosine"] = {
-                "status": "skipped",
-                "reason": "missing_node_features",
-            }
+            models["text_cosine"] = {"status": "skipped", "reason": "missing_node_features"}
 
         if self.config.include_node2vec_probe:
-            score_or_reason = self._score_with_node2vec(
-                normalized, train_samples, eval_samples
-            )
+            score_or_reason = self._score_with_node2vec(normalized, train_samples, eval_samples)
             if isinstance(score_or_reason, list):
                 score_maps["node2vec"] = score_or_reason
             else:
                 models["node2vec"] = score_or_reason
 
         if self.config.include_graphsage_probe:
-            score_or_reason = self._score_with_graphsage(
-                normalized, train_samples, eval_samples
-            )
+            score_or_reason = self._score_with_graphsage(normalized, train_samples, eval_samples)
             if isinstance(score_or_reason, list):
                 score_maps["graphsage_text_v1"] = score_or_reason
             else:
@@ -625,14 +560,8 @@ class StructuralQualityBenchmark:
         for model_name, scores in score_maps.items():
             per_edge_type = {}
             for edge_type in sorted({sample.edge_type for sample in eval_samples}):
-                edge_samples = [
-                    sample for sample in eval_samples if sample.edge_type == edge_type
-                ]
-                edge_scores = [
-                    score
-                    for sample, score in zip(eval_samples, scores)
-                    if sample.edge_type == edge_type
-                ]
+                edge_samples = [sample for sample in eval_samples if sample.edge_type == edge_type]
+                edge_scores = [score for sample, score in zip(eval_samples, scores) if sample.edge_type == edge_type]
                 per_edge_type[edge_type] = _metric_bundle(edge_samples, edge_scores)
 
             models[model_name] = {
@@ -642,12 +571,7 @@ class StructuralQualityBenchmark:
             }
 
         primary_probe_model = None
-        for candidate in (
-            "graphsage_text_v1",
-            "node2vec",
-            "text_cosine",
-            "degree_only",
-        ):
+        for candidate in ("graphsage_text_v1", "node2vec", "text_cosine", "degree_only"):
             if models.get(candidate, {}).get("status") == "completed":
                 primary_probe_model = candidate
                 break
@@ -666,7 +590,11 @@ class StructuralQualityBenchmark:
     def _score_with_type_prior(
         self, train_samples: list[_SampleRecord], eval_samples: list[_SampleRecord]
     ) -> list[float]:
-        positives = [sample for sample in train_samples if sample.label == 1]
+        positives = [
+            sample
+            for sample in train_samples
+            if sample.label == 1
+        ]
         counts = Counter(
             (sample.edge_type, sample.source_type, sample.target_type)
             for sample in positives
@@ -674,9 +602,7 @@ class StructuralQualityBenchmark:
         total_by_edge = Counter(sample.edge_type for sample in positives)
         scores = []
         for sample in eval_samples:
-            numerator = (
-                counts[(sample.edge_type, sample.source_type, sample.target_type)] + 1
-            )
+            numerator = counts[(sample.edge_type, sample.source_type, sample.target_type)] + 1
             denominator = total_by_edge[sample.edge_type] + len(counts) + 1
             scores.append(numerator / denominator)
         return scores
@@ -689,8 +615,7 @@ class StructuralQualityBenchmark:
             degree[edge.source] += 1
             degree[edge.target] += 1
         return [
-            math.log1p(degree[sample.source] + 1)
-            * math.log1p(degree[sample.target] + 1)
+            math.log1p(degree[sample.source] + 1) * math.log1p(degree[sample.target] + 1)
             for sample in eval_samples
         ]
 
@@ -714,10 +639,7 @@ class StructuralQualityBenchmark:
         eval_samples: list[_SampleRecord],
     ) -> list[float] | dict[str, Any]:
         if not GRAPH_EMBEDDING_DEPS_AVAILABLE:
-            payload = {
-                "status": "skipped",
-                "reason": "graph_embedding_dependencies_unavailable",
-            }
+            payload = {"status": "skipped", "reason": "graph_embedding_dependencies_unavailable"}
             if GRAPH_EMBEDDING_IMPORT_ERROR:
                 payload["detail"] = GRAPH_EMBEDDING_IMPORT_ERROR
             return payload
@@ -725,11 +647,7 @@ class StructuralQualityBenchmark:
         training_graph = {
             "nodes": normalized.nodes,
             "edges": [
-                {
-                    "source": sample.source,
-                    "target": sample.target,
-                    "edge_type": sample.edge_type,
-                }
+                {"source": sample.source, "target": sample.target, "edge_type": sample.edge_type}
                 for sample in train_samples
                 if sample.label == 1
             ],
@@ -749,9 +667,7 @@ class StructuralQualityBenchmark:
             return {"status": "skipped", "reason": f"node2vec_failed: {exc}"}
 
         return [
-            _cosine_similarity(
-                embeddings.get(sample.source), embeddings.get(sample.target)
-            )
+            _cosine_similarity(embeddings.get(sample.source), embeddings.get(sample.target))
             for sample in eval_samples
         ]
 
@@ -768,14 +684,10 @@ class StructuralQualityBenchmark:
             return {"status": "skipped", "reason": "missing_node_features"}
 
         train_positive_edges = [
-            (sample.source, sample.target)
-            for sample in train_samples
-            if sample.label == 1
+            (sample.source, sample.target) for sample in train_samples if sample.label == 1
         ]
         train_negative_edges = [
-            (sample.source, sample.target)
-            for sample in train_samples
-            if sample.label == 0
+            (sample.source, sample.target) for sample in train_samples if sample.label == 0
         ]
         if not train_positive_edges or not train_negative_edges:
             return {"status": "skipped", "reason": "insufficient_train_edges"}
@@ -783,7 +695,8 @@ class StructuralQualityBenchmark:
         training_graph = {
             "nodes": normalized.nodes,
             "edges": [
-                {"source": src, "target": dst} for src, dst in train_positive_edges
+                {"source": src, "target": dst}
+                for src, dst in train_positive_edges
             ],
             "node_features": {
                 node_id: features.tolist()
@@ -806,9 +719,7 @@ class StructuralQualityBenchmark:
         try:
             predictor = GNNPredictor(GNNModelType.GRAPHSAGE, config)
             predictor.build_model()
-            predictor.train_link_prediction(
-                training_graph, train_positive_edges, train_negative_edges
-            )
+            predictor.train_link_prediction(training_graph, train_positive_edges, train_negative_edges)
             predictions = predictor.predict(
                 training_graph,
                 task_type="link_prediction",
@@ -828,8 +739,7 @@ class StructuralQualityBenchmark:
         probe_model_comparison: dict[str, Any],
     ) -> dict[str, Any]:
         node_type_counts = Counter(
-            normalized.node_types.get(node_id, "Unknown")
-            for node_id in normalized.nodes
+            normalized.node_types.get(node_id, "Unknown") for node_id in normalized.nodes
         )
         edge_type_counts = Counter(edge.edge_type for edge in normalized.edges)
         degree = Counter()
@@ -857,11 +767,7 @@ class StructuralQualityBenchmark:
         key_edge_types = self.config.key_edge_types or sorted(edge_type_counts.keys())
 
         for edge_type in sorted(edge_type_counts.keys()):
-            positives = (
-                split_manifest["per_edge_type"]
-                .get(edge_type, {})
-                .get("positive_edges", 0)
-            )
+            positives = split_manifest["per_edge_type"].get(edge_type, {}).get("positive_edges", 0)
             primary_metrics = (
                 models.get(primary_probe_model, {})
                 .get("per_edge_type", {})
@@ -890,16 +796,9 @@ class StructuralQualityBenchmark:
             )
 
             if primary_auroc is not None:
-                coverage_component = min(
-                    1.0, positives / max(1, self.config.min_positive_edges_per_type * 2)
-                )
+                coverage_component = min(1.0, positives / max(1, self.config.min_positive_edges_per_type * 2))
                 margin_component = max(0.0, control_margin or 0.0)
-                edge_score = min(
-                    1.0,
-                    0.55 * primary_auroc
-                    + 0.25 * margin_component
-                    + 0.20 * coverage_component,
-                )
+                edge_score = min(1.0, 0.55 * primary_auroc + 0.25 * margin_component + 0.20 * coverage_component)
                 if edge_type in key_edge_types:
                     edge_scores_for_summary.append(edge_score)
 
@@ -924,48 +823,25 @@ class StructuralQualityBenchmark:
                     "count": count,
                     "coverage_ratio": count / total_nodes if total_nodes else 0.0,
                     "orphans": orphan_counts.get(node_type, 0),
-                    "orphan_rate": (
-                        orphan_counts.get(node_type, 0) / count if count else 0.0
-                    ),
-                    "mean_degree": (
-                        float(
-                            np.mean(
-                                [
-                                    degree[node_id]
-                                    for node_id in normalized.nodes
-                                    if normalized.node_types.get(node_id, "Unknown")
-                                    == node_type
-                                ]
-                            )
+                    "orphan_rate": orphan_counts.get(node_type, 0) / count if count else 0.0,
+                    "mean_degree": float(
+                        np.mean(
+                            [degree[node_id] for node_id in normalized.nodes if normalized.node_types.get(node_id, "Unknown") == node_type]
                         )
-                        if count
-                        else 0.0
-                    ),
+                    )
+                    if count
+                    else 0.0,
                 }
                 for node_type, count in sorted(node_type_counts.items())
             },
             "degree_statistics": {
-                "mean_degree": (
-                    float(np.mean(overall_degree_values))
-                    if overall_degree_values
-                    else 0.0
-                ),
-                "median_degree": (
-                    float(np.median(overall_degree_values))
-                    if overall_degree_values
-                    else 0.0
-                ),
-                "max_degree": (
-                    int(max(overall_degree_values)) if overall_degree_values else 0
-                ),
+                "mean_degree": float(np.mean(overall_degree_values)) if overall_degree_values else 0.0,
+                "median_degree": float(np.median(overall_degree_values)) if overall_degree_values else 0.0,
+                "max_degree": int(max(overall_degree_values)) if overall_degree_values else 0,
             },
             "per_edge_type_diagnostics": per_edge_type_diagnostics,
             "primary_probe_model": primary_probe_model,
-            "structure_consistency_score": (
-                float(np.mean(edge_scores_for_summary))
-                if edge_scores_for_summary
-                else 0.0
-            ),
+            "structure_consistency_score": float(np.mean(edge_scores_for_summary)) if edge_scores_for_summary else 0.0,
         }
         return report
 
@@ -977,9 +853,7 @@ class StructuralQualityBenchmark:
         probe_model_comparison: dict[str, Any],
         score_maps: dict[str, list[float]],
     ) -> dict[str, Any]:
-        requested_group_keys = [
-            key for key in self.config.audit_group_keys if str(key).strip()
-        ]
+        requested_group_keys = [key for key in self.config.audit_group_keys if str(key).strip()]
         evaluation_split = probe_model_comparison.get("evaluation_split", "test")
         eval_samples = split_samples.get(evaluation_split, [])
         primary_probe_model = probe_model_comparison.get("primary_probe_model")
@@ -1011,8 +885,7 @@ class StructuralQualityBenchmark:
 
         source_node_ids = sorted({sample.source for sample in eval_samples})
         source_properties = {
-            node_id: normalized.node_properties.get(node_id, {})
-            for node_id in source_node_ids
+            node_id: normalized.node_properties.get(node_id, {}) for node_id in source_node_ids
         }
         available_keys = {
             _normalize_group_key(key): key
@@ -1043,9 +916,7 @@ class StructuralQualityBenchmark:
                 node_groups[node_id] = value
 
             group_node_counts = Counter(node_groups.values())
-            grouped_samples: dict[str, list[tuple[_SampleRecord, int]]] = defaultdict(
-                list
-            )
+            grouped_samples: dict[str, list[tuple[_SampleRecord, int]]] = defaultdict(list)
             missing_eval_samples = 0
             for index, sample in enumerate(eval_samples):
                 group_value = node_groups.get(sample.source)
@@ -1066,9 +937,7 @@ class StructuralQualityBenchmark:
                     else []
                 )
                 primary_metrics = (
-                    _metric_bundle(group_samples, primary_scores)
-                    if primary_scores
-                    else {}
+                    _metric_bundle(group_samples, primary_scores) if primary_scores else {}
                 )
                 primary_auroc = primary_metrics.get("auroc")
 
@@ -1113,9 +982,7 @@ class StructuralQualityBenchmark:
                     ]
                     edge_indices = [idx for _, idx in edge_rows]
                     edge_samples = [sample for sample, _ in edge_rows]
-                    edge_positive_edges = sum(
-                        1 for sample in edge_samples if sample.label == 1
-                    )
+                    edge_positive_edges = sum(1 for sample in edge_samples if sample.label == 1)
                     edge_primary_scores = (
                         [score_maps[primary_probe_model][idx] for idx in edge_indices]
                         if primary_probe_model in score_maps
@@ -1139,21 +1006,17 @@ class StructuralQualityBenchmark:
                         auroc = metrics.get("auroc")
                         if auroc is not None:
                             edge_control_aurocs.append(auroc)
-                    edge_best_control = (
-                        max(edge_control_aurocs) if edge_control_aurocs else None
-                    )
+                    edge_best_control = max(edge_control_aurocs) if edge_control_aurocs else None
                     edge_control_margin = (
                         edge_primary_auroc - edge_best_control
-                        if edge_primary_auroc is not None
-                        and edge_best_control is not None
+                        if edge_primary_auroc is not None and edge_best_control is not None
                         else None
                     )
                     edge_bucket = (
                         "underpowered"
                         if (
                             len(edge_samples) < self.config.min_group_samples
-                            or edge_positive_edges
-                            < self.config.min_positive_edges_per_type
+                            or edge_positive_edges < self.config.min_positive_edges_per_type
                         )
                         else self._diagnostic_bucket(
                             positives=edge_positive_edges,
@@ -1164,9 +1027,7 @@ class StructuralQualityBenchmark:
                     per_edge_type[edge_type] = {
                         "sample_count": len(edge_samples),
                         "positive_edges": edge_positive_edges,
-                        "negative_edges": sum(
-                            1 for sample in edge_samples if sample.label == 0
-                        ),
+                        "negative_edges": sum(1 for sample in edge_samples if sample.label == 0),
                         "primary_probe_metrics": edge_primary_metrics,
                         "best_control_auroc": edge_best_control,
                         "control_margin": edge_control_margin,
@@ -1195,23 +1056,16 @@ class StructuralQualityBenchmark:
             )
             for edge_type in observed_edge_types:
                 group_aurocs = {
-                    group_name: group_payload["per_edge_type"][edge_type][
-                        "primary_probe_metrics"
-                    ].get("auroc")
+                    group_name: group_payload["per_edge_type"][edge_type]["primary_probe_metrics"].get("auroc")
                     for group_name, group_payload in per_value.items()
                     if group_payload["per_edge_type"].get(edge_type)
-                    and group_payload["per_edge_type"][edge_type]["diagnostic_bucket"]
-                    != "underpowered"
-                    and group_payload["per_edge_type"][edge_type][
-                        "primary_probe_metrics"
-                    ].get("auroc")
-                    is not None
+                    and group_payload["per_edge_type"][edge_type]["diagnostic_bucket"] != "underpowered"
+                    and group_payload["per_edge_type"][edge_type]["primary_probe_metrics"].get("auroc") is not None
                 }
                 if len(group_aurocs) < 2:
                     continue
                 disparity_summary[edge_type] = {
-                    "max_auroc_gap": max(group_aurocs.values())
-                    - min(group_aurocs.values()),
+                    "max_auroc_gap": max(group_aurocs.values()) - min(group_aurocs.values()),
                     "best_group": max(group_aurocs, key=group_aurocs.get),
                     "worst_group": min(group_aurocs, key=group_aurocs.get),
                 }
@@ -1221,21 +1075,16 @@ class StructuralQualityBenchmark:
                     "total_source_nodes": len(source_node_ids),
                     "resolved_source_nodes": len(node_groups),
                     "missing_source_nodes": missing_nodes,
-                    "coverage_ratio": (
-                        len(node_groups) / len(source_node_ids)
-                        if source_node_ids
-                        else 0.0
-                    ),
+                    "coverage_ratio": len(node_groups) / len(source_node_ids)
+                    if source_node_ids
+                    else 0.0,
                 },
                 "sample_coverage": {
                     "evaluation_samples": len(eval_samples),
-                    "resolved_samples": sum(
-                        len(items) for items in grouped_samples.values()
-                    ),
+                    "resolved_samples": sum(len(items) for items in grouped_samples.values()),
                     "missing_samples": missing_eval_samples,
                     "coverage_ratio": (
-                        sum(len(items) for items in grouped_samples.values())
-                        / len(eval_samples)
+                        sum(len(items) for items in grouped_samples.values()) / len(eval_samples)
                         if eval_samples
                         else 0.0
                     ),
@@ -1244,8 +1093,7 @@ class StructuralQualityBenchmark:
                     group_name
                     for group_name, payload in per_value.items()
                     if payload["sample_count"] < self.config.min_group_samples
-                    or payload["positive_edges"]
-                    < self.config.min_positive_edges_per_type
+                    or payload["positive_edges"] < self.config.min_positive_edges_per_type
                 ),
                 "per_group_value": per_value,
                 "disparity_summary": disparity_summary,
@@ -1297,6 +1145,4 @@ def run_structural_quality_benchmark(
     """Convenience wrapper for the structural quality benchmark."""
 
     benchmark = StructuralQualityBenchmark(config=config)
-    return benchmark.run(
-        graph_data=graph_data, output_dir=output_dir, graph_metadata=graph_metadata
-    )
+    return benchmark.run(graph_data=graph_data, output_dir=output_dir, graph_metadata=graph_metadata)

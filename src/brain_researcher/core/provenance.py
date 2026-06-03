@@ -7,9 +7,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import platform
 import subprocess
 import sys
+import platform
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -28,11 +28,7 @@ def _sha256_file(path: Path) -> Optional[str]:
 def _git_commit(repo_path: Path) -> Optional[str]:
     try:
         result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=repo_path,
-            capture_output=True,
-            text=True,
-            check=True,
+            ["git", "rev-parse", "HEAD"], cwd=repo_path, capture_output=True, text=True, check=True
         )
         return result.stdout.strip()
     except Exception:
@@ -89,13 +85,7 @@ def write_provenance(
         try:
             canon = json.dumps(references, sort_keys=True)
             ref_hash = hashlib.sha256(canon.encode("utf-8")).hexdigest()
-            ref_sources = sorted(
-                {
-                    r.get("source")
-                    for r in references
-                    if isinstance(r, dict) and r.get("source")
-                }
-            )
+            ref_sources = sorted({r.get("source") for r in references if isinstance(r, dict) and r.get("source")})
         except Exception:
             ref_hash = None
 

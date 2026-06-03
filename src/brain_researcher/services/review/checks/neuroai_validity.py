@@ -298,20 +298,13 @@ def _analysis_family(bundle: CodeReviewBundle) -> str:
     return str(bundle.kg_context.get("analysis_family") or "").strip().lower()
 
 
-def _is_neuroai_context(
-    bundle: CodeReviewBundle, context: Mapping[str, object]
-) -> bool:
+def _is_neuroai_context(bundle: CodeReviewBundle, context: Mapping[str, object]) -> bool:
     analysis_family = _analysis_family(bundle)
     if analysis_family in _NEUROAI_ANALYSIS_FAMILIES:
         return True
     if any(
         key in context
-        for key in (
-            "model_candidates",
-            "layer_candidates",
-            "roi_candidates",
-            "prompt_candidates",
-        )
+        for key in ("model_candidates", "layer_candidates", "roi_candidates", "prompt_candidates")
     ):
         return True
     selection = _nested_mapping(context, "selection")
@@ -328,9 +321,7 @@ def _collect_selection_flags(context: Mapping[str, object]) -> list[str]:
                 continue
             if isinstance(value, str):
                 normalized = _normalize_text(value)
-                if any(
-                    token in normalized for token in ("test", "heldout", "held_out")
-                ):
+                if any(token in normalized for token in ("test", "heldout", "held_out")):
                     flags.append(f"{key}={normalized}")
         for key in _SELECTION_SCOPE_KEYS:
             value = section.get(key)
@@ -352,9 +343,7 @@ def _collect_winner_fields(context: Mapping[str, object]) -> list[str]:
     return sorted(dict.fromkeys(winner_fields))
 
 
-def _collect_group_keys(
-    context: Mapping[str, object], keys: tuple[str, ...]
-) -> set[str]:
+def _collect_group_keys(context: Mapping[str, object], keys: tuple[str, ...]) -> set[str]:
     values: set[str] = set()
     for section in _section_candidates(context):
         for key in keys:
@@ -434,14 +423,7 @@ def _has_accounting(context: Mapping[str, object]) -> bool:
                 continue
             if isinstance(value, str):
                 normalized = _normalize_text(value)
-                if normalized and normalized not in {
-                    "false",
-                    "no",
-                    "0",
-                    "none",
-                    "null",
-                    "missing",
-                }:
+                if normalized and normalized not in {"false", "no", "0", "none", "null", "missing"}:
                     return True
                 continue
             if isinstance(value, Mapping):
@@ -511,9 +493,7 @@ def _manifest_path_for_keys(
     return None
 
 
-def _manifest_path(
-    context: Mapping[str, object], bundle: CodeReviewBundle
-) -> Path | None:
+def _manifest_path(context: Mapping[str, object], bundle: CodeReviewBundle) -> Path | None:
     return _manifest_path_for_keys(context, bundle, _MANIFEST_PATH_KEYS)
 
 
@@ -625,14 +605,9 @@ def _partition_conflict(
 
     for row in rows:
         normalized_row = {
-            _normalize_text(key): value
-            for key, value in row.items()
-            if str(key).strip()
+            _normalize_text(key): value for key, value in row.items() if str(key).strip()
         }
-        if not all(
-            key in normalized_row and str(normalized_row[key]).strip()
-            for key in normalized_group_keys
-        ):
+        if not all(key in normalized_row and str(normalized_row[key]).strip() for key in normalized_group_keys):
             continue
 
         partition = None
@@ -734,14 +709,9 @@ def _nested_outer_holdout_conflict(
 
     for row in rows:
         normalized_row = {
-            _normalize_text(key): value
-            for key, value in row.items()
-            if str(key).strip()
+            _normalize_text(key): value for key, value in row.items() if str(key).strip()
         }
-        if not all(
-            key in normalized_row and str(normalized_row[key]).strip()
-            for key in normalized_group_keys
-        ):
+        if not all(key in normalized_row and str(normalized_row[key]).strip() for key in normalized_group_keys):
             continue
 
         outer_fold = None
@@ -782,17 +752,13 @@ def _nested_outer_partition_gap(
 
     for row in rows:
         normalized_row = {
-            _normalize_text(key): value
-            for key, value in row.items()
-            if str(key).strip()
+            _normalize_text(key): value for key, value in row.items() if str(key).strip()
         }
         outer_fold = _first_normalized_row_value(normalized_row, _OUTER_FOLD_KEYS)
         if not outer_fold:
             continue
 
-        partition = _first_normalized_row_value(
-            normalized_row, _MANIFEST_PARTITION_KEYS
-        )
+        partition = _first_normalized_row_value(normalized_row, _MANIFEST_PARTITION_KEYS)
         normalized_partition = _normalized_partition(partition)
         if not normalized_partition:
             continue
@@ -811,24 +777,18 @@ def _nested_inner_partition_gap(
 
     for row in rows:
         normalized_row = {
-            _normalize_text(key): value
-            for key, value in row.items()
-            if str(key).strip()
+            _normalize_text(key): value for key, value in row.items() if str(key).strip()
         }
         outer_fold = _first_normalized_row_value(normalized_row, _OUTER_FOLD_KEYS)
         inner_fold = _first_normalized_row_value(normalized_row, _INNER_FOLD_KEYS)
         if not outer_fold or not inner_fold:
             continue
 
-        partition = _first_normalized_row_value(
-            normalized_row, _MANIFEST_PARTITION_KEYS
-        )
+        partition = _first_normalized_row_value(normalized_row, _MANIFEST_PARTITION_KEYS)
         normalized_partition = _normalized_partition(partition)
         if normalized_partition not in {"train", "validation", "test"}:
             continue
-        assignments.setdefault((outer_fold, inner_fold), set()).add(
-            normalized_partition
-        )
+        assignments.setdefault((outer_fold, inner_fold), set()).add(normalized_partition)
 
     for (outer_fold, inner_fold), partitions in assignments.items():
         has_train = "train" in partitions
@@ -846,17 +806,13 @@ def _nested_outer_missing_inner_resampling(
 
     for row in rows:
         normalized_row = {
-            _normalize_text(key): value
-            for key, value in row.items()
-            if str(key).strip()
+            _normalize_text(key): value for key, value in row.items() if str(key).strip()
         }
         outer_fold = _first_normalized_row_value(normalized_row, _OUTER_FOLD_KEYS)
         if not outer_fold:
             continue
 
-        partition = _first_normalized_row_value(
-            normalized_row, _MANIFEST_PARTITION_KEYS
-        )
+        partition = _first_normalized_row_value(normalized_row, _MANIFEST_PARTITION_KEYS)
         normalized_partition = _normalized_partition(partition)
         if normalized_partition not in {"train", "validation"}:
             continue
@@ -879,9 +835,7 @@ def _nested_cv_manifest_schema_gaps(rows: list[dict[str, Any]]) -> list[str]:
         gaps.append("outer_fold")
     if not any(_normalize_text(key) in manifest_keys for key in _INNER_FOLD_KEYS):
         gaps.append("inner_fold")
-    if not any(
-        _normalize_text(key) in manifest_keys for key in _MANIFEST_PARTITION_KEYS
-    ):
+    if not any(_normalize_text(key) in manifest_keys for key in _MANIFEST_PARTITION_KEYS):
         gaps.append("partition")
     return gaps
 
@@ -924,9 +878,7 @@ def neuroai_selection_on_test_check(bundle: CodeReviewBundle) -> ReviewFinding |
     )
 
 
-def neuroai_split_grouping_mismatch_check(
-    bundle: CodeReviewBundle,
-) -> ReviewFinding | None:
+def neuroai_split_grouping_mismatch_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
     """Block explicit fine-grained splits that violate required grouping keys."""
 
     context = _review_context(bundle)
@@ -1179,9 +1131,7 @@ def neuroai_split_manifest_missing_group_keys_check(
 
     manifest_keys = _manifest_column_keys(rows)
     missing_keys = sorted(
-        _normalize_text(key)
-        for key in required_group_keys
-        if _normalize_text(key) not in manifest_keys
+        _normalize_text(key) for key in required_group_keys if _normalize_text(key) not in manifest_keys
     )
     if not missing_keys:
         return None

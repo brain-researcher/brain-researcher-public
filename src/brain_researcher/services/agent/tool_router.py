@@ -30,10 +30,10 @@ from brain_researcher.services.agent.tool_allowlist_loader import (
     is_local_first_blocked_tool,
     load_chat_tools_allowlist,
 )
-from brain_researcher.services.tools.spec import ToolSpec, spec_from_tool
 from brain_researcher.services.tools.tool_registry import (
     ToolRegistry as CoreToolRegistry,
 )
+from brain_researcher.services.tools.spec import ToolSpec, spec_from_tool
 
 if TYPE_CHECKING:
     from brain_researcher.services.agent.knowledge import EvidenceBundle

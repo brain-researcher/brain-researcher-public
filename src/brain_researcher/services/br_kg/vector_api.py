@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     )
 
 # Create Blueprint
-vector_bp = Blueprint("vector_api", __name__, url_prefix="/api/vector")
+vector_bp = Blueprint('vector_api', __name__, url_prefix='/api/vector')
 
 # Global vector engine instances keyed by use_niclip
 _vector_engines: Dict[bool, Any] = {}
@@ -69,9 +69,7 @@ def get_vector_engine(use_niclip: bool = False) -> "VectorSearchEngine":
             cache_dir=_cache_dir_for(use_niclip),
             normalize_embeddings=True,
             use_niclip=use_niclip,
-            niclip_data_path=os.environ.get(
-                "NICLIP_DATA_PATH", "/app/data/niclip/data"
-            ),
+            niclip_data_path=os.environ.get("NICLIP_DATA_PATH", "/app/data/niclip/data")
         )
         engine = VectorSearchEngine(db, config)
         _vector_engines[use_niclip] = engine
@@ -80,7 +78,7 @@ def get_vector_engine(use_niclip: bool = False) -> "VectorSearchEngine":
     return engine
 
 
-@vector_bp.route("/search", methods=["POST"])
+@vector_bp.route('/search', methods=['POST'])
 @rate_limit(requests_per_minute=100, requests_per_hour=1500)
 def vector_search():
     """
@@ -98,14 +96,14 @@ def vector_search():
     try:
         data = request.get_json()
 
-        if not data or "query" not in data:
+        if not data or 'query' not in data:
             return jsonify({"error": "Query parameter is required"}), 400
 
-        query = data["query"]
-        node_types = data.get("node_types")
-        k = data.get("k", 10)
-        threshold = data.get("threshold", 0.0)
-        use_niclip = data.get("use_niclip", False)
+        query = data['query']
+        node_types = data.get('node_types')
+        k = data.get('k', 10)
+        threshold = data.get('threshold', 0.0)
+        use_niclip = data.get('use_niclip', False)
 
         # Validate parameters
         if not isinstance(query, str) or len(query.strip()) == 0:
@@ -123,7 +121,10 @@ def vector_search():
         # Perform search
         start_time = time.time()
         results = engine.vector_search(
-            query=query, node_types=node_types, k=k, threshold=threshold
+            query=query,
+            node_types=node_types,
+            k=k,
+            threshold=threshold
         )
         search_time = time.time() - start_time
 
@@ -136,22 +137,18 @@ def vector_search():
                     "node_type": r.node_type,
                     "score": r.score,
                     "properties": r.metadata,
-                    "text_representation": (
-                        r.text[:200] + "..." if len(r.text) > 200 else r.text
-                    ),
+                    "text_representation": r.text[:200] + "..." if len(r.text) > 200 else r.text
                 }
                 for r in results
             ],
             "count": len(results),
-            "search_time_ms": round(search_time * 1000, 2),
+            "search_time_ms": round(search_time * 1000, 2)
         }
 
         stats = engine.get_embedding_stats()
         updated_at = None
         if node_types and isinstance(node_types, list) and len(node_types) == 1:
-            updated_at = (
-                stats.get("indices", {}).get(node_types[0], {}).get("updated_at")
-            )
+            updated_at = stats.get("indices", {}).get(node_types[0], {}).get("updated_at")
         else:
             updated_at = {
                 nt: info.get("updated_at")
@@ -175,7 +172,7 @@ def vector_search():
         return jsonify({"error": msg}), 500
 
 
-@vector_bp.route("/hybrid", methods=["POST"])
+@vector_bp.route('/hybrid', methods=['POST'])
 @rate_limit(requests_per_minute=80, requests_per_hour=1200)
 def hybrid_search():
     """
@@ -195,23 +192,20 @@ def hybrid_search():
     try:
         data = request.get_json()
 
-        if not data or "query" not in data:
+        if not data or 'query' not in data:
             return jsonify({"error": "Query parameter is required"}), 400
 
-        query = data["query"]
-        node_types = data.get("node_types")
-        k = data.get("k", 10)
-        vector_weight = data.get("vector_weight", 0.7)
-        text_weight = data.get("text_weight", 0.3)
-        threshold = data.get("threshold", 0.0)
-        use_niclip = data.get("use_niclip", False)
+        query = data['query']
+        node_types = data.get('node_types')
+        k = data.get('k', 10)
+        vector_weight = data.get('vector_weight', 0.7)
+        text_weight = data.get('text_weight', 0.3)
+        threshold = data.get('threshold', 0.0)
+        use_niclip = data.get('use_niclip', False)
 
         # Validate weights
         if vector_weight + text_weight > 1.001:  # Allow small floating point error
-            return (
-                jsonify({"error": "vector_weight + text_weight must not exceed 1.0"}),
-                400,
-            )
+            return jsonify({"error": "vector_weight + text_weight must not exceed 1.0"}), 400
 
         # Get vector engine with specified model
         engine = get_vector_engine(use_niclip=use_niclip)
@@ -224,7 +218,7 @@ def hybrid_search():
             k=k,
             vector_weight=vector_weight,
             text_weight=text_weight,
-            threshold=threshold,
+            threshold=threshold
         )
         search_time = time.time() - start_time
 
@@ -237,16 +231,14 @@ def hybrid_search():
             "search_config": {
                 "vector_weight": vector_weight,
                 "text_weight": text_weight,
-                "threshold": threshold,
-            },
+                "threshold": threshold
+            }
         }
 
         stats = engine.get_embedding_stats()
         updated_at = None
         if node_types and isinstance(node_types, list) and len(node_types) == 1:
-            updated_at = (
-                stats.get("indices", {}).get(node_types[0], {}).get("updated_at")
-            )
+            updated_at = stats.get("indices", {}).get(node_types[0], {}).get("updated_at")
         else:
             updated_at = {
                 nt: info.get("updated_at")
@@ -270,7 +262,7 @@ def hybrid_search():
         return jsonify({"error": msg}), 500
 
 
-@vector_bp.route("/similar/<node_type>/<node_id>", methods=["GET"])
+@vector_bp.route('/similar/<node_type>/<node_id>', methods=['GET'])
 @rate_limit(requests_per_minute=100, requests_per_hour=1500)
 def find_similar_nodes(node_type: str, node_id: str):
     """
@@ -282,9 +274,9 @@ def find_similar_nodes(node_type: str, node_id: str):
     - use_niclip: whether to use NICLIP embeddings (default: false)
     """
     try:
-        k = request.args.get("k", 10, type=int)
-        include_self = request.args.get("include_self", "false").lower() == "true"
-        use_niclip = request.args.get("use_niclip", "false").lower() == "true"
+        k = request.args.get('k', 10, type=int)
+        include_self = request.args.get('include_self', 'false').lower() == 'true'
+        use_niclip = request.args.get('use_niclip', 'false').lower() == 'true'
 
         # Validate parameters
         if k < 1 or k > 50:
@@ -296,7 +288,10 @@ def find_similar_nodes(node_type: str, node_id: str):
         # Find similar nodes
         start_time = time.time()
         results = engine.find_similar_nodes(
-            node_id=node_id, node_type=node_type, k=k, include_self=include_self
+            node_id=node_id,
+            node_type=node_type,
+            k=k,
+            include_self=include_self
         )
         search_time = time.time() - start_time
 
@@ -305,18 +300,21 @@ def find_similar_nodes(node_type: str, node_id: str):
 
         # Format results
         response_data = {
-            "reference_node": {"node_id": node_id, "node_type": node_type},
+            "reference_node": {
+                "node_id": node_id,
+                "node_type": node_type
+            },
             "similar_nodes": [
                 {
                     "node_id": r.node_id,
                     "node_type": r.node_type,
                     "similarity_score": r.score,
-                    "properties": r.metadata,
+                    "properties": r.metadata
                 }
                 for r in results
             ],
             "count": len(results),
-            "search_time_ms": round(search_time * 1000, 2),
+            "search_time_ms": round(search_time * 1000, 2)
         }
 
         stats = engine.get_embedding_stats()
@@ -326,9 +324,7 @@ def find_similar_nodes(node_type: str, node_id: str):
                 "model": stats.get("model"),
                 "dimension": stats.get("dimension"),
                 "template_version": stats.get("template_version"),
-                "updated_at": stats.get("indices", {})
-                .get(node_type, {})
-                .get("updated_at"),
+                "updated_at": stats.get("indices", {}).get(node_type, {}).get("updated_at"),
             }
         )
 
@@ -339,7 +335,7 @@ def find_similar_nodes(node_type: str, node_id: str):
         return jsonify({"error": str(e)}), 500
 
 
-@vector_bp.route("/stats", methods=["GET"])
+@vector_bp.route('/stats', methods=['GET'])
 def get_vector_stats():
     """Get statistics about the vector search indices."""
     try:
@@ -353,7 +349,7 @@ def get_vector_stats():
         return jsonify({"error": str(e)}), 500
 
 
-@vector_bp.route("/rebuild", methods=["POST"])
+@vector_bp.route('/rebuild', methods=['POST'])
 @rate_limit(requests_per_minute=1, requests_per_hour=5)
 def rebuild_indices():
     """
@@ -362,8 +358,8 @@ def rebuild_indices():
     """
     try:
         # Check for admin auth (simplified for now)
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"error": "Authorization required"}), 401
 
         # Get vector engine and rebuild
@@ -375,23 +371,18 @@ def rebuild_indices():
 
         stats = engine.get_embedding_stats()
 
-        return (
-            jsonify(
-                {
-                    "message": "Vector indices rebuilt successfully",
-                    "rebuild_time_seconds": round(rebuild_time, 2),
-                    "stats": stats,
-                }
-            ),
-            200,
-        )
+        return jsonify({
+            "message": "Vector indices rebuilt successfully",
+            "rebuild_time_seconds": round(rebuild_time, 2),
+            "stats": stats
+        }), 200
 
     except Exception as e:
         logger.error(f"Error rebuilding indices: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-@vector_bp.route("/embedding", methods=["POST"])
+@vector_bp.route('/embedding', methods=['POST'])
 @rate_limit(requests_per_minute=50, requests_per_hour=500)
 def generate_embedding():
     """
@@ -407,11 +398,11 @@ def generate_embedding():
     try:
         data = request.get_json()
 
-        if not data or "text" not in data:
+        if not data or 'text' not in data:
             return jsonify({"error": "Text parameter is required"}), 400
 
-        text = data["text"]
-        use_niclip = data.get("use_niclip", False)
+        text = data['text']
+        use_niclip = data.get('use_niclip', False)
 
         # Get vector engine with specified model
         engine = get_vector_engine(use_niclip=use_niclip)
@@ -419,17 +410,12 @@ def generate_embedding():
         # Generate embedding
         embedding = engine.generate_embedding(text, use_cache=True)
 
-        return (
-            jsonify(
-                {
-                    "text": text[:100] + "..." if len(text) > 100 else text,
-                    "embedding_dimension": len(embedding),
-                    "embedding_preview": embedding[:10].tolist(),  # First 10 dimensions
-                    "model": engine.config.model_name,
-                }
-            ),
-            200,
-        )
+        return jsonify({
+            "text": text[:100] + "..." if len(text) > 100 else text,
+            "embedding_dimension": len(embedding),
+            "embedding_preview": embedding[:10].tolist(),  # First 10 dimensions
+            "model": engine.config.model_name
+        }), 200
 
     except Exception as e:
         logger.exception("Error generating embedding")
@@ -465,23 +451,20 @@ def add_vector_search_to_graphql(schema_builder):
         query: str,
         node_types: Optional[List[str]] = None,
         k: int = 10,
-        threshold: float = 0.0,
+        threshold: float = 0.0
     ) -> List[VectorSearchResultType]:
         """Perform vector similarity search."""
         engine = get_vector_engine()
         results = engine.vector_search(query, node_types, k, threshold)
 
         import json
-
         return [
             VectorSearchResultType(
                 node_id=r.node_id,
                 node_type=r.node_type,
                 score=r.score,
                 properties=json.dumps(r.metadata),
-                text_representation=(
-                    r.text[:200] + "..." if len(r.text) > 200 else r.text
-                ),
+                text_representation=r.text[:200] + "..." if len(r.text) > 200 else r.text
             )
             for r in results
         ]
@@ -489,20 +472,22 @@ def add_vector_search_to_graphql(schema_builder):
     @schema_builder.query
     @strawberry.field
     def find_similar(
-        node_id: str, node_type: str, k: int = 10, include_self: bool = False
+        node_id: str,
+        node_type: str,
+        k: int = 10,
+        include_self: bool = False
     ) -> List[SimilarNodeType]:
         """Find nodes similar to a given node."""
         engine = get_vector_engine()
         results = engine.find_similar_nodes(node_id, node_type, k, include_self)
 
         import json
-
         return [
             SimilarNodeType(
                 node_id=r.node_id,
                 node_type=r.node_type,
                 similarity_score=r.score,
-                properties=json.dumps(r.metadata),
+                properties=json.dumps(r.metadata)
             )
             for r in results
         ]

@@ -11,11 +11,11 @@ This module implements the core LPM compilation logic, which:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Optional, Dict, Any, List
 
-from ..tool_catalog_loader import load_niwrap_containers
+from .specs import SmoothParams, CompiledOp
 from .adapters import compile_smooth_afni, compile_smooth_fsl, compile_smooth_fsl_masked
-from .specs import CompiledOp, SmoothParams
+from ..tool_catalog_loader import load_niwrap_containers
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +55,7 @@ def compile_op(
         >>> print(result.tool)  # "afni.3dBlurInMask"
     """
     if op_name != "smooth":
-        raise ValueError(
-            f"Unsupported operation: {op_name}. Only 'smooth' is currently supported."
-        )
+        raise ValueError(f"Unsupported operation: {op_name}. Only 'smooth' is currently supported.")
 
     # Parse and validate parameters
     try:

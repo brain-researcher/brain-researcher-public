@@ -5,6 +5,7 @@ from typing import Any, Dict, Tuple
 
 from brain_researcher.services.agent.agent_factory import get_llm_agent
 
+
 _MULTI_STEP_INDICATORS = [
     r"\band\s+then\b",
     r"\bthen\b",
@@ -45,10 +46,9 @@ def run_unified_agent(
 
     tool_calls = []
     artifacts = []
-    import json as _json
-    import time
-
     from langchain_core.messages import AIMessage, ToolMessage
+    import time
+    import json as _json
 
     for msg in final_state.get("messages", []):
         if isinstance(msg, AIMessage) and getattr(msg, "tool_calls", None):

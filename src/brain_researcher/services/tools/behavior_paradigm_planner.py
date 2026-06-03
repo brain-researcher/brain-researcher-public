@@ -81,25 +81,18 @@ class BehaviorParadigmPlanArgs(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     query: str = Field(..., description="Free-text task/paradigm description")
-    modality: str | None = Field(
-        default="behavior", description="Primary modality hint"
-    )
-    n_subjects: int | None = Field(
-        default=None, ge=1, description="Optional subject-count hint"
-    )
+    modality: str | None = Field(default="behavior", description="Primary modality hint")
+    n_subjects: int | None = Field(default=None, ge=1, description="Optional subject-count hint")
     expected_rt_sec: float | None = Field(
         default=None, gt=0, description="Optional expected RT (seconds)"
     )
-    top_k: int = Field(
-        default=5, ge=1, le=20, description="Top-K paradigm candidates to resolve"
-    )
+    top_k: int = Field(default=5, ge=1, le=20, description="Top-K paradigm candidates to resolve")
     policy_path: str = Field(
         default="configs/behavior_outlier_policy.yaml",
         description="Behavior outlier policy YAML path propagated into the QC step",
     )
     drop_excluded: bool = Field(
-        default=True,
-        description="Whether the export step should drop QC-excluded trials",
+        default=True, description="Whether the export step should drop QC-excluded trials"
     )
     task_matcher: Any | None = Field(
         default=None,
@@ -186,7 +179,9 @@ class BehaviorParadigmPlannerTool(NeuroToolWrapper):
             record_research_event(
                 sink,
                 kind="paradigm_resolved",
-                content=(f"resolved {resolved['resolution']} for: {query[:200]}"),
+                content=(
+                    f"resolved {resolved['resolution']} for: {query[:200]}"
+                ),
                 context={
                     "query": query,
                     "top": top,

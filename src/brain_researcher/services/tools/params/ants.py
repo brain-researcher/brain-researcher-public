@@ -29,9 +29,7 @@ class ANTsRegistrationParameters:
     extra_args: Tuple[str, ...]
 
 
-def ants_registration_from_payload(
-    payload: Dict[str, Any],
-) -> ANTsRegistrationParameters:
+def ants_registration_from_payload(payload: Dict[str, Any]) -> ANTsRegistrationParameters:
     """Create parameters from payload."""
 
     extra_args: Sequence[str] = payload.get("extra_args", [])
@@ -60,12 +58,8 @@ def ants_registration_from_payload(
 def _build_command(params: ANTsRegistrationParameters) -> list[str]:
     cmd = ["antsRegistration"]
     cmd.extend(["-d", str(params.dimension)])
-    cmd.extend(
-        ["-o", f"[{params.output_prefix}_,{params.output_prefix}_Warped.nii.gz]"]
-    )
-    cmd.extend(
-        ["-m", f"{params.metric}[{params.fixed_image},{params.moving_image},1,32]"]
-    )
+    cmd.extend(["-o", f"[{params.output_prefix}_,{params.output_prefix}_Warped.nii.gz]"])
+    cmd.extend(["-m", f"{params.metric}[{params.fixed_image},{params.moving_image},1,32]"])
     cmd.extend(["-t", f"{params.transform_type}[0.1]"])
     cmd.extend(["-c", params.convergence])
     cmd.extend(["-f", params.shrink_factors])
@@ -93,11 +87,7 @@ def run_ants_registration(params: ANTsRegistrationParameters) -> Dict[str, Any]:
         raise FileNotFoundError(params.moving_image)
 
     output_prefix_path = Path(params.output_prefix)
-    output_dir = (
-        output_prefix_path.parent
-        if output_prefix_path.parent != Path("")
-        else Path.cwd()
-    )
+    output_dir = output_prefix_path.parent if output_prefix_path.parent != Path("") else Path.cwd()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     warped_image = output_dir / f"{output_prefix_path.name}_Warped.nii.gz"

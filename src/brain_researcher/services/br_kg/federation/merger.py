@@ -4,12 +4,12 @@ Federation Result Merger
 Handles merging and deduplication of results from multiple knowledge graphs.
 """
 
-import difflib
-import hashlib
 import logging
-import re
+import hashlib
+from typing import Dict, Any, List, Optional, Set, Tuple
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Set, Tuple
+import difflib
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -30,30 +30,35 @@ class FederationResultMerger:
         self.similarity_threshold = similarity_threshold
 
         # Source priorities (higher = more trusted)
-        self.source_priorities = {"br_kg": 10, "wikidata": 8, "dbpedia": 6, "local": 9}
+        self.source_priorities = {
+            'br_kg': 10,
+            'wikidata': 8,
+            'dbpedia': 6,
+            'local': 9
+        }
 
         # Entity type mappings between sources
         self.type_mappings = {
-            "brain_region": {
-                "wikidata": ["Q864805"],  # Brain region
-                "dbpedia": ["dbo:AnatomicalStructure", "dbo:Brain"],
+            'brain_region': {
+                'wikidata': ['Q864805'],  # Brain region
+                'dbpedia': ['dbo:AnatomicalStructure', 'dbo:Brain']
             },
-            "disease": {
-                "wikidata": ["Q12136", "Q10737"],  # Disease, Neurological disorder
-                "dbpedia": ["dbo:Disease", "dbo:MentalDisorder"],
+            'disease': {
+                'wikidata': ['Q12136', 'Q10737'],  # Disease, Neurological disorder
+                'dbpedia': ['dbo:Disease', 'dbo:MentalDisorder']
             },
-            "institution": {
-                "wikidata": ["Q43229"],  # Organization
-                "dbpedia": ["dbo:University", "dbo:ResearchInstitution"],
+            'institution': {
+                'wikidata': ['Q43229'],  # Organization
+                'dbpedia': ['dbo:University', 'dbo:ResearchInstitution']
             },
-            "person": {
-                "wikidata": ["Q5"],  # Human
-                "dbpedia": ["dbo:Person", "dbo:Scientist"],
+            'person': {
+                'wikidata': ['Q5'],  # Human
+                'dbpedia': ['dbo:Person', 'dbo:Scientist']
             },
-            "publication": {
-                "wikidata": ["Q13442814"],  # Scientific article
-                "dbpedia": ["dbo:AcademicJournal", "dbo:Article"],
-            },
+            'publication': {
+                'wikidata': ['Q13442814'],  # Scientific article
+                'dbpedia': ['dbo:AcademicJournal', 'dbo:Article']
+            }
         }
 
         logger.info("Federation result merger initialized")
@@ -62,7 +67,7 @@ class FederationResultMerger:
         self,
         results_by_source: Dict[str, List[Dict[str, Any]]],
         merge_strategy: str = "best_match",
-        preserve_sources: bool = True,
+        preserve_sources: bool = True
     ) -> List[Dict[str, Any]]:
         """
         Merge results from multiple sources
@@ -83,7 +88,9 @@ class FederationResultMerger:
             return self._merge_best_match(results_by_source, preserve_sources)
 
     def _merge_best_match(
-        self, results_by_source: Dict[str, List[Dict[str, Any]]], preserve_sources: bool
+        self,
+        results_by_source: Dict[str, List[Dict[str, Any]]],
+        preserve_sources: bool
     ) -> List[Dict[str, Any]]:
         """Merge using best match strategy - deduplicate and take best quality"""
 
@@ -92,8 +99,8 @@ class FederationResultMerger:
         for source_name, results in results_by_source.items():
             for result in results:
                 entity = result.copy()
-                entity["_source"] = source_name
-                entity["_source_priority"] = self.source_priorities.get(source_name, 1)
+                entity['_source'] = source_name
+                entity['_source_priority'] = self.source_priorities.get(source_name, 1)
                 all_entities.append(entity)
 
         # Group similar entities
@@ -106,17 +113,15 @@ class FederationResultMerger:
             merged_results.append(merged_entity)
 
         # Sort by quality score
-        merged_results.sort(key=lambda x: x.get("_quality_score", 0), reverse=True)
+        merged_results.sort(key=lambda x: x.get('_quality_score', 0), reverse=True)
 
-        logger.info(
-            "Merged %d entity groups into %d results",
-            len(entity_groups),
-            len(merged_results),
-        )
+        logger.info("Merged %d entity groups into %d results", len(entity_groups), len(merged_results))
         return merged_results
 
     def _merge_union(
-        self, results_by_source: Dict[str, List[Dict[str, Any]]], preserve_sources: bool
+        self,
+        results_by_source: Dict[str, List[Dict[str, Any]]],
+        preserve_sources: bool
     ) -> List[Dict[str, Any]]:
         """Merge using union strategy - include all results with source attribution"""
 
@@ -126,10 +131,8 @@ class FederationResultMerger:
             for result in results:
                 entity = result.copy()
                 if preserve_sources:
-                    entity["_source"] = source_name
-                    entity["_source_priority"] = self.source_priorities.get(
-                        source_name, 1
-                    )
+                    entity['_source'] = source_name
+                    entity['_source_priority'] = self.source_priorities.get(source_name, 1)
                 all_results.append(entity)
 
         # Remove exact duplicates but keep near-duplicates
@@ -138,7 +141,9 @@ class FederationResultMerger:
         return unique_results
 
     def _merge_intersection(
-        self, results_by_source: Dict[str, List[Dict[str, Any]]], preserve_sources: bool
+        self,
+        results_by_source: Dict[str, List[Dict[str, Any]]],
+        preserve_sources: bool
     ) -> List[Dict[str, Any]]:
         """Merge using intersection strategy - only include entities found in multiple sources"""
 
@@ -150,7 +155,7 @@ class FederationResultMerger:
         for source_name, results in results_by_source.items():
             for result in results:
                 entity = result.copy()
-                entity["_source"] = source_name
+                entity['_source'] = source_name
                 all_entities.append(entity)
 
         # Group similar entities
@@ -159,7 +164,7 @@ class FederationResultMerger:
         # Only keep groups with entities from multiple sources
         multi_source_groups = []
         for group in entity_groups:
-            sources = set(entity["_source"] for entity in group)
+            sources = set(entity['_source'] for entity in group)
             if len(sources) > 1:
                 multi_source_groups.append(group)
 
@@ -171,9 +176,7 @@ class FederationResultMerger:
 
         return merged_results
 
-    def _group_similar_entities(
-        self, entities: List[Dict[str, Any]]
-    ) -> List[List[Dict[str, Any]]]:
+    def _group_similar_entities(self, entities: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
         """Group entities that likely represent the same real-world entity"""
 
         groups = []
@@ -186,7 +189,7 @@ class FederationResultMerger:
             group = [entity1]
             used_indices.add(i)
 
-            for j, entity2 in enumerate(entities[i + 1 :], i + 1):
+            for j, entity2 in enumerate(entities[i+1:], i+1):
                 if j in used_indices:
                     continue
 
@@ -200,7 +203,9 @@ class FederationResultMerger:
         return groups
 
     def _calculate_entity_similarity(
-        self, entity1: Dict[str, Any], entity2: Dict[str, Any]
+        self,
+        entity1: Dict[str, Any],
+        entity2: Dict[str, Any]
     ) -> float:
         """Calculate similarity score between two entities"""
 
@@ -227,9 +232,7 @@ class FederationResultMerger:
         type2 = self._extract_entity_type(entity2)
 
         if type1 and type2:
-            type_similarity = self._calculate_type_similarity(
-                type1, type2, entity1.get("_source"), entity2.get("_source")
-            )
+            type_similarity = self._calculate_type_similarity(type1, type2, entity1.get('_source'), entity2.get('_source'))
             scores.append(type_similarity * 0.2)  # 20% weight
 
         # Identifier similarity (if available)
@@ -244,13 +247,13 @@ class FederationResultMerger:
         """Extract name/label from entity"""
 
         # Try different name fields
-        name_fields = ["name", "label", "title", "itemLabel", "relatedLabel"]
+        name_fields = ['name', 'label', 'title', 'itemLabel', 'relatedLabel']
 
         for field in name_fields:
             if field in entity:
                 value = entity[field]
-                if isinstance(value, dict) and "value" in value:
-                    return value["value"]
+                if isinstance(value, dict) and 'value' in value:
+                    return value['value']
                 elif isinstance(value, str):
                     return value
 
@@ -260,13 +263,13 @@ class FederationResultMerger:
         """Extract description from entity"""
 
         # Try different description fields
-        desc_fields = ["description", "abstract", "comment"]
+        desc_fields = ['description', 'abstract', 'comment']
 
         for field in desc_fields:
             if field in entity:
                 value = entity[field]
-                if isinstance(value, dict) and "value" in value:
-                    return value["value"]
+                if isinstance(value, dict) and 'value' in value:
+                    return value['value']
                 elif isinstance(value, str):
                     return value
 
@@ -276,16 +279,16 @@ class FederationResultMerger:
         """Extract entity type from entity"""
 
         # Try different type fields
-        type_fields = ["type", "rdf:type", "instanceOf", "category"]
+        type_fields = ['type', 'rdf:type', 'instanceOf', 'category']
 
         for field in type_fields:
             if field in entity:
                 value = entity[field]
                 if isinstance(value, dict):
-                    if "uri" in value:
-                        return value["uri"]
-                    elif "value" in value:
-                        return value["value"]
+                    if 'uri' in value:
+                        return value['uri']
+                    elif 'value' in value:
+                        return value['value']
                 elif isinstance(value, str):
                     return value
 
@@ -307,7 +310,11 @@ class FederationResultMerger:
         return matcher.ratio()
 
     def _calculate_type_similarity(
-        self, type1: str, type2: str, source1: Optional[str], source2: Optional[str]
+        self,
+        type1: str,
+        type2: str,
+        source1: Optional[str],
+        source2: Optional[str]
     ) -> float:
         """Calculate similarity between entity types, considering source mappings"""
 
@@ -331,7 +338,9 @@ class FederationResultMerger:
         return self._calculate_text_similarity(type1_norm, type2_norm)
 
     def _calculate_identifier_similarity(
-        self, entity1: Dict[str, Any], entity2: Dict[str, Any]
+        self,
+        entity1: Dict[str, Any],
+        entity2: Dict[str, Any]
     ) -> float:
         """Calculate similarity based on identifiers (URIs, IDs, etc.)"""
 
@@ -353,68 +362,72 @@ class FederationResultMerger:
         identifiers = set()
 
         # Common identifier fields
-        id_fields = ["id", "uri", "wikidata_id", "dbpedia_uri", "doi", "pmid"]
+        id_fields = ['id', 'uri', 'wikidata_id', 'dbpedia_uri', 'doi', 'pmid']
 
         for field in id_fields:
             if field in entity:
                 value = entity[field]
                 if isinstance(value, dict):
-                    if "uri" in value:
-                        identifiers.add(value["uri"])
-                    elif "id" in value:
-                        identifiers.add(value["id"])
-                    elif "value" in value:
-                        identifiers.add(value["value"])
+                    if 'uri' in value:
+                        identifiers.add(value['uri'])
+                    elif 'id' in value:
+                        identifiers.add(value['id'])
+                    elif 'value' in value:
+                        identifiers.add(value['value'])
                 elif isinstance(value, str):
                     identifiers.add(value)
 
         return identifiers
 
     def _merge_entity_group(
-        self, group: List[Dict[str, Any]], preserve_sources: bool
+        self,
+        group: List[Dict[str, Any]],
+        preserve_sources: bool
     ) -> Dict[str, Any]:
         """Merge a group of similar entities into a single entity"""
 
         if len(group) == 1:
             entity = group[0].copy()
             if preserve_sources:
-                entity["_sources"] = [entity.get("_source")]
+                entity['_sources'] = [entity.get('_source')]
             return entity
 
         # Sort by source priority
-        group.sort(key=lambda x: x.get("_source_priority", 0), reverse=True)
+        group.sort(key=lambda x: x.get('_source_priority', 0), reverse=True)
 
         # Start with highest priority entity
         merged = group[0].copy()
-        sources = [merged.get("_source")] if preserve_sources else []
+        sources = [merged.get('_source')] if preserve_sources else []
 
         # Merge properties from other entities
         for entity in group[1:]:
             if preserve_sources:
-                sources.append(entity.get("_source"))
+                sources.append(entity.get('_source'))
 
             merged = self._merge_entity_properties(merged, entity)
 
         # Add source information
         if preserve_sources:
-            merged["_sources"] = list(set(sources))  # Remove duplicates
-            merged["_source_count"] = len(merged["_sources"])
+            merged['_sources'] = list(set(sources))  # Remove duplicates
+            merged['_source_count'] = len(merged['_sources'])
 
         # Calculate quality score
-        merged["_quality_score"] = self._calculate_quality_score(merged, group)
+        merged['_quality_score'] = self._calculate_quality_score(merged, group)
 
         # Add cross-references
-        merged["_cross_references"] = self._extract_cross_references(group)
+        merged['_cross_references'] = self._extract_cross_references(group)
 
         return merged
 
     def _merge_entity_properties(
-        self, target: Dict[str, Any], source: Dict[str, Any]
+        self,
+        target: Dict[str, Any],
+        source: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Merge properties from source entity into target entity"""
 
         for key, value in source.items():
-            if key.startswith("_"):  # Skip internal fields
+            if key.startswith('_'):  # Skip internal fields
                 continue
 
             if key not in target or not target[key]:
@@ -435,24 +448,24 @@ class FederationResultMerger:
         return target
 
     def _calculate_quality_score(
-        self, merged_entity: Dict[str, Any], original_group: List[Dict[str, Any]]
+        self,
+        merged_entity: Dict[str, Any],
+        original_group: List[Dict[str, Any]]
     ) -> float:
         """Calculate quality score for merged entity"""
 
         score = 0.0
 
         # Source diversity bonus
-        sources = set(entity.get("_source") for entity in original_group)
+        sources = set(entity.get('_source') for entity in original_group)
         score += len(sources) * 0.2
 
         # Content richness
-        property_count = len([k for k in merged_entity.keys() if not k.startswith("_")])
+        property_count = len([k for k in merged_entity.keys() if not k.startswith('_')])
         score += min(property_count * 0.1, 2.0)  # Cap at 2.0
 
         # Source priority
-        max_priority = max(
-            entity.get("_source_priority", 0) for entity in original_group
-        )
+        max_priority = max(entity.get('_source_priority', 0) for entity in original_group)
         score += max_priority * 0.1
 
         # Description length (more detailed is better)
@@ -469,28 +482,26 @@ class FederationResultMerger:
         cross_refs = {}
 
         for entity in group:
-            source = entity.get("_source")
+            source = entity.get('_source')
             if not source:
                 continue
 
             # Extract main identifier for this source
-            if source == "wikidata":
-                if "item" in entity and isinstance(entity["item"], dict):
-                    wikidata_id = entity["item"].get("id")
+            if source == 'wikidata':
+                if 'item' in entity and isinstance(entity['item'], dict):
+                    wikidata_id = entity['item'].get('id')
                     if wikidata_id:
-                        cross_refs["wikidata"] = (
-                            f"https://www.wikidata.org/entity/{wikidata_id}"
-                        )
+                        cross_refs['wikidata'] = f"https://www.wikidata.org/entity/{wikidata_id}"
 
-            elif source == "dbpedia":
-                if "resource" in entity and isinstance(entity["resource"], dict):
-                    dbpedia_uri = entity["resource"].get("uri")
+            elif source == 'dbpedia':
+                if 'resource' in entity and isinstance(entity['resource'], dict):
+                    dbpedia_uri = entity['resource'].get('uri')
                     if dbpedia_uri:
-                        cross_refs["dbpedia"] = dbpedia_uri
+                        cross_refs['dbpedia'] = dbpedia_uri
 
-            elif source == "br_kg":
-                if "id" in entity:
-                    cross_refs["br_kg"] = entity["id"]
+            elif source == 'br_kg':
+                if 'id' in entity:
+                    cross_refs['br_kg'] = entity['id']
 
         return cross_refs
 
@@ -498,13 +509,11 @@ class FederationResultMerger:
         """Normalize text for comparison"""
         # Convert to lowercase, remove extra whitespace and punctuation
         text = text.lower()
-        text = re.sub(r"[^\w\s]", "", text)
-        text = " ".join(text.split())
+        text = re.sub(r'[^\w\s]', '', text)
+        text = ' '.join(text.split())
         return text
 
-    def _remove_exact_duplicates(
-        self, entities: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _remove_exact_duplicates(self, entities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Remove exact duplicate entities"""
 
         seen = set()
@@ -512,10 +521,8 @@ class FederationResultMerger:
 
         for entity in entities:
             # Create hash of entity content (excluding source info)
-            content = {k: v for k, v in entity.items() if not k.startswith("_")}
-            content_hash = hashlib.md5(
-                str(sorted(content.items())).encode()
-            ).hexdigest()
+            content = {k: v for k, v in entity.items() if not k.startswith('_')}
+            content_hash = hashlib.md5(str(sorted(content.items())).encode()).hexdigest()
 
             if content_hash not in seen:
                 seen.add(content_hash)
@@ -527,7 +534,7 @@ class FederationResultMerger:
         self,
         entities: List[Dict[str, Any]],
         field_name: str,
-        keep_strategy: str = "first",
+        keep_strategy: str = "first"
     ) -> List[Dict[str, Any]]:
         """Deduplicate entities based on a specific field"""
 
@@ -555,7 +562,7 @@ class FederationResultMerger:
             unique = []
             for group in groups.values():
                 # Sort by quality score and take the best
-                group.sort(key=lambda x: x.get("_quality_score", 0), reverse=True)
+                group.sort(key=lambda x: x.get('_quality_score', 0), reverse=True)
                 unique.append(group[0])
 
             return unique
@@ -566,7 +573,7 @@ class FederationResultMerger:
     def resolve_conflicts(
         self,
         merged_entities: List[Dict[str, Any]],
-        conflict_resolution: str = "priority",
+        conflict_resolution: str = "priority"
     ) -> List[Dict[str, Any]]:
         """Resolve conflicts in merged entities"""
 

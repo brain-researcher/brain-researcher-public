@@ -19,13 +19,7 @@ from .survey_models import Base, create_survey_tables
 # Default to in-memory SQLite; can be overridden by env var if needed.
 DATABASE_URL = os.getenv("SURVEY_DATABASE_URL", "sqlite:///:memory:")
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,
-    connect_args=(
-        {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-    ),
-)
+engine = create_engine(DATABASE_URL, echo=False, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

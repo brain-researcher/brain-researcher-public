@@ -3,16 +3,15 @@
 Smart test suite that properly handles each tool's specific requirements.
 """
 
-import json
-import logging
 import os
+import json
 import tempfile
-import time
-from datetime import datetime
-from pathlib import Path
-
-import nibabel as nib
 import numpy as np
+from pathlib import Path
+import logging
+import time
+import nibabel as nib
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -123,32 +122,27 @@ class SmartToolTester:
         # Create events file
         events = np.array([[0, 1, 1], [10, 1, 2], [20, 1, 1]])
         events_path = data_dir / "events.tsv"
-        np.savetxt(
-            events_path,
-            events,
-            delimiter="\t",
-            header="onset\tduration\ttrial_type",
-            comments="",
-        )
+        np.savetxt(events_path, events, delimiter='\t',
+                   header='onset\tduration\ttrial_type', comments='')
 
         return {
-            "nifti": str(test_nifti),
-            "fmri": str(fmri_path),
-            "mask": str(mask_path),
-            "design": str(design_path),
-            "dwi": str(dwi_path),
-            "bvals": str(bvals_path),
-            "bvecs": str(bvecs_path),
-            "timeseries": str(ts_path),
-            "eeg": str(eeg_path),
-            "pvalues": str(pvals_path),
-            "predictions": str(pred_path),
-            "ground_truth": str(gt_path),
-            "features": str(X_path),
-            "labels": str(y_path),
-            "bids_dir": str(bids_dir),
-            "events": str(events_path),
-            "data_dir": str(data_dir),
+            'nifti': str(test_nifti),
+            'fmri': str(fmri_path),
+            'mask': str(mask_path),
+            'design': str(design_path),
+            'dwi': str(dwi_path),
+            'bvals': str(bvals_path),
+            'bvecs': str(bvecs_path),
+            'timeseries': str(ts_path),
+            'eeg': str(eeg_path),
+            'pvalues': str(pvals_path),
+            'predictions': str(pred_path),
+            'ground_truth': str(gt_path),
+            'features': str(X_path),
+            'labels': str(y_path),
+            'bids_dir': str(bids_dir),
+            'events': str(events_path),
+            'data_dir': str(data_dir)
         }
 
     def test_all_tools(self):
@@ -157,200 +151,221 @@ class SmartToolTester:
         # Tool-specific argument mappings
         tool_args = {
             # Analysis tools
-            "glm_analysis": {
-                "fmri_file": self.test_data["fmri"],
-                "design_matrix": self.test_data["design"],
-                "mask_file": self.test_data["mask"],
-                "output_dir": str(self.output_dir / "glm"),
+            'glm_analysis': {
+                'fmri_file': self.test_data['fmri'],
+                'design_matrix': self.test_data['design'],
+                'mask_file': self.test_data['mask'],
+                'output_dir': str(self.output_dir / 'glm')
             },
-            "contrast_analysis": {
-                "fmri_file": self.test_data["fmri"],
-                "design_matrix": self.test_data["design"],
-                "mask_file": self.test_data["mask"],
-                "output_dir": str(self.output_dir / "contrast"),
+            'contrast_analysis': {
+                'fmri_file': self.test_data['fmri'],
+                'design_matrix': self.test_data['design'],
+                'mask_file': self.test_data['mask'],
+                'output_dir': str(self.output_dir / 'contrast')
             },
-            "functional_connectivity": {
-                "fmri_file": self.test_data["fmri"],
-                "mask_file": self.test_data["mask"],
-                "output_dir": str(self.output_dir / "fc"),
+            'functional_connectivity': {
+                'fmri_file': self.test_data['fmri'],
+                'mask_file': self.test_data['mask'],
+                'output_dir': str(self.output_dir / 'fc')
             },
-            "effective_connectivity": {
-                "timeseries_file": self.test_data["timeseries"],
-                "output_dir": str(self.output_dir / "ec"),
+            'effective_connectivity': {
+                'timeseries_file': self.test_data['timeseries'],
+                'output_dir': str(self.output_dir / 'ec')
             },
-            "dynamic_connectivity": {
-                "timeseries_file": self.test_data["timeseries"],
-                "output_dir": str(self.output_dir / "dc"),
+            'dynamic_connectivity': {
+                'timeseries_file': self.test_data['timeseries'],
+                'output_dir': str(self.output_dir / 'dc')
             },
-            "graph_network_analysis": {
-                "connectivity_matrix": self.test_data["timeseries"],
-                "output_dir": str(self.output_dir / "graph"),
+            'graph_network_analysis': {
+                'connectivity_matrix': self.test_data['timeseries'],
+                'output_dir': str(self.output_dir / 'graph')
             },
+
             # Segmentation tools
-            "brain_segmentation": {
-                "input_image": self.test_data["nifti"],
-                "modality": "T1",
-                "output_dir": str(self.output_dir / "seg"),
+            'brain_segmentation': {
+                'input_image': self.test_data['nifti'],
+                'modality': 'T1',
+                'output_dir': str(self.output_dir / 'seg')
             },
-            "lesion_detection": {
-                "flair_image": self.test_data["nifti"],
-                "t1_image": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "lesion"),
+            'lesion_detection': {
+                'flair_image': self.test_data['nifti'],
+                't1_image': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'lesion')
             },
+
             # Preprocessing tools
-            "skull_stripping": {
-                "input_image": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "skull"),
+            'skull_stripping': {
+                'input_image': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'skull')
             },
-            "bias_field_correction": {
-                "input_image": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "bias"),
+            'bias_field_correction': {
+                'input_image': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'bias')
             },
-            "coregistration": {
-                "moving_image": self.test_data["nifti"],
-                "fixed_image": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "coreg"),
+            'coregistration': {
+                'moving_image': self.test_data['nifti'],
+                'fixed_image': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'coreg')
             },
-            "registration_pipeline": {
-                "moving_image": self.test_data["nifti"],
-                "fixed_image": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "reg"),
+            'registration_pipeline': {
+                'moving_image': self.test_data['nifti'],
+                'fixed_image': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'reg')
             },
+
             # DWI/DTI tools
-            "diffusion_tractography": {
-                "dwi_file": self.test_data["dwi"],
-                "bvals_file": self.test_data["bvals"],
-                "bvecs_file": self.test_data["bvecs"],
-                "mask_file": self.test_data["mask"],
-                "output_dir": str(self.output_dir / "tract"),
+            'diffusion_tractography': {
+                'dwi_file': self.test_data['dwi'],
+                'bvals_file': self.test_data['bvals'],
+                'bvecs_file': self.test_data['bvecs'],
+                'mask_file': self.test_data['mask'],
+                'output_dir': str(self.output_dir / 'tract')
             },
+
             # Perfusion tools
-            "asl_perfusion": {
-                "asl_file": self.test_data["fmri"],
-                "m0_file": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "asl"),
+            'asl_perfusion': {
+                'asl_file': self.test_data['fmri'],
+                'm0_file': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'asl')
             },
+
             # QSM tools
-            "qsm_reconstruction": {
-                "phase_file": self.test_data["nifti"],
-                "magnitude_file": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "qsm"),
+            'qsm_reconstruction': {
+                'phase_file': self.test_data['nifti'],
+                'magnitude_file': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'qsm')
             },
+
             # Stats tools
-            "permutation_testing": {
-                "data_file": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "perm"),
+            'permutation_testing': {
+                'data_file': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'perm')
             },
-            "multiple_comparison_correction": {
-                "pvalues_file": self.test_data["pvalues"],
-                "output_dir": str(self.output_dir / "mcc"),
+            'multiple_comparison_correction': {
+                'pvalues_file': self.test_data['pvalues'],
+                'output_dir': str(self.output_dir / 'mcc')
             },
-            "validation_metrics": {
-                "prediction_file": self.test_data["predictions"],
-                "ground_truth_file": self.test_data["ground_truth"],
-                "output_dir": str(self.output_dir / "val"),
+            'validation_metrics': {
+                'prediction_file': self.test_data['predictions'],
+                'ground_truth_file': self.test_data['ground_truth'],
+                'output_dir': str(self.output_dir / 'val')
             },
-            "cross_validation": {
-                "data_file": self.test_data["features"],
-                "labels_file": self.test_data["labels"],
-                "output_dir": str(self.output_dir / "cv"),
+            'cross_validation': {
+                'data_file': self.test_data['features'],
+                'labels_file': self.test_data['labels'],
+                'output_dir': str(self.output_dir / 'cv')
             },
+
             # ML tools
-            "mvpa_classification": {
-                "fmri_file": self.test_data["fmri"],
-                "labels_file": self.test_data["labels"][:100],  # Match timepoints
-                "mask_file": self.test_data["mask"],
-                "output_dir": str(self.output_dir / "mvpa"),
+            'mvpa_classification': {
+                'fmri_file': self.test_data['fmri'],
+                'labels_file': self.test_data['labels'][:100],  # Match timepoints
+                'mask_file': self.test_data['mask'],
+                'output_dir': str(self.output_dir / 'mvpa')
             },
-            "encoding_models": {
-                "fmri_file": self.test_data["fmri"],
-                "stimulus_file": self.test_data["features"],
-                "mask_file": self.test_data["mask"],
-                "output_dir": str(self.output_dir / "encode"),
+            'encoding_models': {
+                'fmri_file': self.test_data['fmri'],
+                'stimulus_file': self.test_data['features'],
+                'mask_file': self.test_data['mask'],
+                'output_dir': str(self.output_dir / 'encode')
             },
+
             # Meta-analysis
-            "meta_analysis": {
-                "studies": [
-                    {"coordinates": [[10, 20, 30]], "sample_size": 20},
-                    {"coordinates": [[15, 25, 35]], "sample_size": 25},
+            'meta_analysis': {
+                'studies': [
+                    {'coordinates': [[10, 20, 30]], 'sample_size': 20},
+                    {'coordinates': [[15, 25, 35]], 'sample_size': 25}
                 ],
-                "output_dir": str(self.output_dir / "meta"),
+                'output_dir': str(self.output_dir / 'meta')
             },
+
             # Quality control
-            "motion_quantification": {
-                "fmri_file": self.test_data["fmri"],
-                "output_dir": str(self.output_dir / "motion"),
+            'motion_quantification': {
+                'fmri_file': self.test_data['fmri'],
+                'output_dir': str(self.output_dir / 'motion')
             },
-            "quality_control": {
-                "input_image": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "qc"),
+            'quality_control': {
+                'input_image': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'qc')
             },
+
             # Radiomics
-            "radiomics_extraction": {
-                "image_file": self.test_data["nifti"],
-                "mask_file": self.test_data["mask"],
-                "output_dir": str(self.output_dir / "radiomics"),
+            'radiomics_extraction': {
+                'image_file': self.test_data['nifti'],
+                'mask_file': self.test_data['mask'],
+                'output_dir': str(self.output_dir / 'radiomics')
             },
+
             # Visualization
-            "advanced_brain_plotting": {
-                "stat_map": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "plot"),
+            'advanced_brain_plotting': {
+                'stat_map': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'plot')
             },
-            "interactive_visualization": {
-                "image_file": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "viz"),
+            'interactive_visualization': {
+                'image_file': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'viz')
             },
+
             # Surface analysis
-            "surface_analysis": {
-                "surface_file": self.test_data["nifti"],
-                "output_dir": str(self.output_dir / "surface"),
+            'surface_analysis': {
+                'surface_file': self.test_data['nifti'],
+                'output_dir': str(self.output_dir / 'surface')
             },
+
             # BIDS tools
-            "validate_bids": {"bids_dir": self.test_data["bids_dir"]},
-            "query_bids_layout": {"bids_dir": self.test_data["bids_dir"], "query": {}},
+            'validate_bids': {
+                'bids_dir': self.test_data['bids_dir']
+            },
+            'query_bids_layout': {
+                'bids_dir': self.test_data['bids_dir'],
+                'query': {}
+            },
+
             # Pipeline tools that need BIDS
-            "fmriprep_preprocessing": {
-                "bids_dir": self.test_data["bids_dir"],
-                "output_dir": str(self.output_dir / "fmriprep"),
+            'fmriprep_preprocessing': {
+                'bids_dir': self.test_data['bids_dir'],
+                'output_dir': str(self.output_dir / 'fmriprep')
             },
-            "run_mriqc": {
-                "bids_dir": self.test_data["bids_dir"],
-                "output_dir": str(self.output_dir / "mriqc"),
+            'run_mriqc': {
+                'bids_dir': self.test_data['bids_dir'],
+                'output_dir': str(self.output_dir / 'mriqc')
             },
-            "run_qsiprep": {
-                "bids_dir": self.test_data["bids_dir"],
-                "output_dir": str(self.output_dir / "qsiprep"),
+            'run_qsiprep': {
+                'bids_dir': self.test_data['bids_dir'],
+                'output_dir': str(self.output_dir / 'qsiprep')
             },
+
             # FSL tools
-            "fsl_bet": {
-                "input_file": self.test_data["nifti"],
-                "output_file": str(self.output_dir / "fsl_bet" / "brain.nii.gz"),
+            'fsl_bet': {
+                'input_file': self.test_data['nifti'],
+                'output_file': str(self.output_dir / 'fsl_bet' / 'brain.nii.gz')
             },
-            "fsl_flirt": {
-                "input_file": self.test_data["nifti"],
-                "reference_file": self.test_data["nifti"],
-                "output_file": str(self.output_dir / "fsl_flirt" / "aligned.nii.gz"),
+            'fsl_flirt': {
+                'input_file': self.test_data['nifti'],
+                'reference_file': self.test_data['nifti'],
+                'output_file': str(self.output_dir / 'fsl_flirt' / 'aligned.nii.gz')
             },
-            "fsl_feat_glm": {
-                "input_file": self.test_data["fmri"],
-                "tr": 2.0,
-                "ev_files": [self.test_data["events"]],
-                "contrasts": [[1, -1]],
-                "output_dir": str(self.output_dir / "feat"),
+            'fsl_feat_glm': {
+                'input_file': self.test_data['fmri'],
+                'tr': 2.0,
+                'ev_files': [self.test_data['events']],
+                'contrasts': [[1, -1]],
+                'output_dir': str(self.output_dir / 'feat')
             },
+
             # Dataset tools
-            "openneuro_download": {
-                "dataset_id": "ds000001",
-                "output_dir": str(self.output_dir / "openneuro"),
+            'openneuro_download': {
+                'dataset_id': 'ds000001',
+                'output_dir': str(self.output_dir / 'openneuro')
             },
-            "dandi_download": {
-                "dandiset_id": "000001",
-                "output_dir": str(self.output_dir / "dandi"),
+            'dandi_download': {
+                'dandiset_id': '000001',
+                'output_dir': str(self.output_dir / 'dandi')
             },
-            "neurovault_download_collection": {
-                "collection_id": 1,
-                "output_dir": str(self.output_dir / "neurovault"),
-            },
+            'neurovault_download_collection': {
+                'collection_id': 1,
+                'output_dir': str(self.output_dir / 'neurovault')
+            }
         }
 
         # Test each tool
@@ -373,16 +388,16 @@ class SmartToolTester:
             # If no specific args, try generic approach
             if not args:
                 # Try to infer based on tool name
-                if "fmri" in tool_name or "functional" in tool_name:
-                    args = {"fmri_file": self.test_data["fmri"]}
-                elif "structural" in tool_name or "anat" in tool_name:
-                    args = {"input_image": self.test_data["nifti"]}
-                elif "dwi" in tool_name or "diffusion" in tool_name:
-                    args = {"dwi_file": self.test_data["dwi"]}
+                if 'fmri' in tool_name or 'functional' in tool_name:
+                    args = {'fmri_file': self.test_data['fmri']}
+                elif 'structural' in tool_name or 'anat' in tool_name:
+                    args = {'input_image': self.test_data['nifti']}
+                elif 'dwi' in tool_name or 'diffusion' in tool_name:
+                    args = {'dwi_file': self.test_data['dwi']}
 
                 # Always add output_dir if not present
-                if "output_dir" not in args:
-                    args["output_dir"] = str(self.output_dir / tool_name)
+                if 'output_dir' not in args:
+                    args['output_dir'] = str(self.output_dir / tool_name)
 
             # Test the tool
             try:
@@ -390,12 +405,12 @@ class SmartToolTester:
                 result = tool._run(**args)
                 elapsed = time.time() - start
 
-                if hasattr(result, "status") and result.status == "success":
+                if hasattr(result, 'status') and result.status == 'success':
                     print(f"  ✓ SUCCESS ({elapsed:.2f}s)")
                     self.results[tool_name] = "SUCCESS"
                     self.timings[tool_name] = elapsed
                 else:
-                    error_msg = getattr(result, "error", "Unknown error")
+                    error_msg = getattr(result, 'error', 'Unknown error')
                     print(f"  ✗ FAILED: {error_msg}")
                     self.results[tool_name] = f"FAILED: {error_msg}"
 
@@ -447,7 +462,7 @@ class SmartToolTester:
 
         # Save report
         report_path = self.output_dir / "TEST_REPORT.md"
-        with open(report_path, "w") as f:
+        with open(report_path, 'w') as f:
             f.write(report)
 
         print(f"\n📊 Report saved to: {report_path}")

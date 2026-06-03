@@ -23,7 +23,7 @@ keywords:
   - cognitive-science
 
 # Home page and source URLs
-home: https://brain-researcher.com
+home: https://${PUBLIC_HOSTNAME}
 sources:
   - https://github.com/zjc062/brain_researcher
 

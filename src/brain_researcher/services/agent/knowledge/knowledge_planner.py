@@ -218,9 +218,7 @@ class KnowledgePlanner:
         lines = []
         for item in bundle.get_top_items(max_items):
             source_label = item.source_type.value.upper()
-            lines.append(
-                f"- [{source_label}] {item.label} (score: {item.relevance_score:.2f})"
-            )
+            lines.append(f"- [{source_label}] {item.label} (score: {item.relevance_score:.2f})")
 
             # Add metadata if available
             if item.metadata:
@@ -274,9 +272,7 @@ class KnowledgePlanner:
 
             lines.append(f"- {item.source_id}: {item.label}")
             lines.append(f"    Tasks: {', '.join(tasks) if tasks else 'N/A'}")
-            lines.append(
-                f"    Modalities: {', '.join(modalities) if modalities else 'N/A'}"
-            )
+            lines.append(f"    Modalities: {', '.join(modalities) if modalities else 'N/A'}")
             lines.append(f"    Subjects: {n_subjects}")
 
         return "\n".join(lines)
@@ -301,7 +297,9 @@ class KnowledgePlanner:
 
         return "\n".join(lines)
 
-    async def classify_intent(self, query: str, bundle: EvidenceBundle) -> DecisionType:
+    async def classify_intent(
+        self, query: str, bundle: EvidenceBundle
+    ) -> DecisionType:
         """Classify user intent based on query and evidence.
 
         Args:
@@ -331,9 +329,7 @@ class KnowledgePlanner:
                 return DecisionType.EXPLANATION
 
         except Exception as e:
-            logger.warning(
-                "Intent classification failed: %s; defaulting to EXPLANATION", e
-            )
+            logger.warning("Intent classification failed: %s; defaulting to EXPLANATION", e)
             return DecisionType.EXPLANATION
 
     async def _generate_explanation_plan(
@@ -362,9 +358,7 @@ class KnowledgePlanner:
                 decision_type=DecisionType.EXPLANATION,
                 query=query,
                 reasoning="Generated explanation based on gathered evidence",
-                explanation=result.get(
-                    "explanation", "Unable to generate explanation."
-                ),
+                explanation=result.get("explanation", "Unable to generate explanation."),
                 citations=bundle.format_citations(self._max_citations),
                 confidence=result.get("confidence", bundle.confidence),
                 evidence_bundle=bundle,
@@ -420,9 +414,7 @@ class KnowledgePlanner:
         except Exception as e:
             logger.warning("Dataset selection failed: %s", e)
             # Fallback: return top datasets from evidence
-            dataset_items = bundle.get_items_by_source(
-                EvidenceSourceType.DATASET_CATALOG
-            )
+            dataset_items = bundle.get_items_by_source(EvidenceSourceType.DATASET_CATALOG)
             fallback_datasets = [item.source_id for item in dataset_items[:5]]
 
             return KnowledgePlan(

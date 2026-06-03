@@ -756,7 +756,7 @@ def parse_args() -> argparse.Namespace:
     default_base_url = (
         _env(repo_root, "BR_KG_API_URL")
         or _env(repo_root, "PUBLIC_BR_KG_URL")
-        or "https://brain-researcher.com/kg"
+        or "https://${PUBLIC_HOSTNAME}/kg"
     )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(

@@ -108,9 +108,7 @@ def build_freesurfer_env(params: FreeSurferReconAllParameters) -> Dict[str, str]
 def freesurfer_from_payload(payload: Mapping[str, Any]) -> FreeSurferReconAllParameters:
     return FreeSurferReconAllParameters(
         subject_id=str(payload["subject_id"]),
-        subjects_dir=str(
-            payload.get("subjects_dir") or payload.get("subjects_dir_path") or ""
-        ),
+        subjects_dir=str(payload.get("subjects_dir") or payload.get("subjects_dir_path") or ""),
         t1_image=payload.get("t1_image"),
         stage=str(payload.get("stage", "all")),
         t2_image=payload.get("t2_image"),

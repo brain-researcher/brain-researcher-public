@@ -9,7 +9,7 @@ cloudflare_api_token = "YOUR_CLOUDFLARE_API_TOKEN"
 cloudflare_zone_id = "YOUR_ZONE_ID"
 
 # Your domain name
-domain = "brain-researcher.com"
+domain = "${PUBLIC_HOSTNAME}"
 
 # Your origin server IP (where your app is hosted)
 # This could be your VPS IP, AWS EC2 IP, or load balancer IP

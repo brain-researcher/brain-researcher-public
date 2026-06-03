@@ -18,14 +18,12 @@ logger = logging.getLogger(__name__)
 
 class IOMap(TypedDict, total=False):
     """I/O mapping from logical resource names to Nipype field names."""
-
     consumes: Dict[str, str]
     produces: Dict[str, str]
 
 
 class InterfaceSpec(TypedDict, total=False):
     """Specification for mapping a tool to a Nipype interface."""
-
     type: str  # Interface type: fsl, spm, freesurfer, ants, afni, mrtrix, dipy, nilearn
     name: str  # Interface class name (e.g., "BET", "Smooth")
     io_map: IOMap  # Mapping from logical resource names to Nipype fields
@@ -40,11 +38,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
         "name": "BET",
         "io_map": {
             "consumes": {"in": "in_file", "input": "in_file", "mask": "mask"},
-            "produces": {
-                "out": "out_file",
-                "mask_out": "mask_file",
-                "output": "out_file",
-            },
+            "produces": {"out": "out_file", "mask_out": "mask_file", "output": "out_file"},
         },
     },
     "fsl.smooth": {
@@ -60,11 +54,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
         "name": "FLIRT",
         "io_map": {
             "consumes": {"in": "in_file", "ref": "reference", "input": "in_file"},
-            "produces": {
-                "out": "out_file",
-                "omat": "out_matrix_file",
-                "output": "out_file",
-            },
+            "produces": {"out": "out_file", "omat": "out_matrix_file", "output": "out_file"},
         },
     },
     "fsl.fnirt": {
@@ -131,6 +121,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
             "produces": {"feat_dir": "feat_dir"},
         },
     },
+
     # FreeSurfer tools
     "freesurfer.recon_all": {
         "type": "freesurfer",
@@ -156,6 +147,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
             "produces": {"annot": "out_file"},
         },
     },
+
     # ANTs tools
     "ants.registration": {
         "type": "ants",
@@ -173,11 +165,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
         "type": "ants",
         "name": "ApplyTransforms",
         "io_map": {
-            "consumes": {
-                "in": "input_image",
-                "ref": "reference_image",
-                "transforms": "transforms",
-            },
+            "consumes": {"in": "input_image", "ref": "reference_image", "transforms": "transforms"},
             "produces": {"out": "output_image"},
         },
     },
@@ -197,6 +185,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
             "produces": {"seg": "classified_image", "posteriors": "posteriors"},
         },
     },
+
     # AFNI tools
     "afni.3dresample": {
         "type": "afni",
@@ -238,6 +227,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
             "produces": {"bucket": "out_file"},
         },
     },
+
     # MRtrix3 tools
     "mrtrix.dwi2fod": {
         "type": "mrtrix",
@@ -263,6 +253,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
             "produces": {"out": "out_file"},
         },
     },
+
     # Utility/Identity (fallback)
     "utility.identity": {
         "type": "utility",
@@ -275,9 +266,7 @@ CORE_TOOL_TO_INTERFACE: Dict[str, InterfaceSpec] = {
 }
 
 
-def load_tool_interface_map(
-    yaml_path: Optional[Path] = None,
-) -> Dict[str, InterfaceSpec]:
+def load_tool_interface_map(yaml_path: Optional[Path] = None) -> Dict[str, InterfaceSpec]:
     """Load tool-to-interface mapping from core + YAML overrides.
 
     Args:
@@ -292,14 +281,11 @@ def load_tool_interface_map(
         yaml_path = resolve_from_config("nipype", "tool_interfaces.yaml")
 
     if not yaml_path.exists():
-        logger.debug(
-            "No YAML overrides found at %s, using core mappings only", yaml_path
-        )
+        logger.debug("No YAML overrides found at %s, using core mappings only", yaml_path)
         return result
 
     try:
         import yaml
-
         data = yaml.safe_load(yaml_path.read_text()) or {}
         yaml_tools = data.get("tools", {})
 
@@ -315,9 +301,7 @@ def load_tool_interface_map(
     return result
 
 
-def get_interface_spec(
-    tool_id: str, interface_map: Optional[Dict[str, InterfaceSpec]] = None
-) -> Optional[InterfaceSpec]:
+def get_interface_spec(tool_id: str, interface_map: Optional[Dict[str, InterfaceSpec]] = None) -> Optional[InterfaceSpec]:
     """Get interface specification for a tool ID.
 
     Supports both exact matches and prefix matching:
@@ -342,7 +326,7 @@ def get_interface_spec(
     prefixes_to_strip = ["mri.", "container.", "python.", "api."]
     for prefix in prefixes_to_strip:
         if tool_id.startswith(prefix):
-            stripped = tool_id[len(prefix) :]
+            stripped = tool_id[len(prefix):]
             if stripped in interface_map:
                 return interface_map[stripped]
 

@@ -18,7 +18,6 @@ def _db():
 @strawberry.type
 class RegionRef:
     """Lightweight reference to a region (avoids recursive nesting)."""
-
     id: Optional[str]
     name: Optional[str]
     abbreviation: Optional[str]
@@ -60,13 +59,11 @@ class Task:
             RETURN r.id AS id, r.name AS name, r.abbreviation AS abbreviation
             """
             for row in db.execute_query(cypher, {"id": self.id}):
-                regions.append(
-                    Region(
-                        id=str(row.get("id")),
-                        name=row.get("name"),
-                        abbreviation=row.get("abbreviation"),
-                    )
-                )
+                regions.append(Region(
+                    id=str(row.get("id")),
+                    name=row.get("name"),
+                    abbreviation=row.get("abbreviation")
+                ))
             # Fallback: if no task-specific regions, return top global regions by coordinate count
             if not regions:
                 fallback = """
@@ -76,13 +73,11 @@ class Task:
                 LIMIT 10
                 """
                 for row in db.execute_query(fallback, {}):
-                    regions.append(
-                        Region(
-                            id=str(row.get("id")),
-                            name=row.get("name"),
-                            abbreviation=row.get("abbreviation"),
-                        )
-                    )
+                    regions.append(Region(
+                        id=str(row.get("id")),
+                        name=row.get("name"),
+                        abbreviation=row.get("abbreviation")
+                    ))
         except Exception:
             # Best-effort; return empty on errors to avoid breaking persisted queries
             pass
@@ -99,11 +94,10 @@ class Task:
             RETURN DISTINCT n.name AS name, n.id AS id
             """
             for row in db.execute_query(cypher, {"id": self.id}):
-                nets.append(
-                    Network(
-                        id=str(row.get("id", row.get("name"))), name=row.get("name")
-                    )
-                )
+                nets.append(Network(
+                    id=str(row.get("id", row.get("name"))),
+                    name=row.get("name")
+                ))
         except Exception:
             pass
         return nets
@@ -227,11 +221,11 @@ class Query:
         props = {"name": name} if name else None
         nodes = []
         for nid, p in db.find_nodes("Region", props):
-            nodes.append(
-                Region(
-                    id=str(nid), name=p.get("name"), abbreviation=p.get("abbreviation")
-                )
-            )
+            nodes.append(Region(
+                id=str(nid),
+                name=p.get("name"),
+                abbreviation=p.get("abbreviation")
+            ))
         return nodes
 
     @strawberry.field
@@ -240,15 +234,13 @@ class Query:
         props = {"pmid": pmid} if pmid else None
         nodes = []
         for nid, p in db.find_nodes("Publication", props):
-            nodes.append(
-                Publication(
-                    id=str(nid),
-                    pmid=p.get("pmid"),
-                    title=p.get("title"),
-                    abstract=p.get("abstract"),
-                    concepts=p.get("concepts"),
-                )
-            )
+            nodes.append(Publication(
+                id=str(nid),
+                pmid=p.get("pmid"),
+                title=p.get("title"),
+                abstract=p.get("abstract"),
+                concepts=p.get("concepts"),
+            ))
         return nodes
 
     @strawberry.field
@@ -272,7 +264,6 @@ class Query:
 @strawberry.type
 class RelationshipInfo:
     """Information about a relationship with provenance."""
-
     type: str
     source_id: str
     target_id: str
@@ -304,9 +295,7 @@ class Mutation:
     @strawberry.mutation
     def create_region(self, name: str, abbreviation: Optional[str] = None) -> Region:
         db = _db()
-        nid = db.create_node(
-            "Region", {"name": name, "abbreviation": abbreviation or ""}
-        )
+        nid = db.create_node("Region", {"name": name, "abbreviation": abbreviation or ""})
         return Region(id=str(nid), name=name, abbreviation=abbreviation)
 
     @strawberry.mutation
@@ -316,7 +305,7 @@ class Mutation:
         target_id: str,
         rel_type: str,
         confidence: Optional[float] = None,
-        source: Optional[str] = None,
+        source: Optional[str] = None
     ) -> RelationshipInfo:
         """Create a relationship with provenance tracking."""
         from datetime import datetime
@@ -327,7 +316,7 @@ class Mutation:
         props = {
             "confidence": confidence,
             "source": source or "GraphQL API",
-            "timestamp": timestamp,
+            "timestamp": timestamp
         }
 
         # Remove None values
@@ -341,7 +330,7 @@ class Mutation:
             target_id=target_id,
             confidence=confidence,
             source=source or "GraphQL API",
-            timestamp=timestamp,
+            timestamp=timestamp
         )
 
 

@@ -16,15 +16,15 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.pipeline_tools import (
-    _build_apptainer_bind_env,
-    _find_freesurfer_license,
-    _resolve_bids_app_executable,
-)
 from brain_researcher.services.tools.pipelines import (
     QSIPrepParameters,
     build_qsiprep_command,
     qsiprep_from_payload,
+)
+from brain_researcher.services.tools.pipeline_tools import (
+    _build_apptainer_bind_env,
+    _find_freesurfer_license,
+    _resolve_bids_app_executable,
 )
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -414,9 +414,9 @@ class QSIPrepTool(NeuroToolWrapper):
                 bids_dir="/data",
                 output_dir="/out",
                 work_dir="/work" if params.work_dir else None,
-                fs_license_file=(
-                    "/opt/freesurfer/license.txt" if params.fs_license_file else None
-                ),
+                fs_license_file="/opt/freesurfer/license.txt"
+                if params.fs_license_file
+                else None,
             )
             cmd.extend(build_qsiprep_command(docker_params, include_executable=False))
 
@@ -497,11 +497,9 @@ class QSIPrepTool(NeuroToolWrapper):
                 "participant_label": participant_label or [],
                 "work_dir": work_dir,
                 "fs_license_file": fs_license_file,
-                "denoise_method": (
-                    denoise_method.value
-                    if isinstance(denoise_method, DenoisingMethod)
-                    else str(denoise_method)
-                ),
+                "denoise_method": denoise_method.value
+                if isinstance(denoise_method, DenoisingMethod)
+                else str(denoise_method),
                 "distortion_correction": distortion_correction.value,
                 "eddy_config": eddy_config,
                 "b0_threshold": b0_threshold,
@@ -544,11 +542,9 @@ class QSIPrepTool(NeuroToolWrapper):
                     "output_dir": output_dir,
                     "work_dir": work_dir,
                     "participant_label": participant_label,
-                    "denoise_method": (
-                        denoise_method.value
-                        if isinstance(denoise_method, DenoisingMethod)
-                        else str(denoise_method)
-                    ),
+                    "denoise_method": denoise_method.value
+                    if isinstance(denoise_method, DenoisingMethod)
+                    else str(denoise_method),
                     "distortion_correction": distortion_correction.value,
                     "output_resolution": output_resolution,
                     "container_type": container_type,

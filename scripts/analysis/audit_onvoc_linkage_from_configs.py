@@ -302,8 +302,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--base-url",
-        default="https://brain-researcher.com/kg",
-        help="BR-KG base URL (default: https://brain-researcher.com/kg)",
+        default="https://${PUBLIC_HOSTNAME}/kg",
+        help="BR-KG base URL (default: https://${PUBLIC_HOSTNAME}/kg)",
     )
     parser.add_argument(
         "--mapping-rules",

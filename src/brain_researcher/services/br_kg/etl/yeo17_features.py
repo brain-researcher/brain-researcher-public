@@ -29,9 +29,7 @@ def _resample_if_needed(
     label_img: nib.Nifti1Image,
     target_img: nib.Nifti1Image,
 ) -> nib.Nifti1Image:
-    if label_img.shape == target_img.shape and np.allclose(
-        label_img.affine, target_img.affine
-    ):
+    if label_img.shape == target_img.shape and np.allclose(label_img.affine, target_img.affine):
         return label_img
     return resample_to_img(
         label_img,

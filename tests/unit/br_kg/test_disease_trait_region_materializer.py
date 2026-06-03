@@ -82,9 +82,7 @@ def _build_graph(db: FakeGraphDB) -> dict[str, str]:
     }
 
 
-def test_collect_disease_trait_region_evidence_merges_publication_and_coordinate_paths() -> (
-    None
-):
+def test_collect_disease_trait_region_evidence_merges_publication_and_coordinate_paths() -> None:
     db = FakeGraphDB()
     ids = _build_graph(db)
 
@@ -125,11 +123,7 @@ def test_materialize_disease_trait_region_associations_is_idempotent() -> None:
     assert props["supporting_publication_count"] == 1
     assert props["supporting_study_count"] == 1
     assert props["supporting_coordinate_count"] == 1
-    assert props["evidence_ids"] == [
-        ids["publication"],
-        ids["study"],
-        ids["coordinate"],
-    ]
+    assert props["evidence_ids"] == [ids["publication"], ids["study"], ids["coordinate"]]
 
 
 def test_materialize_updates_existing_association_when_supported() -> None:

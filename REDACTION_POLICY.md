@@ -39,8 +39,8 @@ When carving `brain_researcher` into `brain-researcher-public`, the following fi
 
 | Pattern | Replace with |
 |---|---|
-| `/home/zijiaochen/`, `/home/<other>/` | `${HOME}/` or `${WORKSPACE}/` |
-| `your.name@example.com`, other personal emails | `person@example.com` |
+| `${BRAIN_RESEARCHER_HOME}/`, `/home/<other>/` | `${HOME}/` or `${WORKSPACE}/` |
+| `person@example.com`, other personal emails | `person@example.com` |
 | Internal hostnames | `host.local` |
 | Subject IDs from private datasets | `subject_001`, `subject_002`, ... |
 | Internal project codenames | `public-demo-project` |

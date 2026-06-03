@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
+import os
+from typing import Tuple, Any
 
 
 @dataclass(frozen=True)
@@ -39,32 +40,17 @@ class GNNConnectivityParameters:
     use_real_gnn: bool
 
 
-def gnn_connectivity_from_payload(
-    payload: Dict[str, object],
-) -> GNNConnectivityParameters:
+def gnn_connectivity_from_payload(payload: Dict[str, object]) -> GNNConnectivityParameters:
     """Normalise payload into parameters."""
 
     output_dir = payload.get("output_dir") or Path.cwd() / "gnn_connectivity"
     use_real_gnn = bool(payload.get("use_real_gnn", False))
     if "use_real_gnn" not in payload:
-        use_real_gnn = os.environ.get("BR_GNN_USE_REAL", "0").lower() in {
-            "1",
-            "true",
-            "yes",
-            "on",
-        }
+        use_real_gnn = os.environ.get("BR_GNN_USE_REAL", "0").lower() in {"1", "true", "yes", "on"}
 
     return GNNConnectivityParameters(
-        connectivity_file=(
-            str(payload.get("connectivity_file"))
-            if payload.get("connectivity_file")
-            else None
-        ),
-        timeseries_file=(
-            str(payload.get("timeseries_file"))
-            if payload.get("timeseries_file")
-            else None
-        ),
+        connectivity_file=str(payload.get("connectivity_file")) if payload.get("connectivity_file") else None,
+        timeseries_file=str(payload.get("timeseries_file")) if payload.get("timeseries_file") else None,
         output_dir=str(output_dir),
         graph_type=str(payload.get("graph_type", "functional")),
         threshold=payload.get("threshold"),
@@ -78,11 +64,7 @@ def gnn_connectivity_from_payload(
         epochs=int(payload.get("epochs", 100)),
         learning_rate=float(payload.get("learning_rate", 0.01)),
         compute_metrics=bool(payload.get("compute_metrics", True)),
-        metrics=list(
-            payload.get(
-                "metrics", ["degree", "clustering", "betweenness", "modularity"]
-            )
-        ),
+        metrics=list(payload.get("metrics", ["degree", "clustering", "betweenness", "modularity"])),
         save_model=bool(payload.get("save_model", True)),
         save_embeddings=bool(payload.get("save_embeddings", True)),
         save_predictions=bool(payload.get("save_predictions", True)),
@@ -92,9 +74,7 @@ def gnn_connectivity_from_payload(
     )
 
 
-def _load_connectivity(
-    params: GNNConnectivityParameters, rng: np.random.Generator
-) -> np.ndarray:
+def _load_connectivity(params: GNNConnectivityParameters, rng: np.random.Generator) -> np.ndarray:
     if params.connectivity_file:
         path = Path(params.connectivity_file)
         if path.suffix == ".npy" and path.exists():
@@ -121,9 +101,7 @@ def _load_connectivity(
     return mat
 
 
-def _apply_threshold(
-    matrix: np.ndarray, threshold: Optional[float], sparsity: Optional[float]
-) -> np.ndarray:
+def _apply_threshold(matrix: np.ndarray, threshold: Optional[float], sparsity: Optional[float]) -> np.ndarray:
     adj = matrix.copy()
     if threshold is not None:
         mask = np.abs(adj) < threshold
@@ -165,11 +143,7 @@ def _graph_metrics(adj: np.ndarray, metrics: List[str]) -> Dict[str, Dict[str, f
         }
     if "modularity" in metrics:
         # Proxy modularity score based on density
-        density = (
-            float(np.count_nonzero(adj) / (adj.shape[0] * (adj.shape[0] - 1)))
-            if adj.shape[0] > 1
-            else 0.0
-        )
+        density = float(np.count_nonzero(adj) / (adj.shape[0] * (adj.shape[0] - 1))) if adj.shape[0] > 1 else 0.0
         results["modularity"] = {
             "estimate": float(1 - density),
         }
@@ -245,19 +219,11 @@ def _attempt_real_gnn(
                     num_classes=params.n_classes or 2,
                 )
         elif params.task == "link_prediction":
-            positive_edges = [
-                (nodes[i], nodes[j])
-                for i in range(n_nodes)
-                for j in range(i + 1, n_nodes)
-                if adjacency[i, j] != 0
-            ]
+            positive_edges = [(nodes[i], nodes[j]) for i in range(n_nodes) for j in range(i + 1, n_nodes) if adjacency[i, j] != 0]
             negative_edges = []
             if n_nodes > 1:
                 attempts = 0
-                while (
-                    len(negative_edges) < min(len(positive_edges), 200)
-                    and attempts < n_nodes * n_nodes
-                ):
+                while len(negative_edges) < min(len(positive_edges), 200) and attempts < n_nodes * n_nodes:
                     i = int(rng.integers(0, n_nodes))
                     j = int(rng.integers(0, n_nodes))
                     if i == j:
@@ -338,20 +304,14 @@ def run_gnn_connectivity(params: GNNConnectivityParameters) -> Dict[str, object]
         real_gnn_used = real_gnn_payload is not None
 
     if real_gnn_used:
-        embeddings = np.asarray(
-            real_gnn_payload.get("embeddings", []), dtype=np.float32
-        )
+        embeddings = np.asarray(real_gnn_payload.get("embeddings", []), dtype=np.float32)
         predictions = real_gnn_payload.get("predictions")
     else:
-        embeddings = rng.normal(scale=0.1, size=(n_nodes, params.hidden_dim)).astype(
-            np.float32
-        )
+        embeddings = rng.normal(scale=0.1, size=(n_nodes, params.hidden_dim)).astype(np.float32)
         logits = rng.normal(size=(n_nodes, params.n_classes or 2)).astype(np.float32)
         predictions = np.argmax(logits, axis=1)
 
-    graph_metrics = (
-        _graph_metrics(adjacency, params.metrics) if params.compute_metrics else {}
-    )
+    graph_metrics = _graph_metrics(adjacency, params.metrics) if params.compute_metrics else {}
 
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -409,9 +369,7 @@ def run_gnn_connectivity(params: GNNConnectivityParameters) -> Dict[str, object]
         "used_full_backend": real_gnn_used,
         "real_gnn_attempted": real_gnn_attempted,
         "real_gnn_error": real_gnn_error,
-        "label_source": (
-            real_gnn_payload.get("label_source") if real_gnn_payload else None
-        ),
+        "label_source": real_gnn_payload.get("label_source") if real_gnn_payload else None,
     }
 
     results_path = out_dir / "gnn_results.json"

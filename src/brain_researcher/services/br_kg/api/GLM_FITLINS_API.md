@@ -41,7 +41,9 @@ Currently, no authentication is required.
 - `/contrasts/{id}/constructs` sorts by `overall_confidence` descending.
 - `/constructs` sorts by `usage_count` descending.
 
-**OpenAPI (draft):** see `docs/api/glmfitlins_openapi.yaml` for a starter spec.
+The old draft OpenAPI file has been removed from the docs because it was not
+generated from the live routes. Treat this Markdown file and the current Flask
+blueprint as the source of truth until a generated contract is added.
 
 ## Endpoints
 

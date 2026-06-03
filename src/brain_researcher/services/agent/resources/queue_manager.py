@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 class Priority(IntEnum):
     """Priority levels for resource requests."""
 
-    HIGH = 1  # Interactive user requests
-    NORMAL = 2  # Standard analysis requests
-    LOW = 3  # Background batch jobs
+    HIGH = 1      # Interactive user requests
+    NORMAL = 2    # Standard analysis requests
+    LOW = 3       # Background batch jobs
 
     @classmethod
     def from_string(cls, value: str) -> "Priority":
@@ -172,9 +172,7 @@ class QueueManager:
 
             return entry
 
-    def dequeue_if_ready(
-        self, ready_check: Callable[[QueueEntry], bool]
-    ) -> Optional[QueueEntry]:
+    def dequeue_if_ready(self, ready_check: Callable[[QueueEntry], bool]) -> Optional[QueueEntry]:
         """
         Dequeue first entry that passes ready check.
 
@@ -288,12 +286,10 @@ class QueueManager:
                 priority_name = entry.priority_name
                 if priority_name not in entries_by_priority:
                     entries_by_priority[priority_name] = []
-                entries_by_priority[priority_name].append(
-                    {
-                        "tool": entry.tool_name,
-                        "wait_time": f"{entry.wait_time:.1f}s",
-                    }
-                )
+                entries_by_priority[priority_name].append({
+                    "tool": entry.tool_name,
+                    "wait_time": f"{entry.wait_time:.1f}s",
+                })
 
             return {
                 "size": len(self._queue),

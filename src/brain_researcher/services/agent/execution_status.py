@@ -119,24 +119,20 @@ class ExecutionMetrics:
 
         # Calculate durations
         completed_durations = [
-            s.actual_duration
-            for s in steps
+            s.actual_duration for s in steps
             if s.actual_duration is not None and s.actual_duration > 0
         ]
 
         if completed_durations:
-            self.average_step_duration = sum(completed_durations) / len(
-                completed_durations
-            )
+            self.average_step_duration = sum(completed_durations) / len(completed_durations)
         else:
             # Use estimated durations if no actual durations yet
             estimated_durations = [
-                s.estimated_duration for s in steps if s.estimated_duration is not None
+                s.estimated_duration for s in steps
+                if s.estimated_duration is not None
             ]
             if estimated_durations:
-                self.average_step_duration = sum(estimated_durations) / len(
-                    estimated_durations
-                )
+                self.average_step_duration = sum(estimated_durations) / len(estimated_durations)
 
         # Estimate remaining time
         pending_steps = sum(1 for s in steps if s.status == StepStatus.WAITING)
@@ -156,7 +152,7 @@ class ExecutionTracker:
         execution_id: Optional[str] = None,
         redis_client: Optional[redis.Redis] = None,
         persistence_ttl: int = 86400,  # 24 hours
-        update_callback: Optional[callable] = None,
+        update_callback: Optional[callable] = None
     ):
         """
         Initialize execution tracker.
@@ -199,7 +195,6 @@ class ExecutionTracker:
         """Get Redis client (real or fake)."""
         try:
             import os
-
             # Prefer a fake Redis by default in dev/test environments (even if
             # REDIS_URL is set), to avoid state leakage across runs
             # (execution_id may be deterministic). Opt into real Redis by
@@ -225,7 +220,7 @@ class ExecutionTracker:
         name: str,
         description: str = "",
         estimated_duration: Optional[float] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None
     ) -> ExecutionStep:
         """
         Add a step to the execution plan.
@@ -243,7 +238,7 @@ class ExecutionTracker:
             name=name,
             description=description,
             estimated_duration=estimated_duration,
-            metadata=metadata or {},
+            metadata=metadata or {}
         )
         self.steps.append(step)
         self._update_metrics()
@@ -284,11 +279,7 @@ class ExecutionTracker:
 
         if self.current_step_index is not None:
             step = self.steps[self.current_step_index]
-            if self.status in {
-                ExecutionStatus.PENDING,
-                ExecutionStatus.INITIALIZING,
-                ExecutionStatus.PAUSED,
-            }:
+            if self.status in {ExecutionStatus.PENDING, ExecutionStatus.INITIALIZING, ExecutionStatus.PAUSED}:
                 self.status = ExecutionStatus.RUNNING
                 if self.started_at is None:
                     self.started_at = time.time()
@@ -304,7 +295,7 @@ class ExecutionTracker:
         self,
         progress: float,
         step_index: Optional[int] = None,
-        message: Optional[str] = None,
+        message: Optional[str] = None
     ):
         """
         Update progress for current or specific step.
@@ -325,10 +316,10 @@ class ExecutionTracker:
 
             self._update_metrics()
             self._calculate_overall_progress()
-            self._trigger_update(
-                "step_progress",
-                {"step": step.to_dict(), "overall_progress": self.overall_progress},
-            )
+            self._trigger_update("step_progress", {
+                "step": step.to_dict(),
+                "overall_progress": self.overall_progress
+            })
             self._persist_state()
 
     def get_current_step(self) -> Optional[ExecutionStep]:
@@ -343,7 +334,7 @@ class ExecutionTracker:
         self,
         step_index: Optional[int] = None,
         error: Optional[str] = None,
-        result: Optional[Any] = None,
+        result: Optional[Any] = None
     ):
         """
         Complete a step.
@@ -366,20 +357,20 @@ class ExecutionTracker:
             self._calculate_overall_progress()
 
             # Auto-start next step if no error (only if there was no specific index)
-            if (
-                not error
-                and self.status == ExecutionStatus.RUNNING
-                and step_index is None
-            ):
+            if not error and self.status == ExecutionStatus.RUNNING and step_index is None:
                 self.start_step()
 
-            self._trigger_update(
-                "step_completed",
-                {"step": step.to_dict(), "overall_progress": self.overall_progress},
-            )
+            self._trigger_update("step_completed", {
+                "step": step.to_dict(),
+                "overall_progress": self.overall_progress
+            })
             self._persist_state()
 
-    def skip_step(self, step_index: int, reason: str = ""):
+    def skip_step(
+        self,
+        step_index: int,
+        reason: str = ""
+    ):
         """
         Skip a step.
 
@@ -392,13 +383,16 @@ class ExecutionTracker:
             step.skip(reason)
             self._update_metrics()
             self._calculate_overall_progress()
-            self._trigger_update(
-                "step_skipped", {"step": step.to_dict(), "reason": reason}
-            )
+            self._trigger_update("step_skipped", {
+                "step": step.to_dict(),
+                "reason": reason
+            })
             self._persist_state()
 
     def complete_execution(
-        self, error: Optional[str] = None, result: Optional[Any] = None
+        self,
+        error: Optional[str] = None,
+        result: Optional[Any] = None
     ):
         """
         Complete the execution.
@@ -419,18 +413,13 @@ class ExecutionTracker:
         if result is not None:
             self.result = result
 
-        self.metrics.total_duration = (
-            self.completed_at - self.started_at if self.started_at else 0
-        )
+        self.metrics.total_duration = self.completed_at - self.started_at if self.started_at else 0
 
-        self._trigger_update(
-            "execution_completed",
-            {
-                "status": self.status,
-                "duration": self.metrics.total_duration,
-                "error": error,
-            },
-        )
+        self._trigger_update("execution_completed", {
+            "status": self.status,
+            "duration": self.metrics.total_duration,
+            "error": error
+        })
         self._persist_state()
 
     def cancel_execution(self, reason: str = ""):
@@ -466,9 +455,8 @@ class ExecutionTracker:
         if self.status == ExecutionStatus.PAUSED:
             self.status = ExecutionStatus.RUNNING
             paused_duration = time.time() - self.metadata.get("paused_at", time.time())
-            self.metadata["total_pause_duration"] = (
+            self.metadata["total_pause_duration"] = \
                 self.metadata.get("total_pause_duration", 0) + paused_duration
-            )
             self._trigger_update("execution_resumed")
             self._persist_state()
 
@@ -503,11 +491,8 @@ class ExecutionTracker:
             "execution_id": self.execution_id,
             "status": self.status,
             "overall_progress": self.overall_progress,
-            "current_step": (
-                self.steps[self.current_step_index].to_dict()
-                if self.current_step_index is not None
-                else None
-            ),
+            "current_step": self.steps[self.current_step_index].to_dict()
+                if self.current_step_index is not None else None,
             "steps": [s.to_dict() for s in self.steps],
             "metrics": self.metrics.to_dict(),
             "created_at": self.created_at,
@@ -516,7 +501,7 @@ class ExecutionTracker:
             "last_updated": self.last_updated,
             "metadata": self.metadata,
             "error": self.error,
-            "eta": self._calculate_eta(),
+            "eta": self._calculate_eta()
         }
 
     def get_progress_summary(self) -> Dict[str, Any]:
@@ -531,15 +516,12 @@ class ExecutionTracker:
             "status": self.status,
             "overall_progress": self.overall_progress,
             "steps_completed": f"{self.metrics.completed_steps}/{self.metrics.total_steps}",
-            "current_step": (
-                self.steps[self.current_step_index].name
-                if self.current_step_index is not None
-                else None
-            ),
+            "current_step": self.steps[self.current_step_index].name
+                if self.current_step_index is not None else None,
             "eta": self._calculate_eta(),
             "elapsed_time": self._format_duration(
                 time.time() - self.started_at if self.started_at else 0
-            ),
+            )
         }
 
     def _calculate_overall_progress(self):
@@ -604,7 +586,6 @@ class ExecutionTracker:
         # Update resource usage if available
         try:
             import psutil
-
             process = psutil.Process()
             self.metrics.cpu_usage = process.cpu_percent()
             self.metrics.memory_usage = process.memory_percent()
@@ -618,7 +599,9 @@ class ExecutionTracker:
                 key = f"execution:{self.execution_id}"
                 state = self.get_status()
                 self.redis_client.setex(
-                    key, self.persistence_ttl, json.dumps(state, default=str)
+                    key,
+                    self.persistence_ttl,
+                    json.dumps(state, default=str)
                 )
             except Exception as e:
                 logger.error(f"Failed to persist execution state: {e}")
@@ -649,13 +632,10 @@ class ExecutionTracker:
         # Restore steps
         self.steps = []
         for step_data in state.get("steps", []):
-            step = ExecutionStep(
-                **{
-                    k: v
-                    for k, v in step_data.items()
-                    if k in ExecutionStep.__dataclass_fields__
-                }
-            )
+            step = ExecutionStep(**{
+                k: v for k, v in step_data.items()
+                if k in ExecutionStep.__dataclass_fields__
+            })
             step.status = StepStatus(step_data.get("status", StepStatus.WAITING))
             self.steps.append(step)
 
@@ -667,13 +647,10 @@ class ExecutionTracker:
 
         # Restore metrics
         metrics_data = state.get("metrics", {})
-        self.metrics = ExecutionMetrics(
-            **{
-                k: v
-                for k, v in metrics_data.items()
-                if k in ExecutionMetrics.__dataclass_fields__
-            }
-        )
+        self.metrics = ExecutionMetrics(**{
+            k: v for k, v in metrics_data.items()
+            if k in ExecutionMetrics.__dataclass_fields__
+        })
 
     def _trigger_update(self, event: str, data: Optional[Dict[str, Any]] = None):
         """
@@ -685,14 +662,12 @@ class ExecutionTracker:
         """
         if self.update_callback:
             try:
-                self.update_callback(
-                    {
-                        "execution_id": self.execution_id,
-                        "event": event,
-                        "timestamp": time.time(),
-                        "data": data or {},
-                    }
-                )
+                self.update_callback({
+                    "execution_id": self.execution_id,
+                    "event": event,
+                    "timestamp": time.time(),
+                    "data": data or {}
+                })
             except Exception as e:
                 logger.error(f"Update callback failed: {e}")
 
@@ -740,15 +715,13 @@ class AsyncExecutionTracker(ExecutionTracker):
         if listener in self.update_listeners:
             self.update_listeners.remove(listener)
 
-    async def _trigger_update_async(
-        self, event: str, data: Optional[Dict[str, Any]] = None
-    ):
+    async def _trigger_update_async(self, event: str, data: Optional[Dict[str, Any]] = None):
         """Trigger async update to all listeners."""
         update = {
             "execution_id": self.execution_id,
             "event": event,
             "timestamp": time.time(),
-            "data": data or {},
+            "data": data or {}
         }
 
         # Notify all listeners
@@ -763,9 +736,7 @@ class AsyncExecutionTracker(ExecutionTracker):
             await asyncio.gather(*tasks, return_exceptions=True)
 
     # Async versions of key methods
-    async def start_step_async(
-        self, step_index: Optional[int] = None
-    ) -> Optional[ExecutionStep]:
+    async def start_step_async(self, step_index: Optional[int] = None) -> Optional[ExecutionStep]:
         """Async version of start_step."""
         step = self.start_step(step_index)
         await self._trigger_update_async(
@@ -777,17 +748,13 @@ class AsyncExecutionTracker(ExecutionTracker):
         self,
         progress: float,
         step_index: Optional[int] = None,
-        message: Optional[str] = None,
+        message: Optional[str] = None
     ):
         """Async version of update_step_progress."""
         self.update_step_progress(progress, step_index, message)
 
         index = step_index if step_index is not None else self.current_step_index
-        step = (
-            self.steps[index]
-            if index is not None and 0 <= index < len(self.steps)
-            else None
-        )
+        step = self.steps[index] if index is not None and 0 <= index < len(self.steps) else None
         await self._trigger_update_async(
             "step_progress",
             {
@@ -800,18 +767,14 @@ class AsyncExecutionTracker(ExecutionTracker):
         self,
         step_index: Optional[int] = None,
         error: Optional[str] = None,
-        result: Optional[Any] = None,
+        result: Optional[Any] = None
     ):
         """Async version of complete_step."""
         index = step_index if step_index is not None else self.current_step_index
         # Pass explicit index to avoid auto-starting the next step in async flows.
         self.complete_step(index, error, result)
 
-        step = (
-            self.steps[index]
-            if index is not None and 0 <= index < len(self.steps)
-            else None
-        )
+        step = self.steps[index] if index is not None and 0 <= index < len(self.steps) else None
         await self._trigger_update_async(
             "step_completed",
             {

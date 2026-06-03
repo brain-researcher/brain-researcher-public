@@ -1,4 +1,0 @@
-[
-  {"region_id": "harvard_oxford_cort25:Anterior Cingulate", "gene_symbol": "COMT", "expression": 1.32, "tissue_type": "cortex"},
-  {"region_id": "harvard_oxford_cort25:Anterior Cingulate", "gene_symbol": "DRD2", "expression": 0.87}
-]

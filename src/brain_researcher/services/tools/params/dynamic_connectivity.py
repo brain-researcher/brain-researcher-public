@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+
 from typing import Any
 
 import numpy as np
@@ -188,7 +189,9 @@ def run_dynamic_connectivity(
         f"dynamic_connectivity_{params.connectivity_method}"
     )
     for window_index in range(matrices.shape[0]):
-        window_label = f"dynamic_{params.connectivity_method}_window_{window_index}"
+        window_label = (
+            f"dynamic_{params.connectivity_method}_window_{window_index}"
+        )
         for contract in window_contracts:
             evaluate_value_domain(
                 contract,

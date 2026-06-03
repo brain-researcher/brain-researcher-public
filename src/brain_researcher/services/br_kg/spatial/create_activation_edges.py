@@ -13,9 +13,7 @@ from typing import Any, Iterable, Sequence
 
 from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 DEFAULT_ACTIVATION_LABELS: tuple[str, ...] = ("Task", "Concept")
@@ -96,13 +94,9 @@ def collect_coordinate_evidence(db: Any, label: str) -> dict[str, dict[str, set[
             continue
 
         for pub_id in publications:
-            coord_rels = db.find_relationships(
-                start_node=pub_id, rel_type="HAS_COORDINATE"
-            )
+            coord_rels = db.find_relationships(start_node=pub_id, rel_type="HAS_COORDINATE")
             for _start, coord_id, _rel_data in coord_rels:
-                region_rels = db.find_relationships(
-                    start_node=coord_id, rel_type="LOCATED_IN"
-                )
+                region_rels = db.find_relationships(start_node=coord_id, rel_type="LOCATED_IN")
                 for _coord, region_id, _region_rel in region_rels:
                     if region_id in db.graph.nodes:
                         region_data = db.graph.nodes[region_id]
@@ -148,9 +142,7 @@ def create_activation_edges(
                 stats["edges_skipped_threshold"] += 1
                 continue
 
-            region_nodes = db.find_nodes(
-                labels="BrainRegion", properties={"name": region_name}
-            )
+            region_nodes = db.find_nodes(labels="BrainRegion", properties={"name": region_name})
             if not region_nodes:
                 logger.warning("Brain region not found: %s", region_name)
                 stats["errors"] += 1
@@ -184,9 +176,7 @@ def create_activation_edges(
                 )
                 continue
 
-            success = db.create_relationship(
-                node_id, region_id, "ACTIVATES", properties
-            )
+            success = db.create_relationship(node_id, region_id, "ACTIVATES", properties)
             if success:
                 stats["edges_created"] += 1
                 logger.debug(
@@ -220,9 +210,7 @@ def validate_database_structure(db: Any) -> bool:
         return False
 
     missing_relationships = [
-        rel
-        for rel in REQUIRED_RELATIONSHIP_TYPES
-        if relationship_types.get(rel, 0) == 0
+        rel for rel in REQUIRED_RELATIONSHIP_TYPES if relationship_types.get(rel, 0) == 0
     ]
     if missing_relationships:
         logger.warning("Missing expected relationship types: %s", missing_relationships)

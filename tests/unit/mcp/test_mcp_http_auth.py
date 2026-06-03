@@ -472,8 +472,8 @@ def test_http_origin_and_host_restrictions(monkeypatch):
     from brain_researcher.services.mcp import server as srv
 
     monkeypatch.setattr(srv, "AUTH_MODE", "none")
-    monkeypatch.setattr(srv, "ALLOWED_ORIGINS", {"https://brain-researcher.com"})
-    monkeypatch.setattr(srv, "ALLOWED_HOSTS", {"brain-researcher.com"})
+    monkeypatch.setattr(srv, "ALLOWED_ORIGINS", {"https://${PUBLIC_HOSTNAME}"})
+    monkeypatch.setattr(srv, "ALLOWED_HOSTS", {"${PUBLIC_HOSTNAME}"})
 
     app = srv.build_http_app(_make_inner_app())
     client = TestClient(app)
@@ -481,7 +481,7 @@ def test_http_origin_and_host_restrictions(monkeypatch):
     # Bad origin rejected.
     resp = client.get(
         "/",
-        headers={"Host": "brain-researcher.com", "Origin": "https://evil.example"},
+        headers={"Host": "${PUBLIC_HOSTNAME}", "Origin": "https://evil.example"},
     )
     assert resp.status_code == 403
     assert resp.json()["error"] == "origin_not_allowed"
@@ -489,7 +489,7 @@ def test_http_origin_and_host_restrictions(monkeypatch):
     # Bad host rejected.
     resp = client.get(
         "/",
-        headers={"Host": "evil.example", "Origin": "https://brain-researcher.com"},
+        headers={"Host": "evil.example", "Origin": "https://${PUBLIC_HOSTNAME}"},
     )
     assert resp.status_code == 421
     assert resp.json()["error"] == "host_not_allowed"
@@ -656,7 +656,8 @@ def test_server_module_loads_auth_env_from_dotenv_for_direct_module_run(
 
     dotenv_path = tmp_path / ".env"
     dotenv_path.write_text(
-        "BR_MCP_AUTH_MODE=token_or_jwt\n" "JWT_SECRET_KEY=dotenv-jwt-secret\n",
+        "BR_MCP_AUTH_MODE=token_or_jwt\n"
+        "JWT_SECRET_KEY=dotenv-jwt-secret\n",
         encoding="utf-8",
     )
 

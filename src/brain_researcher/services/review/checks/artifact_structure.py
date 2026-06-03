@@ -68,21 +68,9 @@ def _review_context(bundle: CodeReviewBundle) -> dict[str, Any]:
     candidates = [
         _mapping(getattr(bundle, "review_context", {})),
         _mapping(bundle.observed_artifacts.get("review_context")),
-        _mapping(
-            _mapping(bundle.observed_artifacts.get("review_contract")).get(
-                "review_context"
-            )
-        ),
-        _mapping(
-            _mapping(bundle.observed_artifacts.get("analysis_bundle")).get(
-                "review_context"
-            )
-        ),
-        _mapping(
-            _mapping(bundle.observed_artifacts.get("source_summary")).get(
-                "review_context"
-            )
-        ),
+        _mapping(_mapping(bundle.observed_artifacts.get("review_contract")).get("review_context")),
+        _mapping(_mapping(bundle.observed_artifacts.get("analysis_bundle")).get("review_context")),
+        _mapping(_mapping(bundle.observed_artifacts.get("source_summary")).get("review_context")),
         _mapping(bundle.stats_metrics.get("review_context")),
         _mapping(bundle.kg_context.get("review_context")),
     ]
@@ -324,9 +312,7 @@ def design_matrix_confound_column_consistency_check(
         for value in _string_list(preprocessing.get("confound_columns"))
         if _normalize_name(value)
     }
-    missing_exact = sorted(
-        value for value in declared_exact if value not in observed_columns
-    )
+    missing_exact = sorted(value for value in declared_exact if value not in observed_columns)
 
     missing_aliases: list[str] = []
     for label in _string_list(preprocessing.get("confounds")):
@@ -334,9 +320,7 @@ def design_matrix_confound_column_consistency_check(
         tokens = _CONFOUND_ALIAS_TOKENS.get(normalized)
         if not tokens:
             continue
-        if not any(
-            any(token in column for token in tokens) for column in observed_columns
-        ):
+        if not any(any(token in column for token in tokens) for column in observed_columns):
             missing_aliases.append(normalized)
 
     if not missing_exact and not missing_aliases:
@@ -379,9 +363,7 @@ def multiple_comparison_metadata_consistency_check(
     evidence: list[str] = []
 
     declared_correction = statistical_inference.get("multiple_comparison_correction")
-    observed_correction = bundle.stats_metrics.get(
-        "observed_multiple_comparison_correction"
-    )
+    observed_correction = bundle.stats_metrics.get("observed_multiple_comparison_correction")
     if declared_correction is not None and observed_correction is not None:
         declared_norm = _normalize_multiple_comparison(declared_correction)
         observed_norm = _normalize_multiple_comparison(observed_correction)
@@ -409,9 +391,7 @@ def multiple_comparison_metadata_consistency_check(
                 f"height_control={declared_height_control!r} vs observed {observed_height_control!r}"
             )
 
-    declared_voxel_threshold = _floatish(
-        statistical_inference.get("voxelwise_threshold")
-    )
+    declared_voxel_threshold = _floatish(statistical_inference.get("voxelwise_threshold"))
     observed_voxel_threshold = _stat(bundle, "observed_voxelwise_threshold")
     if declared_voxel_threshold is not None and observed_voxel_threshold is not None:
         if abs(declared_voxel_threshold - observed_voxel_threshold) > 1e-9:
@@ -483,18 +463,14 @@ def correction_summary_numeric_consistency_check(
 
     mismatches: list[str] = []
     if alpha is not None and not (0.0 <= alpha <= 1.0):
-        mismatches.append(
-            f"observed_multiple_comparison_alpha={alpha:g} is outside [0, 1]"
-        )
+        mismatches.append(f"observed_multiple_comparison_alpha={alpha:g} is outside [0, 1]")
     if fraction is not None and not (0.0 <= fraction <= 1.0):
         mismatches.append(
             "observed_multiple_comparison_fraction_significant="
             f"{fraction:g} is outside [0, 1]"
         )
     if n_tests is not None and n_tests < 0:
-        mismatches.append(
-            f"observed_multiple_comparison_n_tests={int(n_tests)} is negative"
-        )
+        mismatches.append(f"observed_multiple_comparison_n_tests={int(n_tests)} is negative")
     if rejected is not None and rejected < 0:
         mismatches.append(
             f"observed_multiple_comparison_rejected_count={int(rejected)} is negative"
@@ -502,15 +478,18 @@ def correction_summary_numeric_consistency_check(
     if n_found is not None and n_found < 0:
         mismatches.append(f"observed_n_clusters_found={int(n_found)} is negative")
     if n_surviving is not None and n_surviving < 0:
-        mismatches.append(
-            f"observed_n_clusters_surviving={int(n_surviving)} is negative"
-        )
+        mismatches.append(f"observed_n_clusters_surviving={int(n_surviving)} is negative")
     if n_tests is not None and rejected is not None and rejected > n_tests:
         mismatches.append(
             "observed_multiple_comparison_rejected_count="
             f"{int(rejected)} exceeds observed_multiple_comparison_n_tests={int(n_tests)}"
         )
-    if n_tests is not None and rejected is not None and n_tests == 0 and rejected > 0:
+    if (
+        n_tests is not None
+        and rejected is not None
+        and n_tests == 0
+        and rejected > 0
+    ):
         mismatches.append(
             "observed_multiple_comparison_n_tests=0 with rejected_count>0 is impossible"
         )
@@ -538,7 +517,9 @@ def correction_summary_numeric_consistency_check(
         rule_id="REVIEW_CORRECTION_SUMMARY_NUMERIC_MISMATCH",
         severity="error",
         action="block",
-        message=("Observed correction-summary metrics are internally inconsistent."),
+        message=(
+            "Observed correction-summary metrics are internally inconsistent."
+        ),
         suggested_fix=(
             "Regenerate the correction or threshold summary so alpha, rejection counts, "
             "fractions, and cluster counts are numerically self-consistent."
@@ -582,9 +563,7 @@ def contrast_table_semantics_check(bundle: CodeReviewBundle) -> ReviewFinding | 
         bundle.stats_metrics.get("observed_contrast_table_has_contrast_name")
     )
     missing_names = _stat(bundle, "observed_contrast_table_rows_missing_contrast_name")
-    if has_contrast_name is not True or (
-        missing_names is not None and missing_names > 0
-    ):
+    if has_contrast_name is not True or (missing_names is not None and missing_names > 0):
         return ReviewFinding(
             rule_id="REVIEW_CONTRAST_TABLE_SEMANTICS_INVALID",
             severity="error",
@@ -605,9 +584,7 @@ def contrast_table_semantics_check(bundle: CodeReviewBundle) -> ReviewFinding | 
         )
 
     expected_contrast = bundle.kg_context.get("contrast")
-    observed_names = _string_list(
-        bundle.stats_metrics.get("observed_contrast_table_names")
-    )
+    observed_names = _string_list(bundle.stats_metrics.get("observed_contrast_table_names"))
     if expected_contrast and observed_names:
         expected_norm = _normalize_name(expected_contrast)
         observed_norm = {_normalize_name(name) for name in observed_names}
@@ -631,9 +608,7 @@ def contrast_table_semantics_check(bundle: CodeReviewBundle) -> ReviewFinding | 
             )
 
     design_ncols = _stat(bundle, "design_matrix_ncols")
-    vector_lengths = _int_list(
-        bundle.stats_metrics.get("observed_contrast_table_vector_lengths")
-    )
+    vector_lengths = _int_list(bundle.stats_metrics.get("observed_contrast_table_vector_lengths"))
     if design_ncols is not None and vector_lengths:
         mismatched_lengths = sorted(
             {length for length in vector_lengths if int(length) != int(design_ncols)}
@@ -687,9 +662,7 @@ def cluster_table_semantics_check(bundle: CodeReviewBundle) -> ReviewFinding | N
             reason_tags=["null_mismatch"],
         )
 
-    has_size = _boolish(
-        bundle.stats_metrics.get("observed_cluster_table_has_cluster_size")
-    )
+    has_size = _boolish(bundle.stats_metrics.get("observed_cluster_table_has_cluster_size"))
     has_significance = _boolish(
         bundle.stats_metrics.get("observed_cluster_table_has_significance")
     )
@@ -766,12 +739,8 @@ def cluster_table_count_consistency_check(
 def cluster_peak_cardinality_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
     """Block when some cluster rows have no corresponding peak-table membership."""
 
-    cluster_ids = set(
-        _string_list(bundle.stats_metrics.get("observed_cluster_table_cluster_ids"))
-    )
-    peak_cluster_ids = set(
-        _string_list(bundle.stats_metrics.get("observed_peak_table_cluster_ids"))
-    )
+    cluster_ids = set(_string_list(bundle.stats_metrics.get("observed_cluster_table_cluster_ids")))
+    peak_cluster_ids = set(_string_list(bundle.stats_metrics.get("observed_peak_table_cluster_ids")))
     if not cluster_ids or not peak_cluster_ids:
         return None
 
@@ -804,9 +773,7 @@ def peak_cluster_membership_consistency_check(
 ) -> ReviewFinding | None:
     """Block when peak-table cluster membership contradicts the cluster table."""
 
-    peak_has_cluster_id = _boolish(
-        bundle.stats_metrics.get("observed_peak_table_has_cluster_id")
-    )
+    peak_has_cluster_id = _boolish(bundle.stats_metrics.get("observed_peak_table_has_cluster_id"))
     if peak_has_cluster_id is not True:
         return None
 
@@ -837,12 +804,7 @@ def peak_cluster_membership_consistency_check(
             reason_tags=["null_mismatch"],
         )
 
-    if (
-        _boolish(
-            bundle.stats_metrics.get("observed_cluster_table_duplicate_cluster_ids")
-        )
-        is True
-    ):
+    if _boolish(bundle.stats_metrics.get("observed_cluster_table_duplicate_cluster_ids")) is True:
         return ReviewFinding(
             rule_id="REVIEW_PEAK_CLUSTER_MEMBERSHIP_INVALID",
             severity="error",
@@ -858,9 +820,7 @@ def peak_cluster_membership_consistency_check(
             reason_tags=["null_mismatch"],
         )
 
-    missing_peak_cluster_ids = _stat(
-        bundle, "observed_peak_table_rows_missing_cluster_id"
-    )
+    missing_peak_cluster_ids = _stat(bundle, "observed_peak_table_rows_missing_cluster_id")
     peak_rows = _stat(bundle, "observed_peak_table_rows")
     if (
         missing_peak_cluster_ids is not None
@@ -887,12 +847,8 @@ def peak_cluster_membership_consistency_check(
             reason_tags=["null_mismatch"],
         )
 
-    cluster_ids = set(
-        _string_list(bundle.stats_metrics.get("observed_cluster_table_cluster_ids"))
-    )
-    peak_cluster_ids = set(
-        _string_list(bundle.stats_metrics.get("observed_peak_table_cluster_ids"))
-    )
+    cluster_ids = set(_string_list(bundle.stats_metrics.get("observed_cluster_table_cluster_ids")))
+    peak_cluster_ids = set(_string_list(bundle.stats_metrics.get("observed_peak_table_cluster_ids")))
     if peak_cluster_ids and cluster_ids:
         missing = sorted(peak_cluster_ids - cluster_ids)
         if missing:
@@ -990,22 +946,16 @@ def design_model_metadata_consistency_check(
     observed_hrf = bundle.stats_metrics.get("observed_hrf_model")
     if declared_hrf is not None and observed_hrf is not None:
         if _normalize_method(declared_hrf) != _normalize_method(observed_hrf):
-            mismatches.append(
-                f"hrf_model={declared_hrf!r} vs observed {observed_hrf!r}"
-            )
+            mismatches.append(f"hrf_model={declared_hrf!r} vs observed {observed_hrf!r}")
 
     declared_basis = design_model.get("basis_set")
     observed_basis = bundle.stats_metrics.get("observed_basis_set")
     if declared_basis is not None and observed_basis is not None:
         if _normalize_method(declared_basis) != _normalize_method(observed_basis):
-            mismatches.append(
-                f"basis_set={declared_basis!r} vs observed {observed_basis!r}"
-            )
+            mismatches.append(f"basis_set={declared_basis!r} vs observed {observed_basis!r}")
 
     declared_autocorrelation = design_model.get("autocorrelation_model")
-    observed_autocorrelation = bundle.stats_metrics.get(
-        "observed_autocorrelation_model"
-    )
+    observed_autocorrelation = bundle.stats_metrics.get("observed_autocorrelation_model")
     if declared_autocorrelation is not None and observed_autocorrelation is not None:
         if _normalize_autocorrelation_model(
             declared_autocorrelation
@@ -1019,10 +969,7 @@ def design_model_metadata_consistency_check(
     observed_serial_correlation = bundle.stats_metrics.get(
         "observed_serial_correlation_correction"
     )
-    if (
-        declared_serial_correlation is not None
-        and observed_serial_correlation is not None
-    ):
+    if declared_serial_correlation is not None and observed_serial_correlation is not None:
         if _normalize_method(declared_serial_correlation) != _normalize_method(
             observed_serial_correlation
         ):
@@ -1032,13 +979,8 @@ def design_model_metadata_consistency_check(
             )
 
     declared_prewhitening_method = design_model.get("prewhitening_method")
-    observed_prewhitening_method = bundle.stats_metrics.get(
-        "observed_prewhitening_method"
-    )
-    if (
-        declared_prewhitening_method is not None
-        and observed_prewhitening_method is not None
-    ):
+    observed_prewhitening_method = bundle.stats_metrics.get("observed_prewhitening_method")
+    if declared_prewhitening_method is not None and observed_prewhitening_method is not None:
         if _normalize_method(declared_prewhitening_method) != _normalize_method(
             observed_prewhitening_method
         ):
@@ -1081,7 +1023,9 @@ def design_model_metadata_consistency_check(
                     f"{declared_temporal_derivative!r} vs design_matrix count {int(temporal_derivative_count)}"
                 )
 
-    declared_dispersion_derivative = _boolish(design_model.get("dispersion_derivative"))
+    declared_dispersion_derivative = _boolish(
+        design_model.get("dispersion_derivative")
+    )
     observed_dispersion_derivative = _boolish(
         bundle.stats_metrics.get("observed_dispersion_derivative")
     )
@@ -1113,10 +1057,7 @@ def design_model_metadata_consistency_check(
             "declared_autocorrelation="
             f"{declared_autocorrelation!r}; observed_autocorrelation={observed_autocorrelation!r}"
         )
-    if (
-        declared_serial_correlation is not None
-        or observed_serial_correlation is not None
-    ):
+    if declared_serial_correlation is not None or observed_serial_correlation is not None:
         evidence.append(
             "declared_serial_correlation="
             f"{declared_serial_correlation!r}; observed_serial_correlation={observed_serial_correlation!r}"

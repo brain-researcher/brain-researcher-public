@@ -4,15 +4,15 @@ Tenant Management System for BR-KG
 Handles tenant lifecycle, authentication, and configuration.
 """
 
-import hashlib
-import json
 import logging
+import hashlib
 import secrets
 import time
-from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Set
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from dataclasses import dataclass, asdict
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,6 @@ class TenantTier(Enum):
 @dataclass
 class TenantConfiguration:
     """Configuration for a tenant"""
-
     tenant_id: str
     name: str
     description: str
@@ -71,7 +70,6 @@ class TenantConfiguration:
 @dataclass
 class TenantUser:
     """User within a tenant"""
-
     user_id: str
     tenant_id: str
     username: str
@@ -101,53 +99,53 @@ class TenantManager:
         # Default tier configurations
         self.tier_configurations = {
             TenantTier.FREE: {
-                "max_nodes": 10000,
-                "max_relationships": 50000,
-                "max_queries_per_day": 1000,
-                "max_concurrent_queries": 2,
-                "max_storage_mb": 100,
-                "max_users": 1,
-                "sparql_enabled": True,
-                "federation_enabled": False,
-                "analytics_enabled": False,
-                "api_access_enabled": True,
+                'max_nodes': 10000,
+                'max_relationships': 50000,
+                'max_queries_per_day': 1000,
+                'max_concurrent_queries': 2,
+                'max_storage_mb': 100,
+                'max_users': 1,
+                'sparql_enabled': True,
+                'federation_enabled': False,
+                'analytics_enabled': False,
+                'api_access_enabled': True
             },
             TenantTier.BASIC: {
-                "max_nodes": 100000,
-                "max_relationships": 500000,
-                "max_queries_per_day": 10000,
-                "max_concurrent_queries": 5,
-                "max_storage_mb": 1000,
-                "max_users": 5,
-                "sparql_enabled": True,
-                "federation_enabled": True,
-                "analytics_enabled": True,
-                "api_access_enabled": True,
+                'max_nodes': 100000,
+                'max_relationships': 500000,
+                'max_queries_per_day': 10000,
+                'max_concurrent_queries': 5,
+                'max_storage_mb': 1000,
+                'max_users': 5,
+                'sparql_enabled': True,
+                'federation_enabled': True,
+                'analytics_enabled': True,
+                'api_access_enabled': True
             },
             TenantTier.PROFESSIONAL: {
-                "max_nodes": 1000000,
-                "max_relationships": 5000000,
-                "max_queries_per_day": 100000,
-                "max_concurrent_queries": 10,
-                "max_storage_mb": 10000,
-                "max_users": 20,
-                "sparql_enabled": True,
-                "federation_enabled": True,
-                "analytics_enabled": True,
-                "api_access_enabled": True,
+                'max_nodes': 1000000,
+                'max_relationships': 5000000,
+                'max_queries_per_day': 100000,
+                'max_concurrent_queries': 10,
+                'max_storage_mb': 10000,
+                'max_users': 20,
+                'sparql_enabled': True,
+                'federation_enabled': True,
+                'analytics_enabled': True,
+                'api_access_enabled': True
             },
             TenantTier.ENTERPRISE: {
-                "max_nodes": -1,  # Unlimited
-                "max_relationships": -1,
-                "max_queries_per_day": -1,
-                "max_concurrent_queries": 50,
-                "max_storage_mb": -1,
-                "max_users": -1,
-                "sparql_enabled": True,
-                "federation_enabled": True,
-                "analytics_enabled": True,
-                "api_access_enabled": True,
-            },
+                'max_nodes': -1,  # Unlimited
+                'max_relationships': -1,
+                'max_queries_per_day': -1,
+                'max_concurrent_queries': 50,
+                'max_storage_mb': -1,
+                'max_users': -1,
+                'sparql_enabled': True,
+                'federation_enabled': True,
+                'analytics_enabled': True,
+                'api_access_enabled': True
+            }
         }
 
         # Initialize schema
@@ -164,11 +162,13 @@ class TenantManager:
             "CREATE INDEX tenant_name_idx IF NOT EXISTS FOR (t:Tenant) ON (t.name)",
             "CREATE INDEX tenant_status_idx IF NOT EXISTS FOR (t:Tenant) ON (t.status)",
             "CREATE INDEX tenant_tier_idx IF NOT EXISTS FOR (t:Tenant) ON (t.tier)",
+
             # User nodes
             "CREATE CONSTRAINT user_id_unique IF NOT EXISTS FOR (u:TenantUser) REQUIRE u.user_id IS UNIQUE",
             "CREATE INDEX user_email_idx IF NOT EXISTS FOR (u:TenantUser) ON (u.email)",
             "CREATE INDEX user_tenant_idx IF NOT EXISTS FOR (u:TenantUser) ON (u.tenant_id)",
             "CREATE INDEX api_key_idx IF NOT EXISTS FOR (u:TenantUser) ON (u.api_key)",
+
             # Isolation labels for tenant data (per-label indexes are created during tenant operations)
         ]
 
@@ -184,7 +184,7 @@ class TenantManager:
         admin_email: str,
         tier: TenantTier = TenantTier.FREE,
         description: str = "",
-        custom_settings: Optional[Dict[str, Any]] = None,
+        custom_settings: Optional[Dict[str, Any]] = None
     ) -> TenantConfiguration:
         """Create a new tenant"""
 
@@ -210,7 +210,7 @@ class TenantManager:
             updated_at=datetime.now(),
             expires_at=None,
             custom_settings=custom_settings or {},
-            **tier_config,
+            **tier_config
         )
 
         try:
@@ -234,9 +234,7 @@ class TenantManager:
             if admin_user.api_key:
                 self.api_key_to_user[admin_user.api_key] = admin_user.user_id
 
-            logger.info(
-                "Created tenant %s with admin user %s", tenant_id, admin_user.user_id
-            )
+            logger.info("Created tenant %s with admin user %s", tenant_id, admin_user.user_id)
             return tenant_config
 
         except Exception as e:
@@ -262,7 +260,9 @@ class TenantManager:
         return tenant_config
 
     def update_tenant(
-        self, tenant_id: str, updates: Dict[str, Any]
+        self,
+        tenant_id: str,
+        updates: Dict[str, Any]
     ) -> Optional[TenantConfiguration]:
         """Update tenant configuration"""
 
@@ -317,8 +317,7 @@ class TenantManager:
 
                 # Remove users from cache
                 users_to_remove = [
-                    user_id
-                    for user_id, user in self.user_cache.items()
+                    user_id for user_id, user in self.user_cache.items()
                     if user.tenant_id == tenant_id
                 ]
                 for user_id in users_to_remove:
@@ -339,7 +338,7 @@ class TenantManager:
         status: Optional[TenantStatus] = None,
         tier: Optional[TenantTier] = None,
         limit: int = 100,
-        offset: int = 0,
+        offset: int = 0
     ) -> List[TenantConfiguration]:
         """List tenants with optional filtering"""
 
@@ -348,21 +347,21 @@ class TenantManager:
 
         if status:
             query += " AND t.status = $status"
-            params["status"] = status.value
+            params['status'] = status.value
 
         if tier:
             query += " AND t.tier = $tier"
-            params["tier"] = tier.value
+            params['tier'] = tier.value
 
         query += " RETURN t ORDER BY t.created_at DESC SKIP $offset LIMIT $limit"
-        params["offset"] = offset
-        params["limit"] = limit
+        params['offset'] = offset
+        params['limit'] = limit
 
         result = self.neo4j_db._run(query, params)
 
         tenants = []
         for record in result:
-            tenant_data = dict(record["t"])
+            tenant_data = dict(record['t'])
             tenant_config = self._dict_to_tenant_config(tenant_data)
             tenants.append(tenant_config)
 
@@ -398,7 +397,7 @@ class TenantManager:
         username: str,
         email: str,
         role: str = "viewer",
-        permissions: Optional[Set[str]] = None,
+        permissions: Optional[Set[str]] = None
     ) -> Optional[TenantUser]:
         """Create a new user in tenant"""
 
@@ -424,7 +423,7 @@ class TenantManager:
             api_key=api_key,
             created_at=datetime.now(),
             last_active=None,
-            is_active=True,
+            is_active=True
         )
 
         try:
@@ -450,11 +449,11 @@ class TenantManager:
         ORDER BY u.created_at
         """
 
-        result = self.neo4j_db._run(query, {"tenant_id": tenant_id})
+        result = self.neo4j_db._run(query, {'tenant_id': tenant_id})
 
         users = []
         for record in result:
-            user_data = dict(record["u"])
+            user_data = dict(record['u'])
             user = self._dict_to_tenant_user(user_data)
             users.append(user)
 
@@ -464,31 +463,27 @@ class TenantManager:
         """Get statistics for a tenant"""
 
         stats = {
-            "tenant_id": tenant_id,
-            "nodes": 0,
-            "relationships": 0,
-            "storage_mb": 0,
-            "users": 0,
-            "queries_today": 0,
-            "last_activity": None,
+            'tenant_id': tenant_id,
+            'nodes': 0,
+            'relationships': 0,
+            'storage_mb': 0,
+            'users': 0,
+            'queries_today': 0,
+            'last_activity': None
         }
 
         # Count nodes and relationships with tenant isolation
-        node_query = (
-            "MATCH (n) WHERE n._tenant_id = $tenant_id RETURN count(n) as count"
-        )
-        rel_query = (
-            "MATCH ()-[r]->() WHERE r._tenant_id = $tenant_id RETURN count(r) as count"
-        )
+        node_query = "MATCH (n) WHERE n._tenant_id = $tenant_id RETURN count(n) as count"
+        rel_query = "MATCH ()-[r]->() WHERE r._tenant_id = $tenant_id RETURN count(r) as count"
 
-        node_result = self.neo4j_db._run(node_query, {"tenant_id": tenant_id}).single()
-        rel_result = self.neo4j_db._run(rel_query, {"tenant_id": tenant_id}).single()
+        node_result = self.neo4j_db._run(node_query, {'tenant_id': tenant_id}).single()
+        rel_result = self.neo4j_db._run(rel_query, {'tenant_id': tenant_id}).single()
 
-        stats["nodes"] = node_result["count"] if node_result else 0
-        stats["relationships"] = rel_result["count"] if rel_result else 0
+        stats['nodes'] = node_result['count'] if node_result else 0
+        stats['relationships'] = rel_result['count'] if rel_result else 0
 
         # Count users
-        stats["users"] = self._count_tenant_users(tenant_id)
+        stats['users'] = self._count_tenant_users(tenant_id)
 
         # Get query count for today (would need query log)
         # stats['queries_today'] = self._get_daily_query_count(tenant_id)
@@ -499,13 +494,13 @@ class TenantManager:
     def _generate_tenant_id(self, name: str) -> str:
         """Generate unique tenant ID"""
         # Create ID from name + timestamp
-        clean_name = "".join(c.lower() for c in name if c.isalnum())[:20]
+        clean_name = ''.join(c.lower() for c in name if c.isalnum())[:20]
         timestamp = int(time.time())
         return f"tenant_{clean_name}_{timestamp}"
 
     def _generate_user_id(self, tenant_id: str, username: str) -> str:
         """Generate unique user ID"""
-        clean_username = "".join(c.lower() for c in username if c.isalnum())[:20]
+        clean_username = ''.join(c.lower() for c in username if c.isalnum())[:20]
         return f"{tenant_id}_user_{clean_username}_{int(time.time())}"
 
     def _generate_api_key(self) -> str:
@@ -539,23 +534,19 @@ class TenantManager:
         """
 
         params = asdict(tenant_config)
-        params["tier"] = tenant_config.tier.value
-        params["status"] = tenant_config.status.value
-        params["created_at"] = tenant_config.created_at.isoformat()
-        params["updated_at"] = tenant_config.updated_at.isoformat()
-        params["custom_settings"] = json.dumps(tenant_config.custom_settings)
+        params['tier'] = tenant_config.tier.value
+        params['status'] = tenant_config.status.value
+        params['created_at'] = tenant_config.created_at.isoformat()
+        params['updated_at'] = tenant_config.updated_at.isoformat()
+        params['custom_settings'] = json.dumps(tenant_config.custom_settings)
 
         self.neo4j_db._run(query, params)
 
     def _create_admin_user(self, tenant_config: TenantConfiguration) -> TenantUser:
         """Create admin user for tenant"""
         admin_permissions = {
-            "read",
-            "write",
-            "admin",
-            "manage_users",
-            "manage_settings",
-            "view_analytics",
+            'read', 'write', 'admin', 'manage_users',
+            'manage_settings', 'view_analytics'
         }
 
         admin_user = TenantUser(
@@ -568,7 +559,7 @@ class TenantManager:
             api_key=self._generate_api_key(),
             created_at=datetime.now(),
             last_active=None,
-            is_active=True,
+            is_active=True
         )
 
         self._create_user_in_database(admin_user)
@@ -591,15 +582,15 @@ class TenantManager:
         """
 
         params = {
-            "user_id": user.user_id,
-            "tenant_id": user.tenant_id,
-            "username": user.username,
-            "email": user.email,
-            "role": user.role,
-            "permissions": json.dumps(list(user.permissions)),
-            "api_key": user.api_key,
-            "created_at": user.created_at.isoformat(),
-            "is_active": user.is_active,
+            'user_id': user.user_id,
+            'tenant_id': user.tenant_id,
+            'username': user.username,
+            'email': user.email,
+            'role': user.role,
+            'permissions': json.dumps(list(user.permissions)),
+            'api_key': user.api_key,
+            'created_at': user.created_at.isoformat(),
+            'is_active': user.is_active
         }
 
         self.neo4j_db._run(query, params)
@@ -613,26 +604,18 @@ class TenantManager:
     def _cleanup_failed_tenant_creation(self, tenant_id: str):
         """Cleanup after failed tenant creation"""
         try:
-            self.neo4j_db._run(
-                "MATCH (t:Tenant {tenant_id: $tenant_id}) DELETE t",
-                {"tenant_id": tenant_id},
-            )
-            self.neo4j_db._run(
-                "MATCH (u:TenantUser {tenant_id: $tenant_id}) DELETE u",
-                {"tenant_id": tenant_id},
-            )
+            self.neo4j_db._run("MATCH (t:Tenant {tenant_id: $tenant_id}) DELETE t", {'tenant_id': tenant_id})
+            self.neo4j_db._run("MATCH (u:TenantUser {tenant_id: $tenant_id}) DELETE u", {'tenant_id': tenant_id})
         except:
             pass
 
-    def _load_tenant_from_database(
-        self, tenant_id: str
-    ) -> Optional[TenantConfiguration]:
+    def _load_tenant_from_database(self, tenant_id: str) -> Optional[TenantConfiguration]:
         """Load tenant from Neo4j"""
         query = "MATCH (t:Tenant {tenant_id: $tenant_id}) RETURN t"
-        result = self.neo4j_db._run(query, {"tenant_id": tenant_id}).single()
+        result = self.neo4j_db._run(query, {'tenant_id': tenant_id}).single()
 
         if result:
-            tenant_data = dict(result["t"])
+            tenant_data = dict(result['t'])
             return self._dict_to_tenant_config(tenant_data)
 
         return None
@@ -640,10 +623,10 @@ class TenantManager:
     def _load_user_by_api_key(self, api_key: str) -> Optional[TenantUser]:
         """Load user by API key"""
         query = "MATCH (u:TenantUser {api_key: $api_key}) RETURN u"
-        result = self.neo4j_db._run(query, {"api_key": api_key}).single()
+        result = self.neo4j_db._run(query, {'api_key': api_key}).single()
 
         if result:
-            user_data = dict(result["u"])
+            user_data = dict(result['u'])
             return self._dict_to_tenant_user(user_data)
 
         return None
@@ -651,50 +634,42 @@ class TenantManager:
     def _dict_to_tenant_config(self, data: Dict[str, Any]) -> TenantConfiguration:
         """Convert dict to TenantConfiguration"""
         return TenantConfiguration(
-            tenant_id=data["tenant_id"],
-            name=data["name"],
-            description=data.get("description", ""),
-            tier=TenantTier(data["tier"]),
-            status=TenantStatus(data["status"]),
-            max_nodes=data["max_nodes"],
-            max_relationships=data["max_relationships"],
-            max_queries_per_day=data["max_queries_per_day"],
-            max_concurrent_queries=data["max_concurrent_queries"],
-            max_storage_mb=data["max_storage_mb"],
-            max_users=data["max_users"],
-            sparql_enabled=data["sparql_enabled"],
-            federation_enabled=data["federation_enabled"],
-            analytics_enabled=data["analytics_enabled"],
-            api_access_enabled=data["api_access_enabled"],
-            created_at=datetime.fromisoformat(data["created_at"]),
-            updated_at=datetime.fromisoformat(data["updated_at"]),
-            expires_at=(
-                datetime.fromisoformat(data["expires_at"])
-                if data.get("expires_at")
-                else None
-            ),
-            admin_email=data["admin_email"],
-            billing_contact=data.get("billing_contact"),
-            custom_settings=json.loads(data.get("custom_settings", "{}")),
+            tenant_id=data['tenant_id'],
+            name=data['name'],
+            description=data.get('description', ''),
+            tier=TenantTier(data['tier']),
+            status=TenantStatus(data['status']),
+            max_nodes=data['max_nodes'],
+            max_relationships=data['max_relationships'],
+            max_queries_per_day=data['max_queries_per_day'],
+            max_concurrent_queries=data['max_concurrent_queries'],
+            max_storage_mb=data['max_storage_mb'],
+            max_users=data['max_users'],
+            sparql_enabled=data['sparql_enabled'],
+            federation_enabled=data['federation_enabled'],
+            analytics_enabled=data['analytics_enabled'],
+            api_access_enabled=data['api_access_enabled'],
+            created_at=datetime.fromisoformat(data['created_at']),
+            updated_at=datetime.fromisoformat(data['updated_at']),
+            expires_at=datetime.fromisoformat(data['expires_at']) if data.get('expires_at') else None,
+            admin_email=data['admin_email'],
+            billing_contact=data.get('billing_contact'),
+            custom_settings=json.loads(data.get('custom_settings', '{}'))
         )
 
     def _dict_to_tenant_user(self, data: Dict[str, Any]) -> TenantUser:
         """Convert dict to TenantUser"""
         return TenantUser(
-            user_id=data["user_id"],
-            tenant_id=data["tenant_id"],
-            username=data["username"],
-            email=data["email"],
-            role=data["role"],
-            permissions=set(json.loads(data.get("permissions", "[]"))),
-            api_key=data.get("api_key"),
-            created_at=datetime.fromisoformat(data["created_at"]),
-            last_active=(
-                datetime.fromisoformat(data["last_active"])
-                if data.get("last_active")
-                else None
-            ),
-            is_active=data.get("is_active", True),
+            user_id=data['user_id'],
+            tenant_id=data['tenant_id'],
+            username=data['username'],
+            email=data['email'],
+            role=data['role'],
+            permissions=set(json.loads(data.get('permissions', '[]'))),
+            api_key=data.get('api_key'),
+            created_at=datetime.fromisoformat(data['created_at']),
+            last_active=datetime.fromisoformat(data['last_active']) if data.get('last_active') else None,
+            is_active=data.get('is_active', True)
         )
 
     def _update_tenant_in_database(self, tenant_config: TenantConfiguration):
@@ -705,15 +680,13 @@ class TenantManager:
         """
 
         updates = asdict(tenant_config)
-        updates["tier"] = tenant_config.tier.value
-        updates["status"] = tenant_config.status.value
-        updates["created_at"] = tenant_config.created_at.isoformat()
-        updates["updated_at"] = tenant_config.updated_at.isoformat()
-        updates["custom_settings"] = json.dumps(tenant_config.custom_settings)
+        updates['tier'] = tenant_config.tier.value
+        updates['status'] = tenant_config.status.value
+        updates['created_at'] = tenant_config.created_at.isoformat()
+        updates['updated_at'] = tenant_config.updated_at.isoformat()
+        updates['custom_settings'] = json.dumps(tenant_config.custom_settings)
 
-        self.neo4j_db._run(
-            query, {"tenant_id": tenant_config.tenant_id, "updates": updates}
-        )
+        self.neo4j_db._run(query, {'tenant_id': tenant_config.tenant_id, 'updates': updates})
 
     def _update_user_in_database(self, user: TenantUser):
         """Update user in database"""
@@ -723,8 +696,8 @@ class TenantManager:
         """
 
         params = {
-            "user_id": user.user_id,
-            "last_active": user.last_active.isoformat() if user.last_active else None,
+            'user_id': user.user_id,
+            'last_active': user.last_active.isoformat() if user.last_active else None
         }
 
         self.neo4j_db._run(query, params)
@@ -732,26 +705,26 @@ class TenantManager:
     def _count_tenant_users(self, tenant_id: str) -> int:
         """Count users in tenant"""
         query = "MATCH (u:TenantUser {tenant_id: $tenant_id}) RETURN count(u) as count"
-        result = self.neo4j_db._run(query, {"tenant_id": tenant_id}).single()
-        return result["count"] if result else 0
+        result = self.neo4j_db._run(query, {'tenant_id': tenant_id}).single()
+        return result['count'] if result else 0
 
     def _delete_tenant_data(self, tenant_id: str):
         """Delete all tenant data"""
         # Delete tenant-specific nodes and relationships
         queries = [
             "MATCH (n) WHERE n._tenant_id = $tenant_id DETACH DELETE n",
-            "MATCH ()-[r]->() WHERE r._tenant_id = $tenant_id DELETE r",
+            "MATCH ()-[r]->() WHERE r._tenant_id = $tenant_id DELETE r"
         ]
 
         for query in queries:
-            self.neo4j_db._run(query, {"tenant_id": tenant_id})
+            self.neo4j_db._run(query, {'tenant_id': tenant_id})
 
     def _delete_tenant_from_database(self, tenant_id: str):
         """Delete tenant record from database"""
         queries = [
             "MATCH (u:TenantUser {tenant_id: $tenant_id}) DELETE u",
-            "MATCH (t:Tenant {tenant_id: $tenant_id}) DELETE t",
+            "MATCH (t:Tenant {tenant_id: $tenant_id}) DELETE t"
         ]
 
         for query in queries:
-            self.neo4j_db._run(query, {"tenant_id": tenant_id})
+            self.neo4j_db._run(query, {'tenant_id': tenant_id})

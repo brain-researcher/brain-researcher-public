@@ -74,9 +74,7 @@ class LazyStdioMCPCaller:
                         try:
                             return json.loads(content)
                         except json.JSONDecodeError:
-                            logger.warning(
-                                f"Failed to parse MCP response for {tool_name}: {content[:200]}"
-                            )
+                            logger.warning(f"Failed to parse MCP response for {tool_name}: {content[:200]}")
                             return None
                     return {"success": True}
         except asyncio.TimeoutError:
@@ -90,9 +88,7 @@ class LazyLinearMCPCaller(LazyStdioMCPCaller):
     """Backward-compatible Linear caller."""
 
     def __init__(self, server_command: Optional[list[str]] = None):
-        super().__init__(
-            server_command=server_command or _default_linear_server_command()
-        )
+        super().__init__(server_command=server_command or _default_linear_server_command())
 
 
 def _default_linear_server_command() -> list[str]:

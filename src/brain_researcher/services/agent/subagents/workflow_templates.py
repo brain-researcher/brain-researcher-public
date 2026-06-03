@@ -2,18 +2,16 @@
 
 import json
 import uuid
+from typing import Any, Dict, List, Optional, Callable, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
-
 import yaml
 
 # Try to import Jinja2 for template processing
 try:
-    from jinja2 import Environment, FileSystemLoader, Template
-
+    from jinja2 import Template, Environment, FileSystemLoader
     JINJA2_AVAILABLE = True
 except ImportError:
     JINJA2_AVAILABLE = False
@@ -60,15 +58,15 @@ class WorkflowStep:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            "name": self.name,
-            "tool": self.tool,
-            "description": self.description,
-            "parameters": self.parameters,
-            "dependencies": self.dependencies,
-            "optional": self.optional,
-            "timeout_seconds": self.timeout_seconds,
-            "retry_on_failure": self.retry_on_failure,
-            "max_retries": self.max_retries,
+            'name': self.name,
+            'tool': self.tool,
+            'description': self.description,
+            'parameters': self.parameters,
+            'dependencies': self.dependencies,
+            'optional': self.optional,
+            'timeout_seconds': self.timeout_seconds,
+            'retry_on_failure': self.retry_on_failure,
+            'max_retries': self.max_retries
         }
 
 
@@ -169,49 +167,47 @@ class WorkflowTemplate:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            "id": self.id,
-            "name": self.name,
-            "type": self.type.value,
-            "description": self.description,
-            "version": self.version,
-            "steps": [step.to_dict() for step in self.steps],
-            "parameters": self.parameters,
-            "metadata": self.metadata,
-            "created_at": self.created_at.isoformat(),
-            "tags": self.tags,
+            'id': self.id,
+            'name': self.name,
+            'type': self.type.value,
+            'description': self.description,
+            'version': self.version,
+            'steps': [step.to_dict() for step in self.steps],
+            'parameters': self.parameters,
+            'metadata': self.metadata,
+            'created_at': self.created_at.isoformat(),
+            'tags': self.tags
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowTemplate":
+    def from_dict(cls, data: Dict[str, Any]) -> 'WorkflowTemplate':
         """Create from dictionary."""
         steps = [
             WorkflowStep(
-                name=s["name"],
-                tool=s["tool"],
-                description=s["description"],
-                parameters=s["parameters"],
-                dependencies=s.get("dependencies", []),
-                optional=s.get("optional", False),
-                timeout_seconds=s.get("timeout_seconds", 300),
-                retry_on_failure=s.get("retry_on_failure", True),
-                max_retries=s.get("max_retries", 3),
+                name=s['name'],
+                tool=s['tool'],
+                description=s['description'],
+                parameters=s['parameters'],
+                dependencies=s.get('dependencies', []),
+                optional=s.get('optional', False),
+                timeout_seconds=s.get('timeout_seconds', 300),
+                retry_on_failure=s.get('retry_on_failure', True),
+                max_retries=s.get('max_retries', 3)
             )
-            for s in data["steps"]
+            for s in data['steps']
         ]
 
         return cls(
-            id=data["id"],
-            name=data["name"],
-            type=WorkflowType(data["type"]),
-            description=data["description"],
-            version=data["version"],
+            id=data['id'],
+            name=data['name'],
+            type=WorkflowType(data['type']),
+            description=data['description'],
+            version=data['version'],
             steps=steps,
-            parameters=data.get("parameters", {}),
-            metadata=data.get("metadata", {}),
-            created_at=datetime.fromisoformat(
-                data.get("created_at", datetime.now().isoformat())
-            ),
-            tags=data.get("tags", []),
+            parameters=data.get('parameters', {}),
+            metadata=data.get('metadata', {}),
+            created_at=datetime.fromisoformat(data.get('created_at', datetime.now().isoformat())),
+            tags=data.get('tags', [])
         )
 
 
@@ -227,255 +223,270 @@ class WorkflowTemplateLibrary:
         """Load built-in workflow templates."""
 
         # Standard GLM Analysis
-        self.templates["standard_glm"] = WorkflowTemplate(
-            id="standard_glm_v1",
-            name="Standard GLM Analysis",
+        self.templates['standard_glm'] = WorkflowTemplate(
+            id='standard_glm_v1',
+            name='Standard GLM Analysis',
             type=WorkflowType.STANDARD_GLM,
-            description="Standard General Linear Model analysis for fMRI data",
-            version="1.0.0",
+            description='Standard General Linear Model analysis for fMRI data',
+            version='1.0.0',
             steps=[
                 WorkflowStep(
-                    name="load_data",
-                    tool="fmri_data_loader",
-                    description="Load fMRI data and experimental design",
+                    name='load_data',
+                    tool='fmri_data_loader',
+                    description='Load fMRI data and experimental design',
                     parameters={
-                        "data_path": "${data_path}",
-                        "design_matrix_path": "${design_matrix_path}",
-                        "mask_path": "${mask_path}",
-                    },
+                        'data_path': '${data_path}',
+                        'design_matrix_path': '${design_matrix_path}',
+                        'mask_path': '${mask_path}'
+                    }
                 ),
                 WorkflowStep(
-                    name="preprocess",
-                    tool="preprocessing",
-                    description="Preprocess fMRI data",
+                    name='preprocess',
+                    tool='preprocessing',
+                    description='Preprocess fMRI data',
                     parameters={
-                        "smoothing_fwhm": 6,
-                        "high_pass_filter": 0.01,
-                        "standardize": True,
+                        'smoothing_fwhm': 6,
+                        'high_pass_filter': 0.01,
+                        'standardize': True
                     },
-                    dependencies=["load_data"],
-                    optional=True,
+                    dependencies=['load_data'],
+                    optional=True
                 ),
                 WorkflowStep(
-                    name="fit_glm",
-                    tool="glm_analysis",
-                    description="Fit GLM to fMRI data",
+                    name='fit_glm',
+                    tool='glm_analysis',
+                    description='Fit GLM to fMRI data',
                     parameters={
-                        "model_type": "standard",
-                        "drift_model": "cosine",
-                        "noise_model": "ar1",
+                        'model_type': 'standard',
+                        'drift_model': 'cosine',
+                        'noise_model': 'ar1'
                     },
-                    dependencies=["preprocess"],
+                    dependencies=['preprocess']
                 ),
                 WorkflowStep(
-                    name="compute_contrasts",
-                    tool="contrast_analysis",
-                    description="Compute statistical contrasts",
+                    name='compute_contrasts',
+                    tool='contrast_analysis',
+                    description='Compute statistical contrasts',
                     parameters={
-                        "contrasts": "${contrasts}",
-                        "correction_method": "fdr",
-                        "alpha": 0.05,
+                        'contrasts': '${contrasts}',
+                        'correction_method': 'fdr',
+                        'alpha': 0.05
                     },
-                    dependencies=["fit_glm"],
+                    dependencies=['fit_glm']
                 ),
                 WorkflowStep(
-                    name="visualize_results",
-                    tool="visualization",
-                    description="Generate brain maps and plots",
+                    name='visualize_results',
+                    tool='visualization',
+                    description='Generate brain maps and plots',
                     parameters={
-                        "plot_type": "statistical_map",
-                        "threshold": 2.3,
-                        "colormap": "hot",
+                        'plot_type': 'statistical_map',
+                        'threshold': 2.3,
+                        'colormap': 'hot'
                     },
-                    dependencies=["compute_contrasts"],
-                ),
+                    dependencies=['compute_contrasts']
+                )
             ],
             parameters={
-                "data_path": None,
-                "design_matrix_path": None,
-                "mask_path": None,
-                "contrasts": [],
+                'data_path': None,
+                'design_matrix_path': None,
+                'mask_path': None,
+                'contrasts': []
             },
-            tags=["fmri", "glm", "statistics"],
+            tags=['fmri', 'glm', 'statistics']
         )
 
         # Group Comparison
-        self.templates["group_comparison"] = WorkflowTemplate(
-            id="group_comparison_v1",
-            name="Group Comparison Analysis",
+        self.templates['group_comparison'] = WorkflowTemplate(
+            id='group_comparison_v1',
+            name='Group Comparison Analysis',
             type=WorkflowType.GROUP_COMPARISON,
-            description="Compare brain activity between groups",
-            version="1.0.0",
+            description='Compare brain activity between groups',
+            version='1.0.0',
             steps=[
                 WorkflowStep(
-                    name="load_groups",
-                    tool="group_data_loader",
-                    description="Load data for multiple groups",
+                    name='load_groups',
+                    tool='group_data_loader',
+                    description='Load data for multiple groups',
                     parameters={
-                        "group1_data": "${group1_data}",
-                        "group2_data": "${group2_data}",
-                        "covariates": "${covariates}",
-                    },
+                        'group1_data': '${group1_data}',
+                        'group2_data': '${group2_data}',
+                        'covariates': '${covariates}'
+                    }
                 ),
                 WorkflowStep(
-                    name="normalize",
-                    tool="spatial_normalization",
-                    description="Normalize to standard space",
-                    parameters={"template": "MNI152", "resolution": 2},
-                    dependencies=["load_groups"],
-                ),
-                WorkflowStep(
-                    name="statistical_test",
-                    tool="group_statistics",
-                    description="Perform group comparison",
+                    name='normalize',
+                    tool='spatial_normalization',
+                    description='Normalize to standard space',
                     parameters={
-                        "test_type": "${test_type}",
-                        "correction": "cluster",
-                        "threshold": 0.001,
+                        'template': 'MNI152',
+                        'resolution': 2
                     },
-                    dependencies=["normalize"],
+                    dependencies=['load_groups']
                 ),
                 WorkflowStep(
-                    name="effect_size",
-                    tool="effect_size_calculator",
-                    description="Calculate effect sizes",
-                    parameters={"metric": "cohen's d"},
-                    dependencies=["statistical_test"],
-                    optional=True,
+                    name='statistical_test',
+                    tool='group_statistics',
+                    description='Perform group comparison',
+                    parameters={
+                        'test_type': '${test_type}',
+                        'correction': 'cluster',
+                        'threshold': 0.001
+                    },
+                    dependencies=['normalize']
                 ),
                 WorkflowStep(
-                    name="report",
-                    tool="report_generator",
-                    description="Generate analysis report",
-                    parameters={"format": "html", "include_plots": True},
-                    dependencies=["statistical_test", "effect_size"],
+                    name='effect_size',
+                    tool='effect_size_calculator',
+                    description='Calculate effect sizes',
+                    parameters={
+                        'metric': "cohen's d"
+                    },
+                    dependencies=['statistical_test'],
+                    optional=True
                 ),
+                WorkflowStep(
+                    name='report',
+                    tool='report_generator',
+                    description='Generate analysis report',
+                    parameters={
+                        'format': 'html',
+                        'include_plots': True
+                    },
+                    dependencies=['statistical_test', 'effect_size']
+                )
             ],
             parameters={
-                "group1_data": None,
-                "group2_data": None,
-                "covariates": [],
-                "test_type": "t-test",
+                'group1_data': None,
+                'group2_data': None,
+                'covariates': [],
+                'test_type': 't-test'
             },
-            tags=["group", "comparison", "statistics"],
+            tags=['group', 'comparison', 'statistics']
         )
 
         # Connectivity Analysis
-        self.templates["connectivity"] = WorkflowTemplate(
-            id="connectivity_v1",
-            name="Functional Connectivity Analysis",
+        self.templates['connectivity'] = WorkflowTemplate(
+            id='connectivity_v1',
+            name='Functional Connectivity Analysis',
             type=WorkflowType.CONNECTIVITY_ANALYSIS,
-            description="Analyze functional connectivity patterns",
-            version="1.0.0",
+            description='Analyze functional connectivity patterns',
+            version='1.0.0',
             steps=[
                 WorkflowStep(
-                    name="extract_timeseries",
-                    tool="timeseries_extractor",
-                    description="Extract ROI timeseries",
+                    name='extract_timeseries',
+                    tool='timeseries_extractor',
+                    description='Extract ROI timeseries',
                     parameters={
-                        "atlas": "${atlas}",
-                        "detrend": True,
-                        "standardize": True,
-                    },
+                        'atlas': '${atlas}',
+                        'detrend': True,
+                        'standardize': True
+                    }
                 ),
                 WorkflowStep(
-                    name="compute_connectivity",
-                    tool="connectivity_calculator",
-                    description="Calculate connectivity matrix",
+                    name='compute_connectivity',
+                    tool='connectivity_calculator',
+                    description='Calculate connectivity matrix',
                     parameters={
-                        "method": "${connectivity_method}",
-                        "regularization": 0.1,
+                        'method': '${connectivity_method}',
+                        'regularization': 0.1
                     },
-                    dependencies=["extract_timeseries"],
+                    dependencies=['extract_timeseries']
                 ),
                 WorkflowStep(
-                    name="graph_analysis",
-                    tool="graph_metrics",
-                    description="Compute graph theory metrics",
+                    name='graph_analysis',
+                    tool='graph_metrics',
+                    description='Compute graph theory metrics',
                     parameters={
-                        "metrics": ["degree", "betweenness", "clustering"],
-                        "threshold": "${threshold}",
+                        'metrics': ['degree', 'betweenness', 'clustering'],
+                        'threshold': '${threshold}'
                     },
-                    dependencies=["compute_connectivity"],
-                    optional=True,
+                    dependencies=['compute_connectivity'],
+                    optional=True
                 ),
                 WorkflowStep(
-                    name="visualize_network",
-                    tool="network_visualization",
-                    description="Visualize connectivity network",
+                    name='visualize_network',
+                    tool='network_visualization',
+                    description='Visualize connectivity network',
                     parameters={
-                        "layout": "spring",
-                        "node_size": "degree",
-                        "edge_threshold": 0.3,
+                        'layout': 'spring',
+                        'node_size': 'degree',
+                        'edge_threshold': 0.3
                     },
-                    dependencies=["compute_connectivity"],
-                ),
+                    dependencies=['compute_connectivity']
+                )
             ],
             parameters={
-                "atlas": "AAL",
-                "connectivity_method": "correlation",
-                "threshold": 0.2,
+                'atlas': 'AAL',
+                'connectivity_method': 'correlation',
+                'threshold': 0.2
             },
-            tags=["connectivity", "network", "graph"],
+            tags=['connectivity', 'network', 'graph']
         )
 
         # Meta-analysis
-        self.templates["meta_analysis"] = WorkflowTemplate(
-            id="meta_analysis_v1",
-            name="Coordinate-based Meta-analysis",
+        self.templates['meta_analysis'] = WorkflowTemplate(
+            id='meta_analysis_v1',
+            name='Coordinate-based Meta-analysis',
             type=WorkflowType.META_ANALYSIS,
-            description="Perform coordinate-based meta-analysis",
-            version="1.0.0",
+            description='Perform coordinate-based meta-analysis',
+            version='1.0.0',
             steps=[
                 WorkflowStep(
-                    name="collect_studies",
-                    tool="study_collector",
-                    description="Collect studies from databases",
+                    name='collect_studies',
+                    tool='study_collector',
+                    description='Collect studies from databases',
                     parameters={
-                        "databases": "${databases}",
-                        "search_terms": "${search_terms}",
-                        "inclusion_criteria": "${inclusion_criteria}",
+                        'databases': '${databases}',
+                        'search_terms': '${search_terms}',
+                        'inclusion_criteria': '${inclusion_criteria}'
+                    }
+                ),
+                WorkflowStep(
+                    name='extract_coordinates',
+                    tool='coordinate_extractor',
+                    description='Extract peak coordinates',
+                    parameters={
+                        'space': 'MNI',
+                        'min_cluster_size': 10
                     },
+                    dependencies=['collect_studies']
                 ),
                 WorkflowStep(
-                    name="extract_coordinates",
-                    tool="coordinate_extractor",
-                    description="Extract peak coordinates",
-                    parameters={"space": "MNI", "min_cluster_size": 10},
-                    dependencies=["collect_studies"],
+                    name='ale_analysis',
+                    tool='ale_calculator',
+                    description='Perform ALE meta-analysis',
+                    parameters={
+                        'fwhm': 10,
+                        'threshold': 0.001,
+                        'n_simulations': 5000
+                    },
+                    dependencies=['extract_coordinates']
                 ),
                 WorkflowStep(
-                    name="ale_analysis",
-                    tool="ale_calculator",
-                    description="Perform ALE meta-analysis",
-                    parameters={"fwhm": 10, "threshold": 0.001, "n_simulations": 5000},
-                    dependencies=["extract_coordinates"],
-                ),
-                WorkflowStep(
-                    name="cluster_analysis",
-                    tool="cluster_analyzer",
-                    description="Analyze significant clusters",
-                    parameters={"min_cluster_size": 200, "anatomical_labels": True},
-                    dependencies=["ale_analysis"],
-                ),
+                    name='cluster_analysis',
+                    tool='cluster_analyzer',
+                    description='Analyze significant clusters',
+                    parameters={
+                        'min_cluster_size': 200,
+                        'anatomical_labels': True
+                    },
+                    dependencies=['ale_analysis']
+                )
             ],
             parameters={
-                "databases": ["neurosynth", "brainmap"],
-                "search_terms": [],
-                "inclusion_criteria": {},
+                'databases': ['neurosynth', 'brainmap'],
+                'search_terms': [],
+                'inclusion_criteria': {}
             },
-            tags=["meta-analysis", "ale", "coordinates"],
+            tags=['meta-analysis', 'ale', 'coordinates']
         )
 
     def get_template(self, template_id: str) -> Optional[WorkflowTemplate]:
         """Get template by ID."""
         return self.templates.get(template_id)
 
-    def list_templates(
-        self,
-        type_filter: Optional[WorkflowType] = None,
-        tags: Optional[List[str]] = None,
-    ) -> List[WorkflowTemplate]:
+    def list_templates(self, type_filter: Optional[WorkflowType] = None,
+                      tags: Optional[List[str]] = None) -> List[WorkflowTemplate]:
         """List available templates.
 
         Args:
@@ -491,7 +502,8 @@ class WorkflowTemplateLibrary:
             templates = [t for t in templates if t.type == type_filter]
 
         if tags:
-            templates = [t for t in templates if any(tag in t.tags for tag in tags)]
+            templates = [t for t in templates
+                        if any(tag in t.tags for tag in tags)]
 
         return templates
 
@@ -518,7 +530,7 @@ class WorkflowTemplateLibrary:
             return True
         return False
 
-    def export_template(self, template_id: str, format: str = "json") -> str:
+    def export_template(self, template_id: str, format: str = 'json') -> str:
         """Export template to string.
 
         Args:
@@ -534,14 +546,14 @@ class WorkflowTemplateLibrary:
 
         data = template.to_dict()
 
-        if format == "json":
+        if format == 'json':
             return json.dumps(data, indent=2)
-        elif format == "yaml":
+        elif format == 'yaml':
             return yaml.dump(data, default_flow_style=False)
         else:
             raise ValueError(f"Unknown format: {format}")
 
-    def import_template(self, data: str, format: str = "json") -> WorkflowTemplate:
+    def import_template(self, data: str, format: str = 'json') -> WorkflowTemplate:
         """Import template from string.
 
         Args:
@@ -551,9 +563,9 @@ class WorkflowTemplateLibrary:
         Returns:
             Imported template
         """
-        if format == "json":
+        if format == 'json':
             template_data = json.loads(data)
-        elif format == "yaml":
+        elif format == 'yaml':
             template_data = yaml.safe_load(data)
         else:
             raise ValueError(f"Unknown format: {format}")
@@ -583,12 +595,9 @@ class WorkflowExecutor:
         """Register a tool for workflow execution."""
         self.tool_registry[name] = tool
 
-    def execute(
-        self,
-        template: WorkflowTemplate,
-        parameters: Dict[str, Any],
-        skip_optional: bool = False,
-    ) -> Dict[str, Any]:
+    def execute(self, template: WorkflowTemplate,
+                parameters: Dict[str, Any],
+                skip_optional: bool = False) -> Dict[str, Any]:
         """Execute a workflow template.
 
         Args:
@@ -617,10 +626,10 @@ class WorkflowExecutor:
         # Execute steps
         results = {}
         execution_record = {
-            "template_id": template.id,
-            "started_at": datetime.now(),
-            "parameters": merged_params,
-            "steps": [],
+            'template_id': template.id,
+            'started_at': datetime.now(),
+            'parameters': merged_params,
+            'steps': []
         }
 
         for step_name in execution_order:
@@ -633,43 +642,36 @@ class WorkflowExecutor:
             # Check dependencies
             for dep in step.dependencies:
                 if dep not in results:
-                    raise RuntimeError(
-                        f"Dependency '{dep}' not satisfied for step '{step_name}'"
-                    )
+                    raise RuntimeError(f"Dependency '{dep}' not satisfied for step '{step_name}'")
 
             # Execute step
             step_result = self._execute_step(step, merged_params, results)
             results[step_name] = step_result
 
-            execution_record["steps"].append(
-                {
-                    "name": step_name,
-                    "tool": step.tool,
-                    "started_at": step_result.get("started_at"),
-                    "completed_at": step_result.get("completed_at"),
-                    "status": step_result.get("status"),
-                    "result": step_result.get("result"),
-                }
-            )
+            execution_record['steps'].append({
+                'name': step_name,
+                'tool': step.tool,
+                'started_at': step_result.get('started_at'),
+                'completed_at': step_result.get('completed_at'),
+                'status': step_result.get('status'),
+                'result': step_result.get('result')
+            })
 
-        execution_record["completed_at"] = datetime.now()
-        execution_record["status"] = "completed"
+        execution_record['completed_at'] = datetime.now()
+        execution_record['status'] = 'completed'
 
         self.execution_history.append(execution_record)
 
         return {
-            "template": template.name,
-            "execution_id": str(uuid.uuid4()),
-            "results": results,
-            "execution_record": execution_record,
+            'template': template.name,
+            'execution_id': str(uuid.uuid4()),
+            'results': results,
+            'execution_record': execution_record
         }
 
-    def _execute_step(
-        self,
-        step: WorkflowStep,
-        parameters: Dict[str, Any],
-        previous_results: Dict[str, Any],
-    ) -> Dict[str, Any]:
+    def _execute_step(self, step: WorkflowStep,
+                     parameters: Dict[str, Any],
+                     previous_results: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a single workflow step.
 
         Args:
@@ -701,11 +703,11 @@ class WorkflowExecutor:
                 result = tool(**step_params)
 
                 return {
-                    "status": "success",
-                    "result": result,
-                    "started_at": started_at.isoformat(),
-                    "completed_at": datetime.now().isoformat(),
-                    "attempts": attempts + 1,
+                    'status': 'success',
+                    'result': result,
+                    'started_at': started_at.isoformat(),
+                    'completed_at': datetime.now().isoformat(),
+                    'attempts': attempts + 1
                 }
 
             except Exception as e:
@@ -717,19 +719,16 @@ class WorkflowExecutor:
 
         # Step failed
         return {
-            "status": "failed",
-            "error": str(last_error),
-            "started_at": started_at.isoformat(),
-            "completed_at": datetime.now().isoformat(),
-            "attempts": attempts,
+            'status': 'failed',
+            'error': str(last_error),
+            'started_at': started_at.isoformat(),
+            'completed_at': datetime.now().isoformat(),
+            'attempts': attempts
         }
 
-    def _prepare_step_parameters(
-        self,
-        step_params: Dict[str, Any],
-        workflow_params: Dict[str, Any],
-        previous_results: Dict[str, Any],
-    ) -> Dict[str, Any]:
+    def _prepare_step_parameters(self, step_params: Dict[str, Any],
+                                workflow_params: Dict[str, Any],
+                                previous_results: Dict[str, Any]) -> Dict[str, Any]:
         """Prepare parameters for step execution.
 
         Args:
@@ -745,22 +744,19 @@ class WorkflowExecutor:
         for key, value in step_params.items():
             if isinstance(value, str):
                 # Check for parameter references
-                if value.startswith("${") and value.endswith("}"):
+                if value.startswith('${') and value.endswith('}'):
                     param_name = value[2:-1]
 
                     # Check workflow parameters
                     if param_name in workflow_params:
                         resolved[key] = workflow_params[param_name]
                     # Check previous results
-                    elif "." in param_name:
-                        step_name, result_key = param_name.split(".", 1)
+                    elif '.' in param_name:
+                        step_name, result_key = param_name.split('.', 1)
                         if step_name in previous_results:
                             step_result = previous_results[step_name]
-                            if (
-                                "result" in step_result
-                                and result_key in step_result["result"]
-                            ):
-                                resolved[key] = step_result["result"][result_key]
+                            if 'result' in step_result and result_key in step_result['result']:
+                                resolved[key] = step_result['result'][result_key]
                     else:
                         resolved[key] = None
                 else:
@@ -785,7 +781,7 @@ class WorkflowExecutor:
         rendered = {}
 
         for key, value in parameters.items():
-            if isinstance(value, str) and "{{" in value:
+            if isinstance(value, str) and '{{' in value:
                 template = self.jinja_env.from_string(value)
                 rendered[key] = template.render(**parameters)
             else:
@@ -818,12 +814,9 @@ def get_template_library() -> WorkflowTemplateLibrary:
     return _global_library
 
 
-def create_custom_workflow(
-    name: str,
-    steps: List[Dict[str, Any]],
-    description: str = "",
-    parameters: Dict[str, Any] = None,
-) -> WorkflowTemplate:
+def create_custom_workflow(name: str, steps: List[Dict[str, Any]],
+                          description: str = "",
+                          parameters: Dict[str, Any] = None) -> WorkflowTemplate:
     """Create a custom workflow template.
 
     Args:
@@ -839,12 +832,12 @@ def create_custom_workflow(
 
     for step_data in steps:
         step = WorkflowStep(
-            name=step_data["name"],
-            tool=step_data["tool"],
-            description=step_data.get("description", ""),
-            parameters=step_data.get("parameters", {}),
-            dependencies=step_data.get("dependencies", []),
-            optional=step_data.get("optional", False),
+            name=step_data['name'],
+            tool=step_data['tool'],
+            description=step_data.get('description', ''),
+            parameters=step_data.get('parameters', {}),
+            dependencies=step_data.get('dependencies', []),
+            optional=step_data.get('optional', False)
         )
         workflow_steps.append(step)
 
@@ -853,9 +846,9 @@ def create_custom_workflow(
         name=name,
         type=WorkflowType.CUSTOM,
         description=description,
-        version="1.0.0",
+        version='1.0.0',
         steps=workflow_steps,
-        parameters=parameters or {},
+        parameters=parameters or {}
     )
 
     return template

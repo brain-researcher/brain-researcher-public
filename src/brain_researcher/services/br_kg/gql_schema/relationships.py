@@ -12,7 +12,6 @@ import strawberry
 @strawberry.enum
 class RelationshipType(str, Enum):
     """Types of relationships in the knowledge graph."""
-
     MEASURES = "MEASURES"
     ACTIVATES = "ACTIVATES"
     DERIVED_FROM = "DERIVED_FROM"
@@ -32,7 +31,6 @@ class RelationshipType(str, Enum):
 @strawberry.enum
 class ProvenanceSource(str, Enum):
     """Sources of provenance information."""
-
     PUBMED = "PUBMED"
     OPENNEURO = "OPENNEURO"
     NEUROVAULT = "NEUROVAULT"
@@ -46,7 +44,6 @@ class ProvenanceSource(str, Enum):
 @strawberry.type
 class Provenance:
     """Provenance information for relationships."""
-
     source: ProvenanceSource
     source_id: Optional[str] = None  # e.g., PMID, dataset ID
     timestamp: str  # ISO format
@@ -58,7 +55,6 @@ class Provenance:
 @strawberry.type
 class EdgeProperties:
     """Properties associated with graph edges."""
-
     confidence: Optional[float] = None  # 0.0 to 1.0
     strength: Optional[float] = None  # relationship strength
     weight: Optional[float] = None  # edge weight for algorithms
@@ -72,7 +68,6 @@ class EdgeProperties:
 @strawberry.type
 class Relationship:
     """Complete relationship with provenance."""
-
     id: str
     type: str  # RelationshipType as string
     start_node_id: str
@@ -87,7 +82,6 @@ class Relationship:
 @strawberry.type
 class RelationshipInput:
     """Input type for creating relationships."""
-
     type: str
     start_node_id: str
     end_node_id: str
@@ -101,7 +95,6 @@ class RelationshipInput:
 @strawberry.type
 class RelationshipFilter:
     """Filter criteria for relationships."""
-
     type: Optional[str] = None
     min_confidence: Optional[float] = None
     max_confidence: Optional[float] = None
@@ -115,18 +108,16 @@ class RelationshipFilter:
 @strawberry.type
 class RelationshipStatistics:
     """Statistics about relationships."""
-
     total_count: int
-    by_type: List["TypeCount"]
-    by_source: List["SourceCount"]
+    by_type: List['TypeCount']
+    by_source: List['SourceCount']
     avg_confidence: float
-    confidence_distribution: List["ConfidenceRange"]
+    confidence_distribution: List['ConfidenceRange']
 
 
 @strawberry.type
 class TypeCount:
     """Count by relationship type."""
-
     type: str
     count: int
 
@@ -134,7 +125,6 @@ class TypeCount:
 @strawberry.type
 class SourceCount:
     """Count by provenance source."""
-
     source: str
     count: int
 
@@ -142,7 +132,6 @@ class SourceCount:
 @strawberry.type
 class ConfidenceRange:
     """Confidence score distribution."""
-
     range: str  # e.g., "0.0-0.2", "0.2-0.4"
     count: int
     percentage: float
@@ -151,7 +140,6 @@ class ConfidenceRange:
 @strawberry.type
 class ConflictingRelationship:
     """Represents conflicting relationships."""
-
     relationship1: Relationship
     relationship2: Relationship
     conflict_type: str  # "contradictory", "duplicate", "inconsistent"
@@ -168,7 +156,6 @@ class RelationshipQueries:
     def relationship(self, id: str) -> Optional[Relationship]:
         """Get a specific relationship by ID."""
         from brain_researcher.services.br_kg.db.bootstrap import get_db
-
         db = get_db()
 
         # Implementation would fetch from database
@@ -180,11 +167,10 @@ class RelationshipQueries:
         self,
         filter: Optional[RelationshipFilter] = None,
         limit: int = 100,
-        offset: int = 0,
+        offset: int = 0
     ) -> List[Relationship]:
         """Query relationships with filters."""
         from brain_researcher.services.br_kg.db.bootstrap import get_db
-
         db = get_db()
 
         relationships = []
@@ -193,7 +179,9 @@ class RelationshipQueries:
 
     @strawberry.field
     def relationship_statistics(
-        self, node_id: Optional[str] = None, node_type: Optional[str] = None
+        self,
+        node_id: Optional[str] = None,
+        node_type: Optional[str] = None
     ) -> RelationshipStatistics:
         """Get statistics about relationships."""
         # Placeholder implementation
@@ -202,19 +190,24 @@ class RelationshipQueries:
             by_type=[],
             by_source=[],
             avg_confidence=0.0,
-            confidence_distribution=[],
+            confidence_distribution=[]
         )
 
     @strawberry.field
     def find_conflicts(
-        self, node_id: Optional[str] = None, relationship_type: Optional[str] = None
+        self,
+        node_id: Optional[str] = None,
+        relationship_type: Optional[str] = None
     ) -> List[ConflictingRelationship]:
         """Find conflicting relationships."""
         # Placeholder implementation
         return []
 
     @strawberry.field
-    def trace_provenance(self, relationship_id: str) -> List[Provenance]:
+    def trace_provenance(
+        self,
+        relationship_id: str
+    ) -> List[Provenance]:
         """Trace complete provenance chain for a relationship."""
         # Placeholder implementation
         return []
@@ -227,7 +220,8 @@ class RelationshipMutations:
 
     @strawberry.mutation
     def create_relationship_with_provenance(
-        self, input: RelationshipInput
+        self,
+        input: RelationshipInput
     ) -> Relationship:
         """Create a new relationship with full provenance."""
         import uuid
@@ -248,12 +242,13 @@ class RelationshipMutations:
             timestamp=timestamp,
             method=input.method,
             agent="GraphQL API",
-            version="1.0",
+            version="1.0"
         )
 
         # Create edge properties
         properties = EdgeProperties(
-            confidence=input.confidence, metadata=input.metadata
+            confidence=input.confidence,
+            metadata=input.metadata
         )
 
         # Create relationship in database
@@ -268,8 +263,8 @@ class RelationshipMutations:
                 "method": input.method,
                 "metadata": input.metadata,
                 "created_at": timestamp,
-                "updated_at": timestamp,
-            },
+                "updated_at": timestamp
+            }
         )
 
         return Relationship(
@@ -281,12 +276,15 @@ class RelationshipMutations:
             provenance=[provenance],
             created_at=timestamp,
             updated_at=timestamp,
-            is_bidirectional=False,
+            is_bidirectional=False
         )
 
     @strawberry.mutation
     def update_relationship_confidence(
-        self, relationship_id: str, new_confidence: float, reason: str
+        self,
+        relationship_id: str,
+        new_confidence: float,
+        reason: str
     ) -> Relationship:
         """Update confidence score with audit trail."""
         # Placeholder implementation
@@ -302,7 +300,7 @@ class RelationshipMutations:
             end_node_id="",
             provenance=[],
             created_at=timestamp,
-            updated_at=timestamp,
+            updated_at=timestamp
         )
 
     @strawberry.mutation
@@ -311,7 +309,7 @@ class RelationshipMutations:
         relationship_id: str,
         source: str,
         source_id: Optional[str] = None,
-        method: Optional[str] = None,
+        method: Optional[str] = None
     ) -> Provenance:
         """Add additional provenance to existing relationship."""
         from datetime import datetime
@@ -324,7 +322,7 @@ class RelationshipMutations:
             timestamp=timestamp,
             method=method,
             agent="GraphQL API",
-            version="1.0",
+            version="1.0"
         )
 
     @strawberry.mutation
@@ -333,7 +331,7 @@ class RelationshipMutations:
         relationship_id1: str,
         relationship_id2: str,
         resolution_strategy: str,
-        keep_relationship_id: Optional[str] = None,
+        keep_relationship_id: Optional[str] = None
     ) -> ConflictingRelationship:
         """Resolve conflicting relationships."""
         # Placeholder implementation
@@ -342,5 +340,5 @@ class RelationshipMutations:
             relationship2=None,  # Would fetch from DB
             conflict_type="resolved",
             resolution_strategy=resolution_strategy,
-            resolved_relationship=None,
+            resolved_relationship=None
         )

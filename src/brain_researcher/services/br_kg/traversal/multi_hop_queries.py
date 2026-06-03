@@ -8,17 +8,16 @@ This module provides sophisticated graph traversal capabilities for:
 - Context-aware traversal with semantic filtering
 """
 
-import heapq
 import json
 import logging
-import time
-from collections import defaultdict, deque
-from dataclasses import asdict, dataclass
-from enum import Enum
-from itertools import combinations
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
-
 import numpy as np
+import time
+from typing import Dict, List, Any, Optional, Tuple, Union, Set, Callable
+from dataclasses import dataclass, asdict
+from enum import Enum
+from collections import defaultdict, deque
+import heapq
+from itertools import combinations
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,6 @@ except Exception:  # pragma: no cover - defensive fallback
 
 class TraversalMode(str, Enum):
     """Graph traversal modes."""
-
     BREADTH_FIRST = "bfs"
     DEPTH_FIRST = "dfs"
     SHORTEST_PATH = "shortest"
@@ -41,7 +39,6 @@ class TraversalMode(str, Enum):
 
 class EdgeDirection(str, Enum):
     """Edge traversal directions."""
-
     OUTGOING = "outgoing"
     INCOMING = "incoming"
     BOTH = "both"
@@ -104,11 +101,11 @@ class PathPattern:
         Args:
             pattern_spec: Pattern specification dictionary
         """
-        self.node_patterns = pattern_spec.get("nodes", [])
-        self.edge_patterns = pattern_spec.get("edges", [])
-        self.min_length = pattern_spec.get("min_length", 1)
-        self.max_length = pattern_spec.get("max_length", 10)
-        self.pattern_type = pattern_spec.get("type", "linear")
+        self.node_patterns = pattern_spec.get('nodes', [])
+        self.edge_patterns = pattern_spec.get('edges', [])
+        self.min_length = pattern_spec.get('min_length', 1)
+        self.max_length = pattern_spec.get('max_length', 10)
+        self.pattern_type = pattern_spec.get('type', 'linear')
 
     def matches_path(self, path: TraversalPath) -> bool:
         """Check if path matches this pattern.
@@ -123,11 +120,11 @@ class PathPattern:
             return False
 
         # Simple linear pattern matching
-        if self.pattern_type == "linear":
+        if self.pattern_type == 'linear':
             return self._matches_linear_pattern(path)
-        elif self.pattern_type == "star":
+        elif self.pattern_type == 'star':
             return self._matches_star_pattern(path)
-        elif self.pattern_type == "cycle":
+        elif self.pattern_type == 'cycle':
             return self._matches_cycle_pattern(path)
 
         return True
@@ -162,8 +159,8 @@ class PathPattern:
         # Find potential hub (node with highest connectivity)
         node_degrees = defaultdict(int)
         for edge in path.edges:
-            node_degrees[edge.get("start_node")] += 1
-            node_degrees[edge.get("end_node")] += 1
+            node_degrees[edge.get('start_node')] += 1
+            node_degrees[edge.get('end_node')] += 1
 
         # Check if there's a clear hub
         max_degree = max(node_degrees.values())
@@ -171,20 +168,17 @@ class PathPattern:
 
     def _matches_cycle_pattern(self, path: TraversalPath) -> bool:
         """Check cycle pattern."""
-        return path.start_node_id == path.end_node_id and path.path_length >= 3
+        return (path.start_node_id == path.end_node_id and
+                path.path_length >= 3)
 
-    def _node_matches_pattern(
-        self, node: Dict[str, Any], pattern: Dict[str, Any]
-    ) -> bool:
+    def _node_matches_pattern(self, node: Dict[str, Any], pattern: Dict[str, Any]) -> bool:
         """Check if node matches pattern."""
         for key, value in pattern.items():
             if key not in node or node[key] != value:
                 return False
         return True
 
-    def _edge_matches_pattern(
-        self, edge: Dict[str, Any], pattern: Dict[str, Any]
-    ) -> bool:
+    def _edge_matches_pattern(self, edge: Dict[str, Any], pattern: Dict[str, Any]) -> bool:
         """Check if edge matches pattern."""
         for key, value in pattern.items():
             if key not in edge or edge[key] != value:
@@ -211,48 +205,40 @@ class MultiHopQueryEngine:
 
         # Performance tracking
         self.query_stats = {
-            "total_queries": 0,
-            "cache_hits": 0,
-            "avg_execution_time_ms": 0.0,
-            "paths_per_query": 0.0,
-            "traversal_mode_usage": defaultdict(int),
+            'total_queries': 0,
+            'cache_hits': 0,
+            'avg_execution_time_ms': 0.0,
+            'paths_per_query': 0.0,
+            'traversal_mode_usage': defaultdict(int)
         }
 
         # Precomputed patterns for common queries
         self.common_patterns = {
-            "concept_activation_region": PathPattern(
-                {
-                    "nodes": [{"type": "Concept"}, {"type": "Region"}],
-                    "edges": [{"type": "ACTIVATES"}],
-                    "type": "linear",
-                }
-            ),
-            "task_concept_region": PathPattern(
-                {
-                    "nodes": [
-                        {"type": "Task"},
-                        {"type": "Concept"},
-                        {"type": "Region"},
-                    ],
-                    "edges": [{"type": "MEASURES"}, {"type": "ACTIVATES"}],
-                    "type": "linear",
-                }
-            ),
-            "concept_network": PathPattern(
-                {"type": "star", "min_length": 3, "max_length": 8}
-            ),
+            'concept_activation_region': PathPattern({
+                'nodes': [{'type': 'Concept'}, {'type': 'Region'}],
+                'edges': [{'type': 'ACTIVATES'}],
+                'type': 'linear'
+            }),
+            'task_concept_region': PathPattern({
+                'nodes': [{'type': 'Task'}, {'type': 'Concept'}, {'type': 'Region'}],
+                'edges': [{'type': 'MEASURES'}, {'type': 'ACTIVATES'}],
+                'type': 'linear'
+            }),
+            'concept_network': PathPattern({
+                'type': 'star',
+                'min_length': 3,
+                'max_length': 8
+            })
         }
 
         logger.info("Initialized MultiHopQueryEngine")
 
-    def traverse_from_node(
-        self,
-        start_node_id: str,
-        constraints: Optional[TraversalConstraints] = None,
-        mode: TraversalMode = TraversalMode.BREADTH_FIRST,
-        target_node_id: Optional[str] = None,
-        pattern: Optional[PathPattern] = None,
-    ) -> TraversalResult:
+    def traverse_from_node(self,
+                          start_node_id: str,
+                          constraints: Optional[TraversalConstraints] = None,
+                          mode: TraversalMode = TraversalMode.BREADTH_FIRST,
+                          target_node_id: Optional[str] = None,
+                          pattern: Optional[PathPattern] = None) -> TraversalResult:
         """Perform multi-hop traversal from a starting node.
 
         Args:
@@ -266,8 +252,8 @@ class MultiHopQueryEngine:
             Traversal result with discovered paths
         """
         start_time = time.time()
-        self.query_stats["total_queries"] += 1
-        self.query_stats["traversal_mode_usage"][mode.value] += 1
+        self.query_stats['total_queries'] += 1
+        self.query_stats['traversal_mode_usage'][mode.value] += 1
 
         if constraints is None:
             constraints = TraversalConstraints()
@@ -280,38 +266,24 @@ class MultiHopQueryEngine:
         # Check cache
         cached_result = self._get_cached_result(cache_key)
         if cached_result:
-            self.query_stats["cache_hits"] += 1
+            self.query_stats['cache_hits'] += 1
             return cached_result
 
         # Perform traversal based on mode
         if mode == TraversalMode.BREADTH_FIRST:
-            paths = self._breadth_first_traversal(
-                start_node_id, constraints, target_node_id
-            )
+            paths = self._breadth_first_traversal(start_node_id, constraints, target_node_id)
         elif mode == TraversalMode.DEPTH_FIRST:
-            paths = self._depth_first_traversal(
-                start_node_id, constraints, target_node_id
-            )
+            paths = self._depth_first_traversal(start_node_id, constraints, target_node_id)
         elif mode == TraversalMode.SHORTEST_PATH:
-            paths = self._shortest_path_traversal(
-                start_node_id, constraints, target_node_id
-            )
+            paths = self._shortest_path_traversal(start_node_id, constraints, target_node_id)
         elif mode == TraversalMode.WEIGHTED_PATH:
-            paths = self._weighted_path_traversal(
-                start_node_id, constraints, target_node_id
-            )
+            paths = self._weighted_path_traversal(start_node_id, constraints, target_node_id)
         elif mode == TraversalMode.BIDIRECTIONAL:
-            paths = self._bidirectional_traversal(
-                start_node_id, constraints, target_node_id
-            )
+            paths = self._bidirectional_traversal(start_node_id, constraints, target_node_id)
         elif mode == TraversalMode.PATTERN_MATCH:
-            paths = self._pattern_matching_traversal(
-                start_node_id, constraints, pattern
-            )
+            paths = self._pattern_matching_traversal(start_node_id, constraints, pattern)
         else:
-            paths = self._breadth_first_traversal(
-                start_node_id, constraints, target_node_id
-            )
+            paths = self._breadth_first_traversal(start_node_id, constraints, target_node_id)
 
         # Filter paths by pattern if specified
         if pattern and mode != TraversalMode.PATTERN_MATCH:
@@ -332,7 +304,7 @@ class MultiHopQueryEngine:
             execution_time_ms=execution_time_ms,
             traversal_mode=mode,
             constraints=constraints,
-            statistics=statistics,
+            statistics=statistics
         )
 
         # Cache result
@@ -341,18 +313,14 @@ class MultiHopQueryEngine:
         # Update performance stats
         self._update_performance_stats(execution_time_ms, len(paths))
 
-        logger.info(
-            f"Multi-hop traversal completed: {len(paths)} paths in {execution_time_ms:.2f}ms"
-        )
+        logger.info(f"Multi-hop traversal completed: {len(paths)} paths in {execution_time_ms:.2f}ms")
 
         return result
 
-    def _breadth_first_traversal(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        target_node_id: Optional[str] = None,
-    ) -> List[TraversalPath]:
+    def _breadth_first_traversal(self,
+                                start_node_id: str,
+                                constraints: TraversalConstraints,
+                                target_node_id: Optional[str] = None) -> List[TraversalPath]:
         """Breadth-first traversal implementation."""
         query = """
         MATCH path = (start)-[*1..%d]-(end)
@@ -370,19 +338,15 @@ class MultiHopQueryEngine:
             constraints.max_depth,
             self._get_node_id_field(start_node_id),
             self._build_target_filter(target_node_id),
-            self._build_path_filters(constraints),
+            self._build_path_filters(constraints)
         )
 
-        return self._execute_traversal_query(
-            query, start_node_id, target_node_id, constraints
-        )
+        return self._execute_traversal_query(query, start_node_id, target_node_id, constraints)
 
-    def _depth_first_traversal(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        target_node_id: Optional[str] = None,
-    ) -> List[TraversalPath]:
+    def _depth_first_traversal(self,
+                              start_node_id: str,
+                              constraints: TraversalConstraints,
+                              target_node_id: Optional[str] = None) -> List[TraversalPath]:
         """Depth-first traversal implementation."""
         # DFS using APOC path expansion
         query = """
@@ -406,25 +370,19 @@ class MultiHopQueryEngine:
             self._get_node_id_field(start_node_id),
             self._build_relationship_filter(constraints),
             self._build_label_filter(constraints),
-            self._build_target_filter(target_node_id, "path"),
+            self._build_target_filter(target_node_id, "path")
         )
 
-        return self._execute_traversal_query(
-            query, start_node_id, target_node_id, constraints
-        )
+        return self._execute_traversal_query(query, start_node_id, target_node_id, constraints)
 
-    def _shortest_path_traversal(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        target_node_id: Optional[str] = None,
-    ) -> List[TraversalPath]:
+    def _shortest_path_traversal(self,
+                                start_node_id: str,
+                                constraints: TraversalConstraints,
+                                target_node_id: Optional[str] = None) -> List[TraversalPath]:
         """Shortest path traversal using Dijkstra-like algorithm."""
         if not target_node_id:
             # If no target, find shortest paths to all reachable nodes
-            return self._breadth_first_traversal(
-                start_node_id, constraints, target_node_id
-            )
+            return self._breadth_first_traversal(start_node_id, constraints, target_node_id)
 
         query = """
         MATCH (start), (end)
@@ -439,19 +397,15 @@ class MultiHopQueryEngine:
             self._get_node_id_field(start_node_id),
             self._get_node_id_field(target_node_id),
             constraints.max_depth,
-            self._build_path_filters(constraints),
+            self._build_path_filters(constraints)
         )
 
-        return self._execute_traversal_query(
-            query, start_node_id, target_node_id, constraints
-        )
+        return self._execute_traversal_query(query, start_node_id, target_node_id, constraints)
 
-    def _weighted_path_traversal(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        target_node_id: Optional[str] = None,
-    ) -> List[TraversalPath]:
+    def _weighted_path_traversal(self,
+                                start_node_id: str,
+                                constraints: TraversalConstraints,
+                                target_node_id: Optional[str] = None) -> List[TraversalPath]:
         """Weighted path traversal considering edge weights."""
         # Use APOC weighted path algorithms
         query = """
@@ -470,24 +424,18 @@ class MultiHopQueryEngine:
             self._get_node_id_field(start_node_id),
             constraints.max_depth,
             self._build_target_filter(target_node_id, "path"),
-            self._build_path_filters(constraints),
+            self._build_path_filters(constraints)
         )
 
-        return self._execute_traversal_query(
-            query, start_node_id, target_node_id, constraints
-        )
+        return self._execute_traversal_query(query, start_node_id, target_node_id, constraints)
 
-    def _bidirectional_traversal(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        target_node_id: Optional[str] = None,
-    ) -> List[TraversalPath]:
+    def _bidirectional_traversal(self,
+                                start_node_id: str,
+                                constraints: TraversalConstraints,
+                                target_node_id: Optional[str] = None) -> List[TraversalPath]:
         """Bidirectional traversal from both ends."""
         if not target_node_id:
-            return self._breadth_first_traversal(
-                start_node_id, constraints, target_node_id
-            )
+            return self._breadth_first_traversal(start_node_id, constraints, target_node_id)
 
         # Bidirectional search
         query = """
@@ -515,39 +463,33 @@ class MultiHopQueryEngine:
             self._get_node_id_field(start_node_id),
             self._get_node_id_field(target_node_id),
             constraints.max_depth // 2 + 1,
-            constraints.max_depth // 2 + 1,
+            constraints.max_depth // 2 + 1
         )
 
-        return self._execute_traversal_query(
-            query, start_node_id, target_node_id, constraints
-        )
+        return self._execute_traversal_query(query, start_node_id, target_node_id, constraints)
 
-    def _pattern_matching_traversal(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        pattern: Optional[PathPattern] = None,
-    ) -> List[TraversalPath]:
+    def _pattern_matching_traversal(self,
+                                   start_node_id: str,
+                                   constraints: TraversalConstraints,
+                                   pattern: Optional[PathPattern] = None) -> List[TraversalPath]:
         """Pattern-based traversal for specific graph motifs."""
         if not pattern:
             return self._breadth_first_traversal(start_node_id, constraints, None)
 
         # Build pattern-specific query
-        if pattern.pattern_type == "linear":
+        if pattern.pattern_type == 'linear':
             return self._linear_pattern_query(start_node_id, constraints, pattern)
-        elif pattern.pattern_type == "star":
+        elif pattern.pattern_type == 'star':
             return self._star_pattern_query(start_node_id, constraints, pattern)
-        elif pattern.pattern_type == "cycle":
+        elif pattern.pattern_type == 'cycle':
             return self._cycle_pattern_query(start_node_id, constraints, pattern)
 
         return []
 
-    def _linear_pattern_query(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        pattern: PathPattern,
-    ) -> List[TraversalPath]:
+    def _linear_pattern_query(self,
+                             start_node_id: str,
+                             constraints: TraversalConstraints,
+                             pattern: PathPattern) -> List[TraversalPath]:
         """Execute linear pattern matching query."""
         # Build pattern match based on node and edge patterns
         pattern_parts = []
@@ -556,15 +498,9 @@ class MultiHopQueryEngine:
             if i == 0:
                 pattern_parts.append(f"(n{i}:{node_pattern.get('type', '')})")
             else:
-                edge_pattern = (
-                    pattern.edge_patterns[i - 1]
-                    if i - 1 < len(pattern.edge_patterns)
-                    else {}
-                )
-                edge_type = edge_pattern.get("type", "")
-                pattern_parts.append(
-                    f"-[r{i-1}:{edge_type}]-(n{i}:{node_pattern.get('type', '')})"
-                )
+                edge_pattern = pattern.edge_patterns[i-1] if i-1 < len(pattern.edge_patterns) else {}
+                edge_type = edge_pattern.get('type', '')
+                pattern_parts.append(f"-[r{i-1}:{edge_type}]-(n{i}:{node_pattern.get('type', '')})")
 
         pattern_match = "".join(pattern_parts)
 
@@ -582,12 +518,10 @@ class MultiHopQueryEngine:
 
         return self._execute_traversal_query(query, start_node_id, None, constraints)
 
-    def _star_pattern_query(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        pattern: PathPattern,
-    ) -> List[TraversalPath]:
+    def _star_pattern_query(self,
+                           start_node_id: str,
+                           constraints: TraversalConstraints,
+                           pattern: PathPattern) -> List[TraversalPath]:
         """Execute star pattern matching query."""
         query = """
         MATCH (center)-[r*1..2]-(leaf)
@@ -605,18 +539,14 @@ class MultiHopQueryEngine:
                reduce(weight = 0, r in path_rels | weight + coalesce(r.weight, 1.0)) as total_weight
         ORDER BY total_weight DESC
         LIMIT $max_results
-        """ % self._get_node_id_field(
-            start_node_id
-        )
+        """ % self._get_node_id_field(start_node_id)
 
         return self._execute_traversal_query(query, start_node_id, None, constraints)
 
-    def _cycle_pattern_query(
-        self,
-        start_node_id: str,
-        constraints: TraversalConstraints,
-        pattern: PathPattern,
-    ) -> List[TraversalPath]:
+    def _cycle_pattern_query(self,
+                            start_node_id: str,
+                            constraints: TraversalConstraints,
+                            pattern: PathPattern) -> List[TraversalPath]:
         """Execute cycle pattern matching query."""
         query = """
         MATCH cycle_path = (start)-[*%d..%d]-(start)
@@ -629,32 +559,29 @@ class MultiHopQueryEngine:
         ORDER BY path_length ASC, total_weight DESC
         LIMIT $max_results
         """ % (
-            pattern.min_length,
-            pattern.max_length,
+            pattern.min_length, pattern.max_length,
             self._get_node_id_field(start_node_id),
-            pattern.min_length,
+            pattern.min_length
         )
 
         return self._execute_traversal_query(query, start_node_id, None, constraints)
 
-    def _execute_traversal_query(
-        self,
-        query: str,
-        start_node_id: str,
-        target_node_id: Optional[str],
-        constraints: TraversalConstraints,
-    ) -> List[TraversalPath]:
+    def _execute_traversal_query(self,
+                                query: str,
+                                start_node_id: str,
+                                target_node_id: Optional[str],
+                                constraints: TraversalConstraints) -> List[TraversalPath]:
         """Execute traversal query and convert results."""
         try:
             with self.neo4j_db.session() as session:
                 params = {
-                    "start_id": start_node_id,
-                    "max_depth": constraints.max_depth,
-                    "max_results": constraints.max_results,
+                    'start_id': start_node_id,
+                    'max_depth': constraints.max_depth,
+                    'max_results': constraints.max_results
                 }
 
                 if target_node_id:
-                    params["target_id"] = target_node_id
+                    params['target_id'] = target_node_id
 
                 query_payload: Any = query
                 timeout_ms = constraints.query_timeout_ms
@@ -672,18 +599,16 @@ class MultiHopQueryEngine:
                 paths = []
 
                 for record in result:
-                    path_nodes = [dict(node) for node in record["path_nodes"]]
-                    path_rels = [dict(rel) for rel in record["path_rels"]]
+                    path_nodes = [dict(node) for node in record['path_nodes']]
+                    path_rels = [dict(rel) for rel in record['path_rels']]
 
                     path = TraversalPath(
                         nodes=path_nodes,
                         edges=path_rels,
-                        total_weight=record["total_weight"],
-                        path_length=record["path_length"],
+                        total_weight=record['total_weight'],
+                        path_length=record['path_length'],
                         start_node_id=start_node_id,
-                        end_node_id=path_nodes[-1].get(
-                            "concept_id", path_nodes[-1].get("id", "")
-                        ),
+                        end_node_id=path_nodes[-1].get('concept_id', path_nodes[-1].get('id', ''))
                     )
 
                     # Calculate semantic coherence if possible
@@ -704,17 +629,17 @@ class MultiHopQueryEngine:
 
         # Penalize type switches
         for i in range(1, len(path.nodes)):
-            prev_node = path.nodes[i - 1]
+            prev_node = path.nodes[i-1]
             curr_node = path.nodes[i]
 
-            prev_labels = prev_node.get("labels", [])
-            curr_labels = curr_node.get("labels", [])
+            prev_labels = prev_node.get('labels', [])
+            curr_labels = curr_node.get('labels', [])
 
             if not any(label in curr_labels for label in prev_labels):
                 coherence_score *= 0.9  # Penalty for type change
 
         # Boost score for consistent edge types
-        edge_types = [edge.get("type", "") for edge in path.edges]
+        edge_types = [edge.get('type', '') for edge in path.edges]
         unique_edge_types = set(edge_types)
 
         if len(unique_edge_types) == 1:
@@ -724,12 +649,10 @@ class MultiHopQueryEngine:
 
         return min(coherence_score, 1.0)
 
-    def find_connection_paths(
-        self,
-        source_ids: List[str],
-        target_ids: List[str],
-        constraints: Optional[TraversalConstraints] = None,
-    ) -> Dict[str, List[TraversalPath]]:
+    def find_connection_paths(self,
+                             source_ids: List[str],
+                             target_ids: List[str],
+                             constraints: Optional[TraversalConstraints] = None) -> Dict[str, List[TraversalPath]]:
         """Find connection paths between sets of nodes.
 
         Args:
@@ -757,19 +680,17 @@ class MultiHopQueryEngine:
                     start_node_id=source_id,
                     constraints=constraints,
                     mode=TraversalMode.SHORTEST_PATH,
-                    target_node_id=target_id,
+                    target_node_id=target_id
                 )
 
                 connection_paths[source_id][target_id] = result.paths
 
         return connection_paths
 
-    def discover_subgraphs(
-        self,
-        seed_nodes: List[str],
-        constraints: Optional[TraversalConstraints] = None,
-        min_subgraph_size: int = 5,
-    ) -> List[Dict[str, Any]]:
+    def discover_subgraphs(self,
+                          seed_nodes: List[str],
+                          constraints: Optional[TraversalConstraints] = None,
+                          min_subgraph_size: int = 5) -> List[Dict[str, Any]]:
         """Discover connected subgraphs around seed nodes.
 
         Args:
@@ -790,7 +711,7 @@ class MultiHopQueryEngine:
             result = self.traverse_from_node(
                 start_node_id=seed_node,
                 constraints=constraints,
-                mode=TraversalMode.BREADTH_FIRST,
+                mode=TraversalMode.BREADTH_FIRST
             )
 
             # Extract unique nodes and edges
@@ -799,7 +720,7 @@ class MultiHopQueryEngine:
 
             for path in result.paths:
                 for node in path.nodes:
-                    node_id = node.get("concept_id", node.get("id", ""))
+                    node_id = node.get('concept_id', node.get('id', ''))
                     all_nodes[node_id] = node
 
                 all_edges.extend(path.edges)
@@ -807,35 +728,32 @@ class MultiHopQueryEngine:
             # Filter subgraphs by size
             if len(all_nodes) >= min_subgraph_size:
                 subgraph = {
-                    "seed_node": seed_node,
-                    "nodes": list(all_nodes.values()),
-                    "edges": all_edges,
-                    "size": len(all_nodes),
-                    "density": len(all_edges)
-                    / max(1, len(all_nodes) * (len(all_nodes) - 1) / 2),
+                    'seed_node': seed_node,
+                    'nodes': list(all_nodes.values()),
+                    'edges': all_edges,
+                    'size': len(all_nodes),
+                    'density': len(all_edges) / max(1, len(all_nodes) * (len(all_nodes) - 1) / 2)
                 }
                 subgraphs.append(subgraph)
 
         # Sort by size and density
-        subgraphs.sort(key=lambda x: (x["size"], x["density"]), reverse=True)
+        subgraphs.sort(key=lambda x: (x['size'], x['density']), reverse=True)
 
         return subgraphs
 
     def _get_node_id_field(self, node_id: str) -> str:
         """Get the appropriate node ID field name."""
         # Simple heuristic based on ID format
-        if node_id.startswith("C"):
-            return "concept_id"
-        elif node_id.startswith("T"):
-            return "task_id"
-        elif node_id.startswith("R"):
-            return "region_id"
+        if node_id.startswith('C'):
+            return 'concept_id'
+        elif node_id.startswith('T'):
+            return 'task_id'
+        elif node_id.startswith('R'):
+            return 'region_id'
         else:
-            return "id"
+            return 'id'
 
-    def _build_target_filter(
-        self, target_node_id: Optional[str], path_var: str = "end"
-    ) -> str:
+    def _build_target_filter(self, target_node_id: Optional[str], path_var: str = "end") -> str:
         """Build target node filter for query."""
         if not target_node_id:
             return ""
@@ -851,9 +769,7 @@ class MultiHopQueryEngine:
         filters = []
 
         if constraints.min_edge_weight is not None:
-            filters.append(
-                f"ALL(r IN path_rels WHERE coalesce(r.weight, 1.0) >= {constraints.min_edge_weight})"
-            )
+            filters.append(f"ALL(r IN path_rels WHERE coalesce(r.weight, 1.0) >= {constraints.min_edge_weight})")
 
         if constraints.allowed_edge_types:
             edge_types = "', '".join(constraints.allowed_edge_types)
@@ -884,7 +800,6 @@ class MultiHopQueryEngine:
     def _generate_cache_key(self, *args) -> str:
         """Generate cache key for query."""
         import hashlib
-
         key_data = json.dumps([str(arg) for arg in args], sort_keys=True)
         return hashlib.md5(key_data.encode()).hexdigest()
 
@@ -902,9 +817,7 @@ class MultiHopQueryEngine:
         """Cache traversal result."""
         self.query_cache[cache_key] = (result, time.time())
 
-    def _generate_traversal_statistics(
-        self, paths: List[TraversalPath], execution_time_ms: float
-    ) -> Dict[str, Any]:
+    def _generate_traversal_statistics(self, paths: List[TraversalPath], execution_time_ms: float) -> Dict[str, Any]:
         """Generate statistics for traversal result."""
         if not paths:
             return {}
@@ -913,51 +826,44 @@ class MultiHopQueryEngine:
         total_weights = [path.total_weight for path in paths]
 
         return {
-            "min_path_length": min(path_lengths),
-            "max_path_length": max(path_lengths),
-            "avg_path_length": sum(path_lengths) / len(path_lengths),
-            "min_path_weight": min(total_weights),
-            "max_path_weight": max(total_weights),
-            "avg_path_weight": sum(total_weights) / len(total_weights),
-            "unique_nodes": len(
-                set(
-                    node.get("concept_id", node.get("id", ""))
-                    for path in paths
-                    for node in path.nodes
-                )
-            ),
-            "unique_edges": len(
-                set(
-                    edge.get("id", f"{edge.get('start')}-{edge.get('end')}")
-                    for path in paths
-                    for edge in path.edges
-                )
-            ),
+            'min_path_length': min(path_lengths),
+            'max_path_length': max(path_lengths),
+            'avg_path_length': sum(path_lengths) / len(path_lengths),
+            'min_path_weight': min(total_weights),
+            'max_path_weight': max(total_weights),
+            'avg_path_weight': sum(total_weights) / len(total_weights),
+            'unique_nodes': len(set(
+                node.get('concept_id', node.get('id', ''))
+                for path in paths for node in path.nodes
+            )),
+            'unique_edges': len(set(
+                edge.get('id', f"{edge.get('start')}-{edge.get('end')}")
+                for path in paths for edge in path.edges
+            ))
         }
 
     def _update_performance_stats(self, execution_time_ms: float, path_count: int):
         """Update performance statistics."""
-        total_queries = self.query_stats["total_queries"]
+        total_queries = self.query_stats['total_queries']
 
         # Update rolling averages
-        current_avg_time = self.query_stats["avg_execution_time_ms"]
-        self.query_stats["avg_execution_time_ms"] = (
-            current_avg_time * (total_queries - 1) + execution_time_ms
-        ) / total_queries
+        current_avg_time = self.query_stats['avg_execution_time_ms']
+        self.query_stats['avg_execution_time_ms'] = (
+            (current_avg_time * (total_queries - 1) + execution_time_ms) / total_queries
+        )
 
-        current_avg_paths = self.query_stats["paths_per_query"]
-        self.query_stats["paths_per_query"] = (
-            current_avg_paths * (total_queries - 1) + path_count
-        ) / total_queries
+        current_avg_paths = self.query_stats['paths_per_query']
+        self.query_stats['paths_per_query'] = (
+            (current_avg_paths * (total_queries - 1) + path_count) / total_queries
+        )
 
     def get_query_statistics(self) -> Dict[str, Any]:
         """Get comprehensive query statistics."""
         return {
             **self.query_stats,
-            "cache_size": len(self.query_cache),
-            "cache_hit_rate": (
-                self.query_stats["cache_hits"]
-                / max(1, self.query_stats["total_queries"])
+            'cache_size': len(self.query_cache),
+            'cache_hit_rate': (
+                self.query_stats['cache_hits'] / max(1, self.query_stats['total_queries'])
             ),
-            "common_patterns_available": list(self.common_patterns.keys()),
+            'common_patterns_available': list(self.common_patterns.keys())
         }

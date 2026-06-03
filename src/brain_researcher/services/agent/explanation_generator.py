@@ -9,28 +9,21 @@ This module generates context-aware explanations at different technical levels:
 - Adaptive explanations based on user expertise and context
 """
 
-import logging
-import re
-from abc import ABC, abstractmethod
+from typing import Dict, List, Optional, Any, Union, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+import logging
 import numpy as np
+import re
+from abc import ABC, abstractmethod
 
-from .language_templates import (
-    ExplanationLevel,
-    Language,
-    LanguageTemplates,
-    TemplateCategory,
-)
+from .language_templates import LanguageTemplates, Language, ExplanationLevel, TemplateCategory
 
 logger = logging.getLogger(__name__)
 
 
 class ExpertiseLevel(Enum):
     """User expertise levels for adaptive explanations"""
-
     BEGINNER = "beginner"
     NOVICE = "novice"
     INTERMEDIATE = "intermediate"
@@ -40,7 +33,6 @@ class ExpertiseLevel(Enum):
 
 class ConfidenceLevel(Enum):
     """Confidence levels for results"""
-
     VERY_LOW = "very_low"
     LOW = "low"
     MODERATE = "moderate"
@@ -51,7 +43,6 @@ class ConfidenceLevel(Enum):
 @dataclass
 class ExplanationContext:
     """Context for generating explanations"""
-
     expertise_level: ExpertiseLevel = ExpertiseLevel.INTERMEDIATE
     user_expertise: Optional[ExpertiseLevel] = None
     language: Language = Language.ENGLISH
@@ -87,7 +78,6 @@ class ExplanationContext:
 @dataclass
 class StructuredExplanation:
     """Structured explanation with multiple sections"""
-
     summary: str
     methodology: str
     findings: str
@@ -102,7 +92,6 @@ class StructuredExplanation:
 @dataclass
 class ExplanationResult:
     """Result of explanation generation"""
-
     text: str
     confidence_score: float
     explanation_level: ExplanationLevel
@@ -126,13 +115,9 @@ class MethodologyExplainer:
         software = preprocessing_info.get("software", "the preprocessing pipeline")
         steps = preprocessing_info.get("steps") or []
         params = preprocessing_info.get("parameters") or {}
-        steps_text = (
-            ", ".join(steps) if steps else "standard normalization and cleaning"
-        )
+        steps_text = ", ".join(steps) if steps else "standard normalization and cleaning"
         details = f"Key parameters included smoothing {params.get('smoothing_fwhm', 'N/A')}mm and high-pass {params.get('high_pass_filter', 'N/A')}s."
-        return (
-            f"Preprocessing used {software} with steps such as {steps_text}. {details}"
-        )
+        return f"Preprocessing used {software} with steps such as {steps_text}. {details}"
 
     def explain_statistical_model(
         self, model_info: Dict[str, Any], expertise_level: ExpertiseLevel
@@ -151,9 +136,7 @@ class MethodologyExplainer:
 class StatisticalInterpreter:
     """Interpret statistical results for different expertise levels."""
 
-    def interpret_p_values(
-        self, p_value: float, expertise_level: ExpertiseLevel
-    ) -> str:
+    def interpret_p_values(self, p_value: float, expertise_level: ExpertiseLevel) -> str:
         if p_value < 0.001:
             return "The effect is highly significant with strong evidence (p < 0.001)."
         if p_value < 0.01:
@@ -207,7 +190,7 @@ class ExplanationGenerator:
             ConfidenceLevel.LOW: 0.4,
             ConfidenceLevel.MODERATE: 0.6,
             ConfidenceLevel.HIGH: 0.8,
-            ConfidenceLevel.VERY_HIGH: 0.9,
+            ConfidenceLevel.VERY_HIGH: 0.9
         }
 
         self.methodology_explainer = MethodologyExplainer()
@@ -219,9 +202,8 @@ class ExplanationGenerator:
         self.statistical_concepts = self._load_statistical_knowledge()
         self.methodological_notes = self._load_methodological_knowledge()
 
-    def generate_explanation(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> ExplanationResult:
+    def generate_explanation(self, analysis_result: Dict[str, Any],
+                           context: ExplanationContext) -> ExplanationResult:
         """Generate adaptive explanation based on context"""
 
         expertise = context.user_expertise or context.expertise_level
@@ -247,16 +229,11 @@ class ExplanationGenerator:
             text = self.generate_summary_explanation(analysis_result, context)
 
         # Append methodology/statistics/clinical implications when requested
-        text = self._augment_explanation_text(
-            text, analysis_result, context, confidence_score
-        )
+        text = self._augment_explanation_text(text, analysis_result, context, confidence_score)
 
         # Generate structured version if requested
         structured = None
-        if (
-            context.preferred_level == ExplanationLevel.STRUCTURED
-            or context.structured_format
-        ):
+        if context.preferred_level == ExplanationLevel.STRUCTURED or context.structured_format:
             structured = self.generate_structured_explanation(analysis_result, context)
 
         # Add citations
@@ -274,28 +251,21 @@ class ExplanationGenerator:
             metadata={
                 "analysis_type": analysis_result.get("analysis_type"),
                 "user_expertise": expertise.value,
-                "key_findings_count": len(key_info.get("significant_findings", [])),
+                "key_findings_count": len(key_info.get("significant_findings", []))
             },
             complexity_score=complexity_score,
         )
 
-    def generate_technical_explanation(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def generate_technical_explanation(self, analysis_result: Dict[str, Any],
+                                     context: ExplanationContext) -> str:
         """Generate technical explanation with statistical details"""
         analysis_type = str(analysis_result.get("analysis_type", "")).lower()
-        method = (
-            analysis_result.get("method")
-            or analysis_result.get("analysis_type")
-            or "GLM"
-        )
+        method = analysis_result.get("method") or analysis_result.get("analysis_type") or "GLM"
 
         if "connectivity" in analysis_type or "connectivity" in str(method).lower():
             seed = analysis_result.get("seed_region", "a seed region")
             connections = analysis_result.get("significant_connections", [])
-            network = (
-                connections[0].get("network") if connections else "default mode network"
-            )
+            network = (connections[0].get("network") if connections else "default mode network")
             network_props = analysis_result.get("network_properties", {})
             modularity = network_props.get("modularity", "N/A")
             clustering = network_props.get("clustering_coefficient", "N/A")
@@ -326,9 +296,8 @@ class ExplanationGenerator:
             "Peak coordinates and cluster statistics were evaluated for significance."
         )
 
-    def generate_layman_explanation(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def generate_layman_explanation(self, analysis_result: Dict[str, Any],
+                                   context: ExplanationContext) -> str:
         """Generate layman explanation with simplified terminology"""
         n_subjects = analysis_result.get("n_subjects", "several")
         clusters = analysis_result.get("significant_clusters", [])
@@ -342,52 +311,26 @@ class ExplanationGenerator:
             f"that area during the task."
         )
 
-        confidence_text = (
-            "The result looks reliable but should be interpreted with care."
-        )
+        confidence_text = "The result looks reliable but should be interpreted with care."
 
         if context.use_analogies:
             confidence_text += " Think of it like a spotlight highlighting the busiest lanes on a highway."
 
-        implications_text = (
-            "These findings help explain how brain activity relates to behavior."
-        )
+        implications_text = "These findings help explain how brain activity relates to behavior."
 
         return f"{base_text} {confidence_text} {implications_text}"
 
-    def generate_structured_explanation(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> Dict[str, str]:
+    def generate_structured_explanation(self, analysis_result: Dict[str, Any],
+                                      context: ExplanationContext) -> Dict[str, str]:
         """Generate structured explanation with organized sections"""
 
-        summary = (
-            self._create_summary_section(analysis_result, context)
-            or "Summary not available."
-        )
-        methodology = (
-            self._create_methodology_section(analysis_result, context)
-            or "Methodology details were not requested."
-        )
-        findings = (
-            self._create_findings_section(analysis_result, context)
-            or "No major findings were detected."
-        )
-        implications = (
-            self._create_implications_section(analysis_result, context)
-            or "Implications remain exploratory."
-        )
-        confidence = (
-            self._create_confidence_section(analysis_result, context)
-            or "Confidence is moderate."
-        )
-        limitations = (
-            self._create_limitations_section(analysis_result, context)
-            or "Limitations include sample size and potential artifacts."
-        )
-        next_steps = (
-            self._create_next_steps_section(analysis_result, context)
-            or "Next steps include replication and additional validation."
-        )
+        summary = self._create_summary_section(analysis_result, context) or "Summary not available."
+        methodology = self._create_methodology_section(analysis_result, context) or "Methodology details were not requested."
+        findings = self._create_findings_section(analysis_result, context) or "No major findings were detected."
+        implications = self._create_implications_section(analysis_result, context) or "Implications remain exploratory."
+        confidence = self._create_confidence_section(analysis_result, context) or "Confidence is moderate."
+        limitations = self._create_limitations_section(analysis_result, context) or "Limitations include sample size and potential artifacts."
+        next_steps = self._create_next_steps_section(analysis_result, context) or "Next steps include replication and additional validation."
 
         structured: Dict[str, str] = {
             "summary": summary,
@@ -410,9 +353,8 @@ class ExplanationGenerator:
 
         return structured
 
-    def generate_summary_explanation(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def generate_summary_explanation(self, analysis_result: Dict[str, Any],
+                                   context: ExplanationContext) -> str:
         """Generate brief summary explanation"""
 
         key_finding = self._extract_key_finding(analysis_result)
@@ -427,27 +369,19 @@ class ExplanationGenerator:
 
         return f"{key_finding} {confidence_text}."
 
-    def generate_error_explanation(
-        self, error_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def generate_error_explanation(self, error_result: Dict[str, Any], context: ExplanationContext) -> str:
         """Generate explanation for analysis errors with suggested fixes."""
         error_type = error_result.get("error_type", "Error")
         error_message = error_result.get("error_message", "An error occurred.")
         suggestions = error_result.get("suggested_solutions") or []
 
-        suggestion_text = (
-            "; ".join(suggestions)
-            if suggestions
-            else "Please retry with adjusted parameters."
-        )
+        suggestion_text = "; ".join(suggestions) if suggestions else "Please retry with adjusted parameters."
         return (
             f"The analysis failed due to {error_type}: {error_message}. "
             f"Suggested fixes include: {suggestion_text}."
         )
 
-    def _determine_explanation_level(
-        self, context: ExplanationContext
-    ) -> ExplanationLevel:
+    def _determine_explanation_level(self, context: ExplanationContext) -> ExplanationLevel:
         """Determine optimal explanation level based on context"""
 
         if context.structured_format:
@@ -458,10 +392,7 @@ class ExplanationGenerator:
         # Start with user preference
         if context.preferred_level:
             base_level = context.preferred_level
-            if (
-                expertise in {ExpertiseLevel.BEGINNER, ExpertiseLevel.NOVICE}
-                and base_level == ExplanationLevel.TECHNICAL
-            ):
+            if expertise in {ExpertiseLevel.BEGINNER, ExpertiseLevel.NOVICE} and base_level == ExplanationLevel.TECHNICAL:
                 base_level = ExplanationLevel.LAYMAN
         else:
             # Map expertise to explanation level
@@ -470,7 +401,7 @@ class ExplanationGenerator:
                 ExpertiseLevel.NOVICE: ExplanationLevel.LAYMAN,
                 ExpertiseLevel.INTERMEDIATE: ExplanationLevel.STRUCTURED,
                 ExpertiseLevel.EXPERT: ExplanationLevel.TECHNICAL,
-                ExpertiseLevel.RESEARCHER: ExplanationLevel.TECHNICAL,
+                ExpertiseLevel.RESEARCHER: ExplanationLevel.TECHNICAL
             }
             base_level = expertise_mapping.get(expertise, ExplanationLevel.STRUCTURED)
 
@@ -481,43 +412,27 @@ class ExplanationGenerator:
             return ExplanationLevel.STRUCTURED
 
         # Adjust for audience type
-        if (
-            context.audience_type == "clinical"
-            and base_level == ExplanationLevel.TECHNICAL
-        ):
+        if context.audience_type == "clinical" and base_level == ExplanationLevel.TECHNICAL:
             return ExplanationLevel.STRUCTURED
-        elif (
-            context.audience_type == "educational"
-            and base_level == ExplanationLevel.TECHNICAL
-        ):
+        elif context.audience_type == "educational" and base_level == ExplanationLevel.TECHNICAL:
             return ExplanationLevel.LAYMAN
 
         return base_level
 
-    def _extract_key_information(
-        self, analysis_result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _extract_key_information(self, analysis_result: Dict[str, Any]) -> Dict[str, Any]:
         """Extract key information from analysis results"""
 
         key_info = {
             "analysis_type": analysis_result.get("analysis_type", "Unknown"),
             "significant_findings": analysis_result.get("significant_regions", []),
-            "primary_statistic": analysis_result.get("statistics", {}).get(
-                "primary_statistic"
-            ),
-            "effect_magnitude": analysis_result.get("statistics", {}).get(
-                "effect_size"
-            ),
-            "confidence_level": analysis_result.get("statistics", {}).get(
-                "confidence_level", 0.95
-            ),
+            "primary_statistic": analysis_result.get("statistics", {}).get("primary_statistic"),
+            "effect_magnitude": analysis_result.get("statistics", {}).get("effect_size"),
+            "confidence_level": analysis_result.get("statistics", {}).get("confidence_level", 0.95)
         }
 
         return key_info
 
-    def _extract_primary_p_value(
-        self, analysis_result: Dict[str, Any]
-    ) -> Optional[float]:
+    def _extract_primary_p_value(self, analysis_result: Dict[str, Any]) -> Optional[float]:
         stats = analysis_result.get("statistics", {})
         if isinstance(stats, dict) and isinstance(stats.get("p_value"), (int, float)):
             return float(stats.get("p_value"))
@@ -560,7 +475,9 @@ class ExplanationGenerator:
             p_value = self._extract_primary_p_value(analysis_result)
             if p_value is not None:
                 parts.append(
-                    self.statistical_interpreter.interpret_p_values(p_value, expertise)
+                    self.statistical_interpreter.interpret_p_values(
+                        p_value, expertise
+                    )
                 )
             correction = None
             clusters = analysis_result.get("significant_clusters", [])
@@ -613,10 +530,7 @@ class ExplanationGenerator:
                     "From a clinical perspective, the pattern may inform patient diagnosis and treatment planning."
                 )
 
-        if (
-            expertise in {ExpertiseLevel.EXPERT, ExpertiseLevel.RESEARCHER}
-            or context.include_advanced_statistics
-        ):
+        if expertise in {ExpertiseLevel.EXPERT, ExpertiseLevel.RESEARCHER} or context.include_advanced_statistics:
             parts.append(
                 "Advanced statistical considerations include model assumptions, autocorrelation handling, and multiple-comparison control."
             )
@@ -625,13 +539,9 @@ class ExplanationGenerator:
         if confidence_score >= 0.7:
             parts.append("Overall, the evidence is strong, robust, and reliable.")
         elif confidence_score <= 0.4:
-            parts.append(
-                "These findings are preliminary, limited, and should be interpreted cautiously given the small sample."
-            )
+            parts.append("These findings are preliminary, limited, and should be interpreted cautiously given the small sample.")
         else:
-            parts.append(
-                "Confidence is moderate; interpretations should remain cautious."
-            )
+            parts.append("Confidence is moderate; interpretations should remain cautious.")
 
         return " ".join([p for p in parts if p])
 
@@ -745,7 +655,7 @@ class ExplanationGenerator:
             "amygdala": "emotional processing",
             "auditory cortex": "processing sounds",
             "somatosensory cortex": "processing touch sensations",
-            "cerebellum": "coordinating movement and balance",
+            "cerebellum": "coordinating movement and balance"
         }
 
         for region, function in function_mapping.items():
@@ -769,9 +679,8 @@ class ExplanationGenerator:
         else:
             return f"this suggests important activity in brain areas related to {region_function}"
 
-    def _create_summary_section(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _create_summary_section(self, analysis_result: Dict[str, Any],
+                               context: ExplanationContext) -> str:
         """Create summary section for structured explanation"""
 
         method = analysis_result.get("method", "Brain analysis")
@@ -780,9 +689,8 @@ class ExplanationGenerator:
 
         return f"{method} of {n_subjects} subjects revealed {key_finding}."
 
-    def _create_methodology_section(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _create_methodology_section(self, analysis_result: Dict[str, Any],
+                                   context: ExplanationContext) -> str:
         """Create methodology section"""
 
         method_details = analysis_result.get("methodology", {})
@@ -806,9 +714,8 @@ class ExplanationGenerator:
         else:
             return "Standard neuroimaging analysis pipeline was applied."
 
-    def _create_findings_section(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _create_findings_section(self, analysis_result: Dict[str, Any],
+                                context: ExplanationContext) -> str:
         """Create findings section"""
 
         regions = analysis_result.get("significant_regions", [])
@@ -832,33 +739,25 @@ class ExplanationGenerator:
 
         return ". ".join(findings) + "."
 
-    def _create_implications_section(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _create_implications_section(self, analysis_result: Dict[str, Any],
+                                    context: ExplanationContext) -> str:
         """Create implications section"""
 
         # This would be enhanced with domain knowledge
         analysis_type = analysis_result.get("analysis_type", "")
 
         if "task" in analysis_type.lower():
-            return (
-                "These findings suggest neural mechanisms underlying the cognitive task. "
-                "The activated regions are consistent with known functional networks."
-            )
+            return ("These findings suggest neural mechanisms underlying the cognitive task. "
+                   "The activated regions are consistent with known functional networks.")
         elif "clinical" in analysis_type.lower():
-            return (
-                "These results may have clinical implications and warrant further investigation. "
-                "Comparison with normative data is recommended."
-            )
+            return ("These results may have clinical implications and warrant further investigation. "
+                   "Comparison with normative data is recommended.")
         else:
-            return (
-                "These findings contribute to our understanding of brain function and "
-                "may inform future research directions."
-            )
+            return ("These findings contribute to our understanding of brain function and "
+                   "may inform future research directions.")
 
-    def _create_confidence_section(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _create_confidence_section(self, analysis_result: Dict[str, Any],
+                                  context: ExplanationContext) -> str:
         """Create confidence section"""
 
         confidence = self._calculate_confidence(analysis_result)
@@ -895,9 +794,8 @@ class ExplanationGenerator:
         else:
             return f"{base_text}."
 
-    def _create_limitations_section(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _create_limitations_section(self, analysis_result: Dict[str, Any],
+                                   context: ExplanationContext) -> str:
         """Create limitations section"""
 
         limitations = []
@@ -921,9 +819,8 @@ class ExplanationGenerator:
         else:
             return "Standard limitations of neuroimaging research apply."
 
-    def _create_next_steps_section(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _create_next_steps_section(self, analysis_result: Dict[str, Any],
+                                  context: ExplanationContext) -> str:
         """Create next steps section"""
 
         steps = []
@@ -949,9 +846,8 @@ class ExplanationGenerator:
 
         return "Recommended next steps: " + "; ".join(steps) + "."
 
-    def _create_technical_details_section(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _create_technical_details_section(self, analysis_result: Dict[str, Any],
+                                         context: ExplanationContext) -> str:
         """Create detailed technical section for expert users"""
 
         details = []
@@ -978,78 +874,55 @@ class ExplanationGenerator:
             for key, value in qc.items():
                 details.append(f"  {key}: {value}")
 
-        return (
-            "\n".join(details)
-            if details
-            else "No additional technical details available."
-        )
+        return "\n".join(details) if details else "No additional technical details available."
 
-    def _add_methodological_details(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _add_methodological_details(self, analysis_result: Dict[str, Any],
+                                   context: ExplanationContext) -> str:
         """Add methodological context to technical explanations"""
 
         method = analysis_result.get("method", "")
 
         if "GLM" in method:
-            return (
-                "The General Linear Model (GLM) approach models the BOLD signal as a "
-                "linear combination of experimental predictors convolved with the "
-                "hemodynamic response function."
-            )
+            return ("The General Linear Model (GLM) approach models the BOLD signal as a "
+                   "linear combination of experimental predictors convolved with the "
+                   "hemodynamic response function.")
         elif "connectivity" in method.lower():
-            return (
-                "Connectivity analysis examines statistical dependencies between "
-                "spatially remote brain regions to understand functional networks."
-            )
+            return ("Connectivity analysis examines statistical dependencies between "
+                   "spatially remote brain regions to understand functional networks.")
         else:
             return "Standard neuroimaging analysis methodology was applied."
 
-    def _explain_confidence_simply(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _explain_confidence_simply(self, analysis_result: Dict[str, Any],
+                                  context: ExplanationContext) -> str:
         """Explain confidence in simple terms"""
 
         confidence = self._calculate_confidence(analysis_result)
 
         if confidence > 0.8:
-            return (
-                "We are quite confident in these results - they meet strict scientific "
-                "standards and are unlikely to be due to chance."
-            )
+            return ("We are quite confident in these results - they meet strict scientific "
+                   "standards and are unlikely to be due to chance.")
         elif confidence > 0.6:
-            return (
-                "We have reasonable confidence in these results, though some uncertainty "
-                "remains that could be reduced with additional data."
-            )
+            return ("We have reasonable confidence in these results, though some uncertainty "
+                   "remains that could be reduced with additional data.")
         else:
-            return (
-                "These results are preliminary and should be interpreted with caution. "
-                "More data would help confirm these findings."
-            )
+            return ("These results are preliminary and should be interpreted with caution. "
+                   "More data would help confirm these findings.")
 
-    def _explain_practical_implications(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> str:
+    def _explain_practical_implications(self, analysis_result: Dict[str, Any],
+                                       context: ExplanationContext) -> str:
         """Explain practical implications for layman audience"""
 
         analysis_type = analysis_result.get("analysis_type", "")
 
         if "clinical" in analysis_type.lower():
-            return (
-                "These findings may help us better understand brain differences and "
-                "could potentially inform treatment approaches in the future."
-            )
+            return ("These findings may help us better understand brain differences and "
+                   "could potentially inform treatment approaches in the future.")
         elif "cognitive" in analysis_type.lower():
-            return (
-                "This research helps us understand how the brain supports thinking "
-                "and could inform educational or training approaches."
-            )
+            return ("This research helps us understand how the brain supports thinking "
+                   "and could inform educational or training approaches.")
         else:
-            return (
-                "This research contributes to our scientific understanding of how "
-                "the brain works and may have future applications."
-            )
+            return ("This research contributes to our scientific understanding of how "
+                   "the brain works and may have future applications.")
 
     def _extract_key_finding(self, analysis_result: Dict[str, Any]) -> str:
         """Extract the most important finding from results"""
@@ -1064,9 +937,7 @@ class ExplanationGenerator:
         else:
             return f"significant activity in {len(regions)} brain regions"
 
-    def _format_structured_as_text(
-        self, structured: Dict[str, str] | StructuredExplanation
-    ) -> str:
+    def _format_structured_as_text(self, structured: Dict[str, str] | StructuredExplanation) -> str:
         """Format structured explanation as readable text"""
 
         if isinstance(structured, dict):
@@ -1092,7 +963,7 @@ class ExplanationGenerator:
             f"Implications: {structured.implications}",
             f"Confidence: {structured.confidence}",
             f"Limitations: {structured.limitations}",
-            f"Next Steps: {structured.next_steps}",
+            f"Next Steps: {structured.next_steps}"
         ]
 
         if structured.technical_details:
@@ -1104,9 +975,8 @@ class ExplanationGenerator:
 
         return "\n\n".join(sections)
 
-    def _generate_citations(
-        self, analysis_result: Dict[str, Any], context: ExplanationContext
-    ) -> List[str]:
+    def _generate_citations(self, analysis_result: Dict[str, Any],
+                           context: ExplanationContext) -> List[str]:
         """Generate relevant citations for the analysis"""
 
         citations = []
@@ -1114,21 +984,15 @@ class ExplanationGenerator:
 
         # Method-specific citations
         if "GLM" in method:
-            citations.append(
-                "Friston, K.J. et al. (1995). Statistical parametric maps in functional imaging. Human Brain Mapping, 2(4), 189-210."
-            )
+            citations.append("Friston, K.J. et al. (1995). Statistical parametric maps in functional imaging. Human Brain Mapping, 2(4), 189-210.")
 
         if "FWE" in str(analysis_result.get("statistics", {})):
-            citations.append(
-                "Worsley, K.J. et al. (1996). A unified statistical approach for determining significant signals in images of cerebral activation. Human Brain Mapping, 4(1), 58-73."
-            )
+            citations.append("Worsley, K.J. et al. (1996). A unified statistical approach for determining significant signals in images of cerebral activation. Human Brain Mapping, 4(1), 58-73.")
 
         # Software citations
         preprocessing = analysis_result.get("preprocessing", {})
         if "fmriprep" in str(preprocessing).lower():
-            citations.append(
-                "Esteban, O. et al. (2019). fMRIPrep: a robust preprocessing pipeline for functional MRI. Nature Methods, 16(1), 111-116."
-            )
+            citations.append("Esteban, O. et al. (2019). fMRIPrep: a robust preprocessing pipeline for functional MRI. Nature Methods, 16(1), 111-116.")
 
         return citations
 
@@ -1139,13 +1003,13 @@ class ExplanationGenerator:
             "visual_cortex": {
                 "function": "visual processing",
                 "anatomy": "occipital lobe",
-                "connections": ["frontal_eye_fields", "parietal_cortex"],
+                "connections": ["frontal_eye_fields", "parietal_cortex"]
             },
             "motor_cortex": {
                 "function": "motor control",
                 "anatomy": "precentral gyrus",
-                "connections": ["basal_ganglia", "cerebellum"],
-            },
+                "connections": ["basal_ganglia", "cerebellum"]
+            }
             # ... more regions
         }
 
@@ -1154,7 +1018,7 @@ class ExplanationGenerator:
         return {
             "p_value": "probability that results occurred by chance",
             "effect_size": "magnitude of the difference or relationship",
-            "confidence_interval": "range of plausible values for the true effect",
+            "confidence_interval": "range of plausible values for the true effect"
         }
 
     def _load_methodological_knowledge(self) -> Dict[str, Any]:
@@ -1162,7 +1026,7 @@ class ExplanationGenerator:
         return {
             "GLM": "General Linear Model - statistical approach for analyzing brain activation",
             "FWE": "Family-wise error correction - controls for multiple comparisons",
-            "cluster_correction": "groups nearby active voxels to reduce false positives",
+            "cluster_correction": "groups nearby active voxels to reduce false positives"
         }
 
 
@@ -1182,11 +1046,15 @@ if __name__ == "__main__":
             "t_statistic": 5.67,
             "effect_size": 0.8,
             "cluster_volume": 1247,
-            "peak_coordinates": [42, -58, 46],
+            "peak_coordinates": [42, -58, 46]
         },
         "significant_regions": [
-            {"name": "visual cortex", "coordinates": [42, -58, 46], "peak_value": 5.67}
-        ],
+            {
+                "name": "visual cortex",
+                "coordinates": [42, -58, 46],
+                "peak_value": 5.67
+            }
+        ]
     }
 
     # Test different contexts
@@ -1194,25 +1062,23 @@ if __name__ == "__main__":
         ExplanationContext(
             user_expertise=ExpertiseLevel.EXPERT,
             language=Language.ENGLISH,
-            preferred_level=ExplanationLevel.TECHNICAL,
+            preferred_level=ExplanationLevel.TECHNICAL
         ),
         ExplanationContext(
             user_expertise=ExpertiseLevel.NOVICE,
             language=Language.ENGLISH,
-            preferred_level=ExplanationLevel.LAYMAN,
+            preferred_level=ExplanationLevel.LAYMAN
         ),
         ExplanationContext(
             user_expertise=ExpertiseLevel.INTERMEDIATE,
             language=Language.ENGLISH,
-            preferred_level=ExplanationLevel.STRUCTURED,
-        ),
+            preferred_level=ExplanationLevel.STRUCTURED
+        )
     ]
 
     for i, context in enumerate(contexts):
         print(f"\n{'='*50}")
-        print(
-            f"EXPLANATION {i+1}: {context.user_expertise.value.upper()} - {context.preferred_level.value.upper()}"
-        )
+        print(f"EXPLANATION {i+1}: {context.user_expertise.value.upper()} - {context.preferred_level.value.upper()}")
         print(f"{'='*50}")
 
         result = generator.generate_explanation(analysis_result, context)

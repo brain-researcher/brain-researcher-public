@@ -10,6 +10,7 @@ from brain_researcher.core.analysis.value_domain_router import (
     evaluate_value_domain,
 )
 
+
 # --- router -----------------------------------------------------------------
 
 

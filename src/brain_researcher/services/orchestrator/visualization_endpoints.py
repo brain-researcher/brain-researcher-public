@@ -2,15 +2,14 @@
 Visualization endpoints for Knowledge Graph, Pipeline, and Result Gallery
 """
 
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Request
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional
+from datetime import datetime
 import asyncio
 import json
 import logging
-from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
-
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
-from pydantic import BaseModel, Field
 
 from .job_adapter import JobAdapter
 from .job_state import jobs_db as core_jobs_db
@@ -25,13 +24,11 @@ class NodeType(str, Enum):
     CONCEPT = "concept"
     RESEARCHER = "researcher"
 
-
 class EdgeType(str, Enum):
     CITES = "cites"
     USES = "uses"
     PRODUCES = "produces"
     RELATED_TO = "related_to"
-
 
 class GraphNode(BaseModel):
     id: str
@@ -41,13 +38,11 @@ class GraphNode(BaseModel):
     x: Optional[float] = None
     y: Optional[float] = None
 
-
 class GraphEdge(BaseModel):
     source: str
     target: str
     type: EdgeType
     weight: Optional[float] = 1.0
-
 
 class KnowledgeGraphData(BaseModel):
     nodes: List[GraphNode]
@@ -62,14 +57,12 @@ class StepType(str, Enum):
     ANALYSIS = "analysis"
     OUTPUT = "output"
 
-
 class StepStatus(str, Enum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
-
 
 class PipelineStep(BaseModel):
     id: str
@@ -85,20 +78,17 @@ class PipelineStep(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
-
 class PipelineConnection(BaseModel):
     from_step: str = Field(..., alias="from")
     to_step: str = Field(..., alias="to")
     label: Optional[str] = None
     data_type: Optional[str] = None
 
-
 class PipelineStatus(str, Enum):
     IDLE = "idle"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
-
 
 class PipelineData(BaseModel):
     id: str
@@ -119,7 +109,6 @@ class ResultType(str, Enum):
     DOCUMENT = "document"
     MODEL = "model"
 
-
 class ResultMetadata(BaseModel):
     created_at: datetime
     created_by: Optional[str] = None
@@ -129,7 +118,6 @@ class ResultMetadata(BaseModel):
     format: Optional[str] = None
     pipeline: Optional[str] = None
     parameters: Optional[Dict[str, Any]] = None
-
 
 class ResultItem(BaseModel):
     id: str
@@ -141,7 +129,6 @@ class ResultItem(BaseModel):
     metadata: ResultMetadata
     download_url: Optional[str] = None
     share_url: Optional[str] = None
-
 
 class GalleryFilter(BaseModel):
     types: Optional[List[ResultType]] = None
@@ -162,9 +149,7 @@ logger = logging.getLogger(__name__)
 def _get_job_store() -> Optional[Any]:
     """Fetch the orchestrator job store regardless of mounting context."""
     try:
-        from brain_researcher.services.orchestrator.main_enhanced import (
-            app as orchestrator_app,
-        )
+        from brain_researcher.services.orchestrator.main_enhanced import app as orchestrator_app
 
         return getattr(orchestrator_app.state, "job_store", None)
     except Exception:
@@ -258,7 +243,6 @@ async def _resolve_latest_job_for_pipeline(pipeline_id: str) -> Optional[Any]:
             matches.append(job)
 
     if matches:
-
         def _sort_key(job: Any):
             created_at = getattr(job, "created_at", None)
             if created_at:
@@ -290,17 +274,11 @@ def _pipeline_status_from_nodes(nodes: Dict[str, Dict[str, Any]]) -> str:
 def _pipeline_progress_from_nodes(nodes: Dict[str, Dict[str, Any]]) -> float:
     if not nodes:
         return 0.0
-    completed = sum(
-        1
-        for node in nodes.values()
-        if str(node.get("status", "")).lower() == "completed"
-    )
+    completed = sum(1 for node in nodes.values() if str(node.get("status", "")).lower() == "completed")
     return round((completed / len(nodes)) * 100, 2)
 
 
-def _snapshot_to_pipeline_payload(
-    snapshot: Dict[str, Any], pipeline_id: str, name: Optional[str] = None
-) -> Dict[str, Any]:
+def _snapshot_to_pipeline_payload(snapshot: Dict[str, Any], pipeline_id: str, name: Optional[str] = None) -> Dict[str, Any]:
     nodes: Dict[str, Dict[str, Any]] = {}
     for node in snapshot.get("nodes", []) or []:
         node_id = node.get("id")
@@ -313,15 +291,9 @@ def _snapshot_to_pipeline_payload(
         mapped_resources = None
         if resources:
             mapped_resources = {
-                "cpu": resources.get("cpu_pct")
-                or resources.get("cpu")
-                or resources.get("cpu_usage"),
-                "memory": resources.get("memory_gb")
-                or resources.get("memory")
-                or resources.get("memory_usage"),
-                "gpu": resources.get("gpu_pct")
-                or resources.get("gpu")
-                or resources.get("gpu_usage"),
+                "cpu": resources.get("cpu_pct") or resources.get("cpu") or resources.get("cpu_usage"),
+                "memory": resources.get("memory_gb") or resources.get("memory") or resources.get("memory_usage"),
+                "gpu": resources.get("gpu_pct") or resources.get("gpu") or resources.get("gpu_usage"),
             }
 
         nodes[node_id] = {
@@ -360,9 +332,7 @@ def _snapshot_to_pipeline_payload(
     }
 
 
-def _snapshot_to_pipeline_data(
-    snapshot: Dict[str, Any], pipeline_id: str, name: Optional[str] = None
-) -> PipelineData:
+def _snapshot_to_pipeline_data(snapshot: Dict[str, Any], pipeline_id: str, name: Optional[str] = None) -> PipelineData:
     steps: List[PipelineStep] = []
     for node in snapshot.get("nodes", []) or []:
         timing = node.get("timing") or {}
@@ -406,21 +376,13 @@ def _snapshot_to_pipeline_data(
         )
 
     connections = [
-        PipelineConnection(
-            from_step=edge.get("source"),
-            to_step=edge.get("target"),
-            label=edge.get("label"),
-        )
+        PipelineConnection(from_step=edge.get("source"), to_step=edge.get("target"), label=edge.get("label"))
         for edge in snapshot.get("edges", []) or []
         if edge.get("source") and edge.get("target")
     ]
 
-    status_value = _pipeline_status_from_nodes(
-        {step.id: {"status": step.status.value} for step in steps}
-    )
-    progress = _pipeline_progress_from_nodes(
-        {step.id: {"status": step.status.value} for step in steps}
-    )
+    status_value = _pipeline_status_from_nodes({step.id: {"status": step.status.value} for step in steps})
+    progress = _pipeline_progress_from_nodes({step.id: {"status": step.status.value} for step in steps})
 
     if status_value == "running":
         status_enum = PipelineStatus.RUNNING
@@ -448,7 +410,7 @@ def _snapshot_to_pipeline_data(
 async def get_knowledge_graph(
     query: Optional[str] = None,
     node_types: Optional[List[NodeType]] = Query(None),
-    limit: int = 100,
+    limit: int = 100
 ) -> KnowledgeGraphData:
     """Get knowledge graph data"""
 
@@ -470,7 +432,7 @@ async def get_knowledge_graph(
         "total_nodes": len(nodes),
         "total_edges": len(edges),
         "node_types": {},
-        "edge_types": {},
+        "edge_types": {}
     }
 
     for node in nodes:
@@ -490,7 +452,9 @@ async def get_node_details(node_id: str) -> GraphNode:
 
 @kg_router.get("/neighbors/{node_id}")
 async def get_node_neighbors(
-    node_id: str, depth: int = 1, edge_types: Optional[List[EdgeType]] = Query(None)
+    node_id: str,
+    depth: int = 1,
+    edge_types: Optional[List[EdgeType]] = Query(None)
 ) -> KnowledgeGraphData:
     """Get neighbors of a specific node"""
 
@@ -514,15 +478,15 @@ async def get_pipeline(pipeline_id: str) -> PipelineData:
 
 @pipeline_router.post("/{pipeline_id}/control")
 async def control_pipeline(
-    pipeline_id: str, action: str, step_id: Optional[str] = None
+    pipeline_id: str,
+    action: str,
+    step_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """Control pipeline execution (pause, resume, cancel, retry)"""
 
     valid_actions = ["pause", "resume", "cancel", "retry"]
     if action not in valid_actions:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid action. Must be one of: {valid_actions}"
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid action. Must be one of: {valid_actions}")
     raise HTTPException(status_code=501, detail="Pipeline control not implemented")
 
 
@@ -544,18 +508,9 @@ async def get_pipeline_status(pipeline_id: str, request: Request) -> Dict[str, A
 
     if resolved_job:
         timing = getattr(resolved_job, "timing", None)
-        created_at = _serialize_datetime(
-            getattr(resolved_job, "created_at", None)
-            or getattr(timing, "start_time", None)
-        )
-        started_at = _serialize_datetime(
-            getattr(resolved_job, "started_at", None)
-            or getattr(timing, "start_time", None)
-        )
-        finished_at = _serialize_datetime(
-            getattr(resolved_job, "completed_at", None)
-            or getattr(timing, "end_time", None)
-        )
+        created_at = _serialize_datetime(getattr(resolved_job, "created_at", None) or getattr(timing, "start_time", None))
+        started_at = _serialize_datetime(getattr(resolved_job, "started_at", None) or getattr(timing, "start_time", None))
+        finished_at = _serialize_datetime(getattr(resolved_job, "completed_at", None) or getattr(timing, "end_time", None))
         latest_execution = {
             "job_id": latest_job_id,
             "state": getattr(resolved_job, "status", None),
@@ -564,9 +519,7 @@ async def get_pipeline_status(pipeline_id: str, request: Request) -> Dict[str, A
             "finished_at": finished_at,
         }
 
-    snapshot = build_job_graph_snapshot(
-        resolved_job, job_id=latest_job_id or pipeline_id
-    )
+    snapshot = build_job_graph_snapshot(resolved_job, job_id=latest_job_id or pipeline_id)
     pipeline_payload = _snapshot_to_pipeline_payload(snapshot, pipeline_id)
 
     response: Dict[str, Any] = {
@@ -593,7 +546,7 @@ async def get_gallery_items(
     sort_order: str = "desc",
     type_filter: Optional[List[ResultType]] = Query(None),
     tag_filter: Optional[List[str]] = Query(None),
-    search: Optional[str] = None,
+    search: Optional[str] = None
 ) -> Dict[str, Any]:
     """Get gallery items with filtering and pagination"""
 
@@ -612,10 +565,10 @@ async def get_gallery_items(
                 tags=["fmri", "glm", "motor"],
                 size=2048000,
                 dimensions={"width": 1920, "height": 1080},
-                format="png",
+                format="png"
             ),
             download_url="/download/stat_map.png",
-            share_url="/share/result_1",
+            share_url="/share/result_1"
         ),
         ResultItem(
             id="result_2",
@@ -624,17 +577,21 @@ async def get_gallery_items(
             type=ResultType.PLOT,
             thumbnail="/thumbnails/timeseries.png",
             metadata=ResultMetadata(
-                created_at=datetime.now(), tags=["timeseries", "bold"], size=512000
-            ),
+                created_at=datetime.now(),
+                tags=["timeseries", "bold"],
+                size=512000
+            )
         ),
         ResultItem(
             id="result_3",
             title="Results Table",
             type=ResultType.TABLE,
             metadata=ResultMetadata(
-                created_at=datetime.now(), tags=["statistics"], size=102400
-            ),
-        ),
+                created_at=datetime.now(),
+                tags=["statistics"],
+                size=102400
+            )
+        )
     ]
 
     # Apply filters
@@ -645,12 +602,8 @@ async def get_gallery_items(
         items = [i for i in items if any(tag in i.metadata.tags for tag in tag_filter)]
 
     if search:
-        items = [
-            i
-            for i in items
-            if search.lower() in i.title.lower()
-            or (i.description and search.lower() in i.description.lower())
-        ]
+        items = [i for i in items if search.lower() in i.title.lower() or
+                 (i.description and search.lower() in i.description.lower())]
 
     # Calculate pagination
     total_items = len(items)
@@ -663,7 +616,7 @@ async def get_gallery_items(
         "total_items": total_items,
         "total_pages": total_pages,
         "current_page": page,
-        "page_size": page_size,
+        "page_size": page_size
     }
 
 
@@ -687,10 +640,14 @@ async def get_gallery_item(item_id: str) -> ResultItem:
                 dimensions={"width": 1920, "height": 1080},
                 format="png",
                 pipeline="pipeline_123",
-                parameters={"threshold": 0.001, "correction": "FWE", "smoothing": 6},
+                parameters={
+                    "threshold": 0.001,
+                    "correction": "FWE",
+                    "smoothing": 6
+                }
             ),
             download_url="/download/stat_map.png",
-            share_url="/share/result_1",
+            share_url="/share/result_1"
         )
 
     raise HTTPException(status_code=404, detail="Gallery item not found")
@@ -707,7 +664,7 @@ async def share_gallery_item(item_id: str) -> Dict[str, str]:
         "item_id": item_id,
         "share_id": share_id,
         "share_url": share_url,
-        "expires_at": (datetime.now().timestamp() + 86400 * 7),  # 7 days
+        "expires_at": (datetime.now().timestamp() + 86400 * 7)  # 7 days
     }
 
 
@@ -718,9 +675,9 @@ async def delete_gallery_item(item_id: str) -> Dict[str, str]:
     return {
         "item_id": item_id,
         "status": "deleted",
-        "message": "Gallery item deleted successfully",
+        "message": "Gallery item deleted successfully"
     }
 
 
 # Export routers
-__all__ = ["kg_router", "pipeline_router", "gallery_router"]
+__all__ = ['kg_router', 'pipeline_router', 'gallery_router']

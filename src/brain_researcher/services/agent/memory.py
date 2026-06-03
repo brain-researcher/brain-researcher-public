@@ -86,7 +86,9 @@ class ConversationMemory:
         lines = ["## Recent memory"]
         for entry in entries:
             meta = f" meta={json.dumps(entry.metadata)}" if entry.metadata else ""
-            lines.append(f"- [{entry.created_at}] ({entry.role}) {entry.content}{meta}")
+            lines.append(
+                f"- [{entry.created_at}] ({entry.role}) {entry.content}{meta}"
+            )
         return "\n".join(lines) + "\n"
 
     # ------------------------------------------------------------------
@@ -128,9 +130,7 @@ class ConversationMemory:
                 )
             md_lines.append("")
 
-        self.json_path.write_text(
-            "\n".join(lines) + ("\n" if lines else ""), encoding="utf-8"
-        )
+        self.json_path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
         self.store_path.write_text("\n".join(md_lines) + "\n", encoding="utf-8")
         self._cache = cache
 

@@ -23,7 +23,6 @@ from typing import Any
 
 def _normalize_paper_title(title: Any) -> str:
     from brain_researcher.services.br_kg.app import _LABEL_SEP_RE, _LABEL_SPACE_RE
-
     text = str(title or "").strip().lower()
     if not text:
         return ""
@@ -118,7 +117,6 @@ def _merge_task_paper_items(
     limit: int,
 ) -> tuple[list[dict[str, Any]], dict[str, int]]:
     from brain_researcher.services.br_kg.app import _as_paper_item, _paper_dedupe_key
-
     merged: list[dict[str, Any]] = []
     seen: dict[str, int] = {}
     dedup_dropped = 0
@@ -219,7 +217,6 @@ def _merge_task_paper_items(
 
 def _merge_source_channels(existing: Any, incoming: Any) -> str:
     from brain_researcher.services.br_kg.app import _csv_tokens
-
     merged = _csv_tokens(existing) + _csv_tokens(incoming)
     seen: set[str] = set()
     ordered: list[str] = []
@@ -253,7 +250,6 @@ def _merge_evidence_item(
 
 def _evidence_item_id(item: Mapping[str, Any], group_name: str) -> str:
     from brain_researcher.services.br_kg.app import _default_item_id
-
     if group_name == "statmaps":
         for key in ("map_id", "id", "contrast", "url"):
             value = item.get(key)
@@ -281,7 +277,6 @@ def _evidence_dedupe_key(item: Mapping[str, Any], group_name: str) -> str:
         _paper_dedupe_key,
         _task_neighbor_dedupe_key,
     )
-
     if group_name == "papers":
         return _paper_dedupe_key(item)
     if group_name == "studies":

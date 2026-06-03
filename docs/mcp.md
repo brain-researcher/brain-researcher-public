@@ -18,8 +18,8 @@ Brain Researcher can run as a **local stdio MCP server**, so external coding age
 - KG read-only helpers (`kg_search_nodes`, `kg_get_node`, `kg_neighbors`, `kg_search_datasets`, `kg_related_datasets`, `kg_verify_hypothesis`; fail-fast by default, degraded responses are opt-in)
 - KG structural-signal probe (`kg_probe`; compatibility aliases: `kg_find_structural_leverage`, `kg_detect_contradiction_motifs`, `kg_find_contradiction_frontiers`, `kg_mine_assumption_cracks`, `kg_find_analogy_transfers`)
 - KG hypothesis workflow (`kg_hypothesis_workflow`; compatibility aliases: `kg_sample_ood_hypothesis`, `kg_verify_sampled_hypotheses`, `kg_sample_and_verify_hypotheses`)
-- KG novelty wrappers (`neurokg.sample_ood_hypothesis`, `neurokg.detect_topology_shifts`)
-- KG frontier synthesis helper (`neurokg.synthesize_wow_candidate_cards`, used by `workflow_hypothesis_candidate_cards` when `frontier_mode=frontier`)
+- KG novelty wrappers (`br_kg.sample_ood_hypothesis`, `br_kg.detect_topology_shifts`)
+- KG frontier synthesis helper (`br_kg.synthesize_wow_candidate_cards`, used by `workflow_hypothesis_candidate_cards` when `frontier_mode=frontier`)
 - Session learning helpers (`research_log_summary`, `session_risk_classify`, `session_lesson_extract`, `session_open_risks_query`, `session_policy_cards_generate`, `session_learning_report_generate`, `session_signal_report_generate`, `session_backfill_to_kg`)
 - Dataset resources (`dataset_get_resources`)
 - Google tools (`google_file_search`, `google_deep_research_start`, `google_deep_research`; compatibility poller: `google_deep_research_get`)
@@ -32,6 +32,32 @@ is a grounded-generation helper and does not use the official Deep Research agen
 Deep Research tools are **disabled by default** and will return `network_blocked` unless
 `BR_MCP_ALLOW_NETWORK=1` is set. They also require `GOOGLE_API_KEY` or `GEMINI_API_KEY`,
 otherwise responses return `missing_api_key`.
+
+## Surface tiers
+
+MCP tools are grouped so common research workflows stay easy to discover while
+advanced and administrative tools remain available.
+
+- `default`: safe, common read/query tools for ordinary research workflows.
+- `advanced`: specialized, higher-cost, or sharper tools that are still
+  supported for power users.
+- `ops`: diagnostics, admin paths, manual execution surfaces, and low-level
+  mutation entrypoints.
+
+Catalog entries expose both `surface_tier` and `capability_family` in
+`docs/mcp_tools.schema.json`. The legacy `tier` field is retained for
+compatibility; new clients should prefer `surface_tier`.
+
+Important policy anchors:
+
+- `kg_neighbors` is a default KG primitive alongside `kg_search_nodes` and
+  `kg_get_node`.
+- `run_cancel` is advanced because users need to stop long-running work.
+- `pipeline_plan_validate` and `pipeline_execute` stay in ops together while
+  direct pipeline execution remains a manual/admin path.
+- Alias tools stay available for compatibility, but public discovery should
+  focus on canonical entrypoints such as `kg_verify_hypothesis`,
+  `kg_hypothesis_workflow`, `kg_probe`, and `run_get`.
 
 ## Install (recommended)
 
@@ -480,8 +506,9 @@ Execution-recipe metadata now distinguishes local recipes from hosted tools:
 
 When `get_execution_recipe(...)` returns a portable recipe, the response also
 includes a structured `run_pack` for callers that want a ready-to-run local
-handoff. `local_run` is kept as a backwards-compatible alias of the same
-payload.
+handoff. `local_run` is a compact backwards-compatible alias that points to
+`run_pack`; pass `include_legacy_local_run=true` only when a legacy client needs
+the duplicated payload.
 
 - `run_pack.runtime.target`: the intended local runtime (`python`,
   `neurodesk`, `container`, or `slurm`).
@@ -653,7 +680,7 @@ When running with `BR_MCP_TRANSPORT=streamable-http`:
 
 - RPC endpoint is typically `/mcp` (not `/`).
 - MCP clients should include `Accept: application/json, text/event-stream` for streamable HTTP requests.
-- A bare `curl https://brain-researcher.com/mcp` is expected to return `406 Not Acceptable`; that does not mean the server is down.
+- A bare `curl https://${PUBLIC_HOSTNAME}/mcp` is expected to return `406 Not Acceptable`; that does not mean the server is down.
 
 ### Example: Cursor (HTTP)
 
@@ -665,7 +692,7 @@ JSON. Do not rely on env placeholder expansion for the `Authorization` header.
   "mcpServers": {
     "brain-researcher": {
       "type": "http",
-      "url": "https://brain-researcher.com/mcp",
+      "url": "https://${PUBLIC_HOSTNAME}/mcp",
       "headers": {
         "Authorization": "Bearer brk_<kid>.<secret>",
         "Accept": "application/json, text/event-stream"
@@ -693,7 +720,7 @@ const researchState = {
 };
 
 async function callBrTool(name: string, args: Record<string, unknown>) {
-  const response = await fetch("https://brain-researcher.com/mcp", {
+  const response = await fetch("https://${PUBLIC_HOSTNAME}/mcp", {
     method: "POST",
     headers: {
       Authorization: "Bearer brk_<kid>.<secret>",
@@ -738,7 +765,7 @@ async function finalizeResearchSession(summary: {
 ### Manual protocol smoke against prod
 
 ```bash
-curl https://brain-researcher.com/mcp \
+curl https://${PUBLIC_HOSTNAME}/mcp \
   -H "Authorization: Bearer $BR_MCP_TOKEN" \
   -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
@@ -924,8 +951,8 @@ The canonical machine-readable tool catalog lives at `docs/mcp_tools.schema.json
 Examples in that file may include a `tested: true` marker, which means the
 example input/output pair is validated in `tests/unit/mcp/test_local_mcp_server.py`.
 Catalog entries now carry `surface_tier` and `capability_family` metadata in
-addition to the legacy `tier` field. See
-`docs/design/mcp_surface_tiering.md` for the current grouping policy.
+addition to the legacy `tier` field. See the surface tiers section above for
+the current grouping policy.
 
 ### Sherlock/OAK helpers
 

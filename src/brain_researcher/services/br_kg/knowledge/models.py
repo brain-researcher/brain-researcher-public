@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from brain_researcher.services.shared.brkg_evidence_models import EvidenceItem
@@ -72,60 +72,20 @@ class KnowledgeItem:
         # Map source_id to EvidenceSource
         source_map = {
             "br_kg": EvidenceSource.BR_KG,
-            "pubmed": (
-                EvidenceSource.PUBMED
-                if hasattr(EvidenceSource, "PUBMED")
-                else EvidenceSource.EXTERNAL_API
-            ),
-            "neurostore": (
-                EvidenceSource.NEUROSTORE
-                if hasattr(EvidenceSource, "NEUROSTORE")
-                else EvidenceSource.EXTERNAL_API
-            ),
-            "niclip": (
-                EvidenceSource.NICLIP
-                if hasattr(EvidenceSource, "NICLIP")
-                else EvidenceSource.COMPUTED
-            ),
-            "tool_registry": (
-                EvidenceSource.TOOL_REGISTRY
-                if hasattr(EvidenceSource, "TOOL_REGISTRY")
-                else EvidenceSource.AGENT
-            ),
-            "dataset_catalog": (
-                EvidenceSource.DATASET_CATALOG
-                if hasattr(EvidenceSource, "DATASET_CATALOG")
-                else EvidenceSource.BR_KG
-            ),
+            "pubmed": EvidenceSource.PUBMED if hasattr(EvidenceSource, "PUBMED") else EvidenceSource.EXTERNAL_API,
+            "neurostore": EvidenceSource.NEUROSTORE if hasattr(EvidenceSource, "NEUROSTORE") else EvidenceSource.EXTERNAL_API,
+            "niclip": EvidenceSource.NICLIP if hasattr(EvidenceSource, "NICLIP") else EvidenceSource.COMPUTED,
+            "tool_registry": EvidenceSource.TOOL_REGISTRY if hasattr(EvidenceSource, "TOOL_REGISTRY") else EvidenceSource.AGENT,
+            "dataset_catalog": EvidenceSource.DATASET_CATALOG if hasattr(EvidenceSource, "DATASET_CATALOG") else EvidenceSource.BR_KG,
         }
 
         # Map to EvidenceType based on source
         type_map = {
-            "br_kg": (
-                EvidenceType.KG_NODE
-                if hasattr(EvidenceType, "KG_NODE")
-                else EvidenceType.DATASET
-            ),
-            "pubmed": (
-                EvidenceType.LITERATURE
-                if hasattr(EvidenceType, "LITERATURE")
-                else EvidenceType.CITATION
-            ),
-            "neurostore": (
-                EvidenceType.LITERATURE
-                if hasattr(EvidenceType, "LITERATURE")
-                else EvidenceType.CITATION
-            ),
-            "niclip": (
-                EvidenceType.EMBEDDING_MATCH
-                if hasattr(EvidenceType, "EMBEDDING_MATCH")
-                else EvidenceType.RESULT
-            ),
-            "tool_registry": (
-                EvidenceType.TOOL_MATCH
-                if hasattr(EvidenceType, "TOOL_MATCH")
-                else EvidenceType.METHOD
-            ),
+            "br_kg": EvidenceType.KG_NODE if hasattr(EvidenceType, "KG_NODE") else EvidenceType.DATASET,
+            "pubmed": EvidenceType.LITERATURE if hasattr(EvidenceType, "LITERATURE") else EvidenceType.CITATION,
+            "neurostore": EvidenceType.LITERATURE if hasattr(EvidenceType, "LITERATURE") else EvidenceType.CITATION,
+            "niclip": EvidenceType.EMBEDDING_MATCH if hasattr(EvidenceType, "EMBEDDING_MATCH") else EvidenceType.RESULT,
+            "tool_registry": EvidenceType.TOOL_MATCH if hasattr(EvidenceType, "TOOL_MATCH") else EvidenceType.METHOD,
             "dataset_catalog": EvidenceType.DATASET,
         }
 

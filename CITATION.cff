@@ -19,7 +19,7 @@ version: "0.0-dev"
 authors:
   - family-names: "Chen"
     given-names: "Zijiao"
-    email: "zijiao@stanford.edu"
+    email: "person@example.com"
     affiliation: "Stanford University"
   - name: "Brain Researcher contributors"
 keywords:

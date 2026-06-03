@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+
 # Limits and defaults
 MAX_INPUT_CHARS = 1_000_000
 DEFAULT_TIMEOUT_SEC = 60
@@ -348,6 +349,11 @@ def execute_chat(
     parsed = parse_gemini_response(stdout)
     # CLI v0.22+ returns the model output under "response"; older/alt schemas
     # use "text" or "output". Check all three so both transport versions work.
-    text = parsed.get("response") or parsed.get("text") or parsed.get("output") or ""
+    text = (
+        parsed.get("response")
+        or parsed.get("text")
+        or parsed.get("output")
+        or ""
+    )
     usage = parsed.get("usage") or parsed.get("stats", {}).get("models", {}) or {}
     return GeminiResult(text=text, usage=usage, raw=proc.stdout, model=model)

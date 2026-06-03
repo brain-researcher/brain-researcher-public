@@ -24,12 +24,8 @@ def get_openneuro_mount_root() -> Path:
 
 
 OPENNEURO_MOUNT_ROOT = get_openneuro_mount_root()
-OPENNEURO_METADATA_ROOT = Path(
-    os.getenv("OPENNEURO_METADATA_ROOT", "/app/data/openneuro_metadata")
-)
-OPENNEURO_DERIV_ROOT = Path(
-    os.getenv("OPENNEURO_DERIV_ROOT", "/app/data/OpenNeuroDerivatives")
-)
+OPENNEURO_METADATA_ROOT = Path(os.getenv("OPENNEURO_METADATA_ROOT", "/app/data/openneuro_metadata"))
+OPENNEURO_DERIV_ROOT = Path(os.getenv("OPENNEURO_DERIV_ROOT", "/app/data/OpenNeuroDerivatives"))
 
 
 @lru_cache(maxsize=1)
@@ -215,20 +211,16 @@ class OpenNeuroSearchTool(NeuroToolWrapper):
                     continue
 
             # Build result entry (compact format)
-            results.append(
-                {
-                    "dataset_id": rec.get("dataset_id"),
-                    "name": rec.get("name"),
-                    "modalities": rec.get("modalities"),
-                    "tasks": (rec.get("tasks") or [])[
-                        :5
-                    ],  # Limit tasks for readability
-                    "subjects_count": rec.get("subjects_count"),
-                    "has_fmriprep": _path_available(rec.get("path_fmriprep")),
-                    "has_mriqc": _path_available(rec.get("path_mriqc")),
-                    "has_glmfitlins": _path_available(rec.get("path_glmfitlins")),
-                }
-            )
+            results.append({
+                "dataset_id": rec.get("dataset_id"),
+                "name": rec.get("name"),
+                "modalities": rec.get("modalities"),
+                "tasks": (rec.get("tasks") or [])[:5],  # Limit tasks for readability
+                "subjects_count": rec.get("subjects_count"),
+                "has_fmriprep": _path_available(rec.get("path_fmriprep")),
+                "has_mriqc": _path_available(rec.get("path_mriqc")),
+                "has_glmfitlins": _path_available(rec.get("path_glmfitlins")),
+            })
 
         total = len(results)
         return ToolResult(
@@ -275,9 +267,9 @@ class OpenNeuroGetDatasetTool(NeuroToolWrapper):
             if rec_id == norm_id or source_id == norm_id:
                 # Enrich with live availability checks
                 enriched = dict(rec)
-                enriched["available_locally"] = _path_available(
-                    rec.get("path_dataset")
-                ) or _dataset_root_exists(rec_id)
+                enriched["available_locally"] = (
+                    _path_available(rec.get("path_dataset")) or _dataset_root_exists(rec_id)
+                )
                 enriched["has_fmriprep"] = _path_available(rec.get("path_fmriprep"))
                 enriched["has_mriqc"] = _path_available(rec.get("path_mriqc"))
                 enriched["has_glmfitlins"] = _path_available(rec.get("path_glmfitlins"))
@@ -325,9 +317,7 @@ class OpenNeuroGetSummaryTool(NeuroToolWrapper):
                 has_fmriprep = _path_available(rec.get("path_fmriprep"))
                 has_mriqc = _path_available(rec.get("path_mriqc"))
                 has_glm = _path_available(rec.get("path_glmfitlins"))
-                available = _path_available(
-                    rec.get("path_dataset")
-                ) or _dataset_root_exists(rec_id)
+                available = _path_available(rec.get("path_dataset")) or _dataset_root_exists(rec_id)
                 summary = {
                     "dataset_id": rec.get("dataset_id"),
                     "name": rec.get("name"),

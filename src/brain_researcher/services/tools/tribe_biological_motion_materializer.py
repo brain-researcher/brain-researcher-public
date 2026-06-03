@@ -313,9 +313,9 @@ def materialize_biological_motion(
         resolved_video_path = str(video_path.resolve())
         resolved_frame_dir = str(frame_dir.resolve())
         base_labels = {
-            "run_type": (
-                "1" if clip_spec.condition == "intact_biological_motion" else "2"
-            ),
+            "run_type": "1"
+            if clip_spec.condition == "intact_biological_motion"
+            else "2",
             "scramble_kind": clip_spec.scramble_kind,
             "azimuth_deg": clip_spec.azimuth_deg,
             "walker_index": walker_index,

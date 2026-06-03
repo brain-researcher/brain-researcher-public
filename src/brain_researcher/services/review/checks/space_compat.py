@@ -5,30 +5,14 @@ from __future__ import annotations
 from brain_researcher.core.contracts.code_review import CodeReviewBundle, ReviewFinding
 
 _EEG_MEG_MODALITIES = frozenset({"eeg", "meg", "ieeg"})
-_VOLUMETRIC_MNI_SPACES = frozenset(
-    {"MNI152", "MNI152NLin2009cAsym", "MNI152NLin6Asym", "MNI"}
-)
-_DWI_TOOLS = frozenset(
-    {
-        "mrtrix_tckgen",
-        "mrtrix_tcksift",
-        "mrtrix_tckgen2",
-        "dsi_studio_tracking",
-        "fsl_dtifit",
-        "ants_dti",
-        "dipy_tracking",
-        "dmri_tractography",
-        "dmri_parcellate_connectome",
-        "mrtrix_dwi2fod",
-        "mrtrix_ss3t_csd",
-        "tckgen",
-        "tcksift",
-        "dtifit",
-    }
-)
-_BOLD_MODALITIES = frozenset(
-    {"bold", "fmri", "func", "functional", "resting_state", "task_fmri"}
-)
+_VOLUMETRIC_MNI_SPACES = frozenset({"MNI152", "MNI152NLin2009cAsym", "MNI152NLin6Asym", "MNI"})
+_DWI_TOOLS = frozenset({
+    "mrtrix_tckgen", "mrtrix_tcksift", "mrtrix_tckgen2", "dsi_studio_tracking",
+    "fsl_dtifit", "ants_dti", "dipy_tracking", "dmri_tractography",
+    "dmri_parcellate_connectome", "mrtrix_dwi2fod", "mrtrix_ss3t_csd",
+    "tckgen", "tcksift", "dtifit",
+})
+_BOLD_MODALITIES = frozenset({"bold", "fmri", "func", "functional", "resting_state", "task_fmri"})
 
 
 def atlas_modality_compatible(bundle: CodeReviewBundle) -> ReviewFinding | None:
@@ -69,7 +53,9 @@ def dwi_tool_on_bold_data(bundle: CodeReviewBundle) -> ReviewFinding | None:
         return ReviewFinding(
             rule_id="REVIEW_DWI_TOOL_ON_BOLD",
             severity="error",
-            message=(f"DWI tool(s) {offending} declared alongside BOLD/fMRI modality."),
+            message=(
+                f"DWI tool(s) {offending} declared alongside BOLD/fMRI modality."
+            ),
             suggested_fix="Separate DWI and fMRI pipelines; do not mix tractography steps with BOLD GLM.",
         )
     return None

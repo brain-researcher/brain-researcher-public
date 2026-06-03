@@ -64,9 +64,7 @@ class PnmEvsRegressorArgs(BaseModel):
         default=0,
         description="Order of multiplicative respiratory terms",
     )
-    rvt_smooth: float | None = Field(
-        default=None, description="Optional RVT smoothing window in seconds"
-    )
+    rvt_smooth: float | None = Field(default=None, description="Optional RVT smoothing window in seconds")
     heartrate_smooth: float | None = Field(
         default=None,
         description="Optional heartrate smoothing window in seconds",

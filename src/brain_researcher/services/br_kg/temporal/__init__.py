@@ -9,24 +9,24 @@ Key Components:
 - Evolution Tracker: Real-time change tracking and analysis
 """
 
-from .evolution_tracker import (
-    EvolutionAnalyzer,
-    EvolutionEvent,
-    EvolutionPattern,
-    GraphEvolutionTracker,
-)
 from .neo4j_temporal import (
     TemporalNeo4jDB,
     TemporalNode,
-    TemporalQuery,
     TemporalRelationship,
-    TimeRange,
+    TemporalQuery,
+    TimeRange
 )
 from .temporal_cypher import (
     TemporalCypherBuilder,
-    TemporalFilter,
-    TemporalOperator,
     TemporalQueryType,
+    TemporalOperator,
+    TemporalFilter
+)
+from .evolution_tracker import (
+    GraphEvolutionTracker,
+    EvolutionEvent,
+    EvolutionPattern,
+    EvolutionAnalyzer
 )
 
 __all__ = [
@@ -42,5 +42,5 @@ __all__ = [
     "GraphEvolutionTracker",
     "EvolutionEvent",
     "EvolutionPattern",
-    "EvolutionAnalyzer",
+    "EvolutionAnalyzer"
 ]

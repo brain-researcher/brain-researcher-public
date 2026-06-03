@@ -73,7 +73,7 @@ describe('workflow template aliases', () => {
       'workflow_preprocessing_qc',
     )
     expect(
-      workflowIdFromReference('https://brain-researcher.com/api/workflows/workflow_mriqc'),
+      workflowIdFromReference('https://${PUBLIC_HOSTNAME}/api/workflows/workflow_mriqc'),
     ).toBe('workflow_mriqc')
   })
 })

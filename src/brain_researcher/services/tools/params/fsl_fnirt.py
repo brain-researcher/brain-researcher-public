@@ -38,9 +38,7 @@ class FSLFNIRTParameters:
     debug: bool = False
     extra_args: Tuple[str, ...] = field(default_factory=tuple)
 
-    def command(
-        self, include_executable: bool = True, executable: str = "fnirt"
-    ) -> list[str]:
+    def command(self, include_executable: bool = True, executable: str = "fnirt") -> list[str]:
         cmd: list[str] = []
         if include_executable:
             cmd.append(executable)
@@ -71,12 +69,7 @@ class FSLFNIRTParameters:
         if self.subsample_levels:
             cmd.append("--subsamp=" + self.subsample_levels)
         if self.intensity_mapping:
-            cmd.extend(
-                [
-                    "--intmod=global_non_linear",
-                    "--intorder=" + str(self.intensity_mapping_order or 0),
-                ]
-            )
+            cmd.extend(["--intmod=global_non_linear", "--intorder=" + str(self.intensity_mapping_order or 0)])
         if self.ref_mask:
             cmd.append("--refmask=" + self.ref_mask)
         if self.in_mask:
@@ -105,10 +98,7 @@ class FSLFNIRTParameters:
 
 
 def build_fsl_fnirt_command(
-    params: FSLFNIRTParameters,
-    *,
-    include_executable: bool = True,
-    executable: str = "fnirt",
+    params: FSLFNIRTParameters, *, include_executable: bool = True, executable: str = "fnirt"
 ) -> list[str]:
     return params.command(include_executable=include_executable, executable=executable)
 
@@ -125,33 +115,17 @@ def fsl_fnirt_from_payload(payload: Mapping[str, Any]) -> FSLFNIRTParameters:
         in_intensitymap_file=payload.get("in_intensitymap_file"),
         config_file=payload.get("config_file"),
         warp_resolution=payload.get("warp_resolution"),
-        spline_order=(
-            int(payload["spline_order"])
-            if payload.get("spline_order") is not None
-            else None
-        ),
+        spline_order=int(payload["spline_order"]) if payload.get("spline_order") is not None else None,
         regularization_lambda=payload.get("regularization_lambda"),
         regularization_model=payload.get("regularization_model"),
         max_iterations=payload.get("max_iterations"),
         subsample_levels=payload.get("subsample_levels"),
         intensity_mapping=bool(payload.get("intensity_mapping", False)),
-        intensity_mapping_order=(
-            int(payload["intensity_mapping_order"])
-            if payload.get("intensity_mapping_order") is not None
-            else None
-        ),
+        intensity_mapping_order=int(payload["intensity_mapping_order"]) if payload.get("intensity_mapping_order") is not None else None,
         ref_mask=payload.get("ref_mask"),
         in_mask=payload.get("in_mask"),
-        apply_ref_mask=(
-            int(payload["apply_ref_mask"])
-            if payload.get("apply_ref_mask") is not None
-            else None
-        ),
-        apply_in_mask=(
-            int(payload["apply_in_mask"])
-            if payload.get("apply_in_mask") is not None
-            else None
-        ),
+        apply_ref_mask=int(payload["apply_ref_mask"]) if payload.get("apply_ref_mask") is not None else None,
+        apply_in_mask=int(payload["apply_in_mask"]) if payload.get("apply_in_mask") is not None else None,
         in_smoothing=payload.get("in_smoothing"),
         ref_smoothing=payload.get("ref_smoothing"),
         use_gradient_images=bool(payload.get("use_gradient_images", False)),
@@ -159,15 +133,9 @@ def fsl_fnirt_from_payload(payload: Mapping[str, Any]) -> FSLFNIRTParameters:
         derive_from_ref=bool(payload.get("derive_from_ref", False)),
         verbose=bool(payload.get("verbose", False)),
         debug=bool(payload.get("debug", False)),
-        extra_args=(
-            tuple(str(arg) for arg in (payload.get("extra_args") or []))
-            if isinstance(payload.get("extra_args"), (list, tuple))
-            else (
-                tuple(str(payload.get("extra_args")))
-                if payload.get("extra_args")
-                else ()
-            )
-        ),
+        extra_args=tuple(str(arg) for arg in (payload.get("extra_args") or []) )
+        if isinstance(payload.get("extra_args"), (list, tuple))
+        else tuple(str(payload.get("extra_args"))) if payload.get("extra_args") else (),
     )
 
 

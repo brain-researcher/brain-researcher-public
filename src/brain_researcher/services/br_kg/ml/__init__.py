@@ -10,25 +10,25 @@ Key Components:
 """
 
 from .gnn_models import (
-    GNNModelType,
-    GNNPredictor,
-    GraphAttentionNetwork,
     GraphConvolutionalNetwork,
     GraphSAGE,
+    GraphAttentionNetwork,
+    GNNModelType,
+    GNNPredictor
 )
 from .graph_embeddings import (
+    Node2VecEmbedder,
+    Graph2VecEmbedder,
     DeepWalkEmbedder,
     EmbeddingType,
-    Graph2VecEmbedder,
-    GraphEmbedder,
-    Node2VecEmbedder,
+    GraphEmbedder
 )
 from .ml_pipeline import (
     MLPipeline,
-    ModelEvaluator,
     ModelTrainer,
+    ModelEvaluator,
     PredictionService,
-    TaskType,
+    TaskType
 )
 
 __all__ = [
@@ -46,5 +46,5 @@ __all__ = [
     "ModelTrainer",
     "ModelEvaluator",
     "PredictionService",
-    "TaskType",
+    "TaskType"
 ]

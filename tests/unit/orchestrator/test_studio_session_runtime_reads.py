@@ -31,18 +31,13 @@ class _FakeProvisioner:
     def ensure_target(self, spec) -> MarimoRuntimeTarget:
         name = f"br-marimo-{spec.runtime_session_id}"
         return MarimoRuntimeTarget(
-            provisioner="fake",
-            connection_mode="iframe",
-            ready=True,
+            provisioner="fake", connection_mode="iframe", ready=True,
             public_url=f"https://workspace.example/hub/{name}",
             websocket_url=f"wss://workspace.example/hub/{name}",
-            internal_url=f"http://{name}:2718",
-            namespace="test",
-            pod_name=f"{name}-pod",
-            service_name=name,
+            internal_url=f"http://{name}:2718", namespace="test",
+            pod_name=f"{name}-pod", service_name=name,
             workspace_mount_path=spec.absolute_working_directory,
-            workspace_volume_kind="persistentVolumeClaim",
-            status_reason="ready",
+            workspace_volume_kind="persistentVolumeClaim", status_reason="ready",
         )
 
     def destroy_target(self, target) -> None:

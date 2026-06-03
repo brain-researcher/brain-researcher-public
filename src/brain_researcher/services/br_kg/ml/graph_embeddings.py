@@ -6,26 +6,24 @@ for learning distributed representations of graphs and nodes.
 
 from __future__ import annotations
 
-import json
 import logging
-import pickle
-import random
-from collections import defaultdict
+import numpy as np
+from typing import Dict, List, Any, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from enum import Enum
+import pickle
+import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import numpy as np
+import random
+from collections import defaultdict
 
 try:
-    import matplotlib.pyplot as plt
     import networkx as nx
-    import seaborn as sns
     from gensim.models import Word2Vec
     from sklearn.decomposition import PCA
     from sklearn.manifold import TSNE
-
+    import matplotlib.pyplot as plt
+    import seaborn as sns
     DEPS_AVAILABLE = True
     DEPS_IMPORT_ERROR = None
 except ImportError as exc:
@@ -92,7 +90,7 @@ class EmbeddingConfig:
             "epochs": self.epochs,
             "sg": self.sg,
             "hs": self.hs,
-            "negative": self.negative,
+            "negative": self.negative
         }
 
 
@@ -198,10 +196,10 @@ class BaseGraphEmbedder:
         save_data = {
             "embeddings": self.embeddings,
             "config": self.config.to_dict(),
-            "vocabulary": list(self.vocabulary),
+            "vocabulary": list(self.vocabulary)
         }
 
-        with open(filepath, "wb") as f:
+        with open(filepath, 'wb') as f:
             pickle.dump(save_data, f)
 
         logger.info(f"Saved embeddings to {filepath}")
@@ -212,7 +210,7 @@ class BaseGraphEmbedder:
         Args:
             filepath: Input file path
         """
-        with open(filepath, "rb") as f:
+        with open(filepath, 'rb') as f:
             save_data = pickle.load(f)
 
         self.embeddings = save_data["embeddings"]
@@ -222,7 +220,7 @@ class BaseGraphEmbedder:
         config_dict = save_data["config"]
         self.config = EmbeddingConfig(
             embedding_type=EmbeddingType(config_dict["embedding_type"]),
-            **{k: v for k, v in config_dict.items() if k != "embedding_type"},
+            **{k: v for k, v in config_dict.items() if k != "embedding_type"}
         )
 
         logger.info(f"Loaded embeddings from {filepath}")
@@ -306,7 +304,7 @@ class Node2VecEmbedder(BaseGraphEmbedder):
             epochs=self.config.epochs,
             alpha=self.config.learning_rate,
             hs=self.config.hs,
-            negative=self.config.negative,
+            negative=self.config.negative
         )
 
         # Extract embeddings
@@ -445,7 +443,7 @@ class DeepWalkEmbedder(BaseGraphEmbedder):
             epochs=self.config.epochs,
             alpha=self.config.learning_rate,
             hs=self.config.hs,
-            negative=self.config.negative,
+            negative=self.config.negative
         )
 
         # Extract embeddings
@@ -509,9 +507,7 @@ class Graph2VecEmbedder(BaseGraphEmbedder):
 
         super().__init__(config)
 
-    def fit(
-        self, graph_data: Union[Dict[str, Any], List[Dict[str, Any]]]
-    ) -> Dict[str, np.ndarray]:
+    def fit(self, graph_data: Union[Dict[str, Any], List[Dict[str, Any]]]) -> Dict[str, np.ndarray]:
         """Fit Graph2Vec model.
 
         Args:
@@ -555,7 +551,7 @@ class Graph2VecEmbedder(BaseGraphEmbedder):
             epochs=self.config.epochs,
             alpha=self.config.learning_rate,
             hs=self.config.hs,
-            negative=self.config.negative,
+            negative=self.config.negative
         )
 
         # Generate graph embeddings by averaging pattern embeddings
@@ -602,16 +598,12 @@ class Graph2VecEmbedder(BaseGraphEmbedder):
 
             for node in graph.nodes():
                 # Get neighbor labels
-                neighbor_labels = [
-                    node_labels[neighbor] for neighbor in graph.neighbors(node)
-                ]
+                neighbor_labels = [node_labels[neighbor] for neighbor in graph.neighbors(node)]
                 neighbor_labels.sort()
 
                 # Create new label by combining current and neighbor labels
                 combined = node_labels[node] + "_" + "_".join(neighbor_labels)
-                new_labels[node] = str(
-                    hash(combined) % 10000
-                )  # Hash to keep manageable
+                new_labels[node] = str(hash(combined) % 10000)  # Hash to keep manageable
 
             node_labels = new_labels
 
@@ -624,9 +616,7 @@ class Graph2VecEmbedder(BaseGraphEmbedder):
 class GraphEmbedder:
     """High-level interface for graph embeddings."""
 
-    def __init__(
-        self, embedding_type: EmbeddingType, config: Optional[EmbeddingConfig] = None
-    ):
+    def __init__(self, embedding_type: EmbeddingType, config: Optional[EmbeddingConfig] = None):
         """Initialize graph embedder.
 
         Args:
@@ -646,9 +636,7 @@ class GraphEmbedder:
         else:
             raise ValueError(f"Unsupported embedding type: {embedding_type}")
 
-    def fit(
-        self, graph_data: Union[Dict[str, Any], List[Dict[str, Any]]]
-    ) -> Dict[str, np.ndarray]:
+    def fit(self, graph_data: Union[Dict[str, Any], List[Dict[str, Any]]]) -> Dict[str, np.ndarray]:
         """Fit embedding model."""
         return self.embedder.fit(graph_data)
 
@@ -674,7 +662,7 @@ class GraphEmbedder:
         perplexity: int = 30,
         n_components: int = 2,
         figsize: Tuple[int, int] = (12, 8),
-        sample_size: Optional[int] = None,
+        sample_size: Optional[int] = None
     ) -> Optional[Any]:
         """Visualize embeddings in 2D space.
 
@@ -711,9 +699,7 @@ class GraphEmbedder:
             if TSNE is None:
                 logger.warning("scikit-learn not available for t-SNE")
                 return None
-            reducer = TSNE(
-                n_components=n_components, perplexity=perplexity, random_state=42
-            )
+            reducer = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
         elif method.lower() == "pca":
             if PCA is None:
                 logger.warning("scikit-learn not available for PCA")
@@ -728,12 +714,13 @@ class GraphEmbedder:
         fig, ax = plt.subplots(figsize=figsize)
 
         scatter = ax.scatter(
-            reduced_embeddings[:, 0], reduced_embeddings[:, 1], alpha=0.7, s=50
+            reduced_embeddings[:, 0],
+            reduced_embeddings[:, 1],
+            alpha=0.7,
+            s=50
         )
 
-        ax.set_title(
-            f"{self.embedding_type.value.title()} Embeddings ({method.upper()})"
-        )
+        ax.set_title(f"{self.embedding_type.value.title()} Embeddings ({method.upper()})")
         ax.set_xlabel(f"{method.upper()} Component 1")
         ax.set_ylabel(f"{method.upper()} Component 2")
 
@@ -744,9 +731,9 @@ class GraphEmbedder:
                     entity_id[:10] + ("..." if len(entity_id) > 10 else ""),
                     (reduced_embeddings[i, 0], reduced_embeddings[i, 1]),
                     xytext=(5, 5),
-                    textcoords="offset points",
+                    textcoords='offset points',
                     fontsize=8,
-                    alpha=0.7,
+                    alpha=0.7
                 )
 
         plt.tight_layout()
@@ -769,7 +756,7 @@ class GraphEmbedder:
                 "embedding_type": self.embedding_type.value,
                 "num_embeddings": 0,
                 "embedding_dimension": 0,
-                "config": self.config.to_dict(),
+                "config": self.config.to_dict()
             }
 
         sample_embedding = next(iter(embeddings.values()))
@@ -780,5 +767,5 @@ class GraphEmbedder:
             "embedding_dimension": len(sample_embedding),
             "vocabulary_size": len(self.embedder.vocabulary),
             "config": self.config.to_dict(),
-            "sample_entities": list(embeddings.keys())[:10],
+            "sample_entities": list(embeddings.keys())[:10]
         }

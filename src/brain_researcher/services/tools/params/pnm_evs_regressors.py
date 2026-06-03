@@ -64,47 +64,27 @@ def pnm_evs_regressors_from_payload(
         tr=float(payload["tr"]),
         dry_run=bool(payload.get("dry_run", False)),
         output_prefix=str(payload.get("output_prefix", "pnm")),
-        cardiac_file=(
-            str(payload["cardiac_file"]) if payload.get("cardiac_file") else None
-        ),
+        cardiac_file=str(payload["cardiac_file"]) if payload.get("cardiac_file") else None,
         respiratory_file=(
-            str(payload["respiratory_file"])
-            if payload.get("respiratory_file")
-            else None
+            str(payload["respiratory_file"]) if payload.get("respiratory_file") else None
         ),
         rvt_file=str(payload["rvt_file"]) if payload.get("rvt_file") else None,
         heartrate_file=(
             str(payload["heartrate_file"]) if payload.get("heartrate_file") else None
         ),
-        csf_mask_file=(
-            str(payload["csf_mask_file"]) if payload.get("csf_mask_file") else None
-        ),
+        csf_mask_file=str(payload["csf_mask_file"]) if payload.get("csf_mask_file") else None,
         cardiac_order=max(0, int(payload.get("cardiac_order", 2))),
         respiratory_order=max(0, int(payload.get("respiratory_order", 1))),
-        cardiac_multiplicative_order=max(
-            0, int(payload.get("cardiac_multiplicative_order", 0))
-        ),
-        respiratory_multiplicative_order=max(
-            0, int(payload.get("respiratory_multiplicative_order", 0))
-        ),
-        rvt_smooth=(
-            float(payload["rvt_smooth"])
-            if payload.get("rvt_smooth") is not None
-            else None
-        ),
+        cardiac_multiplicative_order=max(0, int(payload.get("cardiac_multiplicative_order", 0))),
+        respiratory_multiplicative_order=max(0, int(payload.get("respiratory_multiplicative_order", 0))),
+        rvt_smooth=(float(payload["rvt_smooth"]) if payload.get("rvt_smooth") is not None else None),
         heartrate_smooth=(
-            float(payload["heartrate_smooth"])
-            if payload.get("heartrate_smooth") is not None
-            else None
+            float(payload["heartrate_smooth"]) if payload.get("heartrate_smooth") is not None else None
         ),
-        slice_direction=(
-            str(payload["slice_direction"]) if payload.get("slice_direction") else None
-        ),
+        slice_direction=str(payload["slice_direction"]) if payload.get("slice_direction") else None,
         slice_order=str(payload["slice_order"]) if payload.get("slice_order") else None,
         slice_timing_file=(
-            str(payload["slice_timing_file"])
-            if payload.get("slice_timing_file")
-            else None
+            str(payload["slice_timing_file"]) if payload.get("slice_timing_file") else None
         ),
         pnm_evs_bin=str(payload["pnm_evs_bin"]) if payload.get("pnm_evs_bin") else None,
         extra_args=_coerce_string_sequence(payload.get("extra_args")),
@@ -129,22 +109,12 @@ def build_pnm_evs_command(
     executable: str | None = None,
 ) -> list[str]:
     binary = executable or resolve_pnm_evs_executable(params)
-    cmd = [
-        binary,
-        "--tr",
-        str(params.tr),
-        "-i",
-        params.func_file,
-        "-o",
-        raw_output_file,
-    ]
+    cmd = [binary, "--tr", str(params.tr), "-i", params.func_file, "-o", raw_output_file]
 
     if params.cardiac_file:
         cmd.extend(["-c", params.cardiac_file, "--oc", str(params.cardiac_order)])
     if params.respiratory_file:
-        cmd.extend(
-            ["-r", params.respiratory_file, "--or", str(params.respiratory_order)]
-        )
+        cmd.extend(["-r", params.respiratory_file, "--or", str(params.respiratory_order)])
     if params.cardiac_multiplicative_order > 0:
         cmd.extend(["--multc", str(params.cardiac_multiplicative_order)])
     if params.respiratory_multiplicative_order > 0:
@@ -249,9 +219,7 @@ def run_pnm_evs_regressors(params: PnmEvsRegressorParameters) -> dict[str, objec
         params.csf_mask_file,
     ]
     if not any(optional_inputs):
-        raise ValueError(
-            "Provide at least one cardiac, respiratory, RVT, heartrate, or CSF mask input"
-        )
+        raise ValueError("Provide at least one cardiac, respiratory, RVT, heartrate, or CSF mask input")
     for optional_path in optional_inputs + [params.slice_timing_file]:
         if optional_path and not Path(optional_path).exists():
             raise FileNotFoundError(optional_path)
@@ -309,9 +277,7 @@ def run_pnm_evs_regressors(params: PnmEvsRegressorParameters) -> dict[str, objec
         stderr_path.write_text(stderr_text, encoding="utf-8")
         if completed.returncode != 0:
             metadata_path.write_text(
-                json.dumps(
-                    {**plan, "executed": True, "returncode": returncode}, indent=2
-                ),
+                json.dumps({**plan, "executed": True, "returncode": returncode}, indent=2),
                 encoding="utf-8",
             )
             raise RuntimeError(stderr_text or stdout_text or "pnm_evs execution failed")

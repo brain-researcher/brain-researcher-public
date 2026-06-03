@@ -185,12 +185,12 @@ class DatasetEvidenceSource(BaseEvidenceSource):
                 metadata={
                     "dataset_id": resolution.dataset_id,
                     "source_repo": resolution.source_repo,
-                    "local_path": (
-                        str(resolution.local_path) if resolution.local_path else None
-                    ),
-                    "bids_path": (
-                        str(resolution.bids_path) if resolution.bids_path else None
-                    ),
+                    "local_path": str(resolution.local_path)
+                    if resolution.local_path
+                    else None,
+                    "bids_path": str(resolution.bids_path)
+                    if resolution.bids_path
+                    else None,
                     **resolution.metadata,
                 },
             )

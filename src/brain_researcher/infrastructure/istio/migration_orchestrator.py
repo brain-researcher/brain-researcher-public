@@ -55,17 +55,13 @@ class MigrationOrchestrator:
                 return name
         return None
 
-    def run_validation_tests(
-        self, migration_id: str, service_name: str
-    ) -> Dict[str, Any]:
+    def run_validation_tests(self, migration_id: str, service_name: str) -> Dict[str, Any]:
         return {
             "health_check": {"passed": True, "duration": 1.0},
             "integration_test": {"passed": True, "duration": 2.0},
         }
 
-    def validate_service_migration(
-        self, migration_id: str, service_name: str
-    ) -> Dict[str, Any]:
+    def validate_service_migration(self, migration_id: str, service_name: str) -> Dict[str, Any]:
         tests = self.run_validation_tests(migration_id, service_name)
         success = all(test.get("passed") for test in tests.values())
         return {"success": success, "tests": tests}
@@ -73,9 +69,7 @@ class MigrationOrchestrator:
     def migrate_service(self, migration_id: str, service_name: str) -> Dict[str, Any]:
         return {"success": True}
 
-    def handle_migration_failure(
-        self, migration_id: str, service_name: str
-    ) -> Dict[str, Any]:
+    def handle_migration_failure(self, migration_id: str, service_name: str) -> Dict[str, Any]:
         return {"action": "rollback_initiated", "rollback_scope": "full_migration"}
 
     def pause_migration(self, migration_id: str) -> Dict[str, Any]:
@@ -98,8 +92,6 @@ class MigrationOrchestrator:
         completion_percentage = (completed / total * 100.0) if total else 0.0
         return {
             "completion_percentage": completion_percentage,
-            "current_phase": migration.get("current_service")
-            or migration.get("current_phase")
-            or "",
+            "current_phase": migration.get("current_service") or migration.get("current_phase") or "",
             "estimated_time_remaining": max(1.0, total - completed) * 5.0,
         }

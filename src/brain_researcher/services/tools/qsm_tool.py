@@ -4,14 +4,14 @@ Quantitative Susceptibility Mapping (QSM) tool for iron and susceptibility quant
 Implements QSM reconstruction for magnetic susceptibility mapping in the brain.
 """
 
-import json
 import logging
-import warnings
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+import json
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Tuple
+import warnings
+
+from pydantic import BaseModel, Field, ConfigDict
 
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -23,140 +23,208 @@ logger = logging.getLogger(__name__)
 
 class QSMArgs(BaseModel):
     """Arguments for QSM processing."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Input data
-    phase_file: str = Field(description="Phase image file (unwrapped)")
-    magnitude_file: str = Field(description="Magnitude image file")
-    mask_file: Optional[str] = Field(default=None, description="Brain mask file")
+    phase_file: str = Field(
+        description="Phase image file (unwrapped)"
+    )
+    magnitude_file: str = Field(
+        description="Magnitude image file"
+    )
+    mask_file: Optional[str] = Field(
+        default=None,
+        description="Brain mask file"
+    )
 
     # Multi-echo data
-    multi_echo: bool = Field(default=False, description="Multi-echo acquisition")
+    multi_echo: bool = Field(
+        default=False,
+        description="Multi-echo acquisition"
+    )
     echo_times: Optional[List[float]] = Field(
-        default=None, description="Echo times in seconds"
+        default=None,
+        description="Echo times in seconds"
     )
     phase_files: Optional[List[str]] = Field(
-        default=None, description="Phase files for multi-echo"
+        default=None,
+        description="Phase files for multi-echo"
     )
     magnitude_files: Optional[List[str]] = Field(
-        default=None, description="Magnitude files for multi-echo"
+        default=None,
+        description="Magnitude files for multi-echo"
     )
 
     # Acquisition parameters
     field_strength: float = Field(
-        default=3.0, description="Magnetic field strength in Tesla"
+        default=3.0,
+        description="Magnetic field strength in Tesla"
     )
     te: float = Field(
-        default=0.020, description="Echo time in seconds (for single echo)"
+        default=0.020,
+        description="Echo time in seconds (for single echo)"
     )
-    tr: float = Field(default=0.050, description="Repetition time in seconds")
-    flip_angle: float = Field(default=15.0, description="Flip angle in degrees")
+    tr: float = Field(
+        default=0.050,
+        description="Repetition time in seconds"
+    )
+    flip_angle: float = Field(
+        default=15.0,
+        description="Flip angle in degrees"
+    )
     voxel_size: List[float] = Field(
-        default=[1.0, 1.0, 1.0], description="Voxel size in mm"
+        default=[1.0, 1.0, 1.0],
+        description="Voxel size in mm"
     )
 
     # Phase unwrapping
     unwrap_method: str = Field(
         default="laplacian",
-        description="Unwrapping method: 'laplacian', 'region_growing', 'path_following'",
+        description="Unwrapping method: 'laplacian', 'region_growing', 'path_following'"
     )
     phase_offset_removal: str = Field(
         default="vsharp",
-        description="Background removal: 'vsharp', 'pdf', 'sharp', 'lbv'",
+        description="Background removal: 'vsharp', 'pdf', 'sharp', 'lbv'"
     )
 
     # QSM reconstruction
     qsm_method: str = Field(
         default="medi",
-        description="QSM method: 'medi', 'tkd', 'closed_form', 'ilsqr', 'star_qsm'",
+        description="QSM method: 'medi', 'tkd', 'closed_form', 'ilsqr', 'star_qsm'"
     )
-    regularization: float = Field(default=1000, description="Regularization parameter")
-    iterations: int = Field(default=10, description="Number of iterations")
+    regularization: float = Field(
+        default=1000,
+        description="Regularization parameter"
+    )
+    iterations: int = Field(
+        default=10,
+        description="Number of iterations"
+    )
 
     # TKD parameters
-    tkd_threshold: float = Field(default=0.2, description="TKD threshold for k-space")
+    tkd_threshold: float = Field(
+        default=0.2,
+        description="TKD threshold for k-space"
+    )
 
     # MEDI parameters
     medi_lambda: float = Field(
-        default=1000, description="MEDI regularization parameter"
+        default=1000,
+        description="MEDI regularization parameter"
     )
-    medi_iterations: int = Field(default=10, description="MEDI iterations")
+    medi_iterations: int = Field(
+        default=10,
+        description="MEDI iterations"
+    )
     use_magnitude_weighting: bool = Field(
-        default=True, description="Use magnitude for weighting"
+        default=True,
+        description="Use magnitude for weighting"
     )
 
     # SHARP/VSHARP parameters
     kernel_radius: List[int] = Field(
-        default=[5, 5, 5], description="Kernel radius for SHARP/VSHARP"
+        default=[5, 5, 5],
+        description="Kernel radius for SHARP/VSHARP"
     )
 
     # R2* mapping
     compute_r2star: bool = Field(
-        default=True, description="Compute R2* map from multi-echo"
+        default=True,
+        description="Compute R2* map from multi-echo"
     )
 
     # Iron quantification
     compute_iron: bool = Field(
-        default=True, description="Convert susceptibility to iron concentration"
+        default=True,
+        description="Convert susceptibility to iron concentration"
     )
     iron_regions: List[str] = Field(
-        default=[
-            "putamen",
-            "caudate",
-            "globus_pallidus",
-            "red_nucleus",
-            "substantia_nigra",
-        ],
-        description="Regions for iron quantification",
+        default=["putamen", "caudate", "globus_pallidus", "red_nucleus", "substantia_nigra"],
+        description="Regions for iron quantification"
     )
 
     # Microbleed detection
     detect_microbleeds: bool = Field(
-        default=False, description="Detect cerebral microbleeds"
+        default=False,
+        description="Detect cerebral microbleeds"
     )
     microbleed_threshold: float = Field(
-        default=0.3, description="Susceptibility threshold for microbleeds (ppm)"
+        default=0.3,
+        description="Susceptibility threshold for microbleeds (ppm)"
     )
 
     # Vein segmentation
-    segment_veins: bool = Field(default=False, description="Segment venous structures")
+    segment_veins: bool = Field(
+        default=False,
+        description="Segment venous structures"
+    )
     vein_threshold: float = Field(
-        default=0.05, description="Threshold for vein segmentation (ppm)"
+        default=0.05,
+        description="Threshold for vein segmentation (ppm)"
     )
 
     # Quality metrics
-    compute_quality: bool = Field(default=True, description="Compute quality metrics")
+    compute_quality: bool = Field(
+        default=True,
+        description="Compute quality metrics"
+    )
 
     # ROI analysis
     roi_file: Optional[str] = Field(
-        default=None, description="ROI atlas for regional analysis"
+        default=None,
+        description="ROI atlas for regional analysis"
     )
-    roi_names: Optional[List[str]] = Field(default=None, description="ROI names")
+    roi_names: Optional[List[str]] = Field(
+        default=None,
+        description="ROI names"
+    )
 
     # Reference region
     reference_region: str = Field(
-        default="csf", description="Reference region: 'csf', 'wm', 'none'"
+        default="csf",
+        description="Reference region: 'csf', 'wm', 'none'"
     )
 
     # Output options
-    output_dir: str = Field(description="Output directory")
+    output_dir: str = Field(
+        description="Output directory"
+    )
     save_intermediate: bool = Field(
-        default=False, description="Save intermediate results"
+        default=False,
+        description="Save intermediate results"
     )
     output_format: str = Field(
-        default="nifti", description="Output format: 'nifti', 'npy'"
+        default="nifti",
+        description="Output format: 'nifti', 'npy'"
     )
 
     # Visualization
-    visualize: bool = Field(default=True, description="Generate visualizations")
-    vmin: float = Field(default=-0.2, description="Min value for visualization (ppm)")
-    vmax: float = Field(default=0.2, description="Max value for visualization (ppm)")
-    colormap: str = Field(default="seismic", description="Colormap for QSM")
+    visualize: bool = Field(
+        default=True,
+        description="Generate visualizations"
+    )
+    vmin: float = Field(
+        default=-0.2,
+        description="Min value for visualization (ppm)"
+    )
+    vmax: float = Field(
+        default=0.2,
+        description="Max value for visualization (ppm)"
+    )
+    colormap: str = Field(
+        default="seismic",
+        description="Colormap for QSM"
+    )
 
     # Advanced options
-    verbose: bool = Field(default=True, description="Verbose output")
-    n_workers: int = Field(default=-1, description="Number of parallel workers")
+    verbose: bool = Field(
+        default=True,
+        description="Verbose output"
+    )
+    n_workers: int = Field(
+        default=-1,
+        description="Number of parallel workers"
+    )
 
 
 class QSMTool(NeuroToolWrapper):
@@ -173,7 +241,6 @@ class QSMTool(NeuroToolWrapper):
 
         try:
             import nibabel as nib
-
             self.nibabel_available = True
             logger.info("Nibabel available for neuroimaging I/O")
         except ImportError:
@@ -218,9 +285,9 @@ class QSMTool(NeuroToolWrapper):
             affine = np.eye(4)
             return phase_data, mag_data, affine
 
-    def _unwrap_phase(self, phase, method="laplacian"):
+    def _unwrap_phase(self, phase, method='laplacian'):
         """Unwrap phase data."""
-        if method == "laplacian":
+        if method == 'laplacian':
             # Laplacian unwrapping
             from scipy.ndimage import laplace
 
@@ -236,14 +303,12 @@ class QSMTool(NeuroToolWrapper):
             jumps = np.abs(diff) > np.pi
 
             for i in range(1, phase.shape[0]):
-                if np.any(jumps[i - 1]):
-                    unwrapped[i:] += (
-                        2 * np.pi * np.sign(diff[i - 1][jumps[i - 1]].mean())
-                    )
+                if np.any(jumps[i-1]):
+                    unwrapped[i:] += 2 * np.pi * np.sign(diff[i-1][jumps[i-1]].mean())
 
             return unwrapped
 
-        elif method == "region_growing":
+        elif method == 'region_growing':
             # Region growing unwrapping
             unwrapped = np.zeros_like(phase)
             visited = np.zeros_like(phase, dtype=bool)
@@ -279,11 +344,9 @@ class QSMTool(NeuroToolWrapper):
             # Default - return as is
             return phase
 
-    def _remove_background_field(
-        self, phase, mask, method="vsharp", kernel_radius=[5, 5, 5]
-    ):
+    def _remove_background_field(self, phase, mask, method='vsharp', kernel_radius=[5, 5, 5]):
         """Remove background field."""
-        if method == "vsharp":
+        if method == 'vsharp':
             # Variable kernel SHARP
             from scipy.ndimage import convolve
 
@@ -302,10 +365,10 @@ class QSMTool(NeuroToolWrapper):
 
             return local_field
 
-        elif method == "pdf":
+        elif method == 'pdf':
             # Projection onto Dipole Fields
             # Simplified implementation
-            from scipy.fft import fftn, fftshift, ifftn
+            from scipy.fft import fftn, ifftn, fftshift
 
             # FFT of phase
             phase_fft = fftn(phase)
@@ -337,9 +400,9 @@ class QSMTool(NeuroToolWrapper):
             for j in range(size[1]):
                 for k in range(size[2]):
                     dist = np.sqrt(
-                        ((i - center[0]) / radius[0]) ** 2
-                        + ((j - center[1]) / radius[1]) ** 2
-                        + ((k - center[2]) / radius[2]) ** 2
+                        ((i - center[0]) / radius[0]) ** 2 +
+                        ((j - center[1]) / radius[1]) ** 2 +
+                        ((k - center[2]) / radius[2]) ** 2
                     )
                     if dist <= 1:
                         kernel[i, j, k] = 1
@@ -365,7 +428,7 @@ class QSMTool(NeuroToolWrapper):
         k2[k2 == 0] = 1e-8  # Avoid division by zero
 
         # Dipole kernel: d = 1/3 - kz^2/k^2
-        dipole = 1 / 3 - (kz * B0_dir[2]) ** 2 / k2
+        dipole = 1/3 - (kz * B0_dir[2])**2 / k2
 
         return dipole
 
@@ -444,13 +507,15 @@ class QSMTool(NeuroToolWrapper):
         from scipy.ndimage import convolve
 
         # Simple TV gradient
-        kernel = np.array(
-            [
-                [[0, 0, 0], [0, -1, 0], [0, 0, 0]],
-                [[0, -1, 0], [-1, 6, -1], [0, -1, 0]],
-                [[0, 0, 0], [0, -1, 0], [0, 0, 0]],
-            ]
-        )
+        kernel = np.array([[[0, 0, 0],
+                           [0, -1, 0],
+                           [0, 0, 0]],
+                          [[0, -1, 0],
+                           [-1, 6, -1],
+                           [0, -1, 0]],
+                          [[0, 0, 0],
+                           [0, -1, 0],
+                           [0, 0, 0]]])
 
         tv_grad = convolve(image, kernel)
         tv_grad *= weight
@@ -501,7 +566,7 @@ class QSMTool(NeuroToolWrapper):
 
     def _detect_microbleeds(self, susceptibility, mask, threshold=0.3):
         """Detect microbleeds from QSM."""
-        from scipy.ndimage import binary_opening, label
+        from scipy.ndimage import label, binary_opening
 
         # Threshold for high susceptibility
         microbleed_candidates = (susceptibility > threshold) & mask
@@ -536,7 +601,7 @@ class QSMTool(NeuroToolWrapper):
         vein_candidates = binary_closing(vein_candidates, iterations=2)
 
         # Skeletonize for vessel centerlines
-        if hasattr(skeletonize_3d, "__call__"):
+        if hasattr(skeletonize_3d, '__call__'):
             vein_skeleton = skeletonize_3d(vein_candidates)
         else:
             vein_skeleton = vein_candidates  # Fallback
@@ -558,22 +623,22 @@ class QSMTool(NeuroToolWrapper):
         field_calc = np.real(ifftn(field_calc_fft))
 
         # RMSE between calculated and measured field
-        rmse = np.sqrt(np.mean((field_calc[mask] - local_field[mask]) ** 2))
-        metrics["field_rmse"] = float(rmse)
+        rmse = np.sqrt(np.mean((field_calc[mask] - local_field[mask])**2))
+        metrics['field_rmse'] = float(rmse)
 
         # Susceptibility statistics
-        metrics["chi_mean"] = float(np.mean(susceptibility[mask]))
-        metrics["chi_std"] = float(np.std(susceptibility[mask]))
-        metrics["chi_min"] = float(np.min(susceptibility[mask]))
-        metrics["chi_max"] = float(np.max(susceptibility[mask]))
+        metrics['chi_mean'] = float(np.mean(susceptibility[mask]))
+        metrics['chi_std'] = float(np.std(susceptibility[mask]))
+        metrics['chi_min'] = float(np.min(susceptibility[mask]))
+        metrics['chi_max'] = float(np.max(susceptibility[mask]))
 
         # SNR estimate
         signal = np.mean(np.abs(susceptibility[mask]))
         noise = np.std(susceptibility[mask])
         if noise > 0:
-            metrics["snr"] = float(signal / noise)
+            metrics['snr'] = float(signal / noise)
         else:
-            metrics["snr"] = 0
+            metrics['snr'] = 0
 
         return metrics
 
@@ -591,20 +656,16 @@ class QSMTool(NeuroToolWrapper):
                 roi_name = f"ROI_{roi_id}" if roi_names is None else roi_names[i]
 
                 roi_results[roi_name] = {
-                    "mean_susceptibility_ppm": float(np.mean(susceptibility[roi_mask])),
-                    "std_susceptibility_ppm": float(np.std(susceptibility[roi_mask])),
-                    "median_susceptibility_ppm": float(
-                        np.median(susceptibility[roi_mask])
-                    ),
-                    "volume_mm3": float(np.sum(roi_mask)),
-                    "n_voxels": int(np.sum(roi_mask)),
+                    'mean_susceptibility_ppm': float(np.mean(susceptibility[roi_mask])),
+                    'std_susceptibility_ppm': float(np.std(susceptibility[roi_mask])),
+                    'median_susceptibility_ppm': float(np.median(susceptibility[roi_mask])),
+                    'volume_mm3': float(np.sum(roi_mask)),
+                    'n_voxels': int(np.sum(roi_mask))
                 }
 
         return roi_results
 
-    def _visualize_qsm(
-        self, susceptibility, output_path, vmin=-0.2, vmax=0.2, colormap="seismic"
-    ):
+    def _visualize_qsm(self, susceptibility, output_path, vmin=-0.2, vmax=0.2, colormap='seismic'):
         """Visualize QSM results."""
         import matplotlib.pyplot as plt
 
@@ -616,55 +677,48 @@ class QSMTool(NeuroToolWrapper):
         fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
         # Axial
-        im1 = axes[0].imshow(
-            susceptibility[:, :, mid_axial].T, cmap=colormap, vmin=vmin, vmax=vmax
-        )
-        axes[0].set_title("QSM - Axial")
-        axes[0].axis("off")
-        plt.colorbar(im1, ax=axes[0], label="Susceptibility (ppm)")
+        im1 = axes[0].imshow(susceptibility[:, :, mid_axial].T,
+                            cmap=colormap, vmin=vmin, vmax=vmax)
+        axes[0].set_title('QSM - Axial')
+        axes[0].axis('off')
+        plt.colorbar(im1, ax=axes[0], label='Susceptibility (ppm)')
 
         # Sagittal
-        im2 = axes[1].imshow(
-            susceptibility[mid_sagittal, :, :].T, cmap=colormap, vmin=vmin, vmax=vmax
-        )
-        axes[1].set_title("QSM - Sagittal")
-        axes[1].axis("off")
-        plt.colorbar(im2, ax=axes[1], label="Susceptibility (ppm)")
+        im2 = axes[1].imshow(susceptibility[mid_sagittal, :, :].T,
+                            cmap=colormap, vmin=vmin, vmax=vmax)
+        axes[1].set_title('QSM - Sagittal')
+        axes[1].axis('off')
+        plt.colorbar(im2, ax=axes[1], label='Susceptibility (ppm)')
 
         # Coronal
-        im3 = axes[2].imshow(
-            susceptibility[:, mid_coronal, :].T, cmap=colormap, vmin=vmin, vmax=vmax
-        )
-        axes[2].set_title("QSM - Coronal")
-        axes[2].axis("off")
-        plt.colorbar(im3, ax=axes[2], label="Susceptibility (ppm)")
+        im3 = axes[2].imshow(susceptibility[:, mid_coronal, :].T,
+                            cmap=colormap, vmin=vmin, vmax=vmax)
+        axes[2].set_title('QSM - Coronal')
+        axes[2].axis('off')
+        plt.colorbar(im3, ax=axes[2], label='Susceptibility (ppm)')
 
-        plt.suptitle("Quantitative Susceptibility Mapping")
+        plt.suptitle('Quantitative Susceptibility Mapping')
         plt.tight_layout()
-        plt.savefig(output_path / "qsm_visualization.png", dpi=150, bbox_inches="tight")
+        plt.savefig(output_path / 'qsm_visualization.png', dpi=150, bbox_inches='tight')
         plt.close()
 
         # Histogram
         fig, ax = plt.subplots(figsize=(8, 6))
 
         chi_flat = susceptibility[susceptibility != 0].flatten()
-        ax.hist(chi_flat, bins=100, alpha=0.7, color="blue", edgecolor="black")
-        ax.axvline(0, color="red", linestyle="--", label="Zero susceptibility")
-        ax.axvline(
-            np.mean(chi_flat),
-            color="green",
-            linestyle="--",
-            label=f"Mean: {np.mean(chi_flat):.3f} ppm",
-        )
+        ax.hist(chi_flat, bins=100, alpha=0.7, color='blue', edgecolor='black')
+        ax.axvline(0, color='red', linestyle='--', label='Zero susceptibility')
+        ax.axvline(np.mean(chi_flat), color='green', linestyle='--',
+                  label=f'Mean: {np.mean(chi_flat):.3f} ppm')
 
-        ax.set_xlabel("Susceptibility (ppm)")
-        ax.set_ylabel("Frequency")
-        ax.set_title("QSM Histogram")
+        ax.set_xlabel('Susceptibility (ppm)')
+        ax.set_ylabel('Frequency')
+        ax.set_title('QSM Histogram')
         ax.legend()
         ax.grid(True, alpha=0.3)
 
         plt.tight_layout()
-        plt.savefig(output_path / "qsm_histogram.png", dpi=150, bbox_inches="tight")
+        plt.savefig(output_path / 'qsm_histogram.png', dpi=150, bbox_inches='tight')
         plt.close()
 
     def _run(
@@ -711,7 +765,7 @@ class QSMTool(NeuroToolWrapper):
         colormap: str = "seismic",
         verbose: bool = True,
         n_workers: int = -1,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute QSM reconstruction."""
         try:
@@ -729,7 +783,6 @@ class QSMTool(NeuroToolWrapper):
             if mask_file and Path(mask_file).exists():
                 if self.nibabel_available:
                     import nibabel as nib
-
                     mask = nib.load(mask_file).get_fdata().astype(bool)
                 else:
                     mask = np.ones_like(phase_data, dtype=bool)
@@ -759,11 +812,11 @@ class QSMTool(NeuroToolWrapper):
             if verbose:
                 logger.info(f"Performing QSM reconstruction using {qsm_method}")
 
-            if qsm_method == "tkd":
+            if qsm_method == 'tkd':
                 susceptibility = self._qsm_tkd(
                     local_field_ppm, mask, tkd_threshold, voxel_size
                 )
-            elif qsm_method == "medi":
+            elif qsm_method == 'medi':
                 susceptibility = self._qsm_medi(
                     local_field_ppm, mag_data, mask, medi_lambda, medi_iterations
                 )
@@ -774,7 +827,7 @@ class QSMTool(NeuroToolWrapper):
                 )
 
             # Reference to CSF if requested
-            if reference_region == "csf":
+            if reference_region == 'csf':
                 # Find CSF regions (low magnitude, near ventricles)
                 csf_mask = mag_data < np.percentile(mag_data[mask], 20)
                 if np.any(csf_mask):
@@ -791,7 +844,6 @@ class QSMTool(NeuroToolWrapper):
                 for mag_file in magnitude_files:
                     if self.nibabel_available:
                         import nibabel as nib
-
                         mag_multi.append(nib.load(mag_file).get_fdata())
 
                 if echo_times and len(mag_multi) == len(echo_times):
@@ -845,11 +897,8 @@ class QSMTool(NeuroToolWrapper):
 
                 if self.nibabel_available:
                     import nibabel as nib
-
                     roi_atlas = nib.load(roi_file).get_fdata().astype(int)
-                    roi_results = self._roi_analysis(
-                        susceptibility, roi_atlas, roi_names
-                    )
+                    roi_results = self._roi_analysis(susceptibility, roi_atlas, roi_names)
 
             # Save outputs
             outputs = {}
@@ -858,43 +907,39 @@ class QSMTool(NeuroToolWrapper):
                 import nibabel as nib
 
                 # Save QSM
-                qsm_file = output_path / "qsm.nii.gz"
+                qsm_file = output_path / 'qsm.nii.gz'
                 qsm_img = nib.Nifti1Image(susceptibility.astype(np.float32), affine)
                 nib.save(qsm_img, qsm_file)
-                outputs["qsm"] = str(qsm_file)
+                outputs['qsm'] = str(qsm_file)
 
                 # Save intermediate results
                 if save_intermediate:
                     # Local field
-                    field_file = output_path / "local_field.nii.gz"
-                    field_img = nib.Nifti1Image(
-                        local_field_ppm.astype(np.float32), affine
-                    )
+                    field_file = output_path / 'local_field.nii.gz'
+                    field_img = nib.Nifti1Image(local_field_ppm.astype(np.float32), affine)
                     nib.save(field_img, field_file)
-                    outputs["local_field"] = str(field_file)
+                    outputs['local_field'] = str(field_file)
 
                 # Save iron map
                 if iron_map is not None:
-                    iron_file = output_path / "iron_concentration.nii.gz"
+                    iron_file = output_path / 'iron_concentration.nii.gz'
                     iron_img = nib.Nifti1Image(iron_map.astype(np.float32), affine)
                     nib.save(iron_img, iron_file)
-                    outputs["iron"] = str(iron_file)
+                    outputs['iron'] = str(iron_file)
 
                 # Save R2* map
                 if r2star_map is not None:
-                    r2star_file = output_path / "r2star.nii.gz"
+                    r2star_file = output_path / 'r2star.nii.gz'
                     r2star_img = nib.Nifti1Image(r2star_map.astype(np.float32), affine)
                     nib.save(r2star_img, r2star_file)
-                    outputs["r2star"] = str(r2star_file)
+                    outputs['r2star'] = str(r2star_file)
 
                 # Save microbleeds
                 if microbleeds is not None:
-                    microbleed_file = output_path / "microbleeds.nii.gz"
-                    microbleed_img = nib.Nifti1Image(
-                        microbleeds.astype(np.uint8), affine
-                    )
+                    microbleed_file = output_path / 'microbleeds.nii.gz'
+                    microbleed_img = nib.Nifti1Image(microbleeds.astype(np.uint8), affine)
                     nib.save(microbleed_img, microbleed_file)
-                    outputs["microbleeds"] = str(microbleed_file)
+                    outputs['microbleeds'] = str(microbleed_file)
 
             # Visualization
             if visualize:
@@ -902,43 +947,43 @@ class QSMTool(NeuroToolWrapper):
                     logger.info("Generating visualizations")
 
                 self._visualize_qsm(susceptibility, output_path, vmin, vmax, colormap)
-                outputs["visualization"] = str(output_path / "qsm_visualization.png")
-                outputs["histogram"] = str(output_path / "qsm_histogram.png")
+                outputs['visualization'] = str(output_path / 'qsm_visualization.png')
+                outputs['histogram'] = str(output_path / 'qsm_histogram.png')
 
             # Prepare results
             results = {
-                "qsm_method": qsm_method,
-                "field_strength": field_strength,
-                "susceptibility_stats": {
-                    "mean_ppm": float(np.mean(susceptibility[mask])),
-                    "std_ppm": float(np.std(susceptibility[mask])),
-                    "min_ppm": float(np.min(susceptibility[mask])),
-                    "max_ppm": float(np.max(susceptibility[mask])),
+                'qsm_method': qsm_method,
+                'field_strength': field_strength,
+                'susceptibility_stats': {
+                    'mean_ppm': float(np.mean(susceptibility[mask])),
+                    'std_ppm': float(np.std(susceptibility[mask])),
+                    'min_ppm': float(np.min(susceptibility[mask])),
+                    'max_ppm': float(np.max(susceptibility[mask]))
                 },
-                "quality_metrics": quality_metrics,
+                'quality_metrics': quality_metrics
             }
 
             if iron_map is not None:
-                results["iron_stats"] = {
-                    "mean_mg_per_g": float(np.mean(iron_map[mask])),
-                    "std_mg_per_g": float(np.std(iron_map[mask])),
+                results['iron_stats'] = {
+                    'mean_mg_per_g': float(np.mean(iron_map[mask])),
+                    'std_mg_per_g': float(np.std(iron_map[mask]))
                 }
 
             if n_microbleeds > 0:
-                results["microbleeds"] = {
-                    "count": n_microbleeds,
-                    "threshold_ppm": microbleed_threshold,
+                results['microbleeds'] = {
+                    'count': n_microbleeds,
+                    'threshold_ppm': microbleed_threshold
                 }
 
             if roi_results:
-                results["roi_analysis"] = roi_results
+                results['roi_analysis'] = roi_results
 
             # Save results
-            results_file = output_path / "qsm_results.json"
-            with open(results_file, "w") as f:
+            results_file = output_path / 'qsm_results.json'
+            with open(results_file, 'w') as f:
                 json.dump(results, f, indent=2)
 
-            outputs["results"] = str(results_file)
+            outputs['results'] = str(results_file)
 
             # Prepare message
             message = f"QSM reconstruction completed using {qsm_method}"
@@ -947,12 +992,20 @@ class QSMTool(NeuroToolWrapper):
 
             return ToolResult(
                 status="success",
-                data={"outputs": outputs, "summary": results, "message": message},
+                data={
+                    "outputs": outputs,
+                    "summary": results,
+                    "message": message
+                }
             )
 
         except Exception as e:
             logger.error(f"QSM reconstruction failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class QSMTools:
@@ -961,4 +1014,6 @@ class QSMTools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all QSM tools."""
-        return [QSMTool()]
+        return [
+            QSMTool()
+        ]

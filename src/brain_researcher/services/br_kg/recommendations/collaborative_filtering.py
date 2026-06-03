@@ -4,15 +4,14 @@ This module provides recommendation capabilities based on graph patterns,
 user similarity, item similarity, and hybrid approaches.
 """
 
-import heapq
 import logging
-from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
-
 import numpy as np
+from typing import Dict, List, Any, Optional, Set, Tuple
+from dataclasses import dataclass, field
+from collections import defaultdict
 from scipy.sparse import csr_matrix
 from scipy.spatial.distance import cosine
+import heapq
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +23,7 @@ class UserProfile:
     user_id: str
     interactions: Dict[str, float]  # item_id -> rating/weight
     preferences: Dict[str, Any] = field(default_factory=dict)
-    history: List[Tuple[str, str, float]] = field(
-        default_factory=list
-    )  # (item_id, timestamp, rating)
+    history: List[Tuple[str, str, float]] = field(default_factory=list)  # (item_id, timestamp, rating)
 
 
 @dataclass
@@ -111,15 +108,13 @@ class CollaborativeFiltering:
             user_id=user_id,
             interactions=interactions,
             preferences=preferences,
-            history=history,
+            history=history
         )
 
         self.user_profiles[user_id] = profile
         return profile
 
-    def _get_interaction_weight(
-        self, interaction_type: str, rating: Optional[float]
-    ) -> float:
+    def _get_interaction_weight(self, interaction_type: str, rating: Optional[float]) -> float:
         """Get weight for an interaction type.
 
         Args:
@@ -132,12 +127,20 @@ class CollaborativeFiltering:
         if rating is not None:
             return rating
 
-        weights = {"RATED": 1.0, "DOWNLOADED": 0.8, "VIEWED": 0.5, "INTERACTED": 0.3}
+        weights = {
+            "RATED": 1.0,
+            "DOWNLOADED": 0.8,
+            "VIEWED": 0.5,
+            "INTERACTED": 0.3
+        }
 
         return weights.get(interaction_type, 0.5)
 
     def recommend_by_user_similarity(
-        self, user_id: str, top_k: int = 10, similarity_threshold: float = 0.3
+        self,
+        user_id: str,
+        top_k: int = 10,
+        similarity_threshold: float = 0.3
     ) -> List[RecommendationResult]:
         """Recommend items based on similar users.
 
@@ -169,33 +172,27 @@ class CollaborativeFiltering:
             similar_profile = self.build_user_profile(similar_user_id)
 
             for item_id, weight in similar_profile.interactions.items():
-                if (
-                    item_id not in profile.interactions
-                ):  # Don't recommend already interacted items
+                if item_id not in profile.interactions:  # Don't recommend already interacted items
                     item_scores[item_id] += similarity * weight
-                    item_evidence[item_id].append(
-                        f"User {similar_user_id} (sim: {similarity:.2f})"
-                    )
+                    item_evidence[item_id].append(f"User {similar_user_id} (sim: {similarity:.2f})")
 
         # Sort and create recommendations
         recommendations = []
-        for item_id, score in sorted(
-            item_scores.items(), key=lambda x: x[1], reverse=True
-        )[:top_k]:
-            recommendations.append(
-                RecommendationResult(
-                    item_id=item_id,
-                    score=score,
-                    explanation=f"Recommended based on {len(item_evidence[item_id])} similar users",
-                    evidence=item_evidence[item_id][:3],  # Top 3 evidence
-                    confidence=min(1.0, score),
-                )
-            )
+        for item_id, score in sorted(item_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]:
+            recommendations.append(RecommendationResult(
+                item_id=item_id,
+                score=score,
+                explanation=f"Recommended based on {len(item_evidence[item_id])} similar users",
+                evidence=item_evidence[item_id][:3],  # Top 3 evidence
+                confidence=min(1.0, score)
+            ))
 
         return recommendations
 
     def _find_similar_users(
-        self, user_id: str, threshold: float = 0.3
+        self,
+        user_id: str,
+        threshold: float = 0.3
     ) -> List[Tuple[str, float]]:
         """Find users similar to given user.
 
@@ -223,7 +220,10 @@ class CollaborativeFiltering:
             RETURN u2.id as user_id, common_items
             """
 
-            result = session.run(query, {"user_id": user_id, "min_common": 3})
+            result = session.run(query, {
+                "user_id": user_id,
+                "min_common": 3
+            })
 
             similar_users = []
 
@@ -244,7 +244,9 @@ class CollaborativeFiltering:
         return similar_users
 
     def _calculate_user_similarity(
-        self, profile1: UserProfile, profile2: UserProfile
+        self,
+        profile1: UserProfile,
+        profile2: UserProfile
     ) -> float:
         """Calculate similarity between two users.
 
@@ -256,9 +258,7 @@ class CollaborativeFiltering:
             Similarity score (0-1)
         """
         # Get common items
-        common_items = set(profile1.interactions.keys()) & set(
-            profile2.interactions.keys()
-        )
+        common_items = set(profile1.interactions.keys()) & set(profile2.interactions.keys())
 
         if len(common_items) < 2:
             return 0.0
@@ -278,7 +278,10 @@ class CollaborativeFiltering:
         return similarity * (0.7 + 0.3 * overlap_bonus)
 
     def recommend_by_item_similarity(
-        self, user_id: str, top_k: int = 10, similarity_threshold: float = 0.3
+        self,
+        user_id: str,
+        top_k: int = 10,
+        similarity_threshold: float = 0.3
     ) -> List[RecommendationResult]:
         """Recommend items based on item similarity.
 
@@ -311,23 +314,21 @@ class CollaborativeFiltering:
 
         # Sort and create recommendations
         recommendations = []
-        for item_id, score in sorted(
-            item_scores.items(), key=lambda x: x[1], reverse=True
-        )[:top_k]:
-            recommendations.append(
-                RecommendationResult(
-                    item_id=item_id,
-                    score=score,
-                    explanation=f"Similar to items you've interacted with",
-                    evidence=item_evidence[item_id][:3],
-                    confidence=min(1.0, score / len(profile.interactions)),
-                )
-            )
+        for item_id, score in sorted(item_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]:
+            recommendations.append(RecommendationResult(
+                item_id=item_id,
+                score=score,
+                explanation=f"Similar to items you've interacted with",
+                evidence=item_evidence[item_id][:3],
+                confidence=min(1.0, score / len(profile.interactions))
+            ))
 
         return recommendations
 
     def _find_similar_items(
-        self, item_id: str, threshold: float = 0.3
+        self,
+        item_id: str,
+        threshold: float = 0.3
     ) -> List[Tuple[str, float]]:
         """Find items similar to given item.
 
@@ -377,7 +378,9 @@ class CollaborativeFiltering:
         return similar_items
 
     def recommend_by_patterns(
-        self, user_id: str, top_k: int = 10
+        self,
+        user_id: str,
+        top_k: int = 10
     ) -> List[RecommendationResult]:
         """Recommend based on graph patterns.
 
@@ -401,30 +404,22 @@ class CollaborativeFiltering:
         item_evidence = defaultdict(list)
 
         for pattern in patterns:
-            matching_items = self._find_items_matching_pattern(
-                pattern, profile.interactions.keys()
-            )
+            matching_items = self._find_items_matching_pattern(pattern, profile.interactions.keys())
 
             for item_id, match_score in matching_items:
                 item_scores[item_id] += pattern["weight"] * match_score
-                item_evidence[item_id].append(
-                    f"Matches pattern: {pattern['description']}"
-                )
+                item_evidence[item_id].append(f"Matches pattern: {pattern['description']}")
 
         # Sort and create recommendations
         recommendations = []
-        for item_id, score in sorted(
-            item_scores.items(), key=lambda x: x[1], reverse=True
-        )[:top_k]:
-            recommendations.append(
-                RecommendationResult(
-                    item_id=item_id,
-                    score=score,
-                    explanation="Based on your interaction patterns",
-                    evidence=item_evidence[item_id][:3],
-                    confidence=min(1.0, score),
-                )
-            )
+        for item_id, score in sorted(item_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]:
+            recommendations.append(RecommendationResult(
+                item_id=item_id,
+                score=score,
+                explanation="Based on your interaction patterns",
+                evidence=item_evidence[item_id][:3],
+                confidence=min(1.0, score)
+            ))
 
         return recommendations
 
@@ -459,14 +454,12 @@ class CollaborativeFiltering:
             result1 = session.run(query1, {"user_id": user_id})
             for record in result1:
                 if record["instances"]:
-                    patterns.append(
-                        {
-                            "type": "co-occurrence",
-                            "instances": record["instances"],
-                            "weight": record["weight"],
-                            "description": "Items frequently accessed together",
-                        }
-                    )
+                    patterns.append({
+                        "type": "co-occurrence",
+                        "instances": record["instances"],
+                        "weight": record["weight"],
+                        "description": "Items frequently accessed together"
+                    })
 
             # Pattern 2: Sequential patterns
             query2 = """
@@ -485,14 +478,12 @@ class CollaborativeFiltering:
                 result2 = session.run(query2, {"user_id": user_id})
                 for record in result2:
                     if record["instances"]:
-                        patterns.append(
-                            {
-                                "type": "sequential",
-                                "instances": record["instances"],
-                                "weight": record["weight"],
-                                "description": "Sequential access patterns",
-                            }
-                        )
+                        patterns.append({
+                            "type": "sequential",
+                            "instances": record["instances"],
+                            "weight": record["weight"],
+                            "description": "Sequential access patterns"
+                        })
             except:
                 pass  # Sequential pattern may not work without proper timestamp format
 
@@ -506,20 +497,20 @@ class CollaborativeFiltering:
 
             result3 = session.run(query3, {"user_id": user_id})
             for record in result3:
-                patterns.append(
-                    {
-                        "type": "category",
-                        "categories": record["categories"],
-                        "weight": record["weight"] / 10,  # Normalize
-                        "description": f"Preference for {record['categories']}",
-                    }
-                )
+                patterns.append({
+                    "type": "category",
+                    "categories": record["categories"],
+                    "weight": record["weight"] / 10,  # Normalize
+                    "description": f"Preference for {record['categories']}"
+                })
 
         self.pattern_cache[cache_key] = patterns
         return patterns
 
     def _find_items_matching_pattern(
-        self, pattern: Dict[str, Any], exclude_items: Set[str]
+        self,
+        pattern: Dict[str, Any],
+        exclude_items: Set[str]
     ) -> List[Tuple[str, float]]:
         """Find items matching a pattern.
 
@@ -542,10 +533,10 @@ class CollaborativeFiltering:
                     RETURN i2.id as item_id, 1.0 as score
                     LIMIT 10
                     """
-                    result = session.run(
-                        query,
-                        {"item_id": instance["item1"], "exclude": list(exclude_items)},
-                    )
+                    result = session.run(query, {
+                        "item_id": instance["item1"],
+                        "exclude": list(exclude_items)
+                    })
 
                     for record in result:
                         matching_items.append((record["item_id"], record["score"]))
@@ -559,13 +550,10 @@ class CollaborativeFiltering:
                 RETURN item.id as item_id, 1.0 as score
                 LIMIT 20
                 """
-                result = session.run(
-                    query,
-                    {
-                        "categories": pattern["categories"],
-                        "exclude": list(exclude_items),
-                    },
-                )
+                result = session.run(query, {
+                    "categories": pattern["categories"],
+                    "exclude": list(exclude_items)
+                })
 
                 for record in result:
                     matching_items.append((record["item_id"], record["score"]))
@@ -573,7 +561,10 @@ class CollaborativeFiltering:
         return matching_items
 
     def hybrid_recommend(
-        self, user_id: str, top_k: int = 10, weights: Optional[Dict[str, float]] = None
+        self,
+        user_id: str,
+        top_k: int = 10,
+        weights: Optional[Dict[str, float]] = None
     ) -> List[RecommendationResult]:
         """Hybrid recommendation combining multiple approaches.
 
@@ -586,65 +577,58 @@ class CollaborativeFiltering:
             List of recommendations
         """
         if weights is None:
-            weights = {"user_similarity": 0.3, "item_similarity": 0.4, "patterns": 0.3}
+            weights = {
+                "user_similarity": 0.3,
+                "item_similarity": 0.4,
+                "patterns": 0.3
+            }
 
-        all_recommendations = defaultdict(
-            lambda: {"score": 0, "explanations": [], "evidence": [], "confidence": []}
-        )
+        all_recommendations = defaultdict(lambda: {
+            "score": 0,
+            "explanations": [],
+            "evidence": [],
+            "confidence": []
+        })
 
         # Get recommendations from each method
         if weights.get("user_similarity", 0) > 0:
             user_recs = self.recommend_by_user_similarity(user_id, top_k * 2)
             for rec in user_recs:
-                all_recommendations[rec.item_id]["score"] += (
-                    rec.score * weights["user_similarity"]
-                )
-                all_recommendations[rec.item_id]["explanations"].append(
-                    f"User-based: {rec.explanation}"
-                )
+                all_recommendations[rec.item_id]["score"] += rec.score * weights["user_similarity"]
+                all_recommendations[rec.item_id]["explanations"].append(f"User-based: {rec.explanation}")
                 all_recommendations[rec.item_id]["evidence"].extend(rec.evidence)
                 all_recommendations[rec.item_id]["confidence"].append(rec.confidence)
 
         if weights.get("item_similarity", 0) > 0:
             item_recs = self.recommend_by_item_similarity(user_id, top_k * 2)
             for rec in item_recs:
-                all_recommendations[rec.item_id]["score"] += (
-                    rec.score * weights["item_similarity"]
-                )
-                all_recommendations[rec.item_id]["explanations"].append(
-                    f"Item-based: {rec.explanation}"
-                )
+                all_recommendations[rec.item_id]["score"] += rec.score * weights["item_similarity"]
+                all_recommendations[rec.item_id]["explanations"].append(f"Item-based: {rec.explanation}")
                 all_recommendations[rec.item_id]["evidence"].extend(rec.evidence)
                 all_recommendations[rec.item_id]["confidence"].append(rec.confidence)
 
         if weights.get("patterns", 0) > 0:
             pattern_recs = self.recommend_by_patterns(user_id, top_k * 2)
             for rec in pattern_recs:
-                all_recommendations[rec.item_id]["score"] += (
-                    rec.score * weights["patterns"]
-                )
-                all_recommendations[rec.item_id]["explanations"].append(
-                    f"Pattern-based: {rec.explanation}"
-                )
+                all_recommendations[rec.item_id]["score"] += rec.score * weights["patterns"]
+                all_recommendations[rec.item_id]["explanations"].append(f"Pattern-based: {rec.explanation}")
                 all_recommendations[rec.item_id]["evidence"].extend(rec.evidence)
                 all_recommendations[rec.item_id]["confidence"].append(rec.confidence)
 
         # Combine and rank
         final_recommendations = []
         for item_id, data in sorted(
-            all_recommendations.items(), key=lambda x: x[1]["score"], reverse=True
+            all_recommendations.items(),
+            key=lambda x: x[1]["score"],
+            reverse=True
         )[:top_k]:
-            final_recommendations.append(
-                RecommendationResult(
-                    item_id=item_id,
-                    score=data["score"],
-                    explanation=" | ".join(data["explanations"]),
-                    evidence=list(set(data["evidence"]))[:5],  # Unique evidence
-                    confidence=(
-                        np.mean(data["confidence"]) if data["confidence"] else 0.5
-                    ),
-                )
-            )
+            final_recommendations.append(RecommendationResult(
+                item_id=item_id,
+                score=data["score"],
+                explanation=" | ".join(data["explanations"]),
+                evidence=list(set(data["evidence"]))[:5],  # Unique evidence
+                confidence=np.mean(data["confidence"]) if data["confidence"] else 0.5
+            ))
 
         return final_recommendations
 
@@ -652,7 +636,7 @@ class CollaborativeFiltering:
         self,
         user_id: str,
         recommendations: List[RecommendationResult],
-        ground_truth: List[str],
+        ground_truth: List[str]
     ) -> Dict[str, float]:
         """Evaluate recommendation quality.
 
@@ -680,11 +664,7 @@ class CollaborativeFiltering:
         recall = hits / len(ground_truth) if ground_truth else 0
 
         # F1 Score
-        f1 = (
-            2 * (precision * recall) / (precision + recall)
-            if (precision + recall) > 0
-            else 0
-        )
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
         # Mean Reciprocal Rank (MRR)
         mrr = 0
@@ -705,11 +685,7 @@ class CollaborativeFiltering:
 
         # Coverage
         profile = self.build_user_profile(user_id)
-        coverage = (
-            len(set(recommended_ids) - set(profile.interactions.keys())) / k
-            if k > 0
-            else 0
-        )
+        coverage = len(set(recommended_ids) - set(profile.interactions.keys())) / k if k > 0 else 0
 
         return {
             "precision_at_k": precision,
@@ -718,5 +694,5 @@ class CollaborativeFiltering:
             "mrr": mrr,
             "ndcg": ndcg,
             "coverage": coverage,
-            "k": k,
+            "k": k
         }

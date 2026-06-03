@@ -323,7 +323,9 @@ def integrate_pubmed_relationships(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Create PubMed relationships in BR-KG")
+    parser = argparse.ArgumentParser(
+        description="Create PubMed relationships in BR-KG"
+    )
     parser.add_argument("db_path", help="Path to BR-KG database")
     parser.add_argument("--limit", type=int, help="Limit number of studies to process")
 

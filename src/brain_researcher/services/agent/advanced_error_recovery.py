@@ -23,16 +23,10 @@ from uuid import uuid4
 import redis
 from fakeredis import FakeRedis
 
-from brain_researcher.services.agent.checkpoint_manager import (
-    CheckpointManager,
-    ExecutionState,
-)
 from brain_researcher.services.agent.error_handling import (
-    AgentError,
-    ErrorCategory,
-    ErrorHandler,
-    ErrorSeverity,
+    ErrorHandler, ErrorCategory, ErrorSeverity, AgentError
 )
+from brain_researcher.services.agent.checkpoint_manager import CheckpointManager, ExecutionState
 from brain_researcher.services.tools.enhanced_registry import EnhancedToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -40,7 +34,6 @@ logger = logging.getLogger(__name__)
 
 class RecoveryStrategy(Enum):
     """Recovery strategy types."""
-
     RETRY_SAME_TOOL = "retry_same_tool"
     FALLBACK_TOOL = "fallback_tool"
     PARAMETER_ADJUSTMENT = "parameter_adjustment"
@@ -52,7 +45,6 @@ class RecoveryStrategy(Enum):
 
 class ErrorPattern(Enum):
     """Common error patterns in neuroimaging workflows."""
-
     MEMORY_EXHAUSTION = "memory_exhaustion"
     TIMEOUT = "timeout"
     FILE_NOT_FOUND = "file_not_found"
@@ -68,7 +60,6 @@ class ErrorPattern(Enum):
 @dataclass
 class RecoveryAction:
     """Single recovery action definition."""
-
     action_id: str
     strategy: RecoveryStrategy
     description: str
@@ -81,7 +72,6 @@ class RecoveryAction:
 @dataclass
 class RecoveryPlan:
     """Complete recovery plan with multiple actions."""
-
     plan_id: str
     error_context: Dict[str, Any]
     actions: List[RecoveryAction] = field(default_factory=list)
@@ -93,7 +83,6 @@ class RecoveryPlan:
 @dataclass
 class ExecutionCheckpoint:
     """Enhanced execution checkpoint with recovery context."""
-
     checkpoint_id: str
     execution_id: str
     timestamp: float
@@ -125,54 +114,46 @@ class ErrorPatternAnalyzer:
                 "recovery_strategies": [
                     RecoveryStrategy.PARAMETER_ADJUSTMENT,
                     RecoveryStrategy.FALLBACK_TOOL,
-                    RecoveryStrategy.ROLLBACK_CHECKPOINT,
+                    RecoveryStrategy.ROLLBACK_CHECKPOINT
                 ],
                 "parameter_adjustments": {
                     "n_jobs": lambda x: max(1, x // 2),
                     "memory_gb": lambda x: max(4, x * 0.8),
-                    "low_mem": lambda x: True,
-                },
+                    "low_mem": lambda x: True
+                }
             },
+
             ErrorPattern.TIMEOUT: {
                 "keywords": ["timeout", "time limit", "exceeded", "hung", "stuck"],
                 "typical_tools": ["connectivity", "glm", "registration"],
                 "recovery_strategies": [
                     RecoveryStrategy.RETRY_SAME_TOOL,
                     RecoveryStrategy.PARAMETER_ADJUSTMENT,
-                    RecoveryStrategy.FALLBACK_TOOL,
+                    RecoveryStrategy.FALLBACK_TOOL
                 ],
                 "parameter_adjustments": {
                     "timeout": lambda x: x * 2 if x else 3600,
-                    "max_iter": lambda x: x * 2 if x else 1000,
-                },
+                    "max_iter": lambda x: x * 2 if x else 1000
+                }
             },
+
             ErrorPattern.FILE_NOT_FOUND: {
-                "keywords": [
-                    "file not found",
-                    "no such file",
-                    "missing file",
-                    "cannot find",
-                ],
+                "keywords": ["file not found", "no such file", "missing file", "cannot find"],
                 "typical_tools": ["all"],
                 "recovery_strategies": [
                     RecoveryStrategy.PARAMETER_ADJUSTMENT,
                     RecoveryStrategy.ROLLBACK_CHECKPOINT,
-                    RecoveryStrategy.SKIP_STEP,
+                    RecoveryStrategy.SKIP_STEP
                 ],
                 "parameter_adjustments": {
                     "input_file": "check_file_existence",
                     "mask": "use_default_mask",
-                    "template": "use_default_template",
-                },
+                    "template": "use_default_template"
+                }
             },
+
             ErrorPattern.INVALID_PARAMETERS: {
-                "keywords": [
-                    "invalid",
-                    "parameter",
-                    "argument",
-                    "value error",
-                    "type error",
-                ],
+                "keywords": ["invalid", "parameter", "argument", "value error", "type error"],
                 "typical_tools": ["all"],
                 "recovery_strategies": [
                     RecoveryStrategy.PARAMETER_ADJUSTMENT,
@@ -180,33 +161,29 @@ class ErrorPatternAnalyzer:
                     RecoveryStrategy.REQUEST_CLARIFICATION,
                 ],
                 "parameter_adjustments": {
-                    "threshold": lambda x: (
-                        0.05 if x is None else max(0.001, min(0.1, x))
-                    ),
-                    "fwhm": lambda x: 6.0 if x is None else max(2.0, min(12.0, x)),
-                },
+                    "threshold": lambda x: 0.05 if x is None else max(0.001, min(0.1, x)),
+                    "fwhm": lambda x: 6.0 if x is None else max(2.0, min(12.0, x))
+                }
             },
+
             ErrorPattern.TOOL_UNAVAILABLE: {
-                "keywords": [
-                    "command not found",
-                    "module not found",
-                    "import error",
-                    "not installed",
-                ],
+                "keywords": ["command not found", "module not found", "import error", "not installed"],
                 "typical_tools": ["specialized"],
                 "recovery_strategies": [
                     RecoveryStrategy.FALLBACK_TOOL,
-                    RecoveryStrategy.SKIP_STEP,
-                ],
+                    RecoveryStrategy.SKIP_STEP
+                ]
             },
+
             ErrorPattern.DEPENDENCY_MISSING: {
                 "keywords": ["dependency", "missing", "required", "not available"],
                 "typical_tools": ["all"],
                 "recovery_strategies": [
                     RecoveryStrategy.FALLBACK_TOOL,
-                    RecoveryStrategy.SKIP_STEP,
-                ],
+                    RecoveryStrategy.SKIP_STEP
+                ]
             },
+
             ErrorPattern.EMPTY_RESULT: {
                 "keywords": ["empty", "no data", "0 results", "not found"],
                 "typical_tools": ["all"],
@@ -214,14 +191,12 @@ class ErrorPatternAnalyzer:
                     RecoveryStrategy.REQUEST_CLARIFICATION,
                     RecoveryStrategy.FALLBACK_TOOL,
                 ],
-            },
+            }
         }
 
         return patterns
 
-    def analyze_error(
-        self, error_message: str, context: Dict[str, Any]
-    ) -> Tuple[ErrorPattern, float]:
+    def analyze_error(self, error_message: str, context: Dict[str, Any]) -> Tuple[ErrorPattern, float]:
         """
         Analyze error message and context to identify error pattern.
 
@@ -233,7 +208,7 @@ class ErrorPatternAnalyzer:
             Tuple of (identified pattern, confidence score)
         """
         error_lower = error_message.lower()
-        tool_name = context.get("tool_name", "").lower()
+        tool_name = context.get('tool_name', '').lower()
 
         pattern_scores = {}
 
@@ -242,27 +217,27 @@ class ErrorPatternAnalyzer:
             score = 0.0
 
             # Keyword matching
-            keywords = config.get("keywords", [])
+            keywords = config.get('keywords', [])
             matching_keywords = sum(1 for keyword in keywords if keyword in error_lower)
             if keywords:
                 score += (matching_keywords / len(keywords)) * 0.7
 
             # Tool matching
-            typical_tools = config.get("typical_tools", [])
-            if "all" in typical_tools:
+            typical_tools = config.get('typical_tools', [])
+            if 'all' in typical_tools:
                 score += 0.2
             elif any(tool in tool_name for tool in typical_tools):
                 score += 0.3
 
             # Context-based scoring
             if pattern == ErrorPattern.MEMORY_EXHAUSTION:
-                if context.get("memory_usage", 0) > 0.8:
+                if context.get('memory_usage', 0) > 0.8:
                     score += 0.2
             elif pattern == ErrorPattern.TIMEOUT:
-                if context.get("execution_time", 0) > context.get("expected_time", 300):
+                if context.get('execution_time', 0) > context.get('expected_time', 300):
                     score += 0.2
             elif pattern == ErrorPattern.EMPTY_RESULT:
-                if context.get("result_size", 1) == 0:
+                if context.get('result_size', 1) == 0:
                     score += 0.3
 
             pattern_scores[pattern] = score
@@ -274,14 +249,16 @@ class ErrorPatternAnalyzer:
     def get_recovery_strategies(self, pattern: ErrorPattern) -> List[RecoveryStrategy]:
         """Get recommended recovery strategies for an error pattern."""
         config = self.error_patterns.get(pattern, {})
-        return config.get("recovery_strategies", [RecoveryStrategy.RETRY_SAME_TOOL])
+        return config.get('recovery_strategies', [RecoveryStrategy.RETRY_SAME_TOOL])
 
     def suggest_parameter_adjustments(
-        self, pattern: ErrorPattern, current_parameters: Dict[str, Any]
+        self,
+        pattern: ErrorPattern,
+        current_parameters: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Suggest parameter adjustments for an error pattern."""
         config = self.error_patterns.get(pattern, {})
-        adjustments = config.get("parameter_adjustments", {})
+        adjustments = config.get('parameter_adjustments', {})
 
         suggested_params = current_parameters.copy()
 
@@ -311,7 +288,7 @@ class ErrorPatternAnalyzer:
         error_pattern: ErrorPattern,
         recovery_strategy: RecoveryStrategy,
         success: bool,
-        context: Dict[str, Any] = None,
+        context: Dict[str, Any] = None
     ):
         """Record the outcome of a recovery attempt for learning."""
         pattern_key = error_pattern.value
@@ -320,22 +297,22 @@ class ErrorPatternAnalyzer:
             self.recovery_history[pattern_key] = []
 
         record = {
-            "strategy": recovery_strategy.value,
-            "success": success,
-            "timestamp": time.time(),
-            "context": context or {},
+            'strategy': recovery_strategy.value,
+            'success': success,
+            'timestamp': time.time(),
+            'context': context or {}
         }
 
         self.recovery_history[pattern_key].append(record)
 
         # Keep only recent history (last 100 attempts per pattern)
         if len(self.recovery_history[pattern_key]) > 100:
-            self.recovery_history[pattern_key] = self.recovery_history[pattern_key][
-                -100:
-            ]
+            self.recovery_history[pattern_key] = self.recovery_history[pattern_key][-100:]
 
     def get_strategy_success_rate(
-        self, error_pattern: ErrorPattern, recovery_strategy: RecoveryStrategy
+        self,
+        error_pattern: ErrorPattern,
+        recovery_strategy: RecoveryStrategy
     ) -> float:
         """Get historical success rate for a recovery strategy on an error pattern."""
         pattern_key = error_pattern.value
@@ -345,15 +322,14 @@ class ErrorPatternAnalyzer:
 
         history = self.recovery_history[pattern_key]
         strategy_attempts = [
-            record
-            for record in history
-            if record["strategy"] == recovery_strategy.value
+            record for record in history
+            if record['strategy'] == recovery_strategy.value
         ]
 
         if not strategy_attempts:
             return 0.5
 
-        successes = sum(1 for attempt in strategy_attempts if attempt["success"])
+        successes = sum(1 for attempt in strategy_attempts if attempt['success'])
         return successes / len(strategy_attempts)
 
 
@@ -376,31 +352,24 @@ class IntelligentFallbackSelector:
         # This would be populated from tool metadata or configuration
         capability_mapping = {
             # Preprocessing tools
-            "fmriprep": {
-                "preprocessing",
-                "motion_correction",
-                "registration",
-                "normalization",
-            },
-            "spm_preprocess": {
-                "preprocessing",
-                "motion_correction",
-                "registration",
-                "smoothing",
-            },
+            "fmriprep": {"preprocessing", "motion_correction", "registration", "normalization"},
+            "spm_preprocess": {"preprocessing", "motion_correction", "registration", "smoothing"},
             "afni_preprocess": {"preprocessing", "motion_correction", "registration"},
+
             # Analysis tools
             "glm_analysis": {"statistical_analysis", "activation", "contrast"},
             "spm_glm": {"statistical_analysis", "activation", "contrast"},
             "fsl_feat": {"statistical_analysis", "activation", "contrast"},
+
             # Connectivity tools
             "connectivity_analysis": {"connectivity", "network_analysis"},
             "conn_toolbox": {"connectivity", "network_analysis", "graph_theory"},
             "nilearn_connectivity": {"connectivity", "functional_networks"},
+
             # Registration tools
             "ants_registration": {"registration", "normalization", "spatial_transform"},
             "fsl_flirt": {"registration", "linear_transform"},
-            "spm_normalize": {"registration", "normalization"},
+            "spm_normalize": {"registration", "normalization"}
         }
 
         # Get actual tools from registry and map capabilities
@@ -415,9 +384,7 @@ class IntelligentFallbackSelector:
 
             # Fallback: infer capabilities from tool name and description
             if tool.get_tool_name() not in self.tool_capabilities:
-                self.tool_capabilities[tool.get_tool_name()] = self._infer_capabilities(
-                    tool
-                )
+                self.tool_capabilities[tool.get_tool_name()] = self._infer_capabilities(tool)
 
     def _infer_capabilities(self, tool) -> Set[str]:
         """Infer tool capabilities from name and description."""
@@ -435,7 +402,7 @@ class IntelligentFallbackSelector:
             "connectivity": ["connectivity", "network", "functional", "correlation"],
             "activation": ["activation", "contrast", "task", "stimulus"],
             "visualization": ["plot", "visualize", "display", "show"],
-            "quality_control": ["quality", "qc", "check", "validate"],
+            "quality_control": ["quality", "qc", "check", "validate"]
         }
 
         for capability, keywords in capability_keywords.items():
@@ -451,23 +418,26 @@ class IntelligentFallbackSelector:
             # Preprocessing fallbacks
             "fmriprep": ["spm_preprocess", "afni_preprocess", "manual_preprocess"],
             "spm_preprocess": ["fmriprep", "afni_preprocess"],
+
             # Analysis fallbacks
             "glm_analysis": ["spm_glm", "fsl_feat", "afni_glm"],
             "spm_glm": ["fsl_feat", "glm_analysis"],
             "fsl_feat": ["spm_glm", "glm_analysis"],
+
             # Registration fallbacks
             "ants_registration": ["fsl_flirt", "spm_normalize"],
             "fsl_flirt": ["ants_registration", "spm_normalize"],
+
             # Connectivity fallbacks
             "connectivity_analysis": ["conn_toolbox", "nilearn_connectivity"],
-            "conn_toolbox": ["nilearn_connectivity", "connectivity_analysis"],
+            "conn_toolbox": ["nilearn_connectivity", "connectivity_analysis"]
         }
 
     def find_fallback_tools(
         self,
         failed_tool_name: str,
         required_capabilities: Set[str] = None,
-        context: Dict[str, Any] = None,
+        context: Dict[str, Any] = None
     ) -> List[Tuple[str, float]]:
         """
         Find appropriate fallback tools for a failed tool.
@@ -493,12 +463,8 @@ class IntelligentFallbackSelector:
 
         explicit_fallbacks = self.fallback_mappings.get(failed_tool_name, [])
         for fallback_name in explicit_fallbacks:
-            if fallback_name in [
-                tool.get_tool_name() for tool in self.tool_registry.get_all_tools()
-            ]:
-                candidates.append(
-                    (fallback_name, 0.8)
-                )  # High score for explicit mappings
+            if fallback_name in [tool.get_tool_name() for tool in self.tool_registry.get_all_tools()]:
+                candidates.append((fallback_name, 0.8))  # High score for explicit mappings
 
         # Find tools with matching capabilities
         for tool in self.tool_registry.get_all_tools():
@@ -541,38 +507,36 @@ class IntelligentFallbackSelector:
         return scored_candidates[:5]  # Return top 5 candidates
 
     def _apply_contextual_scoring(
-        self, tool_name: str, base_score: float, context: Dict[str, Any]
+        self,
+        tool_name: str,
+        base_score: float,
+        context: Dict[str, Any]
     ) -> float:
         """Apply contextual adjustments to tool scores."""
         score = base_score
 
         # Consider tool success history
-        if "tool_success_rates" in context:
-            success_rate = context["tool_success_rates"].get(tool_name, 0.5)
-            score *= 0.5 + success_rate * 0.5  # Weight by historical success
+        if 'tool_success_rates' in context:
+            success_rate = context['tool_success_rates'].get(tool_name, 0.5)
+            score *= (0.5 + success_rate * 0.5)  # Weight by historical success
 
         # Consider resource availability
-        if "available_resources" in context:
+        if 'available_resources' in context:
             # Prefer lighter-weight tools if resources are constrained
             tool_name_lower = tool_name.lower()
-            if any(
-                heavy_tool in tool_name_lower
-                for heavy_tool in ["fmriprep", "freesurfer"]
-            ):
-                if context["available_resources"].get("memory_gb", 16) < 8:
+            if any(heavy_tool in tool_name_lower for heavy_tool in ['fmriprep', 'freesurfer']):
+                if context['available_resources'].get('memory_gb', 16) < 8:
                     score *= 0.7  # Penalize resource-intensive tools
 
         # Consider data type compatibility
-        if "data_type" in context:
-            data_type = context["data_type"].lower()
+        if 'data_type' in context:
+            data_type = context['data_type'].lower()
             tool_name_lower = tool_name.lower()
 
             # Boost score for data-type specific tools
-            if data_type == "fmri" and "fmri" in tool_name_lower:
+            if data_type == 'fmri' and 'fmri' in tool_name_lower:
                 score *= 1.2
-            elif data_type == "dwi" and any(
-                term in tool_name_lower for term in ["dwi", "diffusion"]
-            ):
+            elif data_type == 'dwi' and any(term in tool_name_lower for term in ['dwi', 'diffusion']):
                 score *= 1.2
 
         return min(1.0, score)  # Cap at 1.0
@@ -616,7 +580,7 @@ class AdvancedErrorRecoverySystem:
         self,
         error: Exception,
         execution_context: Dict[str, Any],
-        recovery_options: Dict[str, Any] = None,
+        recovery_options: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
         Handle an error with intelligent recovery strategies.
@@ -636,11 +600,11 @@ class AdvancedErrorRecoverySystem:
 
         # Initialize recovery tracking
         self.active_recoveries[recovery_id] = {
-            "start_time": recovery_start_time,
-            "error": str(error),
-            "context": execution_context,
-            "status": "analyzing",
-            "attempts": [],
+            'start_time': recovery_start_time,
+            'error': str(error),
+            'context': execution_context,
+            'status': 'analyzing',
+            'attempts': []
         }
 
         try:
@@ -648,11 +612,9 @@ class AdvancedErrorRecoverySystem:
             error_pattern, confidence = self.error_analyzer.analyze_error(
                 str(error), execution_context
             )
-            recovery_tracking["error_pattern"] = error_pattern.value
+            recovery_tracking['error_pattern'] = error_pattern.value
 
-            logger.info(
-                f"Error pattern identified: {error_pattern.value} (confidence: {confidence:.2f})"
-            )
+            logger.info(f"Error pattern identified: {error_pattern.value} (confidence: {confidence:.2f})")
 
             # Step 2: Create recovery plan
             recovery_plan = self._create_recovery_plan(
@@ -672,10 +634,10 @@ class AdvancedErrorRecoverySystem:
         except Exception as recovery_error:
             logger.error(f"Recovery system error: {recovery_error}")
             return {
-                "success": False,
-                "recovery_id": recovery_id,
-                "error": f"Recovery system error: {str(recovery_error)}",
-                "actions_taken": [],
+                'success': False,
+                'recovery_id': recovery_id,
+                'error': f"Recovery system error: {str(recovery_error)}",
+                'actions_taken': []
             }
 
         finally:
@@ -687,11 +649,12 @@ class AdvancedErrorRecoverySystem:
         self,
         error_pattern: ErrorPattern,
         execution_context: Dict[str, Any],
-        recovery_options: Dict[str, Any],
+        recovery_options: Dict[str, Any]
     ) -> RecoveryPlan:
         """Create a comprehensive recovery plan for the error."""
         plan = RecoveryPlan(
-            plan_id=f"plan_{uuid4().hex[:8]}", error_context=execution_context
+            plan_id=f"plan_{uuid4().hex[:8]}",
+            error_context=execution_context
         )
 
         # Get recommended strategies for this error pattern
@@ -732,7 +695,7 @@ class AdvancedErrorRecoverySystem:
         strategy: RecoveryStrategy,
         error_pattern: ErrorPattern,
         execution_context: Dict[str, Any],
-        priority: int,
+        priority: int
     ) -> Optional[RecoveryAction]:
         """Create a specific recovery action for a strategy."""
 
@@ -742,25 +705,25 @@ class AdvancedErrorRecoverySystem:
                 strategy=strategy,
                 description="Retry the same tool with original parameters",
                 success_probability=0.3,
-                estimated_cost=1.0,
+                estimated_cost=1.0
             )
 
         elif strategy == RecoveryStrategy.PARAMETER_ADJUSTMENT:
             adjusted_params = self.error_analyzer.suggest_parameter_adjustments(
-                error_pattern, execution_context.get("parameters", {})
+                error_pattern, execution_context.get('parameters', {})
             )
 
             return RecoveryAction(
                 action_id=f"adjust_params_{priority}",
                 strategy=strategy,
                 description="Retry with adjusted parameters",
-                parameters={"adjusted_parameters": adjusted_params},
+                parameters={'adjusted_parameters': adjusted_params},
                 success_probability=0.6,
-                estimated_cost=1.2,
+                estimated_cost=1.2
             )
 
         elif strategy == RecoveryStrategy.FALLBACK_TOOL:
-            failed_tool = execution_context.get("tool_name")
+            failed_tool = execution_context.get('tool_name')
             if failed_tool:
                 fallback_candidates = self.fallback_selector.find_fallback_tools(
                     failed_tool, context=execution_context
@@ -773,45 +736,41 @@ class AdvancedErrorRecoverySystem:
                         strategy=strategy,
                         description=f"Use fallback tool: {best_fallback[0]}",
                         parameters={
-                            "fallback_tool": best_fallback[0],
-                            "fallback_score": best_fallback[1],
-                            "all_candidates": fallback_candidates[:3],
+                            'fallback_tool': best_fallback[0],
+                            'fallback_score': best_fallback[1],
+                            'all_candidates': fallback_candidates[:3]
                         },
                         success_probability=min(0.8, best_fallback[1]),
-                        estimated_cost=1.5,
+                        estimated_cost=1.5
                     )
 
         elif strategy == RecoveryStrategy.ROLLBACK_CHECKPOINT:
             # Check if checkpoints are available
-            execution_id = execution_context.get("execution_id")
-            if execution_id and hasattr(
-                self.checkpoint_manager, "get_latest_checkpoint"
-            ):
+            execution_id = execution_context.get('execution_id')
+            if execution_id and hasattr(self.checkpoint_manager, 'get_latest_checkpoint'):
                 return RecoveryAction(
                     action_id=f"rollback_{priority}",
                     strategy=strategy,
                     description="Rollback to last stable checkpoint",
-                    parameters={"execution_id": execution_id},
+                    parameters={'execution_id': execution_id},
                     success_probability=0.7,
-                    estimated_cost=0.5,
+                    estimated_cost=0.5
                 )
 
         elif strategy == RecoveryStrategy.SKIP_STEP:
-            step_id = execution_context.get("step_id")
+            step_id = execution_context.get('step_id')
             if step_id:
                 return RecoveryAction(
                     action_id=f"skip_{priority}",
                     strategy=strategy,
                     description=f"Skip current step: {step_id}",
-                    parameters={"step_id": step_id},
+                    parameters={'step_id': step_id},
                     success_probability=0.5,
-                    estimated_cost=0.1,
+                    estimated_cost=0.1
                 )
 
         elif strategy == RecoveryStrategy.REQUEST_CLARIFICATION:
-            question = self._build_clarification_question(
-                error_pattern, execution_context
-            )
+            question = self._build_clarification_question(error_pattern, execution_context)
             return RecoveryAction(
                 action_id=f"clarify_{priority}",
                 strategy=strategy,
@@ -824,7 +783,9 @@ class AdvancedErrorRecoverySystem:
         return None
 
     def _create_fallback_actions(
-        self, error_pattern: ErrorPattern, execution_context: Dict[str, Any]
+        self,
+        error_pattern: ErrorPattern,
+        execution_context: Dict[str, Any]
     ) -> List[RecoveryAction]:
         """Create fallback actions as last resort options."""
         fallback_actions = []
@@ -836,7 +797,7 @@ class AdvancedErrorRecoverySystem:
                 strategy=RecoveryStrategy.ABORT_WORKFLOW,
                 description="Abort workflow execution",
                 success_probability=1.0,  # Always "succeeds" at stopping
-                estimated_cost=0.0,
+                estimated_cost=0.0
             )
         )
 
@@ -853,28 +814,22 @@ class AdvancedErrorRecoverySystem:
                 " Which dataset/run should I use instead?"
             )
         if error_pattern == ErrorPattern.INVALID_PARAMETERS:
-            missing = [
-                k
-                for k, v in (execution_context.get("parameters") or {}).items()
-                if v in (None, "", [])
-            ]
+            missing = [k for k, v in (execution_context.get("parameters") or {}).items() if v in (None, "", [])]
             if missing:
                 return f"Please provide values for {', '.join(missing)} so I can retry {tool_name}."
-        return (
-            f"Can you confirm key parameters (dataset, subject, contrast) for {base}?"
-        )
+        return f"Can you confirm key parameters (dataset, subject, contrast) for {base}?"
 
     async def _execute_recovery_plan(
         self,
         recovery_id: str,
         plan: RecoveryPlan,
         execution_context: Dict[str, Any],
-        recovery_options: Dict[str, Any],
+        recovery_options: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute a recovery plan, trying actions in sequence."""
         recovery_tracking = self.active_recoveries[recovery_id]
-        recovery_tracking["status"] = "executing"
-        recovery_tracking["plan"] = plan.plan_id
+        recovery_tracking['status'] = 'executing'
+        recovery_tracking['plan'] = plan.plan_id
 
         actions_taken = []
         max_attempts = recovery_options.get("max_attempts", self.max_attempts)
@@ -891,55 +846,51 @@ class AdvancedErrorRecoverySystem:
                     action, execution_context
                 )
 
-                actions_taken.append(
-                    {
-                        "action_id": action.action_id,
-                        "strategy": action.strategy.value,
-                        "description": action.description,
-                        "result": action_result,
-                        "timestamp": time.time(),
-                    }
-                )
+                actions_taken.append({
+                    'action_id': action.action_id,
+                    'strategy': action.strategy.value,
+                    'description': action.description,
+                    'result': action_result,
+                    'timestamp': time.time()
+                })
                 attempts_used += 1
 
-                recovery_tracking["attempts"].append(actions_taken[-1])
+                recovery_tracking['attempts'].append(actions_taken[-1])
 
-                if action_result.get("clarification_needed"):
+                if action_result.get('clarification_needed'):
                     return {
-                        "success": False,
-                        "recovery_id": recovery_id,
-                        "clarification_needed": True,
-                        "question": action_result.get("question"),
-                        "actions_taken": actions_taken,
+                        'success': False,
+                        'recovery_id': recovery_id,
+                        'clarification_needed': True,
+                        'question': action_result.get('question'),
+                        'actions_taken': actions_taken,
                     }
 
-                if action_result.get("success"):
+                if action_result.get('success'):
                     logger.info(f"Recovery action succeeded: {action.action_id}")
                     return {
-                        "success": True,
-                        "recovery_id": recovery_id,
-                        "successful_action": action.action_id,
-                        "actions_taken": actions_taken,
-                        "recovery_time": time.time() - recovery_tracking["start_time"],
+                        'success': True,
+                        'recovery_id': recovery_id,
+                        'successful_action': action.action_id,
+                        'actions_taken': actions_taken,
+                        'recovery_time': time.time() - recovery_tracking['start_time']
                     }
                 else:
                     logger.warning(f"Recovery action failed: {action.action_id}")
 
                     # Check if we should continue or abort
-                    if action_result.get("abort_recovery"):
+                    if action_result.get('abort_recovery'):
                         break
 
             except Exception as action_error:
                 logger.error(f"Recovery action error: {action_error}")
-                actions_taken.append(
-                    {
-                        "action_id": action.action_id,
-                        "strategy": action.strategy.value,
-                        "description": action.description,
-                        "result": {"success": False, "error": str(action_error)},
-                        "timestamp": time.time(),
-                    }
-                )
+                actions_taken.append({
+                    'action_id': action.action_id,
+                    'strategy': action.strategy.value,
+                    'description': action.description,
+                    'result': {'success': False, 'error': str(action_error)},
+                    'timestamp': time.time()
+                })
 
         # Try fallback actions if primary actions failed
         for fallback_action in plan.fallback_actions:
@@ -952,32 +903,30 @@ class AdvancedErrorRecoverySystem:
                     fallback_action, execution_context
                 )
 
-                actions_taken.append(
-                    {
-                        "action_id": fallback_action.action_id,
-                        "strategy": fallback_action.strategy.value,
-                        "description": fallback_action.description,
-                        "result": fallback_result,
-                        "timestamp": time.time(),
-                    }
-                )
-                if fallback_result.get("clarification_needed"):
+                actions_taken.append({
+                    'action_id': fallback_action.action_id,
+                    'strategy': fallback_action.strategy.value,
+                    'description': fallback_action.description,
+                    'result': fallback_result,
+                    'timestamp': time.time()
+                })
+                if fallback_result.get('clarification_needed'):
                     return {
-                        "success": False,
-                        "recovery_id": recovery_id,
-                        "clarification_needed": True,
-                        "question": fallback_result.get("question"),
-                        "actions_taken": actions_taken,
+                        'success': False,
+                        'recovery_id': recovery_id,
+                        'clarification_needed': True,
+                        'question': fallback_result.get('question'),
+                        'actions_taken': actions_taken,
                     }
                 attempts_used += 1
 
-                if fallback_result.get("success"):
+                if fallback_result.get('success'):
                     return {
-                        "success": True,
-                        "recovery_id": recovery_id,
-                        "successful_action": fallback_action.action_id,
-                        "actions_taken": actions_taken,
-                        "recovery_time": time.time() - recovery_tracking["start_time"],
+                        'success': True,
+                        'recovery_id': recovery_id,
+                        'successful_action': fallback_action.action_id,
+                        'actions_taken': actions_taken,
+                        'recovery_time': time.time() - recovery_tracking['start_time']
                     }
 
             except Exception as fallback_error:
@@ -985,15 +934,17 @@ class AdvancedErrorRecoverySystem:
 
         # All recovery attempts failed
         return {
-            "success": False,
-            "recovery_id": recovery_id,
-            "error": "All recovery attempts failed",
-            "actions_taken": actions_taken,
-            "recovery_time": time.time() - recovery_tracking["start_time"],
+            'success': False,
+            'recovery_id': recovery_id,
+            'error': 'All recovery attempts failed',
+            'actions_taken': actions_taken,
+            'recovery_time': time.time() - recovery_tracking['start_time']
         }
 
     async def _execute_recovery_action(
-        self, action: RecoveryAction, execution_context: Dict[str, Any]
+        self,
+        action: RecoveryAction,
+        execution_context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute a single recovery action."""
 
@@ -1014,59 +965,58 @@ class AdvancedErrorRecoverySystem:
 
         elif action.strategy == RecoveryStrategy.REQUEST_CLARIFICATION:
             return {
-                "success": False,
-                "clarification_needed": True,
-                "question": action.parameters.get("question"),
+                'success': False,
+                'clarification_needed': True,
+                'question': action.parameters.get('question'),
             }
 
         elif action.strategy == RecoveryStrategy.ABORT_WORKFLOW:
             return self._abort_workflow(action, execution_context)
 
         else:
-            return {
-                "success": False,
-                "error": f"Unknown recovery strategy: {action.strategy}",
-            }
+            return {'success': False, 'error': f'Unknown recovery strategy: {action.strategy}'}
 
     async def _retry_same_tool(
-        self, action: RecoveryAction, execution_context: Dict[str, Any]
+        self,
+        action: RecoveryAction,
+        execution_context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Retry the same tool with original parameters."""
-        tool_name = execution_context.get("tool_name")
-        parameters = execution_context.get("parameters", {})
+        tool_name = execution_context.get('tool_name')
+        parameters = execution_context.get('parameters', {})
 
         if not tool_name:
-            return {"success": False, "error": "No tool name in context"}
+            return {'success': False, 'error': 'No tool name in context'}
 
         tool = self.tool_registry.get_tool(tool_name)
         if not tool:
-            return {"success": False, "error": f"Tool {tool_name} not found"}
+            return {'success': False, 'error': f'Tool {tool_name} not found'}
 
         try:
-            result = await self._execute_tool_with_registry(
-                tool, parameters, execution_context
-            )
+            result = await self._execute_tool_with_registry(tool, parameters, execution_context)
             return {
-                "success": result.get("status") in {"success", "ok", "completed"},
-                "result": result,
-                "retry_attempt": True,
+                'success': result.get('status') in {'success', 'ok', 'completed'},
+                'result': result,
+                'retry_attempt': True
             }
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {'success': False, 'error': str(e)}
 
     async def _retry_with_adjusted_parameters(
-        self, action: RecoveryAction, execution_context: Dict[str, Any]
+        self,
+        action: RecoveryAction,
+        execution_context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Retry with adjusted parameters."""
-        tool_name = execution_context.get("tool_name")
-        adjusted_params = action.parameters.get("adjusted_parameters", {})
+        tool_name = execution_context.get('tool_name')
+        adjusted_params = action.parameters.get('adjusted_parameters', {})
 
         if not tool_name:
-            return {"success": False, "error": "No tool name in context"}
+            return {'success': False, 'error': 'No tool name in context'}
 
         tool = self.tool_registry.get_tool(tool_name)
         if not tool:
-            return {"success": False, "error": f"Tool {tool_name} not found"}
+            return {'success': False, 'error': f'Tool {tool_name} not found'}
 
         try:
             tuned_params = self._apply_safety_adjustments(adjusted_params)
@@ -1077,13 +1027,13 @@ class AdvancedErrorRecoverySystem:
             )
 
             return {
-                "success": result["status"] == "success",
-                "result": result,
-                "adjusted_parameters": tuned_params,
+                'success': result['status'] == 'success',
+                'result': result,
+                'adjusted_parameters': tuned_params
             }
 
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {'success': False, 'error': str(e)}
 
     def _apply_safety_adjustments(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Apply generic safe fallbacks such as reducing parallelism."""
@@ -1126,29 +1076,28 @@ class AdvancedErrorRecoverySystem:
         return {"status": "success", "result": result}
 
     async def _execute_fallback_tool(
-        self, action: RecoveryAction, execution_context: Dict[str, Any]
+        self,
+        action: RecoveryAction,
+        execution_context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute a fallback tool."""
-        fallback_tool_name = action.parameters.get("fallback_tool")
-        original_params = execution_context.get("parameters", {})
+        fallback_tool_name = action.parameters.get('fallback_tool')
+        original_params = execution_context.get('parameters', {})
 
         if not fallback_tool_name:
-            return {"success": False, "error": "No fallback tool specified"}
+            return {'success': False, 'error': 'No fallback tool specified'}
 
         fallback_tool = self.tool_registry.get_tool(fallback_tool_name)
         if not fallback_tool:
-            return {
-                "success": False,
-                "error": f"Fallback tool {fallback_tool_name} not found",
-            }
+            return {'success': False, 'error': f'Fallback tool {fallback_tool_name} not found'}
 
         try:
             # Get parameter recommendations for the fallback tool
             fallback_params = original_params.copy()
-            if hasattr(self.tool_registry, "get_intelligent_recommendations"):
+            if hasattr(self.tool_registry, 'get_intelligent_recommendations'):
                 recommendations = self.tool_registry.get_intelligent_recommendations(
-                    query=execution_context.get("original_query", ""),
-                    context=execution_context,
+                    query=execution_context.get('original_query', ''),
+                    context=execution_context
                 )
 
                 for rec in recommendations:
@@ -1164,70 +1113,77 @@ class AdvancedErrorRecoverySystem:
             )
 
             return {
-                "success": result["status"] == "success",
-                "result": result,
-                "fallback_tool": fallback_tool_name,
-                "fallback_parameters": fallback_params,
+                'success': result['status'] == 'success',
+                'result': result,
+                'fallback_tool': fallback_tool_name,
+                'fallback_parameters': fallback_params
             }
 
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {'success': False, 'error': str(e)}
 
     async def _rollback_to_checkpoint(
-        self, action: RecoveryAction, execution_context: Dict[str, Any]
+        self,
+        action: RecoveryAction,
+        execution_context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Rollback execution to a previous checkpoint."""
-        checkpoint_id = action.parameters.get("execution_id") or execution_context.get(
-            "checkpoint_id"
+        checkpoint_id = (
+            action.parameters.get('execution_id')
+            or execution_context.get('checkpoint_id')
         )
 
         if not checkpoint_id:
-            return {"success": False, "error": "No checkpoint available for rollback"}
+            return {'success': False, 'error': 'No checkpoint available for rollback'}
 
         try:
             state = self.checkpoint_manager.restore_from_checkpoint(checkpoint_id)
             return {
-                "success": True,
-                "rollback_point": checkpoint_id,
-                "restored_state": state.__dict__ if state else None,
+                'success': True,
+                'rollback_point': checkpoint_id,
+                'restored_state': state.__dict__ if state else None,
             }
 
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {'success': False, 'error': str(e)}
 
     def _skip_step(
-        self, action: RecoveryAction, execution_context: Dict[str, Any]
+        self,
+        action: RecoveryAction,
+        execution_context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Skip the current step."""
-        step_id = action.parameters.get("step_id")
+        step_id = action.parameters.get('step_id')
 
         return {
-            "success": True,
-            "skipped_step": step_id,
-            "message": f"Skipped step {step_id}",
+            'success': True,
+            'skipped_step': step_id,
+            'message': f'Skipped step {step_id}'
         }
 
     def _abort_workflow(
-        self, action: RecoveryAction, execution_context: Dict[str, Any]
+        self,
+        action: RecoveryAction,
+        execution_context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Abort the workflow execution."""
         return {
-            "success": True,
-            "aborted": True,
-            "message": "Workflow execution aborted",
+            'success': True,
+            'aborted': True,
+            'message': 'Workflow execution aborted'
         }
 
     def _record_recovery_result(self, recovery_id: str, result: Dict[str, Any]):
         """Record the result of a recovery attempt for learning."""
         recovery_record = {
-            "recovery_id": recovery_id,
-            "timestamp": time.time(),
-            "success": result.get("success", False),
-            "actions_taken": result.get("actions_taken", []),
-            "recovery_time": result.get("recovery_time", 0),
+            'recovery_id': recovery_id,
+            'timestamp': time.time(),
+            'success': result.get('success', False),
+            'actions_taken': result.get('actions_taken', []),
+            'recovery_time': result.get('recovery_time', 0)
         }
         recovery_meta = self.active_recoveries.get(recovery_id, {})
-        pattern_str = recovery_meta.get("error_pattern")
+        pattern_str = recovery_meta.get('error_pattern')
 
         self.recovery_history.append(recovery_record)
 
@@ -1236,59 +1192,55 @@ class AdvancedErrorRecoverySystem:
             self.recovery_history = self.recovery_history[-1000:]
 
         # Update error analyzer with results
-        for action in result.get("actions_taken", []):
-            if "strategy" in action and "result" in action:
+        for action in result.get('actions_taken', []):
+            if 'strategy' in action and 'result' in action:
                 try:
-                    pattern = (
-                        ErrorPattern(pattern_str)
-                        if pattern_str
-                        else ErrorPattern.INVALID_PARAMETERS
-                    )
+                    pattern = ErrorPattern(pattern_str) if pattern_str else ErrorPattern.INVALID_PARAMETERS
                 except Exception:
                     pattern = ErrorPattern.INVALID_PARAMETERS
                 self.error_analyzer.record_recovery_attempt(
                     pattern,
-                    RecoveryStrategy(action["strategy"]),
-                    action["result"].get("success", False),
+                    RecoveryStrategy(action['strategy']),
+                    action['result'].get('success', False)
                 )
 
     def get_recovery_statistics(self) -> Dict[str, Any]:
         """Get statistics about recovery system performance."""
         if not self.recovery_history:
-            return {"message": "No recovery history available"}
+            return {'message': 'No recovery history available'}
 
         total_recoveries = len(self.recovery_history)
-        successful_recoveries = sum(1 for r in self.recovery_history if r["success"])
+        successful_recoveries = sum(1 for r in self.recovery_history if r['success'])
         success_rate = successful_recoveries / total_recoveries
 
-        avg_recovery_time = np.mean([r["recovery_time"] for r in self.recovery_history])
+        avg_recovery_time = np.mean([r['recovery_time'] for r in self.recovery_history])
 
         # Strategy effectiveness
         strategy_stats = {}
         for record in self.recovery_history:
-            for action in record.get("actions_taken", []):
-                strategy = action.get("strategy")
+            for action in record.get('actions_taken', []):
+                strategy = action.get('strategy')
                 if strategy:
                     if strategy not in strategy_stats:
-                        strategy_stats[strategy] = {"attempts": 0, "successes": 0}
-                    strategy_stats[strategy]["attempts"] += 1
-                    if action.get("result", {}).get("success"):
-                        strategy_stats[strategy]["successes"] += 1
+                        strategy_stats[strategy] = {'attempts': 0, 'successes': 0}
+                    strategy_stats[strategy]['attempts'] += 1
+                    if action.get('result', {}).get('success'):
+                        strategy_stats[strategy]['successes'] += 1
 
         # Calculate success rates for each strategy
         for strategy, stats in strategy_stats.items():
-            if stats["attempts"] > 0:
-                stats["success_rate"] = stats["successes"] / stats["attempts"]
+            if stats['attempts'] > 0:
+                stats['success_rate'] = stats['successes'] / stats['attempts']
             else:
-                stats["success_rate"] = 0.0
+                stats['success_rate'] = 0.0
 
         return {
-            "total_recoveries": total_recoveries,
-            "successful_recoveries": successful_recoveries,
-            "overall_success_rate": success_rate,
-            "average_recovery_time": avg_recovery_time,
-            "strategy_effectiveness": strategy_stats,
-            "active_recoveries": len(self.active_recoveries),
+            'total_recoveries': total_recoveries,
+            'successful_recoveries': successful_recoveries,
+            'overall_success_rate': success_rate,
+            'average_recovery_time': avg_recovery_time,
+            'strategy_effectiveness': strategy_stats,
+            'active_recoveries': len(self.active_recoveries)
         }
 
 

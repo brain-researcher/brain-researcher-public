@@ -39,13 +39,13 @@ import time by globbing `configs/slurm/profiles/*.yaml`. Each YAML's
 dict that the MCP tools (`sherlock_guide`, `sherlock_slurm` — Phase B-1b
 will rename to `slurm_guide`, `slurm_submit`) read from.
 
-A small inline fallback for `sherlock_default` lives in the module so
+A small inline fallback for `sherlock_russpold` lives in the module so
 that wheel installs without bundled configs/ still work.
 
 ## Default profile
 
 The `BR_SLURM_PROFILE` env var sets the global default. Unset, it falls
-back to `sherlock_default` (Stanford-specific). On non-Stanford
+back to `sherlock_russpold` (Stanford-specific). On non-Stanford
 clusters, always set this env var before running so error messages and
 generated sbatch scripts point at the right partitions.
 
@@ -75,5 +75,5 @@ after reviewing the generated script.
 
 For Stanford Sherlock users, the original workflow guidance lives at
 `skills/sherlock-oak-workflow/`. The legacy `DEFAULT_PROFILE =
-sherlock_default` lookup means existing Sherlock users see no behavior
+sherlock_russpold` lookup means existing Sherlock users see no behavior
 change post-rename.

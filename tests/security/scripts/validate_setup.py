@@ -6,22 +6,22 @@ This script validates that all security testing components are properly configur
 and can run without errors.
 """
 
-import json
 import os
-import subprocess
 import sys
+import subprocess
+import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Dict, List, Any
 
 
 def check_tool_availability() -> Dict[str, bool]:
     """Check if required security tools are available."""
     tools = {
-        "bandit": "bandit --version",
-        "safety": "safety --version",
-        "semgrep": "semgrep --version",
-        "pytest": "pytest --version",
-        "python": "python --version",
+        'bandit': 'bandit --version',
+        'safety': 'safety --version',
+        'semgrep': 'semgrep --version',
+        'pytest': 'pytest --version',
+        'python': 'python --version'
     }
 
     availability = {}
@@ -41,13 +41,13 @@ def validate_config_files() -> Dict[str, bool]:
     project_root = Path(__file__).parent.parent.parent.parent
 
     config_files = {
-        "bandit_config": "tests/security/sast/bandit.yaml",
-        "semgrep_config": "tests/security/sast/semgrep.yml",
-        "safety_policy": "tests/security/sast/safety_policy.json",
-        "zap_config": "tests/security/owasp_zap/zap_automation.yaml",
-        "zap_baseline": "tests/security/owasp_zap/zap_baseline.conf",
-        "pytest_config": "tests/security/configs/pytest.ini",
-        "precommit_config": "tests/security/configs/pre-commit-security.yaml",
+        'bandit_config': 'tests/security/sast/bandit.yaml',
+        'semgrep_config': 'tests/security/sast/semgrep.yml',
+        'safety_policy': 'tests/security/sast/safety_policy.json',
+        'zap_config': 'tests/security/owasp_zap/zap_automation.yaml',
+        'zap_baseline': 'tests/security/owasp_zap/zap_baseline.conf',
+        'pytest_config': 'tests/security/configs/pytest.ini',
+        'precommit_config': 'tests/security/configs/pre-commit-security.yaml'
     }
 
     validation_results = {}
@@ -64,9 +64,9 @@ def validate_test_files() -> Dict[str, bool]:
     project_root = Path(__file__).parent.parent.parent.parent
 
     test_files = {
-        "auth_tests": "tests/security/auth/test_authentication.py",
-        "api_tests": "tests/security/api/test_api_security.py",
-        "jwt_tests": "tests/security/jwt/test_jwt_security.py",
+        'auth_tests': 'tests/security/auth/test_authentication.py',
+        'api_tests': 'tests/security/api/test_api_security.py',
+        'jwt_tests': 'tests/security/jwt/test_jwt_security.py'
     }
 
     validation_results = {}
@@ -83,10 +83,10 @@ def validate_security_scripts() -> Dict[str, bool]:
     project_root = Path(__file__).parent.parent.parent.parent
 
     scripts = {
-        "main_scanner": "tests/security/scripts/run_security_scan.py",
-        "secrets_checker": "tests/security/scripts/check_secrets.py",
-        "participant_data_checker": "tests/security/scripts/check_participant_data.py",
-        "jwt_checker": "tests/security/scripts/check_jwt_security.py",
+        'main_scanner': 'tests/security/scripts/run_security_scan.py',
+        'secrets_checker': 'tests/security/scripts/check_secrets.py',
+        'participant_data_checker': 'tests/security/scripts/check_participant_data.py',
+        'jwt_checker': 'tests/security/scripts/check_jwt_security.py'
     }
 
     validation_results = {}
@@ -94,7 +94,9 @@ def validate_security_scripts() -> Dict[str, bool]:
     for name, path in scripts.items():
         file_path = project_root / path
         validation_results[name] = (
-            file_path.exists() and file_path.is_file() and os.access(file_path, os.X_OK)
+            file_path.exists() and
+            file_path.is_file() and
+            os.access(file_path, os.X_OK)
         )
 
     return validation_results
@@ -105,8 +107,8 @@ def run_quick_sast_test() -> Dict[str, Any]:
     project_root = Path(__file__).parent.parent.parent.parent
 
     # Create a test file with intentional security issues
-    test_file = project_root / "test_security_sample.py"
-    test_code = """
+    test_file = project_root / 'test_security_sample.py'
+    test_code = '''
 # Test file with intentional security issues for validation
 import os
 import subprocess
@@ -124,106 +126,79 @@ def run_command(cmd):
     subprocess.run(cmd, shell=True)
 
 # Remove test file when done
-"""
+'''
 
     try:
         # Write test file
-        with open(test_file, "w") as f:
+        with open(test_file, 'w') as f:
             f.write(test_code)
 
         results = {}
 
         # Test bandit
         try:
-            bandit_result = subprocess.run(
-                ["bandit", "-f", "json", str(test_file)], capture_output=True, text=True
-            )
+            bandit_result = subprocess.run([
+                'bandit', '-f', 'json', str(test_file)
+            ], capture_output=True, text=True)
 
             if bandit_result.stdout:
                 bandit_data = json.loads(bandit_result.stdout)
-                results["bandit"] = {
-                    "status": "success",
-                    "issues_found": len(bandit_data.get("results", [])),
-                    "working": len(bandit_data.get("results", [])) > 0,
+                results['bandit'] = {
+                    'status': 'success',
+                    'issues_found': len(bandit_data.get('results', [])),
+                    'working': len(bandit_data.get('results', [])) > 0
                 }
             else:
-                results["bandit"] = {"status": "no_output", "working": False}
+                results['bandit'] = {'status': 'no_output', 'working': False}
 
         except Exception as e:
-            results["bandit"] = {"status": "error", "error": str(e), "working": False}
+            results['bandit'] = {'status': 'error', 'error': str(e), 'working': False}
 
         # Test semgrep (if config exists)
-        semgrep_config = project_root / "tests/security/sast/semgrep.yml"
+        semgrep_config = project_root / 'tests/security/sast/semgrep.yml'
         if semgrep_config.exists():
             try:
-                semgrep_result = subprocess.run(
-                    [
-                        "semgrep",
-                        "--config",
-                        str(semgrep_config),
-                        "--json",
-                        str(test_file),
-                    ],
-                    capture_output=True,
-                    text=True,
-                )
+                semgrep_result = subprocess.run([
+                    'semgrep', '--config', str(semgrep_config), '--json', str(test_file)
+                ], capture_output=True, text=True)
 
                 if semgrep_result.stdout:
                     semgrep_data = json.loads(semgrep_result.stdout)
-                    results["semgrep"] = {
-                        "status": "success",
-                        "issues_found": len(semgrep_data.get("results", [])),
-                        "working": True,
+                    results['semgrep'] = {
+                        'status': 'success',
+                        'issues_found': len(semgrep_data.get('results', [])),
+                        'working': True
                     }
                 else:
-                    results["semgrep"] = {
-                        "status": "no_output",
-                        "working": True,
-                    }  # May be working but no issues
+                    results['semgrep'] = {'status': 'no_output', 'working': True}  # May be working but no issues
 
             except Exception as e:
-                results["semgrep"] = {
-                    "status": "error",
-                    "error": str(e),
-                    "working": False,
-                }
+                results['semgrep'] = {'status': 'error', 'error': str(e), 'working': False}
         else:
-            results["semgrep"] = {"status": "config_missing", "working": False}
+            results['semgrep'] = {'status': 'config_missing', 'working': False}
 
         # Test custom secret checker
         try:
-            secrets_script = project_root / "tests/security/scripts/check_secrets.py"
+            secrets_script = project_root / 'tests/security/scripts/check_secrets.py'
             if secrets_script.exists():
-                secrets_result = subprocess.run(
-                    ["python", str(secrets_script), str(test_file), "--json"],
-                    capture_output=True,
-                    text=True,
-                )
+                secrets_result = subprocess.run([
+                    'python', str(secrets_script), str(test_file), '--json'
+                ], capture_output=True, text=True)
 
                 if secrets_result.stdout:
                     secrets_data = json.loads(secrets_result.stdout)
-                    results["secrets_checker"] = {
-                        "status": "success",
-                        "issues_found": secrets_data.get("total_secrets", 0),
-                        "working": secrets_data.get("total_secrets", 0) > 0,
+                    results['secrets_checker'] = {
+                        'status': 'success',
+                        'issues_found': secrets_data.get('total_secrets', 0),
+                        'working': secrets_data.get('total_secrets', 0) > 0
                     }
                 else:
-                    results["secrets_checker"] = {
-                        "status": "no_output",
-                        "working": False,
-                    }
+                    results['secrets_checker'] = {'status': 'no_output', 'working': False}
             else:
-                results["secrets_checker"] = {
-                    "status": "script_missing",
-                    "working": False,
-                }
+                results['secrets_checker'] = {'status': 'script_missing', 'working': False}
 
         except Exception as e:
-            results["secrets_checker"] = {
-                "status": "error",
-                "error": str(e),
-                "working": False,
-            }
+            results['secrets_checker'] = {'status': 'error', 'error': str(e), 'working': False}
 
         return results
 
@@ -238,11 +213,11 @@ def run_validation() -> Dict[str, Any]:
     print("Validating Brain Researcher Security Testing Setup...\n")
 
     results = {
-        "tool_availability": check_tool_availability(),
-        "config_files": validate_config_files(),
-        "test_files": validate_test_files(),
-        "security_scripts": validate_security_scripts(),
-        "sast_functionality": run_quick_sast_test(),
+        'tool_availability': check_tool_availability(),
+        'config_files': validate_config_files(),
+        'test_files': validate_test_files(),
+        'security_scripts': validate_security_scripts(),
+        'sast_functionality': run_quick_sast_test()
     }
 
     return results
@@ -258,31 +233,23 @@ def print_validation_results(results: Dict[str, Any]):
         for item, status in data.items():
             if isinstance(status, dict):
                 if check_working:
-                    status_text = (
-                        "✓ WORKING" if status.get("working", False) else "✗ NOT WORKING"
-                    )
-                    if "issues_found" in status:
+                    status_text = "✓ WORKING" if status.get('working', False) else "✗ NOT WORKING"
+                    if 'issues_found' in status:
                         status_text += f" ({status['issues_found']} issues detected)"
-                    if "error" in status:
+                    if 'error' in status:
                         status_text += f" - Error: {status['error']}"
                 else:
-                    status_text = (
-                        "✓ OK"
-                        if status.get("status") == "success"
-                        else f"✗ {status.get('status', 'UNKNOWN')}"
-                    )
+                    status_text = "✓ OK" if status.get('status') == 'success' else f"✗ {status.get('status', 'UNKNOWN')}"
             else:
                 status_text = "✓ AVAILABLE" if status else "✗ MISSING"
 
             print(f"  {item:25} {status_text}")
 
-    print_section("Security Tools", results["tool_availability"])
-    print_section("Configuration Files", results["config_files"])
-    print_section("Test Files", results["test_files"])
-    print_section("Security Scripts", results["security_scripts"])
-    print_section(
-        "SAST Functionality Test", results["sast_functionality"], check_working=True
-    )
+    print_section("Security Tools", results['tool_availability'])
+    print_section("Configuration Files", results['config_files'])
+    print_section("Test Files", results['test_files'])
+    print_section("Security Scripts", results['security_scripts'])
+    print_section("SAST Functionality Test", results['sast_functionality'], check_working=True)
 
     # Summary
     print(f"\n{'='*50}")
@@ -299,14 +266,11 @@ def print_validation_results(results: Dict[str, Any]):
         for item, status in data.items():
             total_checks += 1
             if isinstance(status, dict):
-                if category == "sast_functionality":
-                    if (
-                        status.get("working", False)
-                        or status.get("status") == "success"
-                    ):
+                if category == 'sast_functionality':
+                    if status.get('working', False) or status.get('status') == 'success':
                         category_passed += 1
                         passed_checks += 1
-                elif status.get("status") == "success":
+                elif status.get('status') == 'success':
                     category_passed += 1
                     passed_checks += 1
             else:
@@ -314,18 +278,10 @@ def print_validation_results(results: Dict[str, Any]):
                     category_passed += 1
                     passed_checks += 1
 
-        status_text = (
-            "PASS"
-            if category_passed == category_total
-            else "PARTIAL" if category_passed > 0 else "FAIL"
-        )
+        status_text = "PASS" if category_passed == category_total else "PARTIAL" if category_passed > 0 else "FAIL"
         print(f"{category:25} {category_passed}/{category_total} - {status_text}")
 
-    overall_status = (
-        "PASS"
-        if passed_checks == total_checks
-        else "PARTIAL" if passed_checks > 0 else "FAIL"
-    )
+    overall_status = "PASS" if passed_checks == total_checks else "PARTIAL" if passed_checks > 0 else "FAIL"
     print(f"\nOverall Status: {passed_checks}/{total_checks} - {overall_status}")
 
     if overall_status != "PASS":
@@ -347,19 +303,12 @@ def main():
         print_validation_results(results)
 
         # Return appropriate exit code
-        all_tools_available = all(results["tool_availability"].values())
-        all_configs_present = all(results["config_files"].values())
-        all_tests_present = all(results["test_files"].values())
-        all_scripts_present = all(results["security_scripts"].values())
+        all_tools_available = all(results['tool_availability'].values())
+        all_configs_present = all(results['config_files'].values())
+        all_tests_present = all(results['test_files'].values())
+        all_scripts_present = all(results['security_scripts'].values())
 
-        if all(
-            [
-                all_tools_available,
-                all_configs_present,
-                all_tests_present,
-                all_scripts_present,
-            ]
-        ):
+        if all([all_tools_available, all_configs_present, all_tests_present, all_scripts_present]):
             return 0  # Success
         else:
             return 1  # Partial failure
@@ -369,5 +318,5 @@ def main():
         return 2  # Error
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

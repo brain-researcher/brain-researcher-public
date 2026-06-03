@@ -15,9 +15,7 @@ from brain_researcher.services.agent.tool_router import load_tool_families
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / "scripts" / "eval" / "curate_microtooling_exact_labels.py"
-SPEC = importlib.util.spec_from_file_location(
-    "curate_microtooling_exact_labels", SCRIPT_PATH
-)
+SPEC = importlib.util.spec_from_file_location("curate_microtooling_exact_labels", SCRIPT_PATH)
 assert SPEC is not None
 assert SPEC.loader is not None
 curator = importlib.util.module_from_spec(SPEC)
@@ -47,49 +45,27 @@ PASS3_AUDIT = (
 
 def _patch_catalog(monkeypatch: Any) -> None:
     catalog = {
-        "clean_confounds": SimpleNamespace(
-            name="Clean Confounds", capabilities=["preprocessing"], intents=[]
-        ),
-        "consult_knowledge_graph": SimpleNamespace(
-            name="Consult Knowledge Graph", capabilities=["br_kg"], intents=[]
-        ),
-        "find_related_concepts": SimpleNamespace(
-            name="Find Related Concepts", capabilities=["br_kg"], intents=[]
-        ),
-        "graph_theory": SimpleNamespace(
-            name="Graph Theory", capabilities=["graph_theory"], intents=[]
-        ),
-        "group_ica": SimpleNamespace(
-            name="Group ICA", capabilities=["ica"], intents=[]
-        ),
+        "clean_confounds": SimpleNamespace(name="Clean Confounds", capabilities=["preprocessing"], intents=[]),
+        "consult_knowledge_graph": SimpleNamespace(name="Consult Knowledge Graph", capabilities=["br_kg"], intents=[]),
+        "find_related_concepts": SimpleNamespace(name="Find Related Concepts", capabilities=["br_kg"], intents=[]),
+        "graph_theory": SimpleNamespace(name="Graph Theory", capabilities=["graph_theory"], intents=[]),
+        "group_ica": SimpleNamespace(name="Group ICA", capabilities=["ica"], intents=[]),
         "multiple_comparison_correction": SimpleNamespace(
             name="Multiple Comparison Correction",
             capabilities=["preprocessing"],
             intents=[],
         ),
-        "br_kg.search_nodes": SimpleNamespace(
-            name="Search Nodes", capabilities=["search"], intents=[]
-        ),
-        "br_kg_find_related_concepts": SimpleNamespace(
-            name="Related Concepts", capabilities=["br_kg"], intents=[]
-        ),
-        "br_kg_graph_query": SimpleNamespace(
-            name="BRKG Graph Query", capabilities=["br_kg"], intents=[]
-        ),
-        "nilearn_ica": SimpleNamespace(
-            name="Nilearn ICA", capabilities=["ica"], intents=[]
-        ),
+        "br_kg.search_nodes": SimpleNamespace(name="Search Nodes", capabilities=["search"], intents=[]),
+        "br_kg_find_related_concepts": SimpleNamespace(name="Related Concepts", capabilities=["br_kg"], intents=[]),
+        "br_kg_graph_query": SimpleNamespace(name="BRKG Graph Query", capabilities=["br_kg"], intents=[]),
+        "nilearn_ica": SimpleNamespace(name="Nilearn ICA", capabilities=["ica"], intents=[]),
         "nilearn_preprocessing_tool": SimpleNamespace(
             name="Nilearn Preprocessing",
             capabilities=["preprocessing"],
             intents=[],
         ),
-        "query_bids_layout": SimpleNamespace(
-            name="Query BIDS Layout", capabilities=["bids_query"], intents=[]
-        ),
-        "validate_bids_structure": SimpleNamespace(
-            name="Validate BIDS", capabilities=["bids"], intents=[]
-        ),
+        "query_bids_layout": SimpleNamespace(name="Query BIDS Layout", capabilities=["bids_query"], intents=[]),
+        "validate_bids_structure": SimpleNamespace(name="Validate BIDS", capabilities=["bids"], intents=[]),
     }
     monkeypatch.setattr(
         curator,
@@ -123,9 +99,7 @@ def test_knowledge_graph_label_prefers_kg_tools(monkeypatch: Any) -> None:
     assert "graph_theory" in labels["acceptable_tool_ids"]
 
 
-def test_generic_preprocessing_capability_is_not_exact_promoted(
-    monkeypatch: Any,
-) -> None:
+def test_generic_preprocessing_capability_is_not_exact_promoted(monkeypatch: Any) -> None:
     _patch_catalog(monkeypatch)
 
     rows, _ = curator.curate_rows(
@@ -206,11 +180,7 @@ def test_load_seed_rows_falls_back_to_microtooling_json(tmp_path: Path) -> None:
 
 
 def _jsonl_rows(path: Path) -> list[dict[str, Any]]:
-    return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def test_manual_curated_v2_completes_all_microtooling_rows() -> None:
@@ -252,11 +222,7 @@ def test_manual_curated_v2_labels_are_catalog_backed() -> None:
 
     for row in rows:
         labels = row.get("exact_labels") or {}
-        for field in (
-            "expected_tool_ids",
-            "acceptable_tool_ids",
-            "expected_sequence_tool_ids",
-        ):
+        for field in ("expected_tool_ids", "acceptable_tool_ids", "expected_sequence_tool_ids"):
             for tool_id in labels.get(field) or []:
                 if tool_id not in catalog_tool_ids:
                     invalid.append((row["task_id"], field, tool_id))

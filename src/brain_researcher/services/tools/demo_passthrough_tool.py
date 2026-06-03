@@ -30,17 +30,10 @@ class DemoPassthroughTool(NeuroToolWrapper):
 
         return DemoArgs
 
-    def _run(
-        self,
-        message: str | None = None,
-        payload: Dict[str, Any] | None = None,
-        **kwargs,
-    ) -> ToolResult:
+    def _run(self, message: str | None = None, payload: Dict[str, Any] | None = None, **kwargs) -> ToolResult:
         summary = message or "demo-pass"
         outputs = {"payload": payload or {}, "extra": kwargs}
-        return ToolResult(
-            status="success", data={"outputs": outputs, "summary": {"message": summary}}
-        )
+        return ToolResult(status="success", data={"outputs": outputs, "summary": {"message": summary}})
 
 
 __all__ = ["DemoPassthroughTool"]

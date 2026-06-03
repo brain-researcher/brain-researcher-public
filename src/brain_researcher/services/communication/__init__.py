@@ -13,35 +13,40 @@ Components:
 - Event-driven communication patterns
 """
 
-from .circuit_breaker import CircuitBreaker, CircuitBreakerConfig
-from .event_dispatcher import Event, EventDispatcher
 from .grpc_contracts import BrainResearcherServiceStub, create_grpc_client
-from .message_queue import EventBus, MessageQueue, QueueConfig
-from .retry_policy import RetryConfig, RetryPolicy
-from .service_mesh import MeshConfig, ServiceMesh, ServiceProxy
+from .message_queue import MessageQueue, EventBus, QueueConfig
+from .service_mesh import ServiceMesh, MeshConfig, ServiceProxy
+from .circuit_breaker import CircuitBreaker, CircuitBreakerConfig
+from .retry_policy import RetryPolicy, RetryConfig
+from .event_dispatcher import EventDispatcher, Event
 from .transformation import RequestTransformer, ResponseTransformer
 
 __all__ = [
     # gRPC
     "BrainResearcherServiceStub",
     "create_grpc_client",
+
     # Messaging
     "MessageQueue",
     "EventBus",
     "QueueConfig",
+
     # Service Mesh
     "ServiceMesh",
     "MeshConfig",
     "ServiceProxy",
+
     # Resilience
     "CircuitBreaker",
     "CircuitBreakerConfig",
     "RetryPolicy",
     "RetryConfig",
+
     # Events
     "EventDispatcher",
     "Event",
+
     # Transformation
     "RequestTransformer",
-    "ResponseTransformer",
+    "ResponseTransformer"
 ]

@@ -342,10 +342,10 @@ docs = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/zjc062/brain-researcher-public"
-"Documentation" = "https://github.com/zjc062/brain-researcher-public#readme"
-"Repository" = "https://github.com/zjc062/brain-researcher-public"
-"Issues" = "https://github.com/zjc062/brain-researcher-public/issues"
+"Homepage" = "https://github.com/your-org/brain_researcher"
+"Documentation" = "https://github.com/your-org/brain_researcher#readme"
+"Repository" = "https://github.com/your-org/brain_researcher"
+"Issues" = "https://github.com/your-org/brain_researcher/issues"
 
 [project.scripts]
 brain-researcher = "brain_researcher.cli.main:app"

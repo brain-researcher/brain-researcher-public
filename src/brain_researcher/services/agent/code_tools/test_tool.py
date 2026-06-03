@@ -56,21 +56,21 @@ ALLOWED_TEST_PREFIXES = [
 
 # Patterns that should never appear in commands (security blocklist)
 DISALLOWED_PATTERNS = [
-    " -c ",  # Block -c flag (arbitrary code execution)
-    " -c'",  # Block -c with single quote
-    ' -c"',  # Block -c with double quote
-    " -c\t",  # Block -c with tab
-    ">",  # Output redirection
-    "<",  # Input redirection
-    "`",  # Command substitution (backtick)
-    "$(",  # Command substitution (dollar-paren)
-    "cd /",  # Directory change to root
-    "../",  # Parent directory traversal
-    "..\\",  # Windows parent directory
-    ";",  # Command chaining
-    "&&",  # Command chaining (and)
-    "||",  # Command chaining (or)
-    "|",  # Pipe (command chaining)
+    " -c ",           # Block -c flag (arbitrary code execution)
+    " -c'",           # Block -c with single quote
+    ' -c"',           # Block -c with double quote
+    " -c\t",          # Block -c with tab
+    ">",              # Output redirection
+    "<",              # Input redirection
+    "`",              # Command substitution (backtick)
+    "$(",             # Command substitution (dollar-paren)
+    "cd /",           # Directory change to root
+    "../",            # Parent directory traversal
+    "..\\",           # Windows parent directory
+    ";",              # Command chaining
+    "&&",             # Command chaining (and)
+    "||",             # Command chaining (or)
+    "|",              # Pipe (command chaining)
 ]
 
 # Flags that take path values - must validate paths for these
@@ -143,9 +143,7 @@ class RunTestsTool(CodeTool):
     """Run test commands in workspace."""
 
     name = "code.shell.run_tests"
-    description = (
-        "Run test commands in the workspace. Only allows safe test command patterns."
-    )
+    description = "Run test commands in the workspace. Only allows safe test command patterns."
 
     def get_parameters_schema(self) -> Dict[str, Any]:
         return {
@@ -176,10 +174,7 @@ class RunTestsTool(CodeTool):
 
             if repo_root:
                 if not cwd.exists() or not cwd.is_dir():
-                    return {
-                        "status": "error",
-                        "error": f"Invalid repo_root: {repo_root}",
-                    }
+                    return {"status": "error", "error": f"Invalid repo_root: {repo_root}"}
                 if not validate_path(cwd, cwd):
                     return {
                         "status": "error",
@@ -191,9 +186,7 @@ class RunTestsTool(CodeTool):
             cmd_lower = cmd_normalized.lower().strip()
 
             # Security check: validate command prefix
-            if not any(
-                cmd_lower.startswith(prefix) for prefix in ALLOWED_TEST_PREFIXES
-            ):
+            if not any(cmd_lower.startswith(prefix) for prefix in ALLOWED_TEST_PREFIXES):
                 return {
                     "status": "error",
                     "error": f"Command not allowed. Must start with one of: {ALLOWED_TEST_PREFIXES}",
@@ -235,13 +228,9 @@ class RunTestsTool(CodeTool):
             stderr = result.stderr
 
             if len(stdout) > max_output:
-                stdout = (
-                    stdout[:max_output] + f"\n... (truncated at {max_output} chars)"
-                )
+                stdout = stdout[:max_output] + f"\n... (truncated at {max_output} chars)"
             if len(stderr) > max_output:
-                stderr = (
-                    stderr[:max_output] + f"\n... (truncated at {max_output} chars)"
-                )
+                stderr = stderr[:max_output] + f"\n... (truncated at {max_output} chars)"
 
             return {
                 "status": "success" if success else "failed",

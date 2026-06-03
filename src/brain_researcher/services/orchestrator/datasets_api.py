@@ -9,11 +9,7 @@ from typing import Dict, Iterable, List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from brain_researcher.core.datasets.catalog import (
-    DatasetPreview,
-    DatasetRecord,
-    load_catalog,
-)
+from brain_researcher.core.datasets.catalog import DatasetRecord, DatasetPreview, load_catalog
 
 try:  # pragma: no cover - optional dependency
     from rapidfuzz import fuzz  # type: ignore
@@ -171,15 +167,7 @@ class DatasetCatalogIndex:
             r
             for r in records
             if self._matches(
-                r,
-                modalities,
-                acquisitions,
-                source_repo,
-                access_type,
-                category,
-                tags,
-                center,
-                consortium,
+                r, modalities, acquisitions, source_repo, access_type, category, tags, center, consortium
             )
         ]
         scored = [(self._score(query, r, sort), r) for r in filtered]
@@ -259,13 +247,9 @@ class DatasetCatalogIndex:
             record_acq = set(a.lower() for a in record.acquisitions)
             if not set(a.lower() for a in acquisitions).issubset(record_acq):
                 return False
-        if source_repo and record.source_repo.lower() not in {
-            s.lower() for s in source_repo
-        }:
+        if source_repo and record.source_repo.lower() not in {s.lower() for s in source_repo}:
             return False
-        if access_type and record.access_type.lower() not in {
-            a.lower() for a in access_type
-        }:
+        if access_type and record.access_type.lower() not in {a.lower() for a in access_type}:
             return False
         if category:
             record_category = (record.category or "").lower()
@@ -277,9 +261,7 @@ class DatasetCatalogIndex:
                 return False
         if center and (record.center or "").lower() not in {c.lower() for c in center}:
             return False
-        if consortium and (record.consortium or "").lower() not in {
-            c.lower() for c in consortium
-        }:
+        if consortium and (record.consortium or "").lower() not in {c.lower() for c in consortium}:
             return False
         return True
 
@@ -352,13 +334,9 @@ class DatasetCatalogIndex:
         )
 
     def _preview_to_dict(self, preview: DatasetPreview) -> PreviewResponse:
-        return PreviewResponse(
-            kind=preview.kind, uri=str(preview.uri), label=preview.label
-        )
+        return PreviewResponse(kind=preview.kind, uri=str(preview.uri), label=preview.label)
 
-    def _compute_facets(
-        self, records: Iterable[DatasetRecord]
-    ) -> Dict[str, List[FacetValue]]:
+    def _compute_facets(self, records: Iterable[DatasetRecord]) -> Dict[str, List[FacetValue]]:
         facets: Dict[str, Counter[str]] = {
             "modalities": Counter(),
             "source_repo": Counter(),
@@ -374,10 +352,7 @@ class DatasetCatalogIndex:
             if record.category:
                 facets["category"].update([record.category])
         return {
-            key: [
-                FacetValue(value=value, count=count)
-                for value, count in counter.most_common()
-            ]
+            key: [FacetValue(value=value, count=count) for value, count in counter.most_common()]
             for key, counter in facets.items()
         }
 
@@ -492,9 +467,7 @@ async def get_similar_datasets(
     if not sims:
         record = CATALOG_INDEX.get(dataset_id)
         if not record:
-            raise HTTPException(
-                status_code=404, detail=f"Dataset {dataset_id} not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} not found")
     return sims
 
 
@@ -509,18 +482,12 @@ async def recommend_datasets(
     recs = []
     for card in CATALOG_INDEX.similar(dataset_id, limit=limit):
         reasons = []
-        shared_tags = set(t.lower() for t in card.tags) & set(
-            t.lower() for t in baseline.tags
-        )
+        shared_tags = set(t.lower() for t in card.tags) & set(t.lower() for t in baseline.tags)
         if shared_tags:
             reasons.append(f"Shares tags: {', '.join(sorted(shared_tags))}")
-        shared_modalities = set(card.modalities) & set(
-            str(m) for m in baseline.modalities
-        )
+        shared_modalities = set(card.modalities) & set(str(m) for m in baseline.modalities)
         if shared_modalities:
-            reasons.append(
-                f"Includes modalities: {', '.join(sorted(shared_modalities))}"
-            )
+            reasons.append(f"Includes modalities: {', '.join(sorted(shared_modalities))}")
         recs.append(
             DatasetRecommendation(
                 dataset=card,

@@ -10,8 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from brain_researcher.services.tools.params import (
     TemporalDecodingParameters,
-    run_temporal_decoding,
     temporal_decoding_from_payload,
+    run_temporal_decoding,
 )
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 

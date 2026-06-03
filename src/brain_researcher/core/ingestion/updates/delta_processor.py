@@ -5,14 +5,13 @@ Handles insertions, updates, and deletions based on change detection.
 
 import logging
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Dict, Any, List, Tuple, Optional, Callable
 
 logger = logging.getLogger(__name__)
 
 
 class ChangeType(Enum):
     """Type of change detected."""
-
     INSERT = "insert"
     UPDATE = "update"
     DELETE = "delete"
@@ -22,7 +21,11 @@ class ChangeType(Enum):
 class DeltaProcessor:
     """Process delta changes efficiently."""
 
-    def __init__(self, merge_strategy: str = "overwrite", track_deletes: bool = True):
+    def __init__(
+        self,
+        merge_strategy: str = "overwrite",
+        track_deletes: bool = True
+    ):
         """Initialize delta processor.
 
         Args:
@@ -45,7 +48,7 @@ class DeltaProcessor:
     def categorize_changes(
         self,
         current: List[Tuple[str, Dict[str, Any]]],
-        previous: List[Tuple[str, Dict[str, Any]]],
+        previous: List[Tuple[str, Dict[str, Any]]]
     ) -> Dict[ChangeType, List[Tuple[str, Dict[str, Any]]]]:
         """Categorize changes between current and previous data.
 
@@ -95,7 +98,7 @@ class DeltaProcessor:
         self,
         old_content: Dict[str, Any],
         new_content: Dict[str, Any],
-        custom_merger: Optional[Callable] = None,
+        custom_merger: Optional[Callable] = None
     ) -> Dict[str, Any]:
         """Merge old and new content based on strategy.
 
@@ -128,7 +131,7 @@ class DeltaProcessor:
         changes: Dict[ChangeType, List[Tuple[str, Dict[str, Any]]]],
         insert_handler: Optional[Callable] = None,
         update_handler: Optional[Callable] = None,
-        delete_handler: Optional[Callable] = None,
+        delete_handler: Optional[Callable] = None
     ) -> Dict[str, Any]:
         """Process delta changes with appropriate handlers.
 
@@ -194,7 +197,7 @@ class DeltaProcessor:
         source: str,
         current_items: List[Tuple[str, Dict[str, Any]]],
         get_previous: Callable[[str], List[Tuple[str, Dict[str, Any]]]],
-        handlers: Dict[str, Callable],
+        handlers: Dict[str, Callable]
     ) -> Dict[str, Any]:
         """Process a batch of items with delta detection.
 
@@ -228,7 +231,7 @@ class DeltaProcessor:
             changes,
             handlers.get("insert"),
             handlers.get("update"),
-            handlers.get("delete"),
+            handlers.get("delete")
         )
 
         return {
@@ -245,7 +248,9 @@ class DeltaProcessor:
         }
 
     def resolve_conflicts(
-        self, conflicts: List[Dict[str, Any]], resolution_strategy: str = "newest"
+        self,
+        conflicts: List[Dict[str, Any]],
+        resolution_strategy: str = "newest"
     ) -> List[Dict[str, Any]]:
         """Resolve conflicts between concurrent updates.
 
@@ -288,14 +293,15 @@ class DeltaProcessor:
         stats = dict(self.stats)
 
         # Calculate rates
-        total = sum(
-            [stats["inserts"], stats["updates"], stats["deletes"], stats["unchanged"]]
-        )
+        total = sum([
+            stats["inserts"],
+            stats["updates"],
+            stats["deletes"],
+            stats["unchanged"]
+        ])
 
         if total > 0:
-            stats["change_rate"] = (
-                stats["inserts"] + stats["updates"] + stats["deletes"]
-            ) / total
+            stats["change_rate"] = (stats["inserts"] + stats["updates"] + stats["deletes"]) / total
         else:
             stats["change_rate"] = 0
 

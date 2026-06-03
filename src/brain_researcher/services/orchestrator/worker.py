@@ -8,7 +8,6 @@ and updates job state using the JobStore API.
 from __future__ import annotations
 
 import asyncio
-import heapq
 import importlib
 import json
 import logging
@@ -16,11 +15,12 @@ import os
 import sys
 import threading
 import time
+import heapq
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Optional, Dict, Any, List, TYPE_CHECKING
 from urllib.parse import quote
 
 try:  # Optional dependency for resource snapshots
@@ -28,28 +28,27 @@ try:  # Optional dependency for resource snapshots
 except ImportError:  # pragma: no cover
     psutil = None
 
-from brain_researcher.core.contracts import Violation
-from brain_researcher.core.gates import GateEngine
+from .job_store import JobStore, JobState
+from .job_adapter import JobAdapter
+from .models import CacheMetadata
+from brain_researcher.services.telemetry.metrics_kind_resolver import resolve_job_kind
+from brain_researcher.services.shared.settings import get_settings, Settings
 from brain_researcher.services.orchestrator.dag_runtime import (
     DAGExecutor,
     WorkflowDefinition,
-    WorkflowResult,
-    WorkflowState,
     WorkflowStep,
+    WorkflowState,
+    WorkflowResult,
 )
-from brain_researcher.services.orchestrator.event_log import emit_job_event
-from brain_researcher.services.orchestrator.reward import write_reward_breakdown
+from brain_researcher.core.gates import GateEngine
+from brain_researcher.core.contracts import Violation
 from brain_researcher.services.orchestrator.trace import (
     build_atif_trajectory,
     log_trace_event,
     write_trajectory_json,
 )
-from brain_researcher.services.shared.settings import Settings, get_settings
-from brain_researcher.services.telemetry.metrics_kind_resolver import resolve_job_kind
-
-from .job_adapter import JobAdapter
-from .job_store import JobState, JobStore
-from .models import CacheMetadata
+from brain_researcher.services.orchestrator.event_log import emit_job_event
+from brain_researcher.services.orchestrator.reward import write_reward_breakdown
 
 logger = logging.getLogger(__name__)
 
@@ -146,9 +145,9 @@ def _anchor_plan_step_output_dirs(
 # Import ToolExecutor for job execution
 try:
     from brain_researcher.services.agent.tool_executor import (
-        ExecutionMode,
-        ToolExecutionRequest,
         ToolExecutor,
+        ToolExecutionRequest,
+        ExecutionMode,
     )
 
     TOOL_EXECUTOR_AVAILABLE = True
@@ -578,9 +577,9 @@ class JobWorker:
             else:
                 # Attempt classification for failures
                 try:
-                    from brain_researcher.services.orchestrator.retry import (  # local import
+                    from brain_researcher.services.orchestrator.retry import (
                         classify_failure,
-                    )
+                    )  # local import
 
                     reason_label = (
                         classify_failure(exit_code or -1, final_error or "") or "failed"
@@ -755,8 +754,8 @@ class JobWorker:
             provenance_path: Path to provenance.json file
             job: JobRecord with retry metadata
         """
-        import json
         from pathlib import Path
+        import json
 
         try:
             prov_file = Path(provenance_path)
@@ -854,11 +853,11 @@ class JobWorker:
 
         else:
             # P2.6: Check retry eligibility for failed jobs
-            from brain_researcher.config.retry_settings import get_retry_settings
             from brain_researcher.services.orchestrator.retry import (
-                format_retry_summary,
                 should_retry,
+                format_retry_summary,
             )
+            from brain_researcher.config.retry_settings import get_retry_settings
 
             retry_settings = get_retry_settings()
             retry_decision = should_retry(
@@ -1930,10 +1929,10 @@ class JobWorker:
         if primary_runtime == "neurodesk":
             try:
                 from brain_researcher.services.tools.neurodesk_compiler import (
-                    _HEAVY_TOOLS,
                     NeurodeskCompiler,
                     NeurodeskDispatcher,
                     NeurodeskToolExecutor,
+                    _HEAVY_TOOLS,
                 )
 
                 nd_run_dir = (
@@ -2611,15 +2610,15 @@ class JobWorker:
         """
 
         try:
-            from brain_researcher.services.agent.planner.catalog_loader import (
-                get_tool_by_id,
-            )
             from brain_researcher.services.agent.planner.evidence import (
                 aggregate_plan_job_evidence,
                 is_writeback_enabled,
             )
             from brain_researcher.services.agent.planner.evidence_neo4j import (
                 get_default_evidence_store,
+            )
+            from brain_researcher.services.agent.planner.catalog_loader import (
+                get_tool_by_id,
             )
         except Exception:  # pragma: no cover - optional path
             return

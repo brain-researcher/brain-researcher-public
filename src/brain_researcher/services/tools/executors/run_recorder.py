@@ -33,12 +33,10 @@ from brain_researcher.services.tools.executors.provenance_helpers import (
     get_container_fingerprint,
     get_file_fingerprint,
     get_git_metadata,
+    get_inputs_fingerprints,
 )
 from brain_researcher.services.tools.executors.provenance_helpers import (
     get_host_metadata as get_host_metadata_helper,
-)
-from brain_researcher.services.tools.executors.provenance_helpers import (
-    get_inputs_fingerprints,
 )
 
 # Schema version for provenance JSON

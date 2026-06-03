@@ -442,7 +442,7 @@ class StrengthCalculator:
         try:
             # Import NiCLIP spatial mapper
             from brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper import (
-                get_spatial_mapper,
+                get_spatial_mapper
             )
 
             mapper = get_spatial_mapper()
@@ -456,10 +456,9 @@ class StrengthCalculator:
                 from brain_researcher.services.br_kg.utils.vocab_loader import (
                     search_similar_tasks,
                 )
-
                 similar = search_similar_tasks(concept, top_k=1)
-                if similar and similar[0]["score"] > 0.5:
-                    concept = similar[0]["task"]
+                if similar and similar[0]['score'] > 0.5:
+                    concept = similar[0]['task']
                     alignment_score = mapper.get_task_brain_alignment(concept)
 
             if alignment_score is None:
@@ -468,9 +467,7 @@ class StrengthCalculator:
             # Convert NiCLIP prior to strength score
             # NiCLIP priors are typically in range [0.001, 0.01]
             # Normalize to [0, 1] with log scaling
-            strength = (
-                np.log10(alignment_score + 1e-5) / -2
-            )  # Maps ~[0.001, 0.01] to ~[0.5, 1.0]
+            strength = np.log10(alignment_score + 1e-5) / -2  # Maps ~[0.001, 0.01] to ~[0.5, 1.0]
             strength = max(0.0, min(1.0, strength))
 
             # Get cognitive process if available
@@ -486,7 +483,7 @@ class StrengthCalculator:
                 "concept": concept,
                 "cognitive_process": process,
                 "evidence": "brain_language_alignment",
-                "method": "niclip",
+                "method": "niclip"
             }
 
             return strength, details

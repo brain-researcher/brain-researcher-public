@@ -45,7 +45,9 @@ class PETSUVRTool(NeuroToolWrapper):
         return "pet_suvr"
 
     def get_tool_description(self) -> str:
-        return "Compute SUVR (Standardized Uptake Value Ratio) map from PET image with reference region normalization."
+        return (
+            "Compute SUVR (Standardized Uptake Value Ratio) map from PET image with reference region normalization."
+        )
 
     def get_args_schema(self):
         return PETSUVRArgs

@@ -10,7 +10,8 @@ def test_canonicalize_relation_type_aliases():
     assert canonicalize_relation_type("maps-to") == "MAPS_TO"
     assert canonicalize_relation_type("uses task") == "USES_TASK"
     assert (
-        canonicalize_relation_type("failed-replication-of") == "FAILED_REPLICATION_OF"
+        canonicalize_relation_type("failed-replication-of")
+        == "FAILED_REPLICATION_OF"
     )
     assert canonicalize_relation_type(None) is None
 

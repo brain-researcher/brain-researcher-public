@@ -5,33 +5,31 @@ retry logic, and graceful degradation strategies.
 
 import asyncio
 import logging
-import random
 import time
-import traceback
-from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, Callable, Union, List
 from enum import Enum
-from functools import partial, wraps
-from typing import Any, Callable, Dict, List, Optional, Union
+from contextlib import asynccontextmanager
+import random
+import traceback
+from functools import wraps, partial
 
 from pydantic import BaseModel, Field
+from .models import ErrorCode, ErrorResponse, ErrorContext, RetryConfig
 
-from .models import ErrorCode, ErrorContext, ErrorResponse, RetryConfig
 
 logger = logging.getLogger(__name__)
 
 
 class CircuitState(str, Enum):
     """Circuit breaker states."""
-
-    CLOSED = "closed"  # Normal operation
-    OPEN = "open"  # Failing fast
+    CLOSED = "closed"      # Normal operation
+    OPEN = "open"          # Failing fast
     HALF_OPEN = "half_open"  # Testing recovery
 
 
 class ServiceType(str, Enum):
     """Service types for different error handling strategies."""
-
     AGENT = "agent"
     BR_KG = "br_kg"
     DATABASE = "database"
@@ -42,7 +40,6 @@ class ServiceType(str, Enum):
 
 class FailureType(str, Enum):
     """Types of failures for categorization."""
-
     TIMEOUT = "timeout"
     CONNECTION_ERROR = "connection_error"
     SERVICE_UNAVAILABLE = "service_unavailable"
@@ -55,17 +52,15 @@ class FailureType(str, Enum):
 
 class CircuitBreakerConfig(BaseModel):
     """Circuit breaker configuration."""
-
     failure_threshold: int = Field(default=5, ge=1)  # Failures to open circuit
     success_threshold: int = Field(default=3, ge=1)  # Successes to close circuit
-    timeout_seconds: int = Field(default=60, ge=1)  # Time before half-open
+    timeout_seconds: int = Field(default=60, ge=1)   # Time before half-open
     max_timeout_seconds: int = Field(default=600, ge=1)  # Max timeout
     backoff_multiplier: float = Field(default=1.5, ge=1.0)
 
 
 class GracefulDegradationStrategy(BaseModel):
     """Strategy for graceful degradation."""
-
     fallback_enabled: bool = True
     use_cache: bool = True
     cache_ttl_seconds: int = Field(default=300, ge=0)
@@ -76,7 +71,6 @@ class GracefulDegradationStrategy(BaseModel):
 
 class RetryStrategy(BaseModel):
     """Enhanced retry strategy configuration."""
-
     max_attempts: int = Field(default=3, ge=1, le=10)
     initial_delay_ms: int = Field(default=1000, ge=100)
     max_delay_ms: int = Field(default=30000, le=60000)
@@ -88,7 +82,6 @@ class RetryStrategy(BaseModel):
 
 class ErrorMetrics(BaseModel):
     """Error metrics for monitoring."""
-
     total_requests: int = 0
     failed_requests: int = 0
     success_rate: float = 0.0
@@ -109,15 +102,13 @@ class ServiceErrorHandler:
         service_type: ServiceType,
         circuit_config: Optional[CircuitBreakerConfig] = None,
         retry_strategy: Optional[RetryStrategy] = None,
-        degradation_strategy: Optional[GracefulDegradationStrategy] = None,
+        degradation_strategy: Optional[GracefulDegradationStrategy] = None
     ):
         self.service_name = service_name
         self.service_type = service_type
         self.circuit_config = circuit_config or CircuitBreakerConfig()
         self.retry_strategy = retry_strategy or RetryStrategy()
-        self.degradation_strategy = (
-            degradation_strategy or GracefulDegradationStrategy()
-        )
+        self.degradation_strategy = degradation_strategy or GracefulDegradationStrategy()
 
         self.metrics = ErrorMetrics()
         self.circuit_opened_at: Optional[datetime] = None
@@ -132,7 +123,7 @@ class ServiceErrorHandler:
         *args,
         operation_id: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        **kwargs
     ) -> Any:
         """Execute operation with circuit breaker protection."""
         operation_id = operation_id or f"{self.service_name}_{int(time.time())}"
@@ -160,9 +151,7 @@ class ServiceErrorHandler:
 
         except Exception as e:
             # Record failure
-            await self._record_failure(
-                e, time.time() - start_time, operation_id, context
-            )
+            await self._record_failure(e, time.time() - start_time, operation_id, context)
             raise
 
     async def _execute_with_retry(
@@ -171,7 +160,7 @@ class ServiceErrorHandler:
         *args,
         operation_id: str,
         context: Dict[str, Any],
-        **kwargs,
+        **kwargs
     ) -> Any:
         """Execute operation with retry logic."""
         last_exception = None
@@ -188,13 +177,8 @@ class ServiceErrorHandler:
                 failure_type = self._classify_failure(e)
 
                 # Don't retry certain error types
-                if failure_type in [
-                    FailureType.VALIDATION_ERROR,
-                    FailureType.AUTHENTICATION_ERROR,
-                ]:
-                    logger.warning(
-                        f"Non-retryable error in {operation_id}: {failure_type}"
-                    )
+                if failure_type in [FailureType.VALIDATION_ERROR, FailureType.AUTHENTICATION_ERROR]:
+                    logger.warning(f"Non-retryable error in {operation_id}: {failure_type}")
                     raise
 
                 if attempt < self.retry_strategy.max_attempts - 1:
@@ -205,9 +189,7 @@ class ServiceErrorHandler:
                     )
                     await asyncio.sleep(delay_ms / 1000.0)
                 else:
-                    logger.error(
-                        f"All {self.retry_strategy.max_attempts} attempts failed for {operation_id}"
-                    )
+                    logger.error(f"All {self.retry_strategy.max_attempts} attempts failed for {operation_id}")
 
         raise last_exception
 
@@ -215,7 +197,7 @@ class ServiceErrorHandler:
         """Calculate delay for retry attempt."""
         if self.retry_strategy.backoff_strategy == "exponential":
             base_delay = self.retry_strategy.initial_delay_ms * (
-                self.retry_strategy.exponential_base**attempt
+                self.retry_strategy.exponential_base ** attempt
             )
         elif self.retry_strategy.backoff_strategy == "linear":
             base_delay = self.retry_strategy.initial_delay_ms * (attempt + 1)
@@ -264,20 +246,18 @@ class ServiceErrorHandler:
             # Exponential moving average
             alpha = 0.1
             self.metrics.avg_response_time_ms = (
-                alpha * (response_time_ms * 1000)
-                + (1 - alpha) * self.metrics.avg_response_time_ms
+                alpha * (response_time_ms * 1000) +
+                (1 - alpha) * self.metrics.avg_response_time_ms
             )
 
         self.metrics.success_rate = (
-            self.metrics.total_requests - self.metrics.failed_requests
-        ) / self.metrics.total_requests
+            (self.metrics.total_requests - self.metrics.failed_requests) /
+            self.metrics.total_requests
+        )
 
         # Close circuit if enough successes in half-open state
-        if (
-            self.metrics.circuit_state == CircuitState.HALF_OPEN
-            and self.metrics.consecutive_successes
-            >= self.circuit_config.success_threshold
-        ):
+        if (self.metrics.circuit_state == CircuitState.HALF_OPEN and
+            self.metrics.consecutive_successes >= self.circuit_config.success_threshold):
             self.metrics.circuit_state = CircuitState.CLOSED
             self.circuit_opened_at = None
             logger.info(f"Circuit breaker closed for {self.service_name}")
@@ -287,7 +267,7 @@ class ServiceErrorHandler:
         exception: Exception,
         response_time_ms: float,
         operation_id: str,
-        context: Dict[str, Any],
+        context: Dict[str, Any]
     ):
         """Record failed operation."""
         self.metrics.total_requests += 1
@@ -302,15 +282,13 @@ class ServiceErrorHandler:
         )
 
         self.metrics.success_rate = (
-            self.metrics.total_requests - self.metrics.failed_requests
-        ) / self.metrics.total_requests
+            (self.metrics.total_requests - self.metrics.failed_requests) /
+            self.metrics.total_requests
+        )
 
         # Open circuit if threshold reached
-        if (
-            self.metrics.circuit_state == CircuitState.CLOSED
-            and self.metrics.consecutive_failures
-            >= self.circuit_config.failure_threshold
-        ):
+        if (self.metrics.circuit_state == CircuitState.CLOSED and
+            self.metrics.consecutive_failures >= self.circuit_config.failure_threshold):
             self.metrics.circuit_state = CircuitState.OPEN
             self.circuit_opened_at = datetime.utcnow()
             logger.error(f"Circuit breaker opened for {self.service_name}")
@@ -331,12 +309,8 @@ class ServiceErrorHandler:
 
         elapsed = (datetime.utcnow() - self.circuit_opened_at).total_seconds()
         timeout = self.circuit_config.timeout_seconds * (
-            self.circuit_config.backoff_multiplier
-            ** min(
-                self.metrics.consecutive_failures
-                // self.circuit_config.failure_threshold,
-                5,
-            )
+            self.circuit_config.backoff_multiplier **
+            min(self.metrics.consecutive_failures // self.circuit_config.failure_threshold, 5)
         )
         timeout = min(timeout, self.circuit_config.max_timeout_seconds)
 
@@ -346,9 +320,7 @@ class ServiceErrorHandler:
         self, operation_id: str, context: Dict[str, Any]
     ) -> Any:
         """Handle circuit breaker open state."""
-        logger.warning(
-            f"Circuit breaker open for {self.service_name}, operation: {operation_id}"
-        )
+        logger.warning(f"Circuit breaker open for {self.service_name}, operation: {operation_id}")
 
         # Try graceful degradation
         if self.degradation_strategy.fallback_enabled:
@@ -359,7 +331,7 @@ class ServiceErrorHandler:
             f"Service {self.service_name} is currently unavailable",
             service_name=self.service_name,
             circuit_state=self.metrics.circuit_state,
-            estimated_recovery_time=self._estimate_recovery_time(),
+            estimated_recovery_time=self._estimate_recovery_time()
         )
 
     async def _apply_graceful_degradation(
@@ -371,7 +343,7 @@ class ServiceErrorHandler:
             "service": self.service_name,
             "operation_id": operation_id,
             "message": "Service temporarily unavailable, using fallback response",
-            "data": None,
+            "data": None
         }
 
         # Try cache fallback
@@ -379,9 +351,7 @@ class ServiceErrorHandler:
             cached_result = self._get_cached_response(operation_id, context)
             if cached_result is not None:
                 degraded_response["data"] = cached_result
-                degraded_response["message"] = (
-                    "Using cached response due to service unavailability"
-                )
+                degraded_response["message"] = "Using cached response due to service unavailability"
                 return degraded_response
 
         # Return simplified response
@@ -394,19 +364,13 @@ class ServiceErrorHandler:
             f"Service {self.service_name} is unavailable and no fallback available"
         )
 
-    def _get_cached_response(
-        self, operation_id: str, context: Dict[str, Any]
-    ) -> Optional[Any]:
+    def _get_cached_response(self, operation_id: str, context: Dict[str, Any]) -> Optional[Any]:
         """Get cached response if available and valid."""
         cache_key = self._generate_cache_key(operation_id, context)
 
         if cache_key in self.cache:
             timestamp = self.cache_timestamps.get(cache_key)
-            if (
-                timestamp
-                and (datetime.utcnow() - timestamp).total_seconds()
-                <= self.degradation_strategy.cache_ttl_seconds
-            ):
+            if timestamp and (datetime.utcnow() - timestamp).total_seconds() <= self.degradation_strategy.cache_ttl_seconds:
                 logger.info(f"Using cached response for {operation_id}")
                 return self.cache[cache_key]
             else:
@@ -424,7 +388,7 @@ class ServiceErrorHandler:
         key_data = {
             "service": self.service_name,
             "operation": operation_id,
-            "context": context,
+            "context": context
         }
 
         key_string = json.dumps(key_data, sort_keys=True)
@@ -436,7 +400,7 @@ class ServiceErrorHandler:
             "simplified": True,
             "message": f"Simplified response from {self.service_name}",
             "context": context,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.utcnow().isoformat()
         }
 
     def _estimate_recovery_time(self) -> int:
@@ -445,14 +409,9 @@ class ServiceErrorHandler:
             return 0
 
         base_timeout = self.circuit_config.timeout_seconds
-        failure_multiplier = (
-            self.metrics.consecutive_failures // self.circuit_config.failure_threshold
-        )
+        failure_multiplier = self.metrics.consecutive_failures // self.circuit_config.failure_threshold
 
-        return int(
-            base_timeout
-            * (self.circuit_config.backoff_multiplier ** min(failure_multiplier, 5))
-        )
+        return int(base_timeout * (self.circuit_config.backoff_multiplier ** min(failure_multiplier, 5)))
 
     def cache_response(self, operation_id: str, context: Dict[str, Any], response: Any):
         """Cache successful response."""
@@ -470,9 +429,7 @@ class ServiceErrorHandler:
         expired_keys = []
 
         for key, timestamp in self.cache_timestamps.items():
-            if (
-                current_time - timestamp
-            ).total_seconds() > self.degradation_strategy.cache_ttl_seconds:
+            if (current_time - timestamp).total_seconds() > self.degradation_strategy.cache_ttl_seconds:
                 expired_keys.append(key)
 
         for key in expired_keys:
@@ -499,7 +456,7 @@ class ServiceUnavailableError(Exception):
         message: str,
         service_name: Optional[str] = None,
         circuit_state: Optional[CircuitState] = None,
-        estimated_recovery_time: Optional[int] = None,
+        estimated_recovery_time: Optional[int] = None
     ):
         super().__init__(message)
         self.service_name = service_name
@@ -515,7 +472,7 @@ class ErrorMessageFormatter:
         error_code: ErrorCode,
         original_error: str,
         context: Optional[Dict[str, Any]] = None,
-        suggestions: Optional[List[str]] = None,
+        suggestions: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Format error message for user consumption."""
 
@@ -524,39 +481,39 @@ class ErrorMessageFormatter:
                 "title": "Service Temporarily Unavailable",
                 "message": "The analysis service is currently unavailable. Please try again in a few minutes.",
                 "icon": "🔧",
-                "severity": "warning",
+                "severity": "warning"
             },
             ErrorCode.SERVICE_TIMEOUT: {
                 "title": "Request Timeout",
                 "message": "Your request is taking longer than expected. You can try again or contact support if the issue persists.",
                 "icon": "⏱️",
-                "severity": "warning",
+                "severity": "warning"
             },
             ErrorCode.VALIDATION_ERROR: {
                 "title": "Invalid Input",
                 "message": "Please check your input parameters and try again.",
                 "icon": "❌",
-                "severity": "error",
+                "severity": "error"
             },
             ErrorCode.RATE_LIMITED: {
                 "title": "Rate Limit Exceeded",
                 "message": "You've made too many requests recently. Please wait a moment before trying again.",
                 "icon": "🚦",
-                "severity": "warning",
+                "severity": "warning"
             },
             ErrorCode.NOT_FOUND: {
                 "title": "Resource Not Found",
                 "message": "The requested resource could not be found. Please check your request and try again.",
                 "icon": "🔍",
-                "severity": "error",
-            },
+                "severity": "error"
+            }
         }
 
         default_message = {
             "title": "Unexpected Error",
             "message": "An unexpected error occurred. Our team has been notified.",
             "icon": "⚠️",
-            "severity": "error",
+            "severity": "error"
         }
 
         formatted = user_messages.get(error_code, default_message).copy()
@@ -568,13 +525,13 @@ class ErrorMessageFormatter:
             formatted["suggestions"] = [
                 "Try again in a few minutes",
                 "Check system status page",
-                "Use demo mode if available",
+                "Use demo mode if available"
             ]
         elif error_code == ErrorCode.VALIDATION_ERROR:
             formatted["suggestions"] = [
                 "Check parameter ranges in documentation",
                 "Verify required fields are filled",
-                "Use example values for testing",
+                "Use example values for testing"
             ]
 
         # Add context information
@@ -600,7 +557,7 @@ class ErrorHandlerRegistry:
         service_type: ServiceType,
         circuit_config: Optional[CircuitBreakerConfig] = None,
         retry_strategy: Optional[RetryStrategy] = None,
-        degradation_strategy: Optional[GracefulDegradationStrategy] = None,
+        degradation_strategy: Optional[GracefulDegradationStrategy] = None
     ) -> ServiceErrorHandler:
         """Register error handler for service."""
 
@@ -609,7 +566,7 @@ class ErrorHandlerRegistry:
             service_type=service_type,
             circuit_config=circuit_config,
             retry_strategy=retry_strategy,
-            degradation_strategy=degradation_strategy,
+            degradation_strategy=degradation_strategy
         )
 
         self._handlers[service_name] = handler
@@ -623,7 +580,10 @@ class ErrorHandlerRegistry:
 
     def get_all_metrics(self) -> Dict[str, ErrorMetrics]:
         """Get metrics from all registered handlers."""
-        return {name: handler.get_metrics() for name, handler in self._handlers.items()}
+        return {
+            name: handler.get_metrics()
+            for name, handler in self._handlers.items()
+        }
 
     def reset_all_circuits(self):
         """Reset all circuit breakers."""
@@ -641,7 +601,7 @@ def with_error_handling(
     service_name: str,
     service_type: ServiceType,
     operation_id: Optional[str] = None,
-    context: Optional[Dict[str, Any]] = None,
+    context: Optional[Dict[str, Any]] = None
 ):
     """Decorator to automatically apply error handling to functions."""
 
@@ -692,7 +652,7 @@ async def error_handling_context(
     service_name: str,
     service_type: ServiceType,
     operation_id: Optional[str] = None,
-    context: Optional[Dict[str, Any]] = None,
+    context: Optional[Dict[str, Any]] = None
 ):
     """Context manager for error handling operations."""
     handler = error_registry.get_handler(service_name)
@@ -720,18 +680,18 @@ def create_error_response(
     message: str,
     details: Optional[Dict] = None,
     context: Optional[ErrorContext] = None,
-    suggestions: Optional[List[str]] = None,
+    suggestions: Optional[List[str]] = None
 ) -> ErrorResponse:
     """Helper function to create standardized error responses."""
     formatted_error = ErrorMessageFormatter.format_error_for_user(
         error_code=error_code,
         original_error=message,
         context=context.model_dump() if context else None,
-        suggestions=suggestions,
+        suggestions=suggestions
     )
 
     return ErrorResponse.create(
         code=error_code,
         message=formatted_error["message"],
-        details=details or formatted_error,
+        details=details or formatted_error
     )

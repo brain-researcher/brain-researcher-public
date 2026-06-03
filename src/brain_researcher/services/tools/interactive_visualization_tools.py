@@ -17,21 +17,14 @@ logger = logging.getLogger(__name__)
 
 class VisualizationInput(BaseModel):
     """Input schema for visualization tools."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    brain_data: Optional[np.ndarray] = Field(
-        None, description="3D/4D brain imaging data"
-    )
+    brain_data: Optional[np.ndarray] = Field(None, description="3D/4D brain imaging data")
     surface_mesh: Optional[Dict] = Field(None, description="Surface mesh data")
-    connectivity_matrix: Optional[np.ndarray] = Field(
-        None, description="Connectivity matrix"
-    )
+    connectivity_matrix: Optional[np.ndarray] = Field(None, description="Connectivity matrix")
     time_series: Optional[np.ndarray] = Field(None, description="Time series data")
     atlas_labels: Optional[List[str]] = Field(None, description="Atlas region labels")
-    output_dir: Optional[str] = Field(
-        None, description="Output directory for visualizations"
-    )
+    output_dir: Optional[str] = Field(None, description="Output directory for visualizations")
 
 
 class Interactive3DBrainTool(NeuroToolWrapper):
@@ -59,7 +52,7 @@ class Interactive3DBrainTool(NeuroToolWrapper):
         threshold: Optional[float] = None,
         view_angles: Optional[List[Tuple[float, float]]] = None,
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Create interactive 3D brain visualization."""
         try:
@@ -70,11 +63,7 @@ class Interactive3DBrainTool(NeuroToolWrapper):
             if brain_data is None and surface_mesh is None:
                 brain_data, mesh = self._generate_synthetic_brain_data()
             else:
-                mesh = (
-                    surface_mesh
-                    if surface_mesh
-                    else self._create_surface_mesh(brain_data)
-                )
+                mesh = surface_mesh if surface_mesh else self._create_surface_mesh(brain_data)
 
             # Process overlay if provided
             if overlay_data is not None:
@@ -102,12 +91,12 @@ class Interactive3DBrainTool(NeuroToolWrapper):
 
             # Save configuration
             results = {
-                "visualization_type": "3D_brain",
-                "colormap": colormap,
-                "threshold": threshold,
-                "interactive_features": interactive_features,
-                "metrics": metrics,
-                "output_file": str(output_path / "brain_3d.html"),
+                'visualization_type': '3D_brain',
+                'colormap': colormap,
+                'threshold': threshold,
+                'interactive_features': interactive_features,
+                'metrics': metrics,
+                'output_file': str(output_path / "brain_3d.html")
             }
 
             with open(output_path / "viz3d_config.json", "w") as f:
@@ -119,9 +108,9 @@ class Interactive3DBrainTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "visualization": str(output_path / "brain_3d.html"),
-                        "config": str(output_path / "viz3d_config.json"),
+                        "config": str(output_path / "viz3d_config.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -136,14 +125,12 @@ class Interactive3DBrainTool(NeuroToolWrapper):
 
         # Add brain-like structure
         center = [s // 2 for s in shape]
-        x, y, z = np.ogrid[: shape[0], : shape[1], : shape[2]]
+        x, y, z = np.ogrid[:shape[0], :shape[1], :shape[2]]
 
         # Ellipsoid for brain outline
-        brain_mask = (
-            ((x - center[0]) / 40) ** 2
-            + ((y - center[1]) / 50) ** 2
-            + ((z - center[2]) / 40) ** 2
-        ) <= 1
+        brain_mask = (((x - center[0]) / 40)**2 +
+                     ((y - center[1]) / 50)**2 +
+                     ((z - center[2]) / 40)**2) <= 1
 
         brain[brain_mask] = 1
 
@@ -152,11 +139,9 @@ class Interactive3DBrainTool(NeuroToolWrapper):
             act_center = [center[i] + np.random.randint(-20, 20) for i in range(3)]
             radius = np.random.randint(5, 10)
 
-            activation = (
-                (x - act_center[0]) ** 2
-                + (y - act_center[1]) ** 2
-                + (z - act_center[2]) ** 2
-            ) <= radius**2
+            activation = (((x - act_center[0])**2 +
+                          (y - act_center[1])**2 +
+                          (z - act_center[2])**2) <= radius**2)
 
             brain[activation & brain_mask] = np.random.uniform(2, 5)
 
@@ -188,7 +173,7 @@ class Interactive3DBrainTool(NeuroToolWrapper):
             # Simple triangulation (not proper, just for demo)
             faces = []
             for i in range(0, len(vertices) - 2, 3):
-                faces.append([i, i + 1, i + 2])
+                faces.append([i, i+1, i+2])
 
             faces = np.array(faces)
         else:
@@ -218,15 +203,13 @@ class Interactive3DBrainTool(NeuroToolWrapper):
             faces = np.array(faces)
 
         return {
-            "vertices": vertices.tolist(),
-            "faces": faces.tolist(),
-            "n_vertices": len(vertices),
-            "n_faces": len(faces),
+            'vertices': vertices.tolist(),
+            'faces': faces.tolist(),
+            'n_vertices': len(vertices),
+            'n_faces': len(faces)
         }
 
-    def _process_overlay(
-        self, overlay_data: np.ndarray, threshold: Optional[float]
-    ) -> Dict:
+    def _process_overlay(self, overlay_data: np.ndarray, threshold: Optional[float]) -> Dict:
         """Process overlay data for visualization."""
         if threshold is None:
             threshold = np.percentile(np.abs(overlay_data), 75)
@@ -237,45 +220,43 @@ class Interactive3DBrainTool(NeuroToolWrapper):
 
         # Get statistics
         stats = {
-            "min": float(np.min(masked[masked != 0])) if np.any(masked != 0) else 0,
-            "max": float(np.max(masked[masked != 0])) if np.any(masked != 0) else 0,
-            "mean": float(np.mean(masked[masked != 0])) if np.any(masked != 0) else 0,
-            "n_voxels": int(np.sum(masked != 0)),
+            'min': float(np.min(masked[masked != 0])) if np.any(masked != 0) else 0,
+            'max': float(np.max(masked[masked != 0])) if np.any(masked != 0) else 0,
+            'mean': float(np.mean(masked[masked != 0])) if np.any(masked != 0) else 0,
+            'n_voxels': int(np.sum(masked != 0))
         }
 
         return {
-            "data": masked.tolist() if masked.size < 10000 else None,
-            "threshold": float(threshold),
-            "statistics": stats,
+            'data': masked.tolist() if masked.size < 10000 else None,
+            'threshold': float(threshold),
+            'statistics': stats
         }
 
-    def _create_viz_config(
-        self,
-        brain_data: Optional[np.ndarray],
-        mesh: Dict,
-        overlay: Dict,
-        colormap: str,
-        view_angles: Optional[List],
-    ) -> Dict:
+    def _create_viz_config(self, brain_data: Optional[np.ndarray], mesh: Dict,
+                          overlay: Dict, colormap: str, view_angles: Optional[List]) -> Dict:
         """Create visualization configuration."""
-        config = {"mesh": mesh, "colormap": colormap, "overlay": overlay}
+        config = {
+            'mesh': mesh,
+            'colormap': colormap,
+            'overlay': overlay
+        }
 
         # Default view angles if not provided
         if view_angles is None:
             view_angles = [
-                (0, 0),  # Axial
-                (90, 0),  # Sagittal
-                (0, 90),  # Coronal
-                (45, 45),  # 3D
+                (0, 0),      # Axial
+                (90, 0),     # Sagittal
+                (0, 90),     # Coronal
+                (45, 45)     # 3D
             ]
 
-        config["views"] = [{"azimuth": a, "elevation": e} for a, e in view_angles]
+        config['views'] = [{'azimuth': a, 'elevation': e} for a, e in view_angles]
 
         # Add slicing information if volume data available
         if brain_data is not None:
-            config["slices"] = {
-                "shape": brain_data.shape,
-                "center": [s // 2 for s in brain_data.shape],
+            config['slices'] = {
+                'shape': brain_data.shape,
+                'center': [s // 2 for s in brain_data.shape]
             }
 
         return config
@@ -283,30 +264,29 @@ class Interactive3DBrainTool(NeuroToolWrapper):
     def _setup_interactive_features(self, viz_config: Dict) -> Dict:
         """Setup interactive features for visualization."""
         features = {
-            "rotation": True,
-            "zoom": True,
-            "pan": True,
-            "slice_controls": "slices" in viz_config,
-            "opacity_control": True,
-            "colormap_selector": True,
-            "screenshot": True,
-            "animation": True,
-            "measurements": True,
+            'rotation': True,
+            'zoom': True,
+            'pan': True,
+            'slice_controls': 'slices' in viz_config,
+            'opacity_control': True,
+            'colormap_selector': True,
+            'screenshot': True,
+            'animation': True,
+            'measurements': True
         }
 
         # Add interaction callbacks (simplified)
-        features["callbacks"] = {
-            "on_click": "show_voxel_info",
-            "on_hover": "highlight_region",
-            "on_slice_change": "update_overlay",
+        features['callbacks'] = {
+            'on_click': 'show_voxel_info',
+            'on_hover': 'highlight_region',
+            'on_slice_change': 'update_overlay'
         }
 
         return features
 
     def _generate_html_viz(self, viz_config: Dict, features: Dict) -> str:
         """Generate HTML for interactive visualization."""
-        html = (
-            """
+        html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -342,12 +322,8 @@ class Interactive3DBrainTool(NeuroToolWrapper):
 
     <script>
         // Visualization configuration
-        const config = """
-            + json.dumps(viz_config)
-            + """;
-        const features = """
-            + json.dumps(features)
-            + """;
+        const config = """ + json.dumps(viz_config) + """;
+        const features = """ + json.dumps(features) + """;
 
         // Create 3D surface plot
         const data = [{
@@ -430,28 +406,21 @@ class Interactive3DBrainTool(NeuroToolWrapper):
 </body>
 </html>
 """
-        )
         return html
 
-    def _calculate_viz_metrics(
-        self, brain_data: Optional[np.ndarray], overlay_data: Optional[np.ndarray]
-    ) -> Dict:
+    def _calculate_viz_metrics(self, brain_data: Optional[np.ndarray],
+                              overlay_data: Optional[np.ndarray]) -> Dict:
         """Calculate visualization metrics."""
         metrics = {}
 
         if brain_data is not None:
-            metrics["volume_size"] = list(brain_data.shape)
-            metrics["n_voxels"] = int(np.prod(brain_data.shape))
-            metrics["data_range"] = [
-                float(np.min(brain_data)),
-                float(np.max(brain_data)),
-            ]
+            metrics['volume_size'] = list(brain_data.shape)
+            metrics['n_voxels'] = int(np.prod(brain_data.shape))
+            metrics['data_range'] = [float(np.min(brain_data)), float(np.max(brain_data))]
 
         if overlay_data is not None:
-            metrics["overlay_coverage"] = float(
-                np.sum(overlay_data != 0) / overlay_data.size
-            )
-            metrics["overlay_peak"] = float(np.max(np.abs(overlay_data)))
+            metrics['overlay_coverage'] = float(np.sum(overlay_data != 0) / overlay_data.size)
+            metrics['overlay_peak'] = float(np.max(np.abs(overlay_data)))
 
         return metrics
 
@@ -480,7 +449,7 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
         visualization_type: str = "chord",  # chord, heatmap, graph, or matrix
         threshold: float = 0.3,
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Create dynamic connectivity visualization."""
         try:
@@ -491,9 +460,7 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
             if connectivity_matrix is None:
                 if time_series is None:
                     time_series = self._generate_synthetic_time_series()
-                connectivity_matrix = self._compute_dynamic_connectivity(
-                    time_series, window_size
-                )
+                connectivity_matrix = self._compute_dynamic_connectivity(time_series, window_size)
 
             # Generate labels if not provided
             if atlas_labels is None:
@@ -517,27 +484,21 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
                 viz_data = self._create_matrix_view(processed_conn, atlas_labels)
 
             # Generate interactive HTML
-            html_content = self._generate_connectivity_html(
-                viz_data, visualization_type
-            )
+            html_content = self._generate_connectivity_html(viz_data, visualization_type)
 
             # Save visualization
-            with open(
-                output_path / f"connectivity_{visualization_type}.html", "w"
-            ) as f:
+            with open(output_path / f"connectivity_{visualization_type}.html", "w") as f:
                 f.write(html_content)
 
             # Save processed data
             np.save(output_path / "processed_connectivity.npy", processed_conn)
 
             results = {
-                "visualization_type": visualization_type,
-                "n_regions": len(atlas_labels),
-                "threshold": threshold,
-                "network_metrics": network_metrics,
-                "output_file": str(
-                    output_path / f"connectivity_{visualization_type}.html"
-                ),
+                'visualization_type': visualization_type,
+                'n_regions': len(atlas_labels),
+                'threshold': threshold,
+                'network_metrics': network_metrics,
+                'output_file': str(output_path / f"connectivity_{visualization_type}.html")
             }
 
             with open(output_path / "connectivity_config.json", "w") as f:
@@ -548,13 +509,11 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
                 data=results,
                 metadata={
                     "output_files": {
-                        "visualization": str(
-                            output_path / f"connectivity_{visualization_type}.html"
-                        ),
+                        "visualization": str(output_path / f"connectivity_{visualization_type}.html"),
                         "config": str(output_path / "connectivity_config.json"),
-                        "data": str(output_path / "processed_connectivity.npy"),
+                        "data": str(output_path / "processed_connectivity.npy")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -570,19 +529,17 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
         time_series = np.random.randn(n_regions, n_timepoints)
 
         # Add correlations between some regions
-        for i in range(0, n_regions - 1, 5):
+        for i in range(0, n_regions-1, 5):
             # Create clusters of correlated regions
             cluster_size = min(5, n_regions - i)
             shared_signal = np.random.randn(n_timepoints)
 
             for j in range(cluster_size):
-                time_series[i + j] = 0.7 * time_series[i + j] + 0.3 * shared_signal
+                time_series[i+j] = 0.7 * time_series[i+j] + 0.3 * shared_signal
 
         return time_series
 
-    def _compute_dynamic_connectivity(
-        self, time_series: np.ndarray, window_size: int
-    ) -> np.ndarray:
+    def _compute_dynamic_connectivity(self, time_series: np.ndarray, window_size: int) -> np.ndarray:
         """Compute dynamic connectivity from time series."""
         n_regions, n_timepoints = time_series.shape
         n_windows = n_timepoints - window_size + 1
@@ -596,9 +553,7 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
 
         return connectivity
 
-    def _process_connectivity(
-        self, connectivity: np.ndarray, threshold: float
-    ) -> np.ndarray:
+    def _process_connectivity(self, connectivity: np.ndarray, threshold: float) -> np.ndarray:
         """Process connectivity matrix for visualization."""
         processed = connectivity.copy()
 
@@ -648,44 +603,44 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
                 total = np.sum(adj[nodes_in_c])
                 modularity += within - (total**2) / (2 * actual_edges + 0.01)
 
-        modularity /= 2 * actual_edges + 0.01
+        modularity /= (2 * actual_edges + 0.01)
 
         return {
-            "mean_degree": float(np.mean(degrees)),
-            "network_density": float(density),
-            "clustering_coefficient": float(avg_clustering),
-            "modularity": float(modularity),
-            "n_edges": int(actual_edges),
-            "strongest_connection": float(np.max(np.abs(connectivity))),
+            'mean_degree': float(np.mean(degrees)),
+            'network_density': float(density),
+            'clustering_coefficient': float(avg_clustering),
+            'modularity': float(modularity),
+            'n_edges': int(actual_edges),
+            'strongest_connection': float(np.max(np.abs(connectivity)))
         }
 
-    def _create_chord_diagram(
-        self, connectivity: np.ndarray, labels: List[str]
-    ) -> Dict:
+    def _create_chord_diagram(self, connectivity: np.ndarray, labels: List[str]) -> Dict:
         """Create chord diagram data."""
         # Convert to edge list
         edges = []
         for i in range(len(connectivity)):
-            for j in range(i + 1, len(connectivity)):
+            for j in range(i+1, len(connectivity)):
                 if connectivity[i, j] != 0:
-                    edges.append(
-                        {
-                            "source": labels[i],
-                            "target": labels[j],
-                            "value": float(np.abs(connectivity[i, j])),
-                        }
-                    )
+                    edges.append({
+                        'source': labels[i],
+                        'target': labels[j],
+                        'value': float(np.abs(connectivity[i, j]))
+                    })
 
-        return {"nodes": labels, "edges": edges, "type": "chord"}
+        return {
+            'nodes': labels,
+            'edges': edges,
+            'type': 'chord'
+        }
 
     def _create_heatmap(self, connectivity: np.ndarray, labels: List[str]) -> Dict:
         """Create heatmap data."""
         return {
-            "data": connectivity.tolist(),
-            "labels": labels,
-            "type": "heatmap",
-            "colorscale": "RdBu",
-            "symmetric": True,
+            'data': connectivity.tolist(),
+            'labels': labels,
+            'type': 'heatmap',
+            'colorscale': 'RdBu',
+            'symmetric': True
         }
 
     def _create_graph_layout(self, connectivity: np.ndarray, labels: List[str]) -> Dict:
@@ -695,44 +650,49 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
         # Simple circular layout
         angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
         positions = {
-            labels[i]: {"x": float(np.cos(angles[i])), "y": float(np.sin(angles[i]))}
+            labels[i]: {
+                'x': float(np.cos(angles[i])),
+                'y': float(np.sin(angles[i]))
+            }
             for i in range(n)
         }
 
         # Edges
         edges = []
         for i in range(n):
-            for j in range(i + 1, n):
+            for j in range(i+1, n):
                 if connectivity[i, j] != 0:
-                    edges.append(
-                        {
-                            "source": labels[i],
-                            "target": labels[j],
-                            "weight": float(np.abs(connectivity[i, j])),
-                        }
-                    )
+                    edges.append({
+                        'source': labels[i],
+                        'target': labels[j],
+                        'weight': float(np.abs(connectivity[i, j]))
+                    })
 
-        return {"nodes": positions, "edges": edges, "type": "graph"}
+        return {
+            'nodes': positions,
+            'edges': edges,
+            'type': 'graph'
+        }
 
     def _create_matrix_view(self, connectivity: np.ndarray, labels: List[str]) -> Dict:
         """Create matrix view data."""
         # Reorder matrix for better visualization (simple clustering)
-        from scipy.cluster.hierarchy import dendrogram, linkage
+        from scipy.cluster.hierarchy import linkage, dendrogram
 
         # Hierarchical clustering
-        linkage_matrix = linkage(connectivity, method="average")
+        linkage_matrix = linkage(connectivity, method='average')
         dendro = dendrogram(linkage_matrix, no_plot=True)
-        order = dendro["leaves"]
+        order = dendro['leaves']
 
         # Reorder
         reordered = connectivity[order][:, order]
         reordered_labels = [labels[i] for i in order]
 
         return {
-            "data": reordered.tolist(),
-            "labels": reordered_labels,
-            "original_order": order,
-            "type": "matrix",
+            'data': reordered.tolist(),
+            'labels': reordered_labels,
+            'original_order': order,
+            'type': 'matrix'
         }
 
     def _generate_connectivity_html(self, viz_data: Dict, viz_type: str) -> str:
@@ -748,8 +708,7 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
 
     def _generate_heatmap_html(self, viz_data: Dict) -> str:
         """Generate heatmap HTML."""
-        html = (
-            """
+        html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -765,9 +724,7 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
     <div id="plot"></div>
 
     <script>
-        const data = """
-            + json.dumps(viz_data)
-            + """;
+        const data = """ + json.dumps(viz_data) + """;
 
         const trace = {
             type: 'heatmap',
@@ -789,14 +746,12 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
 </body>
 </html>
 """
-        )
         return html
 
     def _generate_chord_html(self, viz_data: Dict) -> str:
         """Generate chord diagram HTML."""
         # Simplified - would use D3.js in real implementation
-        html = (
-            """
+        html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -811,23 +766,17 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
     <h1>Brain Connectivity Chord Diagram</h1>
     <div id="chart">
         <p>Chord diagram visualization would be rendered here using D3.js</p>
-        <p>Nodes: """
-            + str(len(viz_data["nodes"]))
-            + """</p>
-        <p>Edges: """
-            + str(len(viz_data["edges"]))
-            + """</p>
+        <p>Nodes: """ + str(len(viz_data['nodes'])) + """</p>
+        <p>Edges: """ + str(len(viz_data['edges'])) + """</p>
     </div>
 </body>
 </html>
 """
-        )
         return html
 
     def _generate_graph_html(self, viz_data: Dict) -> str:
         """Generate graph HTML."""
-        html = (
-            """
+        html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -843,9 +792,7 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
     <div id="plot"></div>
 
     <script>
-        const data = """
-            + json.dumps(viz_data)
-            + """;
+        const data = """ + json.dumps(viz_data) + """;
 
         // Create node trace
         const nodeTrace = {
@@ -892,7 +839,6 @@ class DynamicConnectivityVisualizationTool(NeuroToolWrapper):
 </body>
 </html>
 """
-        )
         return html
 
     def _generate_matrix_html(self, viz_data: Dict) -> str:
@@ -924,7 +870,7 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
         visualization_type: str = "multi_panel",  # multi_panel, stacked, overlay
         frequency_analysis: bool = True,
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Create time series visualization."""
         try:
@@ -945,9 +891,7 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
 
             # Frequency analysis if requested
             if frequency_analysis:
-                freq_data = self._perform_frequency_analysis(
-                    processed_ts, sampling_rate
-                )
+                freq_data = self._perform_frequency_analysis(processed_ts, sampling_rate)
             else:
                 freq_data = {}
 
@@ -956,12 +900,7 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
 
             # Generate visualization
             viz_data = self._create_time_series_viz(
-                processed_ts,
-                labels,
-                events,
-                sampling_rate,
-                visualization_type,
-                freq_data,
+                processed_ts, labels, events, sampling_rate, visualization_type, freq_data
             )
 
             # Generate HTML
@@ -972,22 +911,17 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
                 f.write(html_content)
 
             results = {
-                "visualization_type": visualization_type,
-                "n_channels": len(labels),
-                "duration": float(
-                    len(
-                        processed_ts[0] if len(processed_ts.shape) > 1 else processed_ts
-                    )
-                    / sampling_rate
-                ),
-                "sampling_rate": sampling_rate,
-                "metrics": metrics,
-                "frequency_analysis": freq_data != {},
-                "output_file": str(output_path / "time_series.html"),
+                'visualization_type': visualization_type,
+                'n_channels': len(labels),
+                'duration': float(len(processed_ts[0] if len(processed_ts.shape) > 1 else processed_ts) / sampling_rate),
+                'sampling_rate': sampling_rate,
+                'metrics': metrics,
+                'frequency_analysis': freq_data != {},
+                'output_file': str(output_path / "time_series.html")
             }
 
             if freq_data:
-                results["frequency_peaks"] = freq_data.get("peaks", [])
+                results['frequency_peaks'] = freq_data.get('peaks', [])
 
             with open(output_path / "timeseries_config.json", "w") as f:
                 json.dump(results, f, indent=2)
@@ -998,9 +932,9 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "visualization": str(output_path / "time_series.html"),
-                        "config": str(output_path / "timeseries_config.json"),
+                        "config": str(output_path / "timeseries_config.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -1022,17 +956,15 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
             freq1 = 0.01 * (i + 1)
             freq2 = 0.05 * (i + 1)
 
-            time_series[i] = (
-                np.sin(2 * np.pi * freq1 * t)
-                + 0.5 * np.sin(2 * np.pi * freq2 * t)
-                + 0.2 * np.random.randn(n_samples)
-            )
+            time_series[i] = (np.sin(2 * np.pi * freq1 * t) +
+                            0.5 * np.sin(2 * np.pi * freq2 * t) +
+                            0.2 * np.random.randn(n_samples))
 
             # Add some events
             if i % 3 == 0:
                 event_times = [200, 500, 800]
                 for event_time in event_times:
-                    time_series[i, event_time : event_time + 20] += 2
+                    time_series[i, event_time:event_time+20] += 2
 
         return time_series
 
@@ -1044,7 +976,6 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
 
         # Detrend
         from scipy.signal import detrend
-
         processed = np.zeros_like(time_series)
 
         for i in range(len(time_series)):
@@ -1052,85 +983,76 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
 
         return processed
 
-    def _perform_frequency_analysis(
-        self, time_series: np.ndarray, sampling_rate: float
-    ) -> Dict:
+    def _perform_frequency_analysis(self, time_series: np.ndarray, sampling_rate: float) -> Dict:
         """Perform frequency analysis."""
-        from scipy.signal import find_peaks, welch
+        from scipy.signal import welch, find_peaks
 
-        freq_data = {"frequencies": [], "power": [], "peaks": []}
+        freq_data = {
+            'frequencies': [],
+            'power': [],
+            'peaks': []
+        }
 
         for i in range(len(time_series)):
             # Compute power spectral density
-            frequencies, psd = welch(
-                time_series[i], fs=sampling_rate, nperseg=min(256, len(time_series[i]))
-            )
+            frequencies, psd = welch(time_series[i], fs=sampling_rate, nperseg=min(256, len(time_series[i])))
 
-            freq_data["frequencies"] = frequencies.tolist()
-            freq_data["power"].append(psd.tolist())
+            freq_data['frequencies'] = frequencies.tolist()
+            freq_data['power'].append(psd.tolist())
 
             # Find peaks
             peaks, _ = find_peaks(psd, height=np.mean(psd))
             if len(peaks) > 0:
                 peak_freqs = frequencies[peaks[:3]]  # Top 3 peaks
-                freq_data["peaks"].append(peak_freqs.tolist())
+                freq_data['peaks'].append(peak_freqs.tolist())
             else:
-                freq_data["peaks"].append([])
+                freq_data['peaks'].append([])
 
         return freq_data
 
-    def _calculate_time_series_metrics(
-        self, time_series: np.ndarray, sampling_rate: float
-    ) -> Dict:
+    def _calculate_time_series_metrics(self, time_series: np.ndarray, sampling_rate: float) -> Dict:
         """Calculate time series metrics."""
         metrics = {
-            "mean": float(np.mean(time_series)),
-            "std": float(np.std(time_series)),
-            "min": float(np.min(time_series)),
-            "max": float(np.max(time_series)),
-            "rms": float(np.sqrt(np.mean(time_series**2))),
+            'mean': float(np.mean(time_series)),
+            'std': float(np.std(time_series)),
+            'min': float(np.min(time_series)),
+            'max': float(np.max(time_series)),
+            'rms': float(np.sqrt(np.mean(time_series**2)))
         }
 
         # Cross-correlation between channels
         if len(time_series) > 1:
             corr_matrix = np.corrcoef(time_series)
             np.fill_diagonal(corr_matrix, 0)
-            metrics["mean_correlation"] = float(np.mean(np.abs(corr_matrix)))
+            metrics['mean_correlation'] = float(np.mean(np.abs(corr_matrix)))
 
         return metrics
 
-    def _create_time_series_viz(
-        self,
-        time_series: np.ndarray,
-        labels: List[str],
-        events: Optional[List[Dict]],
-        sampling_rate: float,
-        viz_type: str,
-        freq_data: Dict,
-    ) -> Dict:
+    def _create_time_series_viz(self, time_series: np.ndarray, labels: List[str],
+                               events: Optional[List[Dict]], sampling_rate: float,
+                               viz_type: str, freq_data: Dict) -> Dict:
         """Create time series visualization data."""
         time_axis = np.arange(time_series.shape[1]) / sampling_rate
 
         viz_data = {
-            "time": time_axis.tolist(),
-            "data": time_series.tolist(),
-            "labels": labels,
-            "type": viz_type,
-            "sampling_rate": sampling_rate,
+            'time': time_axis.tolist(),
+            'data': time_series.tolist(),
+            'labels': labels,
+            'type': viz_type,
+            'sampling_rate': sampling_rate
         }
 
         if events:
-            viz_data["events"] = events
+            viz_data['events'] = events
 
         if freq_data:
-            viz_data["frequency_data"] = freq_data
+            viz_data['frequency_data'] = freq_data
 
         return viz_data
 
     def _generate_time_series_html(self, viz_data: Dict, viz_type: str) -> str:
         """Generate time series HTML."""
-        html = (
-            """
+        html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -1155,9 +1077,7 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
     <div id="plot"></div>
 
     <script>
-        const data = """
-            + json.dumps(viz_data)
-            + """;
+        const data = """ + json.dumps(viz_data) + """;
         let showFrequency = false;
 
         function createPlot() {
@@ -1227,7 +1147,6 @@ class TimeSeriesVisualizationTool(NeuroToolWrapper):
 </body>
 </html>
 """
-        )
         return html
 
 
@@ -1253,7 +1172,7 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
         vr_platform: str = "webxr",  # webxr, oculus, vive
         interaction_mode: str = "controller",  # controller, gaze, hand
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Create VR brain visualization."""
         try:
@@ -1264,9 +1183,7 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
             if brain_data is None and surface_mesh is None:
                 brain_data, mesh = self._generate_vr_brain_data()
             else:
-                mesh = (
-                    surface_mesh if surface_mesh else self._create_vr_mesh(brain_data)
-                )
+                mesh = surface_mesh if surface_mesh else self._create_vr_mesh(brain_data)
 
             # Optimize mesh for VR
             optimized_mesh = self._optimize_mesh_for_vr(mesh)
@@ -1288,11 +1205,11 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
                 f.write(vr_content)
 
             results = {
-                "vr_platform": vr_platform,
-                "interaction_mode": interaction_mode,
-                "mesh_complexity": metrics,
-                "vr_ready": True,
-                "output_file": str(output_path / "brain_vr.html"),
+                'vr_platform': vr_platform,
+                'interaction_mode': interaction_mode,
+                'mesh_complexity': metrics,
+                'vr_ready': True,
+                'output_file': str(output_path / "brain_vr.html")
             }
 
             with open(output_path / "vr_config.json", "w") as f:
@@ -1304,9 +1221,9 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
                 metadata={
                     "output_files": {
                         "vr_visualization": str(output_path / "brain_vr.html"),
-                        "config": str(output_path / "vr_config.json"),
+                        "config": str(output_path / "vr_config.json")
                     }
-                },
+                }
             )
 
         except Exception as e:
@@ -1321,13 +1238,11 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
 
         # Brain structure
         center = [s // 2 for s in shape]
-        x, y, z = np.ogrid[: shape[0], : shape[1], : shape[2]]
+        x, y, z = np.ogrid[:shape[0], :shape[1], :shape[2]]
 
-        brain_mask = (
-            ((x - center[0]) / 25) ** 2
-            + ((y - center[1]) / 30) ** 2
-            + ((z - center[2]) / 25) ** 2
-        ) <= 1
+        brain_mask = (((x - center[0]) / 25)**2 +
+                     ((y - center[1]) / 30)**2 +
+                     ((z - center[2]) / 25)**2) <= 1
 
         brain[brain_mask] = 1
 
@@ -1357,12 +1272,12 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
         # Simple faces
         faces = []
         for i in range(0, len(vertices) - 2, 3):
-            faces.append([i, i + 1, i + 2])
+            faces.append([i, i+1, i+2])
 
         return {
-            "vertices": vertices.tolist(),
-            "faces": faces,
-            "normals": self._calculate_normals(vertices, faces),
+            'vertices': vertices.tolist(),
+            'faces': faces,
+            'normals': self._calculate_normals(vertices, faces)
         }
 
     def _calculate_normals(self, vertices: np.ndarray, faces: List) -> List:
@@ -1400,75 +1315,91 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
 
         # Reduce vertices if too many
         max_vertices = 1000
-        if len(mesh["vertices"]) > max_vertices:
-            indices = np.random.choice(
-                len(mesh["vertices"]), max_vertices, replace=False
-            )
-            optimized["vertices"] = [mesh["vertices"][i] for i in indices]
+        if len(mesh['vertices']) > max_vertices:
+            indices = np.random.choice(len(mesh['vertices']), max_vertices, replace=False)
+            optimized['vertices'] = [mesh['vertices'][i] for i in indices]
             # Update faces accordingly (simplified)
-            optimized["faces"] = [
-                [i, i + 1, i + 2] for i in range(0, max_vertices - 2, 3)
-            ]
+            optimized['faces'] = [[i, i+1, i+2] for i in range(0, max_vertices-2, 3)]
 
-        optimized["optimized"] = True
-        optimized["lod_levels"] = 3
+        optimized['optimized'] = True
+        optimized['lod_levels'] = 3
 
         return optimized
 
     def _setup_vr_scene(self, mesh: Dict, platform: str) -> Dict:
         """Setup VR scene configuration."""
         scene = {
-            "mesh": mesh,
-            "lighting": {
-                "ambient": 0.3,
-                "directional": [
-                    {"direction": [0, 1, 0], "intensity": 0.5},
-                    {"direction": [1, 0, 0], "intensity": 0.3},
-                ],
+            'mesh': mesh,
+            'lighting': {
+                'ambient': 0.3,
+                'directional': [
+                    {'direction': [0, 1, 0], 'intensity': 0.5},
+                    {'direction': [1, 0, 0], 'intensity': 0.3}
+                ]
             },
-            "camera": {"position": [0, 0, 100], "fov": 75, "near": 0.1, "far": 1000},
-            "environment": {"skybox": "gradient", "floor": True, "grid": True},
+            'camera': {
+                'position': [0, 0, 100],
+                'fov': 75,
+                'near': 0.1,
+                'far': 1000
+            },
+            'environment': {
+                'skybox': 'gradient',
+                'floor': True,
+                'grid': True
+            }
         }
 
         # Platform-specific settings
         if platform == "oculus":
-            scene["performance"] = "high"
-            scene["refresh_rate"] = 90
+            scene['performance'] = 'high'
+            scene['refresh_rate'] = 90
         elif platform == "vive":
-            scene["performance"] = "high"
-            scene["refresh_rate"] = 90
+            scene['performance'] = 'high'
+            scene['refresh_rate'] = 90
         else:  # webxr
-            scene["performance"] = "balanced"
-            scene["refresh_rate"] = 60
+            scene['performance'] = 'balanced'
+            scene['refresh_rate'] = 60
 
         return scene
 
     def _setup_vr_interactions(self, mode: str) -> Dict:
         """Setup VR interaction configuration."""
-        interactions = {"mode": mode, "enabled": True, "features": []}
+        interactions = {
+            'mode': mode,
+            'enabled': True,
+            'features': []
+        }
 
         if mode == "controller":
-            interactions["features"] = [
-                "point_and_select",
-                "grab_and_rotate",
-                "scale",
-                "slice",
-                "measure",
-                "annotate",
+            interactions['features'] = [
+                'point_and_select',
+                'grab_and_rotate',
+                'scale',
+                'slice',
+                'measure',
+                'annotate'
             ]
         elif mode == "gaze":
-            interactions["features"] = ["gaze_select", "dwell_time", "highlight"]
+            interactions['features'] = [
+                'gaze_select',
+                'dwell_time',
+                'highlight'
+            ]
         elif mode == "hand":
-            interactions["features"] = ["pinch_to_zoom", "grab", "gesture_control"]
+            interactions['features'] = [
+                'pinch_to_zoom',
+                'grab',
+                'gesture_control'
+            ]
 
-        interactions["haptic_feedback"] = mode == "controller"
+        interactions['haptic_feedback'] = mode == "controller"
 
         return interactions
 
     def _generate_vr_html(self, scene: Dict, interactions: Dict, platform: str) -> str:
         """Generate VR-ready HTML."""
-        html = (
-            """
+        html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -1528,12 +1459,8 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
     </a-scene>
 
     <script>
-        const scene = """
-            + json.dumps(scene)
-            + """;
-        const interactions = """
-            + json.dumps(interactions)
-            + """;
+        const scene = """ + json.dumps(scene) + """;
+        const interactions = """ + json.dumps(interactions) + """;
 
         // Setup VR
         document.getElementById('enterVR').addEventListener('click', function() {
@@ -1564,13 +1491,12 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
 </body>
 </html>
 """
-        )
         return html
 
     def _calculate_vr_metrics(self, mesh: Dict) -> Dict:
         """Calculate VR performance metrics."""
-        n_vertices = len(mesh.get("vertices", []))
-        n_faces = len(mesh.get("faces", []))
+        n_vertices = len(mesh.get('vertices', []))
+        n_faces = len(mesh.get('faces', []))
 
         # Estimate frame rate based on complexity
         if n_vertices < 1000:
@@ -1581,11 +1507,11 @@ class VirtualRealityBrainTool(NeuroToolWrapper):
             estimated_fps = 30
 
         return {
-            "n_vertices": n_vertices,
-            "n_faces": n_faces,
-            "estimated_fps": estimated_fps,
-            "vr_ready": n_vertices < 10000,
-            "optimization_level": mesh.get("lod_levels", 1),
+            'n_vertices': n_vertices,
+            'n_faces': n_faces,
+            'estimated_fps': estimated_fps,
+            'vr_ready': n_vertices < 10000,
+            'optimization_level': mesh.get('lod_levels', 1)
         }
 
 
@@ -1599,9 +1525,7 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
         return "ar_brain_viz"
 
     def get_tool_description(self) -> str:
-        return (
-            "Generate AR-compatible brain visualizations for mobile and headset devices"
-        )
+        return "Generate AR-compatible brain visualizations for mobile and headset devices"
 
     def get_args_schema(self):
         return VisualizationInput
@@ -1613,7 +1537,7 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
         ar_platform: str = "webxr",  # webxr, arcore, arkit
         tracking_mode: str = "marker",  # marker, markerless, slam
         output_dir: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Create AR brain visualization."""
         try:
@@ -1654,16 +1578,18 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
                     f.write(marker_data)
 
             results = {
-                "ar_platform": ar_platform,
-                "tracking_mode": tracking_mode,
-                "n_markers": len(markers),
-                "model_complexity": metrics,
-                "ar_ready": True,
-                "output_files": {"visualization": str(output_path / "brain_ar.html")},
+                'ar_platform': ar_platform,
+                'tracking_mode': tracking_mode,
+                'n_markers': len(markers),
+                'model_complexity': metrics,
+                'ar_ready': True,
+                'output_files': {
+                    'visualization': str(output_path / "brain_ar.html")
+                }
             }
 
             if tracking_mode == "marker":
-                results["output_files"]["marker"] = str(output_path / "ar_marker.svg")
+                results['output_files']['marker'] = str(output_path / "ar_marker.svg")
 
             with open(output_path / "ar_config.json", "w") as f:
                 json.dump(results, f, indent=2)
@@ -1671,7 +1597,7 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
             return ToolResult(
                 status="success",
                 data=results,
-                metadata={"output_files": results["output_files"]},
+                metadata={"output_files": results['output_files']}
             )
 
         except Exception as e:
@@ -1685,24 +1611,20 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
         brain = np.zeros(shape)
 
         center = [s // 2 for s in shape]
-        x, y, z = np.ogrid[: shape[0], : shape[1], : shape[2]]
+        x, y, z = np.ogrid[:shape[0], :shape[1], :shape[2]]
 
-        brain_mask = (
-            ((x - center[0]) / 20) ** 2
-            + ((y - center[1]) / 25) ** 2
-            + ((z - center[2]) / 20) ** 2
-        ) <= 1
+        brain_mask = (((x - center[0]) / 20)**2 +
+                     ((y - center[1]) / 25)**2 +
+                     ((z - center[2]) / 20)**2) <= 1
 
         brain[brain_mask] = 1
 
         # Add some regions
         for _ in range(3):
             region_center = [center[i] + np.random.randint(-10, 10) for i in range(3)]
-            region_mask = (
-                (x - region_center[0]) ** 2
-                + (y - region_center[1]) ** 2
-                + (z - region_center[2]) ** 2
-            ) <= 25
+            region_mask = (((x - region_center[0])**2 +
+                          (y - region_center[1])**2 +
+                          (z - region_center[2])**2) <= 25)
             brain[region_mask & brain_mask] = 2
 
         return brain
@@ -1722,10 +1644,10 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
         scaled_points = surface_points / np.max(surface_points) * 0.1
 
         return {
-            "points": scaled_points.tolist(),
-            "colors": self._assign_colors(brain_data, surface_points),
-            "scale": 0.1,  # 10cm
-            "anchor_point": [0, 0, 0],
+            'points': scaled_points.tolist(),
+            'colors': self._assign_colors(brain_data, surface_points),
+            'scale': 0.1,  # 10cm
+            'anchor_point': [0, 0, 0]
         }
 
     def _assign_colors(self, brain_data: np.ndarray, points: np.ndarray) -> List:
@@ -1743,18 +1665,21 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
 
     def _setup_tracking(self, mode: str) -> Dict:
         """Setup AR tracking configuration."""
-        config = {"mode": mode, "requirements": []}
+        config = {
+            'mode': mode,
+            'requirements': []
+        }
 
         if mode == "marker":
-            config["marker_type"] = "pattern"
-            config["marker_size"] = 0.15  # 15cm
-            config["requirements"] = ["camera", "marker_detection"]
+            config['marker_type'] = 'pattern'
+            config['marker_size'] = 0.15  # 15cm
+            config['requirements'] = ['camera', 'marker_detection']
         elif mode == "markerless":
-            config["requirements"] = ["camera", "plane_detection"]
-            config["min_features"] = 100
+            config['requirements'] = ['camera', 'plane_detection']
+            config['min_features'] = 100
         elif mode == "slam":
-            config["requirements"] = ["camera", "imu", "slam_capability"]
-            config["map_size"] = "small"
+            config['requirements'] = ['camera', 'imu', 'slam_capability']
+            config['map_size'] = 'small'
 
         return config
 
@@ -1762,48 +1687,45 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
         """Generate default AR markers."""
         return [
             {
-                "id": "info_1",
-                "position": [0.05, 0.05, 0],
-                "content": "Frontal Lobe",
-                "type": "label",
+                'id': 'info_1',
+                'position': [0.05, 0.05, 0],
+                'content': 'Frontal Lobe',
+                'type': 'label'
             },
             {
-                "id": "info_2",
-                "position": [-0.05, 0.05, 0],
-                "content": "Parietal Lobe",
-                "type": "label",
+                'id': 'info_2',
+                'position': [-0.05, 0.05, 0],
+                'content': 'Parietal Lobe',
+                'type': 'label'
             },
             {
-                "id": "measurement",
-                "position": [0, 0, 0.1],
-                "content": "Scale: 10cm",
-                "type": "ruler",
-            },
+                'id': 'measurement',
+                'position': [0, 0, 0.1],
+                'content': 'Scale: 10cm',
+                'type': 'ruler'
+            }
         ]
 
-    def _create_ar_scene(
-        self, model: Dict, markers: List[Dict], tracking: Dict
-    ) -> Dict:
+    def _create_ar_scene(self, model: Dict, markers: List[Dict], tracking: Dict) -> Dict:
         """Create AR scene configuration."""
         return {
-            "model": model,
-            "markers": markers,
-            "tracking": tracking,
-            "lighting": "environmental",
-            "shadows": True,
-            "occlusion": tracking["mode"] != "marker",
-            "interactions": {
-                "tap_to_place": True,
-                "pinch_to_scale": True,
-                "rotate": True,
-                "annotations": True,
-            },
+            'model': model,
+            'markers': markers,
+            'tracking': tracking,
+            'lighting': 'environmental',
+            'shadows': True,
+            'occlusion': tracking['mode'] != 'marker',
+            'interactions': {
+                'tap_to_place': True,
+                'pinch_to_scale': True,
+                'rotate': True,
+                'annotations': True
+            }
         }
 
     def _generate_ar_html(self, scene: Dict, platform: str) -> str:
         """Generate AR-ready HTML."""
-        html = (
-            """
+        html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -1861,9 +1783,7 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
     </a-scene>
 
     <script>
-        const scene = """
-            + json.dumps(scene)
-            + """;
+        const scene = """ + json.dumps(scene) + """;
 
         // AR setup
         document.getElementById('arButton').addEventListener('click', function() {
@@ -1914,7 +1834,6 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
 </body>
 </html>
 """
-        )
         return html
 
     def _generate_marker_image(self) -> str:
@@ -1934,25 +1853,25 @@ class AugmentedRealityBrainTool(NeuroToolWrapper):
 
     def _calculate_ar_metrics(self, model: Dict, tracking_mode: str) -> Dict:
         """Calculate AR performance metrics."""
-        n_points = len(model.get("points", []))
+        n_points = len(model.get('points', []))
 
         # Performance estimation
         if n_points < 500:
-            performance = "high"
+            performance = 'high'
             estimated_fps = 60
         elif n_points < 1000:
-            performance = "medium"
+            performance = 'medium'
             estimated_fps = 30
         else:
-            performance = "low"
+            performance = 'low'
             estimated_fps = 15
 
         return {
-            "n_points": n_points,
-            "model_size_mb": n_points * 0.001,  # Rough estimate
-            "performance": performance,
-            "estimated_fps": estimated_fps,
-            "tracking_quality": "high" if tracking_mode == "slam" else "medium",
+            'n_points': n_points,
+            'model_size_mb': n_points * 0.001,  # Rough estimate
+            'performance': performance,
+            'estimated_fps': estimated_fps,
+            'tracking_quality': 'high' if tracking_mode == 'slam' else 'medium'
         }
 
 
@@ -1965,7 +1884,7 @@ class InteractiveVisualizationTools:
             DynamicConnectivityVisualizationTool(),
             TimeSeriesVisualizationTool(),
             VirtualRealityBrainTool(),
-            AugmentedRealityBrainTool(),
+            AugmentedRealityBrainTool()
         ]
 
     def get_all_tools(self) -> List[NeuroToolWrapper]:

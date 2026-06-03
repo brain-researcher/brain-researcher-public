@@ -26,12 +26,7 @@ def _retry_request(func, max_retries: int = 3, initial_delay: float = 1.0):
 
 
 @tool
-def download_openneuro(
-    dataset_id: str,
-    out_dir: str,
-    use_s3: bool = True,
-    exclude_derivatives: bool = False,
-) -> str:
+def download_openneuro(dataset_id: str, out_dir: str, use_s3: bool = True, exclude_derivatives: bool = False) -> str:
     """Download from OpenNeuro using AWS S3 sync (recommended) or fallback methods.
 
     Args:
@@ -49,12 +44,10 @@ def download_openneuro(
     if use_s3:
         # Use AWS S3 sync - the recommended method for OpenNeuro downloads
         cmd = [
-            "aws",
-            "s3",
-            "sync",
+            "aws", "s3", "sync",
             "--no-sign-request",  # No authentication required
             f"s3://openneuro.org/{dataset_id}/",
-            dataset_path.resolve().as_posix(),
+            dataset_path.resolve().as_posix()
         ]
 
         # Add exclusions if requested
@@ -62,16 +55,11 @@ def download_openneuro(
             cmd.extend(["--exclude", "derivatives/*"])
 
         # Exclude version control files
-        cmd.extend(
-            [
-                "--exclude",
-                ".git/*",
-                "--exclude",
-                ".datalad/*",
-                "--exclude",
-                ".gitattributes",
-            ]
-        )
+        cmd.extend([
+            "--exclude", ".git/*",
+            "--exclude", ".datalad/*",
+            "--exclude", ".gitattributes"
+        ])
 
         logger.info(f"Downloading {dataset_id} from S3 (this may take a while)...")
         _run(cmd)
@@ -96,12 +84,10 @@ def list_openneuro_files(dataset_id: str, use_s3: bool = True) -> list[str]:
     """
     if use_s3:
         cmd = [
-            "aws",
-            "s3",
-            "ls",
+            "aws", "s3", "ls",
             "--no-sign-request",
             f"s3://openneuro.org/{dataset_id}/",
-            "--recursive",
+            "--recursive"
         ]
         proc = _run(cmd)
         # Parse S3 ls output to extract file paths

@@ -6,15 +6,14 @@ Granger causality, and mutual information for EEG/MEG data.
 """
 
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Tuple
 from scipy import signal
 from scipy.stats import entropy
 
-from brain_researcher.core.utils import configure_mne_environment
+from pydantic import BaseModel, Field, ConfigDict
+
 from brain_researcher.services.tools.params import (
     MNEConnectivityParameters,
     mne_connectivity_from_payload,
@@ -24,6 +23,7 @@ from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
     ToolResult,
 )
+from brain_researcher.core.utils import configure_mne_environment
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,6 @@ configure_mne_environment()
 
 class ConnectivityMethod(str):
     """Connectivity methods."""
-
     COHERENCE = "coherence"
     COHERENCY = "coherency"
     IMCOH = "imcoh"  # Imaginary coherence
@@ -50,85 +49,105 @@ class ConnectivityMethod(str):
 
 class MNEConnectivityArgs(BaseModel):
     """Arguments for MNE connectivity analysis."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Input data
     epochs_file: Optional[str] = Field(
-        default=None, description="Path to epochs file (.fif format)"
+        default=None,
+        description="Path to epochs file (.fif format)"
     )
     raw_file: Optional[str] = Field(
-        default=None, description="Path to raw data file (.fif format)"
+        default=None,
+        description="Path to raw data file (.fif format)"
     )
     time_series: Optional[str] = Field(
-        default=None, description="Path to time series data (numpy array)"
+        default=None,
+        description="Path to time series data (numpy array)"
     )
 
     # Analysis parameters
     method: Union[str, List[str]] = Field(
         default="coherence",
-        description="Connectivity method(s): coherence, plv, pli, wpli, gc, mi, etc.",
+        description="Connectivity method(s): coherence, plv, pli, wpli, gc, mi, etc."
     )
     mode: str = Field(
         default="multitaper",
-        description="Spectral estimation mode: multitaper, fourier, cwt_morlet",
+        description="Spectral estimation mode: multitaper, fourier, cwt_morlet"
     )
 
     # Frequency parameters
     fmin: Union[float, List[float]] = Field(
         default=1.0,
-        description="Minimum frequency or list of minimum frequencies for bands",
+        description="Minimum frequency or list of minimum frequencies for bands"
     )
     fmax: Union[float, List[float]] = Field(
         default=40.0,
-        description="Maximum frequency or list of maximum frequencies for bands",
+        description="Maximum frequency or list of maximum frequencies for bands"
     )
-    fskip: int = Field(default=0, description="Frequency skip factor for decimation")
+    fskip: int = Field(
+        default=0,
+        description="Frequency skip factor for decimation"
+    )
     faverage: bool = Field(
-        default=False, description="Average connectivity across frequency bands"
+        default=False,
+        description="Average connectivity across frequency bands"
     )
     n_cycles: Union[float, List[float]] = Field(
-        default=7.0, description="Number of cycles for wavelet analysis"
+        default=7.0,
+        description="Number of cycles for wavelet analysis"
     )
 
     # Time parameters
     tmin: Optional[float] = Field(
-        default=None, description="Start time for analysis window"
+        default=None,
+        description="Start time for analysis window"
     )
     tmax: Optional[float] = Field(
-        default=None, description="End time for analysis window"
+        default=None,
+        description="End time for analysis window"
     )
 
     # Channel selection
     picks: Optional[Union[str, List[str]]] = Field(
         default=None,
-        description="Channel selection: 'meg', 'eeg', or list of channel names",
+        description="Channel selection: 'meg', 'eeg', or list of channel names"
     )
     indices: Optional[Tuple[List[int], List[int]]] = Field(
-        default=None, description="Specific connections to compute (seeds, targets)"
+        default=None,
+        description="Specific connections to compute (seeds, targets)"
     )
 
     # Statistical parameters
     n_surrogates: int = Field(
-        default=0, description="Number of surrogates for significance testing"
+        default=0,
+        description="Number of surrogates for significance testing"
     )
     p_value: float = Field(
-        default=0.05, description="P-value threshold for significance"
+        default=0.05,
+        description="P-value threshold for significance"
     )
 
     # Granger causality specific
     gc_n_lags: int = Field(
-        default=10, description="Number of lags for Granger causality"
+        default=10,
+        description="Number of lags for Granger causality"
     )
 
     # Output options
-    output_dir: str = Field(description="Output directory for results")
-    save_matrix: bool = Field(default=True, description="Save connectivity matrix")
+    output_dir: str = Field(
+        description="Output directory for results"
+    )
+    save_matrix: bool = Field(
+        default=True,
+        description="Save connectivity matrix"
+    )
     save_plots: bool = Field(
-        default=True, description="Generate and save visualization plots"
+        default=True,
+        description="Generate and save visualization plots"
     )
     return_generator: bool = Field(
-        default=False, description="Return generator for memory efficiency"
+        default=False,
+        description="Return generator for memory efficiency"
     )
 
 
@@ -147,7 +166,6 @@ class MNEConnectivityTool(NeuroToolWrapper):
 
         try:
             import mne
-
             self.mne_available = True
             self.mne_version = mne.__version__
             logger.info(f"MNE-Python {self.mne_version} available")
@@ -156,7 +174,6 @@ class MNEConnectivityTool(NeuroToolWrapper):
 
         try:
             import mne_connectivity
-
             self.mne_connectivity_available = True
             logger.info("MNE-Connectivity available")
         except ImportError:
@@ -183,7 +200,7 @@ class MNEConnectivityTool(NeuroToolWrapper):
         raw_file: Optional[str] = None,
         time_series: Optional[str] = None,
         tmin: Optional[float] = None,
-        tmax: Optional[float] = None,
+        tmax: Optional[float] = None
     ):
         """Load and prepare data for connectivity analysis."""
         import mne
@@ -199,7 +216,8 @@ class MNEConnectivityTool(NeuroToolWrapper):
             # Create epochs from raw
             events = mne.make_fixed_length_events(raw, duration=2.0)
             epochs = mne.Epochs(
-                raw, events, tmin=0, tmax=2.0, baseline=None, preload=True
+                raw, events, tmin=0, tmax=2.0,
+                baseline=None, preload=True
             )
             if tmin is not None or tmax is not None:
                 epochs = epochs.copy().crop(tmin, tmax)
@@ -221,12 +239,11 @@ class MNEConnectivityTool(NeuroToolWrapper):
         fmin: Union[float, List[float]],
         fmax: Union[float, List[float]],
         indices: Optional[Tuple] = None,
-        **kwargs,
+        **kwargs
     ):
         """Compute connectivity using MNE-Connectivity."""
-        import inspect
-
         import mne_connectivity
+        import inspect
 
         # Ensure method is a list
         if isinstance(method, str):
@@ -242,13 +259,13 @@ class MNEConnectivityTool(NeuroToolWrapper):
             "wpli": "wpli",
             "psi": "psi",
             "gc": "gc",
-            "mi": "mi",
+            "mi": "mi"
         }
 
         mne_methods = [method_map.get(m, m) for m in method]
 
         # Compute connectivity
-        if hasattr(mne_connectivity, "spectral_connectivity_epochs"):
+        if hasattr(mne_connectivity, 'spectral_connectivity_epochs'):
             func = mne_connectivity.spectral_connectivity_epochs
             sig = inspect.signature(func)
             call_kwargs = {
@@ -258,8 +275,8 @@ class MNEConnectivityTool(NeuroToolWrapper):
                 "indices": indices,
                 "fmin": fmin,
                 "fmax": fmax,
-                "fskip": kwargs.get("fskip", 0),
-                "faverage": kwargs.get("faverage", False),
+                "fskip": kwargs.get('fskip', 0),
+                "faverage": kwargs.get('faverage', False),
                 "n_jobs": 1,
                 "verbose": False,
             }
@@ -271,7 +288,6 @@ class MNEConnectivityTool(NeuroToolWrapper):
         else:
             # Fallback for older versions
             from mne.connectivity import spectral_connectivity
-
             sig = inspect.signature(spectral_connectivity)
             call_kwargs = {
                 "data": data,
@@ -280,16 +296,14 @@ class MNEConnectivityTool(NeuroToolWrapper):
                 "indices": indices,
                 "fmin": fmin,
                 "fmax": fmax,
-                "fskip": kwargs.get("fskip", 0),
-                "faverage": kwargs.get("faverage", False),
+                "fskip": kwargs.get('fskip', 0),
+                "faverage": kwargs.get('faverage', False),
                 "n_jobs": 1,
                 "verbose": False,
             }
             if "n_cycles" in sig.parameters:
                 call_kwargs["n_cycles"] = kwargs.get("n_cycles", 7.0)
-            con = spectral_connectivity(
-                **{k: v for k, v in call_kwargs.items() if k in sig.parameters}
-            )
+            con = spectral_connectivity(**{k: v for k, v in call_kwargs.items() if k in sig.parameters})
 
         return con
 
@@ -347,7 +361,7 @@ class MNEConnectivityTool(NeuroToolWrapper):
                         )
 
                         # Extract F-statistic from first lag
-                        gc_matrix[i, j] = result[1][0][0]["ftest"][0]
+                        gc_matrix[i, j] = result[1][0][0]['ftest'][0]
                     except:
                         gc_matrix[i, j] = 0
 
@@ -386,7 +400,12 @@ class MNEConnectivityTool(NeuroToolWrapper):
 
         return aec
 
-    def _compute_connectivity_fallback(self, data, method: str, **kwargs):
+    def _compute_connectivity_fallback(
+        self,
+        data,
+        method: str,
+        **kwargs
+    ):
         """Fallback connectivity computation without MNE-Connectivity."""
         if isinstance(data, np.ndarray):
             n_channels = data.shape[0]
@@ -404,13 +423,15 @@ class MNEConnectivityTool(NeuroToolWrapper):
 
         # Compute pairwise connectivity
         for i in range(n_channels):
-            for j in range(i + 1, n_channels):
+            for j in range(i+1, n_channels):
                 if method == "plv":
                     con_matrix[i, j] = self._compute_phase_locking_value(
                         data[i], data[j]
                     )
                 elif method == "pli":
-                    con_matrix[i, j] = self._compute_phase_lag_index(data[i], data[j])
+                    con_matrix[i, j] = self._compute_phase_lag_index(
+                        data[i], data[j]
+                    )
                 elif method == "mi":
                     con_matrix[i, j] = self._compute_mutual_information(
                         data[i], data[j]
@@ -428,7 +449,7 @@ class MNEConnectivityTool(NeuroToolWrapper):
         if method == "gc":
             # Granger causality is directional
             con_matrix = self._compute_granger_causality(
-                data, kwargs.get("gc_n_lags", 10)
+                data, kwargs.get('gc_n_lags', 10)
             )
 
         return con_matrix
@@ -439,7 +460,7 @@ class MNEConnectivityTool(NeuroToolWrapper):
         con_matrix,
         method: str,
         n_surrogates: int = 100,
-        p_value: float = 0.05,
+        p_value: float = 0.05
     ):
         """Test significance using surrogate data."""
         if n_surrogates == 0:
@@ -455,7 +476,7 @@ class MNEConnectivityTool(NeuroToolWrapper):
                 # FFT
                 fft = np.fft.fft(data[ch])
                 # Randomize phase
-                random_phase = np.exp(1j * np.random.uniform(0, 2 * np.pi, len(fft)))
+                random_phase = np.exp(1j * np.random.uniform(0, 2*np.pi, len(fft)))
                 fft_surrogate = fft * random_phase
                 # Inverse FFT
                 surrogate[ch] = np.real(np.fft.ifft(fft_surrogate))
@@ -478,20 +499,20 @@ class MNEConnectivityTool(NeuroToolWrapper):
         con_matrix: np.ndarray,
         labels: Optional[List[str]] = None,
         title: str = "Connectivity Matrix",
-        output_file: Optional[str] = None,
+        output_file: Optional[str] = None
     ):
         """Plot connectivity matrix."""
         import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots(figsize=(10, 8))
 
-        im = ax.imshow(con_matrix, cmap="RdBu_r", aspect="auto")
+        im = ax.imshow(con_matrix, cmap='RdBu_r', aspect='auto')
         plt.colorbar(im, ax=ax)
 
         if labels:
             ax.set_xticks(range(len(labels)))
             ax.set_yticks(range(len(labels)))
-            ax.set_xticklabels(labels, rotation=45, ha="right")
+            ax.set_xticklabels(labels, rotation=45, ha='right')
             ax.set_yticklabels(labels)
 
         ax.set_title(title)
@@ -501,7 +522,7 @@ class MNEConnectivityTool(NeuroToolWrapper):
         plt.tight_layout()
 
         if output_file:
-            plt.savefig(output_file, dpi=150, bbox_inches="tight")
+            plt.savefig(output_file, dpi=150, bbox_inches='tight')
             plt.close()
         else:
             plt.show()
@@ -511,7 +532,7 @@ class MNEConnectivityTool(NeuroToolWrapper):
         con_matrix: np.ndarray,
         labels: List[str],
         threshold: float = 0.5,
-        output_file: Optional[str] = None,
+        output_file: Optional[str] = None
     ):
         """Plot connectivity as a circle plot."""
         try:
@@ -522,11 +543,14 @@ class MNEConnectivityTool(NeuroToolWrapper):
             con_thresh[np.abs(con_thresh) < threshold] = 0
 
             fig = plot_connectivity_circle(
-                con_thresh, labels, n_lines=None, title="Connectivity Circle"
+                con_thresh,
+                labels,
+                n_lines=None,
+                title='Connectivity Circle'
             )
 
             if output_file:
-                fig.savefig(output_file, dpi=150, bbox_inches="tight")
+                fig.savefig(output_file, dpi=150, bbox_inches='tight')
         except ImportError:
             logger.warning("Circle plot requires MNE visualization functions")
 
@@ -554,20 +578,19 @@ class MNEConnectivityTool(NeuroToolWrapper):
         save_plots: bool = True,
         return_generator: bool = False,
         verbose: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute connectivity analysis."""
         try:
             if not self.mne_available:
                 return ToolResult(
-                    status="error", error="MNE-Python not available", data={}
+                    status="error",
+                    error="MNE-Python not available",
+                    data={}
                 )
 
             if output_dir is None:
-                output_dir = str(
-                    Path(epochs_file or raw_file or time_series or ".").parent
-                    / "connectivity"
-                )
+                output_dir = str(Path(epochs_file or raw_file or time_series or ".").parent / "connectivity")
 
             payload: Dict[str, Any] = {
                 "epochs_file": epochs_file,
@@ -598,15 +621,17 @@ class MNEConnectivityTool(NeuroToolWrapper):
             used_package = results.pop("used_mne_connectivity_package", None)
 
             if verbose and used_package is False:
-                logger.info(
-                    "mne-connectivity package not available; fallback implementation used."
-                )
+                logger.info("mne-connectivity package not available; fallback implementation used.")
 
             return ToolResult(status="success", data=results)
 
         except Exception as e:
             logger.error(f"Connectivity analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class MNEConnectivityTools:
@@ -615,4 +640,6 @@ class MNEConnectivityTools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all MNE connectivity tools."""
-        return [MNEConnectivityTool()]
+        return [
+            MNEConnectivityTool()
+        ]

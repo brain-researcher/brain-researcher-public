@@ -104,11 +104,7 @@ class ToolEvidenceSource(SyncEvidenceSourceAdapter):
                     exposed_only=True,
                     k_candidates=max(20, query.limit),
                 )
-                candidates = (
-                    (kg_data or {}).get("candidates", [])
-                    if isinstance(kg_data, dict)
-                    else []
-                )
+                candidates = (kg_data or {}).get("candidates", []) if isinstance(kg_data, dict) else []
 
                 for idx, cand in enumerate(candidates[: query.limit]):
                     tool_id = str(cand.get("tool_id") or "")
@@ -156,11 +152,7 @@ class ToolEvidenceSource(SyncEvidenceSourceAdapter):
 
         try:
             # Use the registry's built-in search
-            tools = (
-                registry.get_tools_for_task(query.text, k=query.limit)
-                if registry
-                else []
-            )
+            tools = registry.get_tools_for_task(query.text, k=query.limit) if registry else []
 
             for i, tool in enumerate(tools):
                 # Get tool metadata

@@ -11,7 +11,7 @@ const cliProgress = require('cli-progress');
 
 class CacheWarmer {
     constructor(options = {}) {
-        this.baseUrl = options.baseUrl || process.env.CDN_BASE_URL || 'https://brain-researcher.com';
+        this.baseUrl = options.baseUrl || process.env.CDN_BASE_URL || 'https://${PUBLIC_HOSTNAME}';
         this.concurrency = options.concurrency || 10;
         this.timeout = options.timeout || 30000;
         this.retryCount = options.retryCount || 3;
@@ -476,7 +476,7 @@ if (require.main === module) {
     const configPath = process.argv[3] || './cache-warming-config.json';
 
     const warmer = new CacheWarmer({
-        baseUrl: process.env.CDN_BASE_URL || 'https://brain-researcher.com',
+        baseUrl: process.env.CDN_BASE_URL || 'https://${PUBLIC_HOSTNAME}',
         concurrency: parseInt(process.env.CACHE_WARM_CONCURRENCY) || 10
     });
 
@@ -585,7 +585,7 @@ Commands:
 
 Examples:
   node cache-warmer.js warm ./cache-config.json
-  node cache-warmer.js sitemap https://brain-researcher.com/sitemap.xml
+  node cache-warmer.js sitemap https://${PUBLIC_HOSTNAME}/sitemap.xml
   node cache-warmer.js schedule ./cache-config.json 1800000
   node cache-warmer.js health
   node cache-warmer.js init ./my-cache-config.json

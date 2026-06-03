@@ -54,7 +54,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/*
 Component labels for specific services
 */}}
-{{- define "brain-researcher.componentLabels" -}}
+{{- define "${PUBLIC_HOSTNAME}ponentLabels" -}}
 {{- $component := . -}}
 app.kubernetes.io/component: {{ $component }}
 {{- end }}

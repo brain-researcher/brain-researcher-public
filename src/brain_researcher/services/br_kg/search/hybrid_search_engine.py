@@ -10,39 +10,32 @@ This module provides a comprehensive search system that integrates:
 
 import json
 import logging
-import math
-import re
+import numpy as np
 import time
-from collections import defaultdict
+from typing import Dict, List, Any, Optional, Tuple, Union, Set
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from collections import defaultdict
+import re
+import math
 
-import numpy as np
-
-from .advanced_vector_search import (
-    AdvancedVectorSearchEngine,
-    SearchResult,
-    SearchResultType,
-)
+from .advanced_vector_search import AdvancedVectorSearchEngine, SearchResult, SearchResultType
 
 logger = logging.getLogger(__name__)
 
 
 class SearchMode(str, Enum):
     """Search modes for different query types."""
-
-    AUTO = "auto"  # Automatically choose best mode
-    TEXT = "text"  # Pure text search
-    VECTOR = "vector"  # Pure vector search
-    GRAPH = "graph"  # Graph traversal
-    HYBRID = "hybrid"  # Text + Vector
+    AUTO = "auto"           # Automatically choose best mode
+    TEXT = "text"           # Pure text search
+    VECTOR = "vector"       # Pure vector search
+    GRAPH = "graph"         # Graph traversal
+    HYBRID = "hybrid"       # Text + Vector
     MULTIMODAL = "multimodal"  # Text + Vector + Graph
 
 
 class QueryType(str, Enum):
     """Types of queries detected from user input."""
-
     CONCEPT = "concept"
     TASK = "task"
     REGION = "region"
@@ -87,92 +80,43 @@ class QueryAnalyzer:
 
         # Coordinate pattern
         self.coord_pattern = re.compile(
-            r"(?:mni|coordinates?|position)\s*[:\-]?\s*"
-            r"(?:x?\s*[=:]?\s*)?(-?\d+(?:\.\d+)?)\s*[,\s]+"
-            r"(?:y?\s*[=:]?\s*)?(-?\d+(?:\.\d+)?)\s*[,\s]+"
-            r"(?:z?\s*[=:]?\s*)?(-?\d+(?:\.\d+)?)",
-            re.IGNORECASE,
+            r'(?:mni|coordinates?|position)\s*[:\-]?\s*'
+            r'(?:x?\s*[=:]?\s*)?(-?\d+(?:\.\d+)?)\s*[,\s]+'
+            r'(?:y?\s*[=:]?\s*)?(-?\d+(?:\.\d+)?)\s*[,\s]+'
+            r'(?:z?\s*[=:]?\s*)?(-?\d+(?:\.\d+)?)',
+            re.IGNORECASE
         )
 
         # Query type indicators
         self.query_indicators = {
             QueryType.CONCEPT: [
-                "concept",
-                "cognitive",
-                "mental",
-                "process",
-                "function",
-                "attention",
-                "memory",
-                "language",
-                "executive",
-                "emotion",
+                'concept', 'cognitive', 'mental', 'process', 'function',
+                'attention', 'memory', 'language', 'executive', 'emotion'
             ],
             QueryType.TASK: [
-                "task",
-                "experiment",
-                "paradigm",
-                "protocol",
-                "study",
-                "test",
-                "assessment",
-                "trial",
-                "condition",
+                'task', 'experiment', 'paradigm', 'protocol', 'study',
+                'test', 'assessment', 'trial', 'condition'
             ],
             QueryType.REGION: [
-                "region",
-                "area",
-                "cortex",
-                "lobe",
-                "gyrus",
-                "sulcus",
-                "brain",
-                "neural",
-                "anatomical",
-                "structure",
+                'region', 'area', 'cortex', 'lobe', 'gyrus', 'sulcus',
+                'brain', 'neural', 'anatomical', 'structure'
             ],
             QueryType.PUBLICATION: [
-                "paper",
-                "study",
-                "research",
-                "article",
-                "publication",
-                "author",
-                "journal",
-                "doi",
-                "pmid",
+                'paper', 'study', 'research', 'article', 'publication',
+                'author', 'journal', 'doi', 'pmid'
             ],
             QueryType.RELATIONSHIP: [
-                "relationship",
-                "connection",
-                "link",
-                "association",
-                "correlation",
-                "interaction",
-                "network",
-                "pathway",
+                'relationship', 'connection', 'link', 'association',
+                'correlation', 'interaction', 'network', 'pathway'
             ],
             QueryType.COMPARISON: [
-                "compare",
-                "difference",
-                "similarity",
-                "versus",
-                "vs",
-                "contrast",
-                "between",
-                "among",
-                "relative",
+                'compare', 'difference', 'similarity', 'versus', 'vs',
+                'contrast', 'between', 'among', 'relative'
             ],
             QueryType.DEFINITION: [
-                "what is",
-                "define",
-                "definition",
-                "meaning",
-                "explain",
-                "describe",
-                "overview",
-                "about",
-            ],
+                'what is', 'define', 'definition', 'meaning', 'explain',
+                'describe', 'overview', 'about'
+            ]
         }
 
         # Search mode preferences by query type
@@ -184,7 +128,7 @@ class QueryAnalyzer:
             QueryType.PUBLICATION: SearchMode.TEXT,
             QueryType.RELATIONSHIP: SearchMode.GRAPH,
             QueryType.COMPARISON: SearchMode.MULTIMODAL,
-            QueryType.DEFINITION: SearchMode.VECTOR,
+            QueryType.DEFINITION: SearchMode.VECTOR
         }
 
     def analyze_query(self, query: str) -> QueryAnalysis:
@@ -222,9 +166,7 @@ class QueryAnalyzer:
         filters = self._generate_filters(query_lower, query_type)
 
         # Generate reasoning
-        reasoning = self._generate_reasoning(
-            query_type, search_mode, coordinates, entities
-        )
+        reasoning = self._generate_reasoning(query_type, search_mode, coordinates, entities)
 
         return QueryAnalysis(
             query_type=query_type,
@@ -234,7 +176,7 @@ class QueryAnalyzer:
             relationships=relationships,
             filters=filters,
             confidence=confidence,
-            reasoning=reasoning,
+            reasoning=reasoning
         )
 
     def _extract_coordinates(self, query: str) -> Optional[Tuple[float, float, float]]:
@@ -288,11 +230,11 @@ class QueryAnalyzer:
         relationships = []
 
         relation_patterns = {
-            "activates": ["activates", "activation", "active"],
-            "inhibits": ["inhibits", "inhibition", "suppresses"],
-            "correlates": ["correlates", "correlation", "associated"],
-            "measures": ["measures", "assesses", "evaluates"],
-            "located_in": ["located", "in", "within", "part of"],
+            'activates': ['activates', 'activation', 'active'],
+            'inhibits': ['inhibits', 'inhibition', 'suppresses'],
+            'correlates': ['correlates', 'correlation', 'associated'],
+            'measures': ['measures', 'assesses', 'evaluates'],
+            'located_in': ['located', 'in', 'within', 'part of']
         }
 
         for relation, patterns in relation_patterns.items():
@@ -314,39 +256,30 @@ class QueryAnalyzer:
         else:
             return 0.9  # High confidence
 
-    def _generate_filters(
-        self, query_lower: str, query_type: QueryType
-    ) -> Dict[str, Any]:
+    def _generate_filters(self, query_lower: str, query_type: QueryType) -> Dict[str, Any]:
         """Generate search filters based on query."""
         filters = {}
 
         # Type-based filters
         if query_type != QueryType.RELATIONSHIP:
-            filters["doc_types"] = [SearchResultType(query_type.value)]
+            filters['doc_types'] = [SearchResultType(query_type.value)]
 
         # Year filters
-        year_match = re.search(r"\b(19|20)\d{2}\b", query_lower)
+        year_match = re.search(r'\b(19|20)\d{2}\b', query_lower)
         if year_match:
-            filters["year"] = int(year_match.group())
+            filters['year'] = int(year_match.group())
 
         return filters
 
-    def _generate_reasoning(
-        self,
-        query_type: QueryType,
-        search_mode: SearchMode,
-        coordinates: Optional[Tuple],
-        entities: List[str],
-    ) -> str:
+    def _generate_reasoning(self, query_type: QueryType, search_mode: SearchMode,
+                           coordinates: Optional[Tuple], entities: List[str]) -> str:
         """Generate human-readable reasoning for search strategy."""
         reasoning_parts = []
 
         reasoning_parts.append(f"Detected query type: {query_type.value}")
 
         if coordinates:
-            reasoning_parts.append(
-                f"Found coordinates {coordinates}, using spatial search"
-            )
+            reasoning_parts.append(f"Found coordinates {coordinates}, using spatial search")
 
         if entities:
             reasoning_parts.append(f"Identified entities: {', '.join(entities[:3])}")
@@ -392,9 +325,7 @@ class BM25Scorer:
             for token in unique_tokens:
                 self.doc_freqs[token] += 1
 
-        self.avg_doc_length = (
-            total_length / self.corpus_size if self.corpus_size > 0 else 0
-        )
+        self.avg_doc_length = total_length / self.corpus_size if self.corpus_size > 0 else 0
 
     def score(self, query: str, doc_id: str, doc_content: str) -> float:
         """Calculate BM25 score for query-document pair.
@@ -424,8 +355,7 @@ class BM25Scorer:
             # Term frequency component
             tf = term_freqs[term]
             tf_component = (tf * (self.k1 + 1)) / (
-                tf
-                + self.k1 * (1 - self.b + self.b * (doc_length / self.avg_doc_length))
+                tf + self.k1 * (1 - self.b + self.b * (doc_length / self.avg_doc_length))
             )
 
             # Inverse document frequency component
@@ -442,7 +372,7 @@ class BM25Scorer:
     def _tokenize(self, text: str) -> List[str]:
         """Simple tokenization."""
         # Remove punctuation and convert to lowercase
-        text = re.sub(r"[^\w\s]", " ", text.lower())
+        text = re.sub(r'[^\w\s]', ' ', text.lower())
         return text.split()
 
 
@@ -457,9 +387,7 @@ class GraphTraversal:
         """
         self.neo4j_db = neo4j_db
 
-    def find_related_concepts(
-        self, concept_id: str, max_hops: int = 2
-    ) -> List[Dict[str, Any]]:
+    def find_related_concepts(self, concept_id: str, max_hops: int = 2) -> List[Dict[str, Any]]:
         """Find concepts related through graph traversal.
 
         Args:
@@ -487,13 +415,11 @@ class GraphTraversal:
 
                 related = []
                 for record in result:
-                    related.append(
-                        {
-                            "node": dict(record["node"]),
-                            "distance": record["distance"],
-                            "relationship_types": record["relationship_types"],
-                        }
-                    )
+                    related.append({
+                        'node': dict(record['node']),
+                        'distance': record['distance'],
+                        'relationship_types': record['relationship_types']
+                    })
 
                 return related
 
@@ -501,9 +427,8 @@ class GraphTraversal:
             logger.error(f"Graph traversal error: {e}")
             return []
 
-    def find_shortest_path(
-        self, start_id: str, end_id: str, relation_types: Optional[List[str]] = None
-    ) -> Optional[Dict[str, Any]]:
+    def find_shortest_path(self, start_id: str, end_id: str,
+                          relation_types: Optional[List[str]] = None) -> Optional[Dict[str, Any]]:
         """Find shortest path between two nodes.
 
         Args:
@@ -533,9 +458,9 @@ class GraphTraversal:
 
                 if record:
                     return {
-                        "path_length": record["path_length"],
-                        "path_nodes": [dict(node) for node in record["path_nodes"]],
-                        "path_relations": record["path_relations"],
+                        'path_length': record['path_length'],
+                        'path_nodes': [dict(node) for node in record['path_nodes']],
+                        'path_relations': record['path_relations']
                     }
 
         except Exception as e:
@@ -543,9 +468,8 @@ class GraphTraversal:
 
         return None
 
-    def find_by_coordinates(
-        self, x: float, y: float, z: float, radius: float = 10.0
-    ) -> List[Dict[str, Any]]:
+    def find_by_coordinates(self, x: float, y: float, z: float,
+                           radius: float = 10.0) -> List[Dict[str, Any]]:
         """Find brain regions by MNI coordinates.
 
         Args:
@@ -571,9 +495,10 @@ class GraphTraversal:
 
                 regions = []
                 for record in result:
-                    regions.append(
-                        {"region": dict(record["r"]), "distance": record["distance"]}
-                    )
+                    regions.append({
+                        'region': dict(record['r']),
+                        'distance': record['distance']
+                    })
 
                 return regions
 
@@ -585,12 +510,10 @@ class GraphTraversal:
 class HybridSearchEngine:
     """Comprehensive hybrid search engine."""
 
-    def __init__(
-        self,
-        vector_engine: AdvancedVectorSearchEngine,
-        neo4j_db,
-        enable_graph_traversal: bool = True,
-    ):
+    def __init__(self,
+                 vector_engine: AdvancedVectorSearchEngine,
+                 neo4j_db,
+                 enable_graph_traversal: bool = True):
         """Initialize hybrid search engine.
 
         Args:
@@ -605,39 +528,33 @@ class HybridSearchEngine:
         # Initialize components
         self.query_analyzer = QueryAnalyzer()
         self.bm25_scorer = BM25Scorer()
-        self.graph_traversal = (
-            GraphTraversal(neo4j_db) if enable_graph_traversal else None
-        )
+        self.graph_traversal = GraphTraversal(neo4j_db) if enable_graph_traversal else None
 
         # Index documents for BM25
         self._index_documents_for_bm25()
 
         # Performance tracking
         self.search_stats = {
-            "total_searches": 0,
-            "search_mode_usage": defaultdict(int),
-            "avg_response_time_ms": 0.0,
-            "avg_results_returned": 0.0,
+            'total_searches': 0,
+            'search_mode_usage': defaultdict(int),
+            'avg_response_time_ms': 0.0,
+            'avg_results_returned': 0.0
         }
 
         logger.info("Initialized HybridSearchEngine")
 
     def _index_documents_for_bm25(self):
         """Index documents for BM25 text search."""
-        documents = {
-            doc.id: doc.content for doc in self.vector_engine.documents.values()
-        }
+        documents = {doc.id: doc.content for doc in self.vector_engine.documents.values()}
         self.bm25_scorer.index_documents(documents)
         logger.info(f"Indexed {len(documents)} documents for BM25 scoring")
 
-    def search(
-        self,
-        query: str,
-        k: int = 10,
-        search_mode: Optional[SearchMode] = None,
-        filters: Optional[Dict[str, Any]] = None,
-        explain: bool = False,
-    ) -> List[ScoredResult]:
+    def search(self,
+               query: str,
+               k: int = 10,
+               search_mode: Optional[SearchMode] = None,
+               filters: Optional[Dict[str, Any]] = None,
+               explain: bool = False) -> List[ScoredResult]:
         """Perform hybrid search.
 
         Args:
@@ -651,7 +568,7 @@ class HybridSearchEngine:
             List of scored results
         """
         start_time = time.time()
-        self.search_stats["total_searches"] += 1
+        self.search_stats['total_searches'] += 1
 
         # Analyze query
         analysis = self.query_analyzer.analyze_query(query)
@@ -687,15 +604,11 @@ class HybridSearchEngine:
         search_time = (time.time() - start_time) * 1000
         self._update_search_stats(analysis.search_mode, search_time, len(results))
 
-        logger.info(
-            f"Hybrid search completed in {search_time:.2f}ms using {analysis.search_mode.value} mode"
-        )
+        logger.info(f"Hybrid search completed in {search_time:.2f}ms using {analysis.search_mode.value} mode")
 
         return results[:k]
 
-    def _text_search(
-        self, query: str, k: int, analysis: QueryAnalysis
-    ) -> List[ScoredResult]:
+    def _text_search(self, query: str, k: int, analysis: QueryAnalysis) -> List[ScoredResult]:
         """Pure text search using BM25."""
         results = []
 
@@ -713,13 +626,13 @@ class HybridSearchEngine:
                     score=text_score,
                     content=doc.content,
                     metadata=doc.metadata.copy(),
-                    doc_type=doc.doc_type,
+                    doc_type=doc.doc_type
                 )
 
                 scored_result = ScoredResult(
                     result=search_result,
                     text_score=text_score,
-                    combined_score=text_score,
+                    combined_score=text_score
                 )
                 results.append(scored_result)
 
@@ -727,32 +640,30 @@ class HybridSearchEngine:
         results.sort(key=lambda x: x.combined_score, reverse=True)
         return results[:k]
 
-    def _vector_search(
-        self, query: str, k: int, analysis: QueryAnalysis
-    ) -> List[ScoredResult]:
+    def _vector_search(self, query: str, k: int, analysis: QueryAnalysis) -> List[ScoredResult]:
         """Pure vector search."""
-        doc_types = analysis.filters.get("doc_types")
+        doc_types = analysis.filters.get('doc_types')
 
         vector_results = self.vector_engine.search(
             query=query,
             k=k,
             doc_types=doc_types,
             filters=analysis.filters,
-            use_cache=True,
+            use_cache=True
         )
 
         scored_results = []
         for result in vector_results:
             scored_result = ScoredResult(
-                result=result, vector_score=result.score, combined_score=result.score
+                result=result,
+                vector_score=result.score,
+                combined_score=result.score
             )
             scored_results.append(scored_result)
 
         return scored_results
 
-    def _graph_search(
-        self, query: str, k: int, analysis: QueryAnalysis
-    ) -> List[ScoredResult]:
+    def _graph_search(self, query: str, k: int, analysis: QueryAnalysis) -> List[ScoredResult]:
         """Graph traversal based search."""
         if not self.graph_traversal:
             return self._vector_search(query, k, analysis)
@@ -765,50 +676,48 @@ class HybridSearchEngine:
             regions = self.graph_traversal.find_by_coordinates(x, y, z, radius=15.0)
 
             for region_data in regions[:k]:
-                region = region_data["region"]
-                distance = region_data["distance"]
+                region = region_data['region']
+                distance = region_data['distance']
 
                 search_result = SearchResult(
-                    id=region.get("region_id", str(region.get("id", ""))),
+                    id=region.get('region_id', str(region.get('id', ''))),
                     score=1.0 / (1.0 + distance / 10.0),  # Distance-based score
-                    content=region.get("name", ""),
-                    metadata={**region, "spatial_distance": distance},
-                    doc_type=SearchResultType.REGION,
+                    content=region.get('name', ''),
+                    metadata={**region, 'spatial_distance': distance},
+                    doc_type=SearchResultType.REGION
                 )
 
                 scored_result = ScoredResult(
                     result=search_result,
                     graph_score=search_result.score,
-                    combined_score=search_result.score,
+                    combined_score=search_result.score
                 )
                 results.append(scored_result)
 
         else:
             # Relationship-based search (simplified)
             # In a full implementation, this would parse relationship queries
-            vector_results = self._vector_search(query, k * 2, analysis)
+            vector_results = self._vector_search(query, k*2, analysis)
 
             for i, vector_result in enumerate(vector_results[:k]):
                 scored_result = ScoredResult(
                     result=vector_result.result,
                     vector_score=vector_result.vector_score,
                     graph_score=0.1,  # Small graph component
-                    combined_score=vector_result.vector_score + 0.1,
+                    combined_score=vector_result.vector_score + 0.1
                 )
                 results.append(scored_result)
 
         return results
 
-    def _hybrid_search(
-        self, query: str, k: int, analysis: QueryAnalysis
-    ) -> List[ScoredResult]:
+    def _hybrid_search(self, query: str, k: int, analysis: QueryAnalysis) -> List[ScoredResult]:
         """Hybrid text + vector search."""
         # Get vector results
         vector_results = self.vector_engine.search(
             query=query,
-            k=k * 2,  # Get more for reranking
-            doc_types=analysis.filters.get("doc_types"),
-            filters=analysis.filters,
+            k=k*2,  # Get more for reranking
+            doc_types=analysis.filters.get('doc_types'),
+            filters=analysis.filters
         )
 
         # Calculate combined scores
@@ -816,7 +725,9 @@ class HybridSearchEngine:
         for vector_result in vector_results:
             # Calculate text score
             text_score = self.bm25_scorer.score(
-                query, vector_result.id, vector_result.content
+                query,
+                vector_result.id,
+                vector_result.content
             )
 
             # Combine scores (weighted average)
@@ -826,7 +737,7 @@ class HybridSearchEngine:
                 result=vector_result,
                 text_score=text_score,
                 vector_score=vector_result.score,
-                combined_score=combined_score,
+                combined_score=combined_score
             )
             scored_results.append(scored_result)
 
@@ -835,12 +746,10 @@ class HybridSearchEngine:
 
         return scored_results[:k]
 
-    def _multimodal_search(
-        self, query: str, k: int, analysis: QueryAnalysis
-    ) -> List[ScoredResult]:
+    def _multimodal_search(self, query: str, k: int, analysis: QueryAnalysis) -> List[ScoredResult]:
         """Multimodal search combining text, vector, and graph."""
         # Start with hybrid search
-        hybrid_results = self._hybrid_search(query, k * 2, analysis)
+        hybrid_results = self._hybrid_search(query, k*2, analysis)
 
         # Enhance with graph information
         enhanced_results = []
@@ -848,24 +757,19 @@ class HybridSearchEngine:
             graph_score = 0.0
 
             # Add graph traversal score if graph search is enabled
-            if (
-                self.graph_traversal
-                and hybrid_result.result.doc_type == SearchResultType.CONCEPT
-            ):
+            if self.graph_traversal and hybrid_result.result.doc_type == SearchResultType.CONCEPT:
                 # Simplified graph enhancement
                 graph_score = 0.1  # Base graph score
 
                 # Check if result has relationships
-                if "relationships" in hybrid_result.result.metadata:
-                    graph_score += 0.1 * len(
-                        hybrid_result.result.metadata["relationships"]
-                    )
+                if 'relationships' in hybrid_result.result.metadata:
+                    graph_score += 0.1 * len(hybrid_result.result.metadata['relationships'])
 
             # Combine all scores
             final_score = (
-                0.4 * hybrid_result.vector_score
-                + 0.3 * hybrid_result.text_score
-                + 0.3 * graph_score
+                0.4 * hybrid_result.vector_score +
+                0.3 * hybrid_result.text_score +
+                0.3 * graph_score
             )
 
             scored_result = ScoredResult(
@@ -873,7 +777,7 @@ class HybridSearchEngine:
                 text_score=hybrid_result.text_score,
                 vector_score=hybrid_result.vector_score,
                 graph_score=graph_score,
-                combined_score=final_score,
+                combined_score=final_score
             )
             enhanced_results.append(scored_result)
 
@@ -882,9 +786,7 @@ class HybridSearchEngine:
 
         return enhanced_results[:k]
 
-    def _auto_search(
-        self, query: str, k: int, analysis: QueryAnalysis
-    ) -> List[ScoredResult]:
+    def _auto_search(self, query: str, k: int, analysis: QueryAnalysis) -> List[ScoredResult]:
         """Automatically choose best search method."""
         # Choose method based on analysis confidence and query type
         if analysis.confidence > 0.8:
@@ -904,14 +806,14 @@ class HybridSearchEngine:
             return True
 
         # Check document types
-        if "doc_types" in filters:
-            doc_types = filters["doc_types"]
+        if 'doc_types' in filters:
+            doc_types = filters['doc_types']
             if doc.doc_type not in doc_types:
                 return False
 
         # Check metadata filters
         for key, value in filters.items():
-            if key == "doc_types":
+            if key == 'doc_types':
                 continue
 
             if key not in doc.metadata or doc.metadata[key] != value:
@@ -919,9 +821,7 @@ class HybridSearchEngine:
 
         return True
 
-    def _generate_explanation(
-        self, result: ScoredResult, analysis: QueryAnalysis
-    ) -> str:
+    def _generate_explanation(self, result: ScoredResult, analysis: QueryAnalysis) -> str:
         """Generate human-readable explanation for result scoring."""
         explanation_parts = []
 
@@ -939,24 +839,22 @@ class HybridSearchEngine:
 
         return ". ".join(explanation_parts)
 
-    def _update_search_stats(
-        self, search_mode: SearchMode, search_time_ms: float, result_count: int
-    ):
+    def _update_search_stats(self, search_mode: SearchMode, search_time_ms: float, result_count: int):
         """Update search performance statistics."""
-        self.search_stats["search_mode_usage"][search_mode.value] += 1
+        self.search_stats['search_mode_usage'][search_mode.value] += 1
 
         # Update rolling averages
-        total_searches = self.search_stats["total_searches"]
+        total_searches = self.search_stats['total_searches']
 
-        current_avg_time = self.search_stats["avg_response_time_ms"]
-        self.search_stats["avg_response_time_ms"] = (
-            current_avg_time * (total_searches - 1) + search_time_ms
-        ) / total_searches
+        current_avg_time = self.search_stats['avg_response_time_ms']
+        self.search_stats['avg_response_time_ms'] = (
+            (current_avg_time * (total_searches - 1) + search_time_ms) / total_searches
+        )
 
-        current_avg_results = self.search_stats["avg_results_returned"]
-        self.search_stats["avg_results_returned"] = (
-            current_avg_results * (total_searches - 1) + result_count
-        ) / total_searches
+        current_avg_results = self.search_stats['avg_results_returned']
+        self.search_stats['avg_results_returned'] = (
+            (current_avg_results * (total_searches - 1) + result_count) / total_searches
+        )
 
     def get_search_statistics(self) -> Dict[str, Any]:
         """Get comprehensive search statistics."""
@@ -965,7 +863,7 @@ class HybridSearchEngine:
         return {
             **base_stats,
             **self.search_stats,
-            "bm25_corpus_size": self.bm25_scorer.corpus_size,
-            "graph_traversal_enabled": self.enable_graph_traversal,
-            "query_analyzer_patterns": len(self.query_analyzer.query_indicators),
+            'bm25_corpus_size': self.bm25_scorer.corpus_size,
+            'graph_traversal_enabled': self.enable_graph_traversal,
+            'query_analyzer_patterns': len(self.query_analyzer.query_indicators)
         }

@@ -87,9 +87,7 @@ class OnvocTree:
                 continue
             children_payload = entry.get("children") or []
             alt_parents = tuple(entry.get("alt_parents") or ())
-            child_ids = tuple(
-                child.get("id") for child in children_payload if child.get("id")
-            )
+            child_ids = tuple(child.get("id") for child in children_payload if child.get("id"))
             nodes[node_id] = TreeNode(
                 id=node_id,
                 label=str(label),
@@ -109,9 +107,7 @@ class OnvocTree:
     @staticmethod
     def _build_cannot_link(constraints: dict) -> Dict[str, Set[str]]:
         pairs: Dict[str, Set[str]] = {}
-        entries = (
-            constraints.get("cannot_link", []) if isinstance(constraints, dict) else []
-        )
+        entries = constraints.get("cannot_link", []) if isinstance(constraints, dict) else []
         for entry in entries:
             ids = entry.get("ids") if isinstance(entry, dict) else None
             if not isinstance(ids, (list, tuple)) or len(ids) != 2:

@@ -13,13 +13,13 @@ from typing import List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
 from brain_researcher.services.tools.params import (
     AFNIClustSimParameters,
     afni_clustsim_from_payload,
     run_afni_clustsim,
 )
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
+from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
 
 logger = logging.getLogger(__name__)
 
@@ -29,41 +29,19 @@ class AFNIClustSimArgs(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    input_file: Optional[str] = Field(
-        default=None, description="Input dataset (residuals) for ACF estimation"
-    )
-    mask_file: Optional[str] = Field(
-        default=None, description="Optional mask limiting simulation volume"
-    )
-    fwhm: Optional[Tuple[float, float, float]] = Field(
-        default=None, description="Manual smoothness (x,y,z)"
-    )
-    pthr: List[float] = Field(
-        default_factory=lambda: [0.01, 0.005, 0.001],
-        description="Voxel-wise p-value thresholds",
-    )
-    athr: List[float] = Field(
-        default_factory=lambda: [0.05, 0.01],
-        description="Cluster-level alpha thresholds",
-    )
+    input_file: Optional[str] = Field(default=None, description="Input dataset (residuals) for ACF estimation")
+    mask_file: Optional[str] = Field(default=None, description="Optional mask limiting simulation volume")
+    fwhm: Optional[Tuple[float, float, float]] = Field(default=None, description="Manual smoothness (x,y,z)")
+    pthr: List[float] = Field(default_factory=lambda: [0.01, 0.005, 0.001], description="Voxel-wise p-value thresholds")
+    athr: List[float] = Field(default_factory=lambda: [0.05, 0.01], description="Cluster-level alpha thresholds")
     iter: int = Field(default=10000, description="Number of Monte Carlo iterations")
     seed: Optional[int] = Field(default=None, description="Random seed")
-    sided: int = Field(
-        default=2, description="Sidedness: 1=positive, 2=two-sided, 3=negative"
-    )
+    sided: int = Field(default=2, description="Sidedness: 1=positive, 2=two-sided, 3=negative")
     prefix: str = Field(default="ClustSim", description="Output prefix")
-    acf: bool = Field(
-        default=True, description="Use ACF smoothness estimation if possible"
-    )
-    fast: bool = Field(
-        default=False, description="Use faster analytical approximations"
-    )
-    nodec: bool = Field(
-        default=False, description="Disable deconvolution in estimation"
-    )
-    output_dir: Optional[str] = Field(
-        default=None, description="Directory for generated outputs"
-    )
+    acf: bool = Field(default=True, description="Use ACF smoothness estimation if possible")
+    fast: bool = Field(default=False, description="Use faster analytical approximations")
+    nodec: bool = Field(default=False, description="Disable deconvolution in estimation")
+    output_dir: Optional[str] = Field(default=None, description="Directory for generated outputs")
 
 
 class AFNIClustSimTool(NeuroToolWrapper):
@@ -214,8 +192,6 @@ class AFNI3dDeconvolveTool(NeuroToolWrapper):
             return ToolResult(status="success", data=data)
         except Exception as exc:
             return ToolResult(status="error", error=str(exc), data={})
-
-
 class AFNITools:
     """Discovery helper used by the registry."""
 
@@ -227,7 +203,6 @@ class AFNITools:
             AFNI3dReHoTool(),
             AFNI3dDeconvolveTool(),
         ]
-
 
 __all__ = [
     "AFNIClustSimTool",

@@ -3,18 +3,18 @@ Performance monitoring system for BR-KG.
 Implements KG-015: Query profiling, slow query logging, and index recommendations.
 """
 
-import hashlib
-import json
-import logging
-import sqlite3
-import threading
 import time
-from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass
+import json
+import sqlite3
+import hashlib
+import logging
 from datetime import datetime, timedelta
-from functools import wraps
+from typing import Dict, List, Any, Optional, Tuple, Set
+from dataclasses import dataclass, asdict
+from collections import defaultdict, Counter
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+import threading
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class QueryProfile:
         """Convert to dictionary for storage."""
         data = asdict(self)
         # Remove threshold from storage
-        data.pop("slow_threshold_ms", None)
+        data.pop('slow_threshold_ms', None)
         return data
 
     @property
@@ -84,7 +84,7 @@ class PerformanceMonitor:
         db_path: str = "br_kg_performance.db",
         slow_query_threshold_ms: float = 1000,
         enable_profiling: bool = True,
-        max_history_days: int = 30,
+        max_history_days: int = 30
     ):
         """
         Initialize performance monitor.
@@ -119,8 +119,7 @@ class PerformanceMonitor:
         conn = sqlite3.connect(self.db_path)
         try:
             # Query profiles table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS query_profiles (
                     query_id TEXT PRIMARY KEY,
                     query_text TEXT NOT NULL,
@@ -137,12 +136,10 @@ class PerformanceMonitor:
                     error TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
 
             # Slow query log
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS slow_queries (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     query_id TEXT NOT NULL,
@@ -152,12 +149,10 @@ class PerformanceMonitor:
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (query_id) REFERENCES query_profiles(query_id)
                 )
-            """
-            )
+            """)
 
             # Performance metrics table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS performance_metrics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     metric_name TEXT NOT NULL,
@@ -165,12 +160,10 @@ class PerformanceMonitor:
                     metric_type TEXT NOT NULL,  -- 'counter', 'gauge', 'histogram'
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
 
             # Index recommendations table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS index_recommendations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     table_name TEXT NOT NULL,
@@ -182,12 +175,10 @@ class PerformanceMonitor:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     applied BOOLEAN DEFAULT FALSE
                 )
-            """
-            )
+            """)
 
             # Query patterns table for analysis
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS query_patterns (
                     pattern_hash TEXT PRIMARY KEY,
                     pattern TEXT NOT NULL,
@@ -195,37 +186,28 @@ class PerformanceMonitor:
                     avg_execution_time_ms REAL,
                     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
 
             # Create indexes for performance
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_profiles_time
                 ON query_profiles(start_time DESC)
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_profiles_type
                 ON query_profiles(query_type)
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_slow_queries_time
                 ON slow_queries(timestamp DESC)
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_metrics_name_time
                 ON performance_metrics(metric_name, timestamp DESC)
-            """
-            )
+            """)
 
             conn.commit()
         finally:
@@ -236,7 +218,7 @@ class PerformanceMonitor:
         query_text: str,
         query_type: str = "unknown",
         user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
+        ip_address: Optional[str] = None
     ):
         """
         Context manager for profiling a query.
@@ -255,7 +237,7 @@ class PerformanceMonitor:
             query_text=query_text,
             query_type=query_type,
             user_id=user_id,
-            ip_address=ip_address,
+            ip_address=ip_address
         )
 
     def record_profile(self, profile: QueryProfile):
@@ -290,19 +272,16 @@ class PerformanceMonitor:
         # Store in slow query log
         conn = sqlite3.connect(self.db_path)
         try:
-            conn.execute(
-                """
+            conn.execute("""
                 INSERT INTO slow_queries
                 (query_id, query_text, execution_time_ms, query_type)
                 VALUES (?, ?, ?, ?)
-            """,
-                (
-                    profile.query_id,
-                    profile.query_text,
-                    profile.execution_time_ms,
-                    profile.query_type,
-                ),
-            )
+            """, (
+                profile.query_id,
+                profile.query_text,
+                profile.execution_time_ms,
+                profile.query_type
+            ))
             conn.commit()
         finally:
             conn.close()
@@ -311,37 +290,33 @@ class PerformanceMonitor:
         """Store profile in database."""
         conn = sqlite3.connect(self.db_path)
         try:
-            conn.execute(
-                """
+            conn.execute("""
                 INSERT OR REPLACE INTO query_profiles
                 (query_id, query_text, query_type, start_time, end_time,
                  execution_time_ms, rows_returned, rows_examined,
                  index_used, cache_hit, user_id, ip_address, error)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    profile.query_id,
-                    profile.query_text,
-                    profile.query_type,
-                    profile.start_time,
-                    profile.end_time,
-                    profile.execution_time_ms,
-                    profile.rows_returned,
-                    profile.rows_examined,
-                    profile.index_used,
-                    profile.cache_hit,
-                    profile.user_id,
-                    profile.ip_address,
-                    profile.error,
-                ),
-            )
+            """, (
+                profile.query_id,
+                profile.query_text,
+                profile.query_type,
+                profile.start_time,
+                profile.end_time,
+                profile.execution_time_ms,
+                profile.rows_returned,
+                profile.rows_examined,
+                profile.index_used,
+                profile.cache_hit,
+                profile.user_id,
+                profile.ip_address,
+                profile.error
+            ))
 
             # Update query patterns
             pattern = self._extract_pattern(profile.query_text)
             pattern_hash = hashlib.md5(pattern.encode()).hexdigest()
 
-            conn.execute(
-                """
+            conn.execute("""
                 INSERT INTO query_patterns (pattern_hash, pattern, count, avg_execution_time_ms)
                 VALUES (?, ?, 1, ?)
                 ON CONFLICT(pattern_hash) DO UPDATE SET
@@ -349,14 +324,12 @@ class PerformanceMonitor:
                     avg_execution_time_ms =
                         (avg_execution_time_ms * count + ?) / (count + 1),
                     last_seen = CURRENT_TIMESTAMP
-            """,
-                (
-                    pattern_hash,
-                    pattern,
-                    profile.execution_time_ms,
-                    profile.execution_time_ms,
-                ),
-            )
+            """, (
+                pattern_hash,
+                pattern,
+                profile.execution_time_ms,
+                profile.execution_time_ms
+            ))
 
             conn.commit()
         finally:
@@ -367,29 +340,27 @@ class PerformanceMonitor:
         conn = sqlite3.connect(self.db_path)
         try:
             # Record execution time
-            conn.execute(
-                """
+            conn.execute("""
                 INSERT INTO performance_metrics
                 (metric_name, metric_value, metric_type)
                 VALUES (?, ?, ?)
-            """,
-                (
-                    f"query_execution_time_{profile.query_type}",
-                    profile.execution_time_ms,
-                    "histogram",
-                ),
-            )
+            """, (
+                f"query_execution_time_{profile.query_type}",
+                profile.execution_time_ms,
+                "histogram"
+            ))
 
             # Record cache hit rate
             if profile.cache_hit is not None:
-                conn.execute(
-                    """
+                conn.execute("""
                     INSERT INTO performance_metrics
                     (metric_name, metric_value, metric_type)
                     VALUES (?, ?, ?)
-                """,
-                    ("cache_hit_rate", 1.0 if profile.cache_hit else 0.0, "gauge"),
-                )
+                """, (
+                    "cache_hit_rate",
+                    1.0 if profile.cache_hit else 0.0,
+                    "gauge"
+                ))
 
             conn.commit()
         finally:
@@ -407,15 +378,17 @@ class PerformanceMonitor:
         pattern = re.sub(r"'[^']*'", "'?'", pattern)
 
         # Remove numbers
-        pattern = re.sub(r"\b\d+\b", "?", pattern)
+        pattern = re.sub(r'\b\d+\b', '?', pattern)
 
         # Normalize whitespace
-        pattern = " ".join(pattern.split())
+        pattern = ' '.join(pattern.split())
 
         return pattern
 
     def get_slow_queries(
-        self, limit: int = 100, since: Optional[datetime] = None
+        self,
+        limit: int = 100,
+        since: Optional[datetime] = None
     ) -> List[Dict[str, Any]]:
         """Get recent slow queries."""
         conn = sqlite3.connect(self.db_path)
@@ -442,7 +415,7 @@ class PerformanceMonitor:
                     "query_text": row[1],
                     "execution_time_ms": row[2],
                     "query_type": row[3],
-                    "timestamp": row[4],
+                    "timestamp": row[4]
                 }
                 for row in cursor.fetchall()
             ]
@@ -453,7 +426,7 @@ class PerformanceMonitor:
         self,
         metric_names: Optional[List[str]] = None,
         since: Optional[datetime] = None,
-        aggregation: str = "avg",  # 'avg', 'sum', 'count', 'p50', 'p95', 'p99'
+        aggregation: str = "avg"  # 'avg', 'sum', 'count', 'p50', 'p95', 'p99'
     ) -> Dict[str, float]:
         """Get aggregated performance metrics."""
         conn = sqlite3.connect(self.db_path)
@@ -466,7 +439,7 @@ class PerformanceMonitor:
             params = []
 
             if metric_names:
-                placeholders = ",".join("?" * len(metric_names))
+                placeholders = ','.join('?' * len(metric_names))
                 conditions.append(f"metric_name IN ({placeholders})")
                 params.extend(metric_names)
 
@@ -512,30 +485,28 @@ class PerformanceMonitor:
         finally:
             conn.close()
 
-    def analyze_query_patterns(self, min_frequency: int = 5) -> List[Dict[str, Any]]:
+    def analyze_query_patterns(
+        self,
+        min_frequency: int = 5
+    ) -> List[Dict[str, Any]]:
         """Analyze query patterns to find optimization opportunities."""
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.execute(
-                """
+            cursor = conn.execute("""
                 SELECT pattern, count, avg_execution_time_ms
                 FROM query_patterns
                 WHERE count >= ?
                 ORDER BY count DESC, avg_execution_time_ms DESC
-            """,
-                (min_frequency,),
-            )
+            """, (min_frequency,))
 
             patterns = []
             for row in cursor.fetchall():
-                patterns.append(
-                    {
-                        "pattern": row[0],
-                        "frequency": row[1],
-                        "avg_execution_time_ms": row[2],
-                        "total_time_ms": row[1] * row[2],
-                    }
-                )
+                patterns.append({
+                    "pattern": row[0],
+                    "frequency": row[1],
+                    "avg_execution_time_ms": row[2],
+                    "total_time_ms": row[1] * row[2]
+                })
 
             return patterns
         finally:
@@ -554,8 +525,7 @@ class PerformanceMonitor:
         conn = sqlite3.connect(self.db_path)
         try:
             # Find queries that don't use indexes
-            cursor = conn.execute(
-                """
+            cursor = conn.execute("""
                 SELECT query_text, query_type, COUNT(*) as freq,
                        AVG(execution_time_ms) as avg_time
                 FROM query_profiles
@@ -564,9 +534,7 @@ class PerformanceMonitor:
                 GROUP BY query_text
                 HAVING freq >= 3
                 ORDER BY freq * avg_time DESC
-            """,
-                (self.slow_query_threshold / 2,),
-            )
+            """, (self.slow_query_threshold / 2,))
 
             for row in cursor.fetchall():
                 query_text = row[0]
@@ -583,32 +551,27 @@ class PerformanceMonitor:
                             table=table,
                             columns=columns,
                             reason=f"Frequent slow query without index usage",
-                            estimated_improvement=min(
-                                80, avg_time / 10
-                            ),  # Rough estimate
+                            estimated_improvement=min(80, avg_time / 10),  # Rough estimate
                             query_patterns=[self._extract_pattern(query_text)],
-                            frequency=frequency,
+                            frequency=frequency
                         )
                         recommendations.append(rec)
 
             # Store recommendations
             for rec in recommendations:
-                conn.execute(
-                    """
+                conn.execute("""
                     INSERT INTO index_recommendations
                     (table_name, columns, reason, estimated_improvement,
                      query_patterns, frequency)
                     VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        rec.table,
-                        json.dumps(rec.columns),
-                        rec.reason,
-                        rec.estimated_improvement,
-                        json.dumps(rec.query_patterns),
-                        rec.frequency,
-                    ),
-                )
+                """, (
+                    rec.table,
+                    json.dumps(rec.columns),
+                    rec.reason,
+                    rec.estimated_improvement,
+                    json.dumps(rec.query_patterns),
+                    rec.frequency
+                ))
 
             conn.commit()
 
@@ -618,7 +581,9 @@ class PerformanceMonitor:
         return recommendations
 
     def _extract_index_candidates(
-        self, query: str, query_type: str
+        self,
+        query: str,
+        query_type: str
     ) -> Dict[str, List[str]]:
         """Extract potential index columns from query."""
         import re
@@ -628,11 +593,11 @@ class PerformanceMonitor:
         if query_type == "graphql":
             # Look for filter conditions in GraphQL
             # Example: concepts(filter: {name: "motor"})
-            filter_pattern = r"filter:\s*{([^}]+)}"
+            filter_pattern = r'filter:\s*{([^}]+)}'
             matches = re.findall(filter_pattern, query)
             for match in matches:
                 # Extract field names
-                fields = re.findall(r"(\w+):", match)
+                fields = re.findall(r'(\w+):', match)
                 if fields:
                     # Assume concepts table for now
                     candidates["concepts"].extend(fields)
@@ -640,7 +605,7 @@ class PerformanceMonitor:
         elif query_type == "cypher":
             # Look for WHERE clauses in Cypher
             # Example: WHERE n.name = 'motor'
-            where_pattern = r"WHERE\s+(\w+)\.(\w+)\s*="
+            where_pattern = r'WHERE\s+(\w+)\.(\w+)\s*='
             matches = re.findall(where_pattern, query, re.IGNORECASE)
             for alias, field in matches:
                 # Map alias to table (simplified)
@@ -661,9 +626,9 @@ class PerformanceMonitor:
     def _cypher_alias_to_table(self, alias: str) -> Optional[str]:
         """Map Cypher alias to table name (simplified)."""
         # This is a simple heuristic
-        if alias.lower() in ["n", "node"]:
+        if alias.lower() in ['n', 'node']:
             return "nodes"
-        elif alias.lower() in ["r", "rel", "e", "edge"]:
+        elif alias.lower() in ['r', 'rel', 'e', 'edge']:
             return "relationships"
         return None
 
@@ -672,7 +637,7 @@ class PerformanceMonitor:
         output_path: Optional[str] = None,
         include_slow_queries: bool = True,
         include_metrics: bool = True,
-        include_recommendations: bool = True,
+        include_recommendations: bool = True
     ) -> Dict[str, Any]:
         """
         Export comprehensive performance report.
@@ -689,13 +654,13 @@ class PerformanceMonitor:
         report = {
             "generated_at": datetime.now().isoformat(),
             "monitoring_period_days": self.max_history_days,
-            "slow_query_threshold_ms": self.slow_query_threshold,
+            "slow_query_threshold_ms": self.slow_query_threshold
         }
 
         if include_slow_queries:
             report["slow_queries"] = {
                 "recent": self.get_slow_queries(limit=50),
-                "patterns": self.analyze_query_patterns(),
+                "patterns": self.analyze_query_patterns()
             }
 
         if include_metrics:
@@ -705,12 +670,14 @@ class PerformanceMonitor:
                 "p50": self.get_performance_metrics(since=since, aggregation="p50"),
                 "p95": self.get_performance_metrics(since=since, aggregation="p95"),
                 "p99": self.get_performance_metrics(since=since, aggregation="p99"),
-                "avg": self.get_performance_metrics(since=since, aggregation="avg"),
+                "avg": self.get_performance_metrics(since=since, aggregation="avg")
             }
 
         if include_recommendations:
             recommendations = self.recommend_indexes()
-            report["index_recommendations"] = [rec.to_dict() for rec in recommendations]
+            report["index_recommendations"] = [
+                rec.to_dict() for rec in recommendations
+            ]
 
         # Add summary statistics
         conn = sqlite3.connect(self.db_path)
@@ -722,23 +689,20 @@ class PerformanceMonitor:
             # Slow query percentage
             cursor = conn.execute(
                 "SELECT COUNT(*) FROM query_profiles WHERE execution_time_ms > ?",
-                (self.slow_query_threshold,),
+                (self.slow_query_threshold,)
             )
             slow_count = cursor.fetchone()[0]
             report["slow_query_percentage"] = (
                 (slow_count / report["total_queries"] * 100)
-                if report["total_queries"] > 0
-                else 0
+                if report["total_queries"] > 0 else 0
             )
 
             # Cache hit rate
-            cursor = conn.execute(
-                """
+            cursor = conn.execute("""
                 SELECT AVG(CASE WHEN cache_hit THEN 1.0 ELSE 0.0 END)
                 FROM query_profiles
                 WHERE cache_hit IS NOT NULL
-            """
-            )
+            """)
             cache_hit_rate = cursor.fetchone()[0]
             report["cache_hit_rate"] = cache_hit_rate or 0.0
 
@@ -746,14 +710,13 @@ class PerformanceMonitor:
             conn.close()
 
         if output_path:
-            with open(output_path, "w") as f:
+            with open(output_path, 'w') as f:
                 json.dump(report, f, indent=2, default=str)
 
         return report
 
     def _start_cleanup_thread(self):
         """Start background thread for cleanup."""
-
         def cleanup():
             while True:
                 time.sleep(86400)  # Daily cleanup
@@ -770,18 +733,20 @@ class PerformanceMonitor:
         try:
             # Clean up old profiles
             conn.execute(
-                "DELETE FROM query_profiles WHERE created_at < ?", (cutoff.isoformat(),)
+                "DELETE FROM query_profiles WHERE created_at < ?",
+                (cutoff.isoformat(),)
             )
 
             # Clean up old metrics
             conn.execute(
                 "DELETE FROM performance_metrics WHERE timestamp < ?",
-                (cutoff.isoformat(),),
+                (cutoff.isoformat(),)
             )
 
             # Clean up old slow queries
             conn.execute(
-                "DELETE FROM slow_queries WHERE timestamp < ?", (cutoff.isoformat(),)
+                "DELETE FROM slow_queries WHERE timestamp < ?",
+                (cutoff.isoformat(),)
             )
 
             conn.commit()
@@ -802,7 +767,7 @@ class QueryProfiler:
         query_text: str,
         query_type: str,
         user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
+        ip_address: Optional[str] = None
     ):
         self.monitor = monitor
         self.query_text = query_text
@@ -834,7 +799,7 @@ class QueryProfiler:
             user_id=self.user_id,
             ip_address=self.ip_address,
             error=None,
-            slow_threshold_ms=self.monitor.slow_query_threshold,
+            slow_threshold_ms=self.monitor.slow_query_threshold
         )
 
         return self.profile
@@ -844,8 +809,8 @@ class QueryProfiler:
         if self.profile:
             self.profile.end_time = time.time()
             self.profile.execution_time_ms = (
-                self.profile.end_time - self.profile.start_time
-            ) * 1000
+                (self.profile.end_time - self.profile.start_time) * 1000
+            )
 
             if exc_val:
                 self.profile.error = str(exc_val)
@@ -877,20 +842,19 @@ def profile_query(monitor: PerformanceMonitor):
             # Execute query
             return results
     """
-
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Try to extract query from args
-            query = args[0] if args else kwargs.get("query", "unknown")
-            query_type = kwargs.get("query_type", func.__name__)
+            query = args[0] if args else kwargs.get('query', 'unknown')
+            query_type = kwargs.get('query_type', func.__name__)
 
             with monitor.profile_query(query, query_type) as profile:
                 try:
                     result = func(*args, **kwargs)
 
                     # Try to extract result count
-                    if hasattr(result, "__len__"):
+                    if hasattr(result, '__len__'):
                         profile.rows_returned = len(result)
 
                     return result
@@ -899,18 +863,21 @@ def profile_query(monitor: PerformanceMonitor):
                     raise
 
         return wrapper
-
     return decorator
 
 
 # Example usage
 if __name__ == "__main__":
     # Create monitor
-    monitor = PerformanceMonitor(slow_query_threshold_ms=500, enable_profiling=True)
+    monitor = PerformanceMonitor(
+        slow_query_threshold_ms=500,
+        enable_profiling=True
+    )
 
     # Example profiling
     with monitor.profile_query(
-        "query { concepts(filter: {name: 'motor'}) { id name } }", "graphql"
+        "query { concepts(filter: {name: 'motor'}) { id name } }",
+        "graphql"
     ) as profile:
         # Simulate query execution
         time.sleep(0.1)

@@ -25,9 +25,7 @@ _INVALID_STATUS_VALUES = frozenset(
         "0",
     }
 )
-_VALID_STATUS_VALUES = frozenset(
-    {"valid", "passed", "supported", "ok", "true", "yes", "1"}
-)
+_VALID_STATUS_VALUES = frozenset({"valid", "passed", "supported", "ok", "true", "yes", "1"})
 _SURFACE_TOKENS = frozenset(
     {
         "surface",
@@ -141,9 +139,7 @@ def _extract_explicit_status(context: dict[str, Any], keys: tuple[str, ...]) -> 
     return None
 
 
-def _has_explicit_invalid_status(
-    context: dict[str, Any], keys: tuple[str, ...]
-) -> bool:
+def _has_explicit_invalid_status(context: dict[str, Any], keys: tuple[str, ...]) -> bool:
     value = _extract_explicit_status(context, keys)
     if value is None:
         return False
@@ -177,9 +173,7 @@ def _domain_family(value: Any) -> str | None:
     return None
 
 
-def _collect_domain_families(
-    context: dict[str, Any], keys: tuple[str, ...]
-) -> set[str]:
+def _collect_domain_families(context: dict[str, Any], keys: tuple[str, ...]) -> set[str]:
     families: set[str] = set()
     for key in keys:
         value = context.get(key)
@@ -213,12 +207,7 @@ def _explicit_invalid_exchangeability(context: dict[str, Any]) -> bool:
     if _has_explicit_invalid_status(context, candidate_keys):
         return True
 
-    for nested_key in (
-        "null_model",
-        "permutation",
-        "permutation_manifest",
-        "exchangeability",
-    ):
+    for nested_key in ("null_model", "permutation", "permutation_manifest", "exchangeability"):
         nested = _nested_mapping(context, nested_key)
         if nested and _nested_invalid_status(
             nested,
@@ -262,9 +251,7 @@ def permutation_exchangeability_check(bundle: CodeReviewBundle) -> ReviewFinding
         "explicit exchangeability status indicates invalid / violated / unsupported",
     ]
     if "null_model" in context:
-        evidence.append(
-            f"review_context.null_model={sorted(context['null_model']) if isinstance(context['null_model'], dict) else type(context['null_model']).__name__}"
-        )
+        evidence.append(f"review_context.null_model={sorted(context['null_model']) if isinstance(context['null_model'], dict) else type(context['null_model']).__name__}")
 
     return ReviewFinding(
         rule_id="REVIEW_PERMUTATION_EXCHANGEABILITY_INVALID",

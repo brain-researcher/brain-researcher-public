@@ -39,20 +39,12 @@ class MigrationPlanner:
     def __init__(self, namespace: str = "default"):
         self.namespace = namespace
 
-    def calculate_migration_order(
-        self, services: Dict[str, Dict[str, Any]]
-    ) -> List[str]:
+    def calculate_migration_order(self, services: Dict[str, Dict[str, Any]]) -> List[str]:
         """Return a dependency-aware migration order."""
-        remaining = {
-            name: set(meta.get("dependencies", [])) for name, meta in services.items()
-        }
+        remaining = {name: set(meta.get("dependencies", [])) for name, meta in services.items()}
         order: List[str] = []
         available = sorted(
-            [
-                name
-                for name, deps in remaining.items()
-                if not deps or not (deps & remaining.keys())
-            ]
+            [name for name, deps in remaining.items() if not deps or not (deps & remaining.keys())]
         )
 
         while available:
@@ -62,11 +54,7 @@ class MigrationPlanner:
             for name, deps in list(remaining.items()):
                 deps.discard(current)
             available = sorted(
-                [
-                    name
-                    for name, deps in remaining.items()
-                    if not deps or not (deps & remaining.keys())
-                ]
+                [name for name, deps in remaining.items() if not deps or not (deps & remaining.keys())]
             )
 
         # Append any remaining services (cycles or missing data) in stable order
@@ -75,24 +63,17 @@ class MigrationPlanner:
 
         return order
 
-    def check_istio_compatibility(
-        self, service_specs: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def check_istio_compatibility(self, service_specs: Dict[str, Any]) -> Dict[str, Any]:
         protocols = service_specs.get("protocols", [])
         supported = [p for p in protocols if "HTTP" in p or "gRPC" in p or "http" in p]
-        health_checks = bool(
-            service_specs.get("health_endpoint")
-            or service_specs.get("readiness_endpoint")
-        )
+        health_checks = bool(service_specs.get("health_endpoint") or service_specs.get("readiness_endpoint"))
         return {
             "compatible": True,
             "supported_protocols": supported or protocols,
             "health_checks_available": health_checks,
         }
 
-    def estimate_migration_resources(
-        self, service_config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def estimate_migration_resources(self, service_config: Dict[str, Any]) -> Dict[str, Any]:
         cpu_limit = _parse_cpu(str(service_config.get("cpu_limit", "0m")))
         mem_limit = _parse_memory(str(service_config.get("memory_limit", "0Mi")))
 
@@ -119,9 +100,7 @@ class MigrationPlanner:
             return "canary"
         return "rolling"
 
-    def generate_rollback_plan(
-        self, migration_config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def generate_rollback_plan(self, migration_config: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "emergency_rollback": {
                 "max_time": 300,

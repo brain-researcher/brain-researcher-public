@@ -1147,10 +1147,14 @@ tools:
     modality: [meg, eeg]
   - name: mne_timefreq
     modality: [meg, eeg]
+    search_hint: meg eeg time frequency spectral power frequency bands band-limited networks multilayer connectivity mne morlet multitaper
+    tags: [meg, eeg, meeg, mne, time_frequency, spectral_power, frequency_bands, band_limited, multilayer_networks]
   - name: localize_source
     modality: [meg, eeg]
   - name: timefreq_tfr
     modality: [meg, eeg]
+    search_hint: meg eeg time frequency tfr spectral power frequency bands band-limited network analysis
+    tags: [meg, eeg, meeg, time_frequency, tfr, spectral_power, frequency_bands, band_limited]
   - name: nilearn_connectivity_matrix
     modality: [fmri]
   - name: compute_connectivity
@@ -1163,3 +1167,35 @@ tools:
     modality: [meg, eeg]
     intents: [connectivity_measures]
     tags: [meg, eeg, meeg, mne, sensor_space, connectivity, pli, wpli, plv, python, safe]
+
+  # --- Modality backfill (routing-control-plane #23C) ---
+  # High-confidence exposed tools/workflows only. Broad statistical, ML,
+  # harmonization, KG, and dataset tools intentionally remain modality-empty
+  # because their valid inputs span modalities or non-imaging resources.
+  - name: viz_stat_maps
+    modality: [fmri, smri]
+    search_hint: interactive 3d brain activation overlay glass brain statistical map visualization figure haxby
+    tags: [visualization, interactive, 3d, brain, activation, overlay, glass_brain, stat_map, figure]
+  - name: graph_query
+    search_hint: build create construct knowledge graph kg graph query graph triples tractography structural connectome diffusion data evidence graph
+    tags: [knowledge_graph, kg_construction, graph_query, graph_triples, structural_connectome, tractography, diffusion, evidence_graph]
+  - name: lesion_detection
+    modality: [smri, dmri]
+  - name: realtime_fmri
+    modality: [fmri]
+  - name: workflow_fastsurfer
+    modality: [smri]
+  - name: workflow_fmriprep_preprocessing
+    modality: [fmri]
+  - name: workflow_mriqc
+    modality: [fmri, smri]
+  - name: mriqc_group_report
+    modality: [fmri, smri]
+  - name: diffusion_tractography
+    modality: [dmri]
+  - name: run_tractography
+    modality: [dmri]
+  - name: searchlight_analysis
+    modality: [fmri]
+  - name: encoding_models
+    modality: [fmri]

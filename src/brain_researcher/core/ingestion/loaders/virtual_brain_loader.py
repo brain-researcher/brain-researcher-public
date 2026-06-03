@@ -18,9 +18,7 @@ class VirtualBrainLoader:
 
     def iter_reports(self) -> Iterable[Dict[str, Any]]:
         if not self.cache_dir.exists():
-            logger.debug(
-                "Virtual Brain cache directory %s does not exist", self.cache_dir
-            )
+            logger.debug("Virtual Brain cache directory %s does not exist", self.cache_dir)
             return []
 
         for report_path in sorted(self.cache_dir.glob("*/report.json")):

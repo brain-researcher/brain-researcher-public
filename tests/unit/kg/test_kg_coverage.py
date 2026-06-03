@@ -2,18 +2,15 @@ import os
 
 import pytest
 
-from brain_researcher.services.agent.planner.catalog_loader import load_intents
 from brain_researcher.services.agent.planner.kg_bridge import (
     get_family_stats_for_operation,
 )
+from brain_researcher.services.agent.planner.catalog_loader import load_intents
 
 
 def _neo4j_available():
     pwd_present = bool(os.environ.get("NEO4J_PASSWORD"))
-    return (
-        pwd_present
-        and get_family_stats_for_operation("__connectivity_test__") is not None
-    )
+    return pwd_present and get_family_stats_for_operation("__connectivity_test__") is not None
 
 
 @pytest.mark.skipif(

@@ -7,16 +7,16 @@ neurophysiology and electrophysiology data.
 import logging
 import os
 from datetime import datetime, timezone
-from enum import Enum
-from pathlib import Path
 from tempfile import gettempdir
+from pathlib import Path
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.spec import ToolSpec
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
+from brain_researcher.services.tools.spec import ToolSpec
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,6 @@ def _ensure_pynwb_cache_dir() -> None:
 
 class NWBOperation(str, Enum):
     """NWB file operations."""
-
     INSPECT = "inspect"  # Inspect NWB file structure
     READ = "read"  # Read data from NWB file
     WRITE = "write"  # Write data to NWB file
@@ -60,21 +59,28 @@ class NWBOperation(str, Enum):
 class NWBToolArgs(BaseModel):
     """Arguments for NWB file operations."""
 
-    operation: NWBOperation = Field(description="NWB operation to perform")
+    operation: NWBOperation = Field(
+        description="NWB operation to perform"
+    )
     input_file: Optional[str] = Field(
-        default=None, description="Path to input NWB file (for inspect/read/validate)"
+        default=None,
+        description="Path to input NWB file (for inspect/read/validate)"
     )
     output_file: Optional[str] = Field(
-        default=None, description="Path to output NWB file (for write)"
+        default=None,
+        description="Path to output NWB file (for write)"
     )
     data_path: Optional[str] = Field(
-        default=None, description="Path within NWB file to read/write data"
+        default=None,
+        description="Path within NWB file to read/write data"
     )
     data: Optional[Dict[str, Any]] = Field(
-        default=None, description="Data to write to NWB file"
+        default=None,
+        description="Data to write to NWB file"
     )
     metadata: Optional[Dict[str, Any]] = Field(
-        default=None, description="Metadata for new NWB file"
+        default=None,
+        description="Metadata for new NWB file"
     )
 
 
@@ -116,7 +122,8 @@ TOOL_SPEC = ToolSpec(
 
 
 class NWBTool(NeuroToolWrapper):
-    """NWB file operations tool."""
+    """NWB file operations tool.
+    """
 
     def __init__(self):
         """Initialize NWB tool."""
@@ -142,7 +149,7 @@ class NWBTool(NeuroToolWrapper):
         data_path: Optional[str] = None,
         data: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute NWB file operation."""
         _ensure_pynwb_cache_dir()
@@ -205,9 +212,7 @@ class NWBTool(NeuroToolWrapper):
                 return ToolResult(status="error", error="output_file required", data={})
 
             meta = metadata or {}
-            session_description = meta.get(
-                "session_description", "Brain Researcher NWB"
-            )
+            session_description = meta.get("session_description", "Brain Researcher NWB")
             identifier = meta.get("identifier", f"br-{datetime.now().timestamp()}")
             session_start = meta.get("session_start_time")
             if session_start is None:
@@ -254,23 +259,11 @@ class NWBTool(NeuroToolWrapper):
 
     def read(self, input_file: str, data_path: str) -> ToolResult:
         """Read data from NWB file."""
-        return self._run(
-            operation=NWBOperation.READ, input_file=input_file, data_path=data_path
-        )
+        return self._run(operation=NWBOperation.READ, input_file=input_file, data_path=data_path)
 
-    def write(
-        self,
-        output_file: str,
-        data: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> ToolResult:
+    def write(self, output_file: str, data: Dict[str, Any], metadata: Optional[Dict[str, Any]] = None) -> ToolResult:
         """Write data to NWB file."""
-        return self._run(
-            operation=NWBOperation.WRITE,
-            output_file=output_file,
-            data=data,
-            metadata=metadata,
-        )
+        return self._run(operation=NWBOperation.WRITE, output_file=output_file, data=data, metadata=metadata)
 
     def validate(self, input_file: str) -> ToolResult:
         """Validate NWB file."""

@@ -19,18 +19,11 @@ from typing import Any
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from graph.graph_database import BRKGGraphDB
-
-from brain_researcher.services.br_kg.etl.loaders.cognitive_atlas_loader import (
-    CognitiveAtlasLoader,
-)
-from brain_researcher.services.br_kg.etl.mappers.contrast_concept_linker import (
-    ContrastConceptLinker,
-)
-from brain_researcher.services.br_kg.etl.mappers.cross_source_linker import (
-    CrossSourceLinker,
-)
+from brain_researcher.services.br_kg.etl.loaders.cognitive_atlas_loader import CognitiveAtlasLoader
+from brain_researcher.services.br_kg.etl.mappers.contrast_concept_linker import ContrastConceptLinker
+from brain_researcher.services.br_kg.etl.mappers.cross_source_linker import CrossSourceLinker
 from brain_researcher.services.br_kg.etl.mappers.task_mapper import TaskMapper
+from graph.graph_database import BRKGGraphDB
 
 # Setup logging
 logging.basicConfig(

@@ -161,10 +161,7 @@ def test_normalize_experiment_row_preserves_cohort_metadata() -> None:
                 "resolved_group_keys": ["site", "cohort"],
                 "missing_group_keys": [],
                 "group_counts": {
-                    "site": {
-                        "participant_counts": {"site_a": 12},
-                        "row_counts": {"site_a": 120},
-                    }
+                    "site": {"participant_counts": {"site_a": 12}, "row_counts": {"site_a": 120}}
                 },
             },
         },
@@ -228,23 +225,19 @@ def test_build_graph_plan_rolls_up_dataset_cohort_metadata() -> None:
     }
 
     plan = build_psych101_graph_plan(dataset_metadata, [row])
-    dataset_node = next(
-        node for node in plan.nodes if "Psych101Dataset" in node["labels"]
-    )
-    experiment_node = next(
-        node for node in plan.nodes if "Psych101Experiment" in node["labels"]
-    )
+    dataset_node = next(node for node in plan.nodes if "Psych101Dataset" in node["labels"])
+    experiment_node = next(node for node in plan.nodes if "Psych101Experiment" in node["labels"])
     task_node = next(node for node in plan.nodes if node["labels"] == ["Task"])
 
-    assert dataset_node["properties"]["cohort_metadata"]["group_audit"]["group_counts"][
+    assert dataset_node["properties"]["cohort_metadata"]["group_audit"]["group_counts"]["site"][
+        "participant_counts"
+    ] == {"site_a": 2}
+    assert experiment_node["properties"]["cohort_metadata"]["group_audit"]["resolved_group_keys"] == [
         "site"
-    ]["participant_counts"] == {"site_a": 2}
-    assert experiment_node["properties"]["cohort_metadata"]["group_audit"][
-        "resolved_group_keys"
-    ] == ["site"]
-    assert task_node["properties"]["cohort_metadata"]["group_audit"][
-        "resolved_group_keys"
-    ] == ["site"]
+    ]
+    assert task_node["properties"]["cohort_metadata"]["group_audit"]["resolved_group_keys"] == [
+        "site"
+    ]
 
 
 def test_ingest_writes_to_db_like_object() -> None:
@@ -294,9 +287,7 @@ def test_normalize_experiment_row_uses_path_and_taxonomy_match(tmp_path: Path) -
         "prompt": "Remember the target when it reappears.",
     }
 
-    normalized = loader.normalize_experiment_row(
-        row, index=2, dataset_metadata=_sample_dataset_metadata()
-    )
+    normalized = loader.normalize_experiment_row(row, index=2, dataset_metadata=_sample_dataset_metadata())
 
     assert normalized["task_family_id"] == "tf_working_memory"
     assert normalized["task_family_label"] == "Working Memory"
@@ -330,9 +321,7 @@ def test_normalize_experiment_row_records_ontology_evidence_from_prompt_and_desc
         "prompt": "Learn from feedback",
     }
 
-    normalized = loader.normalize_experiment_row(
-        row, index=3, dataset_metadata=_sample_dataset_metadata()
-    )
+    normalized = loader.normalize_experiment_row(row, index=3, dataset_metadata=_sample_dataset_metadata())
     evidence = normalized["task_ontology_evidence"]
     evidence_fields = {item["field"] for item in evidence}
 
@@ -368,12 +357,8 @@ def test_build_graph_plan_preserves_task_ontology_metadata(tmp_path: Path) -> No
     )
 
     experiment_node = next(
-        node
-        for node in plan.nodes
-        if node["labels"] == ["Experiment", "Psych101Experiment"]
+        node for node in plan.nodes if node["labels"] == ["Experiment", "Psych101Experiment"]
     )
     assert experiment_node["properties"]["task_family_id"] == "tf_working_memory"
-    assert (
-        experiment_node["properties"]["task_ontology_match_field"] == "experiment_path"
-    )
+    assert experiment_node["properties"]["task_ontology_match_field"] == "experiment_path"
     assert experiment_node["properties"]["task_ontology"]["matched"] is True

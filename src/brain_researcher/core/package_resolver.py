@@ -6,13 +6,13 @@ Follows fallback chain: Environment Module → Container → Local Installation 
 Supports CVMFS/Neurodesk, local installations, and Python packages.
 """
 
-import logging
 import os
 import subprocess
+import logging
+from pathlib import Path
+from typing import Optional, Dict, List, Tuple, Any
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,6 @@ NEURODESK_MODULES = f"{NEURODESK}/neurodesk-modules"
 
 class BackendType(Enum):
     """Available backend types for tool execution."""
-
     MODULE = "module"  # Module-loaded tool (e.g., from CVMFS)
     CONTAINER = "container"  # Container execution (e.g., Apptainer/Docker)
     LOCAL = "local"  # Local installation
@@ -35,7 +34,6 @@ class BackendType(Enum):
 @dataclass
 class ToolBackend:
     """Information about an available tool backend."""
-
     type: BackendType
     name: str
     version: str
@@ -52,7 +50,7 @@ class ToolBackend:
             BackendType.MODULE: 1,
             BackendType.CONTAINER: 2,
             BackendType.LOCAL: 3,
-            BackendType.PYTHON: 4,
+            BackendType.PYTHON: 4
         }
         return priorities.get(self.type, 999)
 
@@ -93,7 +91,10 @@ class PackageResolver:
         # Check for Lmod
         try:
             result = subprocess.run(
-                ["module", "--version"], capture_output=True, text=True, timeout=2
+                ["module", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=2
             )
             if result.returncode == 0:
                 if "Lmod" in result.stderr or "Lmod" in result.stdout:
@@ -106,7 +107,10 @@ class PackageResolver:
         # Check for Environment Modules
         try:
             result = subprocess.run(
-                ["modulecmd", "--version"], capture_output=True, text=True, timeout=2
+                ["modulecmd", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=2
             )
             if result.returncode == 0:
                 return "environment-modules"
@@ -120,7 +124,10 @@ class PackageResolver:
         for cmd in ["apptainer", "singularity"]:
             try:
                 result = subprocess.run(
-                    [cmd, "--version"], capture_output=True, text=True, timeout=2
+                    [cmd, "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2
                 )
                 if result.returncode == 0:
                     return True
@@ -128,9 +135,7 @@ class PackageResolver:
                 continue
         return False
 
-    def find_tool(
-        self, tool_name: str, version: Optional[str] = None
-    ) -> List[ToolBackend]:
+    def find_tool(self, tool_name: str, version: Optional[str] = None) -> List[ToolBackend]:
         """
         Find all available backends for a tool.
 
@@ -174,9 +179,7 @@ class PackageResolver:
 
         return backends
 
-    def _find_cvmfs_modules(
-        self, tool_name: str, version: Optional[str] = None
-    ) -> List[ToolBackend]:
+    def _find_cvmfs_modules(self, tool_name: str, version: Optional[str] = None) -> List[ToolBackend]:
         """Find available CVMFS modules for a tool."""
         backends = []
 
@@ -189,20 +192,20 @@ class PackageResolver:
                 ["module", "avail", tool_name],
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=5
             )
 
             # Parse module output (usually in stderr for module avail)
             output = result.stderr + result.stdout
 
-            for line in output.split("\n"):
+            for line in output.split('\n'):
                 if tool_name in line.lower():
                     # Extract module name and version
                     # Format is usually: tool/version or tool-version
                     parts = line.strip().split()
                     for part in parts:
-                        if "/" in part and tool_name in part.lower():
-                            module_parts = part.split("/")
+                        if '/' in part and tool_name in part.lower():
+                            module_parts = part.split('/')
                             if len(module_parts) == 2:
                                 mod_name, mod_version = module_parts
                                 if version is None or version == mod_version:
@@ -211,7 +214,7 @@ class PackageResolver:
                                         name=mod_name,
                                         version=mod_version,
                                         module_name=part,
-                                        metadata={"module_system": self._module_system},
+                                        metadata={"module_system": self._module_system}
                                     )
                                     backends.append(backend)
 
@@ -220,9 +223,7 @@ class PackageResolver:
 
         return backends
 
-    def _find_cvmfs_containers(
-        self, tool_name: str, version: Optional[str] = None
-    ) -> List[ToolBackend]:
+    def _find_cvmfs_containers(self, tool_name: str, version: Optional[str] = None) -> List[ToolBackend]:
         """Find available CVMFS containers for a tool."""
         backends = []
 
@@ -237,7 +238,7 @@ class PackageResolver:
                 if container_dir.is_dir() and tool_name in container_dir.name.lower():
                     # Directory format: tool_version_date
                     dir_name = container_dir.name
-                    parts = dir_name.split("_")
+                    parts = dir_name.split('_')
 
                     if len(parts) >= 2:
                         cont_name = parts[0]
@@ -253,7 +254,7 @@ class PackageResolver:
                                     version=cont_version,
                                     container_path=str(sif_files[0]),
                                     path=str(container_dir),
-                                    metadata={"container_format": "singularity"},
+                                    metadata={"container_format": "singularity"}
                                 )
                                 backends.append(backend)
 
@@ -262,9 +263,7 @@ class PackageResolver:
 
         return backends
 
-    def _find_local_installations(
-        self, tool_name: str, version: Optional[str] = None
-    ) -> List[ToolBackend]:
+    def _find_local_installations(self, tool_name: str, version: Optional[str] = None) -> List[ToolBackend]:
         """Find local installations of a tool."""
         backends = []
 
@@ -296,16 +295,14 @@ class PackageResolver:
                                 name=tool_name,
                                 version=tool_version or "unknown",
                                 path=str(executable),
-                                metadata={"installation_path": str(path)},
+                                metadata={"installation_path": str(path)}
                             )
                             backends.append(backend)
                             break  # Only need one local installation
 
         return backends
 
-    def _find_python_packages(
-        self, tool_name: str, version: Optional[str] = None
-    ) -> List[ToolBackend]:
+    def _find_python_packages(self, tool_name: str, version: Optional[str] = None) -> List[ToolBackend]:
         """Find Python package implementations."""
         backends = []
 
@@ -324,7 +321,6 @@ class PackageResolver:
             try:
                 # Try to import the package
                 import importlib
-
                 module = importlib.import_module(package)
 
                 # Get version if available
@@ -347,7 +343,7 @@ class PackageResolver:
                         name=tool_name,
                         version=pkg_version,
                         python_module=package,
-                        metadata={"python_package": package},
+                        metadata={"python_package": package}
                     )
                     backends.append(backend)
 
@@ -362,18 +358,20 @@ class PackageResolver:
             # Common version flags
             for flag in ["--version", "-version", "-v", "version"]:
                 result = subprocess.run(
-                    [str(executable), flag], capture_output=True, text=True, timeout=2
+                    [str(executable), flag],
+                    capture_output=True,
+                    text=True,
+                    timeout=2
                 )
                 if result.returncode == 0:
                     # Parse version from output
                     output = result.stdout + result.stderr
-                    lines = output.split("\n")
+                    lines = output.split('\n')
                     for line in lines:
                         if "version" in line.lower():
                             # Extract version number
                             import re
-
-                            version_match = re.search(r"(\d+\.?\d*\.?\d*)", line)
+                            version_match = re.search(r'(\d+\.?\d*\.?\d*)', line)
                             if version_match:
                                 return version_match.group(1)
                     return "unknown"
@@ -391,7 +389,7 @@ class PackageResolver:
         sorted_backends = sorted(
             backends,
             key=lambda b: b.version if b.version != "unknown" else "0",
-            reverse=True,
+            reverse=True
         )
         return sorted_backends[0]
 
@@ -399,7 +397,7 @@ class PackageResolver:
         self,
         tool_name: str,
         version: Optional[str] = None,
-        prefer_backend: Optional[BackendType] = None,
+        prefer_backend: Optional[BackendType] = None
     ) -> Optional[ToolBackend]:
         """
         Get the best available backend for a tool.
@@ -432,20 +430,9 @@ class PackageResolver:
 
         # Common neuroimaging tools to search for
         common_tools = [
-            "fsl",
-            "freesurfer",
-            "ants",
-            "mrtrix3",
-            "afni",
-            "spm",
-            "conn",
-            "fmriprep",
-            "mriqc",
-            "qsiprep",
-            "xcpd",
-            "tedana",
-            "micapipe",
-            "fastsurfer",
+            "fsl", "freesurfer", "ants", "mrtrix3", "afni",
+            "spm", "conn", "fmriprep", "mriqc", "qsiprep",
+            "xcpd", "tedana", "micapipe", "fastsurfer"
         ]
 
         for tool in common_tools:

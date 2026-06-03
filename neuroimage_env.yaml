@@ -29,7 +29,7 @@
 #
 # ### 1. Create the Environment
 # ```bash
-# cd /home/zijiaochen/projects/brain_researcher
+# cd ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher
 # conda env create -f neuroimage_env.yaml
 # ```
 #
@@ -87,7 +87,7 @@
 # Run the test suite to verify all tools work:
 # ```bash
 # conda activate neuroimaging_env
-# cd /home/zijiaochen/projects/brain_researcher
+# cd ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher
 # python tests/integration/real_data/run_all_tests.py
 # ```
 #
@@ -96,7 +96,7 @@
 # - Success rate should be 100% (up from 94.1% without optional deps)
 #
 # ## Environment File Location
-# - Main file: `/home/zijiaochen/projects/brain_researcher/neuroimage_env.yaml`
+# - Main file: `${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/neuroimage_env.yaml`
 # - This is the ONLY environment file needed for neuroimaging tools
 # - Previous files (minimal, essential) have been removed to avoid confusion
 #

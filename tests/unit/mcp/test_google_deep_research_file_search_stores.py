@@ -60,5 +60,5 @@ def test_google_deep_research_start_uses_multi_store_env(monkeypatch):
                 "fileSearchStores/papers-fmri-oa-20152025-uni-aqus07ky5cos",
                 "fileSearchStores/brain-researcher-codebase-5i70bkfmcumj",
             ],
-        },
+        }
     ]

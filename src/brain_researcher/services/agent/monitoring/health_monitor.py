@@ -7,21 +7,19 @@ for production readiness.
 import asyncio
 import logging
 import time
-from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
-
-import aiohttp
+from typing import Any, Dict, List, Optional, Set, Callable
 import psutil
+import aiohttp
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
 
 class HealthStatus(Enum):
     """Health status levels."""
-
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -30,7 +28,6 @@ class HealthStatus(Enum):
 
 class ServiceType(Enum):
     """Types of services to monitor."""
-
     CORE = "core"
     TOOL = "tool"
     DATABASE = "database"
@@ -41,7 +38,6 @@ class ServiceType(Enum):
 @dataclass
 class HealthCheck:
     """Individual health check result."""
-
     name: str
     status: HealthStatus
     latency_ms: float
@@ -57,7 +53,6 @@ class HealthCheck:
 @dataclass
 class ServiceHealth:
     """Health status of a service."""
-
     service_name: str
     service_type: ServiceType
     status: HealthStatus
@@ -77,7 +72,6 @@ class ServiceHealth:
 @dataclass
 class SystemMetrics:
     """System-wide metrics."""
-
     cpu_percent: float
     memory_percent: float
     memory_mb: float
@@ -91,7 +85,9 @@ class SystemMetrics:
 class HealthMonitor:
     """Main health monitoring system."""
 
-    def __init__(self, check_interval: int = 30, history_size: int = 1000):
+    def __init__(self,
+                 check_interval: int = 30,
+                 history_size: int = 1000):
         """Initialize health monitor.
 
         Args:
@@ -133,12 +129,10 @@ class HealthMonitor:
         self.register_check("tool_registry", self._check_tool_registry)
         self.register_check("executor_queue", self._check_executor_queue)
 
-    def register_service(
-        self,
-        name: str,
-        service_type: ServiceType,
-        health_check: Optional[Callable] = None,
-    ):
+    def register_service(self,
+                        name: str,
+                        service_type: ServiceType,
+                        health_check: Optional[Callable] = None):
         """Register a service for monitoring.
 
         Args:
@@ -147,7 +141,9 @@ class HealthMonitor:
             health_check: Optional custom health check function
         """
         self.services[name] = ServiceHealth(
-            service_name=name, service_type=service_type, status=HealthStatus.UNKNOWN
+            service_name=name,
+            service_type=service_type,
+            status=HealthStatus.UNKNOWN
         )
 
         if health_check:
@@ -212,7 +208,7 @@ class HealthMonitor:
         """Collect current system metrics."""
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage("/")
+        disk = psutil.disk_usage('/')
         network = len(psutil.net_connections())
 
         # GPU metrics (if available)
@@ -220,7 +216,6 @@ class HealthMonitor:
         gpu_memory = None
         try:
             import GPUtil
-
             gpus = GPUtil.getGPUs()
             if gpus:
                 gpu_percent = gpus[0].load * 100
@@ -231,11 +226,11 @@ class HealthMonitor:
         return SystemMetrics(
             cpu_percent=cpu_percent,
             memory_percent=memory.percent,
-            memory_mb=memory.used / (1024**2),
+            memory_mb=memory.used / (1024 ** 2),
             disk_percent=disk.percent,
             network_connections=network,
             gpu_percent=gpu_percent,
-            gpu_memory_mb=gpu_memory,
+            gpu_memory_mb=gpu_memory
         )
 
     async def _run_health_checks(self) -> List[HealthCheck]:
@@ -255,24 +250,20 @@ class HealthMonitor:
                     # Convert to HealthCheck if needed
                     result = HealthCheck(
                         name=name,
-                        status=(
-                            HealthStatus.HEALTHY if result else HealthStatus.UNHEALTHY
-                        ),
-                        latency_ms=(time.time() - start_time) * 1000,
+                        status=HealthStatus.HEALTHY if result else HealthStatus.UNHEALTHY,
+                        latency_ms=(time.time() - start_time) * 1000
                     )
 
                 checks.append(result)
 
             except Exception as e:
                 logger.error(f"Health check {name} failed: {e}")
-                checks.append(
-                    HealthCheck(
-                        name=name,
-                        status=HealthStatus.UNHEALTHY,
-                        latency_ms=0,
-                        message=str(e),
-                    )
-                )
+                checks.append(HealthCheck(
+                    name=name,
+                    status=HealthStatus.UNHEALTHY,
+                    latency_ms=0,
+                    message=str(e)
+                ))
 
         return checks
 
@@ -280,9 +271,7 @@ class HealthMonitor:
         """Update service health based on checks."""
         for service in self.services.values():
             # Find relevant checks for this service
-            service_checks = [
-                c for c in checks if c.name.startswith(service.service_name)
-            ]
+            service_checks = [c for c in checks if c.name.startswith(service.service_name)]
 
             if service_checks:
                 service.checks = service_checks
@@ -308,37 +297,33 @@ class HealthMonitor:
         # Check for unhealthy services
         unhealthy = [c for c in checks if c.status == HealthStatus.UNHEALTHY]
         if unhealthy:
-            alerts.append(
-                {
-                    "type": "unhealthy_services",
-                    "services": [c.name for c in unhealthy],
-                    "severity": "high",
-                }
-            )
+            alerts.append({
+                "type": "unhealthy_services",
+                "services": [c.name for c in unhealthy],
+                "severity": "high"
+            })
 
         # Check system resources
         if metrics.cpu_percent > 90:
-            alerts.append(
-                {"type": "high_cpu", "value": metrics.cpu_percent, "severity": "medium"}
-            )
+            alerts.append({
+                "type": "high_cpu",
+                "value": metrics.cpu_percent,
+                "severity": "medium"
+            })
 
         if metrics.memory_percent > 90:
-            alerts.append(
-                {
-                    "type": "high_memory",
-                    "value": metrics.memory_percent,
-                    "severity": "high",
-                }
-            )
+            alerts.append({
+                "type": "high_memory",
+                "value": metrics.memory_percent,
+                "severity": "high"
+            })
 
         if metrics.disk_percent > 95:
-            alerts.append(
-                {
-                    "type": "low_disk",
-                    "value": metrics.disk_percent,
-                    "severity": "critical",
-                }
-            )
+            alerts.append({
+                "type": "low_disk",
+                "value": metrics.disk_percent,
+                "severity": "critical"
+            })
 
         # Trigger alert handlers
         for alert in alerts:
@@ -377,12 +362,12 @@ class HealthMonitor:
             status=status,
             latency_ms=0,
             message=message,
-            metadata={"cpu": cpu, "memory": memory.percent},
+            metadata={"cpu": cpu, "memory": memory.percent}
         )
 
     async def _check_disk_space(self) -> HealthCheck:
         """Check disk space availability."""
-        disk = psutil.disk_usage("/")
+        disk = psutil.disk_usage('/')
 
         if disk.percent > 95:
             status = HealthStatus.UNHEALTHY
@@ -399,15 +384,14 @@ class HealthMonitor:
             status=status,
             latency_ms=0,
             message=message,
-            metadata={"disk_percent": disk.percent},
+            metadata={"disk_percent": disk.percent}
         )
 
     async def _check_redis(self) -> HealthCheck:
         """Check Redis connection."""
         try:
             import redis
-
-            client = redis.Redis(host="localhost", port=6379, socket_connect_timeout=1)
+            client = redis.Redis(host='localhost', port=6379, socket_connect_timeout=1)
             start = time.time()
             client.ping()
             latency = (time.time() - start) * 1000
@@ -416,14 +400,14 @@ class HealthMonitor:
                 name="redis_connection",
                 status=HealthStatus.HEALTHY,
                 latency_ms=latency,
-                message="Redis connection OK",
+                message="Redis connection OK"
             )
         except Exception as e:
             return HealthCheck(
                 name="redis_connection",
                 status=HealthStatus.UNHEALTHY,
                 latency_ms=0,
-                message=f"Redis connection failed: {e}",
+                message=f"Redis connection failed: {e}"
             )
 
     async def _check_neo4j(self) -> HealthCheck:
@@ -432,7 +416,7 @@ class HealthMonitor:
             # Simplified check - would use actual Neo4j driver in production
             async with aiohttp.ClientSession() as session:
                 start = time.time()
-                async with session.get("http://localhost:7474", timeout=2) as resp:
+                async with session.get('http://localhost:7474', timeout=2) as resp:
                     latency = (time.time() - start) * 1000
 
                     if resp.status == 200:
@@ -440,21 +424,21 @@ class HealthMonitor:
                             name="neo4j_connection",
                             status=HealthStatus.HEALTHY,
                             latency_ms=latency,
-                            message="Neo4j connection OK",
+                            message="Neo4j connection OK"
                         )
                     else:
                         return HealthCheck(
                             name="neo4j_connection",
                             status=HealthStatus.DEGRADED,
                             latency_ms=latency,
-                            message=f"Neo4j returned status {resp.status}",
+                            message=f"Neo4j returned status {resp.status}"
                         )
         except Exception as e:
             return HealthCheck(
                 name="neo4j_connection",
                 status=HealthStatus.UNHEALTHY,
                 latency_ms=0,
-                message=f"Neo4j connection failed: {e}",
+                message=f"Neo4j connection failed: {e}"
             )
 
     async def _check_tool_registry(self) -> HealthCheck:
@@ -469,7 +453,9 @@ class HealthMonitor:
             try:
                 from brain_researcher.services.tools.registry import UnifiedToolRegistry
 
-                exposed_spec_count = len(UnifiedToolRegistry().get_exposed_toolspecs())
+                exposed_spec_count = len(
+                    UnifiedToolRegistry().get_exposed_toolspecs()
+                )
             except Exception as exc:  # pragma: no cover - defensive fallback
                 spec_error = str(exc)
 
@@ -535,7 +521,7 @@ class HealthMonitor:
                 name="tool_registry",
                 status=HealthStatus.UNHEALTHY,
                 latency_ms=0,
-                message=f"Tool registry error: {e}",
+                message=f"Tool registry error: {e}"
             )
 
     async def _check_executor_queue(self) -> HealthCheck:
@@ -546,7 +532,7 @@ class HealthMonitor:
             status=HealthStatus.HEALTHY,
             latency_ms=0,
             message="Executor queue operational",
-            metadata={"queue_size": 0},
+            metadata={"queue_size": 0}
         )
 
     def get_status(self) -> Dict[str, Any]:
@@ -571,26 +557,16 @@ class HealthMonitor:
                 name: {
                     "status": service.status.value,
                     "availability": service.availability,
-                    "last_check": (
-                        service.last_check.isoformat() if service.last_check else None
-                    ),
+                    "last_check": service.last_check.isoformat() if service.last_check else None
                 }
                 for name, service in self.services.items()
             },
-            "metrics": (
-                {
-                    "cpu_percent": latest_metrics.cpu_percent if latest_metrics else 0,
-                    "memory_percent": (
-                        latest_metrics.memory_percent if latest_metrics else 0
-                    ),
-                    "disk_percent": (
-                        latest_metrics.disk_percent if latest_metrics else 0
-                    ),
-                }
-                if latest_metrics
-                else {}
-            ),
-            "timestamp": datetime.now().isoformat(),
+            "metrics": {
+                "cpu_percent": latest_metrics.cpu_percent if latest_metrics else 0,
+                "memory_percent": latest_metrics.memory_percent if latest_metrics else 0,
+                "disk_percent": latest_metrics.disk_percent if latest_metrics else 0
+            } if latest_metrics else {},
+            "timestamp": datetime.now().isoformat()
         }
 
     def add_alert_handler(self, handler: Callable):

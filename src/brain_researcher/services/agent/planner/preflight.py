@@ -21,17 +21,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, List
 
+from brain_researcher.services.agent.planner.catalog_loader import ToolCapability
 from brain_researcher.services.agent.planner.cache import (
-    clear_preflight_cache as _clear_cache,
-)
-from brain_researcher.services.agent.planner.cache import (
+    get_preflight_cache,
     compute_cache_key,
     compute_tool_digest,
-    get_preflight_cache,
+    clear_preflight_cache as _clear_cache,
 )
-from brain_researcher.services.agent.planner.catalog_loader import ToolCapability
 from brain_researcher.services.agent.planner.config_loader import load_planner_config
 
 logger = logging.getLogger(__name__)
@@ -53,7 +51,6 @@ class PreflightStatus(str, Enum):
 
     These replace string matching in resource_fit scoring for better reliability.
     """
-
     # Container statuses
     CVMFS_AVAILABLE = "cvmfs_available"
     LOCAL_AVAILABLE = "local_available"
@@ -115,31 +112,24 @@ def _check_container_image(tool: ToolCapability) -> PreflightCheck:
     Returns:
         PreflightCheck indicating whether image is accessible
     """
-    container_cfg = get_preflight_config().get("checks", {}).get("container", {})
+    container_cfg = (
+        get_preflight_config()
+        .get("checks", {})
+        .get("container", {})
+    )
 
     if not container_cfg.get("enabled", True):
-        return PreflightCheck(
-            "container_image", True, "disabled", PreflightStatus.NOT_REQUIRED
-        )
+        return PreflightCheck("container_image", True, "disabled", PreflightStatus.NOT_REQUIRED)
 
     if tool.runtime_kind != "container":
-        return PreflightCheck(
-            "container_image", True, "not-required", PreflightStatus.NOT_REQUIRED
-        )
+        return PreflightCheck("container_image", True, "not-required", PreflightStatus.NOT_REQUIRED)
 
     if not tool.container:
-        return PreflightCheck(
-            "container_image", False, "no container spec", PreflightStatus.NOT_AVAILABLE
-        )
+        return PreflightCheck("container_image", False, "no container spec", PreflightStatus.NOT_AVAILABLE)
 
     image = tool.container.image
     if not image:
-        return PreflightCheck(
-            "container_image",
-            False,
-            "no image configured",
-            PreflightStatus.NOT_AVAILABLE,
-        )
+        return PreflightCheck("container_image", False, "no image configured", PreflightStatus.NOT_AVAILABLE)
 
     # Check if image path exists
     # For CVMFS paths, just check if CVMFS is mounted
@@ -147,33 +137,20 @@ def _check_container_image(tool: ToolCapability) -> PreflightCheck:
         cvmfs_root = Path("/cvmfs")
         if not cvmfs_root.exists():
             return PreflightCheck(
-                "container_image",
-                False,
-                "CVMFS not mounted",
-                PreflightStatus.NOT_AVAILABLE,
+                "container_image", False, "CVMFS not mounted", PreflightStatus.NOT_AVAILABLE
             )
         # CVMFS is mounted - assume image is accessible
         # (full validation would be expensive)
-        return PreflightCheck(
-            "container_image", True, "CVMFS accessible", PreflightStatus.CVMFS_AVAILABLE
-        )
+        return PreflightCheck("container_image", True, "CVMFS accessible", PreflightStatus.CVMFS_AVAILABLE)
 
     # For local paths, check existence
     image_path = Path(image)
     if not image_path.exists():
         return PreflightCheck(
-            "container_image",
-            False,
-            f"image not found: {image}",
-            PreflightStatus.NOT_AVAILABLE,
+            "container_image", False, f"image not found: {image}", PreflightStatus.NOT_AVAILABLE
         )
 
-    return PreflightCheck(
-        "container_image",
-        True,
-        "local image available",
-        PreflightStatus.LOCAL_AVAILABLE,
-    )
+    return PreflightCheck("container_image", True, "local image available", PreflightStatus.LOCAL_AVAILABLE)
 
 
 def _check_python_import(tool: ToolCapability) -> PreflightCheck:
@@ -185,30 +162,26 @@ def _check_python_import(tool: ToolCapability) -> PreflightCheck:
     Returns:
         PreflightCheck indicating whether module can be imported
     """
-    python_cfg = get_preflight_config().get("checks", {}).get("python", {})
+    python_cfg = (
+        get_preflight_config()
+        .get("checks", {})
+        .get("python", {})
+    )
 
     if not python_cfg.get("enabled", True):
-        return PreflightCheck(
-            "python_import", True, "disabled", PreflightStatus.NOT_REQUIRED
-        )
+        return PreflightCheck("python_import", True, "disabled", PreflightStatus.NOT_REQUIRED)
 
     if tool.runtime_kind != "python":
-        return PreflightCheck(
-            "python_import", True, "not-required", PreflightStatus.NOT_REQUIRED
-        )
+        return PreflightCheck("python_import", True, "not-required", PreflightStatus.NOT_REQUIRED)
 
     if not tool.python:
-        return PreflightCheck(
-            "python_import", False, "no python spec", PreflightStatus.IMPORT_FAILED
-        )
+        return PreflightCheck("python_import", False, "no python spec", PreflightStatus.IMPORT_FAILED)
 
     module_name = getattr(tool.python, "module", None)
     func_name = getattr(tool.python, "function", None)
 
     if not module_name:
-        return PreflightCheck(
-            "python_import", False, "no python module", PreflightStatus.NOT_AVAILABLE
-        )
+        return PreflightCheck("python_import", False, "no python module", PreflightStatus.NOT_AVAILABLE)
 
     try:
         module = importlib.import_module(module_name)
@@ -220,25 +193,14 @@ def _check_python_import(tool: ToolCapability) -> PreflightCheck:
                     f"function '{func_name}' not found in {module_name}",
                     PreflightStatus.IMPORT_FAILED,
                 )
-        return PreflightCheck(
-            "python_import",
-            True,
-            "module imported successfully",
-            PreflightStatus.IMPORT_SUCCESS,
-        )
+        return PreflightCheck("python_import", True, "module imported successfully", PreflightStatus.IMPORT_SUCCESS)
     except ImportError as exc:
         return PreflightCheck(
-            "python_import",
-            False,
-            f"import failed: {exc}",
-            PreflightStatus.IMPORT_FAILED,
+            "python_import", False, f"import failed: {exc}", PreflightStatus.IMPORT_FAILED
         )
     except Exception as exc:  # pylint: disable=broad-except
         return PreflightCheck(
-            "python_import",
-            False,
-            f"unexpected error: {exc}",
-            PreflightStatus.CHECK_ERROR,
+            "python_import", False, f"unexpected error: {exc}", PreflightStatus.CHECK_ERROR
         )
 
 
@@ -331,9 +293,7 @@ def run_preflight(tool: ToolCapability, use_cache: bool = True) -> PreflightRepo
                     "name": check.name,
                     "passed": check.passed,
                     "detail": check.detail,
-                    "status_code": (
-                        check.status_code.value if check.status_code else None
-                    ),
+                    "status_code": check.status_code.value if check.status_code else None,
                 }
                 for name, check in report.checks.items()
             },
@@ -473,7 +433,9 @@ def preflight_batch(
                         tool_id=tool.id,
                         passed=False,
                         checks={
-                            "error": PreflightCheck("error", False, f"Exception: {exc}")
+                            "error": PreflightCheck(
+                                "error", False, f"Exception: {exc}"
+                            )
                         },
                     )
 
@@ -499,11 +461,7 @@ def preflight_batch(
                                 "name": check.name,
                                 "passed": check.passed,
                                 "detail": check.detail,
-                                "status_code": (
-                                    check.status_code.value
-                                    if check.status_code
-                                    else None
-                                ),
+                                "status_code": check.status_code.value if check.status_code else None,
                             }
                             for name, check in report.checks.items()
                         },

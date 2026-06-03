@@ -158,7 +158,9 @@ def _missing_categories_for_target(
 
     if declared_rank >= _CLAIM_STRENGTH_RANK["internally_supported"]:
         present_core = sum(
-            1 for name in _CORE_VALIDATION_NAMES if statuses.get(name) == "present"
+            1
+            for name in _CORE_VALIDATION_NAMES
+            if statuses.get(name) == "present"
         )
         if present_core < 2:
             for name in sorted(_CORE_VALIDATION_NAMES):
@@ -211,7 +213,9 @@ def _claim_strength_overreach_finding(
     )
 
 
-def _min_claim_strength(declared: str | None, derived: str | None) -> str | None:
+def _min_claim_strength(
+    declared: str | None, derived: str | None
+) -> str | None:
     """Return the minimum-rank claim_strength of ``declared`` and ``derived``."""
 
     if derived is None:
@@ -274,9 +278,7 @@ def _derive_line_directive(
         bundle.review_context.get("forbidden_modules")
     )
     current_training_backend = str(bundle.review_context.get("training_backend") or "")
-    current_success_criterion = str(
-        bundle.review_context.get("success_criterion") or ""
-    )
+    current_success_criterion = str(bundle.review_context.get("success_criterion") or "")
 
     directive_line_type = current_line_type
     next_line_type: str | None = None
@@ -289,8 +291,7 @@ def _derive_line_directive(
             next_line_type = "validation"
     elif current_line_type in {"validation", "sensitivity"}:
         needs_alt_parcellation = (
-            validation_status.get("validation:alternate_parcellation_or_gsr")
-            != "present"
+            validation_status.get("validation:alternate_parcellation_or_gsr") != "present"
         )
         if overall_decision in {"diagnose", "explore_more", "stop_with_rationale"}:
             if needs_alt_parcellation:
@@ -455,9 +456,7 @@ def _correctness_verdict(bundle: AutoresearchReviewBundle) -> CorrectnessVerdict
 
     findings.extend(_shared_correctness_findings(bundle))
 
-    if any(
-        f.action == "block" or f.severity in {"error", "critical"} for f in findings
-    ):
+    if any(f.action == "block" or f.severity in {"error", "critical"} for f in findings):
         decision = "block"
     elif findings:
         decision = "flag"
@@ -637,7 +636,9 @@ def distill_autoresearch_scientific_review(
         validation_present=validation_present,
         replication_present=replication_present,
     )
-    overreach = _claim_strength_overreach_finding(bundle, earned_ceiling=earned_ceiling)
+    overreach = _claim_strength_overreach_finding(
+        bundle, earned_ceiling=earned_ceiling
+    )
     if overreach is not None:
         new_findings = list(correctness.findings) + [overreach]
         new_decision: str = correctness.decision

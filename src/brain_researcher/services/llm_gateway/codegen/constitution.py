@@ -8,6 +8,7 @@ from typing import Any
 
 import yaml
 
+
 REPO_ROOT = Path(__file__).resolve().parents[5]
 DEFAULT_CONSTITUTION_PATH = REPO_ROOT / "configs" / "codegen" / "constitution.yaml"
 

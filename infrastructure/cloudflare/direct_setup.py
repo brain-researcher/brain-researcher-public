@@ -26,7 +26,7 @@ _load_dotenv_if_available()
 # Configuration — supplied via environment, never hardcoded.
 API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
 ZONE_ID = os.environ["CLOUDFLARE_ZONE_ID"]
-DOMAIN = os.environ.get("CLOUDFLARE_DOMAIN", "brain-researcher.com")
+DOMAIN = os.environ.get("CLOUDFLARE_DOMAIN", "${PUBLIC_HOSTNAME}")
 SERVER_IP = os.environ["CLOUDFLARE_SERVER_IP"]
 
 # Service ports
@@ -201,9 +201,9 @@ def create_spectrum_config():
     print("without needing nginx or port forwarding.")
     print()
     print("With Spectrum, you could:")
-    print("  - Route brain-researcher.com:3000 → Your server:3000")
-    print("  - Route api.brain-researcher.com:8000 → Your server:8000")
-    print("  - Route kg.brain-researcher.com:5000 → Your server:5000")
+    print("  - Route ${PUBLIC_HOSTNAME}:3000 → Your server:3000")
+    print("  - Route api.${PUBLIC_HOSTNAME}:8000 → Your server:8000")
+    print("  - Route kg.${PUBLIC_HOSTNAME}:5000 → Your server:5000")
     print()
     print("Learn more: https://www.cloudflare.com/products/cloudflare-spectrum/")
 

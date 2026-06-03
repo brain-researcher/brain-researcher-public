@@ -217,11 +217,9 @@ def build_coarse_place_calibration_bundle_from_replay(
         labels=np.asarray(bundle[labels_key], dtype=np.int32),
         roi_masks=np.asarray(bundle[roi_masks_key], dtype=bool),
         reference_template=np.asarray(bundle[reference_key], dtype=np.float32),
-        neuropil_masks=(
-            np.asarray(bundle[neuropil_key], dtype=bool)
-            if neuropil_key in bundle
-            else None
-        ),
+        neuropil_masks=np.asarray(bundle[neuropil_key], dtype=bool)
+        if neuropil_key in bundle
+        else None,
         output_dir=output_dir,
         decode_window_frames=decode_window_frames,
         decoder_type=decoder_type,

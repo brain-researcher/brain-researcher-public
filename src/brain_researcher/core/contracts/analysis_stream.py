@@ -13,7 +13,7 @@ The canonical contract is `AnalysisStreamEventV1`, a discriminated union on
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, Literal, Union
+from typing import Any, Annotated, Literal, Union
 
 from pydantic import BaseModel, Field
 

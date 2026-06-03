@@ -144,6 +144,4 @@ def demo(
             for s in copilot.suggest_tools(query, k=k)
         ]
 
-    console.print(
-        JSON.from_data({"api_url": base, "query": query, "suggestions": suggestions})
-    )
+    console.print(JSON.from_data({"api_url": base, "query": query, "suggestions": suggestions}))

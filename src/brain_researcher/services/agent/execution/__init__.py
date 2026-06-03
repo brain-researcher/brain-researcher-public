@@ -1,12 +1,12 @@
 """Execution helpers for running long-lived neuroimaging tools."""
 
-from .logging import JobLogEmitter
 from .runners import (
-    CommandExecutionError,
-    CommandResult,
     CommandSpec,
+    CommandResult,
+    CommandExecutionError,
     run_command,
 )
+from .logging import JobLogEmitter
 
 __all__ = [
     "CommandSpec",

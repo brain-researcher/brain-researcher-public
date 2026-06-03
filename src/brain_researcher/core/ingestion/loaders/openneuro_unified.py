@@ -14,7 +14,6 @@ Date: 2025-08-25
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
@@ -27,9 +26,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
+import hashlib
 
-import pandas as pd
 import requests
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -91,9 +91,10 @@ class OpenNeuroUnifiedLoader:
 
         # Session for connection pooling
         self.session = requests.Session()
-        self.session.headers.update(
-            {"Content-Type": "application/json", "User-Agent": "BrainResearcher/1.0"}
-        )
+        self.session.headers.update({
+            "Content-Type": "application/json",
+            "User-Agent": "BrainResearcher/1.0"
+        })
 
         # Load NICLIP task mappings
         self._load_niclip_mappings()
@@ -122,9 +123,7 @@ class OpenNeuroUnifiedLoader:
         self.task_mappings = {}
 
         # Try to load NICLIP task mappings
-        mapping_file = (
-            self.niclip_dir / "data" / "cognitive_atlas" / "task_mappings.json"
-        )
+        mapping_file = self.niclip_dir / "data" / "cognitive_atlas" / "task_mappings.json"
         if mapping_file.exists():
             try:
                 with open(mapping_file) as f:
@@ -182,7 +181,7 @@ class OpenNeuroUnifiedLoader:
         task: Optional[str] = None,
         limit: int = 100,
         skip: int = 0,
-        demo_mode: Optional[bool] = None,
+        demo_mode: Optional[bool] = None
     ) -> List[Dict[str, Any]]:
         """
         Query OpenNeuro datasets using GraphQL API.
@@ -280,9 +279,7 @@ class OpenNeuroUnifiedLoader:
                             tasks = summary.get("tasks", [])
 
                             # Check modality filter
-                            if modality and modality.upper() not in [
-                                m.upper() for m in modalities
-                            ]:
+                            if modality and modality.upper() not in [m.upper() for m in modalities]:
                                 continue
 
                             # Check task filter
@@ -294,14 +291,8 @@ class OpenNeuroUnifiedLoader:
                         datasets.append(dataset)
 
             if modality or task:
-                total_before_filter = (
-                    len(response["data"]["datasets"]["edges"])
-                    if response and "data" in response
-                    else 0
-                )
-                logger.info(
-                    f"Retrieved {len(datasets)} datasets from OpenNeuro (filtered from {total_before_filter})"
-                )
+                total_before_filter = len(response["data"]["datasets"]["edges"]) if response and "data" in response else 0
+                logger.info(f"Retrieved {len(datasets)} datasets from OpenNeuro (filtered from {total_before_filter})")
             else:
                 logger.info(f"Retrieved {len(datasets)} datasets from OpenNeuro")
 
@@ -312,9 +303,7 @@ class OpenNeuroUnifiedLoader:
             self.stats["errors"].append(f"Query failed: {str(e)}")
             raise
 
-    def get_dataset_details(
-        self, dataset_id: str, demo_mode: Optional[bool] = None
-    ) -> Dict[str, Any]:
+    def get_dataset_details(self, dataset_id: str, demo_mode: Optional[bool] = None) -> Dict[str, Any]:
         """
         Get detailed information about a specific dataset.
 
@@ -399,7 +388,7 @@ class OpenNeuroUnifiedLoader:
         snapshot: Optional[str] = None,
         files_pattern: Optional[str] = None,
         max_files: Optional[int] = None,
-        demo_mode: Optional[bool] = None,
+        demo_mode: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
         Download a dataset from OpenNeuro.
@@ -439,7 +428,6 @@ class OpenNeuroUnifiedLoader:
         # Filter files if pattern provided
         if files_pattern:
             import fnmatch
-
             files = [f for f in files if fnmatch.fnmatch(f["filename"], files_pattern)]
 
         # Limit files if max specified
@@ -458,7 +446,10 @@ class OpenNeuroUnifiedLoader:
 
             for file_info in files:
                 future = executor.submit(
-                    self._download_file, dataset_id, file_info, dataset_dir
+                    self._download_file,
+                    dataset_id,
+                    file_info,
+                    dataset_dir
                 )
                 futures.append(future)
 
@@ -495,7 +486,9 @@ class OpenNeuroUnifiedLoader:
         return download_stats
 
     def _execute_graphql(
-        self, query: str, variables: Optional[Dict] = None
+        self,
+        query: str,
+        variables: Optional[Dict] = None
     ) -> Dict[str, Any]:
         """
         Execute a GraphQL query against OpenNeuro API.
@@ -507,11 +500,18 @@ class OpenNeuroUnifiedLoader:
         Returns:
             API response as dictionary
         """
-        payload = {"query": query, "variables": variables or {}}
+        payload = {
+            "query": query,
+            "variables": variables or {}
+        }
 
         for attempt in range(self.retry_attempts):
             try:
-                response = self.session.post(GRAPHQL_ENDPOINT, json=payload, timeout=30)
+                response = self.session.post(
+                    GRAPHQL_ENDPOINT,
+                    json=payload,
+                    timeout=30
+                )
                 self.stats["api_calls"] += 1
 
                 response.raise_for_status()
@@ -526,12 +526,15 @@ class OpenNeuroUnifiedLoader:
                 logger.warning(f"API request failed (attempt {attempt + 1}): {e}")
 
                 if attempt < self.retry_attempts - 1:
-                    time.sleep(self.retry_delay * (2**attempt))  # Exponential backoff
+                    time.sleep(self.retry_delay * (2 ** attempt))  # Exponential backoff
                 else:
                     raise
 
     def _download_file(
-        self, dataset_id: str, file_info: Dict[str, Any], dataset_dir: Path
+        self,
+        dataset_id: str,
+        file_info: Dict[str, Any],
+        dataset_dir: Path
     ) -> Dict[str, Any]:
         """
         Download a single file from OpenNeuro.
@@ -571,7 +574,7 @@ class OpenNeuroUnifiedLoader:
                         return {
                             "status": "downloaded",
                             "filename": filename,
-                            "size": file_size,
+                            "size": file_size
                         }
                 else:
                     # HTTP download
@@ -587,7 +590,7 @@ class OpenNeuroUnifiedLoader:
                     return {
                         "status": "downloaded",
                         "filename": filename,
-                        "size": file_size,
+                        "size": file_size
                     }
 
             except Exception as e:
@@ -609,9 +612,18 @@ class OpenNeuroUnifiedLoader:
         """
         try:
             # Use AWS CLI with no-sign-request for public buckets
-            cmd = ["aws", "s3", "cp", s3_url, str(local_path), "--no-sign-request"]
+            cmd = [
+                "aws", "s3", "cp",
+                s3_url, str(local_path),
+                "--no-sign-request"
+            ]
 
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
 
             if result.returncode == 0:
                 return True
@@ -667,7 +679,7 @@ class OpenNeuroUnifiedLoader:
         self,
         dataset_id: str,
         file_pattern: Optional[str] = None,
-        demo_mode: Optional[bool] = None,
+        demo_mode: Optional[bool] = None
     ) -> List[Dict[str, Any]]:
         """
         Get list of files in a dataset.
@@ -692,13 +704,15 @@ class OpenNeuroUnifiedLoader:
 
         if file_pattern:
             import fnmatch
-
             files = [f for f in files if fnmatch.fnmatch(f["filename"], file_pattern)]
 
         return files
 
     def search_datasets_by_keyword(
-        self, keyword: str, limit: int = 20, demo_mode: Optional[bool] = None
+        self,
+        keyword: str,
+        limit: int = 20,
+        demo_mode: Optional[bool] = None
     ) -> List[Dict[str, Any]]:
         """
         Search datasets by keyword in name or description.
@@ -747,7 +761,7 @@ class OpenNeuroUnifiedLoader:
             **self.stats,
             "cache_size_mb": self._get_cache_size() / (1024 * 1024),
             "data_size_gb": self._get_data_size() / (1024 * 1024 * 1024),
-            "task_mappings_loaded": len(self.task_mappings),
+            "task_mappings_loaded": len(self.task_mappings)
         }
 
     def _get_cache_size(self) -> int:
@@ -773,7 +787,10 @@ class OpenNeuroUnifiedLoader:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             logger.info("Cache cleared")
 
-    def export_for_kg(self, dataset_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    def export_for_kg(
+        self,
+        dataset_ids: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """
         Export dataset metadata for knowledge graph integration.
 
@@ -804,38 +821,32 @@ class OpenNeuroUnifiedLoader:
                 dataset = json.load(f)
 
             # Create dataset node
-            nodes.append(
-                {
-                    "id": f"openneuro_{dataset_id}",
-                    "type": "Dataset",
-                    "properties": {
-                        "source": "OpenNeuro",
-                        "dataset_id": dataset_id,
-                        "name": dataset.get("name", ""),
-                        "created": dataset.get("created", ""),
-                        "public": dataset.get("public", False),
-                    },
+            nodes.append({
+                "id": f"openneuro_{dataset_id}",
+                "type": "Dataset",
+                "properties": {
+                    "source": "OpenNeuro",
+                    "dataset_id": dataset_id,
+                    "name": dataset.get("name", ""),
+                    "created": dataset.get("created", ""),
+                    "public": dataset.get("public", False)
                 }
-            )
+            })
 
             # Add summary info
             summary = dataset.get("draft", {}).get("summary", {})
             if summary:
-                nodes.append(
-                    {
-                        "id": f"openneuro_{dataset_id}_summary",
-                        "type": "DatasetSummary",
-                        "properties": summary,
-                    }
-                )
+                nodes.append({
+                    "id": f"openneuro_{dataset_id}_summary",
+                    "type": "DatasetSummary",
+                    "properties": summary
+                })
 
-                edges.append(
-                    {
-                        "source": f"openneuro_{dataset_id}",
-                        "target": f"openneuro_{dataset_id}_summary",
-                        "type": "HAS_SUMMARY",
-                    }
-                )
+                edges.append({
+                    "source": f"openneuro_{dataset_id}",
+                    "target": f"openneuro_{dataset_id}_summary",
+                    "type": "HAS_SUMMARY"
+                })
 
             # Add modalities
             for modality in summary.get("modalities", []):
@@ -843,21 +854,17 @@ class OpenNeuroUnifiedLoader:
 
                 # Create modality node if not exists
                 if not any(n["id"] == modality_id for n in nodes):
-                    nodes.append(
-                        {
-                            "id": modality_id,
-                            "type": "Modality",
-                            "properties": {"name": modality},
-                        }
-                    )
+                    nodes.append({
+                        "id": modality_id,
+                        "type": "Modality",
+                        "properties": {"name": modality}
+                    })
 
-                edges.append(
-                    {
-                        "source": f"openneuro_{dataset_id}",
-                        "target": modality_id,
-                        "type": "HAS_MODALITY",
-                    }
-                )
+                edges.append({
+                    "source": f"openneuro_{dataset_id}",
+                    "target": modality_id,
+                    "type": "HAS_MODALITY"
+                })
 
             # Add tasks with NICLIP mapping
             for task in summary.get("tasks", []):
@@ -868,45 +875,37 @@ class OpenNeuroUnifiedLoader:
                     # Get cognitive concepts from NICLIP
                     concepts = self.get_task_concepts(task)
 
-                    nodes.append(
-                        {
-                            "id": task_id,
-                            "type": "Task",
-                            "properties": {
-                                "name": task,
-                                "cognitive_concepts": concepts,
-                            },
+                    nodes.append({
+                        "id": task_id,
+                        "type": "Task",
+                        "properties": {
+                            "name": task,
+                            "cognitive_concepts": concepts
                         }
-                    )
+                    })
 
-                edges.append(
-                    {
-                        "source": f"openneuro_{dataset_id}",
-                        "target": task_id,
-                        "type": "HAS_TASK",
-                    }
-                )
+                edges.append({
+                    "source": f"openneuro_{dataset_id}",
+                    "target": task_id,
+                    "type": "HAS_TASK"
+                })
 
                 # Add edges to cognitive concepts
                 for concept in concepts:
                     concept_id = f"concept_{concept}"
 
                     if not any(n["id"] == concept_id for n in nodes):
-                        nodes.append(
-                            {
-                                "id": concept_id,
-                                "type": "CognitiveConcept",
-                                "properties": {"name": concept},
-                            }
-                        )
+                        nodes.append({
+                            "id": concept_id,
+                            "type": "CognitiveConcept",
+                            "properties": {"name": concept}
+                        })
 
-                    edges.append(
-                        {
-                            "source": task_id,
-                            "target": concept_id,
-                            "type": "INVOLVES_CONCEPT",
-                        }
-                    )
+                    edges.append({
+                        "source": task_id,
+                        "target": concept_id,
+                        "type": "INVOLVES_CONCEPT"
+                    })
 
         return {
             "nodes": nodes,
@@ -915,8 +914,8 @@ class OpenNeuroUnifiedLoader:
                 "source": "OpenNeuro",
                 "datasets": len(dataset_ids),
                 "export_time": datetime.now().isoformat(),
-                "niclip_mappings_used": len(self.task_mappings),
-            },
+                "niclip_mappings_used": len(self.task_mappings)
+            }
         }
 
     def _generate_sample_datasets(self) -> List[Dict[str, Any]]:
@@ -932,9 +931,9 @@ class OpenNeuroUnifiedLoader:
                         "modalities": ["MRI"],
                         "tasks": ["motor", "rest"],
                         "subjects": 20,
-                        "sessions": 1,
+                        "sessions": 1
                     }
-                },
+                }
             },
             {
                 "id": "ds000030",
@@ -946,9 +945,9 @@ class OpenNeuroUnifiedLoader:
                         "modalities": ["MRI"],
                         "tasks": ["balloon", "stopsignal", "taskswitch"],
                         "subjects": 130,
-                        "sessions": 1,
+                        "sessions": 1
                     }
-                },
+                }
             },
             {
                 "id": "ds000224",
@@ -960,10 +959,10 @@ class OpenNeuroUnifiedLoader:
                         "modalities": ["MRI", "MEG"],
                         "tasks": ["visual", "perception"],
                         "subjects": 16,
-                        "sessions": 2,
+                        "sessions": 2
                     }
-                },
-            },
+                }
+            }
         ]
 
         logger.info(f"Demo mode: Generated {len(sample_datasets)} sample datasets")
@@ -981,27 +980,27 @@ class OpenNeuroUnifiedLoader:
                     "Name": f"Sample Dataset {dataset_id}",
                     "BIDSVersion": "1.6.0",
                     "License": "CC0",
-                    "Authors": ["Researcher A", "Researcher B"],
+                    "Authors": ["Researcher A", "Researcher B"]
                 },
                 "summary": {
                     "modalities": ["MRI"],
                     "tasks": ["task1", "task2"],
                     "subjects": 10,
-                    "sessions": 1,
+                    "sessions": 1
                 },
                 "files": [
                     {
                         "filename": "dataset_description.json",
                         "size": 1024,
-                        "urls": ["http://example.com/file1"],
+                        "urls": ["http://example.com/file1"]
                     },
                     {
                         "filename": "participants.tsv",
                         "size": 2048,
-                        "urls": ["http://example.com/file2"],
-                    },
-                ],
-            },
+                        "urls": ["http://example.com/file2"]
+                    }
+                ]
+            }
         }
 
 
@@ -1028,7 +1027,7 @@ def main():
             print(f"  Tasks: {', '.join(summary.get('tasks', []))}")
 
             # Check NICLIP mapping for tasks
-            for task in summary.get("tasks", []):
+            for task in summary.get('tasks', []):
                 concepts = loader.get_task_concepts(task)
                 if concepts:
                     print(f"    Task '{task}' maps to concepts: {concepts}")

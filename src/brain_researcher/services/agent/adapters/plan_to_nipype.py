@@ -12,12 +12,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from brain_researcher.services.shared.planner.models import Plan, StepSpec, RuntimeKind
 from brain_researcher.services.agent.adapters.tool_interface_map import (
-    InterfaceSpec,
     get_interface_spec,
     load_tool_interface_map,
+    InterfaceSpec,
 )
-from brain_researcher.services.shared.planner.models import Plan, RuntimeKind, StepSpec
 
 logger = logging.getLogger(__name__)
 
@@ -132,9 +132,7 @@ def _derive_connections(
     warnings: List[str] = []
 
     # Build index of which steps produce which resources
-    resource_producers: Dict[str, Tuple[StepSpec, str]] = (
-        {}
-    )  # resource_name -> (step, resource_type)
+    resource_producers: Dict[str, Tuple[StepSpec, str]] = {}  # resource_name -> (step, resource_type)
     for step in steps:
         for res_name, res_type in (step.produces or {}).items():
             if res_name in resource_producers:
@@ -180,21 +178,13 @@ def _derive_connections(
             to_field = consumer_consumes_map.get(res_name, "in_file")
 
             # Add connection
-            from_node = step_to_node.get(
-                producer_step.id, _sanitize_node_name(producer_step.id)
-            )
-            to_node = step_to_node.get(
-                consumer_step.id, _sanitize_node_name(consumer_step.id)
-            )
+            from_node = step_to_node.get(producer_step.id, _sanitize_node_name(producer_step.id))
+            to_node = step_to_node.get(consumer_step.id, _sanitize_node_name(consumer_step.id))
 
             connections.append((from_node, from_field, to_node, to_field))
             logger.debug(
                 "Added connection: %s.%s -> %s.%s (resource: %s)",
-                from_node,
-                from_field,
-                to_node,
-                to_field,
-                res_name,
+                from_node, from_field, to_node, to_field, res_name
             )
 
     # Fallback: if no explicit resources connect steps, create a linear chain.
@@ -218,12 +208,8 @@ def _derive_connections(
             from_field = next(iter(produces_map.values()), "out_file")
             to_field = next(iter(consumes_map.values()), "in_file")
 
-            from_node = step_to_node.get(
-                producer_step.id, _sanitize_node_name(producer_step.id)
-            )
-            to_node = step_to_node.get(
-                consumer_step.id, _sanitize_node_name(consumer_step.id)
-            )
+            from_node = step_to_node.get(producer_step.id, _sanitize_node_name(producer_step.id))
+            to_node = step_to_node.get(consumer_step.id, _sanitize_node_name(consumer_step.id))
 
             connections.append((from_node, from_field, to_node, to_field))
 

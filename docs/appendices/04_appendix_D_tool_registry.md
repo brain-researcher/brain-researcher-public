@@ -36,7 +36,7 @@ This appendix has two parts.
 | `src/brain_researcher/services/mcp/research_summaries.py` | trajectory and bug-digest summaries over run/candidate artifacts |
 | `src/brain_researcher/services/mcp/sherlock_tools.py` | Sherlock/OAK guide, Slurm rendering, log/job diagnostics |
 | `docs/mcp.md` | user-facing MCP flow, env knobs, execution policy, external coding-agent loop |
-| `docs/design/mcp_surface_tiering.md` | default, advanced, ops tiers and capability-family policy |
+| `docs/mcp.md#surface-tiers` | default, advanced, ops tiers and capability-family policy |
 | `docs/specs/br_mcp_mode_profile_spec.md` | hosted cloud, local Docker, and HPC deployment-mode contract |
 | `docs/mcp_tools.schema.json` | machine-readable tool catalog (72 entries) |
 | `infrastructure/docker/Dockerfile.mcp` | Docker packaging, port 7000, runtime dependencies |
@@ -126,7 +126,7 @@ flowchart TD
   Dispatcher --> Recipe[execution recipe generation]
   Dispatcher --> AdminExec[gated tool/pipeline execution]
   Dispatcher --> RunObs[run and artifact observability]
-  Dispatcher --> KG[NeuroKG read and reasoning tools]
+  Dispatcher --> KG[BR-KG read and reasoning tools]
   Dispatcher --> Literature[Google and DeepXiv literature tools]
   Dispatcher --> Grounding[grounding resolver and gate]
   Dispatcher --> Memory[derived memory store]
@@ -258,7 +258,7 @@ flowchart TD
 | External coding-agent loop | deterministic discovery, recipe, observation, comparison, session logging | `loop_profile_get`, `tool_search`, `get_execution_recipe`, `run_bundle_get`, `run_scorecard`, `run_compare`, `write_session_snapshot` |
 | Neuroimaging planning | read-only facts, blockers, tool candidates, handoff envelope | `plan_preflight`, `plan_create`, `get_latest_plan` |
 | Run review | correctness/completeness/judgment review over BR or external artifacts | `run_code_review`, `run_scientific_review`, `request_external_scientific_review_directive`, `submit_external_scientific_review_verdict` |
-| NeuroKG reasoning | retrieve nodes, paths, datasets, structural signals, hypotheses | `kg_search_nodes`, `kg_neighbors`, `kg_multihop_qa`, `kg_probe`, `kg_hypothesis_workflow` |
+| BR-KG reasoning | retrieve nodes, paths, datasets, structural signals, hypotheses | `kg_search_nodes`, `kg_neighbors`, `kg_multihop_qa`, `kg_probe`, `kg_hypothesis_workflow` |
 | Hypothesis generation | candidate cards, hot-load research, topology shifts | `kg_hypothesis_candidate_cards`, `hypothesis_hot_load_research`, `kg_detect_topology_shifts` |
 | Literature grounding | file search, deep research, arXiv/PMC search/read | `google_file_search`, `google_deep_research_start`, `google_deep_research`, `deepxiv` |
 | Evidence-basis gate | validate/downgrade final-answer anchors | `grounding_resolve`, `grounding_gate_evidence_basis` |

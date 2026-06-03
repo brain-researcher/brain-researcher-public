@@ -69,16 +69,16 @@ class ResolvedFile:
 class FileResolverConfig:
     """Configuration for FileResolver."""
 
-    orchestrator_url: str = field(default_factory=_resolve_orchestrator_url)
+    orchestrator_url: str = field(
+        default_factory=_resolve_orchestrator_url
+    )
     cache_dir: Path = field(
         default_factory=lambda: Path(
             os.getenv("FILE_CACHE_DIR", "/tmp/brain_researcher_files")
         )
     )
     max_file_size: int = MAX_FILE_SIZE
-    allowed_content_types: Set[str] = field(
-        default_factory=lambda: ALLOWED_CONTENT_TYPES.copy()
-    )
+    allowed_content_types: Set[str] = field(default_factory=lambda: ALLOWED_CONTENT_TYPES.copy())
     auth_token: Optional[str] = field(
         default_factory=lambda: os.getenv("ORCHESTRATOR_AUTH_TOKEN")
     )
@@ -186,9 +186,7 @@ class FileResolver:
                         filename=safe_filename,
                     )
                 else:
-                    logger.warning(
-                        f"Cache checksum mismatch for {safe_file_id}, re-downloading"
-                    )
+                    logger.warning(f"Cache checksum mismatch for {safe_file_id}, re-downloading")
                     cached_path.unlink()
             else:
                 # No checksum to verify, use cached file
@@ -367,10 +365,7 @@ class FileResolver:
 
                     # Check size from headers
                     content_length = response.headers.get("content-length")
-                    if (
-                        content_length
-                        and int(content_length) > self.config.max_file_size
-                    ):
+                    if content_length and int(content_length) > self.config.max_file_size:
                         raise SecurityValidationError(
                             f"File too large: {content_length} bytes"
                         )

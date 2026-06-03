@@ -67,7 +67,7 @@ auxiliary field (e.g. `evidence_json`) or fetched through an on-demand adapter.
 ## On-demand Evidence Feed Requirements
 
 The on-demand adapters rely on flat JSON payloads stored under
-`data/neurokg/raw/evidence`. Populate each file with the minimal schema below or
+`data/br-kg/raw/evidence`. Populate each file with the minimal schema below or
 wire the adapter to a live API that returns an equivalent structure.
 
 - **NeuroQuery (`neuroquery_sample.json`)**
@@ -75,7 +75,7 @@ wire the adapter to a live API that returns an equivalent structure.
     `confidence`, `method`, and `source`.
   - Recommended generation: run the NeuroQuery API or CLI against each canonical
     `task_id`, store the Top-K region scores, then copy the file to
-    `data/neurokg/raw/evidence/neuroquery.json`.
+    `data/br-kg/raw/evidence/neuroquery.json`.
 - **NiMARE (`nimare_sample.json`)**
   - JSON array with `task_id`, `region_id`, and `probability` (or another scalar
     key passed as `default_score_key`), plus optional `method` metadata.
@@ -94,13 +94,13 @@ wire the adapter to a live API that returns an equivalent structure.
     anndata), taking Top-K genes per region, and writing the flattened table.
 
 When the JSON files are present the corresponding entries in
-`configs/neurokg/data_config.json` will activate automatically. For real-time
+`configs/br-kg/data_config.json` will activate automatically. For real-time
 fetching, point `data_path` at a streaming cache directory or omit it and
 override the adapter to call the external service directly.
 
 ## Configuration Contract
 
-`configs/neurokg/data_config.json` should declare sources using the following structure:
+`configs/br-kg/data_config.json` should declare sources using the following structure:
 
 ```json
 {

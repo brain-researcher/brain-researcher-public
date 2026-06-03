@@ -15,7 +15,7 @@ sources:
   - https://github.com/brain-researcher/brain-researcher
 maintainers:
   - name: Brain Researcher Team
-    email: team@brain-researcher.com
+    email: team@${PUBLIC_HOSTNAME}
 dependencies:
   - name: istio-base
     version: "1.19.0"

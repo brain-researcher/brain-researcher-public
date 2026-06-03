@@ -4,11 +4,10 @@ Configuration resolver for agent service.
 Provides startup-time resolution of service endpoints and configuration.
 """
 
-import logging
 import os
-from typing import Optional
-
+import logging
 import requests
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

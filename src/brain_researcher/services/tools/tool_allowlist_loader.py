@@ -189,7 +189,9 @@ def _allow_remote_execution_tools() -> bool:
 
 
 def _allow_all_runtime_tools() -> bool:
-    return os.environ.get("BR_AGENT_ALLOW_ALL_RUNTIME_TOOLS", "").strip().lower() in {
+    return os.environ.get(
+        "BR_AGENT_ALLOW_ALL_RUNTIME_TOOLS", ""
+    ).strip().lower() in {
         "1",
         "true",
         "yes",
@@ -336,9 +338,7 @@ def load_full_tool_allowlist(*, include_workflows: bool = True) -> list[str]:
     try:
         from brain_researcher.services.tools.catalog_loader import load_tool_specs
     except Exception as exc:  # pragma: no cover - defensive
-        raise RuntimeError(
-            "Unable to load tool catalog for diagnostic allowlist"
-        ) from exc
+        raise RuntimeError("Unable to load tool catalog for diagnostic allowlist") from exc
 
     specs = load_tool_specs(
         force_reload=False,

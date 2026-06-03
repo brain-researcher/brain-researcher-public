@@ -4,14 +4,14 @@ MONAI deep learning tool for medical imaging.
 Implements deep learning models for neuroimaging using MONAI framework.
 """
 
-import json
 import logging
-import warnings
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+import json
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Tuple
+import warnings
+
+from pydantic import BaseModel, Field, ConfigDict
 
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -23,121 +23,199 @@ logger = logging.getLogger(__name__)
 
 class MONAIArgs(BaseModel):
     """Arguments for MONAI deep learning analysis."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Task specification
     task: str = Field(
         default="segmentation",
-        description="Task type: 'segmentation', 'classification', 'registration', 'synthesis', 'reconstruction'",
+        description="Task type: 'segmentation', 'classification', 'registration', 'synthesis', 'reconstruction'"
     )
 
     # Model selection
     model_name: str = Field(
         default="unet",
-        description="Model: 'unet', 'unetr', 'swin_unetr', 'segresnet', 'densenet', 'efficientnet', 'vit'",
+        description="Model: 'unet', 'unetr', 'swin_unetr', 'segresnet', 'densenet', 'efficientnet', 'vit'"
     )
     pretrained: bool = Field(
-        default=True, description="Use pretrained weights if available"
+        default=True,
+        description="Use pretrained weights if available"
     )
     pretrained_path: Optional[str] = Field(
-        default=None, description="Path to pretrained model weights"
+        default=None,
+        description="Path to pretrained model weights"
     )
 
     # Data parameters
-    input_files: List[str] = Field(description="Input image files (NIfTI format)")
+    input_files: List[str] = Field(
+        description="Input image files (NIfTI format)"
+    )
     label_files: Optional[List[str]] = Field(
-        default=None, description="Label/mask files for training"
+        default=None,
+        description="Label/mask files for training"
     )
     test_files: Optional[List[str]] = Field(
-        default=None, description="Test image files"
+        default=None,
+        description="Test image files"
     )
 
     # Preprocessing
     spacing: Optional[List[float]] = Field(
-        default=None, description="Target voxel spacing [x, y, z] in mm"
+        default=None,
+        description="Target voxel spacing [x, y, z] in mm"
     )
     roi_size: Optional[List[int]] = Field(
-        default=None, description="ROI size for patches [x, y, z]"
+        default=None,
+        description="ROI size for patches [x, y, z]"
     )
-    normalize: bool = Field(default=True, description="Normalize intensities")
+    normalize: bool = Field(
+        default=True,
+        description="Normalize intensities"
+    )
     augment: bool = Field(
-        default=True, description="Apply data augmentation during training"
+        default=True,
+        description="Apply data augmentation during training"
     )
 
     # Model architecture
-    in_channels: int = Field(default=1, description="Number of input channels")
+    in_channels: int = Field(
+        default=1,
+        description="Number of input channels"
+    )
     out_channels: int = Field(
-        default=2, description="Number of output channels/classes"
+        default=2,
+        description="Number of output channels/classes"
     )
     feature_size: int = Field(
-        default=48, description="Base feature size for UNet variants"
+        default=48,
+        description="Base feature size for UNet variants"
     )
     hidden_size: int = Field(
-        default=768, description="Hidden size for transformer models"
+        default=768,
+        description="Hidden size for transformer models"
     )
     mlp_dim: int = Field(
-        default=3072, description="MLP dimension for transformer models"
+        default=3072,
+        description="MLP dimension for transformer models"
     )
-    num_heads: int = Field(default=12, description="Number of attention heads")
+    num_heads: int = Field(
+        default=12,
+        description="Number of attention heads"
+    )
 
     # Training parameters
     mode: str = Field(
-        default="inference", description="Mode: 'train', 'inference', 'finetune'"
+        default="inference",
+        description="Mode: 'train', 'inference', 'finetune'"
     )
-    epochs: int = Field(default=100, description="Number of training epochs")
-    batch_size: int = Field(default=1, description="Batch size")
-    learning_rate: float = Field(default=1e-4, description="Learning rate")
+    epochs: int = Field(
+        default=100,
+        description="Number of training epochs"
+    )
+    batch_size: int = Field(
+        default=1,
+        description="Batch size"
+    )
+    learning_rate: float = Field(
+        default=1e-4,
+        description="Learning rate"
+    )
     weight_decay: float = Field(
-        default=1e-5, description="Weight decay for regularization"
+        default=1e-5,
+        description="Weight decay for regularization"
     )
     optimizer: str = Field(
-        default="adamw", description="Optimizer: 'adam', 'adamw', 'sgd'"
+        default="adamw",
+        description="Optimizer: 'adam', 'adamw', 'sgd'"
     )
     loss_function: str = Field(
-        default="dice", description="Loss: 'dice', 'focal', 'tversky', 'ce', 'mse'"
+        default="dice",
+        description="Loss: 'dice', 'focal', 'tversky', 'ce', 'mse'"
     )
 
     # Validation
-    val_interval: int = Field(default=2, description="Validation interval (epochs)")
-    val_split: float = Field(default=0.2, description="Validation split ratio")
+    val_interval: int = Field(
+        default=2,
+        description="Validation interval (epochs)"
+    )
+    val_split: float = Field(
+        default=0.2,
+        description="Validation split ratio"
+    )
 
     # Inference parameters
     sliding_window: bool = Field(
-        default=True, description="Use sliding window inference"
+        default=True,
+        description="Use sliding window inference"
     )
-    overlap: float = Field(default=0.5, description="Overlap ratio for sliding window")
-    sw_batch_size: int = Field(default=4, description="Batch size for sliding window")
+    overlap: float = Field(
+        default=0.5,
+        description="Overlap ratio for sliding window"
+    )
+    sw_batch_size: int = Field(
+        default=4,
+        description="Batch size for sliding window"
+    )
 
     # Post-processing
     threshold: float = Field(
-        default=0.5, description="Threshold for binary segmentation"
+        default=0.5,
+        description="Threshold for binary segmentation"
     )
     largest_component: bool = Field(
-        default=False, description="Keep only largest connected component"
+        default=False,
+        description="Keep only largest connected component"
     )
     remove_small_objects: bool = Field(
-        default=False, description="Remove small objects"
+        default=False,
+        description="Remove small objects"
     )
-    min_size: int = Field(default=100, description="Minimum object size in voxels")
+    min_size: int = Field(
+        default=100,
+        description="Minimum object size in voxels"
+    )
 
     # Output options
-    output_dir: str = Field(description="Output directory for results")
-    save_model: bool = Field(default=True, description="Save trained model")
-    save_predictions: bool = Field(default=True, description="Save predictions")
+    output_dir: str = Field(
+        description="Output directory for results"
+    )
+    save_model: bool = Field(
+        default=True,
+        description="Save trained model"
+    )
+    save_predictions: bool = Field(
+        default=True,
+        description="Save predictions"
+    )
     save_attention_maps: bool = Field(
-        default=False, description="Save attention maps (for transformer models)"
+        default=False,
+        description="Save attention maps (for transformer models)"
     )
 
     # Advanced options
     mixed_precision: bool = Field(
-        default=False, description="Use automatic mixed precision"
+        default=False,
+        description="Use automatic mixed precision"
     )
-    deterministic: bool = Field(default=False, description="Use deterministic training")
-    num_workers: int = Field(default=4, description="Number of data loading workers")
-    device: str = Field(default="auto", description="Device: 'cuda', 'cpu', 'auto'")
-    random_state: int = Field(default=42, description="Random seed")
-    verbose: bool = Field(default=True, description="Verbose output")
+    deterministic: bool = Field(
+        default=False,
+        description="Use deterministic training"
+    )
+    num_workers: int = Field(
+        default=4,
+        description="Number of data loading workers"
+    )
+    device: str = Field(
+        default="auto",
+        description="Device: 'cuda', 'cpu', 'auto'"
+    )
+    random_state: int = Field(
+        default=42,
+        description="Random seed"
+    )
+    verbose: bool = Field(
+        default=True,
+        description="Verbose output"
+    )
 
 
 class MONAITool(NeuroToolWrapper):
@@ -155,7 +233,6 @@ class MONAITool(NeuroToolWrapper):
 
         try:
             import torch
-
             self.torch_available = True
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             logger.info(f"PyTorch available, using device: {self.device}")
@@ -165,7 +242,6 @@ class MONAITool(NeuroToolWrapper):
 
         try:
             import monai
-
             self.monai_available = True
             logger.info(f"MONAI version {monai.__version__} available")
         except ImportError:
@@ -189,13 +265,7 @@ class MONAITool(NeuroToolWrapper):
     def get_args_schema(self):
         return MONAIArgs
 
-    def _create_unet_model(
-        self,
-        spatial_dims=3,
-        in_channels=1,
-        out_channels=2,
-        features=(32, 64, 128, 256, 512),
-    ):
+    def _create_unet_model(self, spatial_dims=3, in_channels=1, out_channels=2, features=(32, 64, 128, 256, 512)):
         """Create UNet model."""
         if self.monai_available:
             from monai.networks.nets import UNet
@@ -225,12 +295,12 @@ class MONAITool(NeuroToolWrapper):
                         nn.ReLU(),
                         nn.Conv3d(32, 64, 3, padding=1),
                         nn.ReLU(),
-                        nn.MaxPool3d(2),
+                        nn.MaxPool3d(2)
                     )
                     self.decoder = nn.Sequential(
                         nn.ConvTranspose3d(64, 32, 2, stride=2),
                         nn.ReLU(),
-                        nn.Conv3d(32, out_ch, 1),
+                        nn.Conv3d(32, out_ch, 1)
                     )
 
                 def forward(self, x):
@@ -242,16 +312,7 @@ class MONAITool(NeuroToolWrapper):
         else:
             return None
 
-    def _create_unetr_model(
-        self,
-        img_size,
-        in_channels=1,
-        out_channels=2,
-        feature_size=16,
-        hidden_size=768,
-        mlp_dim=3072,
-        num_heads=12,
-    ):
+    def _create_unetr_model(self, img_size, in_channels=1, out_channels=2, feature_size=16, hidden_size=768, mlp_dim=3072, num_heads=12):
         """Create UNETR model."""
         if self.monai_available:
             from monai.networks.nets import UNETR
@@ -272,9 +333,7 @@ class MONAITool(NeuroToolWrapper):
             logger.warning("UNETR requires MONAI installation")
             return self._create_simple_unet(in_channels, out_channels, [32, 64, 128])
 
-    def _create_swin_unetr_model(
-        self, img_size, in_channels=1, out_channels=2, feature_size=48
-    ):
+    def _create_swin_unetr_model(self, img_size, in_channels=1, out_channels=2, feature_size=48):
         """Create Swin UNETR model."""
         if self.monai_available:
             from monai.networks.nets import SwinUNETR
@@ -304,9 +363,7 @@ class MONAITool(NeuroToolWrapper):
                 blocks_up=[1, 1, 1],
             )
         else:
-            return self._create_simple_unet(
-                in_channels, out_channels, [32, 64, 128, 256]
-            )
+            return self._create_simple_unet(in_channels, out_channels, [32, 64, 128, 256])
 
     def _create_densenet_model(self, spatial_dims=3, in_channels=1, out_channels=2):
         """Create DenseNet model for classification."""
@@ -333,7 +390,7 @@ class MONAITool(NeuroToolWrapper):
                             nn.Conv3d(64, 128, 3, padding=1),
                             nn.BatchNorm3d(128),
                             nn.ReLU(),
-                            nn.AdaptiveAvgPool3d(1),
+                            nn.AdaptiveAvgPool3d(1)
                         )
                         self.classifier = nn.Linear(128, out_ch)
 
@@ -347,12 +404,10 @@ class MONAITool(NeuroToolWrapper):
             else:
                 return None
 
-    def _prepare_data_loader(
-        self, files, labels=None, transform=None, batch_size=1, shuffle=True
-    ):
+    def _prepare_data_loader(self, files, labels=None, transform=None, batch_size=1, shuffle=True):
         """Prepare data loader."""
         if self.monai_available:
-            from monai.data import DataLoader, Dataset
+            from monai.data import Dataset, DataLoader
 
             if labels:
                 data = [{"image": img, "label": lbl} for img, lbl in zip(files, labels)]
@@ -381,79 +436,56 @@ class MONAITool(NeuroToolWrapper):
 
         # Simple batching
         for i in range(0, len(data), batch_size):
-            yield data[i : i + batch_size]
+            yield data[i:i+batch_size]
 
     def _get_transforms(self, roi_size, spacing=None, augment=True):
         """Get data transforms."""
         if self.monai_available:
             from monai.transforms import (
-                Compose,
-                CropForegroundd,
-                EnsureChannelFirstd,
-                LoadImaged,
-                Orientationd,
-                RandCropByPosNegLabeld,
-                RandFlipd,
-                RandRotate90d,
-                RandShiftIntensityd,
-                ScaleIntensityRanged,
-                Spacingd,
-                ToTensord,
+                Compose, LoadImaged, EnsureChannelFirstd, Spacingd,
+                Orientationd, ScaleIntensityRanged, CropForegroundd,
+                RandCropByPosNegLabeld, RandFlipd, RandRotate90d,
+                RandShiftIntensityd, ToTensord
             )
 
             transforms = []
 
             # Basic transforms
-            transforms.extend(
-                [
-                    LoadImaged(keys=["image", "label"]),
-                    EnsureChannelFirstd(keys=["image", "label"]),
-                    Orientationd(keys=["image", "label"], axcodes="RAS"),
-                ]
-            )
+            transforms.extend([
+                LoadImaged(keys=["image", "label"]),
+                EnsureChannelFirstd(keys=["image", "label"]),
+                Orientationd(keys=["image", "label"], axcodes="RAS"),
+            ])
 
             # Spacing
             if spacing:
                 transforms.append(
-                    Spacingd(
-                        keys=["image", "label"],
-                        pixdim=spacing,
-                        mode=("bilinear", "nearest"),
-                    )
+                    Spacingd(keys=["image", "label"], pixdim=spacing, mode=("bilinear", "nearest"))
                 )
 
             # Intensity
-            transforms.extend(
-                [
-                    ScaleIntensityRanged(
-                        keys=["image"],
-                        a_min=-1000,
-                        a_max=1000,
-                        b_min=0.0,
-                        b_max=1.0,
-                        clip=True,
-                    ),
-                    CropForegroundd(keys=["image", "label"], source_key="image"),
-                ]
-            )
+            transforms.extend([
+                ScaleIntensityRanged(
+                    keys=["image"], a_min=-1000, a_max=1000,
+                    b_min=0.0, b_max=1.0, clip=True
+                ),
+                CropForegroundd(keys=["image", "label"], source_key="image"),
+            ])
 
             # Augmentation
             if augment:
-                transforms.extend(
-                    [
-                        RandCropByPosNegLabeld(
-                            keys=["image", "label"],
-                            label_key="label",
-                            spatial_size=roi_size,
-                            pos=1,
-                            neg=1,
-                            num_samples=4,
-                        ),
-                        RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
-                        RandRotate90d(keys=["image", "label"], prob=0.5, max_k=3),
-                        RandShiftIntensityd(keys=["image"], offsets=0.1, prob=0.5),
-                    ]
-                )
+                transforms.extend([
+                    RandCropByPosNegLabeld(
+                        keys=["image", "label"],
+                        label_key="label",
+                        spatial_size=roi_size,
+                        pos=1, neg=1,
+                        num_samples=4
+                    ),
+                    RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
+                    RandRotate90d(keys=["image", "label"], prob=0.5, max_k=3),
+                    RandShiftIntensityd(keys=["image"], offsets=0.1, prob=0.5),
+                ])
 
             transforms.append(ToTensord(keys=["image", "label"]))
 
@@ -461,16 +493,14 @@ class MONAITool(NeuroToolWrapper):
         else:
             return None
 
-    def _train_model(
-        self, model, train_loader, val_loader, epochs, learning_rate, device
-    ):
+    def _train_model(self, model, train_loader, val_loader, epochs, learning_rate, device):
         """Train the model."""
         if not self.torch_available:
             return {"error": "PyTorch not available for training"}
 
         import torch
         import torch.nn as nn
-        from torch.optim import SGD, Adam, AdamW
+        from torch.optim import Adam, AdamW, SGD
 
         # Setup optimizer
         optimizer = AdamW(model.parameters(), lr=learning_rate)
@@ -478,7 +508,6 @@ class MONAITool(NeuroToolWrapper):
         # Setup loss
         if self.monai_available:
             from monai.losses import DiceLoss
-
             loss_function = DiceLoss(sigmoid=True)
         else:
             loss_function = nn.BCEWithLogitsLoss()
@@ -495,9 +524,7 @@ class MONAITool(NeuroToolWrapper):
                 return batches, len(batches)
 
         train_batches, n_train_batches = _materialize_batches(train_loader)
-        val_batches, n_val_batches = (
-            _materialize_batches(val_loader) if val_loader else (None, 0)
-        )
+        val_batches, n_val_batches = _materialize_batches(val_loader) if val_loader else (None, 0)
 
         for epoch in range(epochs):
             # Training
@@ -520,17 +547,9 @@ class MONAITool(NeuroToolWrapper):
                     labels = None
 
                 if self.torch_available:
-                    inputs = (
-                        torch.tensor(inputs)
-                        if not isinstance(inputs, torch.Tensor)
-                        else inputs
-                    )
+                    inputs = torch.tensor(inputs) if not isinstance(inputs, torch.Tensor) else inputs
                     if labels is not None:
-                        labels = (
-                            torch.tensor(labels)
-                            if not isinstance(labels, torch.Tensor)
-                            else labels
-                        )
+                        labels = torch.tensor(labels) if not isinstance(labels, torch.Tensor) else labels
 
                     if device:
                         inputs = inputs.to(device)
@@ -580,17 +599,9 @@ class MONAITool(NeuroToolWrapper):
                             val_labels = val_data.get("label")
 
                         if self.torch_available:
-                            val_inputs = (
-                                torch.tensor(val_inputs)
-                                if not isinstance(val_inputs, torch.Tensor)
-                                else val_inputs
-                            )
+                            val_inputs = torch.tensor(val_inputs) if not isinstance(val_inputs, torch.Tensor) else val_inputs
                             if val_labels is not None:
-                                val_labels = (
-                                    torch.tensor(val_labels)
-                                    if not isinstance(val_labels, torch.Tensor)
-                                    else val_labels
-                                )
+                                val_labels = torch.tensor(val_labels) if not isinstance(val_labels, torch.Tensor) else val_labels
 
                             if device:
                                 val_inputs = val_inputs.to(device)
@@ -600,10 +611,7 @@ class MONAITool(NeuroToolWrapper):
                         if val_labels is not None:
                             val_outputs = model(val_inputs)
                             if val_labels.shape != val_outputs.shape:
-                                if (
-                                    val_labels.shape[1] == 1
-                                    and val_outputs.shape[1] > 1
-                                ):
+                                if val_labels.shape[1] == 1 and val_outputs.shape[1] > 1:
                                     repeat_dims = [1] * val_labels.ndim
                                     repeat_dims[1] = val_outputs.shape[1]
                                     val_labels = val_labels.repeat(*repeat_dims)
@@ -612,14 +620,12 @@ class MONAITool(NeuroToolWrapper):
                 avg_val_loss = val_loss / n_val_batches if n_val_batches else 0
                 val_losses.append(avg_val_loss)
 
-                logger.info(
-                    f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_loss:.4f}, Val Loss: {avg_val_loss:.4f}"
-                )
+                logger.info(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
 
         return {
             "train_losses": train_losses,
             "val_losses": val_losses,
-            "final_loss": train_losses[-1] if train_losses else None,
+            "final_loss": train_losses[-1] if train_losses else None
         }
 
     def _inference(self, model, test_loader, device, sliding_window=True, overlap=0.5):
@@ -640,11 +646,7 @@ class MONAITool(NeuroToolWrapper):
                     test_inputs = test_data["image"]
 
                 if self.torch_available:
-                    test_inputs = (
-                        torch.tensor(test_inputs)
-                        if not isinstance(test_inputs, torch.Tensor)
-                        else test_inputs
-                    )
+                    test_inputs = torch.tensor(test_inputs) if not isinstance(test_inputs, torch.Tensor) else test_inputs
                     if device:
                         test_inputs = test_inputs.to(device)
 
@@ -652,11 +654,8 @@ class MONAITool(NeuroToolWrapper):
                     from monai.inferers import sliding_window_inference
 
                     outputs = sliding_window_inference(
-                        test_inputs,
-                        roi_size=(96, 96, 96),
-                        sw_batch_size=4,
-                        predictor=model,
-                        overlap=overlap,
+                        test_inputs, roi_size=(96, 96, 96),
+                        sw_batch_size=4, predictor=model, overlap=overlap
                     )
                 else:
                     outputs = model(test_inputs)
@@ -677,9 +676,7 @@ class MONAITool(NeuroToolWrapper):
             from monai.metrics import DiceMetric, HausdorffDistanceMetric
 
             dice_metric = DiceMetric(include_background=False, reduction="mean")
-            hausdorff_metric = HausdorffDistanceMetric(
-                include_background=False, reduction="mean"
-            )
+            hausdorff_metric = HausdorffDistanceMetric(include_background=False, reduction="mean")
 
             # Compute metrics
             dice = dice_metric(predictions, labels)
@@ -690,7 +687,6 @@ class MONAITool(NeuroToolWrapper):
         else:
             if self.torch_available:
                 import torch
-
                 if isinstance(predictions, torch.Tensor):
                     predictions = predictions.detach().cpu().numpy()
                 if isinstance(labels, torch.Tensor):
@@ -707,7 +703,6 @@ class MONAITool(NeuroToolWrapper):
         """Save trained model."""
         if self.torch_available:
             import torch
-
             torch.save(model.state_dict(), output_path)
             logger.info(f"Model saved to {output_path}")
 
@@ -715,7 +710,6 @@ class MONAITool(NeuroToolWrapper):
         """Load model weights."""
         if self.torch_available:
             import torch
-
             model.load_state_dict(torch.load(weights_path))
             logger.info(f"Model loaded from {weights_path}")
         return model
@@ -765,7 +759,7 @@ class MONAITool(NeuroToolWrapper):
         device: str = "auto",
         random_state: int = 42,
         verbose: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute MONAI deep learning analysis."""
         try:
@@ -773,7 +767,6 @@ class MONAITool(NeuroToolWrapper):
             np.random.seed(random_state)
             if self.torch_available:
                 import torch
-
                 torch.manual_seed(random_state)
                 if deterministic:
                     torch.backends.cudnn.deterministic = True
@@ -786,16 +779,12 @@ class MONAITool(NeuroToolWrapper):
             # Setup device
             if device == "auto" and self.torch_available:
                 import torch
-
                 if not self.monai_available:
                     device_obj = torch.device("cpu")
                 else:
-                    device_obj = torch.device(
-                        "cuda" if torch.cuda.is_available() else "cpu"
-                    )
+                    device_obj = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             elif device == "cuda" and self.torch_available:
                 import torch
-
                 device_obj = torch.device("cuda")
             else:
                 device_obj = None
@@ -813,7 +802,8 @@ class MONAITool(NeuroToolWrapper):
 
             if model_name == "unet":
                 model = self._create_unet_model(
-                    in_channels=in_channels, out_channels=out_channels
+                    in_channels=in_channels,
+                    out_channels=out_channels
                 )
             elif model_name == "unetr":
                 model = self._create_unetr_model(
@@ -822,34 +812,37 @@ class MONAITool(NeuroToolWrapper):
                     out_channels=out_channels,
                     hidden_size=hidden_size,
                     mlp_dim=mlp_dim,
-                    num_heads=num_heads,
+                    num_heads=num_heads
                 )
             elif model_name == "swin_unetr":
                 model = self._create_swin_unetr_model(
                     img_size=roi_size,
                     in_channels=in_channels,
                     out_channels=out_channels,
-                    feature_size=feature_size,
+                    feature_size=feature_size
                 )
             elif model_name == "segresnet":
                 model = self._create_segresnet_model(
-                    in_channels=in_channels, out_channels=out_channels
+                    in_channels=in_channels,
+                    out_channels=out_channels
                 )
             elif model_name == "densenet":
                 model = self._create_densenet_model(
-                    in_channels=in_channels, out_channels=out_channels
+                    in_channels=in_channels,
+                    out_channels=out_channels
                 )
             else:
                 # Default to UNet
                 model = self._create_unet_model(
-                    in_channels=in_channels, out_channels=out_channels
+                    in_channels=in_channels,
+                    out_channels=out_channels
                 )
 
             if model is None:
                 return ToolResult(
                     status="error",
                     error="Failed to create model - check dependencies",
-                    data={},
+                    data={}
                 )
 
             # Load pretrained weights if available
@@ -878,25 +871,17 @@ class MONAITool(NeuroToolWrapper):
                     val_labels = None
 
                 # Get transforms
-                train_transforms = self._get_transforms(
-                    roi_size, spacing, augment=augment
-                )
+                train_transforms = self._get_transforms(roi_size, spacing, augment=augment)
                 val_transforms = self._get_transforms(roi_size, spacing, augment=False)
 
                 # Create data loaders
                 train_loader = self._prepare_data_loader(
-                    train_files,
-                    train_labels,
-                    train_transforms,
-                    batch_size=batch_size,
-                    shuffle=True,
+                    train_files, train_labels, train_transforms,
+                    batch_size=batch_size, shuffle=True
                 )
                 val_loader = self._prepare_data_loader(
-                    val_files,
-                    val_labels,
-                    val_transforms,
-                    batch_size=batch_size,
-                    shuffle=False,
+                    val_files, val_labels, val_transforms,
+                    batch_size=batch_size, shuffle=False
                 )
 
                 # Train model
@@ -904,12 +889,9 @@ class MONAITool(NeuroToolWrapper):
                     logger.info(f"Training model for {epochs} epochs")
 
                 train_results = self._train_model(
-                    model,
-                    train_loader,
-                    val_loader,
-                    epochs=epochs,
-                    learning_rate=learning_rate,
-                    device=device_obj,
+                    model, train_loader, val_loader,
+                    epochs=epochs, learning_rate=learning_rate,
+                    device=device_obj
                 )
 
                 # Save model
@@ -926,27 +908,19 @@ class MONAITool(NeuroToolWrapper):
                     logger.info("Running inference")
 
                 # Use test files or input files for inference
-                inference_files = (
-                    test_files if test_files else input_files[:5]
-                )  # Limit for demo
+                inference_files = test_files if test_files else input_files[:5]  # Limit for demo
 
                 # Prepare test loader
                 test_transforms = self._get_transforms(roi_size, spacing, augment=False)
                 test_loader = self._prepare_data_loader(
-                    inference_files,
-                    labels=None,
-                    transform=test_transforms,
-                    batch_size=1,
-                    shuffle=False,
+                    inference_files, labels=None, transform=test_transforms,
+                    batch_size=1, shuffle=False
                 )
 
                 # Run inference
                 predictions = self._inference(
-                    model,
-                    test_loader,
-                    device_obj,
-                    sliding_window=sliding_window,
-                    overlap=overlap,
+                    model, test_loader, device_obj,
+                    sliding_window=sliding_window, overlap=overlap
                 )
 
                 # Save predictions
@@ -957,7 +931,7 @@ class MONAITool(NeuroToolWrapper):
 
                 # Compute metrics if labels available
                 if label_files and test_files:
-                    test_labels = label_files[: len(test_files)]
+                    test_labels = label_files[:len(test_files)]
                     metrics = self._compute_metrics(predictions, test_labels)
                 else:
                     metrics = None
@@ -967,24 +941,24 @@ class MONAITool(NeuroToolWrapper):
 
             # Prepare results
             results = {
-                "task": task,
-                "model": model_name,
-                "mode": mode,
-                "device": str(device_obj) if device_obj else "cpu",
+                'task': task,
+                'model': model_name,
+                'mode': mode,
+                'device': str(device_obj) if device_obj else 'cpu'
             }
 
             if train_results:
-                results["training"] = train_results
+                results['training'] = train_results
 
             if metrics:
-                results["metrics"] = metrics
+                results['metrics'] = metrics
 
             if predictions:
-                results["n_predictions"] = len(predictions)
+                results['n_predictions'] = len(predictions)
 
             # Save results
             results_file = output_path / "monai_results.json"
-            with open(results_file, "w") as f:
+            with open(results_file, 'w') as f:
                 json.dump(results, f, indent=2)
 
             # Prepare message
@@ -997,21 +971,21 @@ class MONAITool(NeuroToolWrapper):
                 data={
                     "outputs": {
                         "results": str(results_file),
-                        "model": (
-                            str(output_path / f"{model_name}_{task}_model.pth")
-                            if save_model and mode in ["train", "finetune"]
-                            else None
-                        ),
-                        "predictions": str(output_path) if save_predictions else None,
+                        "model": str(output_path / f"{model_name}_{task}_model.pth") if save_model and mode in ["train", "finetune"] else None,
+                        "predictions": str(output_path) if save_predictions else None
                     },
                     "summary": results,
-                    "message": message,
-                },
+                    "message": message
+                }
             )
 
         except Exception as e:
             logger.error(f"MONAI analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class MONAITools:
@@ -1020,4 +994,6 @@ class MONAITools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all MONAI tools."""
-        return [MONAITool()]
+        return [
+            MONAITool()
+        ]

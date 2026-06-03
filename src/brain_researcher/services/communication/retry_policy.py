@@ -6,14 +6,14 @@ in distributed systems with various backoff strategies.
 """
 
 import asyncio
-import logging
 import random
 import time
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from typing import Callable, Any, Optional, List, Type, Union
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, List, Optional, Type, Union
+from dataclasses import dataclass
+import logging
+from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class RetryAttempt:
         attempt_number: int,
         delay_seconds: float,
         start_time: datetime,
-        exception: Optional[Exception] = None,
+        exception: Optional[Exception] = None
     ):
         """Initialize retry attempt.
 
@@ -100,9 +100,7 @@ class RetryAttempt:
         self.success: bool = False
         self.result: Any = None
 
-    def complete(
-        self, success: bool, result: Any = None, exception: Optional[Exception] = None
-    ):
+    def complete(self, success: bool, result: Any = None, exception: Optional[Exception] = None):
         """Mark attempt as complete.
 
         Args:
@@ -154,9 +152,7 @@ class RetryMetrics:
             self.failed_executions += 1
 
         # Calculate total delay
-        total_delay = sum(
-            attempt.delay_seconds for attempt in attempts[1:]
-        )  # Skip first attempt
+        total_delay = sum(attempt.delay_seconds for attempt in attempts[1:])  # Skip first attempt
         self.total_retry_delay_seconds += total_delay
 
         # Store attempt history (keep last 100 executions)
@@ -193,11 +189,7 @@ class RetryMetrics:
             "average_attempts_per_execution": self.get_average_attempts(),
             "total_retry_delay_seconds": self.total_retry_delay_seconds,
             "average_delay_per_execution": self.get_average_delay(),
-            "last_execution_time": (
-                self.last_execution_time.isoformat()
-                if self.last_execution_time
-                else None
-            ),
+            "last_execution_time": self.last_execution_time.isoformat() if self.last_execution_time else None
         }
 
 
@@ -205,9 +197,7 @@ class BackoffCalculator(ABC):
     """Abstract base class for backoff calculators."""
 
     @abstractmethod
-    def calculate_delay(
-        self, attempt_number: int, base_delay: float, **kwargs
-    ) -> float:
+    def calculate_delay(self, attempt_number: int, base_delay: float, **kwargs) -> float:
         """Calculate delay for given attempt.
 
         Args:
@@ -224,9 +214,7 @@ class BackoffCalculator(ABC):
 class FixedBackoff(BackoffCalculator):
     """Fixed delay backoff strategy."""
 
-    def calculate_delay(
-        self, attempt_number: int, base_delay: float, **kwargs
-    ) -> float:
+    def calculate_delay(self, attempt_number: int, base_delay: float, **kwargs) -> float:
         """Return fixed base delay."""
         return base_delay
 
@@ -234,12 +222,10 @@ class FixedBackoff(BackoffCalculator):
 class ExponentialBackoff(BackoffCalculator):
     """Exponential backoff strategy."""
 
-    def calculate_delay(
-        self, attempt_number: int, base_delay: float, **kwargs
-    ) -> float:
+    def calculate_delay(self, attempt_number: int, base_delay: float, **kwargs) -> float:
         """Calculate exponential delay."""
-        multiplier = kwargs.get("backoff_multiplier", 2.0)
-        max_delay = kwargs.get("max_delay_seconds", 60.0)
+        multiplier = kwargs.get('backoff_multiplier', 2.0)
+        max_delay = kwargs.get('max_delay_seconds', 60.0)
 
         delay = base_delay * (multiplier ** (attempt_number - 1))
         return min(delay, max_delay)
@@ -248,12 +234,10 @@ class ExponentialBackoff(BackoffCalculator):
 class LinearBackoff(BackoffCalculator):
     """Linear backoff strategy."""
 
-    def calculate_delay(
-        self, attempt_number: int, base_delay: float, **kwargs
-    ) -> float:
+    def calculate_delay(self, attempt_number: int, base_delay: float, **kwargs) -> float:
         """Calculate linear delay."""
-        multiplier = kwargs.get("backoff_multiplier", 1.0)
-        max_delay = kwargs.get("max_delay_seconds", 60.0)
+        multiplier = kwargs.get('backoff_multiplier', 1.0)
+        max_delay = kwargs.get('max_delay_seconds', 60.0)
 
         delay = base_delay + (multiplier * (attempt_number - 1))
         return min(delay, max_delay)
@@ -274,11 +258,9 @@ class FibonacciBackoff(BackoffCalculator):
         self._fib_cache[n] = self._fibonacci(n - 1) + self._fibonacci(n - 2)
         return self._fib_cache[n]
 
-    def calculate_delay(
-        self, attempt_number: int, base_delay: float, **kwargs
-    ) -> float:
+    def calculate_delay(self, attempt_number: int, base_delay: float, **kwargs) -> float:
         """Calculate Fibonacci delay."""
-        max_delay = kwargs.get("max_delay_seconds", 60.0)
+        max_delay = kwargs.get('max_delay_seconds', 60.0)
 
         fib_multiplier = self._fibonacci(attempt_number)
         delay = base_delay * fib_multiplier
@@ -288,11 +270,9 @@ class FibonacciBackoff(BackoffCalculator):
 class RandomBackoff(BackoffCalculator):
     """Random backoff strategy."""
 
-    def calculate_delay(
-        self, attempt_number: int, base_delay: float, **kwargs
-    ) -> float:
+    def calculate_delay(self, attempt_number: int, base_delay: float, **kwargs) -> float:
         """Calculate random delay."""
-        max_delay = kwargs.get("max_delay_seconds", 60.0)
+        max_delay = kwargs.get('max_delay_seconds', 60.0)
 
         # Random delay between base_delay and max_delay
         delay = random.uniform(base_delay, max_delay)
@@ -302,13 +282,11 @@ class RandomBackoff(BackoffCalculator):
 class ExponentialJitterBackoff(BackoffCalculator):
     """Exponential backoff with jitter."""
 
-    def calculate_delay(
-        self, attempt_number: int, base_delay: float, **kwargs
-    ) -> float:
+    def calculate_delay(self, attempt_number: int, base_delay: float, **kwargs) -> float:
         """Calculate exponential delay with jitter."""
-        multiplier = kwargs.get("backoff_multiplier", 2.0)
-        max_delay = kwargs.get("max_delay_seconds", 60.0)
-        jitter_max = kwargs.get("jitter_max_seconds", 1.0)
+        multiplier = kwargs.get('backoff_multiplier', 2.0)
+        max_delay = kwargs.get('max_delay_seconds', 60.0)
+        jitter_max = kwargs.get('jitter_max_seconds', 1.0)
 
         # Calculate base exponential delay
         exponential_delay = base_delay * (multiplier ** (attempt_number - 1))
@@ -346,14 +324,12 @@ class RetryPolicy:
             BackoffStrategy.LINEAR: LinearBackoff,
             BackoffStrategy.FIBONACCI: FibonacciBackoff,
             BackoffStrategy.RANDOM: RandomBackoff,
-            BackoffStrategy.EXPONENTIAL_JITTER: ExponentialJitterBackoff,
+            BackoffStrategy.EXPONENTIAL_JITTER: ExponentialJitterBackoff
         }
 
         calculator_class = strategy_map.get(self.config.backoff_strategy)
         if not calculator_class:
-            logger.warning(
-                f"Unknown backoff strategy: {self.config.backoff_strategy}, using exponential"
-            )
+            logger.warning(f"Unknown backoff strategy: {self.config.backoff_strategy}, using exponential")
             calculator_class = ExponentialBackoff
 
         return calculator_class()
@@ -389,7 +365,7 @@ class RetryPolicy:
                 attempt_number=attempt_num,
                 delay_seconds=delay,
                 start_time=datetime.utcnow(),
-                exception=last_exception,
+                exception=last_exception
             )
             attempts.append(attempt)
 
@@ -398,15 +374,14 @@ class RetryPolicy:
                 if self.config.timeout_seconds:
                     if asyncio.iscoroutinefunction(func):
                         result = await asyncio.wait_for(
-                            func(*args, **kwargs), timeout=self.config.timeout_seconds
+                            func(*args, **kwargs),
+                            timeout=self.config.timeout_seconds
                         )
                     else:
                         # For sync functions, run in executor with timeout
                         result = await asyncio.wait_for(
-                            asyncio.get_event_loop().run_in_executor(
-                                None, func, *args, **kwargs
-                            ),
-                            timeout=self.config.timeout_seconds,
+                            asyncio.get_event_loop().run_in_executor(None, func, *args, **kwargs),
+                            timeout=self.config.timeout_seconds
                         )
                 else:
                     if asyncio.iscoroutinefunction(func):
@@ -418,9 +393,7 @@ class RetryPolicy:
                 attempt.complete(True, result)
                 self.metrics.record_execution(attempts)
 
-                logger.debug(
-                    f"Retry policy '{self.name}' succeeded on attempt {attempt_num}"
-                )
+                logger.debug(f"Retry policy '{self.name}' succeeded on attempt {attempt_num}")
                 return result
 
             except Exception as e:
@@ -429,9 +402,7 @@ class RetryPolicy:
 
                 # Check if exception is retryable
                 if not self._is_retryable(e):
-                    logger.debug(
-                        f"Non-retryable exception in retry policy '{self.name}': {type(e).__name__}"
-                    )
+                    logger.debug(f"Non-retryable exception in retry policy '{self.name}': {type(e).__name__}")
                     self.metrics.record_execution(attempts)
                     raise
 
@@ -458,15 +429,13 @@ class RetryPolicy:
             self.config.base_delay_seconds,
             backoff_multiplier=self.config.backoff_multiplier,
             max_delay_seconds=self.config.max_delay_seconds,
-            jitter_max_seconds=self.config.jitter_max_seconds,
+            jitter_max_seconds=self.config.jitter_max_seconds
         )
 
         # Apply jitter if enabled (for non-jitter strategies)
-        if (
-            self.config.jitter
-            and self.config.backoff_strategy != BackoffStrategy.EXPONENTIAL_JITTER
-            and self.config.backoff_strategy != BackoffStrategy.RANDOM
-        ):
+        if (self.config.jitter and
+            self.config.backoff_strategy != BackoffStrategy.EXPONENTIAL_JITTER and
+            self.config.backoff_strategy != BackoffStrategy.RANDOM):
             jitter = random.uniform(0, self.config.jitter_max_seconds)
             base_delay += jitter
 
@@ -477,17 +446,11 @@ class RetryPolicy:
         exception_type = type(exception)
 
         # Check non-retryable exceptions first
-        if any(
-            isinstance(exception, exc_type)
-            for exc_type in self.config.non_retryable_exceptions
-        ):
+        if any(isinstance(exception, exc_type) for exc_type in self.config.non_retryable_exceptions):
             return False
 
         # Check retryable exceptions
-        if any(
-            isinstance(exception, exc_type)
-            for exc_type in self.config.retryable_exceptions
-        ):
+        if any(isinstance(exception, exc_type) for exc_type in self.config.retryable_exceptions):
             return True
 
         # Default to not retryable
@@ -496,20 +459,18 @@ class RetryPolicy:
     def get_metrics(self) -> dict:
         """Get retry policy metrics."""
         metrics_dict = self.metrics.to_dict()
-        metrics_dict.update(
-            {
-                "name": self.name,
-                "config": {
-                    "max_attempts": self.config.max_attempts,
-                    "base_delay_seconds": self.config.base_delay_seconds,
-                    "max_delay_seconds": self.config.max_delay_seconds,
-                    "backoff_strategy": self.config.backoff_strategy.value,
-                    "backoff_multiplier": self.config.backoff_multiplier,
-                    "jitter": self.config.jitter,
-                    "timeout_seconds": self.config.timeout_seconds,
-                },
+        metrics_dict.update({
+            "name": self.name,
+            "config": {
+                "max_attempts": self.config.max_attempts,
+                "base_delay_seconds": self.config.base_delay_seconds,
+                "max_delay_seconds": self.config.max_delay_seconds,
+                "backoff_strategy": self.config.backoff_strategy.value,
+                "backoff_multiplier": self.config.backoff_multiplier,
+                "jitter": self.config.jitter,
+                "timeout_seconds": self.config.timeout_seconds
             }
-        )
+        })
         return metrics_dict
 
 
@@ -517,7 +478,7 @@ def retry(
     max_attempts: int = 3,
     base_delay_seconds: float = 1.0,
     backoff_strategy: BackoffStrategy = BackoffStrategy.EXPONENTIAL,
-    **config_kwargs,
+    **config_kwargs
 ):
     """Decorator for applying retry policy to functions.
 
@@ -530,28 +491,23 @@ def retry(
     Returns:
         Decorated function
     """
-
     def decorator(func):
         config = RetryConfig(
             max_attempts=max_attempts,
             base_delay_seconds=base_delay_seconds,
             backoff_strategy=backoff_strategy,
-            **config_kwargs,
+            **config_kwargs
         )
 
         retry_policy = RetryPolicy(config, func.__name__)
 
         if asyncio.iscoroutinefunction(func):
-
             async def async_wrapper(*args, **kwargs):
                 return await retry_policy.execute(func, *args, **kwargs)
-
             return async_wrapper
         else:
-
             async def sync_wrapper(*args, **kwargs):
                 return await retry_policy.execute(func, *args, **kwargs)
-
             return sync_wrapper
 
     return decorator
@@ -565,5 +521,5 @@ __all__ = [
     "RetryAttempt",
     "RetryMetrics",
     "BackoffCalculator",
-    "retry",
+    "retry"
 ]

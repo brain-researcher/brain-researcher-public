@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -87,20 +87,14 @@ STATIC_METHOD_REFS: Dict[tuple, Reference] = {
 }
 
 
-def _dataset_reference(
-    dataset_description: Path, dataset_id: str
-) -> Optional[Reference]:
+def _dataset_reference(dataset_description: Path, dataset_id: str) -> Optional[Reference]:
     if not dataset_description.exists():
         return None
     try:
         desc = json.loads(dataset_description.read_text())
         doi = desc.get("DatasetDOI") or desc.get("DOI")
         title = desc.get("Name") or dataset_id
-        url = (
-            desc.get("ReferencesAndLinks", [None])[0]
-            if desc.get("ReferencesAndLinks")
-            else None
-        )
+        url = desc.get("ReferencesAndLinks", [None])[0] if desc.get("ReferencesAndLinks") else None
         return Reference(
             source="dataset",
             kind="dataset",
@@ -150,17 +144,8 @@ def gather_references(
                 root / "openneuro" / dataset_id / "dataset_description.json",
                 root / "input" / dataset_id / "dataset_description.json",
                 root / "openneuro_mount" / dataset_id / "dataset_description.json",
-                root
-                / "OpenNeuroDerivatives"
-                / "fmriprep"
-                / f"{dataset_id}-fmriprep"
-                / "sourcedata"
-                / "dataset_description.json",
-                root
-                / "openneuro_metadata"
-                / "openneuro"
-                / dataset_id
-                / "dataset_description.json",
+                root / "OpenNeuroDerivatives" / "fmriprep" / f"{dataset_id}-fmriprep" / "sourcedata" / "dataset_description.json",
+                root / "openneuro_metadata" / "openneuro" / dataset_id / "dataset_description.json",
                 root / "openneuro_metadata" / dataset_id / "dataset_description.json",
             ]
         )

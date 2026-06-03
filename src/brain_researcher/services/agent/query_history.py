@@ -68,7 +68,7 @@ class QueryHistoryStore:
         self,
         redis_client: Optional[redis.Redis] = None,
         ttl_days: int = 30,
-        namespace: str = "query_history",
+        namespace: str = "query_history"
     ):
         """
         Initialize the query history store.
@@ -97,8 +97,7 @@ class QueryHistoryStore:
         """Create Redis client with fallback to fakeredis."""
         try:
             import os
-
-            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/1")
+            redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/1')
             client = redis.from_url(redis_url, decode_responses=False)
 
             # Test connection
@@ -112,7 +111,6 @@ class QueryHistoryStore:
 
             try:
                 import fakeredis
-
                 return fakeredis.FakeRedis(decode_responses=False)
             except ImportError:
                 raise Exception("Neither Redis nor fakeredis available")
@@ -145,7 +143,7 @@ class QueryHistoryStore:
                 "query": execution.query,
                 "timestamp": execution.timestamp.isoformat(),
                 "user_id": execution.user_id,
-                "success": execution.success,
+                "success": execution.success
             }
             self.redis.lpush(recent_key, json.dumps(query_record))
             self.redis.ltrim(recent_key, 0, 999)  # Keep last 1000
@@ -157,9 +155,7 @@ class QueryHistoryStore:
                 self.redis.expire(domain_key, self.ttl_seconds)
 
             # 5. Add to time-based indexes
-            date_key = (
-                f"{self.namespace}:date:{execution.timestamp.strftime('%Y-%m-%d')}"
-            )
+            date_key = f"{self.namespace}:date:{execution.timestamp.strftime('%Y-%m-%d')}"
             self.redis.lpush(date_key, execution.query_id)
             self.redis.expire(date_key, self.ttl_seconds)
 
@@ -191,7 +187,7 @@ class QueryHistoryStore:
                 session = QuerySession(
                     session_id=execution.session_id,
                     user_id=execution.user_id,
-                    start_time=execution.timestamp,
+                    start_time=execution.timestamp
                 )
 
             # Update session
@@ -203,9 +199,8 @@ class QueryHistoryStore:
                 session.domains_explored.add(execution.domain)
 
             # Calculate success rate
-            success_count = sum(
-                1 for q_id in session.queries if self._is_query_successful(q_id)
-            )
+            success_count = sum(1 for q_id in session.queries
+                              if self._is_query_successful(q_id))
             session.success_rate = success_count / len(session.queries)
 
             # Store updated session
@@ -253,7 +248,10 @@ class QueryHistoryStore:
         return None
 
     def get_user_queries(
-        self, user_id: str, limit: int = 50, offset: int = 0
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0
     ) -> List[QueryExecution]:
         """
         Get queries for a specific user.
@@ -272,7 +270,7 @@ class QueryHistoryStore:
 
             executions = []
             for query_id_bytes in query_ids:
-                query_id = query_id_bytes.decode("utf-8")
+                query_id = query_id_bytes.decode('utf-8')
                 execution = self.get_query_execution(query_id)
                 if execution:
                     executions.append(execution)
@@ -284,7 +282,9 @@ class QueryHistoryStore:
             return []
 
     def get_recent_queries(
-        self, limit: int = 50, domain: Optional[str] = None
+        self,
+        limit: int = 50,
+        domain: Optional[str] = None
     ) -> List[str]:
         """
         Get recent queries across all users.
@@ -304,7 +304,7 @@ class QueryHistoryStore:
 
                 queries = []
                 for query_id_bytes in query_ids:
-                    query_id = query_id_bytes.decode("utf-8")
+                    query_id = query_id_bytes.decode('utf-8')
                     execution = self.get_query_execution(query_id)
                     if execution:
                         queries.append(execution.query)
@@ -318,8 +318,8 @@ class QueryHistoryStore:
                 queries = []
                 for record_bytes in recent_records:
                     try:
-                        record = json.loads(record_bytes.decode("utf-8"))
-                        queries.append(record["query"])
+                        record = json.loads(record_bytes.decode('utf-8'))
+                        queries.append(record['query'])
                     except json.JSONDecodeError:
                         continue
 
@@ -330,7 +330,9 @@ class QueryHistoryStore:
             return []
 
     def get_popular_queries(
-        self, time_window_days: int = 7, limit: int = 10
+        self,
+        time_window_days: int = 7,
+        limit: int = 10
     ) -> List[Tuple[str, int]]:
         """
         Get most popular queries in a time window.
@@ -353,7 +355,7 @@ class QueryHistoryStore:
 
                 query_ids = self.redis.lrange(date_key, 0, -1)
                 for query_id_bytes in query_ids:
-                    query_id = query_id_bytes.decode("utf-8")
+                    query_id = query_id_bytes.decode('utf-8')
                     execution = self.get_query_execution(query_id)
                     if execution:
                         # Normalize query for counting
@@ -375,10 +377,9 @@ class QueryHistoryStore:
 
         # Remove common variations
         import re
-
-        normalized = re.sub(r"\bds\d+\b", "dataset", normalized)
-        normalized = re.sub(r"\d+\.\d+", "X.X", normalized)
-        normalized = re.sub(r"\b\d+\b", "N", normalized)
+        normalized = re.sub(r'\bds\d+\b', 'dataset', normalized)
+        normalized = re.sub(r'\d+\.\d+', 'X.X', normalized)
+        normalized = re.sub(r'\b\d+\b', 'N', normalized)
 
         return normalized
 
@@ -411,7 +412,9 @@ class QueryHistoryStore:
         return None
 
     def get_query_patterns(
-        self, user_id: Optional[str] = None, time_window_days: int = 30
+        self,
+        user_id: Optional[str] = None,
+        time_window_days: int = 30
     ) -> Dict[str, Any]:
         """
         Analyze query patterns for a user or globally.
@@ -431,7 +434,7 @@ class QueryHistoryStore:
                 "success_rate": 0.0,
                 "peak_hours": defaultdict(int),
                 "query_complexity_dist": defaultdict(int),
-                "total_queries": 0,
+                "total_queries": 0
             }
 
             # Get queries for analysis
@@ -468,23 +471,17 @@ class QueryHistoryStore:
                     successful_queries += 1
 
                 # Complexity
-                complexity_bucket = (
-                    int(execution.complexity_score * 10) // 2
-                )  # 0-5 scale
+                complexity_bucket = int(execution.complexity_score * 10) // 2  # 0-5 scale
                 patterns["query_complexity_dist"][complexity_bucket] += 1
 
             # Calculate averages
             if patterns["total_queries"] > 0:
                 patterns["avg_execution_time"] = total_time / patterns["total_queries"]
-                patterns["success_rate"] = (
-                    successful_queries / patterns["total_queries"]
-                )
+                patterns["success_rate"] = successful_queries / patterns["total_queries"]
 
             # Convert defaultdicts to regular dicts for JSON serialization
-            patterns = {
-                k: dict(v) if isinstance(v, defaultdict) else v
-                for k, v in patterns.items()
-            }
+            patterns = {k: dict(v) if isinstance(v, defaultdict) else v
+                       for k, v in patterns.items()}
 
             return patterns
 
@@ -504,7 +501,7 @@ class QueryHistoryStore:
 
                 query_ids = self.redis.lrange(date_key, 0, -1)
                 for query_id_bytes in query_ids:
-                    query_id = query_id_bytes.decode("utf-8")
+                    query_id = query_id_bytes.decode('utf-8')
                     execution = self.get_query_execution(query_id)
                     if execution:
                         executions.append(execution)
@@ -535,7 +532,7 @@ class QueryHistoryStore:
                 # Get query IDs for this date
                 query_ids = self.redis.lrange(date_key, 0, -1)
                 for query_id_bytes in query_ids:
-                    query_id = query_id_bytes.decode("utf-8")
+                    query_id = query_id_bytes.decode('utf-8')
 
                     # Check if execution is old enough to delete
                     execution = self.get_query_execution(query_id)
@@ -562,7 +559,7 @@ class QueryHistoryStore:
                 "avg_queries_per_user": 0.0,
                 "success_rate": 0.0,
                 "memory_cache_size": len(self.recent_cache),
-                "active_sessions": len(self.session_cache),
+                "active_sessions": len(self.session_cache)
             }
 
             # Get recent stats from Redis
@@ -576,9 +573,7 @@ class QueryHistoryStore:
             stats["unique_users"] = len(user_keys)
 
             if stats["unique_users"] > 0:
-                stats["avg_queries_per_user"] = (
-                    stats["total_queries"] / stats["unique_users"]
-                )
+                stats["avg_queries_per_user"] = stats["total_queries"] / stats["unique_users"]
 
             # Calculate success rate from recent cache
             if self.recent_cache:
@@ -594,7 +589,8 @@ class QueryHistoryStore:
 
 # Factory function
 def create_query_history_store(
-    redis_client: Optional[redis.Redis] = None, ttl_days: int = 30
+    redis_client: Optional[redis.Redis] = None,
+    ttl_days: int = 30
 ) -> QueryHistoryStore:
     """
     Create a query history store instance.

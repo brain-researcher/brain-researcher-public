@@ -253,5 +253,5 @@ spatial:
     top_k: 8
     label_image_path: "data/br-kg/raw/nilearn_atlases/yeo_2011/Yeo_JNeurophysiol11_MNI152/Yeo2011_17Networks_MNI152_FreeSurferConformed1mm.nii.gz"
     parquet:
-      root: "/home/zijiaochen/projects/brain_researcher/data/yeo17_features"
+      root: "${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/data/yeo17_features"
       write_maps_tall: true

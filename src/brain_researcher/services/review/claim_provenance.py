@@ -26,8 +26,7 @@ class ClaimProvenance(BaseModel):
     claim_id: str
     statement: str = ""
     artifact_path: str | None = Field(
-        default=None,
-        description="Run-relative path of the artifact supporting the claim.",
+        default=None, description="Run-relative path of the artifact supporting the claim."
     )
     artifact_sha256: str | None = Field(
         default=None, description="Expected checksum, 'sha256:<hex>' or bare hex."
@@ -36,8 +35,7 @@ class ClaimProvenance(BaseModel):
         default=None, description="Producing code: tool id, or 'tool:step_id'."
     )
     config_digest: str | None = Field(
-        default=None,
-        description="Digest/summary of the config that produced the artifact.",
+        default=None, description="Digest/summary of the config that produced the artifact."
     )
 
 
@@ -92,9 +90,7 @@ def build_run_provenance_index(bundle: Any) -> RunProvenanceIndex:
     code_refs: set[str] = set()
 
     observed = getattr(bundle, "observed_artifacts", None) or {}
-    analysis_bundle = (
-        observed.get("analysis_bundle") if isinstance(observed, dict) else None
-    )
+    analysis_bundle = observed.get("analysis_bundle") if isinstance(observed, dict) else None
 
     # File manifest: produced artifacts + checksums.
     manifest = (
@@ -111,9 +107,7 @@ def build_run_provenance_index(bundle: Any) -> RunProvenanceIndex:
 
     # Provenance outputs (ProvenanceV1-style) as a second artifact source.
     provenance = observed.get("provenance") if isinstance(observed, dict) else None
-    for output in (
-        (provenance or {}).get("outputs", []) if isinstance(provenance, dict) else []
-    ):
+    for output in (provenance or {}).get("outputs", []) if isinstance(provenance, dict) else []:
         if isinstance(output, dict) and isinstance(output.get("uri"), str):
             artifacts.setdefault(output["uri"], _normalize_sha(output.get("sha256")))
 
@@ -185,7 +179,9 @@ def validate_claim_provenance(
 
         code_resolved = index.resolves_code(claim.code_ref)
         if has_code and not code_resolved:
-            issues.append(f"code_ref '{claim.code_ref}' not in run plan steps")
+            issues.append(
+                f"code_ref '{claim.code_ref}' not in run plan steps"
+            )
 
         ok = (
             has_provenance
@@ -226,12 +222,7 @@ def coerce_claims(raw: Any) -> list[ClaimProvenance]:
         data.setdefault("claim_id", str(data.get("id") or f"claim_{i}"))
         provenance = data.get("provenance")
         if isinstance(provenance, dict):
-            for key in (
-                "artifact_path",
-                "artifact_sha256",
-                "code_ref",
-                "config_digest",
-            ):
+            for key in ("artifact_path", "artifact_sha256", "code_ref", "config_digest"):
                 data.setdefault(key, provenance.get(key))
         allowed = {
             "claim_id",
@@ -241,9 +232,7 @@ def coerce_claims(raw: Any) -> list[ClaimProvenance]:
             "code_ref",
             "config_digest",
         }
-        claims.append(
-            ClaimProvenance(**{k: v for k, v in data.items() if k in allowed})
-        )
+        claims.append(ClaimProvenance(**{k: v for k, v in data.items() if k in allowed}))
     return claims
 
 

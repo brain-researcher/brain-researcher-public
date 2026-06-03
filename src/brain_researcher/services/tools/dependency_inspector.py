@@ -65,9 +65,7 @@ def load_dependency_manifest(path: Path | None = None) -> List[DependencySpec]:
         raise ManifestLoadError(f"Dependency manifest not found: {manifest_path}")
 
     if yaml is None:
-        raise ManifestLoadError(
-            "PyYAML is required to parse the dependency manifest"
-        ) from _YAML_IMPORT_ERROR
+        raise ManifestLoadError("PyYAML is required to parse the dependency manifest") from _YAML_IMPORT_ERROR
 
     try:
         data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -98,10 +96,7 @@ def _check_python_package(spec: DependencySpec) -> Tuple[bool, Optional[str]]:
     if not module_name:
         return False, "No module specified for python-package dependency"
     module_spec = importlib.util.find_spec(module_name)
-    return (
-        module_spec is not None,
-        None if module_spec else f"Module '{module_name}' not importable",
-    )
+    return (module_spec is not None, None if module_spec else f"Module '{module_name}' not importable")
 
 
 def _check_executable(spec: DependencySpec) -> Tuple[bool, Optional[str]]:
@@ -109,10 +104,7 @@ def _check_executable(spec: DependencySpec) -> Tuple[bool, Optional[str]]:
     if not command:
         return False, "No command specified for executable dependency"
     path = shutil.which(command)
-    return (
-        path is not None,
-        None if path else f"Executable '{command}' not found on PATH",
-    )
+    return (path is not None, None if path else f"Executable '{command}' not found on PATH")
 
 
 def _check_envvar(spec: DependencySpec) -> Tuple[bool, Optional[str]]:
@@ -137,16 +129,10 @@ def check_dependency(spec: DependencySpec) -> DependencyStatus:
 
     checker = _CHECKERS.get(spec.category)
     if checker is None:
-        return DependencyStatus(
-            spec=spec,
-            present=False,
-            detail=f"Unknown dependency category: {spec.category}",
-        )
+        return DependencyStatus(spec=spec, present=False, detail=f"Unknown dependency category: {spec.category}")
 
     present, detail = checker(spec)
-    return DependencyStatus(
-        spec=spec, present=present, detail=detail if not present else None
-    )
+    return DependencyStatus(spec=spec, present=present, detail=detail if not present else None)
 
 
 def collect_dependency_status(path: Path | None = None) -> List[DependencyStatus]:
@@ -156,9 +142,7 @@ def collect_dependency_status(path: Path | None = None) -> List[DependencyStatus
     return [check_dependency(spec) for spec in specs]
 
 
-def summarise_missing_by_category(
-    statuses: Iterable[DependencyStatus],
-) -> Dict[str, List[DependencyStatus]]:
+def summarise_missing_by_category(statuses: Iterable[DependencyStatus]) -> Dict[str, List[DependencyStatus]]:
     """Group missing dependencies so callers can display category-specific guidance."""
 
     grouped: Dict[str, List[DependencyStatus]] = {}

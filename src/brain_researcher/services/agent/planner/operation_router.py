@@ -24,17 +24,11 @@ def _pick_best_intent_for_request(
 
     for intent in matched_intents:
         # Domain filter (if provided)
-        if (
-            plan_request.domain
-            and intent.domains
-            and plan_request.domain not in intent.domains
-        ):
+        if plan_request.domain and intent.domains and plan_request.domain not in intent.domains:
             continue
         # Modality filter (if provided)
         if plan_request.modality:
-            if intent.modalities and not any(
-                m in intent.modalities for m in plan_request.modality
-            ):
+            if intent.modalities and not any(m in intent.modalities for m in plan_request.modality):
                 continue
         return intent
 

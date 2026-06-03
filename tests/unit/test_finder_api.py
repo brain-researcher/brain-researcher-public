@@ -108,23 +108,16 @@ class TestNLPFilterParser:
     def test_parse_year_after(self, parser):
         """Test parsing year after."""
         filters = parser.parse("studies after 2020")
-        assert any(
-            f.facet == "year" and f.op == ">=" and f.value == 2020 for f in filters
-        )
+        assert any(f.facet == "year" and f.op == ">=" and f.value == 2020 for f in filters)
 
     def test_parse_sample_size(self, parser):
         """Test parsing sample size."""
         filters = parser.parse("large sample over 100 subjects")
-        assert any(
-            f.facet == "sample_size" and f.op == ">=" and f.value == 100
-            for f in filters
-        )
+        assert any(f.facet == "sample_size" and f.op == ">=" and f.value == 100 for f in filters)
 
     def test_parse_multiple_filters(self, parser):
         """Test parsing multiple filters from complex query."""
-        filters = parser.parse(
-            "fMRI motor task studies after 2020 with over 50 subjects"
-        )
+        filters = parser.parse("fMRI motor task studies after 2020 with over 50 subjects")
 
         facets = {f.facet for f in filters}
         assert "modality" in facets
@@ -162,7 +155,7 @@ class TestFacetCounter:
             {"facet": "modality", "value": "fmri", "count": 150},
             {"facet": "modality", "value": "structural", "count": 75},
             {"facet": "task", "value": "motor", "count": 30},
-            {"facet": "task", "value": "memory", "count": 45},
+            {"facet": "task", "value": "memory", "count": 45}
         ]
 
         filters = [Filter(facet="modality", value="fmri")]
@@ -211,7 +204,7 @@ class TestDatasetSearcher:
             "has_bids": True,
             "qc_status": "passed",
             "sample_size": 50,
-            "tr": 2.0,
+            "tr": 2.0
         }
 
         readiness = searcher._calculate_readiness(dataset)
@@ -222,7 +215,12 @@ class TestDatasetSearcher:
 
     def test_calculate_readiness_yellow(self, searcher):
         """Test readiness calculation for yellow status."""
-        dataset = {"has_bids": True, "qc_status": None, "sample_size": 15, "tr": 2.0}
+        dataset = {
+            "has_bids": True,
+            "qc_status": None,
+            "sample_size": 15,
+            "tr": 2.0
+        }
 
         readiness = searcher._calculate_readiness(dataset)
 
@@ -236,7 +234,7 @@ class TestDatasetSearcher:
             "has_bids": False,
             "qc_status": "failed",
             "sample_size": 5,
-            "tr": None,
+            "tr": None
         }
 
         readiness = searcher._calculate_readiness(dataset)
@@ -259,13 +257,13 @@ class TestDatasetSearcher:
                 "has_bids": True,
                 "qc_status": "passed",
                 "tr": 2.0,
-                "matched_fields": ["modality", "task"],
+                "matched_fields": ["modality", "task"]
             }
         ]
 
         filters = [
             Filter(facet="modality", value="fmri"),
-            Filter(facet="task", value="motor"),
+            Filter(facet="task", value="motor")
         ]
 
         result = searcher.search(filters, sort_by="relevance", limit=10, offset=0)
@@ -285,7 +283,7 @@ class TestDatasetSearcher:
                 "qc_status": None,
                 "sample_size": 10,
                 "tr": None,
-                "matched_fields": [],
+                "matched_fields": []
             },
             {
                 "id": "ds002",
@@ -294,8 +292,8 @@ class TestDatasetSearcher:
                 "qc_status": "passed",
                 "sample_size": 50,
                 "tr": 2.0,
-                "matched_fields": [],
-            },
+                "matched_fields": []
+            }
         ]
 
         result = searcher.search([], sort_by="readiness", limit=10, offset=0)
@@ -312,22 +310,22 @@ class TestFinderAPIIntegration:
     def client(self):
         """Create test client."""
         from brain_researcher.services.br_kg.app import app
-
-        app.config["TESTING"] = True
+        app.config['TESTING'] = True
         with app.test_client() as client:
             yield client
 
-    @patch("brain_researcher.services.br_kg.finder_api.Neo4jConnection")
+    @patch('brain_researcher.services.br_kg.finder_api.Neo4jConnection')
     def test_suggest_filters_endpoint(self, mock_neo4j_class, client):
         """Test /kg/suggestFilters endpoint."""
-        response = client.post("/kg/suggestFilters", json={"text": "fMRI motor task"})
+        response = client.post('/kg/suggestFilters',
+                              json={"text": "fMRI motor task"})
 
         assert response.status_code == 200
         data = response.get_json()
         assert "filters" in data
         assert isinstance(data["filters"], list)
 
-    @patch("brain_researcher.services.br_kg.finder_api.Neo4jConnection")
+    @patch('brain_researcher.services.br_kg.finder_api.Neo4jConnection')
     def test_facets_endpoint(self, mock_neo4j_class, client):
         """Test /kg/facets endpoint."""
         mock_instance = Mock()
@@ -336,62 +334,62 @@ class TestFinderAPIIntegration:
             {"facet": "modality", "value": "fmri", "count": 100}
         ]
 
-        response = client.post("/kg/facets", json={"filters": []})
+        response = client.post('/kg/facets',
+                              json={"filters": []})
 
         assert response.status_code == 200
         data = response.get_json()
         assert "facets" in data
 
-    @patch("brain_researcher.services.br_kg.finder_api.Neo4jConnection")
+    @patch('brain_researcher.services.br_kg.finder_api.Neo4jConnection')
     def test_search_datasets_endpoint(self, mock_neo4j_class, client):
         """Test /kg/searchDatasets endpoint."""
         mock_instance = Mock()
         mock_neo4j_class.return_value = mock_instance
-        mock_instance.run.return_value = [
-            {
-                "id": "ds001",
-                "name": "Test Dataset",
-                "has_bids": True,
-                "qc_status": "passed",
-                "sample_size": 30,
-                "tr": 2.0,
-                "matched_fields": [],
-            }
-        ]
+        mock_instance.run.return_value = [{
+            "id": "ds001",
+            "name": "Test Dataset",
+            "has_bids": True,
+            "qc_status": "passed",
+            "sample_size": 30,
+            "tr": 2.0,
+            "matched_fields": []
+        }]
 
-        response = client.post(
-            "/kg/searchDatasets",
-            json={"filters": [], "sort": "relevance", "limit": 10, "offset": 0},
-        )
+        response = client.post('/kg/searchDatasets',
+                              json={
+                                  "filters": [],
+                                  "sort": "relevance",
+                                  "limit": 10,
+                                  "offset": 0
+                              })
 
         assert response.status_code == 200
         data = response.get_json()
         assert "datasets" in data
         assert len(data["datasets"]) == 1
 
-    @patch("brain_researcher.services.br_kg.finder_api.Neo4jConnection")
+    @patch('brain_researcher.services.br_kg.finder_api.Neo4jConnection')
     def test_explain_dataset_endpoint(self, mock_neo4j_class, client):
         """Test /kg/explain/:id endpoint."""
         mock_instance = Mock()
         mock_neo4j_class.return_value = mock_instance
-        mock_instance.run.return_value = [
-            {
-                "dataset": {
-                    "id": "ds001",
-                    "name": "Test Dataset",
-                    "has_bids": True,
-                    "qc_status": "passed",
-                    "sample_size": 30,
-                    "tr": 2.0,
-                    "created": datetime.now(),
-                },
-                "papers": [],
-                "methods": [],
-                "derivatives": [],
-            }
-        ]
+        mock_instance.run.return_value = [{
+            "dataset": {
+                "id": "ds001",
+                "name": "Test Dataset",
+                "has_bids": True,
+                "qc_status": "passed",
+                "sample_size": 30,
+                "tr": 2.0,
+                "created": datetime.now()
+            },
+            "papers": [],
+            "methods": [],
+            "derivatives": []
+        }]
 
-        response = client.get("/kg/explain/ds001")
+        response = client.get('/kg/explain/ds001')
 
         assert response.status_code == 200
         data = response.get_json()
@@ -400,14 +398,14 @@ class TestFinderAPIIntegration:
         assert "evidence" in data
         assert "graph" in data
 
-    @patch("brain_researcher.services.br_kg.finder_api.Neo4jConnection")
+    @patch('brain_researcher.services.br_kg.finder_api.Neo4jConnection')
     def test_explain_dataset_not_found(self, mock_neo4j_class, client):
         """Test /kg/explain/:id endpoint with non-existent dataset."""
         mock_instance = Mock()
         mock_neo4j_class.return_value = mock_instance
         mock_instance.run.return_value = []
 
-        response = client.get("/kg/explain/ds999")
+        response = client.get('/kg/explain/ds999')
 
         assert response.status_code == 404
         data = response.get_json()

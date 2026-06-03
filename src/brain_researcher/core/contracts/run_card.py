@@ -90,18 +90,13 @@ class RunCardV1(BaseModel):
         repro_score = _to_float(repro.get("score")) if repro else None
         legacy_score = _to_float(self.reproducibility_score)
 
-        normalized = _normalize_01(
-            repro_score if repro_score is not None else legacy_score
-        )
+        normalized = _normalize_01(repro_score if repro_score is not None else legacy_score)
         if normalized is None:
             return self
 
         self.reproducibility_score = normalized
         if repro is None:
-            self.reproducibility = {
-                "score": normalized,
-                "is_reproducible": normalized >= 0.8,
-            }
+            self.reproducibility = {"score": normalized, "is_reproducible": normalized >= 0.8}
         else:
             repro["score"] = normalized
             repro.setdefault("is_reproducible", normalized >= 0.8)

@@ -4,32 +4,24 @@ This module provides GCN, GraphSAGE, and GAT implementations for
 node classification, link prediction, and graph-level tasks.
 """
 
-import json
 import logging
-import pickle
+import numpy as np
+from typing import Dict, List, Any, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from enum import Enum
+import pickle
+import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import numpy as np
 
 try:
-    import networkx as nx
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
     from torch.optim import Adam, AdamW
-    from torch_geometric.data import Batch, Data
-    from torch_geometric.nn import (
-        GATConv,
-        GCNConv,
-        SAGEConv,
-        global_max_pool,
-        global_mean_pool,
-    )
-    from torch_geometric.utils import from_networkx, to_networkx
-
+    from torch_geometric.nn import GCNConv, SAGEConv, GATConv, global_mean_pool, global_max_pool
+    from torch_geometric.data import Data, Batch
+    from torch_geometric.utils import to_networkx, from_networkx
+    import networkx as nx
     TORCH_AVAILABLE = True
 except ImportError:
     torch = None
@@ -103,7 +95,7 @@ class GNNConfig:
             "weight_decay": self.weight_decay,
             "batch_size": self.batch_size,
             "epochs": self.epochs,
-            "early_stopping_patience": self.early_stopping_patience,
+            "early_stopping_patience": self.early_stopping_patience
         }
 
 
@@ -117,9 +109,7 @@ class GraphConvolutionalNetwork(_NNModuleBase):
             config: Model configuration
         """
         if not TORCH_AVAILABLE:
-            raise ImportError(
-                "PyTorch and PyTorch Geometric are required for GNN models"
-            )
+            raise ImportError("PyTorch and PyTorch Geometric are required for GNN models")
 
         super().__init__()
         self.config = config
@@ -179,7 +169,7 @@ class GraphConvolutionalNetwork(_NNModuleBase):
         embeddings = self.forward(x, edge_index)
 
         # Add classification head if needed
-        if not hasattr(self, "classifier"):
+        if not hasattr(self, 'classifier'):
             self.classifier = nn.Linear(self.config.output_dim, num_classes)
 
         return self.classifier(embeddings)
@@ -217,9 +207,7 @@ class GraphSAGE(_NNModuleBase):
             config: Model configuration
         """
         if not TORCH_AVAILABLE:
-            raise ImportError(
-                "PyTorch and PyTorch Geometric are required for GNN models"
-            )
+            raise ImportError("PyTorch and PyTorch Geometric are required for GNN models")
 
         super().__init__()
         self.config = config
@@ -228,21 +216,15 @@ class GraphSAGE(_NNModuleBase):
         self.layers = nn.ModuleList()
 
         # Input layer
-        self.layers.append(
-            SAGEConv(config.input_dim, config.hidden_dim, aggr=config.aggr)
-        )
+        self.layers.append(SAGEConv(config.input_dim, config.hidden_dim, aggr=config.aggr))
 
         # Hidden layers
         for _ in range(config.num_layers - 2):
-            self.layers.append(
-                SAGEConv(config.hidden_dim, config.hidden_dim, aggr=config.aggr)
-            )
+            self.layers.append(SAGEConv(config.hidden_dim, config.hidden_dim, aggr=config.aggr))
 
         # Output layer
         if config.num_layers > 1:
-            self.layers.append(
-                SAGEConv(config.hidden_dim, config.output_dim, aggr=config.aggr)
-            )
+            self.layers.append(SAGEConv(config.hidden_dim, config.output_dim, aggr=config.aggr))
 
         # Dropout and activation
         self.dropout = nn.Dropout(config.dropout)
@@ -273,9 +255,7 @@ class GraphAttentionNetwork(_NNModuleBase):
             config: Model configuration
         """
         if not TORCH_AVAILABLE:
-            raise ImportError(
-                "PyTorch and PyTorch Geometric are required for GNN models"
-            )
+            raise ImportError("PyTorch and PyTorch Geometric are required for GNN models")
 
         super().__init__()
         self.config = config
@@ -287,14 +267,10 @@ class GraphAttentionNetwork(_NNModuleBase):
         self.layers.append(
             GATConv(
                 config.input_dim,
-                (
-                    config.hidden_dim // config.heads
-                    if config.concat_heads
-                    else config.hidden_dim
-                ),
+                config.hidden_dim // config.heads if config.concat_heads else config.hidden_dim,
                 heads=config.heads,
                 concat=config.concat_heads,
-                dropout=config.dropout,
+                dropout=config.dropout
             )
         )
 
@@ -303,14 +279,10 @@ class GraphAttentionNetwork(_NNModuleBase):
             self.layers.append(
                 GATConv(
                     config.hidden_dim,
-                    (
-                        config.hidden_dim // config.heads
-                        if config.concat_heads
-                        else config.hidden_dim
-                    ),
+                    config.hidden_dim // config.heads if config.concat_heads else config.hidden_dim,
                     heads=config.heads,
                     concat=config.concat_heads,
-                    dropout=config.dropout,
+                    dropout=config.dropout
                 )
             )
 
@@ -322,7 +294,7 @@ class GraphAttentionNetwork(_NNModuleBase):
                     config.output_dim,
                     heads=1,
                     concat=False,
-                    dropout=config.dropout,
+                    dropout=config.dropout
                 )
             )
 
@@ -354,22 +326,18 @@ class GNNPredictor:
             config: Model configuration
         """
         if not TORCH_AVAILABLE:
-            raise ImportError(
-                "PyTorch and PyTorch Geometric are required for GNN models"
-            )
+            raise ImportError("PyTorch and PyTorch Geometric are required for GNN models")
 
         self.model_type = model_type
         self.config = config
         self.model = None
         self.optimizer = None
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # Training history
         self.training_history = []
 
-        logger.info(
-            f"Initialized GNN predictor with {model_type.value} on {self.device}"
-        )
+        logger.info(f"Initialized GNN predictor with {model_type.value} on {self.device}")
 
     def build_model(self, input_dim: int, output_dim: int, **kwargs):
         """Build the GNN model.
@@ -384,7 +352,7 @@ class GNNPredictor:
                 model_type=self.model_type,
                 input_dim=input_dim,
                 output_dim=output_dim,
-                **kwargs,
+                **kwargs
             )
         else:
             # Update dimensions
@@ -412,12 +380,10 @@ class GNNPredictor:
         self.optimizer = Adam(
             self.model.parameters(),
             lr=self.config.learning_rate,
-            weight_decay=self.config.weight_decay,
+            weight_decay=self.config.weight_decay
         )
 
-        logger.info(
-            f"Built {self.model_type.value} model with {sum(p.numel() for p in self.model.parameters())} parameters"
-        )
+        logger.info(f"Built {self.model_type.value} model with {sum(p.numel() for p in self.model.parameters())} parameters")
 
     def prepare_graph_data(self, graph_data: Dict[str, Any]) -> Data:
         """Prepare graph data for PyTorch Geometric.
@@ -441,9 +407,7 @@ class GNNPredictor:
 
             for node_id, features in node_features.items():
                 if node_id in node_id_to_idx:
-                    x[node_id_to_idx[node_id]] = torch.tensor(
-                        features, dtype=torch.float
-                    )
+                    x[node_id_to_idx[node_id]] = torch.tensor(features, dtype=torch.float)
         else:
             # Use identity features if no features provided
             x = torch.eye(len(nodes), dtype=torch.float)
@@ -473,7 +437,7 @@ class GNNPredictor:
         labels: Dict[str, int],
         train_mask: Optional[List[str]] = None,
         val_mask: Optional[List[str]] = None,
-        num_classes: Optional[int] = None,
+        num_classes: Optional[int] = None
     ) -> Dict[str, Any]:
         """Train for node classification task.
 
@@ -507,9 +471,9 @@ class GNNPredictor:
 
         # Prepare masks
         if train_mask is None:
-            train_mask = list(labels.keys())[: int(0.8 * len(labels))]
+            train_mask = list(labels.keys())[:int(0.8 * len(labels))]
         if val_mask is None:
-            val_mask = list(labels.keys())[int(0.8 * len(labels)) :]
+            val_mask = list(labels.keys())[int(0.8 * len(labels)):]
 
         train_idx = [node_id_to_idx[nid] for nid in train_mask if nid in node_id_to_idx]
         val_idx = [node_id_to_idx[nid] for nid in val_mask if nid in node_id_to_idx]
@@ -541,29 +505,21 @@ class GNNPredictor:
             if epoch % 10 == 0:
                 self.model.eval()
                 with torch.no_grad():
-                    val_out = self.model.predict_node_class(
-                        data.x, data.edge_index, num_classes
-                    )
+                    val_out = self.model.predict_node_class(data.x, data.edge_index, num_classes)
                     val_pred = val_out[val_mask_tensor].argmax(dim=1)
                     val_acc = (val_pred == y[val_mask_tensor]).float().mean().item()
 
                     train_pred = out[train_mask_tensor].argmax(dim=1)
-                    train_acc = (
-                        (train_pred == y[train_mask_tensor]).float().mean().item()
-                    )
+                    train_acc = (train_pred == y[train_mask_tensor]).float().mean().item()
 
-                    self.training_history.append(
-                        {
-                            "epoch": epoch,
-                            "loss": loss.item(),
-                            "train_acc": train_acc,
-                            "val_acc": val_acc,
-                        }
-                    )
+                    self.training_history.append({
+                        "epoch": epoch,
+                        "loss": loss.item(),
+                        "train_acc": train_acc,
+                        "val_acc": val_acc
+                    })
 
-                    logger.info(
-                        f"Epoch {epoch}: Loss={loss.item():.4f}, Train Acc={train_acc:.4f}, Val Acc={val_acc:.4f}"
-                    )
+                    logger.info(f"Epoch {epoch}: Loss={loss.item():.4f}, Train Acc={train_acc:.4f}, Val Acc={val_acc:.4f}")
 
                     # Early stopping
                     if val_acc > best_val_acc:
@@ -582,7 +538,7 @@ class GNNPredictor:
             "best_val_acc": best_val_acc,
             "final_loss": loss.item(),
             "training_history": self.training_history,
-            "num_epochs": len(self.training_history),
+            "num_epochs": len(self.training_history)
         }
 
     def train_link_prediction(
@@ -590,7 +546,7 @@ class GNNPredictor:
         graph_data: Dict[str, Any],
         positive_edges: List[Tuple[str, str]],
         negative_edges: List[Tuple[str, str]],
-        train_ratio: float = 0.8,
+        train_ratio: float = 0.8
     ) -> Dict[str, Any]:
         """Train for link prediction task.
 
@@ -617,11 +573,7 @@ class GNNPredictor:
             for src, dst in edges:
                 if src in node_id_to_idx and dst in node_id_to_idx:
                     edge_indices.append([node_id_to_idx[src], node_id_to_idx[dst]])
-            return (
-                torch.tensor(edge_indices, dtype=torch.long).t()
-                if edge_indices
-                else torch.zeros((2, 0), dtype=torch.long)
-            )
+            return torch.tensor(edge_indices, dtype=torch.long).t() if edge_indices else torch.zeros((2, 0), dtype=torch.long)
 
         pos_edges = edges_to_indices(positive_edges).to(self.device)
         neg_edges = edges_to_indices(negative_edges).to(self.device)
@@ -637,14 +589,16 @@ class GNNPredictor:
 
         # Combine training edges
         train_edges = torch.cat([pos_train_edges, neg_train_edges], dim=1)
-        train_labels = torch.cat(
-            [torch.ones(pos_train_edges.size(1)), torch.zeros(neg_train_edges.size(1))]
-        ).to(self.device)
+        train_labels = torch.cat([
+            torch.ones(pos_train_edges.size(1)),
+            torch.zeros(neg_train_edges.size(1))
+        ]).to(self.device)
 
         val_edges = torch.cat([pos_val_edges, neg_val_edges], dim=1)
-        val_labels = torch.cat(
-            [torch.ones(pos_val_edges.size(1)), torch.zeros(neg_val_edges.size(1))]
-        ).to(self.device)
+        val_labels = torch.cat([
+            torch.ones(pos_val_edges.size(1)),
+            torch.zeros(neg_val_edges.size(1))
+        ]).to(self.device)
 
         # Training loop
         self.model.train()
@@ -666,9 +620,7 @@ class GNNPredictor:
             if epoch % 10 == 0:
                 self.model.eval()
                 with torch.no_grad():
-                    val_pred = self.model.predict_links(
-                        data.x, data.edge_index, val_edges
-                    )
+                    val_pred = self.model.predict_links(data.x, data.edge_index, val_edges)
 
                     # Calculate AUC (simplified)
                     val_pred_np = val_pred.cpu().numpy()
@@ -686,29 +638,18 @@ class GNNPredictor:
                     else:
                         val_auc = 0.5
 
-                    train_acc = (
-                        ((train_pred > 0.5).float() == train_labels)
-                        .float()
-                        .mean()
-                        .item()
-                    )
-                    val_acc = (
-                        ((val_pred > 0.5).float() == val_labels).float().mean().item()
-                    )
+                    train_acc = ((train_pred > 0.5).float() == train_labels).float().mean().item()
+                    val_acc = ((val_pred > 0.5).float() == val_labels).float().mean().item()
 
-                    self.training_history.append(
-                        {
-                            "epoch": epoch,
-                            "loss": loss.item(),
-                            "train_acc": train_acc,
-                            "val_acc": val_acc,
-                            "val_auc": val_auc,
-                        }
-                    )
+                    self.training_history.append({
+                        "epoch": epoch,
+                        "loss": loss.item(),
+                        "train_acc": train_acc,
+                        "val_acc": val_acc,
+                        "val_auc": val_auc
+                    })
 
-                    logger.info(
-                        f"Epoch {epoch}: Loss={loss.item():.4f}, Train Acc={train_acc:.4f}, Val Acc={val_acc:.4f}, Val AUC={val_auc:.4f}"
-                    )
+                    logger.info(f"Epoch {epoch}: Loss={loss.item():.4f}, Train Acc={train_acc:.4f}, Val Acc={val_acc:.4f}, Val AUC={val_auc:.4f}")
 
                     # Early stopping
                     if val_auc > best_val_auc:
@@ -727,12 +668,10 @@ class GNNPredictor:
             "best_val_auc": best_val_auc,
             "final_loss": loss.item(),
             "training_history": self.training_history,
-            "num_epochs": len(self.training_history),
+            "num_epochs": len(self.training_history)
         }
 
-    def predict(
-        self, graph_data: Dict[str, Any], task_type: str = "node_embeddings", **kwargs
-    ) -> Dict[str, Any]:
+    def predict(self, graph_data: Dict[str, Any], task_type: str = "node_embeddings", **kwargs) -> Dict[str, Any]:
         """Make predictions.
 
         Args:
@@ -754,19 +693,17 @@ class GNNPredictor:
                 embeddings = self.model(data.x, data.edge_index)
                 return {
                     "embeddings": embeddings.cpu().numpy(),
-                    "node_ids": graph_data.get("nodes", []),
+                    "node_ids": graph_data.get("nodes", [])
                 }
 
             elif task_type == "node_classification":
                 num_classes = kwargs.get("num_classes", 2)
-                predictions = self.model.predict_node_class(
-                    data.x, data.edge_index, num_classes
-                )
+                predictions = self.model.predict_node_class(data.x, data.edge_index, num_classes)
                 probs = F.softmax(predictions, dim=1)
                 return {
                     "predictions": predictions.argmax(dim=1).cpu().numpy(),
                     "probabilities": probs.cpu().numpy(),
-                    "node_ids": graph_data.get("nodes", []),
+                    "node_ids": graph_data.get("nodes", [])
                 }
 
             elif task_type == "link_prediction":
@@ -778,22 +715,14 @@ class GNNPredictor:
                     edge_indices = []
                     for src, dst in test_edges:
                         if src in node_id_to_idx and dst in node_id_to_idx:
-                            edge_indices.append(
-                                [node_id_to_idx[src], node_id_to_idx[dst]]
-                            )
+                            edge_indices.append([node_id_to_idx[src], node_id_to_idx[dst]])
 
                     if edge_indices:
-                        edge_tensor = (
-                            torch.tensor(edge_indices, dtype=torch.long)
-                            .t()
-                            .to(self.device)
-                        )
-                        link_probs = self.model.predict_links(
-                            data.x, data.edge_index, edge_tensor
-                        )
+                        edge_tensor = torch.tensor(edge_indices, dtype=torch.long).t().to(self.device)
+                        link_probs = self.model.predict_links(data.x, data.edge_index, edge_tensor)
                         return {
                             "link_probabilities": link_probs.cpu().numpy(),
-                            "test_edges": test_edges,
+                            "test_edges": test_edges
                         }
 
                 return {"link_probabilities": [], "test_edges": []}
@@ -814,7 +743,7 @@ class GNNPredictor:
             "model_state_dict": self.model.state_dict(),
             "config": self.config.to_dict(),
             "model_type": self.model_type.value,
-            "training_history": self.training_history,
+            "training_history": self.training_history
         }
 
         torch.save(save_data, filepath)
@@ -832,7 +761,7 @@ class GNNPredictor:
         config_dict = save_data["config"]
         self.config = GNNConfig(
             model_type=GNNModelType(config_dict["model_type"]),
-            **{k: v for k, v in config_dict.items() if k != "model_type"},
+            **{k: v for k, v in config_dict.items() if k != "model_type"}
         )
         self.model_type = GNNModelType(save_data["model_type"])
 
@@ -855,5 +784,5 @@ class GNNPredictor:
             "config": self.config.to_dict() if self.config else None,
             "parameters": sum(p.numel() for p in self.model.parameters()),
             "device": str(self.device),
-            "training_epochs": len(self.training_history),
+            "training_epochs": len(self.training_history)
         }

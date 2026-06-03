@@ -90,9 +90,9 @@ def build_bids_dataset_manifest(
                     {
                         "sha256": digest,
                         "sha256_mode": "capped" if capped else "full",
-                        "sha256_bytes": (
-                            min(file_size, max_read_bytes) if capped else file_size
-                        ),
+                        "sha256_bytes": min(file_size, max_read_bytes)
+                        if capped
+                        else file_size,
                     }
                 )
         else:

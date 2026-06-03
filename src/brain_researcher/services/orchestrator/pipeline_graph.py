@@ -33,19 +33,13 @@ def _get_job_timing(job: Any) -> Tuple[Optional[datetime], Optional[datetime]]:
     started_at = getattr(timing, "start_time", None) if timing else None
     ended_at = getattr(timing, "end_time", None) if timing else None
     if started_at is None:
-        started_at = getattr(job, "started_at", None) or getattr(
-            job, "created_at", None
-        )
+        started_at = getattr(job, "started_at", None) or getattr(job, "created_at", None)
     if ended_at is None:
-        ended_at = getattr(job, "completed_at", None) or getattr(
-            job, "finished_at", None
-        )
+        ended_at = getattr(job, "completed_at", None) or getattr(job, "finished_at", None)
     return started_at, ended_at
 
 
-def _get_step_timing(
-    step: Any,
-) -> Tuple[Optional[datetime], Optional[datetime], Optional[int]]:
+def _get_step_timing(step: Any) -> Tuple[Optional[datetime], Optional[datetime], Optional[int]]:
     timing = getattr(step, "timing", None)
     started_at = getattr(timing, "start_time", None) if timing else None
     ended_at = getattr(timing, "end_time", None) if timing else None
@@ -71,9 +65,7 @@ def _get_step_dependencies(step: Any) -> List[str]:
     return []
 
 
-def build_job_graph_snapshot(
-    job: Optional[Job], *, job_id: Optional[str] = None
-) -> Dict[str, Any]:
+def build_job_graph_snapshot(job: Optional[Job], *, job_id: Optional[str] = None) -> Dict[str, Any]:
     resolved_job_id = job_id or (job.id if job else "unknown")
     generated_at = datetime.utcnow().isoformat()
 
@@ -96,9 +88,7 @@ def build_job_graph_snapshot(
     dependency_edges: List[Tuple[str, str]] = []
 
     for step in job.steps:
-        step_id = (
-            getattr(step, "id", None) or getattr(step, "step_id", None) or "unknown"
-        )
+        step_id = getattr(step, "id", None) or getattr(step, "step_id", None) or "unknown"
         node_id = f"step:{step_id}"
         started_at, ended_at, duration_ms = _get_step_timing(step)
         progress = getattr(step, "progress", None)
@@ -112,9 +102,7 @@ def build_job_graph_snapshot(
                 "id": node_id,
                 "kind": "step",
                 "type": "process",
-                "label": getattr(step, "name", None)
-                or getattr(step, "tool", None)
-                or str(step_id),
+                "label": getattr(step, "name", None) or getattr(step, "tool", None) or str(step_id),
                 "status": _map_step_status(step.status),
                 "progress": progress if isinstance(progress, (int, float)) else None,
                 "timing": {
@@ -124,11 +112,7 @@ def build_job_graph_snapshot(
                     "duration_ms": duration_ms,
                 },
                 "resources": {},
-                "error": (
-                    {"code": None, "message": error_message}
-                    if error_message
-                    else {"code": None, "message": None}
-                ),
+                "error": {"code": None, "message": error_message} if error_message else {"code": None, "message": None},
                 "meta": {"tool": meta_tool} if meta_tool else {},
             }
         )

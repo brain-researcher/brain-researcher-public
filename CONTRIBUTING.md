@@ -57,8 +57,9 @@ python scripts/analyze_code_import_graph.py \
   --boundary core:services --boundary llmcore:services
 ```
 
-Compare against the canonical baseline at
-[`docs/architecture/codegraph_baseline.md`](docs/architecture/codegraph_baseline.md);
+Compare against the canonical ratchet in
+[`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py)
+and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt);
 PRs must not introduce new cross-boundary violations.
 
 For function-level impact (e.g., before renaming or moving a symbol),
@@ -147,12 +148,10 @@ grep -rln "/home/$USER" src/ apps/ configs/ scripts/ tests/ docs/ \
 
 ### Captured experiment archives
 
-`benchmarks/reproducibility_audit_examples/`,
-`benchmarks/UNIFIED_BENCHMARK_BUNDLE*/`, `docs/audits/`,
-`docs/operations/*/data/`, `docs/archive/` are **frozen audit trails**.
-Don't rewrite paths inside their JSON dumps — they're records, not
-code. If you need to regenerate, do it via a new run, not by editing
-the historical output.
+Large generated benchmark and audit bundles are not part of the public release
+surface. If a generated use case is intentionally checked in under
+`docs/use_cases/`, treat it as a frozen artifact: regenerate via a new run
+rather than editing historical output in place.
 
 ### MCP tool naming
 
@@ -174,7 +173,7 @@ from the agent / MCP loop:
 3. Add the tool name to `configs/catalog/exposed_tools.yaml`.
 4. Add an example invocation in `configs/catalog/chat_tool_schemas.yaml`.
 5. Add a unit test under `tests/unit/tools/`.
-6. Document inputs/outputs in `docs/api/mcp-tools.md`.
+6. Document inputs/outputs in `docs/mcp.md` and `docs/mcp_tools.schema.json`.
 
 ---
 

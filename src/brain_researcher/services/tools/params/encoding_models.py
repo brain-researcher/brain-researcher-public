@@ -102,9 +102,7 @@ def run_encoding_model(params: EncodingModelParameters) -> Dict[str, object]:
 
     predicted = design @ weights
     residuals = brain_data - predicted
-    r2_scores = 1.0 - np.sum(residuals**2, axis=0) / (
-        np.sum((brain_data - np.mean(brain_data, axis=0)) ** 2, axis=0) + 1e-8
-    )
+    r2_scores = 1.0 - np.sum(residuals ** 2, axis=0) / (np.sum((brain_data - np.mean(brain_data, axis=0)) ** 2, axis=0) + 1e-8)
     # Handle potential numerical issues
     r2_scores = np.clip(r2_scores, -1.0, 1.0)
 
@@ -145,9 +143,7 @@ def run_encoding_model(params: EncodingModelParameters) -> Dict[str, object]:
 
     if params.save_models:
         model_path = out_dir / "encoding_model.json"
-        model_path.write_text(
-            json.dumps({"alpha": 1.0, "type": params.model_type}), encoding="utf-8"
-        )
+        model_path.write_text(json.dumps({"alpha": 1.0, "type": params.model_type}), encoding="utf-8")
         outputs["model"] = str(model_path)
 
     return {

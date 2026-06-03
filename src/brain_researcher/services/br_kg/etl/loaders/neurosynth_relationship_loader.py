@@ -430,11 +430,8 @@ def integrate_neurosynth_relationships(db_path: str, limit: int | None = None):
         0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
 
+    from brain_researcher.services.br_kg.etl.loaders.enhanced_neurosynth_loader import EnhancedNeurosynthLoader
     from graph.graph_database import BRKGGraphDB
-
-    from brain_researcher.services.br_kg.etl.loaders.enhanced_neurosynth_loader import (
-        EnhancedNeurosynthLoader,
-    )
 
     # Setup logging
     logging.basicConfig(level=logging.INFO)

@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,9 +31,7 @@ class OnvocUnifiedLoader:
         """Return ONVOC concept payloads."""
 
         concepts = self._load_json(self._concepts_path)
-        logger.debug(
-            "Loaded %d ONVOC concepts from %s", len(concepts), self._concepts_path
-        )
+        logger.debug("Loaded %d ONVOC concepts from %s", len(concepts), self._concepts_path)
         return concepts
 
     def load_relationships(self) -> List[Dict[str, Any]]:

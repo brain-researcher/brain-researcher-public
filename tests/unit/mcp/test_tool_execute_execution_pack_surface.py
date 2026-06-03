@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-
 from brain_researcher.services.mcp import runstore
 
 
@@ -38,9 +37,7 @@ def _configure_tool_execute_env(
                 return None
             return srv._enrich_toolspec_schema(spec.model_copy(deep=True))
 
-        monkeypatch.setattr(
-            srv, "_get_toolspec_with_schema", _real_toolspec_with_schema
-        )
+        monkeypatch.setattr(srv, "_get_toolspec_with_schema", _real_toolspec_with_schema)
 
 
 def test_tool_execute_promotes_execution_pack_to_top_level_response(

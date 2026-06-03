@@ -18,7 +18,7 @@ vulnerabilities. Instead, use one of the private channels below:
 
 1. **GitHub's private advisory flow** (preferred):
    [Open a private security advisory](https://github.com/zjc062/brain_researcher/security/advisories/new).
-2. **Email**: `micochan0622@gmail.com` with subject `[brain-researcher SECURITY]`.
+2. **Email**: `person@example.com` with subject `[brain-researcher SECURITY]`.
 
 Please include, where possible:
 
@@ -57,11 +57,9 @@ Out of scope (please do not report):
 - Findings in third-party dependencies that are already disclosed
   upstream (file with the upstream project instead)
 - Theoretical issues without a working proof-of-concept
-- The captured experiment archives under
-  `benchmarks/reproducibility_audit_examples/`,
-  `benchmarks/UNIFIED_BENCHMARK_BUNDLE*/`, `docs/audits/`, and
-  `docs/archive/` (these are frozen records; their content is the
-  research artifact, not the running system)
+- Generated research artifacts intentionally checked in under `docs/use_cases/`
+  (these are frozen records; their content is the research artifact, not the
+  running system)
 
 ## Hall of Fame
 

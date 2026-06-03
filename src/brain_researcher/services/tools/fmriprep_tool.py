@@ -19,16 +19,17 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.shared.toolsagent_command_execution import (
-    CommandExecutionError,
-    CommandSpec,
-    JobLogEmitter,
-    run_command,
-)
 from brain_researcher.services.tools.pipelines import (
     FMRIPrepParameters,
     build_fmriprep_command,
     fmriprep_from_payload,
+)
+
+from brain_researcher.services.shared.toolsagent_command_execution import (
+    CommandSpec,
+    CommandExecutionError,
+    JobLogEmitter,
+    run_command,
 )
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
@@ -37,7 +38,6 @@ logger = logging.getLogger(__name__)
 
 class OutputSpace(str, Enum):
     """Common output spaces for fMRIPrep."""
-
     MNI152NLin2009cAsym = "MNI152NLin2009cAsym"
     MNI152NLin6Asym = "MNI152NLin6Asym"
     MNI152Lin = "MNI152Lin"
@@ -50,7 +50,6 @@ class OutputSpace(str, Enum):
 
 class CiftiOutput(str, Enum):
     """CIFTI output resolutions."""
-
     NONE = ""
     RES_91K = "91k"
     RES_170K = "170k"
@@ -58,14 +57,12 @@ class CiftiOutput(str, Enum):
 
 class ErrorMode(str, Enum):
     """Error handling modes."""
-
     CRASH = "crash"
     CONTINUE = "continue"
 
 
 class MemoryProfile(str, Enum):
     """Memory profile settings."""
-
     LOW = "low"  # < 8GB
     MEDIUM = "medium"  # 8-16GB
     HIGH = "high"  # 16-32GB
@@ -79,72 +76,99 @@ FMRIPrepConfig = FMRIPrepParameters
 class FMRIPrepArgs(BaseModel):
     """Arguments for fMRIPrep preprocessing."""
 
-    bids_dir: str = Field(description="Path to BIDS dataset directory")
-    output_dir: str = Field(description="Output directory for fMRIPrep results")
+    bids_dir: str = Field(
+        description="Path to BIDS dataset directory"
+    )
+    output_dir: str = Field(
+        description="Output directory for fMRIPrep results"
+    )
     participant_label: Optional[List[str]] = Field(
         default=None,
-        description="Participant labels to process (without 'sub-' prefix)",
+        description="Participant labels to process (without 'sub-' prefix)"
     )
     work_dir: Optional[str] = Field(
-        default=None, description="Working directory for intermediate files"
+        default=None,
+        description="Working directory for intermediate files"
     )
     fs_license_file: Optional[str] = Field(
-        default=None, description="Path to FreeSurfer license file"
+        default=None,
+        description="Path to FreeSurfer license file"
     )
     output_spaces: Optional[List[str]] = Field(
         default=None,
-        description="Output spaces for registration (e.g., ['MNI152NLin2009cAsym', 'fsaverage'])",
+        description="Output spaces for registration (e.g., ['MNI152NLin2009cAsym', 'fsaverage'])"
     )
     skip_bids_validation: bool = Field(
-        default=False, description="Skip BIDS dataset validation"
+        default=False,
+        description="Skip BIDS dataset validation"
     )
-    use_aroma: bool = Field(default=False, description="Use ICA-AROMA for denoising")
+    use_aroma: bool = Field(
+        default=False,
+        description="Use ICA-AROMA for denoising"
+    )
     cifti_output: Optional[str] = Field(
         default=None,
-        description="Generate CIFTI outputs at specified resolution (91k or 170k)",
+        description="Generate CIFTI outputs at specified resolution (91k or 170k)"
     )
-    n_cpus: Optional[int] = Field(default=None, description="Number of CPUs to use")
-    mem_mb: Optional[int] = Field(default=None, description="Memory limit in MB")
-    low_mem: bool = Field(default=False, description="Use low-memory settings")
+    n_cpus: Optional[int] = Field(
+        default=None,
+        description="Number of CPUs to use"
+    )
+    mem_mb: Optional[int] = Field(
+        default=None,
+        description="Memory limit in MB"
+    )
+    low_mem: bool = Field(
+        default=False,
+        description="Use low-memory settings"
+    )
     stop_on_first_crash: bool = Field(
-        default=False, description="Stop on first crash instead of continuing"
+        default=False,
+        description="Stop on first crash instead of continuing"
     )
     longitudinal: bool = Field(
-        default=False, description="Enable longitudinal processing"
+        default=False,
+        description="Enable longitudinal processing"
     )
     skull_strip_t1w: str = Field(
-        default="auto", description="Skull stripping method (auto, skip, or force)"
+        default="auto",
+        description="Skull stripping method (auto, skip, or force)"
     )
     bold2t1w_dof: int = Field(
         default=6,
-        description="Degrees of freedom for BOLD to T1w registration (6, 9, or 12)",
+        description="Degrees of freedom for BOLD to T1w registration (6, 9, or 12)"
     )
     fd_spike_threshold: float = Field(
         default=0.5,
-        description="Framewise displacement threshold for motion outliers (mm)",
+        description="Framewise displacement threshold for motion outliers (mm)"
     )
     dvars_spike_threshold: float = Field(
-        default=1.5, description="DVARS threshold for motion outliers"
+        default=1.5,
+        description="DVARS threshold for motion outliers"
     )
     use_syn_sdc: Optional[str] = Field(
         default=None,
-        description="Use fieldmap-less distortion correction (error or warn)",
+        description="Use fieldmap-less distortion correction (error or warn)"
     )
-    force_syn: bool = Field(default=False, description="Force fieldmap-less correction")
+    force_syn: bool = Field(
+        default=False,
+        description="Force fieldmap-less correction"
+    )
     container_type: str = Field(
         default="singularity",
-        description="Container type to use (singularity or docker)",
+        description="Container type to use (singularity or docker)"
     )
     container_image: Optional[str] = Field(
-        default=None, description="Path to container image or docker tag"
+        default=None,
+        description="Path to container image or docker tag"
     )
     execute: bool = Field(
         default=False,
-        description="Execute the generated command instead of returning it only",
+        description="Execute the generated command instead of returning it only"
     )
     timeout_minutes: Optional[int] = Field(
         default=12 * 60,
-        description="Timeout in minutes when executing the container (default 12h)",
+        description="Timeout in minutes when executing the container (default 12h)"
     )
 
 
@@ -197,7 +221,6 @@ class FMRIPrepTool(NeuroToolWrapper):
                 # Look for fMRIPrep containers
                 fmriprep_pattern = os.path.join(self.neurodesk_path, "fmriprep_*")
                 import glob
-
                 containers = glob.glob(fmriprep_pattern)
                 if containers:
                     # Use the latest version
@@ -217,7 +240,7 @@ class FMRIPrepTool(NeuroToolWrapper):
             "has_participants": False,
             "has_dataset_description": False,
             "participants": [],
-            "issues": [],
+            "issues": []
         }
 
         # Check for required BIDS files
@@ -247,8 +270,8 @@ class FMRIPrepTool(NeuroToolWrapper):
             validation["issues"].append("No participant directories found")
 
         validation["is_valid"] = (
-            validation["has_dataset_description"]
-            and len(validation["participants"]) > 0
+            validation["has_dataset_description"] and
+            len(validation["participants"]) > 0
         )
 
         return validation
@@ -261,7 +284,7 @@ class FMRIPrepTool(NeuroToolWrapper):
             "derivatives": {},
             "confounds": [],
             "surfaces": [],
-            "quality_metrics": {},
+            "quality_metrics": {}
         }
 
         if not os.path.exists(output_dir):
@@ -282,7 +305,7 @@ class FMRIPrepTool(NeuroToolWrapper):
                     outputs["derivatives"][participant] = {
                         "anat": [],
                         "func": [],
-                        "figures": [],
+                        "figures": []
                     }
 
                     # Anatomical outputs
@@ -311,8 +334,7 @@ class FMRIPrepTool(NeuroToolWrapper):
                     figures_dir = os.path.join(part_dir, "figures")
                     if os.path.exists(figures_dir):
                         outputs["derivatives"][participant]["figures"] = [
-                            os.path.join(figures_dir, f)
-                            for f in os.listdir(figures_dir)
+                            os.path.join(figures_dir, f) for f in os.listdir(figures_dir)
                         ]
 
         # Find surface outputs
@@ -322,18 +344,18 @@ class FMRIPrepTool(NeuroToolWrapper):
                 if participant.startswith("sub-"):
                     surf_dir = os.path.join(freesurfer_dir, participant, "surf")
                     if os.path.exists(surf_dir):
-                        outputs["surfaces"].extend(
-                            [
-                                os.path.join(surf_dir, f)
-                                for f in os.listdir(surf_dir)
-                                if f.endswith((".white", ".pial", ".inflated"))
-                            ]
-                        )
+                        outputs["surfaces"].extend([
+                            os.path.join(surf_dir, f) for f in os.listdir(surf_dir)
+                            if f.endswith((".white", ".pial", ".inflated"))
+                        ])
 
         return outputs
 
     def _generate_command(
-        self, config: FMRIPrepConfig, container_type: str, container_image: str
+        self,
+        config: FMRIPrepConfig,
+        container_type: str,
+        container_image: str
     ) -> str:
         """Generate fMRIPrep execution command."""
         if container_type == "singularity":
@@ -366,7 +388,9 @@ class FMRIPrepTool(NeuroToolWrapper):
                     config,
                     fs_license_file="/opt/freesurfer/license.txt",
                 )
-            cmd.extend(build_fmriprep_command(command_config, include_executable=False))
+            cmd.extend(
+                build_fmriprep_command(command_config, include_executable=False)
+            )
 
         elif container_type == "docker":
             cmd = ["docker", "run", "--rm", "-it"]
@@ -389,11 +413,11 @@ class FMRIPrepTool(NeuroToolWrapper):
                 bids_dir="/data",
                 output_dir="/out",
                 work_dir="/work" if config.work_dir else None,
-                fs_license_file=(
-                    "/opt/freesurfer/license.txt" if config.fs_license_file else None
-                ),
+                fs_license_file="/opt/freesurfer/license.txt" if config.fs_license_file else None,
             )
-            cmd.extend(build_fmriprep_command(docker_config, include_executable=False))
+            cmd.extend(
+                build_fmriprep_command(docker_config, include_executable=False)
+            )
         else:
             # Direct execution (if fMRIPrep is installed locally)
             cmd = build_fmriprep_command(config)
@@ -418,7 +442,7 @@ class FMRIPrepTool(NeuroToolWrapper):
         container_image: Optional[str] = None,
         execute: bool = False,
         timeout_minutes: Optional[int] = None,
-        **kwargs,
+        **kwargs
     ) -> ToolResult:
         """Execute fMRIPrep preprocessing."""
         try:
@@ -429,23 +453,19 @@ class FMRIPrepTool(NeuroToolWrapper):
                     return ToolResult(
                         status="error",
                         error=f"Invalid BIDS dataset: {', '.join(validation['issues'])}",
-                        data={"validation": validation},
+                        data={"validation": validation}
                     )
 
                 # If no participants specified, use all found
                 if not participant_label and validation["participants"]:
-                    logger.info(
-                        f"Processing all participants: {validation['participants']}"
-                    )
+                    logger.info(f"Processing all participants: {validation['participants']}")
                     participant_label = validation["participants"]
 
             # Find or validate FreeSurfer license
             if not fs_license_file:
                 fs_license_file = self._find_freesurfer_license()
                 if not fs_license_file:
-                    logger.warning(
-                        "No FreeSurfer license found - surface reconstruction will be skipped"
-                    )
+                    logger.warning("No FreeSurfer license found - surface reconstruction will be skipped")
 
             # Find container image
             if not container_image:
@@ -454,7 +474,7 @@ class FMRIPrepTool(NeuroToolWrapper):
                     return ToolResult(
                         status="error",
                         error="No fMRIPrep container image found",
-                        data={},
+                        data={}
                     )
 
             # Set default output spaces
@@ -505,9 +525,7 @@ class FMRIPrepTool(NeuroToolWrapper):
             config = fmriprep_from_payload(payload)
 
             # Generate command
-            command_args = self._generate_command(
-                config, container_type, container_image
-            )
+            command_args = self._generate_command(config, container_type, container_image)
             if isinstance(command_args, str):
                 command = command_args
                 command_args_list = shlex.split(command_args)
@@ -532,28 +550,24 @@ class FMRIPrepTool(NeuroToolWrapper):
                     "participant_label": participant_label,
                     "output_spaces": output_spaces,
                     "container_type": container_type,
-                    "container_image": container_image,
+                    "container_image": container_image
                 },
                 "outputs": outputs,
                 "message": (
                     "fMRIPrep command generated successfully."
                     if not execute
                     else "fMRIPrep execution completed."
-                ),
+                )
             }
 
             # Add execution notes
             notes = []
             if not fs_license_file:
-                notes.append(
-                    "No FreeSurfer license - surface reconstruction will be skipped"
-                )
+                notes.append("No FreeSurfer license - surface reconstruction will be skipped")
             if use_aroma:
                 notes.append("ICA-AROMA denoising will be performed")
             if cifti_output:
-                notes.append(
-                    f"CIFTI outputs will be generated at {cifti_output} resolution"
-                )
+                notes.append(f"CIFTI outputs will be generated at {cifti_output} resolution")
             if low_mem:
                 notes.append("Low memory mode enabled - processing may be slower")
 
@@ -645,15 +659,22 @@ class FMRIPrepTool(NeuroToolWrapper):
 
         except Exception as e:
             logger.error(f"fMRIPrep setup failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 class FMRIPrepQCArgs(BaseModel):
     """Arguments for fMRIPrep quality control."""
 
-    fmriprep_dir: str = Field(description="Path to fMRIPrep output directory")
+    fmriprep_dir: str = Field(
+        description="Path to fMRIPrep output directory"
+    )
     output_file: Optional[str] = Field(
-        default=None, description="Path to save QC report"
+        default=None,
+        description="Path to save QC report"
     )
 
 
@@ -678,35 +699,32 @@ class FMRIPrepQCTool(NeuroToolWrapper):
 
         try:
             import pandas as pd
-
-            df = pd.read_csv(confounds_file, sep="\t")
+            df = pd.read_csv(confounds_file, sep='\t')
 
             # Motion parameters
-            if "framewise_displacement" in df.columns:
-                fd = df["framewise_displacement"].dropna()
-                metrics["mean_fd"] = float(fd.mean())
-                metrics["max_fd"] = float(fd.max())
-                metrics["percent_fd_above_0.5"] = float((fd > 0.5).mean() * 100)
+            if 'framewise_displacement' in df.columns:
+                fd = df['framewise_displacement'].dropna()
+                metrics['mean_fd'] = float(fd.mean())
+                metrics['max_fd'] = float(fd.max())
+                metrics['percent_fd_above_0.5'] = float((fd > 0.5).mean() * 100)
 
             # DVARS
-            if "std_dvars" in df.columns:
-                dvars = df["std_dvars"].dropna()
-                metrics["mean_dvars"] = float(dvars.mean())
-                metrics["max_dvars"] = float(dvars.max())
+            if 'std_dvars' in df.columns:
+                dvars = df['std_dvars'].dropna()
+                metrics['mean_dvars'] = float(dvars.mean())
+                metrics['max_dvars'] = float(dvars.max())
 
             # Global signals
-            for signal in ["global_signal", "csf", "white_matter"]:
+            for signal in ['global_signal', 'csf', 'white_matter']:
                 if signal in df.columns:
-                    metrics[f"mean_{signal}"] = float(df[signal].mean())
-                    metrics[f"std_{signal}"] = float(df[signal].std())
+                    metrics[f'mean_{signal}'] = float(df[signal].mean())
+                    metrics[f'std_{signal}'] = float(df[signal].std())
 
             # Count motion outliers
-            motion_cols = [c for c in df.columns if "motion_outlier" in c]
+            motion_cols = [c for c in df.columns if 'motion_outlier' in c]
             if motion_cols:
-                metrics["n_motion_outliers"] = int(df[motion_cols].sum().sum())
-                metrics["percent_motion_outliers"] = float(
-                    df[motion_cols].mean().mean() * 100
-                )
+                metrics['n_motion_outliers'] = int(df[motion_cols].sum().sum())
+                metrics['percent_motion_outliers'] = float(df[motion_cols].mean().mean() * 100)
 
         except Exception as e:
             logger.warning(f"Failed to parse confounds: {e}")
@@ -714,7 +732,10 @@ class FMRIPrepQCTool(NeuroToolWrapper):
         return metrics
 
     def _run(
-        self, fmriprep_dir: str, output_file: Optional[str] = None, **kwargs
+        self,
+        fmriprep_dir: str,
+        output_file: Optional[str] = None,
+        **kwargs
     ) -> ToolResult:
         """Extract QC metrics from fMRIPrep outputs."""
         try:
@@ -722,7 +743,7 @@ class FMRIPrepQCTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error=f"fMRIPrep directory not found: {fmriprep_dir}",
-                    data={},
+                    data={}
                 )
 
             qc_report = {
@@ -732,8 +753,8 @@ class FMRIPrepQCTool(NeuroToolWrapper):
                     "n_participants": 0,
                     "mean_fd_across_participants": [],
                     "high_motion_runs": [],
-                    "failed_runs": [],
-                },
+                    "failed_runs": []
+                }
             }
 
             # Process each participant
@@ -746,7 +767,10 @@ class FMRIPrepQCTool(NeuroToolWrapper):
                     part_data = {
                         "confounds": {},
                         "reports": [],
-                        "outputs": {"anat": [], "func": []},
+                        "outputs": {
+                            "anat": [],
+                            "func": []
+                        }
                     }
 
                     part_dir = os.path.join(fmriprep_output, participant)
@@ -757,9 +781,7 @@ class FMRIPrepQCTool(NeuroToolWrapper):
                         for file in os.listdir(func_dir):
                             if "confounds" in file and file.endswith(".tsv"):
                                 confounds_path = os.path.join(func_dir, file)
-                                run_name = file.replace(
-                                    "_desc-confounds_timeseries.tsv", ""
-                                )
+                                run_name = file.replace("_desc-confounds_timeseries.tsv", "")
                                 metrics = self._parse_confounds(confounds_path)
                                 part_data["confounds"][run_name] = metrics
 
@@ -781,7 +803,9 @@ class FMRIPrepQCTool(NeuroToolWrapper):
                         ]
 
                     # Find HTML reports
-                    html_report = os.path.join(fmriprep_dir, f"{participant}.html")
+                    html_report = os.path.join(
+                        fmriprep_dir, f"{participant}.html"
+                    )
                     if os.path.exists(html_report):
                         part_data["reports"].append(html_report)
 
@@ -798,7 +822,6 @@ class FMRIPrepQCTool(NeuroToolWrapper):
             # Calculate summary statistics
             if qc_report["summary"]["mean_fd_across_participants"]:
                 import statistics
-
                 qc_report["summary"]["overall_mean_fd"] = statistics.mean(
                     qc_report["summary"]["mean_fd_across_participants"]
                 )
@@ -808,7 +831,7 @@ class FMRIPrepQCTool(NeuroToolWrapper):
 
             # Save report if requested
             if output_file:
-                with open(output_file, "w") as f:
+                with open(output_file, 'w') as f:
                     json.dump(qc_report, f, indent=2)
                 logger.info(f"QC report saved to: {output_file}")
 
@@ -816,13 +839,17 @@ class FMRIPrepQCTool(NeuroToolWrapper):
                 status="success",
                 data={
                     "qc_report": qc_report,
-                    "message": f"QC analysis completed for {qc_report['summary']['n_participants']} participants",
-                },
+                    "message": f"QC analysis completed for {qc_report['summary']['n_participants']} participants"
+                }
             )
 
         except Exception as e:
             logger.error(f"QC analysis failed: {str(e)}")
-            return ToolResult(status="error", error=str(e), data={})
+            return ToolResult(
+                status="error",
+                error=str(e),
+                data={}
+            )
 
 
 # Tool collection for registration
@@ -832,4 +859,7 @@ class FMRIPrepTools:
     @staticmethod
     def get_all_tools() -> List[NeuroToolWrapper]:
         """Get all fMRIPrep tools."""
-        return [FMRIPrepTool(), FMRIPrepQCTool()]
+        return [
+            FMRIPrepTool(),
+            FMRIPrepQCTool()
+        ]

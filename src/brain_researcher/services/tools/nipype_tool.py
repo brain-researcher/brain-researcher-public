@@ -83,7 +83,7 @@ class NipypeConfig:
                 "workflow_level": "INFO",
                 "interface_level": "INFO",
                 "log_directory": self.working_dir,
-            },
+            }
         }
 
         if self.crash_dir:
@@ -107,17 +107,19 @@ class NipypeWorkflowBuilderArgs(BaseModel):
     )
     connections: List[Tuple[str, str, str, str]] = Field(
         default=[],
-        description="Node connections [(from_node, from_field, to_node, to_field)]",
+        description="Node connections [(from_node, from_field, to_node, to_field)]"
     )
     iterables: Optional[Dict[str, List[Any]]] = Field(
-        default=None, description="Iterables for parametric execution"
+        default=None,
+        description="Iterables for parametric execution"
     )
     plugin: str = Field(
         default="Linear",
-        description="Execution plugin (Linear, MultiProc, SLURM, etc.)",
+        description="Execution plugin (Linear, MultiProc, SLURM, etc.)"
     )
     plugin_args: Optional[Dict[str, Any]] = Field(
-        default=None, description="Plugin-specific arguments"
+        default=None,
+        description="Plugin-specific arguments"
     )
 
 
@@ -195,21 +197,19 @@ class NipypeWorkflowBuilderTool(NeuroToolWrapper):
             elif interface == "nilearn":
                 script_lines.append("import nipype.interfaces.nilearn as nil")
 
-        script_lines.extend(
-            [
-                "",
-                "# Configure Nipype",
-                "config.update_config({'execution': {'plugin': '" + plugin + "'}})",
-                "logging.update_logging(config)",
-                "",
-                f"def create_{name}_workflow():",
-                '    """Create the workflow."""',
-                f'    workflow = pe.Workflow(name="{name}")',
-                f'    workflow.base_dir = "{base_dir}"',
-                "",
-                "    # Create nodes",
-            ]
-        )
+        script_lines.extend([
+            "",
+            "# Configure Nipype",
+            "config.update_config({'execution': {'plugin': '" + plugin + "'}})",
+            "logging.update_logging(config)",
+            "",
+            f"def create_{name}_workflow():",
+            '    """Create the workflow."""',
+            f'    workflow = pe.Workflow(name="{name}")',
+            f'    workflow.base_dir = "{base_dir}"',
+            "",
+            "    # Create nodes",
+        ])
 
         # Create nodes
         node_names = []
@@ -287,26 +287,22 @@ class NipypeWorkflowBuilderTool(NeuroToolWrapper):
         script_lines.append("")
 
         # Add main execution block
-        script_lines.extend(
-            [
-                "",
-                'if __name__ == "__main__":',
-                f"    wf = create_{name}_workflow()",
-                '    print(f"Workflow created: {wf.name}")',
-                '    print(f"Base directory: {wf.base_dir}")',
-                "",
-                "    # Write workflow graph",
-                '    wf.write_graph(graph2use="colored", format="png", simple_form=True)',
-                "",
-                "    # Run workflow",
-            ]
-        )
+        script_lines.extend([
+            "",
+            'if __name__ == "__main__":',
+            f'    wf = create_{name}_workflow()',
+            '    print(f"Workflow created: {wf.name}")',
+            '    print(f"Base directory: {wf.base_dir}")',
+            "",
+            "    # Write workflow graph",
+            '    wf.write_graph(graph2use="colored", format="png", simple_form=True)',
+            "",
+            "    # Run workflow",
+        ])
 
         if plugin_args:
-            script_lines.append(f"    plugin_args = {plugin_args}")
-            script_lines.append(
-                f'    wf.run(plugin="{plugin}", plugin_args=plugin_args)'
-            )
+            script_lines.append(f'    plugin_args = {plugin_args}')
+            script_lines.append(f'    wf.run(plugin="{plugin}", plugin_args=plugin_args)')
         else:
             script_lines.append(f'    wf.run(plugin="{plugin}")')
 
@@ -319,7 +315,9 @@ class NipypeWorkflowBuilderTool(NeuroToolWrapper):
 
         # Generate config file
         config = NipypeConfig(
-            working_dir=base_dir, plugin=plugin, plugin_args=plugin_args or {}
+            working_dir=base_dir,
+            plugin=plugin,
+            plugin_args=plugin_args or {}
         )
 
         config_file = Path(base_dir) / "nipype.cfg"
@@ -348,8 +346,8 @@ class NipypeWorkflowBuilderTool(NeuroToolWrapper):
                 "n_connections": len(connections),
                 "plugin": plugin,
                 "node_names": node_names,
-                "command": f"python {workflow_file}",
-            },
+                "command": f"python {workflow_file}"
+            }
         )
 
 
@@ -364,19 +362,28 @@ class NipypeBIDSAppArgs(BaseModel):
     bids_dir: str = Field(description="BIDS dataset directory")
     output_dir: str = Field(description="Output directory")
     analysis_level: str = Field(
-        default="participant", description="Analysis level (participant or group)"
+        default="participant",
+        description="Analysis level (participant or group)"
     )
     participant_label: Optional[List[str]] = Field(
-        default=None, description="Participant labels to process"
+        default=None,
+        description="Participant labels to process"
     )
-    task: Optional[str] = Field(default=None, description="Task to process")
+    task: Optional[str] = Field(
+        default=None,
+        description="Task to process"
+    )
     pipeline: str = Field(
         default="preprocessing",
-        description="Pipeline to run (preprocessing, first_level, etc.)",
+        description="Pipeline to run (preprocessing, first_level, etc.)"
     )
-    fwhm: float = Field(default=6.0, description="Smoothing kernel FWHM in mm")
+    fwhm: float = Field(
+        default=6.0,
+        description="Smoothing kernel FWHM in mm"
+    )
     tr: Optional[float] = Field(
-        default=None, description="Repetition time (if not in BIDS)"
+        default=None,
+        description="Repetition time (if not in BIDS)"
     )
 
 
@@ -411,7 +418,8 @@ class NipypeBIDSAppTool(NeuroToolWrapper):
         # Validate BIDS directory
         if not os.path.exists(bids_dir):
             return ToolResult(
-                status="error", error=f"BIDS directory not found: {bids_dir}"
+                status="error",
+                error=f"BIDS directory not found: {bids_dir}"
             )
 
         # Create output directory
@@ -446,161 +454,155 @@ class NipypeBIDSAppTool(NeuroToolWrapper):
             "})",
             "logging.update_logging(config)",
             "",
-            f"def create_bids_{pipeline}_workflow(bids_dir, output_dir, subjects=None):",
+            f'def create_bids_{pipeline}_workflow(bids_dir, output_dir, subjects=None):',
             '    """Create BIDS workflow."""',
             "    ",
             "    # Initialize BIDS layout",
-            "    layout = BIDSLayout(bids_dir, validate=False)",
+            '    layout = BIDSLayout(bids_dir, validate=False)',
             "    ",
             "    # Get subjects",
             "    if subjects is None:",
             "        subjects = layout.get_subjects()",
             "    ",
-            f"    # Create main workflow",
+            f'    # Create main workflow',
             f'    workflow = pe.Workflow(name="bids_{pipeline}")',
-            f"    workflow.base_dir = output_dir",
+            f'    workflow.base_dir = output_dir',
             "    ",
         ]
 
         if pipeline == "preprocessing":
-            script_lines.extend(
-                [
-                    "    # Create preprocessing nodes",
-                    "    for subject in subjects:",
-                    f"        # Get functional files",
-                    "        func_files = layout.get(",
-                    "            subject=subject,",
-                    "            extension='nii.gz',",
-                    "            suffix='bold',",
-                    f"            task={repr(task) if task else None},",
-                    "            return_type='file'",
-                    "        )",
-                    "        ",
-                    "        if not func_files:",
-                    "            continue",
-                    "        ",
-                    "        # Get anatomical file",
-                    "        anat_files = layout.get(",
-                    "            subject=subject,",
-                    "            extension='nii.gz',",
-                    "            suffix='T1w',",
-                    "            return_type='file'",
-                    "        )",
-                    "        ",
-                    "        if not anat_files:",
-                    "            continue",
-                    "        ",
-                    f"        # Create subject workflow",
-                    f'        subj_wf = pe.Workflow(name=f"sub_{{subject}}")',
-                    "        ",
-                    "        # Motion correction",
-                    '        mcflirt = pe.Node(fsl.MCFLIRT(), name="motion_correction")',
-                    "        mcflirt.inputs.in_file = func_files[0]",
-                    "        ",
-                    "        # Slice timing correction",
-                    '        slicetimer = pe.Node(fsl.SliceTimer(), name="slice_timing")',
-                    f"        slicetimer.inputs.time_repetition = {tr or 2.0}",
-                    "        ",
-                    "        # Brain extraction",
-                    '        bet = pe.Node(fsl.BET(), name="brain_extraction")',
-                    "        bet.inputs.frac = 0.5",
-                    "        bet.inputs.functional = True",
-                    "        ",
-                    "        # Smoothing",
-                    '        smooth = pe.Node(fsl.Smooth(), name="smoothing")',
-                    f"        smooth.inputs.fwhm = {fwhm}",
-                    "        ",
-                    "        # Connect nodes",
-                    '        subj_wf.connect(mcflirt, "out_file", slicetimer, "in_file")',
-                    '        subj_wf.connect(slicetimer, "slice_time_corrected_file", bet, "in_file")',
-                    '        subj_wf.connect(bet, "out_file", smooth, "in_file")',
-                    "        ",
-                    "        # Add to main workflow",
-                    "        workflow.add_nodes([subj_wf])",
-                    "    ",
-                ]
-            )
+            script_lines.extend([
+                "    # Create preprocessing nodes",
+                "    for subject in subjects:",
+                f"        # Get functional files",
+                "        func_files = layout.get(",
+                "            subject=subject,",
+                "            extension='nii.gz',",
+                "            suffix='bold',",
+                f"            task={repr(task) if task else None},",
+                "            return_type='file'",
+                "        )",
+                "        ",
+                "        if not func_files:",
+                "            continue",
+                "        ",
+                "        # Get anatomical file",
+                "        anat_files = layout.get(",
+                "            subject=subject,",
+                "            extension='nii.gz',",
+                "            suffix='T1w',",
+                "            return_type='file'",
+                "        )",
+                "        ",
+                "        if not anat_files:",
+                "            continue",
+                "        ",
+                f"        # Create subject workflow",
+                f'        subj_wf = pe.Workflow(name=f"sub_{{subject}}")',
+                "        ",
+                "        # Motion correction",
+                '        mcflirt = pe.Node(fsl.MCFLIRT(), name="motion_correction")',
+                "        mcflirt.inputs.in_file = func_files[0]",
+                "        ",
+                "        # Slice timing correction",
+                '        slicetimer = pe.Node(fsl.SliceTimer(), name="slice_timing")',
+                f"        slicetimer.inputs.time_repetition = {tr or 2.0}",
+                "        ",
+                "        # Brain extraction",
+                '        bet = pe.Node(fsl.BET(), name="brain_extraction")',
+                "        bet.inputs.frac = 0.5",
+                "        bet.inputs.functional = True",
+                "        ",
+                "        # Smoothing",
+                '        smooth = pe.Node(fsl.Smooth(), name="smoothing")',
+                f"        smooth.inputs.fwhm = {fwhm}",
+                "        ",
+                "        # Connect nodes",
+                '        subj_wf.connect(mcflirt, "out_file", slicetimer, "in_file")',
+                '        subj_wf.connect(slicetimer, "slice_time_corrected_file", bet, "in_file")',
+                '        subj_wf.connect(bet, "out_file", smooth, "in_file")',
+                "        ",
+                "        # Add to main workflow",
+                "        workflow.add_nodes([subj_wf])",
+                "    ",
+            ])
 
         elif pipeline == "first_level":
-            script_lines.extend(
-                [
-                    "    # Create first-level analysis nodes",
-                    "    for subject in subjects:",
-                    "        # Get preprocessed functional files",
-                    "        func_files = layout.get(",
-                    "            subject=subject,",
-                    "            extension='nii.gz',",
-                    "            suffix='bold',",
-                    f"            task={repr(task) if task else None},",
-                    "            return_type='file'",
-                    "        )",
-                    "        ",
-                    "        if not func_files:",
-                    "            continue",
-                    "        ",
-                    "        # Get events files",
-                    "        event_files = layout.get(",
-                    "            subject=subject,",
-                    "            extension='tsv',",
-                    "            suffix='events',",
-                    f"            task={repr(task) if task else None},",
-                    "            return_type='file'",
-                    "        )",
-                    "        ",
-                    f"        # Create subject workflow",
-                    f'        subj_wf = pe.Workflow(name=f"sub_{{subject}}_glm")',
-                    "        ",
-                    "        # Specify model",
-                    '        modelspec = pe.Node(fsl.SpecifyModel(), name="modelspec")',
-                    f"        modelspec.inputs.time_repetition = {tr or 2.0}",
-                    "        modelspec.inputs.input_units = 'secs'",
-                    "        modelspec.inputs.high_pass_filter_cutoff = 128",
-                    "        ",
-                    "        # Generate design",
-                    '        level1design = pe.Node(fsl.Level1Design(), name="level1design")',
-                    "        level1design.inputs.interscan_interval = modelspec.inputs.time_repetition",
-                    "        level1design.inputs.bases = {'dgamma': {'derivs': False}}",
-                    "        ",
-                    "        # Estimate model",
-                    '        modelgen = pe.Node(fsl.FEATModel(), name="modelgen")',
-                    '        estimate = pe.Node(fsl.FILMGLS(), name="estimate")',
-                    "        ",
-                    "        # Connect nodes",
-                    '        subj_wf.connect(modelspec, "session_info", level1design, "session_info")',
-                    '        subj_wf.connect(level1design, "fsf_files", modelgen, "fsf_file")',
-                    '        subj_wf.connect(level1design, "ev_files", modelgen, "ev_files")',
-                    '        subj_wf.connect(modelgen, "design_file", estimate, "design_file")',
-                    "        ",
-                    "        # Add to main workflow",
-                    "        workflow.add_nodes([subj_wf])",
-                    "    ",
-                ]
-            )
+            script_lines.extend([
+                "    # Create first-level analysis nodes",
+                "    for subject in subjects:",
+                "        # Get preprocessed functional files",
+                "        func_files = layout.get(",
+                "            subject=subject,",
+                "            extension='nii.gz',",
+                "            suffix='bold',",
+                f"            task={repr(task) if task else None},",
+                "            return_type='file'",
+                "        )",
+                "        ",
+                "        if not func_files:",
+                "            continue",
+                "        ",
+                "        # Get events files",
+                "        event_files = layout.get(",
+                "            subject=subject,",
+                "            extension='tsv',",
+                "            suffix='events',",
+                f"            task={repr(task) if task else None},",
+                "            return_type='file'",
+                "        )",
+                "        ",
+                f'        # Create subject workflow',
+                f'        subj_wf = pe.Workflow(name=f"sub_{{subject}}_glm")',
+                "        ",
+                "        # Specify model",
+                '        modelspec = pe.Node(fsl.SpecifyModel(), name="modelspec")',
+                f"        modelspec.inputs.time_repetition = {tr or 2.0}",
+                "        modelspec.inputs.input_units = 'secs'",
+                "        modelspec.inputs.high_pass_filter_cutoff = 128",
+                "        ",
+                "        # Generate design",
+                '        level1design = pe.Node(fsl.Level1Design(), name="level1design")',
+                "        level1design.inputs.interscan_interval = modelspec.inputs.time_repetition",
+                "        level1design.inputs.bases = {'dgamma': {'derivs': False}}",
+                "        ",
+                "        # Estimate model",
+                '        modelgen = pe.Node(fsl.FEATModel(), name="modelgen")',
+                '        estimate = pe.Node(fsl.FILMGLS(), name="estimate")',
+                "        ",
+                "        # Connect nodes",
+                '        subj_wf.connect(modelspec, "session_info", level1design, "session_info")',
+                '        subj_wf.connect(level1design, "fsf_files", modelgen, "fsf_file")',
+                '        subj_wf.connect(level1design, "ev_files", modelgen, "ev_files")',
+                '        subj_wf.connect(modelgen, "design_file", estimate, "design_file")',
+                "        ",
+                "        # Add to main workflow",
+                "        workflow.add_nodes([subj_wf])",
+                "    ",
+            ])
 
-        script_lines.extend(
-            [
-                "    return workflow",
-                "",
-                "",
-                'if __name__ == "__main__":',
-                f'    bids_dir = "{bids_dir}"',
-                f'    output_dir = "{output_dir}"',
-                "    ",
-                "    # Participant labels",
-                f'    participants = {participant_label or "None"}',
-                "    ",
-                "    # Create and run workflow",
-                f"    wf = create_bids_{pipeline}_workflow(bids_dir, output_dir, participants)",
-                '    print(f"Created workflow: {wf.name}")',
-                "    ",
-                "    # Write graph",
-                '    wf.write_graph(graph2use="colored", format="png")',
-                "    ",
-                "    # Run workflow",
-                f'    wf.run(plugin="MultiProc", plugin_args={{"n_procs": 4}})',
-                '    print("BIDS app execution complete!")',
-            ]
-        )
+        script_lines.extend([
+            "    return workflow",
+            "",
+            "",
+            'if __name__ == "__main__":',
+            f'    bids_dir = "{bids_dir}"',
+            f'    output_dir = "{output_dir}"',
+            "    ",
+            "    # Participant labels",
+            f'    participants = {participant_label or "None"}',
+            "    ",
+            "    # Create and run workflow",
+            f'    wf = create_bids_{pipeline}_workflow(bids_dir, output_dir, participants)',
+            '    print(f"Created workflow: {wf.name}")',
+            "    ",
+            "    # Write graph",
+            '    wf.write_graph(graph2use="colored", format="png")',
+            "    ",
+            "    # Run workflow",
+            f'    wf.run(plugin="MultiProc", plugin_args={{"n_procs": 4}})',
+            '    print("BIDS app execution complete!")',
+        ])
 
         # Save BIDS app script
         app_file = Path(output_dir) / f"bids_{pipeline}_app.py"
@@ -614,9 +616,14 @@ class NipypeBIDSAppTool(NeuroToolWrapper):
             "PipelineDescription": {
                 "Name": f"nipype_{pipeline}",
                 "Version": "1.0.0",
-                "CodeURL": str(app_file),
+                "CodeURL": str(app_file)
             },
-            "SourceDatasets": [{"URL": bids_dir, "Version": "1.0.0"}],
+            "SourceDatasets": [
+                {
+                    "URL": bids_dir,
+                    "Version": "1.0.0"
+                }
+            ]
         }
 
         desc_file = Path(output_dir) / "dataset_description.json"
@@ -632,8 +639,8 @@ class NipypeBIDSAppTool(NeuroToolWrapper):
                 "analysis_level": analysis_level,
                 "participants": participant_label or "all",
                 "command": f"python {app_file}",
-                "dataset_description": str(desc_file),
-            },
+                "dataset_description": str(desc_file)
+            }
         )
 
 
@@ -648,11 +655,18 @@ class NipypeInterfaceWrapperArgs(BaseModel):
     interface_type: str = Field(
         description="Interface type (fsl, spm, freesurfer, ants, etc.)"
     )
-    interface_name: str = Field(description="Interface name (e.g., BET, FLIRT, Smooth)")
-    inputs: Dict[str, Any] = Field(description="Input parameters for the interface")
-    output_dir: str = Field(description="Output directory for results")
+    interface_name: str = Field(
+        description="Interface name (e.g., BET, FLIRT, Smooth)"
+    )
+    inputs: Dict[str, Any] = Field(
+        description="Input parameters for the interface"
+    )
+    output_dir: str = Field(
+        description="Output directory for results"
+    )
     run_interface: bool = Field(
-        default=False, description="Whether to run the interface immediately"
+        default=False,
+        description="Whether to run the interface immediately"
     )
 
 
@@ -719,15 +733,13 @@ class NipypeInterfaceWrapperTool(NeuroToolWrapper):
             script_lines.append("import nipype.interfaces.utility as util")
             interface_module = "util"
 
-        script_lines.extend(
-            [
-                "",
-                f"# Create interface",
-                f"interface = {interface_module}.{interface_name}()",
-                "",
-                "# Set inputs",
-            ]
-        )
+        script_lines.extend([
+            "",
+            f"# Create interface",
+            f"interface = {interface_module}.{interface_name}()",
+            "",
+            "# Set inputs",
+        ])
 
         # Set input parameters
         for key, value in inputs.items():
@@ -738,54 +750,46 @@ class NipypeInterfaceWrapperTool(NeuroToolWrapper):
             else:
                 script_lines.append(f"interface.inputs.{key} = {value}")
 
-        script_lines.extend(
-            [
-                "",
-                "# Print interface details",
-                'print("Interface:", interface)',
-                'print("\\nInputs:")',
-                "print(interface.inputs)",
-                "",
-            ]
-        )
+        script_lines.extend([
+            "",
+            "# Print interface details",
+            'print("Interface:", interface)',
+            'print("\\nInputs:")',
+            "print(interface.inputs)",
+            "",
+        ])
 
         if run_interface:
-            script_lines.extend(
-                [
-                    "# Run interface",
-                    "try:",
-                    "    result = interface.run()",
-                    '    print("\\nInterface executed successfully!")',
-                    '    print("\\nOutputs:")',
-                    "    print(result.outputs)",
-                    "except Exception as e:",
-                    '    print(f"\\nError running interface: {e}")',
-                    "    import traceback",
-                    "    traceback.print_exc()",
-                ]
-            )
+            script_lines.extend([
+                "# Run interface",
+                "try:",
+                "    result = interface.run()",
+                '    print("\\nInterface executed successfully!")',
+                '    print("\\nOutputs:")',
+                "    print(result.outputs)",
+                "except Exception as e:",
+                '    print(f"\\nError running interface: {e}")',
+                "    import traceback",
+                "    traceback.print_exc()",
+            ])
         else:
-            script_lines.extend(
-                [
-                    "# To run the interface, uncomment the following:",
-                    "# result = interface.run()",
-                    "# print(result.outputs)",
-                ]
-            )
+            script_lines.extend([
+                "# To run the interface, uncomment the following:",
+                "# result = interface.run()",
+                "# print(result.outputs)",
+            ])
 
         # Add command line generation
-        script_lines.extend(
-            [
-                "",
-                "# Generate command line",
-                "try:",
-                "    cmdline = interface.cmdline",
-                '    print("\\nCommand line:")',
-                "    print(cmdline)",
-                "except Exception:",
-                '    print("\\nCommand line generation not available for this interface")',
-            ]
-        )
+        script_lines.extend([
+            "",
+            "# Generate command line",
+            "try:",
+            "    cmdline = interface.cmdline",
+            '    print("\\nCommand line:")',
+            "    print(cmdline)",
+            "except Exception:",
+            '    print("\\nCommand line generation not available for this interface")',
+        ])
 
         # Save interface script
         script_file = Path(output_dir) / f"{interface_type}_{interface_name}.py"
@@ -797,29 +801,18 @@ class NipypeInterfaceWrapperTool(NeuroToolWrapper):
             "interface_type": interface_type,
             "interface_name": interface_name,
             "inputs": inputs,
-            "output_dir": output_dir,
+            "output_dir": output_dir
         }
 
-        config_file = (
-            Path(output_dir) / f"{interface_type}_{interface_name}_config.json"
-        )
+        config_file = Path(output_dir) / f"{interface_type}_{interface_name}_config.json"
         config_file.write_text(json.dumps(config, indent=2))
 
         # Try to get command line preview (if possible)
         cmdline_preview = None
-        if interface_type == "fsl" and interface_name in [
-            "BET",
-            "FLIRT",
-            "FNIRT",
-            "FAST",
-        ]:
+        if interface_type == "fsl" and interface_name in ["BET", "FLIRT", "FNIRT", "FAST"]:
             if interface_name == "BET" and "in_file" in inputs:
                 cmdline_preview = f"bet {inputs['in_file']} output"
-            elif (
-                interface_name == "FLIRT"
-                and "in_file" in inputs
-                and "reference" in inputs
-            ):
+            elif interface_name == "FLIRT" and "in_file" in inputs and "reference" in inputs:
                 cmdline_preview = f"flirt -in {inputs['in_file']} -ref {inputs['reference']} -out output"
 
         return ToolResult(
@@ -832,8 +825,8 @@ class NipypeInterfaceWrapperTool(NeuroToolWrapper):
                 "output_dir": output_dir,
                 "command": f"python {script_file}",
                 "cmdline_preview": cmdline_preview,
-                "run_interface": run_interface,
-            },
+                "run_interface": run_interface
+            }
         )
 
 
@@ -848,19 +841,27 @@ class NipypeDistributedArgs(BaseModel):
     workflow_file: str = Field(description="Workflow Python file to execute")
     plugin: str = Field(
         default="MultiProc",
-        description="Execution plugin (MultiProc, SLURM, SGE, etc.)",
+        description="Execution plugin (MultiProc, SLURM, SGE, etc.)"
     )
     n_procs: int = Field(
-        default=4, description="Number of processes for MultiProc plugin"
+        default=4,
+        description="Number of processes for MultiProc plugin"
     )
-    memory_gb: int = Field(default=4, description="Memory per process in GB")
+    memory_gb: int = Field(
+        default=4,
+        description="Memory per process in GB"
+    )
     queue: Optional[str] = Field(
-        default=None, description="Queue name for cluster execution"
+        default=None,
+        description="Queue name for cluster execution"
     )
     walltime: Optional[str] = Field(
-        default=None, description="Wall time for cluster jobs (HH:MM:SS)"
+        default=None,
+        description="Wall time for cluster jobs (HH:MM:SS)"
     )
-    working_dir: str = Field(description="Working directory for execution")
+    working_dir: str = Field(
+        description="Working directory for execution"
+    )
 
 
 class NipypeDistributedTool(NeuroToolWrapper):
@@ -893,7 +894,8 @@ class NipypeDistributedTool(NeuroToolWrapper):
 
         if not os.path.exists(workflow_file):
             return ToolResult(
-                status="error", error=f"Workflow file not found: {workflow_file}"
+                status="error",
+                error=f"Workflow file not found: {workflow_file}"
             )
 
         if working_dir is None:
@@ -949,13 +951,13 @@ class NipypeDistributedTool(NeuroToolWrapper):
             plugin_args = {
                 "n_procs": n_procs,
                 "memory_gb": memory_gb,
-                "maxtasksperchild": 1,
+                "maxtasksperchild": 1
             }
 
         elif plugin == "SLURM":
             plugin_args = {
                 "template": "#!/bin/bash\n#SBATCH --nodes=1\n#SBATCH --ntasks=1",
-                "sbatch_args": f"--mem={memory_gb}G",
+                "sbatch_args": f"--mem={memory_gb}G"
             }
             if queue:
                 plugin_args["sbatch_args"] += f" --partition={queue}"
@@ -965,7 +967,7 @@ class NipypeDistributedTool(NeuroToolWrapper):
         elif plugin == "SGE":
             plugin_args = {
                 "template": f"#!/bin/bash\n#$ -l h_vmem={memory_gb}G",
-                "qsub_args": "-V -cwd",
+                "qsub_args": "-V -cwd"
             }
             if queue:
                 plugin_args["qsub_args"] += f" -q {queue}"
@@ -973,54 +975,52 @@ class NipypeDistributedTool(NeuroToolWrapper):
         elif plugin == "PBS":
             plugin_args = {
                 "template": f"#!/bin/bash\n#PBS -l mem={memory_gb}gb",
-                "qsub_args": "",
+                "qsub_args": ""
             }
             if queue:
                 plugin_args["qsub_args"] += f" -q {queue}"
             if walltime:
                 plugin_args["qsub_args"] += f" -l walltime={walltime}"
 
-        script_lines.extend(
-            [
-                "# Plugin configuration",
-                f"plugin_args = {plugin_args}",
-                "",
-                "# Get workflow",
-                "# Try different common workflow creation function names",
-                "workflow = None",
-                "for func_name in ['create_workflow', 'get_workflow', 'main', 'build_workflow']:",
-                "    if hasattr(workflow_module, func_name):",
-                "        workflow_func = getattr(workflow_module, func_name)",
-                "        try:",
-                "            workflow = workflow_func()",
-                "            break",
-                "        except TypeError:",
-                "            # Function might require arguments",
-                "            pass",
-                "",
-                "if workflow is None:",
-                '    print("Could not find or create workflow from file")',
-                "    sys.exit(1)",
-                "",
-                'print(f"Running workflow: {workflow.name}")',
-                f'print(f"Plugin: {plugin}")',
-                'print(f"Plugin args: {plugin_args}")',
-                "",
-                "# Create directories",
-                "Path(config_dict['execution']['crashdump_dir']).mkdir(parents=True, exist_ok=True)",
-                "Path(config_dict['logging']['log_directory']).mkdir(parents=True, exist_ok=True)",
-                "",
-                "# Run workflow",
-                "try:",
-                f'    result = workflow.run(plugin="{plugin}", plugin_args=plugin_args)',
-                '    print("\\nWorkflow completed successfully!")',
-                "except Exception as e:",
-                '    print(f"\\nWorkflow failed: {e}")',
-                "    import traceback",
-                "    traceback.print_exc()",
-                "    sys.exit(1)",
-            ]
-        )
+        script_lines.extend([
+            "# Plugin configuration",
+            f"plugin_args = {plugin_args}",
+            "",
+            "# Get workflow",
+            "# Try different common workflow creation function names",
+            "workflow = None",
+            "for func_name in ['create_workflow', 'get_workflow', 'main', 'build_workflow']:",
+            "    if hasattr(workflow_module, func_name):",
+            "        workflow_func = getattr(workflow_module, func_name)",
+            "        try:",
+            "            workflow = workflow_func()",
+            "            break",
+            "        except TypeError:",
+            "            # Function might require arguments",
+            "            pass",
+            "",
+            "if workflow is None:",
+            '    print("Could not find or create workflow from file")',
+            "    sys.exit(1)",
+            "",
+            'print(f"Running workflow: {workflow.name}")',
+            f'print(f"Plugin: {plugin}")',
+            'print(f"Plugin args: {plugin_args}")',
+            "",
+            "# Create directories",
+            "Path(config_dict['execution']['crashdump_dir']).mkdir(parents=True, exist_ok=True)",
+            "Path(config_dict['logging']['log_directory']).mkdir(parents=True, exist_ok=True)",
+            "",
+            "# Run workflow",
+            "try:",
+            f'    result = workflow.run(plugin="{plugin}", plugin_args=plugin_args)',
+            '    print("\\nWorkflow completed successfully!")',
+            "except Exception as e:",
+            '    print(f"\\nWorkflow failed: {e}")',
+            "    import traceback",
+            "    traceback.print_exc()",
+            "    sys.exit(1)",
+        ])
 
         # Save execution script
         exec_file = Path(working_dir) / f"run_{plugin.lower()}.py"
@@ -1045,7 +1045,10 @@ class NipypeDistributedTool(NeuroToolWrapper):
                     submit_lines.append(f"#SBATCH --partition={queue}")
                 if walltime:
                     submit_lines.append(f"#SBATCH --time={walltime}")
-                submit_lines.extend(["", f"python {exec_file}"])
+                submit_lines.extend([
+                    "",
+                    f"python {exec_file}"
+                ])
                 submit_cmd = "sbatch"
 
             elif plugin == "SGE":
@@ -1061,7 +1064,10 @@ class NipypeDistributedTool(NeuroToolWrapper):
                 ]
                 if queue:
                     submit_lines.append(f"#$ -q {queue}")
-                submit_lines.extend(["", f"python {exec_file}"])
+                submit_lines.extend([
+                    "",
+                    f"python {exec_file}"
+                ])
                 submit_cmd = "qsub"
 
             elif plugin == "PBS":
@@ -1077,7 +1083,11 @@ class NipypeDistributedTool(NeuroToolWrapper):
                     submit_lines.append(f"#PBS -q {queue}")
                 if walltime:
                     submit_lines.append(f"#PBS -l walltime={walltime}")
-                submit_lines.extend(["", f"cd {working_dir}", f"python {exec_file}"])
+                submit_lines.extend([
+                    "",
+                    f"cd {working_dir}",
+                    f"python {exec_file}"
+                ])
                 submit_cmd = "qsub"
 
             submit_script = Path(working_dir) / f"submit_{plugin.lower()}.sh"
@@ -1093,12 +1103,10 @@ class NipypeDistributedTool(NeuroToolWrapper):
                 "plugin": plugin,
                 "plugin_args": plugin_args,
                 "command": f"python {exec_file}",
-                "submit_command": (
-                    f"{submit_cmd} {submit_script}" if submit_script else None
-                ),
+                "submit_command": f"{submit_cmd} {submit_script}" if submit_script else None,
                 "n_procs": n_procs,
-                "memory_gb": memory_gb,
-            },
+                "memory_gb": memory_gb
+            }
         )
 
 

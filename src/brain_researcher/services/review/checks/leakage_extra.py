@@ -400,9 +400,7 @@ _INDEPENDENCE_UNIT_KEYS = (
 )
 
 
-def _pseudoreplication_sections(
-    context: Mapping[str, object],
-) -> list[Mapping[str, object]]:
+def _pseudoreplication_sections(context: Mapping[str, object]) -> list[Mapping[str, object]]:
     return [
         context,
         _nested_mapping(context, "sample"),
@@ -412,9 +410,7 @@ def _pseudoreplication_sections(
     ]
 
 
-def _first_int(
-    sections: list[Mapping[str, object]], keys: tuple[str, ...]
-) -> int | None:
+def _first_int(sections: list[Mapping[str, object]], keys: tuple[str, ...]) -> int | None:
     for section in sections:
         for key in keys:
             value = _int_value(section.get(key))
@@ -568,13 +564,7 @@ def _spatial_null_present(sections: list[Mapping[str, object]]) -> bool:
                 return True
             if isinstance(value, str):
                 normalized = _normalize(value)
-                if not normalized or normalized in {
-                    "false",
-                    "no",
-                    "none",
-                    "absent",
-                    "missing",
-                }:
+                if not normalized or normalized in {"false", "no", "none", "absent", "missing"}:
                     continue
                 return True
             if isinstance(value, Mapping) and value:
@@ -613,9 +603,9 @@ def brainmap_correlation_spatial_null_check(
             explicit_absent = True
         if _explicit_bool(section.get("spatial_null_applied")) is False:
             explicit_absent = True
-        if _explicit_bool(
-            section.get("spatial_null_required")
-        ) is True and not _spatial_null_present(sections):
+        if _explicit_bool(section.get("spatial_null_required")) is True and not _spatial_null_present(
+            sections
+        ):
             explicit_absent = True
     if not explicit_absent:
         return None

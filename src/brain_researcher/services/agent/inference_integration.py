@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from brain_researcher.services.agent.parameter_inference import (
-    InferredParameters,
     ParameterInferenceEngine,
+    InferredParameters,
 )
 from brain_researcher.services.agent.parameter_validation import ParameterValidator
 

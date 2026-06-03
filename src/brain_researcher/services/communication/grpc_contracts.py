@@ -7,21 +7,20 @@ with support for streaming, authentication, and service discovery.
 
 import asyncio
 import json
-import logging
-from dataclasses import asdict, dataclass
+from typing import Dict, List, Optional, Any, AsyncIterator, Union
 from datetime import datetime
-from typing import Any, AsyncIterator, Dict, List, Optional, Union
+from dataclasses import dataclass, asdict
+import logging
 
 import grpc
-import jwt
-from google.protobuf.json_format import MessageToDict, ParseDict
 from grpc import aio
+from google.protobuf.json_format import MessageToDict, ParseDict
+import jwt
 
 logger = logging.getLogger(__name__)
 
 
 # Data Models (would typically be generated from .proto files)
-
 
 @dataclass
 class ServiceRequest:
@@ -140,26 +139,30 @@ class BrainResearcherServicer:
                 return ServiceResponse(
                     request_id=service_request.request_id,
                     success=False,
-                    error=f"Method {service_request.method} not found",
+                    error=f"Method {service_request.method} not found"
                 )
 
             # Execute handler
             result = await handler(service_request.payload)
 
             return ServiceResponse(
-                request_id=service_request.request_id, success=True, data=result
+                request_id=service_request.request_id,
+                success=True,
+                data=result
             )
 
         except Exception as e:
             logger.error(f"gRPC unary call error: {e}")
             return ServiceResponse(
-                request_id=getattr(service_request, "request_id", "unknown"),
+                request_id=getattr(service_request, 'request_id', 'unknown'),
                 success=False,
-                error=str(e),
+                error=str(e)
             )
 
     async def StreamingCall(
-        self, request_iterator, context
+        self,
+        request_iterator,
+        context
     ) -> AsyncIterator[ServiceResponse]:
         """Handle streaming RPC calls."""
         try:
@@ -175,14 +178,14 @@ class BrainResearcherServicer:
                     session_id = streaming_request.session_id
 
                 # Process streaming data
-                handler = self._handlers.get("streaming")
+                handler = self._handlers.get('streaming')
                 if handler:
                     result = await handler(streaming_request.data)
 
                     yield ServiceResponse(
                         request_id=f"{session_id}_{streaming_request.chunk_id}",
                         success=True,
-                        data=result,
+                        data=result
                     )
 
                 if streaming_request.is_final:
@@ -191,7 +194,9 @@ class BrainResearcherServicer:
         except Exception as e:
             logger.error(f"gRPC streaming call error: {e}")
             yield ServiceResponse(
-                request_id="streaming_error", success=False, error=str(e)
+                request_id='streaming_error',
+                success=False,
+                error=str(e)
             )
 
     async def HealthCheck(self, request, context) -> HealthCheckResponse:
@@ -202,34 +207,35 @@ class BrainResearcherServicer:
 
             return HealthCheckResponse(
                 status="SERVING" if is_healthy else "NOT_SERVING",
-                message="Service is healthy" if is_healthy else "Service is unhealthy",
+                message="Service is healthy" if is_healthy else "Service is unhealthy"
             )
 
         except Exception as e:
             logger.error(f"Health check error: {e}")
-            return HealthCheckResponse(status="UNKNOWN", message=str(e))
+            return HealthCheckResponse(
+                status="UNKNOWN",
+                message=str(e)
+            )
 
     async def _authenticate(self, context):
         """Authenticate request using JWT token."""
         try:
             metadata = dict(context.invocation_metadata())
-            token = metadata.get("authorization", "").replace("Bearer ", "")
+            token = metadata.get('authorization', '').replace('Bearer ', '')
 
             if not token:
-                await context.abort(
-                    grpc.StatusCode.UNAUTHENTICATED, "No token provided"
-                )
+                await context.abort(grpc.StatusCode.UNAUTHENTICATED, 'No token provided')
                 return
 
             # Decode JWT token (simplified - use proper secret in production)
-            decoded = jwt.decode(token, "secret", algorithms=["HS256"])
-            context.user_id = decoded.get("user_id")
+            decoded = jwt.decode(token, 'secret', algorithms=['HS256'])
+            context.user_id = decoded.get('user_id')
 
         except jwt.InvalidTokenError:
-            await context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid token")
+            await context.abort(grpc.StatusCode.UNAUTHENTICATED, 'Invalid token')
         except Exception as e:
             logger.error(f"Authentication error: {e}")
-            await context.abort(grpc.StatusCode.INTERNAL, "Authentication failed")
+            await context.abort(grpc.StatusCode.INTERNAL, 'Authentication failed')
 
     async def _check_health(self) -> bool:
         """Check service health."""
@@ -254,7 +260,10 @@ class BrainResearcherServiceStub:
         self.stub = None  # Would be generated from .proto files
 
     async def call_method(
-        self, method: str, payload: Dict[str, Any], timeout: float = 30.0
+        self,
+        method: str,
+        payload: Dict[str, Any],
+        timeout: float = 30.0
     ) -> ServiceResponse:
         """Call remote method.
 
@@ -271,35 +280,40 @@ class BrainResearcherServiceStub:
                 request_id=f"req_{asyncio.current_task().get_name()}_{int(datetime.utcnow().timestamp())}",
                 service_name=self.service_name,
                 method=method,
-                payload=payload,
+                payload=payload
             )
 
             # Add authentication metadata
             metadata = []
             if self.auth_token:
-                metadata.append(("authorization", f"Bearer {self.auth_token}"))
+                metadata.append(('authorization', f'Bearer {self.auth_token}'))
 
             # Make gRPC call (simplified - would use generated stub)
             response = await asyncio.wait_for(
-                self._make_grpc_call(request, metadata), timeout=timeout
+                self._make_grpc_call(request, metadata),
+                timeout=timeout
             )
 
             return response
 
         except asyncio.TimeoutError:
             return ServiceResponse(
-                request_id=request.request_id, success=False, error="Request timeout"
+                request_id=request.request_id,
+                success=False,
+                error="Request timeout"
             )
         except Exception as e:
             logger.error(f"gRPC call error: {e}")
             return ServiceResponse(
-                request_id=getattr(request, "request_id", "unknown"),
+                request_id=getattr(request, 'request_id', 'unknown'),
                 success=False,
-                error=str(e),
+                error=str(e)
             )
 
     async def stream_data(
-        self, data_iterator: AsyncIterator[Any], session_id: str
+        self,
+        data_iterator: AsyncIterator[Any],
+        session_id: str
     ) -> AsyncIterator[ServiceResponse]:
         """Stream data to service.
 
@@ -313,7 +327,7 @@ class BrainResearcherServiceStub:
         try:
             metadata = []
             if self.auth_token:
-                metadata.append(("authorization", f"Bearer {self.auth_token}"))
+                metadata.append(('authorization', f'Bearer {self.auth_token}'))
 
             async def request_generator():
                 chunk_id = 0
@@ -322,25 +336,28 @@ class BrainResearcherServiceStub:
                         session_id=session_id,
                         chunk_id=chunk_id,
                         data=data,
-                        is_final=False,
+                        is_final=False
                     )
                     chunk_id += 1
 
                 # Send final chunk
                 yield StreamingRequest(
-                    session_id=session_id, chunk_id=chunk_id, data={}, is_final=True
+                    session_id=session_id,
+                    chunk_id=chunk_id,
+                    data={},
+                    is_final=True
                 )
 
             # Make streaming call (simplified)
-            async for response in self._make_streaming_call(
-                request_generator(), metadata
-            ):
+            async for response in self._make_streaming_call(request_generator(), metadata):
                 yield response
 
         except Exception as e:
             logger.error(f"gRPC streaming error: {e}")
             yield ServiceResponse(
-                request_id=f"stream_error_{session_id}", success=False, error=str(e)
+                request_id=f"stream_error_{session_id}",
+                success=False,
+                error=str(e)
             )
 
     async def health_check(self) -> HealthCheckResponse:
@@ -358,11 +375,12 @@ class BrainResearcherServiceStub:
 
         except Exception as e:
             logger.error(f"Health check error: {e}")
-            return HealthCheckResponse(status="UNKNOWN", message=str(e))
+            return HealthCheckResponse(
+                status="UNKNOWN",
+                message=str(e)
+            )
 
-    async def _make_grpc_call(
-        self, request: ServiceRequest, metadata: List
-    ) -> ServiceResponse:
+    async def _make_grpc_call(self, request: ServiceRequest, metadata: List) -> ServiceResponse:
         """Make actual gRPC call (placeholder - would use generated stubs)."""
         # This would use the actual generated gRPC stubs
         # For now, simulate a successful call
@@ -371,28 +389,27 @@ class BrainResearcherServiceStub:
         return ServiceResponse(
             request_id=request.request_id,
             success=True,
-            data={"message": f"Method {request.method} executed successfully"},
+            data={"message": f"Method {request.method} executed successfully"}
         )
 
-    async def _make_streaming_call(
-        self, request_generator, metadata
-    ) -> AsyncIterator[ServiceResponse]:
+    async def _make_streaming_call(self, request_generator, metadata) -> AsyncIterator[ServiceResponse]:
         """Make streaming gRPC call (placeholder)."""
         # This would use actual gRPC streaming
         async for request in request_generator:
             yield ServiceResponse(
                 request_id=f"{request.session_id}_{request.chunk_id}",
                 success=True,
-                data={"processed": True},
+                data={"processed": True}
             )
 
-    async def _make_health_check(
-        self, request: HealthCheckRequest
-    ) -> HealthCheckResponse:
+    async def _make_health_check(self, request: HealthCheckRequest) -> HealthCheckResponse:
         """Make health check call (placeholder)."""
         await asyncio.sleep(0.01)
 
-        return HealthCheckResponse(status="SERVING", message="Service is healthy")
+        return HealthCheckResponse(
+            status="SERVING",
+            message="Service is healthy"
+        )
 
 
 class ServiceDiscoveryIntegration:
@@ -408,9 +425,7 @@ class ServiceDiscoveryIntegration:
         self._channels = {}
         self._stubs = {}
 
-    async def get_client(
-        self, service_name: str, auth_token: Optional[str] = None
-    ) -> BrainResearcherServiceStub:
+    async def get_client(self, service_name: str, auth_token: Optional[str] = None) -> BrainResearcherServiceStub:
         """Get gRPC client for service.
 
         Args:
@@ -447,7 +462,7 @@ class ServiceDiscoveryIntegration:
         """
         # Parse URL and create gRPC channel
         # For now, create a simple channel (would need proper configuration)
-        host_port = service_url.replace("http://", "").replace("https://", "")
+        host_port = service_url.replace('http://', '').replace('https://', '')
 
         return aio.insecure_channel(host_port)
 
@@ -461,7 +476,9 @@ class ServiceDiscoveryIntegration:
 
 
 async def create_grpc_client(
-    service_name: str, service_url: str, auth_token: Optional[str] = None
+    service_name: str,
+    service_url: str,
+    auth_token: Optional[str] = None
 ) -> BrainResearcherServiceStub:
     """Create gRPC client for service.
 
@@ -474,14 +491,16 @@ async def create_grpc_client(
         gRPC client stub
     """
     # Parse URL and create channel
-    host_port = service_url.replace("http://", "").replace("https://", "")
+    host_port = service_url.replace('http://', '').replace('https://', '')
     channel = aio.insecure_channel(host_port)
 
     return BrainResearcherServiceStub(channel, service_name, auth_token)
 
 
 async def create_grpc_server(
-    servicer: BrainResearcherServicer, port: int, max_workers: int = 10
+    servicer: BrainResearcherServicer,
+    port: int,
+    max_workers: int = 10
 ) -> grpc.aio.Server:
     """Create gRPC server with servicer.
 
@@ -512,5 +531,5 @@ __all__ = [
     "HealthCheckResponse",
     "ServiceDiscoveryIntegration",
     "create_grpc_client",
-    "create_grpc_server",
+    "create_grpc_server"
 ]

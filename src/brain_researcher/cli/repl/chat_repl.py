@@ -8,9 +8,10 @@ from rich.panel import Panel
 
 from brain_researcher.services.agent.tool_metadata_bridge import (
     get_example_payload,
-    get_output_examples,
     get_resource_hints,
+    get_output_examples,
 )
+
 
 console = Console()
 
@@ -32,7 +33,7 @@ HELP_TEXT = (
 def run_chat_repl(
     initial_model: Optional[str] = None, json_output: bool = False
 ) -> None:
-    from brain_researcher.cli.compat.gemini_compat import emit_result, run_simple_chat
+    from brain_researcher.cli.compat.gemini_compat import run_simple_chat, emit_result
 
     model = initial_model
     auto_mode = False

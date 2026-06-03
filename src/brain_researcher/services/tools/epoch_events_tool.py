@@ -10,6 +10,7 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 from brain_researcher.core.utils import configure_mne_environment
+
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 
@@ -17,9 +18,7 @@ class EpochEventsArgs(BaseModel):
     clean_eeg: str = Field(description="Preprocessed EEG file")
     tmin: float = Field(default=-0.2)
     tmax: float = Field(default=0.8)
-    events_file: Optional[str] = Field(
-        default=None, description="Events TSV/CSV or numpy file"
-    )
+    events_file: Optional[str] = Field(default=None, description="Events TSV/CSV or numpy file")
     event_id: Optional[int] = Field(default=1, description="Event ID to epoch around")
     output_dir: Optional[str] = Field(default=None, description="Output directory")
 
@@ -39,9 +38,7 @@ class EpochEventsTool(NeuroToolWrapper):
         try:
             import mne
         except ImportError as exc:
-            return ToolResult(
-                status="error", error=f"MNE not available: {exc}", data={}
-            )
+            return ToolResult(status="error", error=f"MNE not available: {exc}", data={})
         args = EpochEventsArgs(
             clean_eeg=clean_eeg,
             tmin=kwargs.get("tmin", -0.2),
@@ -61,9 +58,7 @@ class EpochEventsTool(NeuroToolWrapper):
         if args.events_file:
             events_path = Path(args.events_file)
             if not events_path.exists():
-                return ToolResult(
-                    status="error", error="events_file not found", data={}
-                )
+                return ToolResult(status="error", error="events_file not found", data={})
             if events_path.suffix in {".tsv", ".csv"}:
                 sep = "\t" if events_path.suffix == ".tsv" else ","
                 df = pd.read_csv(events_path, sep=sep)
@@ -75,20 +70,14 @@ class EpochEventsTool(NeuroToolWrapper):
                 elif {"onset", "event_id"}.issubset(df.columns):
                     samples = (df["onset"].to_numpy() * raw.info["sfreq"]).astype(int)
                     events = np.column_stack(
-                        [
-                            samples,
-                            np.zeros(len(samples), dtype=int),
-                            df["event_id"].to_numpy(),
-                        ]
+                        [samples, np.zeros(len(samples), dtype=int), df["event_id"].to_numpy()]
                     )
                 else:
                     events = df.values
             elif events_path.suffix == ".npy":
                 events = np.load(events_path)
             else:
-                return ToolResult(
-                    status="error", error="Unsupported events_file format", data={}
-                )
+                return ToolResult(status="error", error="Unsupported events_file format", data={})
         else:
             events = mne.make_fixed_length_events(raw, duration=1.0, id=args.event_id)
 

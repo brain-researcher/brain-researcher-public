@@ -6,6 +6,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+
 PYTHON_CHECKABLE_SUFFIXES = {".py", ".pyi"}
 
 
@@ -40,9 +41,7 @@ def build_verification_plan(
     touched_paths = _existing_python_paths(workdir, touched_items)
     if touched_items:
         if touched_paths:
-            return VerificationPlan(
-                mode="py_compile", candidate_paths=tuple(touched_paths)
-            )
+            return VerificationPlan(mode="py_compile", candidate_paths=tuple(touched_paths))
         return VerificationPlan(mode="none", reason=_missing_verification_reason())
 
     materialized_paths = _existing_python_paths(workdir, materialized)

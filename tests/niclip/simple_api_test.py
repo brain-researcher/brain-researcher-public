@@ -3,9 +3,8 @@
 Simple ways to call the NiCLIP service
 """
 
-import json
-
 import requests
+import json
 
 # The service runs on port 8000
 BASE_URL = "http://localhost:8000"
@@ -16,20 +15,18 @@ print("🔍 How to Call the NiCLIP Service\n")
 print("1️⃣ METHOD 1: Direct Tool Call")
 print("-" * 40)
 print("Code:")
-print(
-    """
+print('''
 response = requests.post(
     "http://localhost:8000/debug/tool/task_to_concept_mapping",
     json={"args": {"task_name": "n-back task"}}
 )
 result = response.json()
-"""
-)
+''')
 
 # Actually run it
 response = requests.post(
     f"{BASE_URL}/debug/tool/task_to_concept_mapping",
-    json={"args": {"task_name": "n-back task"}},
+    json={"args": {"task_name": "n-back task"}}
 )
 result = response.json()
 
@@ -44,20 +41,17 @@ if result.get("result", {}).get("data"):
 print("\n\n2️⃣ METHOD 2: Using curl in Terminal")
 print("-" * 40)
 print("Run this command:")
-print(
-    """
+print('''
 curl -X POST http://localhost:8000/debug/tool/task_to_concept_mapping \\
   -H "Content-Type: application/json" \\
   -d '{"args": {"task_name": "stroop task"}}' | python -m json.tool
-"""
-)
+''')
 
 # Method 3: LangGraph API (for conversations)
 print("\n\n3️⃣ METHOD 3: LangGraph API (Stateful)")
 print("-" * 40)
 print("Code:")
-print(
-    """
+print('''
 # Create thread
 thread_resp = requests.post("http://localhost:8000/threads",
                            headers={"Content-Type": "application/json"})
@@ -70,13 +64,11 @@ requests.post(f"http://localhost:8000/threads/{thread_id}/messages",
 # Run agent
 run_resp = requests.post(f"http://localhost:8000/threads/{thread_id}/runs",
                         json={"assistant_id": "brain-researcher"})
-"""
-)
+''')
 
 # Actually create a thread
-thread_resp = requests.post(
-    f"{BASE_URL}/threads", headers={"Content-Type": "application/json"}
-)
+thread_resp = requests.post(f"{BASE_URL}/threads",
+                           headers={"Content-Type": "application/json"})
 if thread_resp.status_code in [200, 201]:
     thread_id = thread_resp.json()["thread_id"]
     print(f"\nCreated thread: {thread_id}")
@@ -90,7 +82,7 @@ tasks = ["n-back task", "stroop task", "emotional faces task"]
 for task in tasks:
     response = requests.post(
         f"{BASE_URL}/debug/tool/task_to_concept_mapping",
-        json={"args": {"task_name": task}},
+        json={"args": {"task_name": task}}
     )
     if response.status_code == 200:
         data = response.json().get("result", {}).get("data", {})
@@ -111,8 +103,6 @@ print("-" * 40)
 print("# Check if service is running:")
 print("curl http://localhost:8000/health")
 print("\n# Get task concepts:")
-print(
-    'curl -X POST http://localhost:8000/debug/tool/task_to_concept_mapping -H "Content-Type: application/json" -d \'{"args": {"task_name": "n-back task"}}\' | jq .'
-)
+print('curl -X POST http://localhost:8000/debug/tool/task_to_concept_mapping -H "Content-Type: application/json" -d \'{"args": {"task_name": "n-back task"}}\' | jq .')
 print("\n# List all tools:")
 print("curl http://localhost:8000/tools | jq '.tools[].name'")

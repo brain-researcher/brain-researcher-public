@@ -29,11 +29,9 @@ DEEPSEEK_API_URL = os.environ.get(
 DEEPSEEK_API_BASE = os.environ.get(
     "DEEPSEEK_API_BASE",
     # Derive base from URL if provided (strip path like /v1/chat/completions)
-    (
-        DEEPSEEK_API_URL.split("/v1")[0]
-        if "/v1" in DEEPSEEK_API_URL
-        else "https://api.deepseek.com"
-    ),
+    DEEPSEEK_API_URL.split("/v1")[0]
+    if "/v1" in DEEPSEEK_API_URL
+    else "https://api.deepseek.com",
 )
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL")

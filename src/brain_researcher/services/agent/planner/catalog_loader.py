@@ -12,16 +12,15 @@ import logging
 import os
 import re
 import time
+import yaml
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-import yaml
-
 # NiWrap MCP catalog support removed; keep placeholder for compatibility
 iter_tool_definitions = None
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from brain_researcher.config.mapping_resolver import resolve_mapping_path
 from brain_researcher.config.paths import get_repo_root as get_shared_repo_root
@@ -32,11 +31,8 @@ from brain_researcher.services.shared.planner.models import (
 )
 from brain_researcher.services.tools.catalog_loader import (
     resolve_primary_runtime_tool_id,
-)
-from brain_researcher.services.tools.catalog_loader import (
     resolve_runtime_tool_ids as resolve_runtime_registry_tool_ids,
 )
-
 from .intents import Intent
 
 logger = logging.getLogger(__name__)
@@ -64,21 +60,13 @@ def _preferred_runtime_aliases(tool_id: str) -> List[str]:
     if primary:
         if primary == normalized:
             return _dedupe_preserve_order(
-                [
-                    primary,
-                    *resolve_runtime_registry_tool_ids(normalized, include_self=False),
-                ]
+                [primary, *resolve_runtime_registry_tool_ids(normalized, include_self=False)]
             )
         return _dedupe_preserve_order(
-            [
-                primary,
-                *resolve_runtime_registry_tool_ids(normalized, include_self=False),
-            ]
+            [primary, *resolve_runtime_registry_tool_ids(normalized, include_self=False)]
         )
 
-    return _dedupe_preserve_order(
-        resolve_runtime_registry_tool_ids(normalized, include_self=False)
-    )
+    return _dedupe_preserve_order(resolve_runtime_registry_tool_ids(normalized, include_self=False))
 
 
 def _filter_local_first_capabilities(
@@ -340,7 +328,9 @@ def _resolve_tools_catalog_path(path: Optional[Path] = None) -> Path:
     if merged_path.exists():
         return merged_path
 
-    raise FileNotFoundError(f"Tool catalog not found at {legacy_path} or {merged_path}")
+    raise FileNotFoundError(
+        f"Tool catalog not found at {legacy_path} or {merged_path}"
+    )
 
 
 def _infer_legacy_domain(raw_domain: Any, name: str, tags: List[str]) -> str:
@@ -494,9 +484,7 @@ def load_tools_catalog_json(path: Optional[Path] = None) -> Dict[str, ToolSpec]:
         with source_path.open("r", encoding="utf-8") as f:
             raw = json.load(f)
         entries = raw.get("tools", [])
-        is_legacy_schema = (
-            bool(entries) and "consumes" in entries[0] and "produces" in entries[0]
-        )
+        is_legacy_schema = bool(entries) and "consumes" in entries[0] and "produces" in entries[0]
         return entries, is_legacy_schema
 
     tools: Dict[str, ToolSpec] = {}

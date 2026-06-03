@@ -1,21 +1,19 @@
 """Graph enrichment pipeline for external data integration."""
 
 import asyncio
+import logging
+from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime, timedelta
+import aiohttp
+from enum import Enum
 import hashlib
 import json
-import logging
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
-
-import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class DataSource(str, Enum):
     """External data sources for enrichment."""
-
     WIKIDATA = "wikidata"
     PUBMED = "pubmed"
     UNIPROT = "uniprot"
@@ -26,7 +24,6 @@ class DataSource(str, Enum):
 
 class ConflictResolution(str, Enum):
     """Conflict resolution strategies."""
-
     KEEP_EXISTING = "keep_existing"
     OVERWRITE = "overwrite"
     MERGE = "merge"
@@ -41,9 +38,9 @@ class EntityMatcher:
         self.match_cache = {}
         self.confidence_threshold = 0.7
 
-    def match_entities(
-        self, source_entity: Dict[str, Any], target_entities: List[Dict[str, Any]]
-    ) -> List[Tuple[Dict, float]]:
+    def match_entities(self,
+                      source_entity: Dict[str, Any],
+                      target_entities: List[Dict[str, Any]]) -> List[Tuple[Dict, float]]:
         """Match source entity to target entities with confidence scores.
 
         Args:
@@ -64,9 +61,9 @@ class EntityMatcher:
         matches.sort(key=lambda x: x[1], reverse=True)
         return matches
 
-    def _calculate_confidence(
-        self, source: Dict[str, Any], target: Dict[str, Any]
-    ) -> float:
+    def _calculate_confidence(self,
+                            source: Dict[str, Any],
+                            target: Dict[str, Any]) -> float:
         """Calculate matching confidence between entities.
 
         Args:
@@ -79,25 +76,26 @@ class EntityMatcher:
         scores = []
 
         # Check identifiers
-        if "id" in source and "id" in target:
-            if source["id"] == target["id"]:
+        if 'id' in source and 'id' in target:
+            if source['id'] == target['id']:
                 return 1.0  # Exact match
 
         # Check names
-        if "name" in source and "name" in target:
-            name_sim = self._string_similarity(source["name"], target["name"])
+        if 'name' in source and 'name' in target:
+            name_sim = self._string_similarity(source['name'], target['name'])
             scores.append(name_sim * 0.4)  # 40% weight
 
         # Check aliases
-        if "aliases" in source and "aliases" in target:
-            alias_matches = set(source["aliases"]) & set(target["aliases"])
+        if 'aliases' in source and 'aliases' in target:
+            alias_matches = set(source['aliases']) & set(target['aliases'])
             if alias_matches:
                 scores.append(0.3)  # 30% weight for alias match
 
         # Check properties
         common_props = set(source.keys()) & set(target.keys())
         if len(common_props) > 2:  # More than just id and name
-            prop_matches = sum(1 for p in common_props if source[p] == target[p])
+            prop_matches = sum(1 for p in common_props
+                             if source[p] == target[p])
             prop_score = prop_matches / len(common_props)
             scores.append(prop_score * 0.3)  # 30% weight
 
@@ -143,7 +141,7 @@ class ExternalAPIClient:
             DataSource.UNIPROT: 50,
             DataSource.MESH: 100,
             DataSource.ONTOBEE: 60,
-            DataSource.BIOPORTAL: 150,
+            DataSource.BIOPORTAL: 150
         }
         self.last_request_time = {}
 
@@ -157,9 +155,10 @@ class ExternalAPIClient:
         if self.session:
             await self.session.close()
 
-    async def fetch_data(
-        self, source: DataSource, entity_id: str, entity_type: str
-    ) -> Optional[Dict[str, Any]]:
+    async def fetch_data(self,
+                        source: DataSource,
+                        entity_id: str,
+                        entity_type: str) -> Optional[Dict[str, Any]]:
         """Fetch data from external source.
 
         Args:
@@ -218,7 +217,11 @@ class ExternalAPIClient:
     async def _fetch_pubmed(self, pmid: str) -> Optional[Dict[str, Any]]:
         """Fetch from PubMed."""
         url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-        params = {"db": "pubmed", "id": pmid, "retmode": "json"}
+        params = {
+            "db": "pubmed",
+            "id": pmid,
+            "retmode": "json"
+        }
 
         async with self.session.get(url, params=params) as response:
             if response.status == 200:
@@ -243,39 +246,42 @@ class ExternalAPIClient:
             "id": mesh_id,
             "source": "mesh",
             "name": f"MeSH Term {mesh_id}",
-            "category": "medical_subject_heading",
+            "category": "medical_subject_heading"
         }
 
     def _parse_wikidata(self, data: Dict) -> Dict[str, Any]:
         """Parse Wikidata response."""
         # Simplified parsing
-        entities = data.get("entities", {})
+        entities = data.get('entities', {})
         if not entities:
             return None
 
         entity = list(entities.values())[0]
         return {
-            "id": entity.get("id"),
+            "id": entity.get('id'),
             "source": "wikidata",
-            "labels": entity.get("labels", {}),
-            "descriptions": entity.get("descriptions", {}),
-            "aliases": entity.get("aliases", {}),
-            "claims": entity.get("claims", {}),
+            "labels": entity.get('labels', {}),
+            "descriptions": entity.get('descriptions', {}),
+            "aliases": entity.get('aliases', {}),
+            "claims": entity.get('claims', {})
         }
 
     def _parse_pubmed(self, data: Dict) -> Dict[str, Any]:
         """Parse PubMed response."""
         # Simplified parsing
-        return {"source": "pubmed", "data": data}
+        return {
+            "source": "pubmed",
+            "data": data
+        }
 
     def _parse_uniprot(self, data: Dict) -> Dict[str, Any]:
         """Parse UniProt response."""
         return {
-            "id": data.get("primaryAccession"),
+            "id": data.get('primaryAccession'),
             "source": "uniprot",
-            "name": data.get("proteinDescription", {}).get("recommendedName", {}),
-            "organism": data.get("organism", {}),
-            "sequence": data.get("sequence", {}),
+            "name": data.get('proteinDescription', {}).get('recommendedName', {}),
+            "organism": data.get('organism', {}),
+            "sequence": data.get('sequence', {})
         }
 
 
@@ -288,16 +294,14 @@ class GraphEnrichmentPipeline:
             "total_processed": 0,
             "successful_enrichments": 0,
             "conflicts_resolved": 0,
-            "errors": 0,
+            "errors": 0
         }
         self.provenance_records = []
 
-    async def enrich_graph(
-        self,
-        nodes: List[Dict[str, Any]],
-        sources: List[DataSource],
-        conflict_strategy: ConflictResolution = ConflictResolution.HIGHEST_CONFIDENCE,
-    ) -> Dict[str, Any]:
+    async def enrich_graph(self,
+                          nodes: List[Dict[str, Any]],
+                          sources: List[DataSource],
+                          conflict_strategy: ConflictResolution = ConflictResolution.HIGHEST_CONFIDENCE) -> Dict[str, Any]:
         """Enrich graph nodes with external data.
 
         Args:
@@ -320,7 +324,7 @@ class GraphEnrichmentPipeline:
             # Process in batches to avoid overwhelming
             batch_size = 10
             for i in range(0, len(tasks), batch_size):
-                batch = tasks[i : i + batch_size]
+                batch = tasks[i:i+batch_size]
                 results = await asyncio.gather(*batch, return_exceptions=True)
 
                 for result in results:
@@ -336,16 +340,14 @@ class GraphEnrichmentPipeline:
         return {
             "enriched_nodes": enriched_nodes,
             "statistics": self.enrichment_stats,
-            "provenance": self.provenance_records[-100:],  # Last 100 records
+            "provenance": self.provenance_records[-100:]  # Last 100 records
         }
 
-    async def _enrich_node(
-        self,
-        node: Dict[str, Any],
-        source: DataSource,
-        client: ExternalAPIClient,
-        conflict_strategy: ConflictResolution,
-    ) -> Optional[Dict[str, Any]]:
+    async def _enrich_node(self,
+                          node: Dict[str, Any],
+                          source: DataSource,
+                          client: ExternalAPIClient,
+                          conflict_strategy: ConflictResolution) -> Optional[Dict[str, Any]]:
         """Enrich single node from source.
 
         Args:
@@ -359,14 +361,19 @@ class GraphEnrichmentPipeline:
         """
         # Fetch external data
         external_data = await client.fetch_data(
-            source, node.get("id", ""), node.get("type", "")
+            source,
+            node.get('id', ''),
+            node.get('type', '')
         )
 
         if not external_data:
             return None
 
         # Match entities
-        matches = self.entity_matcher.match_entities(external_data, [node])
+        matches = self.entity_matcher.match_entities(
+            external_data,
+            [node]
+        )
 
         if not matches:
             return None
@@ -377,23 +384,29 @@ class GraphEnrichmentPipeline:
 
         # Resolve conflicts
         merged_data = self._resolve_conflicts(
-            enriched_node, external_data, conflict_strategy, confidence
+            enriched_node,
+            external_data,
+            conflict_strategy,
+            confidence
         )
 
         enriched_node.update(merged_data)
 
         # Track provenance
-        self._track_provenance(node["id"], source, confidence, conflict_strategy)
+        self._track_provenance(
+            node['id'],
+            source,
+            confidence,
+            conflict_strategy
+        )
 
         return enriched_node
 
-    def _resolve_conflicts(
-        self,
-        existing: Dict[str, Any],
-        new_data: Dict[str, Any],
-        strategy: ConflictResolution,
-        confidence: float,
-    ) -> Dict[str, Any]:
+    def _resolve_conflicts(self,
+                          existing: Dict[str, Any],
+                          new_data: Dict[str, Any],
+                          strategy: ConflictResolution,
+                          confidence: float) -> Dict[str, Any]:
         """Resolve conflicts between existing and new data.
 
         Args:
@@ -429,7 +442,8 @@ class GraphEnrichmentPipeline:
                 return new_data
             elif confidence >= 0.7:
                 # Partial update
-                return {k: v for k, v in new_data.items() if k not in existing}
+                return {k: v for k, v in new_data.items()
+                       if k not in existing}
             return {}
 
         elif strategy == ConflictResolution.MOST_RECENT:
@@ -438,13 +452,11 @@ class GraphEnrichmentPipeline:
 
         return {}
 
-    def _track_provenance(
-        self,
-        node_id: str,
-        source: DataSource,
-        confidence: float,
-        strategy: ConflictResolution,
-    ):
+    def _track_provenance(self,
+                         node_id: str,
+                         source: DataSource,
+                         confidence: float,
+                         strategy: ConflictResolution):
         """Track enrichment provenance.
 
         Args:
@@ -453,22 +465,19 @@ class GraphEnrichmentPipeline:
             confidence: Match confidence
             strategy: Conflict resolution used
         """
-        self.provenance_records.append(
-            {
-                "timestamp": datetime.now().isoformat(),
-                "node_id": node_id,
-                "source": source.value,
-                "confidence": confidence,
-                "strategy": strategy.value,
-                "hash": hashlib.md5(
-                    f"{node_id}{source}{confidence}".encode()
-                ).hexdigest(),
-            }
-        )
+        self.provenance_records.append({
+            "timestamp": datetime.now().isoformat(),
+            "node_id": node_id,
+            "source": source.value,
+            "confidence": confidence,
+            "strategy": strategy.value,
+            "hash": hashlib.md5(
+                f"{node_id}{source}{confidence}".encode()
+            ).hexdigest()
+        })
 
-    def schedule_updates(
-        self, update_interval: timedelta = timedelta(days=7)
-    ) -> Dict[str, Any]:
+    def schedule_updates(self,
+                        update_interval: timedelta = timedelta(days=7)) -> Dict[str, Any]:
         """Schedule periodic enrichment updates.
 
         Args:
@@ -484,5 +493,5 @@ class GraphEnrichmentPipeline:
             "next_update": next_update.isoformat(),
             "interval_days": update_interval.days,
             "sources": [s.value for s in DataSource],
-            "last_stats": self.enrichment_stats,
+            "last_stats": self.enrichment_stats
         }

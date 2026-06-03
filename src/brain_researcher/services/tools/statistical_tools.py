@@ -11,9 +11,8 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 import pandas as pd
-from nilearn import image
+from nilearn import image, surface, masking
 from nilearn import image as nilearn_image
-from nilearn import masking, surface
 from nilearn.reporting import get_clusters_table
 from pydantic import BaseModel, Field, field_validator
 from scipy import stats

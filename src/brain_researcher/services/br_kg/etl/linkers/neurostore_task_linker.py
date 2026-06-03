@@ -100,9 +100,7 @@ class ConstructManager:
                 pass
 
     # ------------------------------------------------------------------ lookups
-    def process_ids_for_names(
-        self, domains: Sequence[str]
-    ) -> Tuple[Set[str], List[str]]:
+    def process_ids_for_names(self, domains: Sequence[str]) -> Tuple[Set[str], List[str]]:
         matches: Set[str] = set()
         misses: List[str] = []
         for domain in domains:
@@ -149,9 +147,7 @@ class ConstructManager:
                 "confidence": float(confidence),
             }
             try:
-                if self.db.create_relationship(
-                    entity_id, process_id, relationship, rel_props
-                ):
+                if self.db.create_relationship(entity_id, process_id, relationship, rel_props):
                     created += 1
             except Exception as exc:  # pragma: no cover - defensive
                 logger.debug(
@@ -227,10 +223,8 @@ class NeurostoreTaskLinker:
 
             domains = task.get("domains_original") or []
             if domains:
-                domain_matches, domain_misses = (
-                    self._construct_manager.process_ids_for_names(
-                        [str(domain) for domain in domains if domain]
-                    )
+                domain_matches, domain_misses = self._construct_manager.process_ids_for_names(
+                    [str(domain) for domain in domains if domain]
                 )
                 process_ids.update(domain_matches)
                 stats["domain_misses"] += len(domain_misses)

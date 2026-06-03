@@ -8,11 +8,10 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Dict, Any, List, Optional, Set, Tuple
 
 try:
     import orjson
-
     HAS_ORJSON = True
 except ImportError:
     HAS_ORJSON = False
@@ -44,7 +43,7 @@ class ChangeDetector:
     def __init__(
         self,
         state_file: Optional[str | Path] = "artifacts/change_state.json",
-        ttl_days: int = 30,
+        ttl_days: int = 30
     ):
         """Initialize change detector.
 
@@ -89,14 +88,10 @@ class ChangeDetector:
             self.state_file.parent.mkdir(parents=True, exist_ok=True)
 
             with open(self.state_file, "w") as f:
-                json.dump(
-                    {
-                        "state": self.state,
-                        "updated": datetime.now().isoformat(),
-                    },
-                    f,
-                    indent=2,
-                )
+                json.dump({
+                    "state": self.state,
+                    "updated": datetime.now().isoformat(),
+                }, f, indent=2)
 
             logger.debug(f"Saved change state for {len(self.state)} sources")
 
@@ -113,8 +108,7 @@ class ChangeDetector:
 
         for source in self.state:
             old_items = [
-                item_id
-                for item_id, (_, timestamp) in self.state[source].items()
+                item_id for item_id, (_, timestamp) in self.state[source].items()
                 if timestamp < cutoff_str
             ]
 
@@ -124,7 +118,12 @@ class ChangeDetector:
             if old_items:
                 logger.debug(f"Cleaned {len(old_items)} old entries from {source}")
 
-    def has_changed(self, source: str, item_id: str, content: Dict[str, Any]) -> bool:
+    def has_changed(
+        self,
+        source: str,
+        item_id: str,
+        content: Dict[str, Any]
+    ) -> bool:
         """Check if an item has changed.
 
         Args:
@@ -145,7 +144,12 @@ class ChangeDetector:
         # New item
         return True
 
-    def update(self, source: str, item_id: str, content: Dict[str, Any]):
+    def update(
+        self,
+        source: str,
+        item_id: str,
+        content: Dict[str, Any]
+    ):
         """Update the hash for an item.
 
         Args:
@@ -162,7 +166,9 @@ class ChangeDetector:
         self.state[source][item_id] = (current_hash, timestamp)
 
     def detect_changes(
-        self, source: str, items: List[Tuple[str, Dict[str, Any]]]
+        self,
+        source: str,
+        items: List[Tuple[str, Dict[str, Any]]]
     ) -> Tuple[List[Tuple[str, Dict[str, Any]]], List[str], List[str]]:
         """Detect changes in a batch of items.
 
@@ -200,7 +206,11 @@ class ChangeDetector:
 
         return changed_items, new_ids, deleted_ids
 
-    def update_batch(self, source: str, items: List[Tuple[str, Dict[str, Any]]]):
+    def update_batch(
+        self,
+        source: str,
+        items: List[Tuple[str, Dict[str, Any]]]
+    ):
         """Update hashes for a batch of items.
 
         Args:

@@ -4,41 +4,36 @@ Provides embedding-based search using multiple vector stores (Pinecone, Weaviate
 with hybrid search combining vector similarity and graph traversal.
 """
 
-import hashlib
 import json
 import logging
-from abc import ABC, abstractmethod
+import numpy as np
+from typing import Dict, List, Any, Optional, Tuple, Union
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import numpy as np
+import hashlib
+from abc import ABC, abstractmethod
 
 # Vector store imports (optional dependencies)
 try:
     import pinecone
-
     PINECONE_AVAILABLE = True
 except ImportError:
     PINECONE_AVAILABLE = False
 
 try:
     import weaviate
-
     WEAVIATE_AVAILABLE = True
 except ImportError:
     WEAVIATE_AVAILABLE = False
 
 try:
     import qdrant_client
-
     QDRANT_AVAILABLE = True
 except ImportError:
     QDRANT_AVAILABLE = False
 
 try:
     from sentence_transformers import SentenceTransformer
-
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
@@ -50,7 +45,6 @@ logger = logging.getLogger(__name__)
 
 class VectorStoreType(str, Enum):
     """Supported vector stores."""
-
     FAISS = "faiss"
     PINECONE = "pinecone"
     WEAVIATE = "weaviate"
@@ -59,16 +53,14 @@ class VectorStoreType(str, Enum):
 
 class SearchMode(str, Enum):
     """Search modes."""
-
     VECTOR = "vector"  # Pure vector similarity
     HYBRID = "hybrid"  # Vector + keyword
-    GRAPH = "graph"  # Vector + graph traversal
+    GRAPH = "graph"    # Vector + graph traversal
 
 
 @dataclass
 class SearchResult:
     """Search result with metadata."""
-
     id: str
     score: float
     content: str
@@ -81,16 +73,12 @@ class VectorStore(ABC):
     """Abstract base class for vector stores."""
 
     @abstractmethod
-    def index(
-        self, vectors: np.ndarray, ids: List[str], metadata: List[Dict[str, Any]]
-    ):
+    def index(self, vectors: np.ndarray, ids: List[str], metadata: List[Dict[str, Any]]):
         """Index vectors with metadata."""
         pass
 
     @abstractmethod
-    def search(
-        self, query_vector: np.ndarray, k: int = 10, filters: Optional[Dict] = None
-    ) -> List[SearchResult]:
+    def search(self, query_vector: np.ndarray, k: int = 10, filters: Optional[Dict] = None) -> List[SearchResult]:
         """Search for similar vectors."""
         pass
 
@@ -100,12 +88,7 @@ class VectorStore(ABC):
         pass
 
     @abstractmethod
-    def update(
-        self,
-        id: str,
-        vector: Optional[np.ndarray] = None,
-        metadata: Optional[Dict] = None,
-    ):
+    def update(self, id: str, vector: Optional[np.ndarray] = None, metadata: Optional[Dict] = None):
         """Update vector or metadata."""
         pass
 
@@ -144,9 +127,7 @@ class FAISSVectorStore(VectorStore):
         """Expose the underlying FAISS index (for tests/inspection)."""
         return self._index
 
-    def index(
-        self, vectors: np.ndarray, ids: List[str], metadata: List[Dict[str, Any]]
-    ):
+    def index(self, vectors: np.ndarray, ids: List[str], metadata: List[Dict[str, Any]]):
         """Index vectors."""
         vectors = vectors.astype("float32")
 
@@ -161,9 +142,7 @@ class FAISSVectorStore(VectorStore):
         self.next_idx += len(vectors)
         logger.info(f"Indexed {len(vectors)} vectors in FAISS")
 
-    def search(
-        self, query_vector: np.ndarray, k: int = 10, filters: Optional[Dict] = None
-    ) -> List[SearchResult]:
+    def search(self, query_vector: np.ndarray, k: int = 10, filters: Optional[Dict] = None) -> List[SearchResult]:
         """Search for similar vectors."""
         query_vector = query_vector.astype("float32").reshape(1, -1)
 
@@ -187,14 +166,12 @@ class FAISSVectorStore(VectorStore):
                 if not match:
                     continue
 
-            results.append(
-                SearchResult(
-                    id=vec_id,
-                    score=1.0 / (1.0 + dist),  # Convert distance to similarity
-                    content=meta.get("content", ""),
-                    metadata=meta,
-                )
-            )
+            results.append(SearchResult(
+                id=vec_id,
+                score=1.0 / (1.0 + dist),  # Convert distance to similarity
+                content=meta.get('content', ''),
+                metadata=meta
+            ))
 
         return results
 
@@ -202,12 +179,7 @@ class FAISSVectorStore(VectorStore):
         """Delete vectors (not supported in basic FAISS)."""
         logger.warning("Delete not supported in basic FAISS index")
 
-    def update(
-        self,
-        id: str,
-        vector: Optional[np.ndarray] = None,
-        metadata: Optional[Dict] = None,
-    ):
+    def update(self, id: str, vector: Optional[np.ndarray] = None, metadata: Optional[Dict] = None):
         """Update metadata only (vector update not supported)."""
         if metadata and id in self.metadata_store:
             self.metadata_store[id].update(metadata)
@@ -216,9 +188,7 @@ class FAISSVectorStore(VectorStore):
 class PineconeVectorStore(VectorStore):
     """Pinecone vector store."""
 
-    def __init__(
-        self, api_key: str, environment: str, index_name: str, dimension: int = 768
-    ):
+    def __init__(self, api_key: str, environment: str, index_name: str, dimension: int = 768):
         """Initialize Pinecone store."""
         if not PINECONE_AVAILABLE:
             raise ImportError("Pinecone not installed")
@@ -227,13 +197,15 @@ class PineconeVectorStore(VectorStore):
 
         # Create or connect to index
         if index_name not in pinecone.list_indexes():
-            pinecone.create_index(index_name, dimension=dimension, metric="cosine")
+            pinecone.create_index(
+                index_name,
+                dimension=dimension,
+                metric='cosine'
+            )
 
         self._index = pinecone.Index(index_name)
 
-    def index(
-        self, vectors: np.ndarray, ids: List[str], metadata: List[Dict[str, Any]]
-    ):
+    def index(self, vectors: np.ndarray, ids: List[str], metadata: List[Dict[str, Any]]):
         """Index vectors in Pinecone."""
         # Prepare batch
         batch = [
@@ -245,24 +217,23 @@ class PineconeVectorStore(VectorStore):
         self._index.upsert(batch)
         logger.info(f"Indexed {len(vectors)} vectors in Pinecone")
 
-    def search(
-        self, query_vector: np.ndarray, k: int = 10, filters: Optional[Dict] = None
-    ) -> List[SearchResult]:
+    def search(self, query_vector: np.ndarray, k: int = 10, filters: Optional[Dict] = None) -> List[SearchResult]:
         """Search in Pinecone."""
         response = self._index.query(
-            vector=query_vector.tolist(), top_k=k, include_metadata=True, filter=filters
+            vector=query_vector.tolist(),
+            top_k=k,
+            include_metadata=True,
+            filter=filters
         )
 
         results = []
-        for match in response["matches"]:
-            results.append(
-                SearchResult(
-                    id=match["id"],
-                    score=match["score"],
-                    content=match.get("metadata", {}).get("content", ""),
-                    metadata=match.get("metadata", {}),
-                )
-            )
+        for match in response['matches']:
+            results.append(SearchResult(
+                id=match['id'],
+                score=match['score'],
+                content=match.get('metadata', {}).get('content', ''),
+                metadata=match.get('metadata', {})
+            ))
 
         return results
 
@@ -270,31 +241,24 @@ class PineconeVectorStore(VectorStore):
         """Delete from Pinecone."""
         self._index.delete(ids=ids)
 
-    def update(
-        self,
-        id: str,
-        vector: Optional[np.ndarray] = None,
-        metadata: Optional[Dict] = None,
-    ):
+    def update(self, id: str, vector: Optional[np.ndarray] = None, metadata: Optional[Dict] = None):
         """Update in Pinecone."""
         if vector is not None or metadata is not None:
-            update_data = {"id": id}
+            update_data = {'id': id}
             if vector is not None:
-                update_data["values"] = vector.tolist()
+                update_data['values'] = vector.tolist()
             if metadata is not None:
-                update_data["metadata"] = metadata
+                update_data['metadata'] = metadata
             self._index.upsert([update_data])
 
 
 class VectorSearchEngine:
     """Main vector search engine with hybrid capabilities."""
 
-    def __init__(
-        self,
-        store_type: VectorStoreType = VectorStoreType.FAISS,
-        embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
-        **store_kwargs,
-    ):
+    def __init__(self,
+                 store_type: VectorStoreType = VectorStoreType.FAISS,
+                 embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+                 **store_kwargs):
         """Initialize search engine.
 
         Args:
@@ -310,11 +274,9 @@ class VectorSearchEngine:
             self.embedding_model = SentenceTransformer(embedding_model)
             self.dimension = self.embedding_model.get_sentence_embedding_dimension()
         else:
-            logger.warning(
-                "Sentence transformers not available, using random embeddings"
-            )
+            logger.warning("Sentence transformers not available, using random embeddings")
             self.embedding_model = None
-            self.dimension = store_kwargs.get("dimension", 768)
+            self.dimension = store_kwargs.get('dimension', 768)
 
         # Initialize vector store
         if store_type == VectorStoreType.FAISS:
@@ -360,12 +322,10 @@ class VectorSearchEngine:
 
         return np.array(embeddings)
 
-    def index_documents(
-        self,
-        documents: List[Dict[str, Any]],
-        content_field: str = "content",
-        id_field: str = "id",
-    ):
+    def index_documents(self,
+                       documents: List[Dict[str, Any]],
+                       content_field: str = 'content',
+                       id_field: str = 'id'):
         """Index documents in vector store.
 
         Args:
@@ -383,7 +343,7 @@ class VectorSearchEngine:
         metadata = []
         for doc in documents:
             meta = {k: v for k, v in doc.items() if k != content_field}
-            meta["content"] = doc[content_field]
+            meta['content'] = doc[content_field]
             metadata.append(meta)
 
         # Index in store
@@ -391,14 +351,12 @@ class VectorSearchEngine:
 
         logger.info(f"Indexed {len(documents)} documents")
 
-    def search(
-        self,
-        query: str,
-        k: int = 10,
-        mode: SearchMode = SearchMode.VECTOR,
-        filters: Optional[Dict] = None,
-        rerank: bool = False,
-    ) -> List[SearchResult]:
+    def search(self,
+              query: str,
+              k: int = 10,
+              mode: SearchMode = SearchMode.VECTOR,
+              filters: Optional[Dict] = None,
+              rerank: bool = False) -> List[SearchResult]:
         """Search for similar documents.
 
         Args:
@@ -436,9 +394,10 @@ class VectorSearchEngine:
 
         return results[:k]
 
-    def _hybrid_search(
-        self, query: str, vector_results: List[SearchResult], k: int
-    ) -> List[SearchResult]:
+    def _hybrid_search(self,
+                      query: str,
+                      vector_results: List[SearchResult],
+                      k: int) -> List[SearchResult]:
         """Combine vector and keyword search.
 
         Args:
@@ -466,9 +425,10 @@ class VectorSearchEngine:
 
         return vector_results
 
-    def _graph_enhanced_search(
-        self, query: str, vector_results: List[SearchResult], k: int
-    ) -> List[SearchResult]:
+    def _graph_enhanced_search(self,
+                              query: str,
+                              vector_results: List[SearchResult],
+                              k: int) -> List[SearchResult]:
         """Enhance search with graph traversal.
 
         Args:
@@ -484,9 +444,10 @@ class VectorSearchEngine:
         logger.info("Graph enhancement would traverse Neo4j relationships")
         return vector_results
 
-    def _rerank_results(
-        self, query: str, results: List[SearchResult], k: int
-    ) -> List[SearchResult]:
+    def _rerank_results(self,
+                       query: str,
+                       results: List[SearchResult],
+                       k: int) -> List[SearchResult]:
         """Rerank results using cross-encoder.
 
         Args:
@@ -500,17 +461,15 @@ class VectorSearchEngine:
         # Simple length-based reranking for demonstration
         for result in results:
             length_penalty = min(1.0, 100 / max(1, len(result.content)))
-            result.score *= 1.0 + length_penalty * 0.1
+            result.score *= (1.0 + length_penalty * 0.1)
 
         results.sort(key=lambda x: x.score, reverse=True)
         return results
 
-    def update_document(
-        self,
-        doc_id: str,
-        content: Optional[str] = None,
-        metadata: Optional[Dict] = None,
-    ):
+    def update_document(self,
+                       doc_id: str,
+                       content: Optional[str] = None,
+                       metadata: Optional[Dict] = None):
         """Update document in index.
 
         Args:
@@ -523,7 +482,7 @@ class VectorSearchEngine:
             vector = self.embed_text(content)[0]
             if metadata is None:
                 metadata = {}
-            metadata["content"] = content
+            metadata['content'] = content
 
         self.store.update(doc_id, vector=vector, metadata=metadata)
 
@@ -543,14 +502,14 @@ class VectorSearchEngine:
             Statistics dictionary
         """
         stats = {
-            "store_type": self.store_type.value,
-            "embedding_model": self.embedding_model_name,
-            "dimension": self.dimension,
-            "cache_size": len(self.embedding_cache),
+            'store_type': self.store_type.value,
+            'embedding_model': self.embedding_model_name,
+            'dimension': self.dimension,
+            'cache_size': len(self.embedding_cache)
         }
 
         if isinstance(self.store, FAISSVectorStore):
-            stats["indexed_vectors"] = self.store.faiss_index.ntotal
-            stats["index_type"] = self.store.index_type
+            stats['indexed_vectors'] = self.store.faiss_index.ntotal
+            stats['index_type'] = self.store.index_type
 
         return stats

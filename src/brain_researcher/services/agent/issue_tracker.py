@@ -174,7 +174,9 @@ class LinearIssueTrackerBackend:
                 {"teamId": self.team_id},
             )
             nodes = (
-                result.get("team", {}).get("states", {}).get("nodes", [])
+                result.get("team", {})
+                .get("states", {})
+                .get("nodes", [])
                 if result
                 else []
             )
@@ -301,9 +303,7 @@ def create_issue_tracker_backend(
     Env:
       - BR_PLAN_TRACKER_PROVIDER: auto|none|linear (default: auto)
     """
-    selected = (
-        (provider or os.getenv("BR_PLAN_TRACKER_PROVIDER", "auto")).strip().lower()
-    )
+    selected = (provider or os.getenv("BR_PLAN_TRACKER_PROVIDER", "auto")).strip().lower()
     disabled_values = {"none", "off", "disabled", "false", "0"}
 
     if selected in disabled_values:
@@ -316,7 +316,5 @@ def create_issue_tracker_backend(
             return backend
         return None
 
-    logger.warning(
-        "Unknown tracker provider '%s'; external tracker disabled.", selected
-    )
+    logger.warning("Unknown tracker provider '%s'; external tracker disabled.", selected)
     return None

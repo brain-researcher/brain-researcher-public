@@ -33,11 +33,10 @@ Usage:
     # Execute tool
     result = execute_niwrap_tool(tool, {"infile": "/data/brain.nii"})
 """
-
 from brain_researcher.services.tools.niwrap.catalog import (
-    clear_cache,
     get_niwrap_tools,
     get_tool_by_name,
+    clear_cache,
 )
 from brain_researcher.services.tools.niwrap.executor import (
     execute_niwrap_tool,

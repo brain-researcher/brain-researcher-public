@@ -5,7 +5,7 @@ Converts token usage to USD cost estimates based on per-model pricing.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Dict, Any, Optional
 
 
 @dataclass

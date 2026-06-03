@@ -1,9 +1,8 @@
 """Graph aggregation utilities for dense subgraph handling."""
 
-from collections import defaultdict
-from typing import Any, Dict, List, Set, Tuple
-
 import networkx as nx
+from typing import Dict, List, Set, Tuple, Any
+from collections import defaultdict
 
 
 class GraphAggregator:
@@ -13,9 +12,9 @@ class GraphAggregator:
         self.aggregated_nodes = {}
         self.aggregation_metadata = {}
 
-    def cluster_dense_regions(
-        self, graph: nx.Graph, density_threshold: float = 0.7
-    ) -> nx.Graph:
+    def cluster_dense_regions(self,
+                             graph: nx.Graph,
+                             density_threshold: float = 0.7) -> nx.Graph:
         """Cluster dense regions of the graph.
 
         Args:
@@ -54,7 +53,7 @@ class GraphAggregator:
                     type="cluster",
                     size=n,
                     density=density,
-                    members=list(community),
+                    members=list(community)
                 )
 
                 # Track mapping
@@ -64,7 +63,7 @@ class GraphAggregator:
                 self.aggregation_metadata[cluster_id] = {
                     "members": list(community),
                     "internal_edges": m,
-                    "density": density,
+                    "density": density
                 }
             else:
                 # Add individual nodes
@@ -79,7 +78,7 @@ class GraphAggregator:
             if u_cluster != v_cluster:
                 if agg_graph.has_edge(u_cluster, v_cluster):
                     # Increment edge weight
-                    agg_graph[u_cluster][v_cluster]["weight"] += 1
+                    agg_graph[u_cluster][v_cluster]['weight'] += 1
                 else:
                     agg_graph.add_edge(u_cluster, v_cluster, weight=1)
 
@@ -121,11 +120,8 @@ class GraphAggregator:
                         visited.add(next_node)
 
                         # Get next node in chain
-                        next_neighbors = [
-                            n
-                            for n in graph.neighbors(next_node)
-                            if n != current and n not in chain
-                        ]
+                        next_neighbors = [n for n in graph.neighbors(next_node)
+                                        if n != current and n not in chain]
                         if not next_neighbors:
                             break
 
@@ -150,7 +146,12 @@ class GraphAggregator:
             agg_graph.remove_nodes_from(chain)
 
             # Add chain node
-            agg_graph.add_node(chain_id, type="chain", length=len(chain), members=chain)
+            agg_graph.add_node(
+                chain_id,
+                type="chain",
+                length=len(chain),
+                members=chain
+            )
 
             # Connect to endpoints
             for endpoint in endpoints:
@@ -159,14 +160,14 @@ class GraphAggregator:
 
             self.aggregation_metadata[chain_id] = {
                 "members": chain,
-                "length": len(chain),
+                "length": len(chain)
             }
 
         return agg_graph
 
-    def summarize_neighborhoods(
-        self, graph: nx.Graph, max_neighbors: int = 10
-    ) -> Dict[str, Any]:
+    def summarize_neighborhoods(self,
+                               graph: nx.Graph,
+                               max_neighbors: int = 10) -> Dict[str, Any]:
         """Summarize neighborhoods for nodes with many neighbors.
 
         Args:
@@ -189,22 +190,20 @@ class GraphAggregator:
 
                 for neighbor in neighbors:
                     # Count node types
-                    node_type = graph.nodes[neighbor].get("type", "unknown")
+                    node_type = graph.nodes[neighbor].get('type', 'unknown')
                     neighbor_types[node_type] += 1
 
                     # Collect edge weights
                     edge_data = graph[node][neighbor]
-                    if "weight" in edge_data:
-                        edge_weights.append(edge_data["weight"])
+                    if 'weight' in edge_data:
+                        edge_weights.append(edge_data['weight'])
 
                 summaries[node] = {
                     "total_neighbors": degree,
                     "shown_neighbors": neighbors[:max_neighbors],
                     "hidden_count": degree - max_neighbors,
                     "neighbor_types": dict(neighbor_types),
-                    "avg_edge_weight": (
-                        sum(edge_weights) / len(edge_weights) if edge_weights else 1.0
-                    ),
+                    "avg_edge_weight": sum(edge_weights) / len(edge_weights) if edge_weights else 1.0
                 }
 
         return summaries

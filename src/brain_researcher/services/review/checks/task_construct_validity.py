@@ -193,9 +193,7 @@ def _has_truthy_value(value: object) -> bool:
     return _value_present(value)
 
 
-def _explicit_confound_value(
-    context: Mapping[str, object], label: str
-) -> object | None:
+def _explicit_confound_value(context: Mapping[str, object], label: str) -> object | None:
     construct_validity = _nested_mapping(context, "construct_validity")
     task_validity = _nested_mapping(context, "task_validity")
     imbalance = construct_validity.get("behavioral_imbalance")
@@ -230,7 +228,9 @@ def _controlled_covariates(context: Mapping[str, object]) -> set[str]:
             "confound_columns",
             "confound_regression_scope",
         ):
-            covariates.update(token.lower() for token in _string_list(section.get(key)))
+            covariates.update(
+                token.lower() for token in _string_list(section.get(key))
+            )
 
     control_strategy = _normalize_text(construct_validity.get("control_strategy"))
     if control_strategy:
@@ -254,9 +254,7 @@ def _generalization_scope_text(value: object) -> str:
     return _normalize_text(value)
 
 
-def _stimulus_generalization_request(
-    context: Mapping[str, object],
-) -> tuple[str, object] | None:
+def _stimulus_generalization_request(context: Mapping[str, object]) -> tuple[str, object] | None:
     task_validity = _nested_mapping(context, "task_validity")
     construct_validity = _nested_mapping(context, "construct_validity")
     for source_name, source in (
@@ -271,9 +269,7 @@ def _stimulus_generalization_request(
     return None
 
 
-def _stimulus_randomization_support(
-    context: Mapping[str, object],
-) -> tuple[str, object] | None:
+def _stimulus_randomization_support(context: Mapping[str, object]) -> tuple[str, object] | None:
     task_validity = _nested_mapping(context, "task_validity")
     construct_validity = _nested_mapping(context, "construct_validity")
     for source_name, source in (
@@ -406,9 +402,7 @@ def behavioral_imbalance_not_modeled_check(
     unresolved_confounds = [
         confound
         for confound in explicit_confounds
-        if not any(
-            token in controlled_covariates for token in _CONFOUND_FIELDS[confound]
-        )
+        if not any(token in controlled_covariates for token in _CONFOUND_FIELDS[confound])
     ]
     if not unresolved_confounds:
         return None
@@ -457,9 +451,7 @@ def _analysis_family(bundle: CodeReviewBundle, context: Mapping[str, object]) ->
     return ""
 
 
-def _evoked_response_statuses(
-    context: Mapping[str, object],
-) -> list[tuple[str, object]]:
+def _evoked_response_statuses(context: Mapping[str, object]) -> list[tuple[str, object]]:
     task_connectivity = _nested_mapping(context, "task_connectivity")
     connectivity = _nested_mapping(context, "connectivity")
     preprocessing = _nested_mapping(context, "preprocessing")
@@ -507,9 +499,7 @@ def task_fc_ppi_evoked_response_control_check(
 
     statuses = _evoked_response_statuses(context)
     insufficient = [
-        (path, value)
-        for path, value in statuses
-        if _evoked_response_is_insufficient(value)
+        (path, value) for path, value in statuses if _evoked_response_is_insufficient(value)
     ]
     if not insufficient:
         return None

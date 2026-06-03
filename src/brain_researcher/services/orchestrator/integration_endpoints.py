@@ -11,23 +11,22 @@ The Evidence Rail endpoints support real job data with mock fallback when:
 - Job not found in jobs_db
 """
 
-import asyncio
-import hashlib
-import json
-import logging
-import os
-import platform
-import sys
-import tempfile
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Response
+from fastapi.responses import StreamingResponse, FileResponse
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
+import asyncio
+import json
+import hashlib
+import logging
+import tempfile
+import os
+import platform
 import psutil
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
-from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel, Field
+import sys
+from pathlib import Path
 from sse_starlette.sse import EventSourceResponse
 
 from brain_researcher.config.paths import get_data_root
@@ -36,9 +35,7 @@ from brain_researcher.core.contracts.run_card import RunCardV1 as RunCard
 logger = logging.getLogger(__name__)
 
 # Feature flag for mock fallback behavior
-ENABLE_MOCK_FALLBACK = (
-    os.getenv("ENABLE_EVIDENCE_MOCK_FALLBACK", "true").lower() == "true"
-)
+ENABLE_MOCK_FALLBACK = os.getenv("ENABLE_EVIDENCE_MOCK_FALLBACK", "true").lower() == "true"
 
 
 # Chat Integration Models
@@ -48,7 +45,6 @@ class ChatMessage(BaseModel):
     attachments: Optional[List[Dict[str, Any]]] = None
     metadata: Optional[Dict[str, Any]] = None
 
-
 class ChatThread(BaseModel):
     id: str
     title: str
@@ -56,7 +52,6 @@ class ChatThread(BaseModel):
     updated_at: datetime
     message_count: int
     status: str = "active"
-
 
 class ChatRequest(BaseModel):
     content: str
@@ -72,12 +67,10 @@ class ProvenanceNode(BaseModel):
     label: str
     metadata: Optional[Dict[str, Any]] = None
 
-
 class ProvenanceEdge(BaseModel):
     source: str
     target: str
     label: Optional[str] = None
-
 
 class ProvenanceGraph(BaseModel):
     nodes: List[ProvenanceNode]
@@ -94,7 +87,6 @@ class DatasetFilter(BaseModel):
     has_derivatives: Optional[bool] = None
     bids_compliant: Optional[bool] = None
 
-
 class Dataset(BaseModel):
     id: str
     name: str
@@ -108,7 +100,6 @@ class Dataset(BaseModel):
     bids_version: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
 
-
 class DatasetSearchResult(BaseModel):
     datasets: List[Dataset]
     total_count: int
@@ -121,7 +112,6 @@ class DatasetSearchResult(BaseModel):
 # Job Access Helpers (via adapter pattern, not direct dict access)
 # =============================================================================
 
-
 def _get_jobs_db():
     """
     Lazy import to get jobs_db from main_enhanced.
@@ -133,7 +123,6 @@ def _get_jobs_db():
         return {}
     try:
         from .main_enhanced import jobs_db
-
         return jobs_db
     except ImportError:
         logger.warning("Could not import jobs_db from main_enhanced")
@@ -148,7 +137,6 @@ def _get_enhanced_job_manager():
         return None
     try:
         from .main_enhanced import EnhancedJobManager
-
         return EnhancedJobManager
     except ImportError:
         logger.warning("Could not import EnhancedJobManager from main_enhanced")
@@ -179,12 +167,12 @@ def _mock_provenance_graph() -> ProvenanceGraph:
         nodes=[
             ProvenanceNode(id="ds_1", type="dataset", label="Input Dataset"),
             ProvenanceNode(id="tool_1", type="tool", label="Analysis Tool"),
-            ProvenanceNode(id="out_1", type="output", label="Results"),
+            ProvenanceNode(id="out_1", type="output", label="Results")
         ],
         edges=[
             ProvenanceEdge(source="ds_1", target="tool_1", label="input"),
-            ProvenanceEdge(source="tool_1", target="out_1", label="generated"),
-        ],
+            ProvenanceEdge(source="tool_1", target="out_1", label="generated")
+        ]
     )
 
 
@@ -196,7 +184,7 @@ def _mock_artifacts(job_id: str = "mock") -> List[Dict[str, Any]]:
             "name": f"output_{i}.nii.gz",
             "type": "nifti",
             "size": 1024000 * (i + 1),
-            "created_at": datetime.now().isoformat(),
+            "created_at": datetime.now().isoformat()
         }
         for i in range(3)
     ]
@@ -218,14 +206,16 @@ async def create_thread(title: Optional[str] = "New Chat") -> ChatThread:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         message_count=0,
-        status="active",
+        status="active"
     )
     return thread
 
 
 @chat_router.get("/threads/{thread_id}/messages")
 async def get_thread_messages(
-    thread_id: str, limit: int = 50, offset: int = 0
+    thread_id: str,
+    limit: int = 50,
+    offset: int = 0
 ) -> Dict[str, Any]:
     """Get messages for a thread"""
     # Mock implementation
@@ -234,7 +224,7 @@ async def get_thread_messages(
             "id": f"msg_{i}",
             "role": "user" if i % 2 == 0 else "assistant",
             "content": f"Message {i}",
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat()
         }
         for i in range(offset, min(offset + limit, 10))
     ]
@@ -244,13 +234,20 @@ async def get_thread_messages(
 
 @chat_router.post("/threads/{thread_id}/messages")
 async def send_message(
-    thread_id: str, request: ChatRequest, background_tasks: BackgroundTasks
+    thread_id: str,
+    request: ChatRequest,
+    background_tasks: BackgroundTasks
 ) -> Dict[str, str]:
     """Send a message to the chat thread"""
     message_id = f"msg_{datetime.now().timestamp()}"
 
     # Queue processing in background
-    background_tasks.add_task(process_chat_message, thread_id, message_id, request)
+    background_tasks.add_task(
+        process_chat_message,
+        thread_id,
+        message_id,
+        request
+    )
 
     return {"message_id": message_id}
 
@@ -258,21 +255,26 @@ async def send_message(
 @chat_router.get("/threads/{thread_id}/stream")
 async def stream_response(thread_id: str, message_id: str):
     """Stream chat response using SSE"""
-
     async def event_generator():
         # Simulate streaming response
         messages = [
             "Processing your request...",
             "Running analysis...",
             "Generating results...",
-            "Analysis complete!",
+            "Analysis complete!"
         ]
 
         for msg in messages:
             await asyncio.sleep(0.5)
-            yield {"event": "message", "data": json.dumps({"content": msg})}
+            yield {
+                "event": "message",
+                "data": json.dumps({"content": msg})
+            }
 
-        yield {"event": "done", "data": json.dumps({"status": "success"})}
+        yield {
+            "event": "done",
+            "data": json.dumps({"status": "success"})
+        }
 
     return EventSourceResponse(event_generator())
 
@@ -303,7 +305,7 @@ async def get_provenance(job_id: str) -> ProvenanceGraph:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
     # Check if job has explicit provenance graph
-    if hasattr(job, "provenance_graph") and job.provenance_graph:
+    if hasattr(job, 'provenance_graph') and job.provenance_graph:
         logger.debug(f"Returning explicit provenance graph for job {job_id}")
         return job.provenance_graph
 
@@ -312,85 +314,61 @@ async def get_provenance(job_id: str) -> ProvenanceGraph:
     edges: List[ProvenanceEdge] = []
 
     # Add input dataset nodes from job metadata
-    datasets = job.metadata.get("datasets", []) if hasattr(job, "metadata") else []
+    datasets = job.metadata.get("datasets", []) if hasattr(job, 'metadata') else []
     for i, ds in enumerate(datasets):
         ds_id = ds.get("id", f"ds_{i}")
-        nodes.append(
-            ProvenanceNode(
-                id=ds_id,
-                type="dataset",
-                label=ds.get("name", f"Dataset {i+1}"),
-                metadata={
-                    "source": ds.get("source"),
-                    "n_subjects": ds.get("n_subjects"),
-                },
-            )
-        )
+        nodes.append(ProvenanceNode(
+            id=ds_id,
+            type="dataset",
+            label=ds.get("name", f"Dataset {i+1}"),
+            metadata={"source": ds.get("source"), "n_subjects": ds.get("n_subjects")}
+        ))
 
     # Add nodes from execution steps
-    steps = job.steps if hasattr(job, "steps") else []
+    steps = job.steps if hasattr(job, 'steps') else []
     for i, step in enumerate(steps):
-        step_id = step.id if hasattr(step, "id") else f"step_{i}"
-        tool_name = (
-            step.tool
-            if hasattr(step, "tool")
-            else step.name if hasattr(step, "name") else f"Tool {i+1}"
-        )
-        step_name = step.name if hasattr(step, "name") else tool_name
+        step_id = step.id if hasattr(step, 'id') else f"step_{i}"
+        tool_name = step.tool if hasattr(step, 'tool') else step.name if hasattr(step, 'name') else f"Tool {i+1}"
+        step_name = step.name if hasattr(step, 'name') else tool_name
 
-        nodes.append(
-            ProvenanceNode(
-                id=step_id,
-                type="tool",
-                label=step_name,
-                metadata={
-                    "tool": tool_name,
-                    "status": (
-                        step.status.value if hasattr(step, "status") else "unknown"
-                    ),
-                },
-            )
-        )
+        nodes.append(ProvenanceNode(
+            id=step_id,
+            type="tool",
+            label=step_name,
+            metadata={"tool": tool_name, "status": step.status.value if hasattr(step, 'status') else "unknown"}
+        ))
 
         # Connect to previous step or input datasets
         if i == 0:
             # First step connects to all input datasets
             for ds in datasets:
                 ds_id = ds.get("id", f"ds_{datasets.index(ds)}")
-                edges.append(
-                    ProvenanceEdge(source=ds_id, target=step_id, label="input")
-                )
+                edges.append(ProvenanceEdge(source=ds_id, target=step_id, label="input"))
         else:
             # Subsequent steps connect to previous step
-            prev_step = steps[i - 1]
-            prev_id = prev_step.id if hasattr(prev_step, "id") else f"step_{i-1}"
+            prev_step = steps[i-1]
+            prev_id = prev_step.id if hasattr(prev_step, 'id') else f"step_{i-1}"
             edges.append(ProvenanceEdge(source=prev_id, target=step_id, label="output"))
 
     # Add output artifact nodes
-    artifacts = job.artifacts if hasattr(job, "artifacts") else []
+    artifacts = job.artifacts if hasattr(job, 'artifacts') else []
     for i, artifact in enumerate(artifacts):
-        art_id = artifact.id if hasattr(artifact, "id") else f"artifact_{i}"
-        art_name = artifact.name if hasattr(artifact, "name") else f"Output {i+1}"
-        art_type = artifact.type if hasattr(artifact, "type") else "output"
+        art_id = artifact.id if hasattr(artifact, 'id') else f"artifact_{i}"
+        art_name = artifact.name if hasattr(artifact, 'name') else f"Output {i+1}"
+        art_type = artifact.type if hasattr(artifact, 'type') else "output"
 
-        nodes.append(
-            ProvenanceNode(
-                id=art_id,
-                type="output",
-                label=art_name,
-                metadata={"artifact_type": art_type},
-            )
-        )
+        nodes.append(ProvenanceNode(
+            id=art_id,
+            type="output",
+            label=art_name,
+            metadata={"artifact_type": art_type}
+        ))
 
         # Connect artifacts to last step
         if steps:
             last_step = steps[-1]
-            last_id = (
-                last_step.id if hasattr(last_step, "id") else f"step_{len(steps)-1}"
-            )
-            edges.append(
-                ProvenanceEdge(source=last_id, target=art_id, label="generated")
-            )
+            last_id = last_step.id if hasattr(last_step, 'id') else f"step_{len(steps)-1}"
+            edges.append(ProvenanceEdge(source=last_id, target=art_id, label="generated"))
 
     # If no real data, fall back to mock
     if not nodes and ENABLE_MOCK_FALLBACK:
@@ -411,7 +389,7 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
         "os_version": platform.release(),
         "memory_gb": round(psutil.virtual_memory().total / (1024**3), 2),
         "cpu_cores": psutil.cpu_count(),
-        "gpu_info": None,  # Would query GPU if available
+        "gpu_info": None  # Would query GPU if available
     }
 
     # Mock execution steps
@@ -423,7 +401,7 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
             "args": {"dataset_id": "ds000114", "subjects": ["sub-01", "sub-02"]},
             "status": "completed",
             "start_time": datetime.now().isoformat(),
-            "duration_ms": 2500,
+            "duration_ms": 2500
         },
         {
             "id": "step_2",
@@ -432,7 +410,7 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
             "args": {"smoothing": 6, "normalization": "mni152"},
             "status": "completed",
             "start_time": datetime.now().isoformat(),
-            "duration_ms": 45000,
+            "duration_ms": 45000
         },
         {
             "id": "step_3",
@@ -441,8 +419,8 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
             "args": {"model": "glm", "contrasts": ["motor > rest"]},
             "status": "completed",
             "start_time": datetime.now().isoformat(),
-            "duration_ms": 15000,
-        },
+            "duration_ms": 15000
+        }
     ]
 
     # Mock datasets used
@@ -458,7 +436,7 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
             # Avoid fake hashes in mock fallback mode; real producers should
             # populate checksums from actual data snapshots/manifests.
             "checksum": None,
-            "bids_version": "1.6.0",
+            "bids_version": "1.6.0"
         }
     ]
 
@@ -468,20 +446,20 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
             "name": "nilearn",
             "version": "0.10.0",
             "citation": "Abraham et al. (2014). Machine learning for neuroimaging with scikit-learn",
-            "doi": "10.3389/fninf.2014.00014",
+            "doi": "10.3389/fninf.2014.00014"
         },
         {
             "name": "fmriprep",
             "version": "23.1.4",
             "citation": "Esteban et al. (2019). fMRIPrep: a robust preprocessing pipeline for functional MRI",
-            "doi": "10.1038/s41592-018-0235-4",
+            "doi": "10.1038/s41592-018-0235-4"
         },
         {
             "name": "FSL",
             "version": "6.0.5",
             "citation": "Jenkinson et al. (2012). FSL. NeuroImage, 62(2), 782-790",
-            "doi": "10.1016/j.neuroimage.2011.09.015",
-        },
+            "doi": "10.1016/j.neuroimage.2011.09.015"
+        }
     ]
 
     # Mock artifacts
@@ -495,7 +473,7 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
             # Avoid fake hashes in mock fallback mode.
             "checksum": None,
             "description": "Statistical parametric map for motor > rest contrast",
-            "metadata": {"space": "MNI152NLin2009cAsym", "smoothing": 6},
+            "metadata": {"space": "MNI152NLin2009cAsym", "smoothing": 6}
         },
         {
             "id": f"artifact_{job_id}_2",
@@ -505,8 +483,8 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
             "size_bytes": 156789,
             # Avoid fake hashes in mock fallback mode.
             "checksum": None,
-            "description": "Design matrix visualization",
-        },
+            "description": "Design matrix visualization"
+        }
     ]
 
     # Mock citations
@@ -518,7 +496,7 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
             "authors": ["Hanke, M.", "Baumgartner, F.J.", "Ibe, P."],
             "year": 2014,
             "journal": "Scientific Data",
-            "doi": "10.1038/sdata.2014.3",
+            "doi": "10.1038/sdata.2014.3"
         }
     ]
 
@@ -528,7 +506,7 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
         "cpu_time_seconds": 62.5,
         "gpu_time_seconds": None,
         "disk_io_mb": 1024.2,
-        "network_io_mb": 156.7,
+        "network_io_mb": 156.7
     }
 
     total_duration = sum(step["duration_ms"] for step in execution_steps) / 1000
@@ -636,7 +614,6 @@ def generate_comprehensive_run_card(job_id: str) -> Dict[str, Any]:
     dumped.setdefault("run_id", job_id)
     return dumped
 
-
 @evidence_router.get("/jobs/{job_id}/runcard")
 async def get_run_card(job_id: str) -> Dict[str, Any]:
     """
@@ -670,9 +647,9 @@ async def get_run_card(job_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
     # Try to get pre-generated run card from job
-    if hasattr(job, "run_card") and job.run_card:
+    if hasattr(job, 'run_card') and job.run_card:
         logger.debug(f"Returning pre-generated run card for job {job_id}")
-        if hasattr(job.run_card, "model_dump"):
+        if hasattr(job.run_card, 'model_dump'):
             return job.run_card.model_dump()
         return job.run_card
 
@@ -688,10 +665,8 @@ async def get_run_card(job_id: str) -> Dict[str, Any]:
         try:
             run_card = await EnhancedJobManager.generate_run_card(job_id)
             if run_card:
-                logger.debug(
-                    f"Generated run card for job {job_id} via EnhancedJobManager"
-                )
-                if hasattr(run_card, "model_dump"):
+                logger.debug(f"Generated run card for job {job_id} via EnhancedJobManager")
+                if hasattr(run_card, 'model_dump'):
                     return run_card.model_dump()
                 return run_card
         except Exception as e:
@@ -702,9 +677,7 @@ async def get_run_card(job_id: str) -> Dict[str, Any]:
         logger.debug(f"Falling back to mock run card for job {job_id}")
         return generate_comprehensive_run_card(job_id)
 
-    raise HTTPException(
-        status_code=500, detail=f"Could not generate run card for job {job_id}"
-    )
+    raise HTTPException(status_code=500, detail=f"Could not generate run card for job {job_id}")
 
 
 @evidence_router.get("/jobs/{job_id}/artifacts")
@@ -730,32 +703,26 @@ async def get_artifacts(job_id: str) -> Dict[str, List[Dict[str, Any]]]:
 
     # Get real artifacts from job
     artifacts = []
-    job_artifacts = job.artifacts if hasattr(job, "artifacts") else []
+    job_artifacts = job.artifacts if hasattr(job, 'artifacts') else []
 
     for artifact in job_artifacts:
         artifact_dict = {}
 
         # Handle both Pydantic models and dicts
-        if hasattr(artifact, "model_dump"):
+        if hasattr(artifact, 'model_dump'):
             artifact_dict = artifact.model_dump()
         elif isinstance(artifact, dict):
             artifact_dict = artifact
         else:
             # Try to extract common fields
             artifact_dict = {
-                "id": getattr(
-                    artifact, "id", f"artifact_{job_artifacts.index(artifact)}"
-                ),
-                "name": getattr(artifact, "name", "Unknown"),
-                "type": getattr(artifact, "type", "unknown"),
-                "size": getattr(artifact, "size", 0),
-                "url": getattr(artifact, "url", ""),
-                "checksum": getattr(artifact, "checksum", None),
-                "created_at": (
-                    getattr(artifact, "created_at", datetime.now()).isoformat()
-                    if hasattr(artifact, "created_at")
-                    else datetime.now().isoformat()
-                ),
+                "id": getattr(artifact, 'id', f"artifact_{job_artifacts.index(artifact)}"),
+                "name": getattr(artifact, 'name', 'Unknown'),
+                "type": getattr(artifact, 'type', 'unknown'),
+                "size": getattr(artifact, 'size', 0),
+                "url": getattr(artifact, 'url', ''),
+                "checksum": getattr(artifact, 'checksum', None),
+                "created_at": getattr(artifact, 'created_at', datetime.now()).isoformat() if hasattr(artifact, 'created_at') else datetime.now().isoformat(),
             }
 
         artifacts.append(artifact_dict)
@@ -770,7 +737,9 @@ async def get_artifacts(job_id: str) -> Dict[str, List[Dict[str, Any]]]:
 
 @evidence_router.post("/jobs/{job_id}/artifacts/{artifact_id}/annotate")
 async def add_annotation(
-    job_id: str, artifact_id: str, annotation: Dict[str, str]
+    job_id: str,
+    artifact_id: str,
+    annotation: Dict[str, str]
 ) -> Dict[str, bool]:
     """Add annotation to an artifact"""
     # Process annotation
@@ -780,22 +749,16 @@ async def add_annotation(
 def generate_pdf_run_card(run_card_data: Dict[str, Any], job_id: str) -> str:
     """Generate PDF Run Card using reportlab"""
     try:
-        from reportlab.lib import colors
-        from reportlab.lib.pagesizes import A4, letter
-        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import inch
-        from reportlab.platypus import (
-            Paragraph,
-            SimpleDocTemplate,
-            Spacer,
-            Table,
-            TableStyle,
-        )
+        from reportlab.lib import colors
     except ImportError:
         # Fallback if reportlab not available
         raise HTTPException(
             status_code=500,
-            detail="PDF generation not available - reportlab package required",
+            detail="PDF generation not available - reportlab package required"
         )
 
     # Create temporary file
@@ -808,132 +771,100 @@ def generate_pdf_run_card(run_card_data: Dict[str, Any], job_id: str) -> str:
 
     # Title
     title_style = ParagraphStyle(
-        "CustomTitle",
-        parent=styles["Heading1"],
+        'CustomTitle',
+        parent=styles['Heading1'],
         fontSize=24,
         spaceAfter=30,
-        textColor=colors.darkblue,
+        textColor=colors.darkblue
     )
     story.append(Paragraph(f"Run Card: {run_card_data['title']}", title_style))
     story.append(Spacer(1, 20))
 
     # Description
-    story.append(
-        Paragraph(
-            f"<b>Description:</b> {run_card_data['description']}", styles["Normal"]
-        )
-    )
+    story.append(Paragraph(f"<b>Description:</b> {run_card_data['description']}", styles['Normal']))
     story.append(Spacer(1, 12))
 
     # Metadata table
     metadata = [
-        ["Run ID", run_card_data["id"]],
-        ["Timestamp", run_card_data["timestamp"]],
+        ["Run ID", run_card_data['id']],
+        ["Timestamp", run_card_data['timestamp']],
         ["Duration", f"{run_card_data['execution']['duration_seconds']:.1f}s"],
-        [
-            "Reproducibility Score",
-            f"{run_card_data.get('reproducibility_score', 0):.0%}",
-        ],
+        ["Reproducibility Score", f"{run_card_data.get('reproducibility_score', 0):.0%}"]
     ]
 
-    t = Table(metadata, colWidths=[2 * inch, 4 * inch])
-    t.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (0, -1), colors.lightgrey),
-                ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
-                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-                ("FONTSIZE", (0, 0), (-1, -1), 9),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
-                ("GRID", (0, 0), (-1, -1), 1, colors.black),
-            ]
-        )
-    )
+    t = Table(metadata, colWidths=[2*inch, 4*inch])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
     story.append(t)
     story.append(Spacer(1, 20))
 
     # Datasets
-    story.append(Paragraph("<b>Datasets Used</b>", styles["Heading2"]))
-    for dataset in run_card_data["inputs"]["datasets"]:
-        story.append(
-            Paragraph(
-                f"• {dataset['name']} ({dataset['source']}) - {dataset.get('n_subjects', 'N/A')} subjects",
-                styles["Normal"],
-            )
-        )
+    story.append(Paragraph("<b>Datasets Used</b>", styles['Heading2']))
+    for dataset in run_card_data['inputs']['datasets']:
+        story.append(Paragraph(
+            f"• {dataset['name']} ({dataset['source']}) - {dataset.get('n_subjects', 'N/A')} subjects",
+            styles['Normal']
+        ))
     story.append(Spacer(1, 12))
 
     # Tools
-    story.append(Paragraph("<b>Analysis Tools</b>", styles["Heading2"]))
-    for tool in run_card_data["provenance"]["tools"]:
-        story.append(
-            Paragraph(f"• {tool['name']} v{tool['version']}", styles["Normal"])
-        )
+    story.append(Paragraph("<b>Analysis Tools</b>", styles['Heading2']))
+    for tool in run_card_data['provenance']['tools']:
+        story.append(Paragraph(
+            f"• {tool['name']} v{tool['version']}",
+            styles['Normal']
+        ))
     story.append(Spacer(1, 12))
 
     # Parameters
-    story.append(Paragraph("<b>Analysis Parameters</b>", styles["Heading2"]))
-    for key, value in run_card_data["inputs"]["parameters"].items():
-        story.append(Paragraph(f"• {key}: {value}", styles["Normal"]))
+    story.append(Paragraph("<b>Analysis Parameters</b>", styles['Heading2']))
+    for key, value in run_card_data['inputs']['parameters'].items():
+        story.append(Paragraph(f"• {key}: {value}", styles['Normal']))
     story.append(Spacer(1, 12))
 
     # Outputs
-    story.append(Paragraph("<b>Generated Artifacts</b>", styles["Heading2"]))
-    for artifact in run_card_data["outputs"]["artifacts"]:
-        size_mb = artifact["size_bytes"] / (1024 * 1024)
-        story.append(
-            Paragraph(
-                f"• {artifact['name']} ({size_mb:.1f} MB) - {artifact.get('description', 'No description')}",
-                styles["Normal"],
-            )
-        )
+    story.append(Paragraph("<b>Generated Artifacts</b>", styles['Heading2']))
+    for artifact in run_card_data['outputs']['artifacts']:
+        size_mb = artifact['size_bytes'] / (1024*1024)
+        story.append(Paragraph(
+            f"• {artifact['name']} ({size_mb:.1f} MB) - {artifact.get('description', 'No description')}",
+            styles['Normal']
+        ))
     story.append(Spacer(1, 12))
 
     # Citations
-    story.append(Paragraph("<b>Citations</b>", styles["Heading2"]))
-    for citation in run_card_data["provenance"]["citations"]:
-        authors_str = (
-            ", ".join(citation["authors"]) if citation["authors"] else "Unknown"
-        )
-        story.append(
-            Paragraph(
-                f"• {authors_str} ({citation.get('year', 'N/A')}). {citation['title']}. DOI: {citation.get('doi', 'N/A')}",
-                styles["Normal"],
-            )
-        )
+    story.append(Paragraph("<b>Citations</b>", styles['Heading2']))
+    for citation in run_card_data['provenance']['citations']:
+        authors_str = ", ".join(citation['authors']) if citation['authors'] else "Unknown"
+        story.append(Paragraph(
+            f"• {authors_str} ({citation.get('year', 'N/A')}). {citation['title']}. DOI: {citation.get('doi', 'N/A')}",
+            styles['Normal']
+        ))
     story.append(Spacer(1, 12))
 
     # Reproducibility info
-    story.append(Paragraph("<b>Reproducibility Information</b>", styles["Heading2"]))
-    repro = run_card_data["reproducibility"]
-    story.append(
-        Paragraph(
-            f"• Random Seed: {repro.get('random_seed', 'Not set')}", styles["Normal"]
-        )
-    )
-    story.append(
-        Paragraph(
-            f"• Container Image: {repro.get('container_info', {}).get('image', 'Not available')}",
-            styles["Normal"],
-        )
-    )
+    story.append(Paragraph("<b>Reproducibility Information</b>", styles['Heading2']))
+    repro = run_card_data['reproducibility']
+    story.append(Paragraph(f"• Random Seed: {repro.get('random_seed', 'Not set')}", styles['Normal']))
+    story.append(Paragraph(f"• Container Image: {repro.get('container_info', {}).get('image', 'Not available')}", styles['Normal']))
 
     # Environment
-    env = run_card_data["execution"]["environment"]
-    story.append(
-        Paragraph(f"• Platform: {env.get('platform', 'Unknown')}", styles["Normal"])
-    )
-    story.append(
-        Paragraph(f"• Memory: {env.get('memory_gb', 'Unknown')} GB", styles["Normal"])
-    )
+    env = run_card_data['execution']['environment']
+    story.append(Paragraph(f"• Platform: {env.get('platform', 'Unknown')}", styles['Normal']))
+    story.append(Paragraph(f"• Memory: {env.get('memory_gb', 'Unknown')} GB", styles['Normal']))
 
     # Build PDF
     doc.build(story)
     temp_file.close()
 
     return temp_file.name
-
 
 # Configurable run cards directory
 RUN_CARDS_DIR = Path(
@@ -967,12 +898,11 @@ def store_run_card(job_id: str, run_card_data: Dict[str, Any], format: str) -> s
 
     # Store the file
     if format == "json":
-        with open(file_path, "w") as f:
+        with open(file_path, 'w') as f:
             json.dump(run_card_data, f, indent=2, default=str)
     elif format == "yaml":
         import yaml
-
-        with open(file_path, "w") as f:
+        with open(file_path, 'w') as f:
             yaml.dump(run_card_data, f, default_flow_style=False)
 
     logger.info(f"Stored run card for job {job_id} at {file_path}")
@@ -1014,12 +944,11 @@ def get_persisted_run_card(job_id: str) -> Optional[Dict[str, Any]]:
     most_recent = max(candidates, key=lambda p: p.stat().st_mtime)
 
     try:
-        with open(most_recent, "r") as f:
+        with open(most_recent, 'r') as f:
             return json.load(f)
     except Exception as e:
         logger.warning(f"Failed to load persisted run card {most_recent}: {e}")
         return None
-
 
 @evidence_router.get("/jobs/{job_id}/runcard/export")
 async def export_run_card(
@@ -1029,7 +958,7 @@ async def export_run_card(
     includeProvenance: bool = True,
     includeCitations: bool = True,
     includeEnvironment: bool = True,
-    generateQR: bool = False,
+    generateQR: bool = False
 ) -> StreamingResponse:
     """Export run card in specified format with options"""
     run_card_data = await get_run_card(job_id)
@@ -1053,7 +982,6 @@ async def export_run_card(
 
         elif format == "yaml":
             import yaml
-
             content = yaml.safe_dump(run_card_data, default_flow_style=False)
             media_type = "text/yaml"
             filename = f"run_card_{job_id}.yaml"
@@ -1084,20 +1012,24 @@ async def export_run_card(
 
         headers = {
             "Content-Disposition": f"attachment; filename={filename}",
-            "X-Stored-Path": stored_path,
+            "X-Stored-Path": stored_path
         }
         if format == "yaml":
             headers["Content-Type"] = "text/yaml"
 
-        return Response(content=content, media_type=media_type, headers=headers)
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers=headers
+        )
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to export run card: {str(e)}"
+            status_code=500,
+            detail=f"Failed to export run card: {str(e)}"
         )
-
 
 # Share Models
 class ShareFormat(str, Enum):
@@ -1109,12 +1041,10 @@ class ShareRequest(BaseModel):
     format: ShareFormat = ShareFormat.JSON
     expires_in_hours: int = Field(default=24, ge=1, le=168)  # Max 1 week
 
-
 class ShareResponse(BaseModel):
     share_id: str
     share_url: str
     expires_at: datetime
-
 
 @evidence_router.post("/share")
 async def create_share_link(request: ShareRequest) -> ShareResponse:
@@ -1126,16 +1056,14 @@ async def create_share_link(request: ShareRequest) -> ShareResponse:
         "job_id": request.jobId,
         "format": request.format.value,
         "created_at": datetime.now().isoformat(),
-        "expires_at": (
-            datetime.now() + timedelta(hours=request.expires_in_hours)
-        ).isoformat(),
+        "expires_at": (datetime.now() + timedelta(hours=request.expires_in_hours)).isoformat()
     }
 
     # Store to filesystem (mock implementation)
     shares_dir = Path(os.environ.get("BR_SHARES_DIR", "/app/data/shares"))
     shares_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(shares_dir / f"{share_id}.json", "w") as f:
+    with open(shares_dir / f"{share_id}.json", 'w') as f:
         json.dump(share_data, f, indent=2)
 
     share_url = f"https://brain-researcher.ai/share/{share_id}"
@@ -1143,9 +1071,8 @@ async def create_share_link(request: ShareRequest) -> ShareResponse:
     return ShareResponse(
         share_id=share_id,
         share_url=share_url,
-        expires_at=datetime.now() + timedelta(hours=request.expires_in_hours),
+        expires_at=datetime.now() + timedelta(hours=request.expires_in_hours)
     )
-
 
 @evidence_router.get("/share/{share_id}")
 async def get_shared_run_card(share_id: str):
@@ -1156,26 +1083,25 @@ async def get_shared_run_card(share_id: str):
     if not share_file.exists():
         raise HTTPException(status_code=404, detail="Share link not found")
 
-    with open(share_file, "r") as f:
+    with open(share_file, 'r') as f:
         share_data = json.load(f)
 
     # Check if expired
-    expires_at = datetime.fromisoformat(share_data["expires_at"])
+    expires_at = datetime.fromisoformat(share_data['expires_at'])
     if datetime.now() > expires_at:
         raise HTTPException(status_code=410, detail="Share link has expired")
 
     # Get the run card
-    job_id = share_data["job_id"]
+    job_id = share_data['job_id']
     run_card_data = await get_run_card(job_id)
 
     return {
         "run_card": run_card_data,
         "share_info": {
-            "created_at": share_data["created_at"],
-            "expires_at": share_data["expires_at"],
-        },
+            "created_at": share_data['created_at'],
+            "expires_at": share_data['expires_at']
+        }
     }
-
 
 # Dataset Endpoints
 @dataset_router.get("/")
@@ -1190,7 +1116,7 @@ async def search_datasets(
     page: int = 1,
     limit: int = 20,
     sort: str = "name",
-    order: str = "asc",
+    order: str = "asc"
 ) -> DatasetSearchResult:
     """Search datasets with filters"""
     # Mock dataset search
@@ -1203,7 +1129,7 @@ async def search_datasets(
             n_subjects=10,
             tasks=["motor"],
             quality_score=8.5,
-            size_gb=15.2,
+            size_gb=15.2
         ),
         Dataset(
             id="hcp_1200",
@@ -1213,8 +1139,8 @@ async def search_datasets(
             n_subjects=1200,
             tasks=["motor", "wm", "language"],
             quality_score=9.8,
-            size_gb=2400,
-        ),
+            size_gb=2400
+        )
     ]
 
     # Apply filters
@@ -1230,8 +1156,14 @@ async def search_datasets(
 
     # Calculate facets
     facets = {
-        "sources": [{"value": "OpenNeuro", "count": 1}, {"value": "HCP", "count": 1}],
-        "modalities": [{"value": "bold", "count": 2}, {"value": "T1w", "count": 2}],
+        "sources": [
+            {"value": "OpenNeuro", "count": 1},
+            {"value": "HCP", "count": 1}
+        ],
+        "modalities": [
+            {"value": "bold", "count": 2},
+            {"value": "T1w", "count": 2}
+        ]
     }
 
     return DatasetSearchResult(
@@ -1239,7 +1171,7 @@ async def search_datasets(
         total_count=len(datasets),
         page=page,
         page_size=limit,
-        facets=facets,
+        facets=facets
     )
 
 
@@ -1257,7 +1189,7 @@ async def get_dataset(dataset_id: str) -> Dataset:
             tasks=["motor"],
             quality_score=8.5,
             size_gb=15.2,
-            bids_version="1.6.0",
+            bids_version="1.6.0"
         )
     else:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -1270,9 +1202,15 @@ async def get_dataset_statistics(dataset_id: str) -> Dict[str, Any]:
         "total_subjects": 10,
         "total_sessions": 20,
         "total_size_gb": 15.2,
-        "file_types": [{"type": "nii.gz", "count": 240}, {"type": "json", "count": 50}],
-        "scan_types": [{"type": "T1w", "count": 10}, {"type": "bold", "count": 200}],
-        "average_quality_score": 8.5,
+        "file_types": [
+            {"type": "nii.gz", "count": 240},
+            {"type": "json", "count": 50}
+        ],
+        "scan_types": [
+            {"type": "T1w", "count": 10},
+            {"type": "bold", "count": 200}
+        ],
+        "average_quality_score": 8.5
     }
 
 
@@ -1283,17 +1221,21 @@ async def get_dataset_preview(dataset_id: str) -> Dict[str, Any]:
         "sample_subjects": ["sub-01", "sub-02", "sub-03"],
         "sample_files": [
             "sub-01/anat/sub-01_T1w.nii.gz",
-            "sub-01/func/sub-01_task-motor_bold.nii.gz",
+            "sub-01/func/sub-01_task-motor_bold.nii.gz"
         ],
         "directory_structure": {
-            "sub-01": {"anat": ["T1w.nii.gz"], "func": ["task-motor_bold.nii.gz"]}
-        },
+            "sub-01": {
+                "anat": ["T1w.nii.gz"],
+                "func": ["task-motor_bold.nii.gz"]
+            }
+        }
     }
 
 
 @dataset_router.get("/{dataset_id}/related")
 async def get_related_datasets(
-    dataset_id: str, limit: int = 5
+    dataset_id: str,
+    limit: int = 5
 ) -> Dict[str, List[Dataset]]:
     """Get related datasets"""
     related = [
@@ -1304,7 +1246,7 @@ async def get_related_datasets(
             modality=["T1w", "bold"],
             n_subjects=15,
             tasks=["motor"],
-            quality_score=8.0,
+            quality_score=8.0
         )
     ]
 
@@ -1315,13 +1257,20 @@ async def get_related_datasets(
 async def check_dataset_quality(dataset_id: str) -> Dict[str, Any]:
     """Check dataset quality"""
     return {
-        "bids_validation": {"valid": True, "warnings": 2, "errors": 0},
+        "bids_validation": {
+            "valid": True,
+            "warnings": 2,
+            "errors": 0
+        },
         "completeness": {
             "missing_files": [],
-            "missing_metadata": ["participants.json"],
+            "missing_metadata": ["participants.json"]
         },
-        "consistency": {"naming_convention": "consistent", "file_format": "valid"},
-        "score": 8.5,
+        "consistency": {
+            "naming_convention": "consistent",
+            "file_format": "valid"
+        },
+        "score": 8.5
     }
 
 
@@ -1335,7 +1284,7 @@ async def get_dataset_citations(dataset_id: str) -> Dict[str, List[Dict[str, Any
             "authors": ["Smith, J.", "Doe, A."],
             "year": 2021,
             "doi": "10.18112/openneuro.ds000114.v1.0.1",
-            "type": "dataset",
+            "type": "dataset"
         }
     ]
 
@@ -1343,7 +1292,10 @@ async def get_dataset_citations(dataset_id: str) -> Dict[str, List[Dict[str, Any
 
 
 @dataset_router.get("/{dataset_id}/download")
-async def download_dataset(dataset_id: str, format: str = "bids") -> StreamingResponse:
+async def download_dataset(
+    dataset_id: str,
+    format: str = "bids"
+) -> StreamingResponse:
     """Download dataset"""
     # Mock download - in reality would stream from storage
     content = f"Dataset {dataset_id} in {format} format"
@@ -1353,12 +1305,16 @@ async def download_dataset(dataset_id: str, format: str = "bids") -> StreamingRe
         media_type="application/octet-stream",
         headers={
             "Content-Disposition": f"attachment; filename=dataset_{dataset_id}.tar.gz"
-        },
+        }
     )
 
 
 # Helper functions
-async def process_chat_message(thread_id: str, message_id: str, request: ChatRequest):
+async def process_chat_message(
+    thread_id: str,
+    message_id: str,
+    request: ChatRequest
+):
     """Process chat message in background"""
     # Simulate processing
     await asyncio.sleep(1)
@@ -1367,4 +1323,4 @@ async def process_chat_message(thread_id: str, message_id: str, request: ChatReq
 
 
 # Export routers
-__all__ = ["chat_router", "evidence_router", "dataset_router"]
+__all__ = ['chat_router', 'evidence_router', 'dataset_router']

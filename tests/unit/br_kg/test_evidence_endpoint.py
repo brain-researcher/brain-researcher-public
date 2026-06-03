@@ -75,119 +75,31 @@ class _StubNeo4j:
 
         # Statmaps
         if "collect({" in cypher and "map_id" in cypher:
-            return [
-                {
-                    "items": [
-                        {
-                            "map_id": "m1",
-                            "space": "MNI",
-                            "atlas": "A",
-                            "contrast": "c1",
-                            "url": "u",
-                        }
-                    ],
-                    "total": 1,
-                }
-            ]
+            return [{"items": [{"map_id": "m1", "space": "MNI", "atlas": "A", "contrast": "c1", "url": "u"}], "total": 1}]
         # Coords
         if "CoordAnchor" in cypher:
-            return [
-                {
-                    "items": [
-                        {
-                            "x": 1.0,
-                            "y": 2.0,
-                            "z": 3.0,
-                            "label": "peak",
-                            "statistic": 7.5,
-                        }
-                    ],
-                    "total": 1,
-                }
-            ]
+            return [{"items": [{"x": 1.0, "y": 2.0, "z": 3.0, "label": "peak", "statistic": 7.5}], "total": 1}]
         # Timeseries
         if "timeseries_labels" in params and "task: ts.task" in cypher:
-            return [
-                {
-                    "items": [
-                        {"id": "ts1", "roi": "roiA", "task": "taskA", "url": "ts-url"}
-                    ],
-                    "total": 1,
-                }
-            ]
+            return [{"items": [{"id": "ts1", "roi": "roiA", "task": "taskA", "url": "ts-url"}], "total": 1}]
         # Datasets
         if "dataset_labels" in params and "description: d.description" in cypher:
-            return [
-                {
-                    "items": [
-                        {
-                            "name": "ds",
-                            "id": "d1",
-                            "description": "desc",
-                            "url": "d-url",
-                        }
-                    ],
-                    "total": 1,
-                }
-            ]
+            return [{"items": [{"name": "ds", "id": "d1", "description": "desc", "url": "d-url"}], "total": 1}]
         # Papers
         if "paper_labels" in params and "title: pub.title" in cypher:
-            return [
-                {
-                    "items": [
-                        {"pmid": "123", "title": "t", "year": 2020, "authors": "a"}
-                    ],
-                    "total": 1,
-                }
-            ]
+            return [{"items": [{"pmid": "123", "title": "t", "year": 2020, "authors": "a"}], "total": 1}]
         # Tasks
         if "task_labels" in params and "via_dataset_items" in cypher:
-            return [
-                {
-                    "items": [
-                        {"id": "task1", "label": "n-back task", "description": "wm"}
-                    ],
-                    "total": 1,
-                }
-            ]
+            return [{"items": [{"id": "task1", "label": "n-back task", "description": "wm"}], "total": 1}]
         # Contrasts
         if "contrast_labels" in params and "via_map_items" in cypher:
-            return [
-                {
-                    "items": [
-                        {
-                            "id": "contrast1",
-                            "label": "2-back > 0-back",
-                            "statmap_count": 1,
-                        }
-                    ],
-                    "total": 1,
-                }
-            ]
+            return [{"items": [{"id": "contrast1", "label": "2-back > 0-back", "statmap_count": 1}], "total": 1}]
         # Tools
-        if (
-            "tool_labels" in params
-            and "tool_concept_rel_types" in params
-            and "study_labels" not in params
-        ):
-            return [
-                {
-                    "items": [
-                        {"id": "tool1", "name": "FLIRT", "description": "registration"}
-                    ],
-                    "total": 1,
-                }
-            ]
+        if "tool_labels" in params and "tool_concept_rel_types" in params and "study_labels" not in params:
+            return [{"items": [{"id": "tool1", "name": "FLIRT", "description": "registration"}], "total": 1}]
         # Studies
         if "study_labels" in params and "study_concept_rel_types" in params:
-            return [
-                {
-                    "items": [
-                        {"id": "study1", "name": "Study A", "description": "desc"}
-                    ],
-                    "total": 1,
-                }
-            ]
+            return [{"items": [{"id": "study1", "name": "Study A", "description": "desc"}], "total": 1}]
 
         return []
 
@@ -303,7 +215,6 @@ class _AlignmentEvidenceStubNeo4j:
 @pytest.fixture()
 def app_module(monkeypatch):
     from brain_researcher.services.br_kg.graph import neo4j_utils
-
     monkeypatch.setattr(neo4j_utils, "require_neo4j_db", lambda **_kwargs: object())
     sys.modules.pop("brain_researcher.services.br_kg.app", None)
     br_kg_app = importlib.import_module("brain_researcher.services.br_kg.app")
@@ -361,9 +272,7 @@ def test_evidence_counts_match_groups(monkeypatch, app_module):
     monkeypatch.setattr(app_module, "neo4j_db", _StubNeo4j(concept_exists=True))
     client = app_module.app.test_client()
 
-    resp = client.get(
-        "/api/kg/concept/ONVOC:demo/evidence?limit=10&types=statmaps,coords,datasets,papers,timeseries"
-    )
+    resp = client.get("/api/kg/concept/ONVOC:demo/evidence?limit=10&types=statmaps,coords,datasets,papers,timeseries")
 
     assert resp.status_code == 200
     body = json.loads(resp.data.decode())
@@ -394,9 +303,7 @@ def test_evidence_extended_types_match_groups(monkeypatch, app_module):
     monkeypatch.setattr(app_module, "neo4j_db", _StubNeo4j(concept_exists=True))
     client = app_module.app.test_client()
 
-    resp = client.get(
-        "/api/kg/concept/ONVOC:demo/evidence?limit=10&types=tasks,contrasts,tools,studies"
-    )
+    resp = client.get("/api/kg/concept/ONVOC:demo/evidence?limit=10&types=tasks,contrasts,tools,studies")
 
     assert resp.status_code == 200
     body = json.loads(resp.data.decode())
@@ -411,9 +318,7 @@ def test_evidence_extended_types_match_groups(monkeypatch, app_module):
     assert len(body["groups"]["studies"]) == 1
 
 
-def test_evidence_statmaps_query_supports_statmap_and_statsmap_labels(
-    monkeypatch, app_module
-):
+def test_evidence_statmaps_query_supports_statmap_and_statsmap_labels(monkeypatch, app_module):
     stub = _StubNeo4j(concept_exists=True)
     monkeypatch.setattr(app_module, "neo4j_db", stub)
     client = app_module.app.test_client()
@@ -451,9 +356,7 @@ def test_evidence_rejects_invalid_verified_only(monkeypatch, app_module):
     assert "verified_only" in body.get("error", "")
 
 
-def test_evidence_confidence_min_is_forwarded_to_all_query_groups(
-    monkeypatch, app_module
-):
+def test_evidence_confidence_min_is_forwarded_to_all_query_groups(monkeypatch, app_module):
     stub = _StubNeo4j(concept_exists=True)
     monkeypatch.setattr(app_module, "neo4j_db", stub)
     client = app_module.app.test_client()
@@ -473,9 +376,7 @@ def test_evidence_confidence_min_is_forwarded_to_all_query_groups(
         assert call["params"].get("confidence_min") == pytest.approx(0.7)
 
 
-def test_evidence_verified_only_is_forwarded_to_all_query_groups(
-    monkeypatch, app_module
-):
+def test_evidence_verified_only_is_forwarded_to_all_query_groups(monkeypatch, app_module):
     stub = _StubNeo4j(concept_exists=True)
     monkeypatch.setattr(app_module, "neo4j_db", stub)
     client = app_module.app.test_client()

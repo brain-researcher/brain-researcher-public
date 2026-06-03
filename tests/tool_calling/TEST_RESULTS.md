@@ -222,14 +222,14 @@ The `ImprovedNiCLIPSpatialMapper` was failing to load because:
 #### 1. Updated Environment Configuration
 
 Added to **3 .env files**:
-- `/home/zijiaochen/projects/brain_researcher/.env`
+- `${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/.env`
 - `brain_researcher/services/agent/.env`
 - `brain_researcher/services/br_kg/.env`
 
 ```bash
 BR_KG_API_URL=http://localhost:5001
 BR_KG_URL=http://localhost:5001
-NICLIP_DATA_PATH=/home/zijiaochen/projects/brain_researcher/data/niclip/data
+NICLIP_DATA_PATH=${BRAIN_RESEARCHER_HOME}/projects/brain_researcher/data/niclip/data
 ```
 
 #### 2. Created Automation Scripts

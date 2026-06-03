@@ -7,7 +7,7 @@ credits only when --grant-credit or BR_WORKFLOW_SMOKE_GRANT_CREDIT=1 is set and
 BR_WORKFLOW_SMOKE_ALLOW_CREDIT_GRANT=1 is also set.
 
 Common environment variables:
-  BR_WORKFLOW_SMOKE_BASE_URL=https://brain-researcher.com
+  BR_WORKFLOW_SMOKE_BASE_URL=https://${PUBLIC_HOSTNAME}
   BR_WORKFLOW_SMOKE_EMAIL=...
   BR_WORKFLOW_SMOKE_PASSWORD=...
   BR_WORKFLOW_SMOKE_WORKSPACE_ID=...
@@ -36,7 +36,7 @@ from urllib.parse import urljoin
 
 import requests
 
-DEFAULT_BASE_URL = "https://brain-researcher.com"
+DEFAULT_BASE_URL = "https://${PUBLIC_HOSTNAME}"
 DEFAULT_DATASET_ID = "ds000114"
 DEFAULT_WORKFLOW_ID = "workflow_rest_connectome_e2e"
 DEFAULT_REQUIRED_OUTPUTS = (

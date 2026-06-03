@@ -375,9 +375,9 @@ def test_wired_and_skipped_partition_all_cases() -> None:
 
     wired_ids = set(WIRED)
     skipped_ids = set(SKIPPED)
-    assert not (
-        wired_ids & skipped_ids
-    ), f"cases both wired and skipped: {sorted(wired_ids & skipped_ids)}"
+    assert not (wired_ids & skipped_ids), (
+        f"cases both wired and skipped: {sorted(wired_ids & skipped_ids)}"
+    )
     covered = wired_ids | skipped_ids
     fixture_ids = set(CASES_BY_ID)
     assert covered == fixture_ids, (
@@ -392,10 +392,9 @@ def test_wired_cases_only_target_block_or_warn() -> None:
 
     for case_id in WIRED:
         severity = CASES_BY_ID[case_id]["expected_severity"]
-        assert severity in {
-            "warn",
-            "block",
-        }, f"{case_id}: wired an allow case ({severity}); allow cases must be skipped"
+        assert severity in {"warn", "block"}, (
+            f"{case_id}: wired an allow case ({severity}); allow cases must be skipped"
+        )
 
 
 @pytest.mark.parametrize("case_id", sorted(WIRED), ids=sorted(WIRED))

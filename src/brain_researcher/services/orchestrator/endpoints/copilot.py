@@ -39,9 +39,7 @@ class CopilotSuggestion(BaseModel):
     name: str
     description: str
     reason: str
-    score: float = Field(
-        1.0, ge=0.0, le=3.0, description="Confidence score (0-3 scale)"
-    )
+    score: float = Field(1.0, ge=0.0, le=3.0, description="Confidence score (0-3 scale)")
     autocomplete: Optional[Dict[str, Any]] = None
 
 
@@ -57,9 +55,7 @@ class CopilotMethod(BaseModel):
     name: str
     description: str
     reason: str
-    score: float = Field(
-        1.0, ge=0.0, le=3.0, description="Confidence score (0-3 scale)"
-    )
+    score: float = Field(1.0, ge=0.0, le=3.0, description="Confidence score (0-3 scale)")
     parameters: List[CopilotMethodParameter] = Field(default_factory=list)
 
 
@@ -90,23 +86,9 @@ class CopilotLearnResponse(BaseModel):
 
 
 FUNCTION_HINTS: Dict[str, List[str]] = {
-    "preproc": [
-        "preprocess",
-        "preprocessing",
-        "fmriprep",
-        "mriqc",
-        "motion",
-        "denoise",
-        "qc",
-    ],
+    "preproc": ["preprocess", "preprocessing", "fmriprep", "mriqc", "motion", "denoise", "qc"],
     "glm": ["glm", "fitlins", "design", "contrast", "stats"],
-    "connectivity": [
-        "connectivity",
-        "connectome",
-        "timeseries",
-        "parcellation",
-        "graph",
-    ],
+    "connectivity": ["connectivity", "connectome", "timeseries", "parcellation", "graph"],
     "qc": ["qc", "quality", "mriqc", "preflight"],
     "analysis": ["analysis", "model", "inference"],
     "decoding": ["decoding", "mvpa", "classifier", "prediction"],
@@ -125,16 +107,8 @@ DOMAIN_MODALITY_HINTS: Dict[str, List[str]] = {
 }
 
 INPUT_PARAM_DEFAULTS: Dict[str, tuple[str, str, Optional[str | float | int | bool]]] = {
-    "parcellation": (
-        "parcellation",
-        "Atlas / parcellation for ROI definition",
-        "Schaefer2018_200",
-    ),
-    "parcellation_labels": (
-        "parcellation",
-        "Atlas / parcellation for ROI definition",
-        "Schaefer2018_200",
-    ),
+    "parcellation": ("parcellation", "Atlas / parcellation for ROI definition", "Schaefer2018_200"),
+    "parcellation_labels": ("parcellation", "Atlas / parcellation for ROI definition", "Schaefer2018_200"),
     "timeseries": ("bandpass_filter", "Temporal filtering band (Hz)", "0.01-0.1"),
     "design_matrix": ("hrf_model", "Hemodynamic response function model", "spm"),
     "stats_map": ("threshold", "Voxel-wise statistical threshold", 0.001),
@@ -145,7 +119,9 @@ INPUT_PARAM_DEFAULTS: Dict[str, tuple[str, str, Optional[str | float | int | boo
 
 def _tokenize(text: str) -> set[str]:
     return {
-        token for token in re.findall(r"[a-z0-9_]+", text.lower()) if len(token) >= 3
+        token
+        for token in re.findall(r"[a-z0-9_]+", text.lower())
+        if len(token) >= 3
     }
 
 
@@ -160,11 +136,7 @@ def _load_intent_catalog() -> List[Dict[str, Any]]:
         return []
     if not isinstance(raw, list):
         return []
-    return [
-        item
-        for item in raw
-        if isinstance(item, dict) and item.get("id") and item.get("name")
-    ]
+    return [item for item in raw if isinstance(item, dict) and item.get("id") and item.get("name")]
 
 
 @lru_cache(maxsize=1)
@@ -198,9 +170,7 @@ def _function_matches(intent: Dict[str, Any], function_filter: Optional[str]) ->
 def _domain_matches(intent: Dict[str, Any], domain_filter: Optional[str]) -> bool:
     if not domain_filter:
         return True
-    modalities = [
-        str(v).lower() for v in intent.get("modalities", []) if isinstance(v, str)
-    ]
+    modalities = [str(v).lower() for v in intent.get("modalities", []) if isinstance(v, str)]
     hints = DOMAIN_MODALITY_HINTS.get(domain_filter, [])
     if not hints:
         return True
@@ -220,9 +190,7 @@ def _score_intent(
             str(intent.get("name", "")),
             str(intent.get("description", "")),
             " ".join([str(v) for v in intent.get("parents", []) if isinstance(v, str)]),
-            " ".join(
-                [str(v) for v in intent.get("modalities", []) if isinstance(v, str)]
-            ),
+            " ".join([str(v) for v in intent.get("modalities", []) if isinstance(v, str)]),
         ]
     ).lower()
     searchable_tokens = _tokenize(searchable_text)
@@ -309,8 +277,7 @@ def _build_methods(request: CopilotSuggestRequest) -> List[CopilotMethod]:
                 id=f"intent-{intent_id}-{rank}",
                 intent_id=intent_id,
                 name=str(intent.get("name")),
-                description=str(intent.get("description", "")).strip()
-                or str(intent.get("name")),
+                description=str(intent.get("description", "")).strip() or str(intent.get("name")),
                 reason=", ".join(reason_parts),
                 score=score,
                 parameters=_build_method_parameters(intent, request.metadata or {}),
@@ -324,85 +291,70 @@ async def copilot_suggest(request: CopilotSuggestRequest) -> CopilotSuggestRespo
     q = request.query.lower()
     suggestions: List[CopilotSuggestion] = []
 
-    def add(
-        name: str,
-        description: str,
-        reason: str,
-        score: float,
-        autocomplete: Optional[Dict[str, Any]] = None,
-    ):
-        suggestions.append(
-            CopilotSuggestion(
-                name=name,
-                description=description,
-                reason=reason,
-                score=score,
-                autocomplete=autocomplete or {},
-            )
-        )
+    def add(name: str, description: str, reason: str, score: float, autocomplete: Optional[Dict[str, Any]] = None):
+        suggestions.append(CopilotSuggestion(
+            name=name,
+            description=description,
+            reason=reason,
+            score=score,
+            autocomplete=autocomplete or {}
+        ))
 
     # Heuristic suggestions based on detected intent
     # Apply coarse filters: if domain/function/risk are provided, only include
     # suggestions whose implied function/domain matches. (We only have a few
     # buckets here; keep it simple.)
 
-    def allow(
-        function_hint: Optional[str] = None, domain_hint: Optional[str] = None
-    ) -> bool:
+    def allow(function_hint: Optional[str] = None, domain_hint: Optional[str] = None) -> bool:
         if request.function and function_hint and request.function != function_hint:
             return False
         if request.domain and domain_hint and request.domain != domain_hint:
             return False
         return True
-
-    if re.search(r"\bglm\b|general\s+linear\s+model|z-?map", q) and allow(
-        function_hint="glm", domain_hint="fmri"
-    ):
+    if re.search(r"\bglm\b|general\s+linear\s+model|z-?map", q) and allow(function_hint="glm", domain_hint="fmri"):
         add(
             name="hrf_model",
             description="Hemodynamic response function model",
             reason="GLM analysis typically requires HRF specification",
             score=2.6,
-            autocomplete={"hrf_model": "spm"},
+            autocomplete={"hrf_model": "spm"}
         )
         add(
             name="smoothing_fwhm",
             description="Spatial smoothing kernel (FWHM in mm)",
             reason="Common pre-statistics denoising for fMRI",
             score=2.2,
-            autocomplete={"smoothing_fwhm": 6},
+            autocomplete={"smoothing_fwhm": 6}
         )
         add(
             name="threshold",
             description="Voxel-wise statistical threshold",
             reason="Control false positives in statistical maps",
             score=2.0,
-            autocomplete={"threshold": 0.001},
+            autocomplete={"threshold": 0.001}
         )
 
-    if re.search(r"connectivity|correlation|resting[-\s]?state", q) and allow(
-        function_hint="connectivity", domain_hint="fmri"
-    ):
+    if re.search(r"connectivity|correlation|resting[-\s]?state", q) and allow(function_hint="connectivity", domain_hint="fmri"):
         add(
             name="parcellation",
             description="Atlas for region definition",
             reason="Connectivity requires ROIs; choose an atlas",
             score=2.4,
-            autocomplete={"parcellation": "Schaefer2018_200"},
+            autocomplete={"parcellation": "Schaefer2018_200"}
         )
         add(
             name="bandpass_filter",
             description="Temporal filtering band (Hz)",
             reason="Denoising for resting-state connectivity",
             score=2.0,
-            autocomplete={"bandpass_filter": [0.01, 0.1]},
+            autocomplete={"bandpass_filter": [0.01, 0.1]}
         )
         add(
             name="correlation_threshold",
             description="Edge threshold for graph construction",
             reason="Filter weak or noisy connections",
             score=1.8,
-            autocomplete={"correlation_threshold": 0.3},
+            autocomplete={"correlation_threshold": 0.3}
         )
 
     # Generic fallbacks
@@ -412,16 +364,14 @@ async def copilot_suggest(request: CopilotSuggestRequest) -> CopilotSuggestRespo
             description="Select a dataset for analysis",
             reason="Most analyses require data selection",
             score=1.5,
-            autocomplete={
-                "dataset_id": request.metadata.get("dataset_id") or "motor_task_sample"
-            },
+            autocomplete={"dataset_id": request.metadata.get("dataset_id") or "motor_task_sample"}
         )
         add(
             name="pipeline",
             description="Choose or infer an analysis pipeline",
             reason="Disambiguate desired analysis flow",
             score=1.4,
-            autocomplete={"pipeline": request.metadata.get("pipeline") or "auto"},
+            autocomplete={"pipeline": request.metadata.get("pipeline") or "auto"}
         )
 
     methods = _build_methods(request)

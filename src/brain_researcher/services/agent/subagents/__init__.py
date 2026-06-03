@@ -18,7 +18,7 @@ IntegratorSubagent = None
 SubagentController = None
 
 try:
-    from .base import BaseSubagent, SubagentMessage, SubagentState
+    from .base import BaseSubagent, SubagentState, SubagentMessage
 except Exception:  # pragma: no cover - optional legacy module
     pass
 try:

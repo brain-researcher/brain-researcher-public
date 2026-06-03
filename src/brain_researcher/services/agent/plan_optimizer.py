@@ -14,10 +14,10 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from brain_researcher.services.agent.cost_models import (
-    CloudProvider,
     CostModel,
+    CloudProvider,
     ResourceCostCalculator,
-    create_cost_model,
+    create_cost_model
 )
 from brain_researcher.services.agent.planning import ExecutionPlan, WorkflowStep
 
@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 class OptimizationObjective(str, Enum):
     """Optimization objectives for plan optimization."""
-
     MINIMIZE_COST = "cost"
     MINIMIZE_TIME = "time"
     MINIMIZE_RESOURCES = "resources"
@@ -36,7 +35,6 @@ class OptimizationObjective(str, Enum):
 
 class OptimizationStrategy(str, Enum):
     """Optimization strategies."""
-
     PARETO_OPTIMAL = "pareto"  # Find Pareto frontier
     WEIGHTED_SUM = "weighted"  # Weighted sum of objectives
     LEXICOGRAPHIC = "lexicographic"  # Prioritized objectives
@@ -46,7 +44,6 @@ class OptimizationStrategy(str, Enum):
 @dataclass
 class OptimizationConstraint:
     """Constraint specification for optimization."""
-
     objective: OptimizationObjective
     constraint_type: str  # "max", "min", "equal"
     value: float
@@ -57,7 +54,6 @@ class OptimizationConstraint:
 @dataclass
 class OptimizationPreferences:
     """User preferences for optimization."""
-
     primary_objective: OptimizationObjective
     secondary_objectives: List[OptimizationObjective] = field(default_factory=list)
     constraints: List[OptimizationConstraint] = field(default_factory=list)
@@ -71,7 +67,6 @@ class OptimizationPreferences:
 @dataclass
 class PlanMetrics:
     """Metrics for an execution plan."""
-
     total_cost: float
     total_time: float
     total_cpu_hours: float
@@ -85,7 +80,6 @@ class PlanMetrics:
 @dataclass
 class OptimizedPlan:
     """An optimized execution plan with metrics."""
-
     plan_id: str
     original_plan: ExecutionPlan
     optimized_steps: List[WorkflowStep]
@@ -100,7 +94,6 @@ class OptimizedPlan:
 @dataclass
 class ParetoSolution:
     """Pareto-optimal solution."""
-
     solution_id: str
     plan: OptimizedPlan
     objectives: Dict[OptimizationObjective, float]
@@ -117,12 +110,12 @@ class TimeEstimator:
         # Historical data for time estimation (would be learned from actual executions)
         self.tool_base_times = {
             "fmriprep": 3600.0,  # 1 hour base time
-            "fsl_feat": 900.0,  # 15 minutes
+            "fsl_feat": 900.0,   # 15 minutes
             "fsl_flirt": 300.0,  # 5 minutes
             "connectivity_analysis": 600.0,  # 10 minutes
             "glm_analysis": 1200.0,  # 20 minutes
             "meta_analysis": 1800.0,  # 30 minutes
-            "default": 300.0,  # 5 minutes default
+            "default": 300.0  # 5 minutes default
         }
 
         # Complexity multipliers based on data size, parameters, etc.
@@ -132,7 +125,7 @@ class TimeEstimator:
             "data_size_large": 4.0,
             "high_resolution": 1.5,
             "multi_session": 2.0,
-            "group_analysis": 3.0,
+            "group_analysis": 3.0
         }
 
     def estimate_step_time(self, step: WorkflowStep) -> float:
@@ -145,9 +138,7 @@ class TimeEstimator:
         Returns:
             Estimated time in seconds
         """
-        base_time = self.tool_base_times.get(
-            step.tool_name, self.tool_base_times["default"]
-        )
+        base_time = self.tool_base_times.get(step.tool_name, self.tool_base_times["default"])
 
         # Apply complexity factors based on tool arguments
         complexity_multiplier = 1.0
@@ -170,7 +161,6 @@ class TimeEstimator:
 
         # Add some randomness for realistic estimation
         import random
-
         variation = random.uniform(0.8, 1.2)  # ±20% variation
 
         return estimated_time * variation
@@ -186,10 +176,7 @@ class TimeEstimator:
             Estimated parallel execution time
         """
         # Build dependency graph and calculate critical path
-        from brain_researcher.services.agent.dependency_resolver import (
-            DependencyResolver,
-            Task,
-        )
+        from brain_researcher.services.agent.dependency_resolver import DependencyResolver, Task
 
         resolver = DependencyResolver()
 
@@ -202,7 +189,7 @@ class TimeEstimator:
                 tool_name=step.tool_name,
                 tool_args=step.tool_args,
                 dependencies=step.dependencies,
-                estimated_duration=self.estimate_step_time(step),
+                estimated_duration=self.estimate_step_time(step)
             )
             tasks.append(task)
 
@@ -223,7 +210,9 @@ class ParetoOptimizer:
         pass
 
     def find_pareto_frontier(
-        self, solutions: List[OptimizedPlan], objectives: List[OptimizationObjective]
+        self,
+        solutions: List[OptimizedPlan],
+        objectives: List[OptimizationObjective]
     ) -> List[ParetoSolution]:
         """
         Find Pareto-optimal solutions using NSGA-II-like approach.
@@ -246,7 +235,7 @@ class ParetoOptimizer:
                 solution_id=f"pareto_{i}",
                 plan=solution,
                 objectives=objectives_dict,
-                rank=0,
+                rank=0
             )
             pareto_solutions.append(pareto_sol)
 
@@ -264,7 +253,9 @@ class ParetoOptimizer:
             return []
 
     def _extract_objectives(
-        self, solution: OptimizedPlan, objectives: List[OptimizationObjective]
+        self,
+        solution: OptimizedPlan,
+        objectives: List[OptimizationObjective]
     ) -> Dict[OptimizationObjective, float]:
         """Extract objective values from a solution."""
         objectives_dict = {}
@@ -277,24 +268,22 @@ class ParetoOptimizer:
             elif obj == OptimizationObjective.MINIMIZE_RESOURCES:
                 # Combine CPU, memory, and storage into resource score
                 resource_score = (
-                    solution.metrics.total_cpu_hours
-                    + solution.metrics.total_memory_gb_hours / 10  # Scale memory
-                    + solution.metrics.total_storage_gb / 100  # Scale storage
+                    solution.metrics.total_cpu_hours +
+                    solution.metrics.total_memory_gb_hours / 10 +  # Scale memory
+                    solution.metrics.total_storage_gb / 100  # Scale storage
                 )
                 objectives_dict[obj] = resource_score
             elif obj == OptimizationObjective.MAXIMIZE_RELIABILITY:
-                objectives_dict[obj] = (
-                    -solution.metrics.reliability_score
-                )  # Negative for minimization
+                objectives_dict[obj] = -solution.metrics.reliability_score  # Negative for minimization
             elif obj == OptimizationObjective.MAXIMIZE_THROUGHPUT:
-                objectives_dict[obj] = (
-                    -solution.metrics.parallel_efficiency
-                )  # Negative for minimization
+                objectives_dict[obj] = -solution.metrics.parallel_efficiency  # Negative for minimization
 
         return objectives_dict
 
     def _fast_non_dominated_sort(
-        self, solutions: List[ParetoSolution], objectives: List[OptimizationObjective]
+        self,
+        solutions: List[ParetoSolution],
+        objectives: List[OptimizationObjective]
     ) -> List[List[ParetoSolution]]:
         """Fast non-dominated sorting algorithm."""
         fronts = []
@@ -330,9 +319,7 @@ class ParetoOptimizer:
             for sol1 in fronts[front_idx]:
                 for dominated_id in sol1.dominates:
                     # Find the dominated solution
-                    dominated_sol = next(
-                        s for s in solutions if s.solution_id == dominated_id
-                    )
+                    dominated_sol = next(s for s in solutions if s.solution_id == dominated_id)
                     dominated_sol.dominated_by.remove(sol1.solution_id)
 
                     if len(dominated_sol.dominated_by) == 0:
@@ -352,14 +339,14 @@ class ParetoOptimizer:
         self,
         sol1: ParetoSolution,
         sol2: ParetoSolution,
-        objectives: List[OptimizationObjective],
+        objectives: List[OptimizationObjective]
     ) -> bool:
         """Check if solution 1 dominates solution 2."""
         at_least_one_better = False
 
         for obj in objectives:
-            val1 = sol1.objectives.get(obj, float("inf"))
-            val2 = sol2.objectives.get(obj, float("inf"))
+            val1 = sol1.objectives.get(obj, float('inf'))
+            val2 = sol2.objectives.get(obj, float('inf'))
 
             if val1 > val2:  # sol1 is worse in this objective
                 return False
@@ -369,12 +356,14 @@ class ParetoOptimizer:
         return at_least_one_better
 
     def _calculate_crowding_distance(
-        self, front: List[ParetoSolution], objectives: List[OptimizationObjective]
+        self,
+        front: List[ParetoSolution],
+        objectives: List[OptimizationObjective]
     ):
         """Calculate crowding distance for solutions in a front."""
         if len(front) <= 2:
             for sol in front:
-                sol.crowding_distance = float("inf")
+                sol.crowding_distance = float('inf')
             return
 
         # Initialize distances
@@ -384,11 +373,11 @@ class ParetoOptimizer:
         # Calculate distance for each objective
         for obj in objectives:
             # Sort by objective value
-            front.sort(key=lambda s: s.objectives.get(obj, float("inf")))
+            front.sort(key=lambda s: s.objectives.get(obj, float('inf')))
 
             # Set boundary points to infinite distance
-            front[0].crowding_distance = float("inf")
-            front[-1].crowding_distance = float("inf")
+            front[0].crowding_distance = float('inf')
+            front[-1].crowding_distance = float('inf')
             front[0].is_extreme_point = True
             front[-1].is_extreme_point = True
 
@@ -400,8 +389,8 @@ class ParetoOptimizer:
             if obj_range > 0:
                 for i in range(1, len(front) - 1):
                     distance = (
-                        front[i + 1].objectives.get(obj, 0.0)
-                        - front[i - 1].objectives.get(obj, 0.0)
+                        front[i + 1].objectives.get(obj, 0.0) -
+                        front[i - 1].objectives.get(obj, 0.0)
                     ) / obj_range
                     front[i].crowding_distance += distance
 
@@ -422,7 +411,7 @@ class AdvancedPlanOptimizer:
     def __init__(
         self,
         cost_model: Optional[CostModel] = None,
-        cloud_provider: CloudProvider = CloudProvider.AWS,
+        cloud_provider: CloudProvider = CloudProvider.AWS
     ):
         """
         Initialize advanced plan optimizer.
@@ -441,15 +430,13 @@ class AdvancedPlanOptimizer:
         self.convergence_threshold = 0.001
         self.population_size = 50
 
-        logger.info(
-            f"Plan optimizer initialized with {cloud_provider.value} cost model"
-        )
+        logger.info(f"Plan optimizer initialized with {cloud_provider.value} cost model")
 
     def optimize(
         self,
         plan: ExecutionPlan,
         preferences: OptimizationPreferences,
-        constraints: Optional[List[OptimizationConstraint]] = None,
+        constraints: Optional[List[OptimizationConstraint]] = None
     ) -> List[OptimizedPlan]:
         """
         Optimize execution plan based on preferences and constraints.
@@ -482,7 +469,7 @@ class AdvancedPlanOptimizer:
                 original_plan=plan,
                 optimized_steps=candidate,
                 metrics=metrics,
-                optimization_score=optimization_score,
+                optimization_score=optimization_score
             )
             evaluated_candidates.append(optimized_plan)
 
@@ -497,9 +484,7 @@ class AdvancedPlanOptimizer:
             )
         else:
             # Default to single best solution
-            optimized_plans = [
-                max(evaluated_candidates, key=lambda p: p.optimization_score)
-            ]
+            optimized_plans = [max(evaluated_candidates, key=lambda p: p.optimization_score)]
 
         # Generate trade-off analysis
         for plan in optimized_plans:
@@ -517,7 +502,9 @@ class AdvancedPlanOptimizer:
         return optimized_plans
 
     def _generate_candidate_solutions(
-        self, plan: ExecutionPlan, preferences: OptimizationPreferences
+        self,
+        plan: ExecutionPlan,
+        preferences: OptimizationPreferences
     ) -> List[List[WorkflowStep]]:
         """
         Generate candidate optimized solutions.
@@ -560,17 +547,15 @@ class AdvancedPlanOptimizer:
             candidates.append(instance_optimized_plan)
 
         # Hybrid optimizations (combinations)
-        hybrid_plan = self._combine_optimizations(
-            [substituted_plan, param_optimized_plan, parallel_optimized_plan]
-        )
+        hybrid_plan = self._combine_optimizations([
+            substituted_plan, param_optimized_plan, parallel_optimized_plan
+        ])
         if hybrid_plan and hybrid_plan not in candidates:
             candidates.append(hybrid_plan)
 
         return candidates
 
-    def _optimize_tool_substitution(
-        self, steps: List[WorkflowStep]
-    ) -> List[WorkflowStep]:
+    def _optimize_tool_substitution(self, steps: List[WorkflowStep]) -> List[WorkflowStep]:
         """Optimize by substituting tools with more efficient alternatives."""
         optimized_steps = []
 
@@ -586,16 +571,13 @@ class AdvancedPlanOptimizer:
                 new_step = WorkflowStep(
                     step_id=step.step_id,
                     step_number=step.step_number,
-                    description=step.description.replace(
-                        step.tool_name, tool_substitutions[step.tool_name]
-                    ),
+                    description=step.description.replace(step.tool_name, tool_substitutions[step.tool_name]),
                     tool_name=tool_substitutions[step.tool_name],
                     tool_args=step.tool_args.copy(),
                     dependencies=step.dependencies.copy(),
                     expected_output=step.expected_output,
-                    estimated_time_seconds=step.estimated_time_seconds
-                    * 0.8,  # Assume 20% faster
-                    resource_requirements=step.resource_requirements.copy(),
+                    estimated_time_seconds=step.estimated_time_seconds * 0.8,  # Assume 20% faster
+                    resource_requirements=step.resource_requirements.copy()
                 )
                 optimized_steps.append(new_step)
             else:
@@ -617,47 +599,39 @@ class AdvancedPlanOptimizer:
                 dependencies=step.dependencies.copy(),
                 expected_output=step.expected_output,
                 estimated_time_seconds=step.estimated_time_seconds,
-                resource_requirements=step.resource_requirements.copy(),
+                resource_requirements=step.resource_requirements.copy()
             )
 
             # Optimize parameters based on tool type
             if "fmriprep" in step.tool_name.lower():
                 # Optimize fMRIPrep parameters
-                new_step.tool_args.update(
-                    {
-                        "nprocs": min(8, new_step.tool_args.get("nprocs", 4)),
-                        "mem_mb": 16000,  # Optimize memory usage
-                        "use_syn_sdc": False,  # Disable slow distortion correction
-                    }
-                )
+                new_step.tool_args.update({
+                    "nprocs": min(8, new_step.tool_args.get("nprocs", 4)),
+                    "mem_mb": 16000,  # Optimize memory usage
+                    "use_syn_sdc": False,  # Disable slow distortion correction
+                })
                 new_step.estimated_time_seconds *= 0.7  # 30% faster with optimizations
 
             elif "glm" in step.tool_name.lower():
                 # Optimize GLM parameters
-                new_step.tool_args.update(
-                    {
-                        "high_pass_filter": 128,  # Standard high-pass filter
-                        "motion_outliers": True,  # Enable motion outlier detection
-                    }
-                )
+                new_step.tool_args.update({
+                    "high_pass_filter": 128,  # Standard high-pass filter
+                    "motion_outliers": True,  # Enable motion outlier detection
+                })
 
             optimized_steps.append(new_step)
 
         return optimized_steps
 
-    def _optimize_parallelization(
-        self, steps: List[WorkflowStep]
-    ) -> List[WorkflowStep]:
+    def _optimize_parallelization(self, steps: List[WorkflowStep]) -> List[WorkflowStep]:
         """Optimize parallelization of workflow steps."""
         # Identify steps that can be parallelized
         parallel_candidates = []
         sequential_steps = []
 
         for step in steps:
-            if not step.dependencies and step.tool_name.lower() not in [
-                "preprocessing",
-                "fmriprep",
-            ]:
+            if (not step.dependencies and
+                step.tool_name.lower() not in ["preprocessing", "fmriprep"]):
                 # Independent steps can potentially be parallelized
                 parallel_candidates.append(step)
             else:
@@ -681,7 +655,7 @@ class AdvancedPlanOptimizer:
                 dependencies=step.dependencies.copy(),
                 expected_output=step.expected_output,
                 estimated_time_seconds=step.estimated_time_seconds,
-                resource_requirements=step.resource_requirements.copy(),
+                resource_requirements=step.resource_requirements.copy()
             )
 
             # Optimize resource allocation for parallel execution
@@ -695,9 +669,7 @@ class AdvancedPlanOptimizer:
 
         return optimized_steps
 
-    def _optimize_resource_allocation(
-        self, steps: List[WorkflowStep]
-    ) -> List[WorkflowStep]:
+    def _optimize_resource_allocation(self, steps: List[WorkflowStep]) -> List[WorkflowStep]:
         """Optimize resource allocation for steps."""
         optimized_steps = []
 
@@ -711,7 +683,7 @@ class AdvancedPlanOptimizer:
                 dependencies=step.dependencies.copy(),
                 expected_output=step.expected_output,
                 estimated_time_seconds=step.estimated_time_seconds,
-                resource_requirements=step.resource_requirements.copy(),
+                resource_requirements=step.resource_requirements.copy()
             )
 
             # Optimize resource allocation based on workload characteristics
@@ -719,23 +691,16 @@ class AdvancedPlanOptimizer:
 
             if "connectivity" in tool_name_lower:
                 # Connectivity analysis is memory-intensive
-                new_step.resource_requirements.update(
-                    {
-                        "memory": new_step.resource_requirements.get("memory", 4.0)
-                        * 1.5,
-                        "cpu": max(2.0, new_step.resource_requirements.get("cpu", 1.0)),
-                    }
-                )
+                new_step.resource_requirements.update({
+                    "memory": new_step.resource_requirements.get("memory", 4.0) * 1.5,
+                    "cpu": max(2.0, new_step.resource_requirements.get("cpu", 1.0))
+                })
             elif "glm" in tool_name_lower:
                 # GLM analysis benefits from more CPU cores
-                new_step.resource_requirements.update(
-                    {
-                        "cpu": min(
-                            8.0, new_step.resource_requirements.get("cpu", 2.0) * 2
-                        ),
-                        "memory": new_step.resource_requirements.get("memory", 8.0),
-                    }
-                )
+                new_step.resource_requirements.update({
+                    "cpu": min(8.0, new_step.resource_requirements.get("cpu", 2.0) * 2),
+                    "memory": new_step.resource_requirements.get("memory", 8.0)
+                })
 
             optimized_steps.append(new_step)
 
@@ -755,7 +720,7 @@ class AdvancedPlanOptimizer:
                 dependencies=step.dependencies.copy(),
                 expected_output=step.expected_output,
                 estimated_time_seconds=step.estimated_time_seconds,
-                resource_requirements=step.resource_requirements.copy(),
+                resource_requirements=step.resource_requirements.copy()
             )
 
             # Add instance type recommendations based on workload
@@ -779,9 +744,7 @@ class AdvancedPlanOptimizer:
 
         return optimized_steps
 
-    def _combine_optimizations(
-        self, plans: List[List[WorkflowStep]]
-    ) -> Optional[List[WorkflowStep]]:
+    def _combine_optimizations(self, plans: List[List[WorkflowStep]]) -> Optional[List[WorkflowStep]]:
         """Combine multiple optimization strategies."""
         if not plans:
             return None
@@ -811,9 +774,7 @@ class AdvancedPlanOptimizer:
     def _score_step(self, step: WorkflowStep) -> float:
         """Score a workflow step for optimization selection."""
         # Simple scoring based on estimated efficiency
-        time_score = 1.0 / max(
-            0.1, step.estimated_time_seconds / 3600
-        )  # Prefer faster steps
+        time_score = 1.0 / max(0.1, step.estimated_time_seconds / 3600)  # Prefer faster steps
 
         cpu_req = step.resource_requirements.get("cpu", 1.0)
         memory_req = step.resource_requirements.get("memory", 4.0)
@@ -842,21 +803,20 @@ class AdvancedPlanOptimizer:
 
         # Calculate resource metrics
         total_cpu_hours = sum(
-            step.resource_requirements.get("cpu", 1.0)
-            * step.estimated_time_seconds
-            / 3600
+            step.resource_requirements.get("cpu", 1.0) *
+            step.estimated_time_seconds / 3600
             for step in steps
         )
 
         total_memory_gb_hours = sum(
-            step.resource_requirements.get("memory", 4.0)
-            * step.estimated_time_seconds
-            / 3600
+            step.resource_requirements.get("memory", 4.0) *
+            step.estimated_time_seconds / 3600
             for step in steps
         )
 
         total_storage_gb = sum(
-            step.resource_requirements.get("storage", 10.0) for step in steps
+            step.resource_requirements.get("storage", 10.0)
+            for step in steps
         )
 
         # Calculate reliability score
@@ -877,7 +837,7 @@ class AdvancedPlanOptimizer:
             total_storage_gb=total_storage_gb,
             reliability_score=reliability_score,
             complexity_score=complexity_score,
-            parallel_efficiency=parallel_efficiency,
+            parallel_efficiency=parallel_efficiency
         )
 
     def _calculate_reliability_score(self, steps: List[WorkflowStep]) -> float:
@@ -889,7 +849,7 @@ class AdvancedPlanOptimizer:
             "afni": 0.96,
             "ants": 0.94,
             "freesurfer": 0.92,
-            "default": 0.90,
+            "default": 0.90
         }
 
         total_reliability = 1.0
@@ -912,7 +872,9 @@ class AdvancedPlanOptimizer:
         return total_reliability
 
     def _calculate_optimization_score(
-        self, metrics: PlanMetrics, preferences: OptimizationPreferences
+        self,
+        metrics: PlanMetrics,
+        preferences: OptimizationPreferences
     ) -> float:
         """
         Calculate optimization score based on preferences.
@@ -932,13 +894,9 @@ class AdvancedPlanOptimizer:
         elif preferences.primary_objective == OptimizationObjective.MINIMIZE_TIME:
             score += 10000.0 / max(1.0, metrics.total_time)
         elif preferences.primary_objective == OptimizationObjective.MINIMIZE_RESOURCES:
-            resource_usage = (
-                metrics.total_cpu_hours + metrics.total_memory_gb_hours / 10
-            )
+            resource_usage = metrics.total_cpu_hours + metrics.total_memory_gb_hours / 10
             score += 1000.0 / max(1.0, resource_usage)
-        elif (
-            preferences.primary_objective == OptimizationObjective.MAXIMIZE_RELIABILITY
-        ):
+        elif preferences.primary_objective == OptimizationObjective.MAXIMIZE_RELIABILITY:
             score += metrics.reliability_score * 1000
         elif preferences.primary_objective == OptimizationObjective.MAXIMIZE_THROUGHPUT:
             score += metrics.parallel_efficiency * 1000
@@ -960,7 +918,9 @@ class AdvancedPlanOptimizer:
         return score
 
     def _evaluate_constraint_penalty(
-        self, metrics: PlanMetrics, constraint: OptimizationConstraint
+        self,
+        metrics: PlanMetrics,
+        constraint: OptimizationConstraint
     ) -> float:
         """Evaluate penalty for constraint violation."""
         value = 0.0
@@ -981,14 +941,14 @@ class AdvancedPlanOptimizer:
         return penalty
 
     def _pareto_optimization(
-        self, candidates: List[OptimizedPlan], preferences: OptimizationPreferences
+        self,
+        candidates: List[OptimizedPlan],
+        preferences: OptimizationPreferences
     ) -> List[OptimizedPlan]:
         """Perform Pareto optimization."""
         objectives = [preferences.primary_objective] + preferences.secondary_objectives
 
-        pareto_solutions = self.pareto_optimizer.find_pareto_frontier(
-            candidates, objectives
-        )
+        pareto_solutions = self.pareto_optimizer.find_pareto_frontier(candidates, objectives)
 
         # Convert back to OptimizedPlan format
         optimized_plans = []
@@ -999,7 +959,9 @@ class AdvancedPlanOptimizer:
         return optimized_plans
 
     def _weighted_sum_optimization(
-        self, candidates: List[OptimizedPlan], preferences: OptimizationPreferences
+        self,
+        candidates: List[OptimizedPlan],
+        preferences: OptimizationPreferences
     ) -> List[OptimizedPlan]:
         """Perform weighted sum optimization."""
         # Return top candidate based on optimization score
@@ -1007,74 +969,63 @@ class AdvancedPlanOptimizer:
         return [best_candidate]
 
     def _generate_trade_off_analysis(
-        self, optimized_plan: OptimizedPlan, original_plan: ExecutionPlan
+        self,
+        optimized_plan: OptimizedPlan,
+        original_plan: ExecutionPlan
     ) -> Dict[str, Any]:
         """Generate trade-off analysis comparing optimized vs original plan."""
         original_metrics = self._evaluate_plan_metrics(original_plan.steps)
 
         cost_reduction = (
-            (original_metrics.total_cost - optimized_plan.metrics.total_cost)
-            / original_metrics.total_cost
-            * 100
+            (original_metrics.total_cost - optimized_plan.metrics.total_cost) /
+            original_metrics.total_cost * 100
         )
 
         time_change = (
-            (optimized_plan.metrics.total_time - original_metrics.total_time)
-            / original_metrics.total_time
-            * 100
+            (optimized_plan.metrics.total_time - original_metrics.total_time) /
+            original_metrics.total_time * 100
         )
 
         reliability_change = (
-            optimized_plan.metrics.reliability_score
-            - original_metrics.reliability_score
+            optimized_plan.metrics.reliability_score - original_metrics.reliability_score
         )
 
         return {
             "cost_reduction_percent": cost_reduction,
             "time_change_percent": time_change,
             "reliability_change": reliability_change,
-            "optimization_achieved": cost_reduction
-            > 20.0,  # Target >20% cost reduction
+            "optimization_achieved": cost_reduction > 20.0,  # Target >20% cost reduction
             "trade_offs": {
                 "cost_vs_time": f"Cost reduced by {cost_reduction:.1f}%, time {'increased' if time_change > 0 else 'decreased'} by {abs(time_change):.1f}%",
                 "cost_vs_reliability": f"Cost reduced by {cost_reduction:.1f}%, reliability {'improved' if reliability_change > 0 else 'decreased'} by {abs(reliability_change):.3f}",
-                "efficiency_gain": f"Parallel efficiency: {optimized_plan.metrics.parallel_efficiency:.2f}x",
+                "efficiency_gain": f"Parallel efficiency: {optimized_plan.metrics.parallel_efficiency:.2f}x"
             },
-            "recommendations": self._generate_recommendations(
-                optimized_plan, original_metrics
-            ),
+            "recommendations": self._generate_recommendations(optimized_plan, original_metrics)
         }
 
     def _generate_recommendations(
-        self, optimized_plan: OptimizedPlan, original_metrics: PlanMetrics
+        self,
+        optimized_plan: OptimizedPlan,
+        original_metrics: PlanMetrics
     ) -> List[str]:
         """Generate optimization recommendations."""
         recommendations = []
 
         if optimized_plan.metrics.total_cost < original_metrics.total_cost * 0.8:
-            recommendations.append(
-                "Significant cost reduction achieved through optimization"
-            )
+            recommendations.append("Significant cost reduction achieved through optimization")
 
         if optimized_plan.metrics.parallel_efficiency > 2.0:
-            recommendations.append(
-                "High parallel efficiency - consider increasing parallelism"
-            )
+            recommendations.append("High parallel efficiency - consider increasing parallelism")
 
         if optimized_plan.metrics.reliability_score < 0.9:
-            recommendations.append(
-                "Consider reliability improvements with backup strategies"
-            )
+            recommendations.append("Consider reliability improvements with backup strategies")
 
         spot_instance_steps = sum(
-            1
-            for step in optimized_plan.optimized_steps
+            1 for step in optimized_plan.optimized_steps
             if step.tool_args.get("use_spot_instances", False)
         )
         if spot_instance_steps > 0:
-            recommendations.append(
-                f"Using spot instances for {spot_instance_steps} steps - monitor for interruptions"
-            )
+            recommendations.append(f"Using spot instances for {spot_instance_steps} steps - monitor for interruptions")
 
         return recommendations
 
@@ -1082,7 +1033,7 @@ class AdvancedPlanOptimizer:
 # Factory function
 def create_plan_optimizer(
     cost_model: Optional[CostModel] = None,
-    cloud_provider: CloudProvider = CloudProvider.AWS,
+    cloud_provider: CloudProvider = CloudProvider.AWS
 ) -> AdvancedPlanOptimizer:
     """
     Create an advanced plan optimizer.
@@ -1094,4 +1045,7 @@ def create_plan_optimizer(
     Returns:
         Configured plan optimizer
     """
-    return AdvancedPlanOptimizer(cost_model=cost_model, cloud_provider=cloud_provider)
+    return AdvancedPlanOptimizer(
+        cost_model=cost_model,
+        cloud_provider=cloud_provider
+    )

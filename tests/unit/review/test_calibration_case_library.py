@@ -88,9 +88,9 @@ def test_case_structural_integrity(case: dict) -> None:
 
     # novelty tag typing
     novelty = case["novelty"]
-    assert (
-        novelty is None or novelty in VALID_NOVELTY_TAGS
-    ), f"{cid}: bad novelty tag {novelty!r}"
+    assert novelty is None or novelty in VALID_NOVELTY_TAGS, (
+        f"{cid}: bad novelty tag {novelty!r}"
+    )
 
 
 def test_each_severity_is_represented() -> None:

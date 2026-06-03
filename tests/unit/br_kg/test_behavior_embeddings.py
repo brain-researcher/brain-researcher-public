@@ -25,9 +25,7 @@ class _FakeTorch:
         self.float16 = "float16"
 
 
-def test_hf_auto_dispatch_kwargs_include_device_map_and_dtype_when_cuda_available() -> (
-    None
-):
+def test_hf_auto_dispatch_kwargs_include_device_map_and_dtype_when_cuda_available() -> None:
     kwargs = _hf_auto_dispatch_kwargs(_FakeTorch(available=True))
 
     assert kwargs["device_map"] == "auto"

@@ -29,7 +29,6 @@ _SEED_PATH = get_config_root() / "br-kg" / "method_compatibility_seed.yaml"
 # Seed loading (cached)
 # ---------------------------------------------------------------------------
 
-
 @functools.lru_cache(maxsize=1)
 def _load_seed() -> dict[str, Any]:
     try:
@@ -79,7 +78,6 @@ def _resolve_canonical(text: str, alias_map: dict[str, list[str]]) -> str | None
 # ---------------------------------------------------------------------------
 # Inference helpers
 # ---------------------------------------------------------------------------
-
 
 def _collect_text_hints(bundle: CodeReviewBundle) -> list[str]:
     hints: list[str] = []
@@ -152,11 +150,7 @@ def _infer_method_type(bundle: CodeReviewBundle) -> tuple[str | None, list[str]]
     # 1. Explicit statistical_method / test_type / method param.
     for step in bundle.plan_steps:
         params = step.get("params") if isinstance(step.get("params"), dict) else {}
-        explicit = (
-            params.get("statistical_method")
-            or params.get("test_type")
-            or params.get("method")
-        )
+        explicit = params.get("statistical_method") or params.get("test_type") or params.get("method")
         if isinstance(explicit, str) and explicit.strip():
             resolved = _resolve_canonical(explicit, method_aliases)
             if resolved:
@@ -185,7 +179,6 @@ def _infer_method_type(bundle: CodeReviewBundle) -> tuple[str | None, list[str]]
 # ---------------------------------------------------------------------------
 # KG helper (optional, lazy import)
 # ---------------------------------------------------------------------------
-
 
 def _lookup_optional_kg_helper() -> Callable[..., Any] | None:
     try:
@@ -233,9 +226,7 @@ def _query_kg_helper(
     db = _lookup_optional_kg_db()
     task = str(bundle.kg_context.get("task") or "").strip() or None
     study_id = str(bundle.kg_context.get("study_id") or "").strip() or None
-    analysis_family = (
-        str(bundle.kg_context.get("analysis_family") or "").strip() or None
-    )
+    analysis_family = str(bundle.kg_context.get("analysis_family") or "").strip() or None
     design_label = str(bundle.kg_context.get("design_type") or design_type)
     method_label = str(bundle.kg_context.get("statistical_method") or method_type)
 
@@ -299,7 +290,6 @@ def _query_kg_helper(
 # Seed-based compatibility lookup
 # ---------------------------------------------------------------------------
 
-
 def _query_seed_compatibility(
     design_type: str,
     method_type: str,
@@ -334,20 +324,16 @@ def _query_seed_compatibility(
 # Incompatibility detection
 # ---------------------------------------------------------------------------
 
-
 def _is_incompatible(payload: dict[str, Any]) -> bool:
     if payload.get("compatible") is False:
         return True
-    status = (
-        str(payload.get("status") or payload.get("compatibility") or "").strip().lower()
-    )
+    status = str(payload.get("status") or payload.get("compatibility") or "").strip().lower()
     return status in {"incompatible", "mismatch", "disallowed", "invalid"}
 
 
 # ---------------------------------------------------------------------------
 # Evidence + finding builders
 # ---------------------------------------------------------------------------
-
 
 def _build_finding(
     payload: dict[str, Any],
@@ -372,9 +358,7 @@ def _build_finding(
             if value is not None:
                 kg_evidence.append(f"{key}={value}")
 
-    rule_id = str(
-        payload.get("rule_id") or f"REVIEW_{design_type}_{method_type}_MISMATCH"
-    ).upper()
+    rule_id = str(payload.get("rule_id") or f"REVIEW_{design_type}_{method_type}_MISMATCH").upper()
     source_rule_id = payload.get("rule_id")
     if source_rule_id and str(source_rule_id).upper() != rule_id:
         kg_evidence.append(f"source_rule_id={source_rule_id}")
@@ -415,7 +399,6 @@ def _build_finding(
 # Main entry point
 # ---------------------------------------------------------------------------
 
-
 def method_appropriateness_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
     """Flag design-method mismatches using KG edges or curated seed rules."""
     design_type, design_hints = _infer_design_type(bundle)
@@ -430,9 +413,7 @@ def method_appropriateness_check(bundle: CodeReviewBundle) -> ReviewFinding | No
     if not kg_payload or not _is_incompatible(kg_payload):
         return None
 
-    return _build_finding(
-        kg_payload, design_type, method_type, design_hints, method_hints
-    )
+    return _build_finding(kg_payload, design_type, method_type, design_hints, method_hints)
 
 
 __all__ = ["method_appropriateness_check"]

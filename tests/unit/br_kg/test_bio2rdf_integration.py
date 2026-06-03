@@ -2,18 +2,17 @@
 Unit tests for Bio2RDF integration
 """
 
-import json
-from unittest.mock import MagicMock, Mock, patch
-
 import pytest
+from unittest.mock import Mock, patch, MagicMock
+import json
 
 from brain_researcher.services.br_kg.bio2rdf import (
     Bio2RDFClient,
-    ConceptMapping,
-    EnrichedEntity,
-    LinkEnrichmentEngine,
     OntologyMapper,
+    LinkEnrichmentEngine,
+    ConceptMapping,
     OntologyNamespace,
+    EnrichedEntity
 )
 
 
@@ -28,24 +27,26 @@ class TestBio2RDFClient:
         """Test client initializes with correct defaults"""
         assert client.timeout == 5
         assert client.max_retries == 1
-        assert client.default_endpoint == Bio2RDFClient.BIO2RDF_ENDPOINTS["main"]
+        assert client.default_endpoint == Bio2RDFClient.BIO2RDF_ENDPOINTS['main']
 
-    @patch("brain_researcher.services.br_kg.bio2rdf.bio2rdf_client.SPARQLWrapper")
+    @patch('brain_researcher.services.br_kg.bio2rdf.bio2rdf_client.SPARQLWrapper')
     def test_query_execution(self, mock_sparql, client):
         """Test SPARQL query execution"""
         # Mock SPARQL response
         mock_wrapper = MagicMock()
         mock_sparql.return_value = mock_wrapper
         mock_wrapper.query.return_value.convert.return_value = {
-            "results": {
-                "bindings": [{"gene": {"value": "http://bio2rdf.org/gene:BDNF"}}]
+            'results': {
+                'bindings': [
+                    {'gene': {'value': 'http://bio2rdf.org/gene:BDNF'}}
+                ]
             }
         }
 
         result = client.query("SELECT ?gene WHERE { ?gene rdfs:label 'BDNF' }")
 
-        assert "results" in result
-        assert len(result["results"]["bindings"]) == 1
+        assert 'results' in result
+        assert len(result['results']['bindings']) == 1
         mock_sparql.assert_called_once()
 
     def test_query_caching(self, client):
@@ -53,77 +54,72 @@ class TestBio2RDFClient:
         query = "SELECT * WHERE { ?s ?p ?o } LIMIT 1"
 
         # First call
-        with patch.object(client, "query") as mock_query:
-            mock_query.return_value = {"results": {"bindings": []}}
+        with patch.object(client, 'query') as mock_query:
+            mock_query.return_value = {'results': {'bindings': []}}
             result1 = client.query(query)
 
         # Second call should use cache
-        client._cache[f"{client.default_endpoint}:{query}"] = {"cached": True}
+        client._cache[f"{client.default_endpoint}:{query}"] = {'cached': True}
         client._cache_timestamps[f"{client.default_endpoint}:{query}"] = 9999999999
 
         result2 = client.query(query)
-        assert result2 == {"cached": True}
+        assert result2 == {'cached': True}
 
-    @patch("brain_researcher.services.br_kg.bio2rdf.bio2rdf_client.SPARQLWrapper")
+    @patch('brain_researcher.services.br_kg.bio2rdf.bio2rdf_client.SPARQLWrapper')
     def test_get_gene_info(self, mock_sparql, client):
         """Test gene information retrieval"""
         mock_wrapper = MagicMock()
         mock_sparql.return_value = mock_wrapper
         mock_wrapper.query.return_value.convert.return_value = {
-            "results": {
-                "bindings": [
+            'results': {
+                'bindings': [
                     {
-                        "gene": {"value": "http://bio2rdf.org/gene:BDNF"},
-                        "label": {"value": "Brain-derived neurotrophic factor"},
-                        "go_term": {"value": "http://bio2rdf.org/go:0007399"},
+                        'gene': {'value': 'http://bio2rdf.org/gene:BDNF'},
+                        'label': {'value': 'Brain-derived neurotrophic factor'},
+                        'go_term': {'value': 'http://bio2rdf.org/go:0007399'}
                     }
                 ]
             }
         }
 
-        result = client.get_gene_info("BDNF")
+        result = client.get_gene_info('BDNF')
 
-        assert "results" in result
-        assert (
-            result["results"]["bindings"][0]["label"]["value"]
-            == "Brain-derived neurotrophic factor"
-        )
+        assert 'results' in result
+        assert result['results']['bindings'][0]['label']['value'] == 'Brain-derived neurotrophic factor'
 
-    @patch("brain_researcher.services.br_kg.bio2rdf.bio2rdf_client.SPARQLWrapper")
+    @patch('brain_researcher.services.br_kg.bio2rdf.bio2rdf_client.SPARQLWrapper')
     def test_get_drug_target_interactions(self, mock_sparql, client):
         """Test drug-target interaction retrieval"""
         mock_wrapper = MagicMock()
         mock_sparql.return_value = mock_wrapper
         mock_wrapper.query.return_value.convert.return_value = {
-            "results": {
-                "bindings": [
+            'results': {
+                'bindings': [
                     {
-                        "drug": {"value": "http://bio2rdf.org/drugbank:DB00001"},
-                        "drug_name": {"value": "Lepirudin"},
-                        "target": {"value": "http://bio2rdf.org/uniprot:P00734"},
-                        "target_name": {"value": "Prothrombin"},
+                        'drug': {'value': 'http://bio2rdf.org/drugbank:DB00001'},
+                        'drug_name': {'value': 'Lepirudin'},
+                        'target': {'value': 'http://bio2rdf.org/uniprot:P00734'},
+                        'target_name': {'value': 'Prothrombin'}
                     }
                 ]
             }
         }
 
-        result = client.get_drug_target_interactions("Lepirudin")
+        result = client.get_drug_target_interactions('Lepirudin')
 
-        assert "results" in result
-        assert result["results"]["bindings"][0]["target_name"]["value"] == "Prothrombin"
+        assert 'results' in result
+        assert result['results']['bindings'][0]['target_name']['value'] == 'Prothrombin'
 
-    @patch("requests.get")
+    @patch('requests.get')
     def test_federated_search(self, mock_get, client):
         """Test federated search across endpoints"""
-        with patch.object(client, "query") as mock_query:
-            mock_query.return_value = {"results": {"bindings": []}}
+        with patch.object(client, 'query') as mock_query:
+            mock_query.return_value = {'results': {'bindings': []}}
 
-            results = client.federated_search(
-                "dopamine", endpoints=["drugbank", "uniprot"]
-            )
+            results = client.federated_search('dopamine', endpoints=['drugbank', 'uniprot'])
 
-            assert "drugbank" in results
-            assert "uniprot" in results
+            assert 'drugbank' in results
+            assert 'uniprot' in results
 
 
 class TestOntologyMapper:
@@ -135,94 +131,94 @@ class TestOntologyMapper:
 
     def test_mapper_initialization(self, mapper):
         """Test mapper initializes with correct mappings"""
-        assert "brain_region" in mapper.all_mappings
-        assert "cognitive_task" in mapper.all_mappings
-        assert "neurochemical" in mapper.all_mappings
-        assert "disorder" in mapper.all_mappings
+        assert 'brain_region' in mapper.all_mappings
+        assert 'cognitive_task' in mapper.all_mappings
+        assert 'neurochemical' in mapper.all_mappings
+        assert 'disorder' in mapper.all_mappings
 
     def test_exact_mapping(self, mapper):
         """Test exact concept mapping"""
-        mappings = mapper.map_concept("hippocampus", "brain_region", fuzzy=False)
+        mappings = mapper.map_concept('hippocampus', 'brain_region', fuzzy=False)
 
         assert len(mappings) > 0
-        assert mappings[0].br_kg_label == "hippocampus"
-        assert mappings[0].mapping_type == "exact"
+        assert mappings[0].br_kg_label == 'hippocampus'
+        assert mappings[0].mapping_type == 'exact'
         assert mappings[0].confidence_score == 1.0
-        assert "mesh:D006624" in mappings[0].bio2rdf_uri
+        assert 'mesh:D006624' in mappings[0].bio2rdf_uri
 
     def test_fuzzy_mapping(self, mapper):
         """Test fuzzy concept mapping"""
-        mappings = mapper.map_concept("hippocamp", "brain_region", fuzzy=True)
+        mappings = mapper.map_concept('hippocamp', 'brain_region', fuzzy=True)
 
         assert len(mappings) > 0
         # Should find hippocampus through fuzzy matching
-        assert any("hippocampus" in m.bio2rdf_label.lower() for m in mappings)
+        assert any('hippocampus' in m.bio2rdf_label.lower() for m in mappings)
 
     def test_cognitive_task_mapping(self, mapper):
         """Test cognitive task mapping"""
-        mappings = mapper.map_concept("working_memory", "cognitive_task")
+        mappings = mapper.map_concept('working_memory', 'cognitive_task')
 
         assert len(mappings) > 0
-        assert any("memory" in m.bio2rdf_label.lower() for m in mappings)
+        assert any('memory' in m.bio2rdf_label.lower() for m in mappings)
 
     def test_neurochemical_mapping(self, mapper):
         """Test neurochemical mapping"""
-        mappings = mapper.map_concept("dopamine", "neurochemical")
+        mappings = mapper.map_concept('dopamine', 'neurochemical')
 
         assert len(mappings) > 0
         assert mappings[0].bio2rdf_namespace in [
             OntologyNamespace.DRUGBANK,
             OntologyNamespace.CHEBI,
-            OntologyNamespace.MESH,
+            OntologyNamespace.MESH
         ]
 
     def test_disorder_mapping(self, mapper):
         """Test disorder mapping"""
-        mappings = mapper.map_concept("alzheimer", "disorder")
+        mappings = mapper.map_concept('alzheimer', 'disorder')
 
         assert len(mappings) > 0
-        assert any("Alzheimer" in m.bio2rdf_label for m in mappings)
+        assert any('Alzheimer' in m.bio2rdf_label for m in mappings)
 
     def test_namespace_extraction(self, mapper):
         """Test namespace extraction from URI"""
-        namespace = mapper._extract_namespace("http://bio2rdf.org/mesh:D006624")
+        namespace = mapper._extract_namespace('http://bio2rdf.org/mesh:D006624')
         assert namespace == OntologyNamespace.MESH
 
-        namespace = mapper._extract_namespace("http://bio2rdf.org/go:0007399")
+        namespace = mapper._extract_namespace('http://bio2rdf.org/go:0007399')
         assert namespace == OntologyNamespace.GO
 
     def test_string_similarity(self, mapper):
         """Test string similarity calculation"""
-        similarity = mapper._string_similarity("hippocampus", "hippocampus")
+        similarity = mapper._string_similarity('hippocampus', 'hippocampus')
         assert similarity == 1.0
 
-        similarity = mapper._string_similarity("hippo", "hippocampus")
+        similarity = mapper._string_similarity('hippo', 'hippocampus')
         assert 0 < similarity < 1.0
 
-        similarity = mapper._string_similarity("xyz", "abc")
+        similarity = mapper._string_similarity('xyz', 'abc')
         assert similarity < 0.5
 
     def test_generate_mapping_sparql(self, mapper):
         """Test SPARQL generation for mappings"""
         mappings = [
             ConceptMapping(
-                br_kg_id="br_kg:hippocampus",
-                br_kg_label="hippocampus",
-                br_kg_type="brain_region",
-                bio2rdf_uri="http://bio2rdf.org/mesh:D006624",
+                br_kg_id='br_kg:hippocampus',
+                br_kg_label='hippocampus',
+                br_kg_type='brain_region',
+                bio2rdf_uri='http://bio2rdf.org/mesh:D006624',
                 bio2rdf_namespace=OntologyNamespace.MESH,
-                bio2rdf_label="Hippocampus",
+                bio2rdf_label='Hippocampus',
                 confidence_score=1.0,
-                mapping_type="exact",
+                mapping_type='exact'
             )
         ]
 
         sparql = mapper.generate_mapping_sparql(mappings)
 
-        assert "CONSTRUCT" in sparql
-        assert "owl:sameAs" in sparql
-        assert "skos:exactMatch" in sparql
-        assert "br_kg:hippocampus" in sparql
+        assert 'CONSTRUCT' in sparql
+        assert 'owl:sameAs' in sparql
+        assert 'skos:exactMatch' in sparql
+        assert 'br_kg:hippocampus' in sparql
 
 
 class TestLinkEnrichmentEngine:
@@ -245,36 +241,40 @@ class TestLinkEnrichmentEngine:
         # Mock mapper response
         engine.ontology_mapper.map_concept.return_value = [
             ConceptMapping(
-                br_kg_id="br_kg:hippocampus",
-                br_kg_label="hippocampus",
-                br_kg_type="brain_region",
-                bio2rdf_uri="http://bio2rdf.org/mesh:D006624",
+                br_kg_id='br_kg:hippocampus',
+                br_kg_label='hippocampus',
+                br_kg_type='brain_region',
+                bio2rdf_uri='http://bio2rdf.org/mesh:D006624',
                 bio2rdf_namespace=OntologyNamespace.MESH,
-                bio2rdf_label="Hippocampus",
+                bio2rdf_label='Hippocampus',
                 confidence_score=1.0,
-                mapping_type="exact",
+                mapping_type='exact'
             )
         ]
 
         # Mock Bio2RDF client responses
-        engine.bio2rdf_client.query.return_value = {"results": {"bindings": []}}
+        engine.bio2rdf_client.query.return_value = {
+            'results': {'bindings': []}
+        }
         engine.bio2rdf_client.get_gene_info.return_value = {
-            "results": {
-                "bindings": [
+            'results': {
+                'bindings': [
                     {
-                        "gene": {"value": "http://bio2rdf.org/gene:BDNF"},
-                        "label": {"value": "BDNF"},
+                        'gene': {'value': 'http://bio2rdf.org/gene:BDNF'},
+                        'label': {'value': 'BDNF'}
                     }
                 ]
             }
         }
 
         enriched = engine.enrich_entity(
-            "br_kg:hippocampus", "brain_region", "hippocampus"
+            'br_kg:hippocampus',
+            'brain_region',
+            'hippocampus'
         )
 
-        assert enriched.entity_id == "br_kg:hippocampus"
-        assert enriched.entity_type == "brain_region"
+        assert enriched.entity_id == 'br_kg:hippocampus'
+        assert enriched.entity_type == 'brain_region'
         assert len(enriched.bio2rdf_mappings) == 1
         assert len(enriched.related_genes) == 1
         assert enriched.confidence_score == 1.0
@@ -283,44 +283,46 @@ class TestLinkEnrichmentEngine:
         """Test cognitive task enrichment"""
         engine.ontology_mapper.map_concept.return_value = [
             ConceptMapping(
-                br_kg_id="br_kg:working_memory",
-                br_kg_label="working_memory",
-                br_kg_type="cognitive_task",
-                bio2rdf_uri="http://bio2rdf.org/go:0007613",
+                br_kg_id='br_kg:working_memory',
+                br_kg_label='working_memory',
+                br_kg_type='cognitive_task',
+                bio2rdf_uri='http://bio2rdf.org/go:0007613',
                 bio2rdf_namespace=OntologyNamespace.GO,
-                bio2rdf_label="memory",
+                bio2rdf_label='memory',
                 confidence_score=0.8,
-                mapping_type="broad",
+                mapping_type='broad'
             )
         ]
 
         engine.bio2rdf_client.query.return_value = {
-            "results": {
-                "bindings": [
+            'results': {
+                'bindings': [
                     {
-                        "process": {"value": "http://bio2rdf.org/go:0007613"},
-                        "label": {"value": "memory"},
+                        'process': {'value': 'http://bio2rdf.org/go:0007613'},
+                        'label': {'value': 'memory'}
                     }
                 ]
             }
         }
 
         enriched = engine.enrich_entity(
-            "br_kg:working_memory", "cognitive_task", "working memory"
+            'br_kg:working_memory',
+            'cognitive_task',
+            'working memory'
         )
 
-        assert enriched.entity_type == "cognitive_task"
-        assert "go_processes" in enriched.biological_annotations
+        assert enriched.entity_type == 'cognitive_task'
+        assert 'go_processes' in enriched.biological_annotations
 
     def test_batch_enrichment(self, engine):
         """Test batch enrichment of multiple entities"""
         entities = [
-            ("br_kg:hippocampus", "brain_region", "hippocampus"),
-            ("br_kg:dopamine", "neurochemical", "dopamine"),
+            ('br_kg:hippocampus', 'brain_region', 'hippocampus'),
+            ('br_kg:dopamine', 'neurochemical', 'dopamine')
         ]
 
         engine.ontology_mapper.map_concept.return_value = []
-        engine.bio2rdf_client.query.return_value = {"results": {"bindings": []}}
+        engine.bio2rdf_client.query.return_value = {'results': {'bindings': []}}
 
         enriched_list = engine.batch_enrich(entities, max_workers=2)
 
@@ -330,35 +332,35 @@ class TestLinkEnrichmentEngine:
     def test_export_enrichment_graph_json(self, engine):
         """Test exporting enrichment as JSON-LD"""
         enriched_entity = EnrichedEntity(
-            entity_id="br_kg:hippocampus",
-            entity_type="brain_region",
-            entity_label="hippocampus",
+            entity_id='br_kg:hippocampus',
+            entity_type='brain_region',
+            entity_label='hippocampus',
             bio2rdf_mappings=[],
             biological_annotations={},
             related_genes=[],
             related_drugs=[],
             pathways=[],
             literature_refs=[],
-            confidence_score=1.0,
+            confidence_score=1.0
         )
 
-        json_output = engine.export_enrichment_graph([enriched_entity], format="json")
+        json_output = engine.export_enrichment_graph([enriched_entity], format='json')
         data = json.loads(json_output)
 
-        assert "@context" in data
-        assert "@graph" in data
-        assert len(data["@graph"]) == 1
-        assert data["@graph"][0]["@id"] == "br_kg:hippocampus"
+        assert '@context' in data
+        assert '@graph' in data
+        assert len(data['@graph']) == 1
+        assert data['@graph'][0]['@id'] == 'br_kg:hippocampus'
 
     def test_caching(self, engine):
         """Test enrichment caching"""
         engine.ontology_mapper.map_concept.return_value = []
 
         # First call
-        enriched1 = engine.enrich_entity("id1", "brain_region", "test")
+        enriched1 = engine.enrich_entity('id1', 'brain_region', 'test')
 
         # Second call should use cache
-        enriched2 = engine.enrich_entity("id1", "brain_region", "test")
+        enriched2 = engine.enrich_entity('id1', 'brain_region', 'test')
 
         assert enriched1 is enriched2  # Same object from cache
         engine.ontology_mapper.map_concept.assert_called_once()  # Only called once

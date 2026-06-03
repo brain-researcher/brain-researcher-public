@@ -1177,7 +1177,7 @@ class TestConstraintFiltering:
 class TestPhase14HierarchicalOverrides:
     """Phase 1.4 overrides & strategy tests.
 
-    Reference: docs/issues/09_move_planning_into_agent.md (lines 13-52)
+    Reference: retired planner issue notes.
     """
 
     def _setup_preflight(self, mock_preflight, reports):

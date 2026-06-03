@@ -3,28 +3,19 @@ Comprehensive tests for UsageMetricsAggregator - advanced data aggregation and a
 """
 
 import asyncio
-import statistics
-from collections import Counter, defaultdict
-from datetime import datetime, timedelta
-from typing import Any, Dict, List
-from unittest.mock import Mock, patch
-
 import pytest
+import statistics
+from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
+from typing import List, Dict, Any
+from collections import defaultdict, Counter
 
 from brain_researcher.services.telemetry.aggregator import (
-    AggregationConfig,
-    AggregationWindow,
-    UsageMetricsAggregator,
+    UsageMetricsAggregator, AggregationWindow, AggregationConfig
 )
 from brain_researcher.services.telemetry.models import (
-    EventType,
-    FeatureUsage,
-    MetricType,
-    PrivacyLevel,
-    ServiceType,
-    TelemetryEvent,
-    UsageMetric,
-    UserJourney,
+    TelemetryEvent, UsageMetric, FeatureUsage, UserJourney,
+    EventType, MetricType, ServiceType, PrivacyLevel
 )
 
 
@@ -80,7 +71,7 @@ class TestAggregationConfig:
         config = AggregationConfig(
             default_window_hours=48,
             batch_size=500,
-            percentile_thresholds=custom_percentiles,
+            percentile_thresholds=custom_percentiles
         )
 
         assert config.default_window_hours == 48
@@ -98,7 +89,7 @@ class TestUsageMetricsAggregator:
             default_window_hours=24,
             batch_size=100,
             cache_results=False,  # Disable caching for tests
-            min_feature_uses=3,
+            min_feature_uses=3
         )
 
     @pytest.fixture
@@ -117,28 +108,22 @@ class TestUsageMetricsAggregator:
             timestamp = base_time + timedelta(minutes=i * 5)
 
             # Mix of event types and services
-            event_type = [
-                EventType.TOOL_INVOCATION,
-                EventType.FEATURE_ACCESS,
-                EventType.PAGE_VIEW,
-            ][i % 3]
+            event_type = [EventType.TOOL_INVOCATION, EventType.FEATURE_ACCESS, EventType.PAGE_VIEW][i % 3]
             service = [ServiceType.AGENT, ServiceType.WEB_UI, ServiceType.BR_KG][i % 3]
 
-            events.append(
-                TelemetryEvent(
-                    id=f"evt_{i:03d}",
-                    event_type=event_type,
-                    service=service,
-                    timestamp=timestamp,
-                    user_id=f"user_{i % 10}",  # 10 unique users
-                    session_id=f"session_{i % 5}",  # 5 sessions
-                    feature_name=f"feature_{i % 8}",  # 8 different features
-                    action=["view", "click", "execute", "submit"][i % 4],
-                    duration_ms=100 + (i * 50) % 1000,  # Varying durations
-                    success=i % 20 != 19,  # 5% error rate
-                    privacy_level=PrivacyLevel.AGGREGATE_ONLY,
-                )
-            )
+            events.append(TelemetryEvent(
+                id=f"evt_{i:03d}",
+                event_type=event_type,
+                service=service,
+                timestamp=timestamp,
+                user_id=f"user_{i % 10}",  # 10 unique users
+                session_id=f"session_{i % 5}",  # 5 sessions
+                feature_name=f"feature_{i % 8}",  # 8 different features
+                action=["view", "click", "execute", "submit"][i % 4],
+                duration_ms=100 + (i * 50) % 1000,  # Varying durations
+                success=i % 20 != 19,  # 5% error rate
+                privacy_level=PrivacyLevel.AGGREGATE_ONLY
+            ))
 
         return events
 
@@ -175,7 +160,7 @@ class TestUsageMetricsAggregator:
         window = AggregationWindow(
             start=datetime(2024, 1, 1, 11, 0, 0),
             end=datetime(2024, 1, 1, 17, 0, 0),
-            granularity="hour",
+            granularity="hour"
         )
 
         metrics = await aggregator.calculate_usage_metrics(window=window)
@@ -196,7 +181,7 @@ class TestUsageMetricsAggregator:
         window = AggregationWindow(
             start=sample_events[0].timestamp - timedelta(hours=1),
             end=sample_events[-1].timestamp + timedelta(hours=1),
-            granularity="hour",
+            granularity="hour"
         )
 
         metrics = await aggregator._calculate_usage_counts(sample_events, window)
@@ -208,9 +193,7 @@ class TestUsageMetricsAggregator:
         assert total_metric.unit == "events"
 
         # Should have service-specific metrics
-        service_metrics = [
-            m for m in metrics if "Usage" in m.name and m.name != "Total Events"
-        ]
+        service_metrics = [m for m in metrics if "Usage" in m.name and m.name != "Total Events"]
         assert len(service_metrics) == 3  # One for each service type
 
         # Should have unique users metric
@@ -226,7 +209,7 @@ class TestUsageMetricsAggregator:
         window = AggregationWindow(
             start=sample_events[0].timestamp - timedelta(hours=1),
             end=sample_events[-1].timestamp + timedelta(hours=1),
-            granularity="day",
+            granularity="day"
         )
 
         metrics = await aggregator._calculate_adoption_metrics(sample_events, window)
@@ -240,9 +223,7 @@ class TestUsageMetricsAggregator:
 
         # Should have metrics for each feature
         feature_names = set(e.feature_name for e in sample_events if e.feature_name)
-        metric_features = set(
-            m.dimensions.get("feature") for m in metrics if m.dimensions.get("feature")
-        )
+        metric_features = set(m.dimensions.get("feature") for m in metrics if m.dimensions.get("feature"))
         assert metric_features == feature_names
 
     @pytest.mark.asyncio
@@ -254,12 +235,10 @@ class TestUsageMetricsAggregator:
         window = AggregationWindow(
             start=sample_events[0].timestamp - timedelta(hours=1),
             end=sample_events[-1].timestamp + timedelta(hours=1),
-            granularity="hour",
+            granularity="hour"
         )
 
-        metrics = await aggregator._calculate_performance_metrics(
-            duration_events, window
-        )
+        metrics = await aggregator._calculate_performance_metrics(duration_events, window)
 
         # Should have average and median response time
         avg_metrics = [m for m in metrics if m.name == "Average Response Time"]
@@ -271,9 +250,7 @@ class TestUsageMetricsAggregator:
         assert avg_metrics[0].unit == "milliseconds"
 
         # Should have percentile metrics
-        percentile_metrics = [
-            m for m in metrics if "Response Time" in m.name and "P" in m.name
-        ]
+        percentile_metrics = [m for m in metrics if "Response Time" in m.name and "P" in m.name]
         assert len(percentile_metrics) > 0
 
         # Verify percentile calculations
@@ -287,7 +264,7 @@ class TestUsageMetricsAggregator:
         window = AggregationWindow(
             start=sample_events[0].timestamp - timedelta(hours=1),
             end=sample_events[-1].timestamp + timedelta(hours=1),
-            granularity="hour",
+            granularity="hour"
         )
 
         metrics = await aggregator._calculate_error_metrics(sample_events, window)
@@ -315,7 +292,7 @@ class TestUsageMetricsAggregator:
         window = AggregationWindow(
             start=sample_events[0].timestamp - timedelta(hours=1),
             end=sample_events[-1].timestamp + timedelta(hours=1),
-            granularity="hour",
+            granularity="hour"
         )
 
         metrics = await aggregator._calculate_temporal_metrics(sample_events, window)
@@ -365,7 +342,8 @@ class TestUsageMetricsAggregator:
         service = ServiceType.AGENT
 
         feature_analyses = await aggregator.analyze_feature_usage(
-            feature_name=feature_name, service=service
+            feature_name=feature_name,
+            service=service
         )
 
         # Should only contain analyses for the specified feature and service
@@ -404,9 +382,7 @@ class TestUsageMetricsAggregator:
 
         # Should only contain journeys for the specified user
         for journey in journeys:
-            assert journey.user_hash == user_hash or journey.user_hash.startswith(
-                "session_"
-            )
+            assert journey.user_hash == user_hash or journey.user_hash.startswith("session_")
 
     @pytest.mark.asyncio
     async def test_get_real_time_metrics(self, aggregator, sample_events):
@@ -451,11 +427,7 @@ class TestUsageMetricsAggregator:
         # Filter by features
         feature_list = ["feature_1", "feature_2"]
         filtered_by_features = aggregator._filter_events(features=feature_list)
-        assert all(
-            e.feature_name in feature_list
-            for e in filtered_by_features
-            if e.feature_name
-        )
+        assert all(e.feature_name in feature_list for e in filtered_by_features if e.feature_name)
 
         # Filter by event types
         event_types = [EventType.TOOL_INVOCATION, EventType.PAGE_VIEW]
@@ -506,7 +478,7 @@ class TestUsageMetricsAggregator:
         common_steps = [
             {"step_number": 1, "feature_name": "feature_1", "action": "view"},
             {"step_number": 2, "feature_name": "feature_2", "action": "click"},
-            {"step_number": 3, "feature_name": "feature_3", "action": "execute"},
+            {"step_number": 3, "feature_name": "feature_3", "action": "execute"}
         ]
 
         # Create multiple journeys with this pattern
@@ -520,7 +492,7 @@ class TestUsageMetricsAggregator:
                 total_steps=3,
                 completion_rate=1.0,
                 successful=True,
-                common_path=False,
+                common_path=False
             )
             journeys.append(journey)
 
@@ -538,7 +510,7 @@ class TestUsageMetricsAggregator:
                 total_steps=1,
                 completion_rate=1.0,
                 successful=True,
-                common_path=False,
+                common_path=False
             )
             journeys.append(journey)
 
@@ -575,7 +547,7 @@ class TestUsageMetricsAggregator:
         window = AggregationWindow(
             start=datetime(2024, 1, 1, 12, 0, 0),
             end=datetime(2024, 1, 1, 18, 0, 0),
-            granularity="hour",
+            granularity="hour"
         )
 
         cache_key = aggregator._get_cache_key("test_operation", window, ["service1"])
@@ -590,9 +562,7 @@ class TestUsageMetricsAggregator:
         assert cached_result == test_result
 
         # Test cache expiration (mock time)
-        with patch(
-            "brain_researcher.services.telemetry.aggregator.datetime"
-        ) as mock_datetime:
+        with patch('brain_researcher.services.telemetry.aggregator.datetime') as mock_datetime:
             future_time = datetime.utcnow() + timedelta(minutes=5)
             mock_datetime.utcnow.return_value = future_time
 
@@ -628,7 +598,7 @@ class TestUsageMetricsAggregator:
         batch_size = 10
 
         for i in range(0, len(sample_events), batch_size):
-            batch = sample_events[i : i + batch_size]
+            batch = sample_events[i:i + batch_size]
             await aggregator.add_events(batch)
 
             # Check that real-time counters are updated
@@ -651,7 +621,7 @@ class TestUsageMetricsAggregator:
             event_type=EventType.SESSION_START,
             service=ServiceType.WEB_UI,
             timestamp=base_time,
-            session_id="timeout_session",
+            session_id="timeout_session"
         )
 
         # Event that should trigger timeout (3+ hours later)
@@ -660,7 +630,7 @@ class TestUsageMetricsAggregator:
             event_type=EventType.FEATURE_ACCESS,
             service=ServiceType.WEB_UI,
             timestamp=base_time + timedelta(hours=4),
-            session_id="timeout_session",
+            session_id="timeout_session"
         )
 
         # Add events and trigger journey completion
@@ -688,22 +658,19 @@ class TestAggregatorPerformance:
         base_time = datetime(2024, 1, 1, 0, 0, 0)
 
         for i in range(5000):
-            events.append(
-                TelemetryEvent(
-                    id=f"perf_evt_{i}",
-                    event_type=EventType.TOOL_INVOCATION,
-                    service=ServiceType.AGENT,
-                    timestamp=base_time + timedelta(seconds=i),
-                    user_id=f"user_{i % 100}",
-                    feature_name=f"tool_{i % 50}",
-                    duration_ms=(i * 13) % 2000,
-                    success=i % 10 != 0,
-                )
-            )
+            events.append(TelemetryEvent(
+                id=f"perf_evt_{i}",
+                event_type=EventType.TOOL_INVOCATION,
+                service=ServiceType.AGENT,
+                timestamp=base_time + timedelta(seconds=i),
+                user_id=f"user_{i % 100}",
+                feature_name=f"tool_{i % 50}",
+                duration_ms=(i * 13) % 2000,
+                success=i % 10 != 0
+            ))
 
         # Test processing time
         import time
-
         start_time = time.time()
 
         asyncio.run(aggregator.add_events(events))
@@ -712,9 +679,7 @@ class TestAggregatorPerformance:
         processing_time = end_time - start_time
 
         # Should process 5000 events reasonably quickly
-        assert (
-            processing_time < 2.0
-        ), f"Too slow: {processing_time:.2f}s for 5000 events"
+        assert processing_time < 2.0, f"Too slow: {processing_time:.2f}s for 5000 events"
         assert len(aggregator._events) == 5000
 
     @pytest.mark.asyncio
@@ -728,30 +693,27 @@ class TestAggregatorPerformance:
         base_time = datetime(2024, 1, 1, 0, 0, 0)
 
         for i in range(2000):
-            events.append(
-                TelemetryEvent(
-                    id=f"calc_evt_{i}",
-                    event_type=EventType.FEATURE_ACCESS,
-                    service=ServiceType.WEB_UI,
-                    timestamp=base_time + timedelta(minutes=i),
-                    user_id=f"user_{i % 50}",
-                    feature_name=f"feature_{i % 20}",
-                    duration_ms=(i * 7) % 1500,
-                    success=i % 15 != 0,
-                )
-            )
+            events.append(TelemetryEvent(
+                id=f"calc_evt_{i}",
+                event_type=EventType.FEATURE_ACCESS,
+                service=ServiceType.WEB_UI,
+                timestamp=base_time + timedelta(minutes=i),
+                user_id=f"user_{i % 50}",
+                feature_name=f"feature_{i % 20}",
+                duration_ms=(i * 7) % 1500,
+                success=i % 15 != 0
+            ))
 
         await aggregator.add_events(events)
 
         # Test metrics calculation time
         import time
-
         start_time = time.time()
 
         window = AggregationWindow(
             start=base_time - timedelta(hours=1),
             end=base_time + timedelta(days=2),
-            granularity="hour",
+            granularity="hour"
         )
 
         metrics = await aggregator.calculate_usage_metrics(window=window)
@@ -760,9 +722,7 @@ class TestAggregatorPerformance:
         calculation_time = end_time - start_time
 
         # Should calculate comprehensive metrics reasonably quickly
-        assert (
-            calculation_time < 3.0
-        ), f"Metrics calculation too slow: {calculation_time:.2f}s"
+        assert calculation_time < 3.0, f"Metrics calculation too slow: {calculation_time:.2f}s"
         assert len(metrics) > 0
 
     def test_memory_usage_efficiency(self):
@@ -777,15 +737,13 @@ class TestAggregatorPerformance:
             batch_events = []
             for i in range(500):
                 event_id = batch_num * 500 + i
-                batch_events.append(
-                    TelemetryEvent(
-                        id=f"mem_evt_{event_id}",
-                        event_type=EventType.PAGE_VIEW,
-                        service=ServiceType.WEB_UI,
-                        timestamp=base_time + timedelta(seconds=event_id),
-                        user_id=f"user_{event_id % 100}",
-                    )
-                )
+                batch_events.append(TelemetryEvent(
+                    id=f"mem_evt_{event_id}",
+                    event_type=EventType.PAGE_VIEW,
+                    service=ServiceType.WEB_UI,
+                    timestamp=base_time + timedelta(seconds=event_id),
+                    user_id=f"user_{event_id % 100}"
+                ))
 
             asyncio.run(aggregator.add_events(batch_events))
 
@@ -794,7 +752,6 @@ class TestAggregatorPerformance:
 
         # Real-time counters should be manageable size
         total_counter_entries = sum(
-            len(counter_dict)
-            for counter_dict in aggregator._real_time_counters.values()
+            len(counter_dict) for counter_dict in aggregator._real_time_counters.values()
         )
         assert total_counter_entries < 1000  # Should not grow unboundedly

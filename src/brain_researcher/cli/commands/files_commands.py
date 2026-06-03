@@ -44,11 +44,7 @@ def files_ls() -> None:
     table.add_column("name")
     table.add_column("size")
     for f in files:
-        table.add_row(
-            str(f.get("id") or f.get("file_id")),
-            f.get("file_name", ""),
-            str(f.get("size_bytes", "")),
-        )
+        table.add_row(str(f.get("id") or f.get("file_id")), f.get("file_name", ""), str(f.get("size_bytes", "")))
     console.print(table)
 
 
@@ -72,10 +68,7 @@ def files_upload(path: Path = typer.Argument(..., exists=True, readable=True)) -
 
 
 @app.command("download")
-def files_download(
-    file_id: str = typer.Argument(...),
-    out: Optional[Path] = typer.Option(None, "--out"),
-) -> None:
+def files_download(file_id: str = typer.Argument(...), out: Optional[Path] = typer.Option(None, "--out")) -> None:
     url = _agent(f"/api/files/{file_id}")
     out_path = out or Path(f"{file_id}")
     headers = {}

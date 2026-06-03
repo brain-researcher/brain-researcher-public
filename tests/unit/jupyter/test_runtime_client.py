@@ -12,7 +12,7 @@ from brain_researcher.integrations.jupyter.runtime_client import (
 @pytest.mark.asyncio
 async def test_ensure_session_reuses_existing_session_by_path(monkeypatch):
     target = JupyterRuntimeTarget(
-        base_url="https://hub.brain-researcher.com/user/demo",
+        base_url="https://hub.${PUBLIC_HOSTNAME}/user/demo",
         token="secret-token",
         kernel_name="python3",
         session_name="Brain Researcher Studio proj_demo",

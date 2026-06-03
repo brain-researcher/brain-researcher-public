@@ -8,9 +8,7 @@ from typing import Dict
 class IstioConfigTemplates:
     """Generate basic Istio resource templates."""
 
-    def get_virtual_service_template(
-        self, name: str, host: str, namespace: str
-    ) -> Dict[str, object]:
+    def get_virtual_service_template(self, name: str, host: str, namespace: str) -> Dict[str, object]:
         return {
             "apiVersion": "networking.istio.io/v1beta1",
             "kind": "VirtualService",

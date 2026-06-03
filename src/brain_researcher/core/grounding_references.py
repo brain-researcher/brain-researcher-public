@@ -861,13 +861,9 @@ def gate_evidence_basis(
             if mode == "judge":
                 try:
                     jl = str(alignment_judge(claim, support_text) or "").strip().lower()
-                except (
-                    Exception
-                ) as exc:  # judge failure -> fall back to lexical, never crash the gate
+                except Exception as exc:  # judge failure -> fall back to lexical, never crash the gate
                     jl = ""
-                    errors.append(
-                        {"index": index, "error": f"alignment_judge_failed: {exc}"}
-                    )
+                    errors.append({"index": index, "error": f"alignment_judge_failed: {exc}"})
                 if jl in {"yes", "partial", "no_unrelated"}:
                     label, details = jl, {"alignment_source": "llm_judge"}
                 else:

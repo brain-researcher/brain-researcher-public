@@ -7,16 +7,16 @@ This loader integrates with the enhanced BIDS validator to provide:
 - Storage of validation results
 """
 
-import hashlib
 import json
 import logging
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
+from datetime import datetime
+import hashlib
 
-from ..utils.database import store_validation_result
-from ..validation.bids_validator import BIDSValidationResult, BIDSValidator
+from ..validation.bids_validator import BIDSValidator, BIDSValidationResult
 from ..validation.validator import ValidationEngine
+from ..utils.database import store_validation_result
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class BIDSUnifiedLoader:
         self,
         db_path: Optional[str] = None,
         strict_validation: bool = True,
-        cache_results: bool = True,
+        cache_results: bool = True
     ):
         """Initialize BIDS unified loader.
 
@@ -42,7 +42,10 @@ class BIDSUnifiedLoader:
         self.cache_results = cache_results
 
         # Initialize validator
-        self.validator = BIDSValidator(strict=strict_validation, extract_metadata=True)
+        self.validator = BIDSValidator(
+            strict=strict_validation,
+            extract_metadata=True
+        )
 
         # Cache for validation results
         self._cache: Dict[str, BIDSValidationResult] = {}
@@ -110,7 +113,7 @@ class BIDSUnifiedLoader:
                 results[dataset_path] = {
                     "error": str(e),
                     "is_valid": False,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now().isoformat()
                 }
 
         return results
@@ -127,7 +130,8 @@ class BIDSUnifiedLoader:
         from ..validation import bids_validator as bids_validator_module
 
         validator = bids_validator_module.BIDSValidator(
-            strict=self.strict_validation, extract_metadata=False
+            strict=self.strict_validation,
+            extract_metadata=False
         )
         return validator.validate_dataset(dataset_path)
 
@@ -168,7 +172,6 @@ class BIDSUnifiedLoader:
         tasks = set()
         for task_file in dataset_path.rglob("*task-*.json"):
             import re
-
             match = re.search(r"task-([a-zA-Z0-9]+)", task_file.name)
             if match:
                 tasks.add(match.group(1))
@@ -177,7 +180,9 @@ class BIDSUnifiedLoader:
         return info
 
     def check_incremental_changes(
-        self, dataset_path: str, previous_result: Optional[BIDSValidationResult] = None
+        self,
+        dataset_path: str,
+        previous_result: Optional[BIDSValidationResult] = None
     ) -> Dict[str, Any]:
         """Check for incremental changes since last validation.
 
@@ -233,7 +238,9 @@ class BIDSUnifiedLoader:
         return changes
 
     def generate_report(
-        self, validation_result: BIDSValidationResult, format: str = "markdown"
+        self,
+        validation_result: BIDSValidationResult,
+        format: str = "markdown"
     ) -> str:
         """Generate a validation report.
 
@@ -247,7 +254,9 @@ class BIDSUnifiedLoader:
         return self.validator.generate_report(validation_result, format)
 
     def _format_result(
-        self, validation_result: BIDSValidationResult, dataset_path: str
+        self,
+        validation_result: BIDSValidationResult,
+        dataset_path: str
     ) -> Dict[str, Any]:
         """Format validation result for output.
 
@@ -266,9 +275,7 @@ class BIDSUnifiedLoader:
             "status": "valid" if validation_result.is_valid else "invalid",
             "n_errors": len(validation_result.errors),
             "n_warnings": len(validation_result.warnings),
-            "quality_score": validation_result.quality_metrics.get(
-                "overall_quality_score", 0
-            ),
+            "quality_score": validation_result.quality_metrics.get("overall_quality_score", 0),
         }
 
         # Add key metadata
@@ -279,9 +286,7 @@ class BIDSUnifiedLoader:
                 result["bids_version"] = desc.get("BIDSVersion", "Unknown")
 
             if "participants" in validation_result.metadata:
-                result["n_participants"] = validation_result.metadata["participants"][
-                    "count"
-                ]
+                result["n_participants"] = validation_result.metadata["participants"]["count"]
 
             if "tasks" in validation_result.metadata:
                 result["tasks"] = validation_result.metadata["tasks"]
@@ -372,15 +377,9 @@ class BIDSUnifiedLoader:
         # Calculate rates
         if stats["datasets_processed"] > 0:
             stats["valid_rate"] = stats["valid_datasets"] / stats["datasets_processed"]
-            stats["invalid_rate"] = (
-                stats["invalid_datasets"] / stats["datasets_processed"]
-            )
-            stats["avg_errors_per_dataset"] = (
-                stats["total_errors"] / stats["datasets_processed"]
-            )
-            stats["avg_warnings_per_dataset"] = (
-                stats["total_warnings"] / stats["datasets_processed"]
-            )
+            stats["invalid_rate"] = stats["invalid_datasets"] / stats["datasets_processed"]
+            stats["avg_errors_per_dataset"] = stats["total_errors"] / stats["datasets_processed"]
+            stats["avg_warnings_per_dataset"] = stats["total_warnings"] / stats["datasets_processed"]
 
         return stats
 
@@ -397,12 +396,8 @@ def main():
     parser = argparse.ArgumentParser(description="BIDS Dataset Loader and Validator")
     parser.add_argument("dataset_path", help="Path to BIDS dataset")
     parser.add_argument("--strict", action="store_true", help="Strict validation mode")
-    parser.add_argument(
-        "--format",
-        choices=["json", "markdown", "html"],
-        default="markdown",
-        help="Report format",
-    )
+    parser.add_argument("--format", choices=["json", "markdown", "html"],
+                       default="markdown", help="Report format")
     parser.add_argument("--output", help="Output file for report")
 
     args = parser.parse_args()
@@ -440,5 +435,4 @@ def main():
 
 if __name__ == "__main__":
     import sys
-
     sys.exit(main())

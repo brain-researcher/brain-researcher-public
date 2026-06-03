@@ -170,11 +170,6 @@ REQUIRED_SUBSTRINGS = {
         "**Web UI public proxy (port 3000)**: browser-facing `/api/*` routes.",
         "submit/list now go through `/api/analyses*`",
     ),
-    "docs/user-guide/cli.md": (
-        "Use the agent service for `/act`, `/chat`, and the legacy `/api/runs*` compatibility facade.",
-        "Use the orchestrator service for `/run`, `/api/jobs`, `/api/analyses`, `/api/cache/*`, canonical analysis submit/list APIs, and job inspection APIs.",
-        "The Web UI owns the public browser-facing `/api/*` surface",
-    ),
     "docs/UI_WIRING_CHECKLIST.md": (
         "Internal Orchestrator-owned execution surfaces: `/run`, `/api/jobs/*`, `/api/analyses/*`",
         "Public analysis facade: top-level `/api/analyses` list/create now normalize directly",
@@ -184,13 +179,6 @@ REQUIRED_SUBSTRINGS = {
         "no local stateless-token",
         "Legacy Dataset→Run alias that now submits to Orchestrator `/run`",
         "caller-supplied demo ids",
-    ),
-    "docs/testing/TESTING_GUIDE.md": (
-        "curl -X POST http://localhost:3001/run",
-        "curl http://localhost:3001/api/jobs/{job_id}",
-        "curl -X POST http://localhost:8000/act",
-        'self.client.post("/run", json={',
-        "locust -f locustfile.py --host=http://localhost:3001",
     ),
 }
 
@@ -308,12 +296,6 @@ FORBIDDEN_SUBSTRINGS = {
         "Compatibility note: top-level `/api/analyses` list/create still normalize through Agent `/api/runs`",
         "Analysis facade: `/api/analyses` create/list -> Agent `/api/runs` with Web UI normalization",
         "create runs via compatibility `/api/runs`",
-    ),
-    "docs/testing/TESTING_GUIDE.md": (
-        "curl -X POST http://localhost:8000/api/run",
-        "curl http://localhost:8000/api/jobs/{job_id}",
-        'self.client.post("/api/run", json={',
-        "locust -f locustfile.py --host=http://localhost:8000",
     ),
 }
 

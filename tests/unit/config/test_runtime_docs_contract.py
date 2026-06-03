@@ -13,20 +13,6 @@ REQUIRED_SUBSTRINGS = {
         "curl http://localhost:3001/health",
         "Set `BR_ORCHESTRATOR_URL` explicitly",
     ),
-    "docs/user-guide/cli.md": (
-        "br serve orchestrator  # Orchestrator API on port 3001",
-        "`br serve orchestrator` starts the standalone orchestrator service on port 3001.",
-        "Set `BR_ORCHESTRATOR_URL` explicitly",
-        "Use the agent service for `/act`, `/chat`, and the legacy `/api/runs*` compatibility facade.",
-        "Use the orchestrator service for `/run`, `/api/jobs`, `/api/analyses`, `/api/cache/*`, canonical analysis submit/list APIs, and job inspection APIs.",
-        "The Web UI owns the public browser-facing `/api/*` surface",
-    ),
-    "docs/testing/TESTING_GUIDE.md": (
-        "br serve orchestrator --port 3001",
-        "curl -X POST http://localhost:3001/run",
-        "curl http://localhost:3001/api/jobs/{job_id}",
-        "curl -X POST http://localhost:8000/act",
-    ),
     "src/brain_researcher/services/br_kg/RUN_INSTRUCTIONS.md": (
         "apps/web-ui",
         "br serve kg --port 5000",
@@ -62,11 +48,6 @@ FORBIDDEN_SUBSTRINGS = {
         "**Orchestrator**: mounted only when `BR_DEV_ORCH_COMPAT=1`; otherwise disabled.",
         "`BR_DEV_ORCH_COMPAT=1` is only needed",
     ),
-    "docs/user-guide/cli.md": (
-        "The default dev setup does not run a separate orchestrator service; it is mounted only when `BR_DEV_ORCH_COMPAT=1`.",
-        "`BR_DEV_ORCH_COMPAT=1` is only needed",
-    ),
-    "docs/testing/TESTING_GUIDE.md": ("# BR_DEV_ORCH_COMPAT=1 br serve agent --debug",),
     "src/brain_researcher/services/br_kg/RUN_INSTRUCTIONS.md": (
         "brain_researcher/services/web_ui",
         "br serve ui",

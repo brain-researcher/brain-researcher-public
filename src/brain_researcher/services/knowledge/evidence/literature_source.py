@@ -105,11 +105,7 @@ class LiteratureEvidenceSource:
                             "journal": item.metadata.get("journal"),
                             "year": item.metadata.get("year"),
                             "doi": item.doi,
-                            "item_type": (
-                                str(item.item_type.value)
-                                if item.item_type
-                                else "publication"
-                            ),
+                            "item_type": str(item.item_type.value) if item.item_type else "publication",
                         },
                         url=item.url,
                         summary=item.description,
@@ -175,7 +171,9 @@ def search_literature_sync(
     Returns:
         List of EvidenceResult for matching publications.
     """
-    return asyncio.run(search_literature(query_text, year_min, year_max, limit))
+    return asyncio.run(
+        search_literature(query_text, year_min, year_max, limit)
+    )
 
 
 __all__ = [

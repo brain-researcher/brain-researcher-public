@@ -13,10 +13,10 @@ import logging
 import os
 import queue
 import re
-import subprocess
+import uuid
 import threading
 import time
-import uuid
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional
@@ -25,11 +25,11 @@ import requests as req_lib
 from flask import (
     Blueprint,
     Response,
-    current_app,
     jsonify,
     request,
     send_file,
     stream_with_context,
+    current_app,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,14 +100,14 @@ def _json() -> Dict[str, Any]:
 
 
 from brain_researcher.services.agent.kg_multihop_preview import (  # noqa: F401
-    _attach_kg_multihop_previews,
-    _build_kg_multihop_result_preview,
+    _normalize_tool_name,
+    _is_kg_multihop_qa_tool_call,
     _extract_kg_multihop_arguments,
     _extract_kg_multihop_payload,
-    _format_multihop_path_preview,
-    _is_kg_multihop_qa_tool_call,
     _multihop_node_label,
-    _normalize_tool_name,
+    _format_multihop_path_preview,
+    _build_kg_multihop_result_preview,
+    _attach_kg_multihop_previews,
 )
 
 
@@ -185,30 +185,32 @@ def _normalize_checkpoint_metadata(metadata: Any) -> Dict[str, Any]:
     return normalized
 
 
-from brain_researcher.services.agent.clarification_helpers import (  # noqa: F401,E402
-    _build_effective_clarified_user_content,
-    _build_legacy_clarification_result,
-    _clarification_anchor_from_history,
-    _clarification_key,
-    _is_generic_clarification_decision,
-    _legacy_info_gap_questions,
-    _match_resolution_choice,
-    _maybe_legacy_clarification_result,
-    _normalize_resolution_reply,
-    _pending_question_text,
-    _query_has_dataset_or_subject_reference,
-    _queue_generic_clarifications,
-)
 from brain_researcher.services.agent.query_context_helpers import (  # noqa: F401,E402
-    _augment_query_with_context,
+    _truncate_text,
+    _normalize_history_messages,
+    _resolve_history_from_payload_or_thread,
+    _resolve_history_from_payload_or_thread_with_source,
     _extract_plan_context,
     _extract_repair_context,
     _format_plan_context_lines,
-    _normalize_history_messages,
     _repair_examples_block,
-    _resolve_history_from_payload_or_thread,
-    _resolve_history_from_payload_or_thread_with_source,
-    _truncate_text,
+    _augment_query_with_context,
+)
+
+
+from brain_researcher.services.agent.clarification_helpers import (  # noqa: F401,E402
+    _is_generic_clarification_decision,
+    _clarification_key,
+    _pending_question_text,
+    _normalize_resolution_reply,
+    _match_resolution_choice,
+    _queue_generic_clarifications,
+    _query_has_dataset_or_subject_reference,
+    _legacy_info_gap_questions,
+    _clarification_anchor_from_history,
+    _build_effective_clarified_user_content,
+    _build_legacy_clarification_result,
+    _maybe_legacy_clarification_result,
 )
 
 # ---------------------------------------------------------------------------
@@ -409,16 +411,13 @@ def api_auth_signup():
     # Stub: return success without creating user
     # Real implementation would require user store + email verification
     logger.info(f"Signup stub called for email: {email}")
-    return (
-        jsonify(
-            {
-                "message": "Signup request received. Please use OAuth login (Google/GitHub) for full account creation.",
-                "status": "stub",
-                "email": email,
-            }
-        ),
-        200,
-    )
+    return jsonify(
+        {
+            "message": "Signup request received. Please use OAuth login (Google/GitHub) for full account creation.",
+            "status": "stub",
+            "email": email,
+        }
+    ), 200
 
 
 @ui_api.post("/auth/reset-password")
@@ -434,15 +433,12 @@ def api_auth_reset_password():
 
     # Stub: return success without sending email
     logger.info(f"Password reset stub called for email: {email}")
-    return (
-        jsonify(
-            {
-                "message": "If an account exists, a reset email would be sent.",
-                "status": "stub",
-            }
-        ),
-        200,
-    )
+    return jsonify(
+        {
+            "message": "If an account exists, a reset email would be sent.",
+            "status": "stub",
+        }
+    ), 200
 
 
 @ui_api.post("/auth/exchange")
@@ -508,7 +504,7 @@ def api_auth_exchange():
 
 @ui_api.post("/chat")
 def api_chat():
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     payload = _json()
     messages: List[Dict[str, Any]] = payload.get("messages") or []
@@ -545,12 +541,9 @@ def api_chat():
 
     # Check thread access (will create new thread if doesn't exist)
     if not _check_thread_access(thread_id, user.id, user.tenant_id):
-        return (
-            jsonify(
-                {"error": "forbidden", "detail": "You don't have access to this thread"}
-            ),
-            403,
-        )
+        return jsonify(
+            {"error": "forbidden", "detail": "You don't have access to this thread"}
+        ), 403
 
     ctx_extra = _normalize_checkpoint_ctx_ingress(payload.get("ctx") or {}, payload)
     if not isinstance(ctx_extra, dict):
@@ -666,8 +659,8 @@ def api_chat():
 
         # Use core functions directly (no Flask request dependency)
         from brain_researcher.services.agent.agent_core import (
-            agent_act_core,
             simple_chat_core,
+            agent_act_core,
         )
 
         if tool_mode in {"none", "off", "coding"}:
@@ -1012,10 +1005,10 @@ def api_chat_stream():
     requests with ``BR_ENABLE_CODE_AGENT_TOOL=1`` stream plan/patch/test events
     from CodeOrchestrator.
     """
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
     from brain_researcher.services.agent.streaming import (
-        StreamEvent,
         StreamingChatHandler,
+        StreamEvent,
     )
 
     payload = _json()
@@ -1038,12 +1031,9 @@ def api_chat_stream():
 
     # Check thread access
     if not _check_thread_access(thread_id, user.id, user.tenant_id):
-        return (
-            jsonify(
-                {"error": "forbidden", "detail": "You don't have access to this thread"}
-            ),
-            403,
-        )
+        return jsonify(
+            {"error": "forbidden", "detail": "You don't have access to this thread"}
+        ), 403
 
     user_content = last_user["content"]
     history, history_source = _resolve_history_from_payload_or_thread_with_source(
@@ -1709,7 +1699,7 @@ def api_chat_stream():
 @ui_api.get("/threads")
 def api_threads_list():
     """List all threads owned by the current user."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -1737,7 +1727,7 @@ def api_threads_list():
 
 @ui_api.get("/threads/<thread_id>/messages")
 def api_thread_messages(thread_id: str):
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -1746,12 +1736,9 @@ def api_thread_messages(thread_id: str):
 
     # Check ownership
     if not _check_thread_access(thread_id, user.id, user.tenant_id):
-        return (
-            jsonify(
-                {"error": "forbidden", "detail": "You don't have access to this thread"}
-            ),
-            403,
-        )
+        return jsonify(
+            {"error": "forbidden", "detail": "You don't have access to this thread"}
+        ), 403
 
     store = _get_thread_store()
     messages = store.get_messages(thread_id)
@@ -1773,7 +1760,7 @@ def api_thread_stream(thread_id: str):
 
     Without message param, returns existing thread messages (snapshot mode).
     """
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -1782,12 +1769,9 @@ def api_thread_stream(thread_id: str):
 
     # Check ownership
     if not _check_thread_access(thread_id, user.id, user.tenant_id):
-        return (
-            jsonify(
-                {"error": "forbidden", "detail": "You don't have access to this thread"}
-            ),
-            403,
-        )
+        return jsonify(
+            {"error": "forbidden", "detail": "You don't have access to this thread"}
+        ), 403
 
     # Check for live streaming mode
     new_message = request.args.get("message")
@@ -1843,9 +1827,8 @@ def api_thread_stream(thread_id: str):
 
 @ui_api.get("/tools")
 def api_tools():
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
     import logging
-
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
 
     # Optional auth check - allow unauthenticated but log for monitoring
     try:
@@ -1928,7 +1911,7 @@ def api_tools_search():
 
 @ui_api.post("/tools/run")
 def api_tools_run():
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         get_current_user(request)
@@ -2038,7 +2021,7 @@ def _normalize_project_id(value: Any) -> str:
 
 @ui_api.get("/projects")
 def api_projects_list():
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2052,7 +2035,7 @@ def api_projects_list():
 
 @ui_api.post("/projects")
 def api_projects_create():
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     payload = _json()
     project_id = payload.get("project_id")
@@ -2060,10 +2043,9 @@ def api_projects_create():
     description = payload.get("description")
 
     if not isinstance(project_id, str) or not project_id.strip():
-        return (
-            jsonify({"error": "invalid_request", "detail": "project_id required"}),
-            400,
-        )
+        return jsonify(
+            {"error": "invalid_request", "detail": "project_id required"}
+        ), 400
     if not isinstance(name, str) or not name.strip():
         return jsonify({"error": "invalid_request", "detail": "name required"}), 400
     if description is not None and not isinstance(description, str):
@@ -2098,7 +2080,7 @@ def api_projects_create():
 
 @ui_api.get("/projects/<project_id>")
 def api_projects_get(project_id: str):
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2114,7 +2096,7 @@ def api_projects_get(project_id: str):
 
 @ui_api.patch("/projects/<project_id>")
 def api_projects_update(project_id: str):
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     payload = _json()
     has_name = "name" in payload
@@ -2132,10 +2114,9 @@ def api_projects_update(project_id: str):
     description = payload.get("description") if has_description else None
 
     if has_name and (not isinstance(name, str) or not name.strip()):
-        return (
-            jsonify({"error": "invalid_request", "detail": "name must be non-empty"}),
-            400,
-        )
+        return jsonify(
+            {"error": "invalid_request", "detail": "name must be non-empty"}
+        ), 400
     if has_description and description is not None and not isinstance(description, str):
         return (
             jsonify(
@@ -2167,7 +2148,7 @@ def api_projects_update(project_id: str):
 
 @ui_api.delete("/projects/<project_id>")
 def api_projects_delete(project_id: str):
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2190,7 +2171,7 @@ def api_projects_delete(project_id: str):
 
 @ui_api.post("/runs")
 def api_runs_create():
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     payload = _json()
     plan = payload.get("plan") or {}
@@ -2234,7 +2215,7 @@ def api_runs_list():
         - runs: List of run objects
         - count: Total count returned
     """
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2256,7 +2237,7 @@ def api_runs_list():
 
 @ui_api.get("/runs/<run_id>")
 def api_runs_status(run_id: str):
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2283,7 +2264,7 @@ def api_runs_stream(run_id: str):
         - log: Log chunks as they become available
         - done: Final status when run completes
     """
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2344,12 +2325,13 @@ from brain_researcher.services.agent.file_upload_storage import (  # noqa: F401,
     MAX_FILE_SIZE,
     MAX_RESUMABLE_FILE_SIZE,
     UPLOAD_DIR,
-    FileStorage,
-    ResumableUploadStorage,
     _compute_upload_dir,
     _get_file_extension,
     _is_allowed_file,
+    FileStorage,
+    ResumableUploadStorage,
 )
+
 
 _resumable_storage: Optional[ResumableUploadStorage] = None
 _resumable_storage_lock = threading.Lock()
@@ -2393,7 +2375,7 @@ def api_files_upload():
     Accepts multipart/form-data with a 'file' field.
     Returns file metadata including file_id and url.
     """
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2410,28 +2392,22 @@ def api_files_upload():
 
     # Validate extension
     if not _is_allowed_file(file.filename):
-        return (
-            jsonify(
-                {
-                    "error": "invalid_extension",
-                    "detail": f"File type not allowed. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
-                }
-            ),
-            400,
-        )
+        return jsonify(
+            {
+                "error": "invalid_extension",
+                "detail": f"File type not allowed. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
+            }
+        ), 400
 
     # Read file data
     file_data = file.read()
     if len(file_data) > MAX_FILE_SIZE:
-        return (
-            jsonify(
-                {
-                    "error": "file_too_large",
-                    "detail": f"File exceeds max size of {MAX_FILE_SIZE // (1024 * 1024)}MB",
-                }
-            ),
-            413,
-        )
+        return jsonify(
+            {
+                "error": "file_too_large",
+                "detail": f"File exceeds max size of {MAX_FILE_SIZE // (1024 * 1024)}MB",
+            }
+        ), 413
 
     # Determine content type
     content_type = file.content_type or "application/octet-stream"
@@ -2451,7 +2427,7 @@ from brain_researcher.services.agent.file_upload_storage import (  # noqa: F401,
 @ui_api.post("/files/resumable/init")
 def api_files_resumable_init():
     """Initialize a resumable upload session."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2466,22 +2442,16 @@ def api_files_resumable_init():
     if not isinstance(filename, str) or not filename.strip():
         return jsonify({"error": "invalid_request", "detail": "filename required"}), 400
     if not isinstance(total_size, int):
-        return (
-            jsonify(
-                {"error": "invalid_request", "detail": "total_size (int) required"}
-            ),
-            400,
-        )
+        return jsonify(
+            {"error": "invalid_request", "detail": "total_size (int) required"}
+        ), 400
     if total_size > MAX_RESUMABLE_FILE_SIZE:
-        return (
-            jsonify(
-                {
-                    "error": "file_too_large",
-                    "detail": f"total_size exceeds server max of {MAX_RESUMABLE_FILE_SIZE} bytes",
-                }
-            ),
-            413,
-        )
+        return jsonify(
+            {
+                "error": "file_too_large",
+                "detail": f"total_size exceeds server max of {MAX_RESUMABLE_FILE_SIZE} bytes",
+            }
+        ), 413
 
     storage = get_resumable_upload_storage()
     try:
@@ -2494,27 +2464,24 @@ def api_files_resumable_init():
     except ValueError as exc:
         return jsonify({"error": "invalid_request", "detail": str(exc)}), 400
 
-    return (
-        jsonify(
-            {
-                "upload_id": meta["upload_id"],
-                "filename": meta["filename"],
-                "content_type": meta["content_type"],
-                "total_size": meta["total_size"],
-                "received": meta["received"],
-                "status": meta["status"],
-                "chunk_url": f"/api/files/resumable/{meta['upload_id']}",
-                "complete_url": f"/api/files/resumable/{meta['upload_id']}/complete",
-            }
-        ),
-        201,
-    )
+    return jsonify(
+        {
+            "upload_id": meta["upload_id"],
+            "filename": meta["filename"],
+            "content_type": meta["content_type"],
+            "total_size": meta["total_size"],
+            "received": meta["received"],
+            "status": meta["status"],
+            "chunk_url": f"/api/files/resumable/{meta['upload_id']}",
+            "complete_url": f"/api/files/resumable/{meta['upload_id']}/complete",
+        }
+    ), 201
 
 
 @ui_api.get("/files/resumable/<upload_id>")
 def api_files_resumable_status(upload_id: str):
     """Check resumable upload status."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2543,7 +2510,7 @@ def api_files_resumable_status(upload_id: str):
 @ui_api.put("/files/resumable/<upload_id>")
 def api_files_resumable_put(upload_id: str):
     """Append a chunk to a resumable upload (sequential)."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2565,12 +2532,9 @@ def api_files_resumable_put(upload_id: str):
         try:
             start = int(request.headers.get("X-Upload-Offset", "0"))
         except ValueError:
-            return (
-                jsonify(
-                    {"error": "invalid_offset", "detail": "X-Upload-Offset must be int"}
-                ),
-                400,
-            )
+            return jsonify(
+                {"error": "invalid_offset", "detail": "X-Upload-Offset must be int"}
+            ), 400
         try:
             total = (
                 int(request.headers["X-Upload-Length"])
@@ -2578,12 +2542,9 @@ def api_files_resumable_put(upload_id: str):
                 else None
             )
         except ValueError:
-            return (
-                jsonify(
-                    {"error": "invalid_total", "detail": "X-Upload-Length must be int"}
-                ),
-                400,
-            )
+            return jsonify(
+                {"error": "invalid_total", "detail": "X-Upload-Length must be int"}
+            ), 400
 
     data = request.get_data(cache=False) or b""
     if not data:
@@ -2603,20 +2564,15 @@ def api_files_resumable_put(upload_id: str):
     except PermissionError:
         return jsonify({"error": "forbidden", "detail": "Not owner"}), 403
     except ValueError as exc:
-        return (
-            jsonify(
-                {
-                    "error": "invalid_chunk",
-                    "detail": str(exc),
-                    "expected_offset": (
-                        storage.get(upload_id).get("received")
-                        if storage.get(upload_id)
-                        else None
-                    ),
-                }
-            ),
-            409,
-        )
+        return jsonify(
+            {
+                "error": "invalid_chunk",
+                "detail": str(exc),
+                "expected_offset": storage.get(upload_id).get("received")
+                if storage.get(upload_id)
+                else None,
+            }
+        ), 409
 
     return jsonify(
         {
@@ -2631,7 +2587,7 @@ def api_files_resumable_put(upload_id: str):
 @ui_api.post("/files/resumable/<upload_id>/complete")
 def api_files_resumable_complete(upload_id: str):
     """Finalize a resumable upload and register it as a normal file."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2657,7 +2613,7 @@ def api_files_resumable_complete(upload_id: str):
 @ui_api.delete("/files/resumable/<upload_id>")
 def api_files_resumable_abort(upload_id: str):
     """Abort a resumable upload and delete partial data."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2674,7 +2630,7 @@ def api_files_resumable_abort(upload_id: str):
 @ui_api.get("/files/<file_id>")
 def api_files_get(file_id: str):
     """Download a file by ID."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2706,7 +2662,7 @@ def api_files_get(file_id: str):
 @ui_api.delete("/files/<file_id>")
 def api_files_delete(file_id: str):
     """Delete a file by ID."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2717,18 +2673,15 @@ def api_files_delete(file_id: str):
     if storage.delete(file_id, user.id):
         return jsonify({"status": "deleted", "file_id": file_id})
     else:
-        return (
-            jsonify(
-                {"error": "not_found", "detail": "File not found or access denied"}
-            ),
-            404,
-        )
+        return jsonify(
+            {"error": "not_found", "detail": "File not found or access denied"}
+        ), 404
 
 
 @ui_api.get("/files")
 def api_files_list():
     """List all files for current user."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -2757,8 +2710,8 @@ def _get_dataset_catalog():
             if _dataset_catalog is None:
                 try:
                     from brain_researcher.core.datasets.catalog import (
-                        DatasetRecord,
                         load_catalog,
+                        DatasetRecord,
                     )
 
                     records = load_catalog()
@@ -3027,16 +2980,15 @@ def api_dataset_detail(dataset_id: str):
             }
         )
 
-    return (
-        jsonify({"error": "not_found", "detail": f"Dataset {dataset_id} not found"}),
-        404,
-    )
+    return jsonify(
+        {"error": "not_found", "detail": f"Dataset {dataset_id} not found"}
+    ), 404
 
 
 @ui_api.get("/datasets/local")
 def api_datasets_local_list():
     """List datasets present in the local registry."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         _ = get_current_user(request)
@@ -3072,7 +3024,7 @@ def api_datasets_local_list():
 @ui_api.post("/datasets/import")
 def api_datasets_import():
     """Import an uploaded BIDS zip into `data/bids/<dataset_id>` and register it."""
-    from brain_researcher.services.agent.agent_auth import AuthError, get_current_user
+    from brain_researcher.services.agent.agent_auth import get_current_user, AuthError
 
     try:
         user = get_current_user(request)
@@ -3095,12 +3047,9 @@ def api_datasets_import():
     if dataset_id is not None and (
         not isinstance(dataset_id, str) or not dataset_id.strip()
     ):
-        return (
-            jsonify(
-                {"error": "invalid_request", "detail": "dataset_id must be string"}
-            ),
-            400,
-        )
+        return jsonify(
+            {"error": "invalid_request", "detail": "dataset_id must be string"}
+        ), 400
 
     storage = get_file_storage()
     meta = storage.get(file_id)
@@ -3111,10 +3060,9 @@ def api_datasets_import():
 
     filename = meta.get("filename") or ""
     if _get_file_extension(filename) != "zip":
-        return (
-            jsonify({"error": "invalid_extension", "detail": "Only .zip is supported"}),
-            400,
-        )
+        return jsonify(
+            {"error": "invalid_extension", "detail": "Only .zip is supported"}
+        ), 400
 
     try:
         from brain_researcher.core.datasets.bids_import import import_bids_zip
@@ -3144,14 +3092,11 @@ def api_datasets_import():
         except Exception:
             pass
 
-    return (
-        jsonify(
-            result.model_dump(mode="json")
-            if hasattr(result, "model_dump")
-            else result.dict()
-        ),
-        201,
-    )
+    return jsonify(
+        result.model_dump(mode="json")
+        if hasattr(result, "model_dump")
+        else result.dict()
+    ), 201
 
 
 # ---------------------------------------------------------------------------
@@ -3312,10 +3257,9 @@ def _proxy_demo_request(subpath: str, method: str = "GET"):
                 "description": f"Demo stub (timeout): {subpath}",
             }
             return jsonify(_create_stub_run(subpath, plan)), 200
-        return (
-            jsonify({"error": "upstream_timeout", "detail": "Demo service timed out"}),
-            504,
-        )
+        return jsonify(
+            {"error": "upstream_timeout", "detail": "Demo service timed out"}
+        ), 504
     except req_lib.exceptions.ConnectionError as e:
         _demo_logger.error(
             f"Connection error proxying demo request: {e} (method={method}, subpath={subpath})"
@@ -3328,12 +3272,9 @@ def _proxy_demo_request(subpath: str, method: str = "GET"):
                 "description": f"Demo stub (orchestrator down): {subpath}",
             }
             return jsonify(_create_stub_run(subpath, plan)), 200
-        return (
-            jsonify(
-                {"error": "upstream_unavailable", "detail": "Demo service unavailable"}
-            ),
-            503,
-        )
+        return jsonify(
+            {"error": "upstream_unavailable", "detail": "Demo service unavailable"}
+        ), 503
     except Exception as e:
         _demo_logger.exception(f"Error proxying demo request: {e}")
         if method == "POST":

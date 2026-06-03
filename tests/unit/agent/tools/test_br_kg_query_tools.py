@@ -12,11 +12,7 @@ def test_search_nodes_tool_uses_service(monkeypatch):
     monkeypatch.setattr(
         query_service,
         "search_nodes",
-        lambda *a, **k: [
-            query_service.KGNodeSummary(
-                kg_id="n1", label="Motor", node_type="BrainRegion", score=0.9
-            )
-        ],
+        lambda *a, **k: [query_service.KGNodeSummary(kg_id="n1", label="Motor", node_type="BrainRegion", score=0.9)],
     )
     tool = SearchNodesTool()
     result = tool._run("motor")

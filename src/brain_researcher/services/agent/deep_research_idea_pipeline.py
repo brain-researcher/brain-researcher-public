@@ -149,9 +149,7 @@ def _build_kggen_command(
     if no_dspy:
         cmd.append("--no-dspy")
     if query:
-        cmd.extend(
-            ["--context", f"Deep-research grounded idea generation for: {query}"]
-        )
+        cmd.extend(["--context", f"Deep-research grounded idea generation for: {query}"])
     return cmd
 
 
@@ -222,9 +220,7 @@ def _run_kggen_with_recovery(
                 check=False,
             )
             if retry_completed.returncode != 0:
-                stderr = (
-                    retry_completed.stderr or retry_completed.stdout or ""
-                ).strip()
+                stderr = (retry_completed.stderr or retry_completed.stdout or "").strip()
                 raise RuntimeError(
                     "KGGEN reduced-config retry failed with code "
                     f"{retry_completed.returncode}: {stderr[:1000]}"
@@ -262,9 +258,7 @@ def generate_deep_research_idea_cards_from_result(
     """Run a bounded idea-generation pipeline from deep-research results."""
 
     normalized = coerce_deep_research_result(dict(deep_research_result))
-    if not isinstance(normalized.get("documents"), list) or not normalized.get(
-        "documents"
-    ):
+    if not isinstance(normalized.get("documents"), list) or not normalized.get("documents"):
         raise RuntimeError("deep research result contains no documents")
 
     repo_root = _repo_root()
@@ -334,13 +328,13 @@ def generate_deep_research_idea_cards_from_result(
         query=query,
         no_dspy=True,
     )
-    should_retry = min(max(1, int(max_papers)), DEFAULT_RETRY_MAX_PAPERS) < int(
-        max_papers
-    ) or min(
-        max(1, int(max_relations_per_paper)),
-        DEFAULT_RETRY_MAX_RELATIONS_PER_PAPER,
-    ) < int(
-        max_relations_per_paper
+    should_retry = (
+        min(max(1, int(max_papers)), DEFAULT_RETRY_MAX_PAPERS) < int(max_papers)
+        or min(
+            max(1, int(max_relations_per_paper)),
+            DEFAULT_RETRY_MAX_RELATIONS_PER_PAPER,
+        )
+        < int(max_relations_per_paper)
     )
     kggen_summary_payload, kggen_warnings = _run_kggen_with_recovery(
         cmd=cmd,

@@ -25,9 +25,7 @@ class ExtractTimeseriesArgs(BaseModel):
     detrend: bool = Field(default=True, description="Detrend signals")
     tr: Optional[float] = Field(default=None, description="Repetition time (seconds)")
     low_pass: Optional[float] = Field(default=None, description="Low-pass filter (Hz)")
-    high_pass: Optional[float] = Field(
-        default=None, description="High-pass filter (Hz)"
-    )
+    high_pass: Optional[float] = Field(default=None, description="High-pass filter (Hz)")
 
 
 class ExtractTimeseriesTool(NeuroToolWrapper):

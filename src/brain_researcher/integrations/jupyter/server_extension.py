@@ -24,9 +24,9 @@ def _jupyter_server_extension_points() -> list[dict[str, str]]:
 
 
 def _resolve_jupyter_runtime() -> SimpleNamespace:
-    import tornado.web as web
     from jupyter_server.base.handlers import APIHandler
     from jupyter_server.utils import url_path_join
+    import tornado.web as web
 
     return SimpleNamespace(
         APIHandler=APIHandler,

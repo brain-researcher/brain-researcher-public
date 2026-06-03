@@ -4,9 +4,8 @@ BR-KG Evidence Service - Query knowledge graph for demo-related evidence
 
 import logging
 import os
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
-
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -18,7 +17,6 @@ DEFAULT_BR_KG_URL = os.getenv("BR_KG_URL", "http://localhost:5000")
 @dataclass
 class Evidence:
     """Evidence item from knowledge graph"""
-
     type: str  # 'paper', 'dataset', 'statmap', 'coordinate'
     title: str
     description: str
@@ -34,7 +32,6 @@ class Evidence:
 @dataclass
 class Citation:
     """Citation reference"""
-
     id: str
     title: str
     authors: List[str]
@@ -62,23 +59,26 @@ class KGEvidenceService:
             br_kg_url: Base URL for BR-KG service
             timeout: HTTP request timeout in seconds
         """
-        self.br_kg_url = br_kg_url.rstrip("/")
+        self.br_kg_url = br_kg_url.rstrip('/')
         self.timeout = timeout
         self.client = httpx.AsyncClient(timeout=timeout)
 
     def _build_search_url(self) -> str:
         """Return the correct search endpoint for a mounted or direct BR-KG base."""
-        if self.br_kg_url.endswith("/api/kg"):
+        if self.br_kg_url.endswith('/api/kg'):
             return f"{self.br_kg_url}/search"
         return f"{self.br_kg_url}/api/kg/search"
 
     def _build_concept_evidence_url(self, concept_id: str) -> str:
-        if self.br_kg_url.endswith("/api/kg"):
+        if self.br_kg_url.endswith('/api/kg'):
             return f"{self.br_kg_url}/concept/{concept_id}/evidence"
         return f"{self.br_kg_url}/api/kg/concept/{concept_id}/evidence"
 
     async def get_demo_evidence(
-        self, demo_id: str, demo_config: Dict[str, Any], limit: int = 10
+        self,
+        demo_id: str,
+        demo_config: Dict[str, Any],
+        limit: int = 10
     ) -> List[Evidence]:
         """
         Get evidence for a demo from the knowledge graph.
@@ -103,9 +103,7 @@ class KGEvidenceService:
             # Convert search results to Evidence objects
             evidence_items = self._format_evidence(search_results, demo_config)
 
-            logger.info(
-                f"Found {len(evidence_items)} evidence items for demo '{demo_id}'"
-            )
+            logger.info(f"Found {len(evidence_items)} evidence items for demo '{demo_id}'")
 
             return evidence_items[:limit]
 
@@ -123,35 +121,37 @@ class KGEvidenceService:
         query_parts = []
 
         # Add task
-        if "task" in demo_config:
-            task = demo_config["task"]
+        if 'task' in demo_config:
+            task = demo_config['task']
             # Clean up task name (remove dashes, camelCase)
-            task_clean = task.replace("-", " ").replace("_", " ")
+            task_clean = task.replace('-', ' ').replace('_', ' ')
             query_parts.append(task_clean)
 
         # Add dataset ID
-        if "dataset_id" in demo_config:
-            query_parts.append(demo_config["dataset_id"])
+        if 'dataset_id' in demo_config:
+            query_parts.append(demo_config['dataset_id'])
 
         # Add analysis type if specified
-        if "analysis_type" in demo_config:
-            query_parts.append(demo_config["analysis_type"])
+        if 'analysis_type' in demo_config:
+            query_parts.append(demo_config['analysis_type'])
 
         # Fallback to title keywords
-        if not query_parts and "title" in demo_config:
+        if not query_parts and 'title' in demo_config:
             # Extract key terms from title
-            title = demo_config["title"]
+            title = demo_config['title']
             keywords = [
-                word
-                for word in title.split()
-                if len(word) > 3 and word.lower() not in {"analysis", "task", "data"}
+                word for word in title.split()
+                if len(word) > 3 and word.lower() not in {'analysis', 'task', 'data'}
             ]
             query_parts.extend(keywords[:3])
 
-        return " ".join(query_parts)
+        return ' '.join(query_parts)
 
     async def _search_kg(
-        self, query: str, limit: int = 10, node_types: Optional[List[str]] = None
+        self,
+        query: str,
+        limit: int = 10,
+        node_types: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
         """
         Search the knowledge graph via /api/search endpoint.
@@ -167,7 +167,10 @@ class KGEvidenceService:
         try:
             url = self._build_search_url()
 
-            payload = {"query": query, "limit": limit}
+            payload = {
+                "query": query,
+                "limit": limit
+            }
 
             if node_types:
                 payload["node_types"] = node_types
@@ -191,7 +194,7 @@ class KGEvidenceService:
         self,
         concept_id: str,
         evidence_types: str = "papers,datasets,statmaps",
-        limit: int = 20,
+        limit: int = 20
     ) -> Dict[str, Any]:
         """
         Get evidence for a specific concept from /concept/<id>/evidence endpoint.
@@ -207,7 +210,10 @@ class KGEvidenceService:
         try:
             url = self._build_concept_evidence_url(concept_id)
 
-            params = {"types": evidence_types, "limit": limit}
+            params = {
+                "types": evidence_types,
+                "limit": limit
+            }
 
             response = await self.client.get(url, params=params)
             response.raise_for_status()
@@ -222,7 +228,9 @@ class KGEvidenceService:
             return {}
 
     def _format_evidence(
-        self, search_results: List[Dict[str, Any]], demo_config: Dict[str, Any]
+        self,
+        search_results: List[Dict[str, Any]],
+        demo_config: Dict[str, Any]
     ) -> List[Evidence]:
         """
         Convert KG search results to Evidence objects.
@@ -237,93 +245,81 @@ class KGEvidenceService:
         evidence_items = []
 
         for result in search_results:
-            node_type = result.get("node_type", "unknown")
-            properties = result.get("properties", {})
-            matched_fields = result.get("matched_fields", [])
-            score = result.get("score", 0.0)
+            node_type = result.get('node_type', 'unknown')
+            properties = result.get('properties', {})
+            matched_fields = result.get('matched_fields', [])
+            score = result.get('score', 0.0)
 
             # Format based on node type
-            if node_type == "Paper":
+            if node_type == 'Paper':
                 evidence = Evidence(
-                    type="paper",
-                    title=properties.get("title", "Untitled Paper"),
-                    description=(
-                        properties.get("abstract", "")[:200] + "..."
-                        if properties.get("abstract")
-                        else ""
-                    ),
-                    source=properties.get("journal", "Unknown Journal"),
-                    url=properties.get("url") or properties.get("doi"),
+                    type='paper',
+                    title=properties.get('title', 'Untitled Paper'),
+                    description=properties.get('abstract', '')[:200] + '...' if properties.get('abstract') else '',
+                    source=properties.get('journal', 'Unknown Journal'),
+                    url=properties.get('url') or properties.get('doi'),
                     metadata={
-                        "authors": properties.get("authors", []),
-                        "year": properties.get("year"),
-                        "doi": properties.get("doi"),
-                        "score": score,
-                        "matched_fields": matched_fields,
-                    },
+                        'authors': properties.get('authors', []),
+                        'year': properties.get('year'),
+                        'doi': properties.get('doi'),
+                        'score': score,
+                        'matched_fields': matched_fields
+                    }
                 )
                 evidence_items.append(evidence)
 
-            elif node_type == "Dataset":
+            elif node_type == 'Dataset':
                 evidence = Evidence(
-                    type="dataset",
-                    title=properties.get("name", "Unnamed Dataset"),
-                    description=(
-                        properties.get("description", "")[:200] + "..."
-                        if properties.get("description")
-                        else ""
-                    ),
+                    type='dataset',
+                    title=properties.get('name', 'Unnamed Dataset'),
+                    description=properties.get('description', '')[:200] + '...' if properties.get('description') else '',
                     source=f"Dataset {properties.get('id', '')}",
-                    url=properties.get("url"),
+                    url=properties.get('url'),
                     metadata={
-                        "n_subjects": properties.get("n_subjects"),
-                        "tasks": properties.get("tasks", []),
-                        "modalities": properties.get("modalities", []),
-                        "score": score,
-                        "matched_fields": matched_fields,
-                    },
+                        'n_subjects': properties.get('n_subjects'),
+                        'tasks': properties.get('tasks', []),
+                        'modalities': properties.get('modalities', []),
+                        'score': score,
+                        'matched_fields': matched_fields
+                    }
                 )
                 evidence_items.append(evidence)
 
-            elif node_type == "StatMap":
+            elif node_type == 'StatMap':
                 evidence = Evidence(
-                    type="statmap",
+                    type='statmap',
                     title=f"Statistical Map: {properties.get('contrast', 'Unknown Contrast')}",
                     description=f"Brain activation map in {properties.get('space', 'unknown')} space",
-                    source=properties.get("source", "NeuroVault"),
-                    url=properties.get("url"),
+                    source=properties.get('source', 'NeuroVault'),
+                    url=properties.get('url'),
                     metadata={
-                        "contrast": properties.get("contrast"),
-                        "space": properties.get("space"),
-                        "atlas": properties.get("atlas"),
-                        "score": score,
-                        "matched_fields": matched_fields,
-                    },
+                        'contrast': properties.get('contrast'),
+                        'space': properties.get('space'),
+                        'atlas': properties.get('atlas'),
+                        'score': score,
+                        'matched_fields': matched_fields
+                    }
                 )
                 evidence_items.append(evidence)
 
-            elif node_type == "Concept":
+            elif node_type == 'Concept':
                 evidence = Evidence(
-                    type="concept",
-                    title=properties.get("label", "Unknown Concept"),
-                    description=(
-                        properties.get("definition", "")[:200] + "..."
-                        if properties.get("definition")
-                        else ""
-                    ),
-                    source="Cognitive Atlas / ONVOC",
-                    url=properties.get("url"),
+                    type='concept',
+                    title=properties.get('label', 'Unknown Concept'),
+                    description=properties.get('definition', '')[:200] + '...' if properties.get('definition') else '',
+                    source='Cognitive Atlas / ONVOC',
+                    url=properties.get('url'),
                     metadata={
-                        "id": properties.get("id"),
-                        "scheme": properties.get("scheme"),
-                        "score": score,
-                        "matched_fields": matched_fields,
-                    },
+                        'id': properties.get('id'),
+                        'scheme': properties.get('scheme'),
+                        'score': score,
+                        'matched_fields': matched_fields
+                    }
                 )
                 evidence_items.append(evidence)
 
         # Sort by relevance score
-        evidence_items.sort(key=lambda x: x.metadata.get("score", 0.0), reverse=True)
+        evidence_items.sort(key=lambda x: x.metadata.get('score', 0.0), reverse=True)
 
         return evidence_items
 

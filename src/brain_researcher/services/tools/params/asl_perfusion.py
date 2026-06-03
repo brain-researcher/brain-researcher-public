@@ -65,11 +65,7 @@ def asl_perfusion_from_payload(payload: Dict[str, object]) -> ASLPerfusionParame
         labeling_duration=float(payload.get("labeling_duration", 1.8)),
         post_labeling_delay=_ensure_list(payload.get("post_labeling_delay"), [2.0]),
         multi_delay=bool(payload.get("multi_delay", False)),
-        delays=(
-            _ensure_list(payload.get("delays"), [2.0])
-            if payload.get("delays")
-            else None
-        ),
+        delays=_ensure_list(payload.get("delays"), [2.0]) if payload.get("delays") else None,
         use_m0=bool(payload.get("use_m0", True)),
         m0_scale=float(payload.get("m0_scale", 1.0)),
         cbf_units=str(payload.get("cbf_units", "ml/100g/min")),
@@ -107,9 +103,7 @@ def _load_image(path: str) -> np.ndarray:
     return rng.normal(loc=500, scale=50, size=(size, size, size, n_volumes))
 
 
-def _load_scalar_image(
-    path: Optional[str], target_shape: Optional[tuple[int, int, int]]
-) -> Optional[np.ndarray]:
+def _load_scalar_image(path: Optional[str], target_shape: Optional[tuple[int, int, int]]) -> Optional[np.ndarray]:
     if not path:
         return None
     arr = _load_image(path)
@@ -137,9 +131,7 @@ def _estimate_mask(volume: np.ndarray) -> np.ndarray:
     return mask
 
 
-def _compute_cbf(
-    perfusion: np.ndarray, m0: np.ndarray, params: ASLPerfusionParameters
-) -> np.ndarray:
+def _compute_cbf(perfusion: np.ndarray, m0: np.ndarray, params: ASLPerfusionParameters) -> np.ndarray:
     lambda_bb = 0.9
     if params.multi_delay:
         pld = float(np.mean(params.delays or params.post_labeling_delay))
@@ -150,24 +142,13 @@ def _compute_cbf(
     t1_blood = 1.65
 
     numerator = lambda_bb * perfusion * np.exp(pld / max(t1_blood, 1e-6))
-    denominator = (
-        2
-        * alpha
-        * t1_blood
-        * np.maximum(m0, 1e-3)
-        * (1 - np.exp(-tau / max(t1_blood, 1e-6)))
-    )
+    denominator = 2 * alpha * t1_blood * np.maximum(m0, 1e-3) * (1 - np.exp(-tau / max(t1_blood, 1e-6)))
     cbf = numerator / np.maximum(denominator, 1e-6)
     cbf = np.clip(cbf * 6000, 0, 200)
     return cbf.astype(np.float32)
 
 
-def _quality_metrics(
-    perfusion: np.ndarray,
-    cbf: np.ndarray,
-    mask: np.ndarray,
-    params: ASLPerfusionParameters,
-) -> Dict[str, float]:
+def _quality_metrics(perfusion: np.ndarray, cbf: np.ndarray, mask: np.ndarray, params: ASLPerfusionParameters) -> Dict[str, float]:
     metrics: Dict[str, float] = {}
     masked = perfusion[mask]
     if masked.size == 0:
@@ -220,9 +201,7 @@ def run_asl_perfusion(params: ASLPerfusionParameters) -> Dict[str, object]:
         att_map = np.full_like(cbf, base, dtype=np.float32)
 
     mask = _estimate_mask(mean_perfusion)
-    qc_metrics = (
-        _quality_metrics(perfusion_series, cbf, mask, params) if params.save_qc else {}
-    )
+    qc_metrics = _quality_metrics(perfusion_series, cbf, mask, params) if params.save_qc else {}
 
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -289,7 +268,9 @@ def run_asl_perfusion(params: ASLPerfusionParameters) -> Dict[str, object]:
         outputs["visualization"] = str(vis_path)
         outputs["histogram"] = str(hist_path)
 
-    message = f"ASL perfusion completed (fallback) — mean CBF {cbf_stats['mean']:.1f} {params.cbf_units}"
+    message = (
+        f"ASL perfusion completed (fallback) — mean CBF {cbf_stats['mean']:.1f} {params.cbf_units}"
+    )
 
     return {
         "outputs": {k: v for k, v in outputs.items() if v is not None},

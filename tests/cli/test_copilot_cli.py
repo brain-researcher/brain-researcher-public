@@ -1,5 +1,4 @@
 import json
-
 from typer.testing import CliRunner
 
 
@@ -15,11 +14,7 @@ def test_cli_copilot_suggest():
     from brain_researcher.cli.main import app
 
     runner = CliRunner()
-    result = runner.invoke(
-        app,
-        ["copilot", "suggest", "glm motor task", "-m", '{"repetition_time":2.0}'],
-        prog_name="brain-researcher",
-    )
+    result = runner.invoke(app, ["copilot", "suggest", "glm motor task", "-m", '{"repetition_time":2.0}'], prog_name="brain-researcher")
     assert result.exit_code == 0
     data = _parse_json_output(result.output)
     assert "suggestions" in data
@@ -29,11 +24,13 @@ def test_cli_copilot_autocomplete():
     from brain_researcher.cli.main import app
 
     runner = CliRunner()
-    result = runner.invoke(
-        app,
-        ["copilot", "autocomplete", "spm-glm", "-m", '{"repetition_time":2.0}'],
-        prog_name="brain-researcher",
-    )
+    result = runner.invoke(app, [
+        "copilot",
+        "autocomplete",
+        "spm-glm",
+        "-m",
+        '{"repetition_time":2.0}'
+    ], prog_name="brain-researcher")
     assert result.exit_code == 0
     data = _parse_json_output(result.output)
     completed = data.get("completed", {})

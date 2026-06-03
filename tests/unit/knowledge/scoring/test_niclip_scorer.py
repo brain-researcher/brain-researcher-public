@@ -3,16 +3,16 @@
 import asyncio
 import os
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 
 import numpy as np
 import pytest
 
 from brain_researcher.services.knowledge.evidence.base import (
-    EvidenceBundle,
     EvidenceQuery,
-    EvidenceResult,
     EvidenceSourceType,
+    EvidenceBundle,
+    EvidenceResult,
 )
 from brain_researcher.services.knowledge.scoring.niclip_scorer import (
     NiCLIPConfig,
@@ -136,9 +136,7 @@ class TestNiCLIPEvidenceSource:
         assert source._config.vocabulary_type == "cogatlasred_task-names"
         assert source._config.top_k == 15
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -154,9 +152,7 @@ class TestNiCLIPEvidenceSource:
         mock_service_class.assert_called_once_with("/test/path")
         assert service is mock_service
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -173,9 +169,7 @@ class TestNiCLIPEvidenceSource:
         mock_service_class.assert_called_once()
         assert service1 is service2
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -208,9 +202,7 @@ class TestNiCLIPEvidenceSource:
         assert vocab[0] == "Motor Learning"
         assert embeddings.shape == (3, 3)
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -238,9 +230,7 @@ class TestNiCLIPEvidenceSource:
         assert concepts[0].term == "motor learning"
         assert concepts[0].score >= 0.8  # Exact match should have high score
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -270,9 +260,7 @@ class TestNiCLIPEvidenceSource:
         assert "motor learning" in terms
         assert "motor cortex activation" in terms
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     def test_keyword_scoring_no_match(self, mock_service_class):
         """Test keyword scoring with no matches."""
         mock_index = MagicMock()
@@ -294,9 +282,7 @@ class TestNiCLIPEvidenceSource:
 
         assert len(concepts) == 0
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     def test_query_sync_returns_evidence_results(self, mock_service_class):
         """Test query_sync returns EvidenceResult objects."""
         mock_index = MagicMock()
@@ -323,9 +309,7 @@ class TestNiCLIPEvidenceSource:
         assert "niclip:" in results[0].id
         assert results[0].payload.get("cognitive_atlas_concept") is True
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     def test_query_sync_respects_limit(self, mock_service_class):
         """Test query_sync respects limit parameter."""
         mock_index = MagicMock()
@@ -352,9 +336,7 @@ class TestNiCLIPEvidenceSource:
     def test_query_sync_unavailable_service(self, mock_get_service):
         """Test query_sync handles unavailable service gracefully."""
         if _run_niclip_unit_tests():
-            pytest.skip(
-                "NiCLIP unit tests enabled; unavailable-service test not applicable"
-            )
+            pytest.skip("NiCLIP unit tests enabled; unavailable-service test not applicable")
         source = NiCLIPEvidenceSource(data_path="/nonexistent/path")
         query = EvidenceQuery(text="test")
         results = source.query_sync(query)
@@ -362,9 +344,7 @@ class TestNiCLIPEvidenceSource:
         assert results == []
 
     @pytest.mark.asyncio
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -394,9 +374,7 @@ class TestNiCLIPEvidenceSource:
         assert results[0].source == EvidenceSourceType.NICLIP
 
     @pytest.mark.asyncio
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -429,9 +407,7 @@ class TestNiCLIPEvidenceSource:
         """Test health check when service is unavailable."""
         monkeypatch.setattr(asyncio, "to_thread", _direct_to_thread)
         if _run_niclip_unit_tests():
-            pytest.skip(
-                "NiCLIP unit tests enabled; unavailable-service test not applicable"
-            )
+            pytest.skip("NiCLIP unit tests enabled; unavailable-service test not applicable")
         source = NiCLIPEvidenceSource(data_path="/nonexistent/path")
         result = await source.health_check()
 
@@ -451,30 +427,20 @@ class TestNiCLIPScorer:
 
         mock_service = MagicMock()
         mock_service.get_vocabulary_index.return_value = (
-            [
-                "motor learning",
-                "visual perception",
-                "working memory",
-                "attention",
-                "motor cortex",
-            ],
+            ["motor learning", "visual perception", "working memory", "attention", "motor cortex"],
             mock_index,
             np.array([0.2, 0.25, 0.2, 0.15, 0.2]),
         )
         return mock_service
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     def test_scorer_initialization(self, mock_service_class):
         """Test scorer initialization."""
         scorer = NiCLIPScorer(data_path="/test/path", top_k=15)
         assert scorer._config.data_path == "/test/path"
         assert scorer._config.top_k == 15
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -491,9 +457,7 @@ class TestNiCLIPScorer:
         terms = [c.term for c in concepts]
         assert "motor learning" in terms or "motor cortex" in terms
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     @pytest.mark.skipif(
         not _run_niclip_unit_tests(),
         reason="NiCLIP vocab/engine unavailable; set BR_RUN_NICLIP_UNIT_TESTS=1 or provide vocab files.",
@@ -508,9 +472,7 @@ class TestNiCLIPScorer:
         assert 0.0 <= score <= 1.0
         assert score > 0.5  # Exact match should have high aggregate score
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     def test_compute_aggregate_score_no_match(self, mock_service_class):
         """Test aggregate score with no matches."""
         mock_service_class.return_value = self._create_mock_service()
@@ -520,9 +482,7 @@ class TestNiCLIPScorer:
 
         assert score == 0.0
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     def test_get_top_concepts(self, mock_service_class):
         """Test get_top_concepts returns concept names."""
         mock_service_class.return_value = self._create_mock_service()
@@ -535,9 +495,7 @@ class TestNiCLIPScorer:
         assert len(concepts) <= 3
 
     @pytest.mark.asyncio
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     async def test_is_available(self, mock_service_class):
         """Test is_available async method."""
         mock_service_class.return_value = self._create_mock_service()
@@ -548,9 +506,7 @@ class TestNiCLIPScorer:
         assert available is True
 
     @pytest.mark.asyncio
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     async def test_enrich_bundle(self, mock_service_class):
         """Test bundle enrichment with NiCLIP results."""
         mock_service_class.return_value = self._create_mock_service()
@@ -572,9 +528,7 @@ class TestNiCLIPScorer:
         assert "niclip_aggregate_score" in enriched.metadata
 
     @pytest.mark.asyncio
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     async def test_enrich_bundle_avoids_duplicates(self, mock_service_class):
         """Test bundle enrichment doesn't duplicate concepts."""
         mock_service_class.return_value = self._create_mock_service()
@@ -606,9 +560,7 @@ class TestNiCLIPScorer:
 class TestConvenienceFunctions:
     """Test convenience functions."""
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     def test_search_niclip(self, mock_service_class):
         """Test search_niclip convenience function."""
         mock_index = MagicMock()
@@ -631,9 +583,7 @@ class TestConvenienceFunctions:
         assert all(isinstance(r, EvidenceResult) for r in results)
         assert results[0].source == EvidenceSourceType.NICLIP
 
-    @patch(
-        "brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService"
-    )
+    @patch("brain_researcher.services.br_kg.niclip.embedding_service.NICLIPEmbeddingService")
     def test_create_niclip_source(self, mock_service_class):
         """Test create_niclip_source factory function."""
         source = create_niclip_source(

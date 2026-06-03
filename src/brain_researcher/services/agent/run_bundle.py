@@ -450,6 +450,7 @@ def persist_agent_trajectory(
     return path
 
 
+
 __all__ = [
     "log_trace_event",
     "persist_agent_analysis_bundle",

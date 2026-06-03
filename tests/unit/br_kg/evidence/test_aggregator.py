@@ -3,8 +3,8 @@
 import pytest
 
 from brain_researcher.services.br_kg.evidence.aggregator import (
-    _infer_sources_from_qur,
     gather_evidence,
+    _infer_sources_from_qur,
 )
 from brain_researcher.services.br_kg.evidence.models import (
     EvidenceBundle,

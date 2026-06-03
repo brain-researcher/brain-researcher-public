@@ -6,21 +6,21 @@ including YAML-based template definitions, parameter substitution with validatio
 template inheritance support, and custom template creation.
 """
 
-import asyncio
 import json
-import logging
-import os
-import re
-import resource
+import asyncio
 import time
 import uuid
+import logging
+import os
+import resource
+import re
+import yaml
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Union, Tuple
 
-import yaml
 from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
@@ -123,22 +123,18 @@ class TemplateParameter:
             return float(value)
         elif self.type == ParameterType.BOOLEAN:
             if isinstance(value, str):
-                return value.lower() in ["true", "1", "yes", "on"]
+                return value.lower() in ['true', '1', 'yes', 'on']
             return bool(value)
         elif self.type == ParameterType.LIST:
             if isinstance(value, str):
-                return [item.strip() for item in value.split(",")]
+                return [item.strip() for item in value.split(',')]
             elif isinstance(value, list):
                 return value
             else:
                 return [value]
-        elif self.type in [
-            ParameterType.PATH,
-            ParameterType.DATASET_ID,
-            ParameterType.BRAIN_REGION,
-            ParameterType.TASK,
-            ParameterType.CONTRAST,
-        ]:
+        elif self.type in [ParameterType.PATH, ParameterType.DATASET_ID,
+                          ParameterType.BRAIN_REGION, ParameterType.TASK,
+                          ParameterType.CONTRAST]:
             return str(value)
         elif self.type == ParameterType.DICT:
             if isinstance(value, str):
@@ -271,7 +267,7 @@ class TemplateValidator:
             param_names.add(param.name)
 
             # Check for valid parameter names (no spaces, special chars)
-            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", param.name):
+            if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', param.name):
                 issues.append(f"Invalid parameter name: {param.name}")
 
         return issues
@@ -315,17 +311,12 @@ class TemplateValidator:
         # Get available tools from registry
         try:
             from brain_researcher.services.tools.tool_registry import ToolRegistry
-
             registry = ToolRegistry()
-            available_tools = {
-                tool.get_tool_name() for tool in registry.get_all_tools()
-            }
+            available_tools = {tool.get_tool_name() for tool in registry.get_all_tools()}
 
             for step in template.steps:
                 if step.tool not in available_tools:
-                    issues.append(
-                        f"Step '{step.name}' references unknown tool: {step.tool}"
-                    )
+                    issues.append(f"Step '{step.name}' references unknown tool: {step.tool}")
 
         except Exception as e:
             logger.warning(f"Could not validate tools: {e}")
@@ -382,9 +373,7 @@ class WorkflowTemplateEngine:
         Args:
             template_dir: Directory containing template files
         """
-        self.template_dir = (
-            Path(template_dir) if template_dir else self._get_default_template_dir()
-        )
+        self.template_dir = Path(template_dir) if template_dir else self._get_default_template_dir()
         self.templates: Dict[str, WorkflowTemplate] = {}
         self.validator = TemplateValidator()
 
@@ -395,9 +384,7 @@ class WorkflowTemplateEngine:
 
     def _get_default_template_dir(self) -> Path:
         """Get the default template directory."""
-        env_dir = os.getenv("BR_TEMPLATE_DIR") or os.getenv(
-            "BRAIN_RESEARCHER_TEMPLATE_DIR"
-        )
+        env_dir = os.getenv("BR_TEMPLATE_DIR") or os.getenv("BRAIN_RESEARCHER_TEMPLATE_DIR")
         if env_dir:
             return Path(env_dir)
 
@@ -427,9 +414,7 @@ class WorkflowTemplateEngine:
             logger.warning(f"Template directory does not exist: {self.template_dir}")
             return
 
-        template_files = list(self.template_dir.glob("*.yaml")) + list(
-            self.template_dir.glob("*.yml")
-        )
+        template_files = list(self.template_dir.glob("*.yaml")) + list(self.template_dir.glob("*.yml"))
 
         for template_file in template_files:
             try:
@@ -445,7 +430,7 @@ class WorkflowTemplateEngine:
 
     def _load_template_file(self, file_path: Path) -> List[WorkflowTemplate]:
         """Load a single template file."""
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             template_data = yaml.safe_load(f)
 
         templates: List[WorkflowTemplate] = []
@@ -453,9 +438,7 @@ class WorkflowTemplateEngine:
             return templates
 
         if isinstance(template_data, dict):
-            if "templates" in template_data and isinstance(
-                template_data["templates"], dict
-            ):
+            if "templates" in template_data and isinstance(template_data["templates"], dict):
                 for template_id, data in template_data["templates"].items():
                     if isinstance(data, dict) and "id" not in data:
                         data = {**data, "id": template_id}
@@ -489,7 +472,7 @@ class WorkflowTemplateEngine:
                     min_value=param_data.get("min_value"),
                     max_value=param_data.get("max_value"),
                     pattern=param_data.get("pattern"),
-                    validation_rules=param_data.get("validation_rules", []),
+                    validation_rules=param_data.get("validation_rules", [])
                 )
                 parameters.append(param)
 
@@ -505,14 +488,14 @@ class WorkflowTemplateEngine:
                     optional=step_data.get("optional", False),
                     timeout_seconds=step_data.get("timeout_seconds"),
                     retry_count=step_data.get("retry_count", 0),
-                    conditions=step_data.get("conditions", []),
+                    conditions=step_data.get("conditions", [])
                 )
                 steps.append(step)
 
             # Parse metadata
             created_str = data.get("created_at", datetime.now().isoformat())
             if isinstance(created_str, str):
-                created_at = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+                created_at = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
             else:
                 created_at = created_str
 
@@ -530,7 +513,7 @@ class WorkflowTemplateEngine:
                 steps=steps,
                 outputs=data.get("outputs", {}),
                 metadata=data.get("metadata", {}),
-                inherits_from=data.get("inherits_from"),
+                inherits_from=data.get("inherits_from")
             )
 
             return template
@@ -547,9 +530,7 @@ class WorkflowTemplateEngine:
                 if parent:
                     self._inherit_from_parent(template, parent)
                 else:
-                    logger.warning(
-                        f"Template {template_id} inherits from unknown template: {template.inherits_from}"
-                    )
+                    logger.warning(f"Template {template_id} inherits from unknown template: {template.inherits_from}")
 
     def _inherit_from_parent(self, child: WorkflowTemplate, parent: WorkflowTemplate):
         """Apply inheritance from parent template to child."""
@@ -575,7 +556,10 @@ class WorkflowTemplateEngine:
         child.outputs = inherited_outputs
 
     def instantiate(
-        self, template_id: str, parameters: Dict[str, Any], validate_only: bool = False
+        self,
+        template_id: str,
+        parameters: Dict[str, Any],
+        validate_only: bool = False
     ) -> Union[Dict[str, Any], List[str]]:
         """
         Instantiate a workflow template with given parameters.
@@ -610,9 +594,7 @@ class WorkflowTemplateEngine:
         final_parameters = self._apply_defaults(template, parameters)
 
         # Substitute parameters in steps
-        instantiated_steps = self._substitute_parameters(
-            template.steps, final_parameters
-        )
+        instantiated_steps = self._substitute_parameters(template.steps, final_parameters)
 
         # Create instantiated workflow
         workflow = {
@@ -625,18 +607,18 @@ class WorkflowTemplateEngine:
             "metadata": {
                 **template.metadata,
                 "instantiated_at": datetime.now().isoformat(),
-                "parameter_count": len(final_parameters),
-            },
+                "parameter_count": len(final_parameters)
+            }
         }
 
-        logger.info(
-            f"Instantiated template {template_id} with {len(instantiated_steps)} steps"
-        )
+        logger.info(f"Instantiated template {template_id} with {len(instantiated_steps)} steps")
 
         return workflow
 
     def _apply_defaults(
-        self, template: WorkflowTemplate, parameters: Dict[str, Any]
+        self,
+        template: WorkflowTemplate,
+        parameters: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Apply default values to missing parameters."""
         final_params = parameters.copy()
@@ -648,7 +630,9 @@ class WorkflowTemplateEngine:
         return final_params
 
     def _substitute_parameters(
-        self, steps: List[WorkflowStep], parameters: Dict[str, Any]
+        self,
+        steps: List[WorkflowStep],
+        parameters: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Substitute parameters in workflow steps."""
         substituted_steps = []
@@ -664,7 +648,7 @@ class WorkflowTemplateEngine:
                 "optional": step.optional,
                 "timeout_seconds": step.timeout_seconds,
                 "retry_count": step.retry_count,
-                "conditions": step.conditions.copy(),
+                "conditions": step.conditions.copy()
             }
 
             # Perform parameter substitution
@@ -677,10 +661,7 @@ class WorkflowTemplateEngine:
     def _substitute_dict(self, obj: Any, parameters: Dict[str, Any]) -> Any:
         """Recursively substitute parameters in nested dictionaries."""
         if isinstance(obj, dict):
-            return {
-                key: self._substitute_dict(value, parameters)
-                for key, value in obj.items()
-            }
+            return {key: self._substitute_dict(value, parameters) for key, value in obj.items()}
         elif isinstance(obj, list):
             return [self._substitute_dict(item, parameters) for item in obj]
         elif isinstance(obj, str):
@@ -690,7 +671,6 @@ class WorkflowTemplateEngine:
 
     def _substitute_string(self, text: str, parameters: Dict[str, Any]) -> str:
         """Substitute parameters in a string using ${param_name} syntax."""
-
         def replace_param(match):
             param_name = match.group(1)
             if param_name in parameters:
@@ -700,7 +680,7 @@ class WorkflowTemplateEngine:
                 return match.group(0)  # Return original text
 
         # Replace ${param_name} patterns
-        return re.sub(r"\$\{([^}]+)\}", replace_param, text)
+        return re.sub(r'\$\{([^}]+)\}', replace_param, text)
 
     def get_template(self, template_id: str) -> Optional[WorkflowTemplate]:
         """Get a template by ID."""
@@ -710,7 +690,7 @@ class WorkflowTemplateEngine:
         self,
         category: Optional[str] = None,
         status: Optional[TemplateStatus] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None
     ) -> List[WorkflowTemplate]:
         """
         List templates with optional filtering.
@@ -747,7 +727,9 @@ class WorkflowTemplateEngine:
         return filtered_templates
 
     def create_custom_template(
-        self, template_data: Dict[str, Any], save_to_file: bool = True
+        self,
+        template_data: Dict[str, Any],
+        save_to_file: bool = True
     ) -> Union[WorkflowTemplate, List[str]]:
         """
         Create a new custom template.
@@ -786,13 +768,11 @@ class WorkflowTemplateEngine:
 
         return template
 
-    def _save_template_to_file(
-        self, template: WorkflowTemplate, original_data: Dict[str, Any]
-    ):
+    def _save_template_to_file(self, template: WorkflowTemplate, original_data: Dict[str, Any]):
         """Save template to YAML file."""
         file_path = self.template_dir / f"{template.id}.yaml"
 
-        with open(file_path, "w", encoding="utf-8") as f:
+        with open(file_path, 'w', encoding='utf-8') as f:
             yaml.dump(original_data, f, default_flow_style=False, sort_keys=False)
 
     def get_template_categories(self) -> List[str]:
@@ -918,9 +898,7 @@ class WorkflowExecutor:
                 step_status[step.name] = "skipped"
                 continue
 
-            failed_deps = [
-                dep for dep in step.depends_on if step_status.get(dep) == "failed"
-            ]
+            failed_deps = [dep for dep in step.depends_on if step_status.get(dep) == "failed"]
             if failed_deps:
                 step_results.append(
                     ExecutionStep(
@@ -936,19 +914,13 @@ class WorkflowExecutor:
 
             kwargs = self._resolve_step_parameters(step, execution_context)
 
-            if isinstance(kwargs.get("input_data"), list) and self._is_parallel_step(
-                step.name
-            ):
-                subject_results, subject_status = await self._execute_parallel_subjects(
-                    step, kwargs
-                )
+            if isinstance(kwargs.get("input_data"), list) and self._is_parallel_step(step.name):
+                subject_results, subject_status = await self._execute_parallel_subjects(step, kwargs)
                 step_results.extend(subject_results)
                 step_status[step.name] = subject_status
                 if subject_status == "failed":
                     overall_status = "failed"
-                elif (
-                    subject_status == "partial_success" and overall_status == "success"
-                ):
+                elif subject_status == "partial_success" and overall_status == "success":
                     overall_status = "partial_success"
                 continue
 
@@ -1005,10 +977,7 @@ class WorkflowExecutor:
         parallel_step_count = sum(
             1
             for step in step_results
-            if any(
-                token in step.step_name
-                for token in ["subject_analysis", "within_subject"]
-            )
+            if any(token in step.step_name for token in ["subject_analysis", "within_subject"])
         )
         success_rate = (
             success_count / (success_count + failure_count)
@@ -1083,10 +1052,7 @@ class WorkflowExecutor:
                         error_message=str(exc),
                     )
 
-        tasks = [
-            asyncio.create_task(_run_for_subject(i, item))
-            for i, item in enumerate(subjects)
-        ]
+        tasks = [asyncio.create_task(_run_for_subject(i, item)) for i, item in enumerate(subjects)]
         if tasks:
             results = await asyncio.gather(*tasks)
 
@@ -1110,9 +1076,7 @@ class WorkflowExecutor:
 
         if callable(tool):
             if self.run_sync_in_executor:
-                return await asyncio.wait_for(
-                    asyncio.to_thread(tool, **kwargs), timeout=timeout
-                )
+                return await asyncio.wait_for(asyncio.to_thread(tool, **kwargs), timeout=timeout)
             return tool(**kwargs)
 
         raise ExecutionError(f"Tool '{step.tool}' is not callable")
@@ -1162,14 +1126,8 @@ class WorkflowExecutor:
             if "task" in step.name and "task" in data_map:
                 merged["input_data"] = data_map["task"]
 
-        if isinstance(merged.get("input_data"), list) and not self._is_parallel_step(
-            step.name
-        ):
-            merged["input_data"] = (
-                merged["input_data"][0]
-                if merged["input_data"]
-                else merged["input_data"]
-            )
+        if isinstance(merged.get("input_data"), list) and not self._is_parallel_step(step.name):
+            merged["input_data"] = merged["input_data"][0] if merged["input_data"] else merged["input_data"]
         return merged
 
     def _resolve_value(self, value: Any, context: ExecutionContext) -> Any:
@@ -1179,9 +1137,7 @@ class WorkflowExecutor:
         return value
 
     def _is_parallel_step(self, step_name: str) -> bool:
-        return any(
-            token in step_name for token in ["subject_analysis", "within_subject"]
-        )
+        return any(token in step_name for token in ["subject_analysis", "within_subject"])
 
     def _build_builtin_template(self, template_name: str) -> Optional[WorkflowTemplate]:
         if template_name == "fmri_analysis":
@@ -1194,9 +1150,7 @@ class WorkflowExecutor:
                 author="system",
                 created_at=datetime.utcnow(),
                 steps=[
-                    WorkflowStep(
-                        name="load_data", tool="load_data", description="Load data"
-                    ),
+                    WorkflowStep(name="load_data", tool="load_data", description="Load data"),
                     WorkflowStep(
                         name="motion_correction",
                         tool="preprocess_fmri",
@@ -1249,11 +1203,7 @@ class WorkflowExecutor:
                 author="system",
                 created_at=datetime.utcnow(),
                 steps=[
-                    WorkflowStep(
-                        name="preparation",
-                        tool="preprocess_fmri",
-                        description="Prepare data",
-                    ),
+                    WorkflowStep(name="preparation", tool="preprocess_fmri", description="Prepare data"),
                     WorkflowStep(
                         name="subject_analysis",
                         tool="compute_glm",
@@ -1279,11 +1229,7 @@ class WorkflowExecutor:
                 author="system",
                 created_at=datetime.utcnow(),
                 steps=[
-                    WorkflowStep(
-                        name="rest_preparation",
-                        tool="preprocess_fmri",
-                        description="Prepare rest",
-                    ),
+                    WorkflowStep(name="rest_preparation", tool="preprocess_fmri", description="Prepare rest"),
                     WorkflowStep(
                         name="rest_subject_analysis",
                         tool="compute_connectivity",
@@ -1291,11 +1237,7 @@ class WorkflowExecutor:
                         depends_on=["rest_preparation"],
                         parameters={"input_data": "${rest_data}"},
                     ),
-                    WorkflowStep(
-                        name="task_preparation",
-                        tool="preprocess_fmri",
-                        description="Prepare task",
-                    ),
+                    WorkflowStep(name="task_preparation", tool="preprocess_fmri", description="Prepare task"),
                     WorkflowStep(
                         name="task_subject_analysis",
                         tool="compute_connectivity",
@@ -1321,11 +1263,7 @@ class WorkflowExecutor:
                 author="system",
                 created_at=datetime.utcnow(),
                 steps=[
-                    WorkflowStep(
-                        name="baseline_preparation",
-                        tool="preprocess_fmri",
-                        description="Baseline prep",
-                    ),
+                    WorkflowStep(name="baseline_preparation", tool="preprocess_fmri", description="Baseline prep"),
                     WorkflowStep(
                         name="within_subject_analysis",
                         tool="compute_glm",
@@ -1388,9 +1326,7 @@ class WorkflowExecutor:
 
 
 # Factory function
-def create_template_engine(
-    template_dir: Optional[str] = None,
-) -> WorkflowTemplateEngine:
+def create_template_engine(template_dir: Optional[str] = None) -> WorkflowTemplateEngine:
     """
     Create a workflow template engine instance.
 

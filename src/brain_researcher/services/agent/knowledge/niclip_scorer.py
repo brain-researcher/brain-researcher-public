@@ -190,8 +190,8 @@ class NiCLIPScorer:
                 term_words = set(term_lower.split())
                 overlap = query_words.intersection(term_words)
                 if overlap:
-                    base_score = (
-                        0.4 * len(overlap) / max(len(query_words), len(term_words))
+                    base_score = 0.4 * len(overlap) / max(
+                        len(query_words), len(term_words)
                     )
                 else:
                     continue  # Skip if no overlap
@@ -214,7 +214,9 @@ class NiCLIPScorer:
         scored.sort(key=lambda x: x.score, reverse=True)
         return scored[: self._top_k]
 
-    def score_text_semantic(self, query_embedding: np.ndarray) -> List[ScoredConcept]:
+    def score_text_semantic(
+        self, query_embedding: np.ndarray
+    ) -> List[ScoredConcept]:
         """Score using a pre-computed embedding vector.
 
         This provides full semantic similarity using FAISS.
@@ -251,9 +253,9 @@ class NiCLIPScorer:
                         term=vocab[idx],
                         score=float(dist),  # Cosine similarity
                         vocabulary_index=int(idx),
-                        prior_probability=(
-                            float(priors[idx]) if idx < len(priors) else 0.5
-                        ),
+                        prior_probability=float(priors[idx])
+                        if idx < len(priors)
+                        else 0.5,
                         vocabulary_type=self._vocabulary_type,
                     )
                 )

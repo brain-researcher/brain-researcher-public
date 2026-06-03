@@ -257,7 +257,7 @@ async function warmCache() {
   ];
   
   const promises = urlsToWarm.map(url => 
-    fetch(`https://brain-researcher.com${url}`)
+    fetch(`https://${PUBLIC_HOSTNAME}${url}`)
   );
   
   await Promise.all(promises);

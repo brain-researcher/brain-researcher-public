@@ -4,17 +4,15 @@ Integration test for UI-004 Run Card Export functionality
 Tests the complete end-to-end flow from backend to frontend
 """
 
+import requests
 import json
 import sys
 import time
 from pathlib import Path
 
-import requests
-
 # Configuration
 BASE_URL = "http://localhost:3001"  # Orchestrator service
 TEST_JOB_ID = "test_ui004_integration"
-
 
 def test_run_card_api():
     """Test the Run Card API endpoints"""
@@ -33,18 +31,14 @@ def test_run_card_api():
             print(f"   🏷️  Title: {run_card['title']}")
             print(f"   ⏱️  Duration: {run_card['execution']['duration_seconds']}s")
             print(f"   🔬 Tools: {len(run_card['provenance']['tools'])}")
-            print(
-                f"   📊 Reproducibility Score: {run_card.get('reproducibility_score', 'N/A')}"
-            )
+            print(f"   📊 Reproducibility Score: {run_card.get('reproducibility_score', 'N/A')}")
         else:
             print(f"   ❌ Failed to get Run Card: {response.status_code}")
             return False
 
         # Test 2: Export as JSON
         print("\n2️⃣ Testing JSON Export")
-        response = requests.get(
-            f"{BASE_URL}/api/evidence/jobs/{TEST_JOB_ID}/runcard/export?format=json"
-        )
+        response = requests.get(f"{BASE_URL}/api/evidence/jobs/{TEST_JOB_ID}/runcard/export?format=json")
 
         if response.status_code == 200:
             print("   ✅ JSON export successful")
@@ -63,9 +57,7 @@ def test_run_card_api():
 
         # Test 3: Export as YAML
         print("\n3️⃣ Testing YAML Export")
-        response = requests.get(
-            f"{BASE_URL}/api/evidence/jobs/{TEST_JOB_ID}/runcard/export?format=yaml"
-        )
+        response = requests.get(f"{BASE_URL}/api/evidence/jobs/{TEST_JOB_ID}/runcard/export?format=yaml")
 
         if response.status_code == 200:
             print("   ✅ YAML export successful")
@@ -91,19 +83,19 @@ def test_run_card_api():
         if response.status_code == 200:
             filtered_data = json.loads(response.text)
             print("   ✅ Filtered export successful")
-            print(
-                f"   🗂️  Artifacts excluded: {len(filtered_data['outputs']['artifacts']) == 0}"
-            )
-            print(
-                f"   🖥️  Environment excluded: {len(filtered_data['execution']['environment']) == 0}"
-            )
+            print(f"   🗂️  Artifacts excluded: {len(filtered_data['outputs']['artifacts']) == 0}")
+            print(f"   🖥️  Environment excluded: {len(filtered_data['execution']['environment']) == 0}")
         else:
             print(f"   ❌ Filtered export failed: {response.status_code}")
             return False
 
         # Test 5: Create Share Link
         print("\n5️⃣ Testing Share Link Creation")
-        share_request = {"jobId": TEST_JOB_ID, "format": "json", "expires_in_hours": 24}
+        share_request = {
+            "jobId": TEST_JOB_ID,
+            "format": "json",
+            "expires_in_hours": 24
+        }
 
         response = requests.post(f"{BASE_URL}/api/evidence/share", json=share_request)
 
@@ -115,7 +107,7 @@ def test_run_card_api():
             print(f"   ⏰ Expires: {share_data['expires_at']}")
 
             # Test accessing the shared run card
-            share_id = share_data["share_id"]
+            share_id = share_data['share_id']
             response = requests.get(f"{BASE_URL}/api/evidence/share/{share_id}")
 
             if response.status_code == 200:
@@ -131,9 +123,7 @@ def test_run_card_api():
 
         # Test 6: PDF Export (optional - may not have reportlab)
         print("\n6️⃣ Testing PDF Export")
-        response = requests.get(
-            f"{BASE_URL}/api/evidence/jobs/{TEST_JOB_ID}/runcard/export?format=pdf"
-        )
+        response = requests.get(f"{BASE_URL}/api/evidence/jobs/{TEST_JOB_ID}/runcard/export?format=pdf")
 
         if response.status_code == 200:
             print("   ✅ PDF export successful")
@@ -155,7 +145,6 @@ def test_run_card_api():
     except Exception as e:
         print(f"❌ Test error: {e}")
         return False
-
 
 def test_file_storage():
     """Test that Run Cards are being stored correctly"""
@@ -187,7 +176,6 @@ def test_file_storage():
     else:
         print("   ❌ Run cards directory not found")
         return False
-
 
 if __name__ == "__main__":
     print("🚀 Starting UI-004 Integration Tests")

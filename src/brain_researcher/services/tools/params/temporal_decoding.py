@@ -27,9 +27,7 @@ class TemporalDecodingParameters:
     save_patterns: bool
 
 
-def temporal_decoding_from_payload(
-    payload: Dict[str, object],
-) -> TemporalDecodingParameters:
+def temporal_decoding_from_payload(payload: Dict[str, object]) -> TemporalDecodingParameters:
     """Create parameters from payload."""
 
     return TemporalDecodingParameters(
@@ -98,9 +96,7 @@ def _majority_accuracy(labels: np.ndarray) -> float:
     return float(np.max(counts) / labels.size)
 
 
-def _deterministic_stratified_folds(
-    labels: np.ndarray, n_splits: int
-) -> List[np.ndarray]:
+def _deterministic_stratified_folds(labels: np.ndarray, n_splits: int) -> List[np.ndarray]:
     folds: List[List[int]] = [[] for _ in range(n_splits)]
     for cls in np.unique(labels):
         cls_idx = np.where(labels == cls)[0]
@@ -120,9 +116,7 @@ def _nearest_centroid_predict(
     return classes[np.argmin(dists, axis=1)]
 
 
-def _nearest_centroid_cv_accuracy(
-    data: np.ndarray, labels: np.ndarray, n_splits: int
-) -> float:
+def _nearest_centroid_cv_accuracy(data: np.ndarray, labels: np.ndarray, n_splits: int) -> float:
     fold_indices = _deterministic_stratified_folds(labels, n_splits)
     all_idx = np.arange(labels.size)
     fold_accuracies: List[float] = []
@@ -132,9 +126,7 @@ def _nearest_centroid_cv_accuracy(
         train_labels = labels[train_idx]
         if np.unique(train_labels).size < 2:
             continue
-        predictions = _nearest_centroid_predict(
-            data[train_idx], train_labels, data[test_idx]
-        )
+        predictions = _nearest_centroid_predict(data[train_idx], train_labels, data[test_idx])
         fold_accuracies.append(float(np.mean(predictions == labels[test_idx])))
 
     if not fold_accuracies:
@@ -235,9 +227,7 @@ def run_temporal_decoding(params: TemporalDecodingParameters) -> Dict[str, objec
             time, _ = data.shape
             timeseries = data[np.newaxis, ...]
     else:
-        raise ValueError(
-            "Data must be either (time x features) or (time x features x trials)."
-        )
+        raise ValueError("Data must be either (time x features) or (time x features x trials).")
 
     n_trials = timeseries.shape[0]
     if labels.size < n_trials:
@@ -283,11 +273,7 @@ def run_temporal_decoding(params: TemporalDecodingParameters) -> Dict[str, objec
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
-        "summary": None,
-        "accuracies": None,
-        "patterns": None,
-    }
+    outputs: Dict[str, Optional[str]] = {"summary": None, "accuracies": None, "patterns": None}
 
     summary = {
         "method": params.method,

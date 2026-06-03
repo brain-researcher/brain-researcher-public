@@ -26,9 +26,7 @@ def test_tool_retriever_uses_query_service(monkeypatch):
         _fake_search_tools_structured,
     )
 
-    retriever = ToolRetriever(
-        neo4j_uri="bolt://localhost:7687"
-    )  # driver won't be used in this path
+    retriever = ToolRetriever(neo4j_uri="bolt://localhost:7687")  # driver won't be used in this path
     results = retriever.retrieve_tools("glm analysis", top_k=3)
 
     assert results
@@ -62,9 +60,7 @@ def test_tool_retriever_allows_explicit_unexposed_tool_reference(monkeypatch):
         _fake_search_tools_structured,
     )
 
-    retriever = ToolRetriever(
-        neo4j_uri="bolt://localhost:7687"
-    )  # driver won't be used in this path
+    retriever = ToolRetriever(neo4j_uri="bolt://localhost:7687")  # driver won't be used in this path
     results = retriever.retrieve_tools("fsl.6.0.4.film_gls.run", top_k=3)
     assert results and results[0].id == "fsl.6.0.4.film_gls.run"
     retriever.close()

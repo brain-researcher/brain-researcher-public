@@ -19,8 +19,8 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from brain_researcher.core.contracts import Violation
 from brain_researcher.services.orchestrator.job_store import JobRecord, JobState
+from brain_researcher.core.contracts import Violation
 
 logger = logging.getLogger(__name__)
 
@@ -175,17 +175,12 @@ async def get_job_steps(job_id: str, request: Request) -> JobStepsResponse:
         steps_payload = provenance.get("steps", [])
 
     summaries = [
-        _build_step_summary(raw, index) for index, raw in enumerate(steps_payload or [])
+        _build_step_summary(raw, index)
+        for index, raw in enumerate(steps_payload or [])
     ]
     summaries = _coerce_terminal_failure_summaries(job, summaries)
 
-    return JobStepsResponse(
-        job_id=job.job_id,
-        state=job.state,
-        steps=summaries,
-        cache_key=cache_key,
-        cache_hit=cache_hit,
-    )
+    return JobStepsResponse(job_id=job.job_id, state=job.state, steps=summaries, cache_key=cache_key, cache_hit=cache_hit)
 
 
 def _resolve_provenance_path(job: JobRecord) -> Optional[Path]:
@@ -254,9 +249,7 @@ def _string_error(value: Any) -> str:
 
 
 def _job_failure_message(job: JobRecord, payload: dict[str, Any]) -> str:
-    metadata = (
-        payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
-    )
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
     for value in (
         getattr(job, "error_message", None),
         payload.get("error_message"),
@@ -276,8 +269,7 @@ def _job_failure_message(job: JobRecord, payload: dict[str, Any]) -> str:
 
 def _is_pending_like_step(step: StepSummary) -> bool:
     return (
-        str(step.state or "").strip().lower()
-        in {"", "pending", "queued", "claimed", "unknown"}
+        str(step.state or "").strip().lower() in {"", "pending", "queued", "claimed", "unknown"}
         and not step.started_at
         and not step.run_dir
         and not step.error
@@ -286,11 +278,7 @@ def _is_pending_like_step(step: StepSummary) -> bool:
 
 def _job_level_failure_step(job: JobRecord, payload: dict[str, Any]) -> StepSummary:
     state = _job_state_text(job)
-    step_state = (
-        state
-        if state in {JobState.FAILED.value, JobState.TIMEOUT.value}
-        else JobState.FAILED.value
-    )
+    step_state = state if state in {JobState.FAILED.value, JobState.TIMEOUT.value} else JobState.FAILED.value
     return StepSummary(
         step_id="job_failed",
         name="Job timed out" if step_state == JobState.TIMEOUT.value else "Job failed",
@@ -319,9 +307,7 @@ def _coerce_terminal_failure_summaries(
     coerced: list[StepSummary] = []
     for index, step in enumerate(summaries):
         if index == 0:
-            coerced.append(
-                step.model_copy(update={"state": state, "error": failure_message})
-            )
+            coerced.append(step.model_copy(update={"state": state, "error": failure_message}))
         else:
             coerced.append(step.model_copy(update={"state": JobState.SKIPPED.value}))
     return coerced
@@ -365,21 +351,21 @@ def _build_step_summary(raw_step: dict, index: int) -> StepSummary:
     # Parse timestamps (PR-4)
     timestamps = raw_step.get("timestamps", {}) or {}
     created_at = (
-        timestamps.get("created")
-        or raw_step.get("created_at")
-        or raw_step.get("created")
+        timestamps.get("created") or
+        raw_step.get("created_at") or
+        raw_step.get("created")
     )
     started_at = (
-        timestamps.get("started")
-        or timestamps.get("start")
-        or raw_step.get("started_at")
-        or raw_step.get("start_time")
+        timestamps.get("started") or
+        timestamps.get("start") or
+        raw_step.get("started_at") or
+        raw_step.get("start_time")
     )
     finished_at = (
-        timestamps.get("finished")
-        or timestamps.get("end")
-        or raw_step.get("finished_at")
-        or raw_step.get("end_time")
+        timestamps.get("finished") or
+        timestamps.get("end") or
+        raw_step.get("finished_at") or
+        raw_step.get("end_time")
     )
 
     # Parse retry info (PR-4)
@@ -457,13 +443,9 @@ def _build_step_summary(raw_step: dict, index: int) -> StepSummary:
         error=error_message,
         provenance_path=provenance_path,
         violations=violations,
-        preflight_result=(
-            preflight_result if isinstance(preflight_result, dict) else None
-        ),
+        preflight_result=preflight_result if isinstance(preflight_result, dict) else None,
         exec_result=exec_result if isinstance(exec_result, dict) else None,
-        postcheck_result=(
-            postcheck_result if isinstance(postcheck_result, dict) else None
-        ),
+        postcheck_result=postcheck_result if isinstance(postcheck_result, dict) else None,
     )
 
 
@@ -509,7 +491,7 @@ async def stream_job_steps(job_id: str, request: Request) -> EventSourceResponse
                 if job is None:
                     yield {
                         "event": "error",
-                        "data": json.dumps({"error": f"Job {job_id} not found"}),
+                        "data": json.dumps({"error": f"Job {job_id} not found"})
                     }
                     break
 
@@ -523,35 +505,27 @@ async def stream_job_steps(job_id: str, request: Request) -> EventSourceResponse
                     yield {
                         "event": "steps_update",
                         "data": response_json,
-                        "id": str(
-                            int(time.time() * 1000)
-                        ),  # Millisecond timestamp as event ID
+                        "id": str(int(time.time() * 1000))  # Millisecond timestamp as event ID
                     }
                     last_hash = current_hash
                     logger.debug(
                         "Sent steps_update for job %s (state=%s, %d steps)",
                         job_id,
                         response.state,
-                        len(response.steps),
+                        len(response.steps)
                     )
 
                 # Check if job is terminal
                 if job.state in _TERMINAL_STATES:
                     yield {
                         "event": "complete",
-                        "data": json.dumps(
-                            {
-                                "final_state": job.state,
-                                "job_id": job_id,
-                                "total_steps": len(response.steps),
-                            }
-                        ),
+                        "data": json.dumps({
+                            "final_state": job.state,
+                            "job_id": job_id,
+                            "total_steps": len(response.steps)
+                        })
                     }
-                    logger.info(
-                        "Job %s reached terminal state %s, closing SSE stream",
-                        job_id,
-                        job.state,
-                    )
+                    logger.info("Job %s reached terminal state %s, closing SSE stream", job_id, job.state)
                     break
 
                 # Send keepalive ping every 30 seconds
@@ -559,7 +533,10 @@ async def stream_job_steps(job_id: str, request: Request) -> EventSourceResponse
                 if now - last_ping > 30:
                     yield {
                         "event": "ping",
-                        "data": json.dumps({"timestamp": int(now), "job_id": job_id}),
+                        "data": json.dumps({
+                            "timestamp": int(now),
+                            "job_id": job_id
+                        })
                     }
                     last_ping = now
 
@@ -568,21 +545,22 @@ async def stream_job_steps(job_id: str, request: Request) -> EventSourceResponse
 
             except HTTPException as exc:
                 # Re-raise HTTP exceptions (like 404)
-                logger.warning(
-                    "HTTP error in SSE stream for job %s: %s", job_id, exc.detail
-                )
+                logger.warning("HTTP error in SSE stream for job %s: %s", job_id, exc.detail)
                 yield {
                     "event": "error",
-                    "data": json.dumps(
-                        {"error": exc.detail, "status_code": exc.status_code}
-                    ),
+                    "data": json.dumps({
+                        "error": exc.detail,
+                        "status_code": exc.status_code
+                    })
                 }
                 break
             except Exception as exc:
                 logger.exception("Unexpected error in SSE stream for job %s", job_id)
                 yield {
                     "event": "error",
-                    "data": json.dumps({"error": f"Internal server error: {str(exc)}"}),
+                    "data": json.dumps({
+                        "error": f"Internal server error: {str(exc)}"
+                    })
                 }
                 break
 

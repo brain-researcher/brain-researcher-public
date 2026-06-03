@@ -10,12 +10,12 @@ import yaml
 from brain_researcher.services.br_kg.utils.onvoc_tree import OnvocTree
 from scripts.tools.ontologies.build_onvoc_mapping_rules import (
     build_diagnosis_rules,
-    build_hed_rules,
-    build_instrument_rules,
     build_medication_rules,
     build_modality_rules,
     build_payload,
     build_phenotype_rules,
+    build_hed_rules,
+    build_instrument_rules,
     derive_anchors,
     derive_contrast_rules,
     load_crosswalk,
@@ -103,9 +103,7 @@ def test_mapping_rules_cover_all_families(tmp_path: Path) -> None:
     exclude: Set[str] = set()
     exclude_subtrees: Set[str] = set()
 
-    anchors = derive_anchors(
-        tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees
-    )
+    anchors = derive_anchors(tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees)
     assert {anchor["onvoc_uri"] for anchor in anchors} == {
         "ONVOC_CHILD_A",
         "ONVOC_CHILD_B",
@@ -114,27 +112,13 @@ def test_mapping_rules_cover_all_families(tmp_path: Path) -> None:
     assert ("task:bar",) in seed_sets
     assert ("task:foo",) in seed_sets
 
-    contrast_rules = derive_contrast_rules(
-        tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees
-    )
-    phenotype_rules = build_phenotype_rules(
-        tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees
-    )
-    diagnosis_rules = build_diagnosis_rules(
-        tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees
-    )
-    medication_rules = build_medication_rules(
-        tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees
-    )
-    instrument_rules = build_instrument_rules(
-        tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees
-    )
-    hed_rules = build_hed_rules(
-        tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees
-    )
-    modality_rules = build_modality_rules(
-        tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees
-    )
+    contrast_rules = derive_contrast_rules(tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees)
+    phenotype_rules = build_phenotype_rules(tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees)
+    diagnosis_rules = build_diagnosis_rules(tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees)
+    medication_rules = build_medication_rules(tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees)
+    instrument_rules = build_instrument_rules(tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees)
+    hed_rules = build_hed_rules(tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees)
+    modality_rules = build_modality_rules(tree, crosswalk, allowed_levels, include, exclude, exclude_subtrees)
 
     payload = build_payload(
         tree_path,

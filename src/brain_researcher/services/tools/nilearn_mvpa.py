@@ -23,22 +23,14 @@ class MVPADecodingArgs(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     img: str = Field(description="Input data matrix (.npy) or nifti path")
-    labels: str | List[float] = Field(
-        description="Labels vector or path to labels file"
-    )
+    labels: str | List[float] = Field(description="Labels vector or path to labels file")
     mask_img: Optional[str] = Field(default=None, description="Optional mask image")
     classifier: str = Field(default="svc", description="Classifier backend")
     cv_folds: int = Field(default=5, description="Number of cross-validation folds")
     standardize: bool = Field(default=True, description="Standardize features")
-    smoothing_fwhm: Optional[float] = Field(
-        default=None, description="Smoothing kernel"
-    )
-    feature_selection: Optional[str] = Field(
-        default=None, description="Feature selection strategy"
-    )
-    n_features: Optional[int] = Field(
-        default=None, description="Number of features to keep"
-    )
+    smoothing_fwhm: Optional[float] = Field(default=None, description="Smoothing kernel")
+    feature_selection: Optional[str] = Field(default=None, description="Feature selection strategy")
+    n_features: Optional[int] = Field(default=None, description="Number of features to keep")
     permutations: int = Field(default=0, description="Permutation test iterations")
     n_jobs: int = Field(default=-1, description="Parallel jobs (if backend supports)")
     output_dir: Optional[str] = Field(default=None, description="Directory for outputs")

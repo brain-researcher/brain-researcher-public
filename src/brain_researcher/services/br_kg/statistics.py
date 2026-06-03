@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NodeStatistics:
     """Statistics for a node type."""
-
     count: int
     avg_degree: float
     max_degree: int
@@ -25,7 +24,6 @@ class NodeStatistics:
 @dataclass
 class EdgeStatistics:
     """Statistics for an edge type."""
-
     count: int
     avg_confidence: float
     confidence_distribution: Dict[str, int]  # Range -> count
@@ -35,7 +33,6 @@ class EdgeStatistics:
 @dataclass
 class GraphStatistics:
     """Overall graph statistics."""
-
     total_nodes: int
     total_edges: int
     node_types: Dict[str, NodeStatistics]
@@ -89,7 +86,7 @@ class GraphAnalyzer:
             avg_clustering_coefficient=clustering,
             connected_components=len(components),
             largest_component_size=max(len(c) for c in components) if components else 0,
-            diameter=None,  # Expensive to calculate for large graphs
+            diameter=None  # Expensive to calculate for large graphs
         )
 
         if use_cache:
@@ -128,14 +125,18 @@ class GraphAnalyzer:
                 avg_degree=sum(degrees) / len(degrees) if degrees else 0,
                 max_degree=max(degrees) if degrees else 0,
                 min_degree=min(degrees) if degrees else 0,
-                properties=dict(property_counts),
+                properties=dict(property_counts)
             )
 
         return node_stats
 
     def _get_edge_statistics(self) -> Dict[str, EdgeStatistics]:
         """Get statistics for each edge type."""
-        edge_stats = defaultdict(lambda: {"count": 0, "confidences": [], "sources": []})
+        edge_stats = defaultdict(lambda: {
+            "count": 0,
+            "confidences": [],
+            "sources": []
+        })
 
         # Collect all edges
         for source, target, props in self.db.find_relationships(None, None, None):
@@ -164,13 +165,9 @@ class GraphAnalyzer:
 
             result[edge_type] = EdgeStatistics(
                 count=data["count"],
-                avg_confidence=(
-                    sum(data["confidences"]) / len(data["confidences"])
-                    if data["confidences"]
-                    else 0
-                ),
+                avg_confidence=sum(data["confidences"]) / len(data["confidences"]) if data["confidences"] else 0,
                 confidence_distribution=confidence_dist,
-                source_distribution=source_dist,
+                source_distribution=source_dist
             )
 
         return result
@@ -228,15 +225,11 @@ class GraphAnalyzer:
                         component.append(current)
 
                         # Add neighbors
-                        for _, target, _ in self.db.find_relationships(
-                            current, None, None
-                        ):
+                        for _, target, _ in self.db.find_relationships(current, None, None):
                             if target not in visited:
                                 stack.append(target)
 
-                        for source, _, _ in self.db.find_relationships(
-                            None, current, None
-                        ):
+                        for source, _, _ in self.db.find_relationships(None, current, None):
                             if source not in visited:
                                 stack.append(source)
 
@@ -257,9 +250,7 @@ class GraphAnalyzer:
 
         return dict(degree_counts)
 
-    def get_top_nodes(
-        self, n: int = 10, metric: str = "degree"
-    ) -> List[Tuple[str, float]]:
+    def get_top_nodes(self, n: int = 10, metric: str = "degree") -> List[Tuple[str, float]]:
         """
         Get top N nodes by specified metric.
 
@@ -293,7 +284,7 @@ class GraphAnalyzer:
         return {
             "avg_path_length": None,  # Would require all-pairs shortest paths
             "diameter": None,  # Longest shortest path
-            "radius": None,  # Minimum eccentricity
+            "radius": None  # Minimum eccentricity
         }
 
     def get_type_connectivity(self) -> Dict[str, Dict[str, int]]:
@@ -348,7 +339,7 @@ def create_statistics_endpoints(app):
 
                 node_types: Dict[str, int] = {}
                 total_nodes = 0
-                for entry in payload.get("nodes") or []:
+                for entry in (payload.get("nodes") or []):
                     if not isinstance(entry, dict):
                         continue
                     if "label" in entry:
@@ -360,15 +351,11 @@ def create_statistics_endpoints(app):
 
                 edge_types: Dict[str, int] = {}
                 total_edges = 0
-                for entry in payload.get("relationships") or []:
+                for entry in (payload.get("relationships") or []):
                     if not isinstance(entry, dict):
                         continue
                     rel_type = entry.get("relationshipType")
-                    if (
-                        rel_type
-                        and "startLabel" not in entry
-                        and "endLabel" not in entry
-                    ):
+                    if rel_type and "startLabel" not in entry and "endLabel" not in entry:
                         edge_types[str(rel_type)] = int(entry.get("count") or 0)
                     elif "count" in entry and not rel_type:
                         total_edges = int(entry.get("count") or 0)
@@ -420,9 +407,10 @@ def create_statistics_endpoints(app):
         analyzer = GraphAnalyzer(db)
         top_nodes = analyzer.get_top_nodes(n=20)
 
-        return jsonify(
-            [{"node_id": node_id, "degree": degree} for node_id, degree in top_nodes]
-        )
+        return jsonify([
+            {"node_id": node_id, "degree": degree}
+            for node_id, degree in top_nodes
+        ])
 
     @app.route("/api/statistics/connectivity", methods=["GET"])
     def get_type_connectivity():

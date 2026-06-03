@@ -6,11 +6,11 @@ This document defines the immutable rules that MUST be enforced across all BR-KG
 
 | Rule | Description | Config Location | Validation | Owner |
 |------|-------------|-----------------|------------|--------|
-| **ID-01** | Global unique identifiers | `src/brain_researcher/services/neurokg/graph/neo4j_graph_database.py:79-84` | Neo4j NODE KEY constraints + CI validation | Platform |
+| **ID-01** | Global unique identifiers | `src/brain_researcher/services/br_kg/graph/neo4j_graph_database.py:79-84` | Neo4j NODE KEY constraints + CI validation | Platform |
 | **ID-02** | Idempotent operations | All loaders must use upsert | Loader base class enforcement | Data Eng |
 | **REL-01** | Relationship whitelist | See allowed relationships below | `create_relationship()` validation | Platform |
 | **REL-02** | Domain/range constraints | Node type pairs for edges | Runtime validation in graph DB | Platform |
-| **COORD-01** | Default coordinate space | MNI152_2009c, mm units, RAS orientation | `configs/neurokg/coordinate_systems.yaml` | Loader validation | Neuro |
+| **COORD-01** | Default coordinate space | MNI152_2009c, mm units, RAS orientation | `configs/br-kg/coordinate_systems.yaml` | Loader validation | Neuro |
 | **COORD-02** | Space field required | All Coordinate/StatisticalMap nodes | Schema validation | Neuro |
 | **PROV-01** | Provenance required | All nodes/edges must have source, method, timestamp | NDJSON schema validation | Platform |
 | **PROV-02** | Loader versioning | Track loader_version in provenance | Automatic injection | Data Eng |
@@ -22,7 +22,7 @@ This document defines the immutable rules that MUST be enforced across all BR-KG
 | **MERGE-02** | Canonical stability | canonical_id immutable after merge | Write-once enforcement | Platform |
 | **PII-01** | No direct PII | Subject data must be anonymized | Export filter enforcement | Security |
 | **PII-02** | Coordinate rounding | Public exports round to 1mm | `security/pii_redaction.yaml` | Security |
-| **INDEX-01** | Core indexes | Required indexes for performance | `configs/neurokg/index_plan.yaml` | Migration script | Platform |
+| **INDEX-01** | Core indexes | Required indexes for performance | `configs/br-kg/index_plan.yaml` | Migration script | Platform |
 | **QUERY-01** | Golden queries | Must pass with latency < threshold | CI performance tests | QA |
 
 ## Allowed Relationships

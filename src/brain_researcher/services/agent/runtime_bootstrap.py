@@ -47,15 +47,7 @@ def _resolve_install_command(spec: str) -> List[str]:
     """
     if spec.startswith("requirements:"):
         req_path = spec.split(":", 1)[1]
-        return [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "--no-cache-dir",
-            "-r",
-            req_path,
-        ]
+        return [sys.executable, "-m", "pip", "install", "--no-cache-dir", "-r", req_path]
 
     # Default path-aware editable install.
     if spec.startswith("."):
@@ -113,9 +105,7 @@ def install_runtime_dependencies() -> None:
         sentinel_path.parent.mkdir(parents=True, exist_ok=True)
         sentinel_path.write_text("installed\n")
     except OSError as exc:
-        logger.warning(
-            "Unable to write bootstrap sentinel file %s: %s", sentinel_path, exc
-        )
+        logger.warning("Unable to write bootstrap sentinel file %s: %s", sentinel_path, exc)
 
 
 # Execute bootstrap at import time so the rest of the agent stack can assume

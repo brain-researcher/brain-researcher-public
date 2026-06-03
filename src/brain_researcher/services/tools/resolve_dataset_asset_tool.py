@@ -241,9 +241,7 @@ def _downloadable_dataset_guard(resources: Any, dataset_ref: str) -> str:
     dataset_simple_id = _extract_dataset_simple_id(
         getattr(resources, "resolved_dataset_id", None), dataset_ref
     )
-    if not dataset_simple_id or not _is_public_openneuro_dataset(
-        resources, dataset_ref
-    ):
+    if not dataset_simple_id or not _is_public_openneuro_dataset(resources, dataset_ref):
         raise RuntimeError(
             "download_missing is currently supported only for public OpenNeuro "
             "datasets with dsXXXXXX identifiers."
@@ -401,9 +399,7 @@ def _derivative_download_patterns(
         patterns.append(f"derivatives/{alias}/**/dataset_description.json")
         if extensions:
             for extension in extensions:
-                suffix_text = (
-                    extension if str(extension).startswith(".") else f".{extension}"
-                )
+                suffix_text = extension if str(extension).startswith(".") else f".{extension}"
                 patterns.append(f"derivatives/{alias}/**/{filename_glob}{suffix_text}")
         elif suffix or desc or task or run or subject_id or session_id or space:
             patterns.append(f"derivatives/{alias}/**/{filename_glob}")
@@ -455,9 +451,7 @@ def _download_openneuro_subset_checked(
     target_root = _openneuro_download_root(
         dataset_simple_id, download_root=download_root
     )
-    patterns = [
-        str(pattern).strip() for pattern in include_patterns if str(pattern).strip()
-    ]
+    patterns = [str(pattern).strip() for pattern in include_patterns if str(pattern).strip()]
     if not patterns:
         raise ValueError("No selective download patterns were generated.")
     download_openneuro_subset(
@@ -842,7 +836,7 @@ def _resolve_dataset_context(
     if resources is None:
         raise FileNotFoundError(
             f"Dataset '{args.dataset_ref}' was not found in dataset resources."
-        )
+    )
     dataset_resolution = _dataset_identity(resources)
     bids_path = _first_existing(
         Path(resources.bids_path).expanduser()
@@ -888,16 +882,12 @@ def _resolve_dataset_summary(
         "derivative_roots": dict(getattr(resources, "derivatives", {}) or {}),
         **_copy_file_map(
             {
-                "dataset_description": (
-                    root_file
-                    if root_file and root_file.name == "dataset_description.json"
-                    else dataset_description
-                ),
-                "participants_tsv": (
-                    root_file
-                    if root_file and root_file.name == "participants.tsv"
-                    else participants_tsv
-                ),
+                "dataset_description": root_file
+                if root_file and root_file.name == "dataset_description.json"
+                else dataset_description,
+                "participants_tsv": root_file
+                if root_file and root_file.name == "participants.tsv"
+                else participants_tsv,
             },
             output_dir,
         ),

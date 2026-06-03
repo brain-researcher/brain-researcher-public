@@ -258,9 +258,9 @@ class NiCLIPTaskMapper:
                 }
                 for p in processes
             ],
-            "primary_category": (
-                self.get_process_name(primary_process) if primary_process else None
-            ),
+            "primary_category": self.get_process_name(primary_process)
+            if primary_process
+            else None,
         }
 
     def search_similar_tasks(

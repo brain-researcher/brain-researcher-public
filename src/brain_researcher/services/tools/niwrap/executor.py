@@ -307,9 +307,9 @@ def execute_niwrap_tool(
                 app = parts[-1]
                 for candidate in get_niwrap_tools(packages=[package], use_cache=True):
                     candidate_name = str(candidate.get("name", "") or "")
-                    if candidate_name.startswith(
-                        f"{package}."
-                    ) and candidate_name.endswith(f".{app}.run"):
+                    if candidate_name.startswith(f"{package}.") and candidate_name.endswith(
+                        f".{app}.run"
+                    ):
                         resolved_definition = candidate
                         break
 
@@ -365,9 +365,9 @@ def execute_niwrap_tool(
     try:
         # Import container execution helpers from unified executors package
         from brain_researcher.services.tools.executors import (
-            BindMount,
             ContainerRequest,
             run_container,
+            BindMount,
         )
 
         # Build mounts

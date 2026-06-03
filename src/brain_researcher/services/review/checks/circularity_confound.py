@@ -259,9 +259,7 @@ _SAME_DATA_TOKENS = frozenset(
 )
 
 
-def _double_dipping_sections(
-    context: Mapping[str, object],
-) -> list[Mapping[str, object]]:
+def _double_dipping_sections(context: Mapping[str, object]) -> list[Mapping[str, object]]:
     return [
         context,
         _nested_mapping(context, "selection"),
@@ -313,7 +311,9 @@ def double_dipping_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
             evidence.append(f"review_context.{prov_key}.{key}=True")
     if _explicit_bool(provenance.get("selection_test_independence")) is False:
         triggered = True
-        evidence.append(f"review_context.{prov_key}.selection_test_independence=False")
+        evidence.append(
+            f"review_context.{prov_key}.selection_test_independence=False"
+        )
 
     # 2. Selection source is a same-data token.
     source_hit = _first_present([provenance], _SELECTION_SOURCE_KEYS)
@@ -494,7 +494,9 @@ def _significant_demographic_variables(
                 if not isinstance(entry, Mapping):
                     continue
                 var_name = (
-                    entry.get("variable") or entry.get("name") or entry.get("var")
+                    entry.get("variable")
+                    or entry.get("name")
+                    or entry.get("var")
                 )
                 if var_name in (None, ""):
                     continue

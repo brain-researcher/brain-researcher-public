@@ -3,22 +3,22 @@
 This module handles Neo4j database setup, authentication, SSL, backups, and monitoring.
 """
 
-import logging
 import os
 import ssl
+import logging
 import subprocess
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, List
+from dataclasses import dataclass, field
 
-import redis
-import schedule
+from neo4j import GraphDatabase, basic_auth
 from cryptography import x509
+from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.x509.oid import NameOID
-from neo4j import GraphDatabase, basic_auth
+import schedule
+import redis
 
 logger = logging.getLogger(__name__)
 
@@ -28,46 +28,21 @@ class Neo4jConfig:
     """Neo4j database configuration."""
 
     # Connection settings
-    uri: str = field(
-        default_factory=lambda: os.getenv("NEO4J_URI", "bolt://localhost:7687")
-    )
+    uri: str = field(default_factory=lambda: os.getenv("NEO4J_URI", "bolt://localhost:7687"))
     username: str = field(default_factory=lambda: os.getenv("NEO4J_USER", "neo4j"))
-    password: str = field(
-        default_factory=lambda: os.getenv("NEO4J_PASSWORD", "password")
-    )
+    password: str = field(default_factory=lambda: os.getenv("NEO4J_PASSWORD", "password"))
     database: str = field(default_factory=lambda: os.getenv("NEO4J_DATABASE", "neo4j"))
 
     # SSL settings
-    ssl_enabled: bool = field(
-        default_factory=lambda: os.getenv("NEO4J_SSL_ENABLED", "false").lower()
-        == "true"
-    )
-    ssl_cert_path: Path = field(
-        default_factory=lambda: Path(
-            os.getenv("NEO4J_SSL_CERT", "/etc/neo4j/ssl/cert.pem")
-        )
-    )
-    ssl_key_path: Path = field(
-        default_factory=lambda: Path(
-            os.getenv("NEO4J_SSL_KEY", "/etc/neo4j/ssl/key.pem")
-        )
-    )
+    ssl_enabled: bool = field(default_factory=lambda: os.getenv("NEO4J_SSL_ENABLED", "false").lower() == "true")
+    ssl_cert_path: Path = field(default_factory=lambda: Path(os.getenv("NEO4J_SSL_CERT", "/etc/neo4j/ssl/cert.pem")))
+    ssl_key_path: Path = field(default_factory=lambda: Path(os.getenv("NEO4J_SSL_KEY", "/etc/neo4j/ssl/key.pem")))
 
     # Auth settings
-    ldap_enabled: bool = field(
-        default_factory=lambda: os.getenv("NEO4J_LDAP_ENABLED", "false").lower()
-        == "true"
-    )
-    ldap_server: str = field(
-        default_factory=lambda: os.getenv("LDAP_SERVER", "ldap://localhost:389")
-    )
-    oauth_enabled: bool = field(
-        default_factory=lambda: os.getenv("NEO4J_OAUTH_ENABLED", "false").lower()
-        == "true"
-    )
-    oauth_provider: str = field(
-        default_factory=lambda: os.getenv("OAUTH_PROVIDER", "google")
-    )
+    ldap_enabled: bool = field(default_factory=lambda: os.getenv("NEO4J_LDAP_ENABLED", "false").lower() == "true")
+    ldap_server: str = field(default_factory=lambda: os.getenv("LDAP_SERVER", "ldap://localhost:389"))
+    oauth_enabled: bool = field(default_factory=lambda: os.getenv("NEO4J_OAUTH_ENABLED", "false").lower() == "true")
+    oauth_provider: str = field(default_factory=lambda: os.getenv("OAUTH_PROVIDER", "google"))
 
     # Backup settings
     backup_enabled: bool = True
@@ -76,10 +51,7 @@ class Neo4jConfig:
     backup_retention_days: int = 30
 
     # Cluster settings
-    cluster_enabled: bool = field(
-        default_factory=lambda: os.getenv("NEO4J_CLUSTER_ENABLED", "false").lower()
-        == "true"
-    )
+    cluster_enabled: bool = field(default_factory=lambda: os.getenv("NEO4J_CLUSTER_ENABLED", "false").lower() == "true")
     cluster_members: List[str] = field(default_factory=list)
 
     # Monitoring
@@ -106,38 +78,39 @@ class SSLManager:
             Tuple of (cert_path, key_path)
         """
         # Generate private key
-        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        private_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048
+        )
 
         # Generate certificate
-        subject = issuer = x509.Name(
-            [
-                x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
-                x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Brain Researcher"),
-                x509.NameAttribute(NameOID.COMMON_NAME, "neo4j.brainresearcher.local"),
-            ]
-        )
+        subject = issuer = x509.Name([
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Brain Researcher"),
+            x509.NameAttribute(NameOID.COMMON_NAME, "neo4j.brainresearcher.local"),
+        ])
 
-        cert = (
-            x509.CertificateBuilder()
-            .subject_name(subject)
-            .issuer_name(issuer)
-            .public_key(private_key.public_key())
-            .serial_number(x509.random_serial_number())
-            .not_valid_before(datetime.utcnow())
-            .not_valid_after(datetime.utcnow() + timedelta(days=365))
-            .add_extension(
-                x509.SubjectAlternativeName(
-                    [
-                        x509.DNSName("localhost"),
-                        x509.DNSName("neo4j.brainresearcher.local"),
-                    ]
-                ),
-                critical=False,
-            )
-            .sign(private_key, hashes.SHA256())
-        )
+        cert = x509.CertificateBuilder().subject_name(
+            subject
+        ).issuer_name(
+            issuer
+        ).public_key(
+            private_key.public_key()
+        ).serial_number(
+            x509.random_serial_number()
+        ).not_valid_before(
+            datetime.utcnow()
+        ).not_valid_after(
+            datetime.utcnow() + timedelta(days=365)
+        ).add_extension(
+            x509.SubjectAlternativeName([
+                x509.DNSName("localhost"),
+                x509.DNSName("neo4j.brainresearcher.local"),
+            ]),
+            critical=False,
+        ).sign(private_key, hashes.SHA256())
 
         # Save certificate
         cert_path = self.config.ssl_cert_path
@@ -149,13 +122,11 @@ class SSLManager:
         # Save private key
         key_path = self.config.ssl_key_path
         with open(key_path, "wb") as f:
-            f.write(
-                private_key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.PEM,
-                    encryption_algorithm=serialization.NoEncryption(),
-                )
-            )
+            f.write(private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PEM,
+                encryption_algorithm=serialization.NoEncryption()
+            ))
 
         # Set permissions
         os.chmod(key_path, 0o600)
@@ -209,7 +180,7 @@ class AuthenticationManager:
             "dbms.security.ldap.authentication.user_dn_template": "uid={0},ou=users,dc=example,dc=com",
             "dbms.security.ldap.authorization.user_search_base": "ou=users,dc=example,dc=com",
             "dbms.security.ldap.authorization.user_search_filter": "(&(objectClass=person)(uid={0}))",
-            "dbms.security.ldap.authorization.group_membership_attributes": "memberOf",
+            "dbms.security.ldap.authorization.group_membership_attributes": "memberOf"
         }
 
         # Apply LDAP configuration
@@ -234,7 +205,7 @@ class AuthenticationManager:
             "dbms.security.oauth.provider": self.config.oauth_provider,
             "dbms.security.oauth.client_id": os.getenv("OAUTH_CLIENT_ID", ""),
             "dbms.security.oauth.client_secret": os.getenv("OAUTH_CLIENT_SECRET", ""),
-            "dbms.security.oauth.redirect_uri": "http://localhost:7474/oauth/callback",
+            "dbms.security.oauth.redirect_uri": "http://localhost:7474/oauth/callback"
         }
 
         logger.info(f"OAuth authentication configured for {self.config.oauth_provider}")
@@ -250,7 +221,7 @@ class AuthenticationManager:
         if not self.driver:
             self.driver = GraphDatabase.driver(
                 self.config.uri,
-                auth=basic_auth(self.config.username, self.config.password),
+                auth=basic_auth(self.config.username, self.config.password)
             )
 
         with self.driver.session() as session:
@@ -258,7 +229,7 @@ class AuthenticationManager:
             session.run(
                 "CALL dbms.security.createUser($username, $password, false)",
                 username=username,
-                password=password,
+                password=password
             )
 
             # Assign roles
@@ -267,7 +238,7 @@ class AuthenticationManager:
                     session.run(
                         "CALL dbms.security.addRoleToUser($role, $username)",
                         role=role,
-                        username=username,
+                        username=username
                     )
 
             logger.info(f"Created user: {username}")
@@ -297,12 +268,9 @@ class BackupManager:
 
         # Run neo4j-admin backup
         cmd = [
-            "neo4j-admin",
-            "backup",
-            "--database",
-            self.config.database,
-            "--to",
-            str(backup_path),
+            "neo4j-admin", "backup",
+            "--database", self.config.database,
+            "--to", str(backup_path)
         ]
 
         try:
@@ -329,13 +297,10 @@ class BackupManager:
 
         # Restore backup
         cmd = [
-            "neo4j-admin",
-            "restore",
-            "--from",
-            str(backup_path),
-            "--database",
-            self.config.database,
-            "--force",
+            "neo4j-admin", "restore",
+            "--from", str(backup_path),
+            "--database", self.config.database,
+            "--force"
         ]
 
         try:
@@ -354,12 +319,8 @@ class BackupManager:
         cutoff_date = datetime.now() - timedelta(days=self.config.backup_retention_days)
 
         for backup_dir in self.config.backup_dir.iterdir():
-            if (
-                backup_dir.is_dir()
-                and backup_dir.stat().st_mtime < cutoff_date.timestamp()
-            ):
+            if backup_dir.is_dir() and backup_dir.stat().st_mtime < cutoff_date.timestamp():
                 import shutil
-
                 shutil.rmtree(backup_dir)
                 logger.info(f"Removed old backup: {backup_dir}")
 
@@ -387,7 +348,7 @@ class ClusterManager:
         self.redis_client = redis.Redis(
             host=os.getenv("REDIS_HOST", "localhost"),
             port=int(os.getenv("REDIS_PORT", 6379)),
-            decode_responses=True,
+            decode_responses=True
         )
 
     def configure_cluster(self):
@@ -399,12 +360,10 @@ class ClusterManager:
             "dbms.mode": "CORE",
             "dbms.cluster.minimum_core_cluster_size_at_formation": "3",
             "dbms.cluster.minimum_core_cluster_size_at_runtime": "3",
-            "causal_clustering.initial_discovery_members": ",".join(
-                self.config.cluster_members
-            ),
+            "causal_clustering.initial_discovery_members": ",".join(self.config.cluster_members),
             "causal_clustering.discovery_advertised_address": f"{self._get_hostname()}:5000",
             "causal_clustering.transaction_advertised_address": f"{self._get_hostname()}:6000",
-            "causal_clustering.raft_advertised_address": f"{self._get_hostname()}:7000",
+            "causal_clustering.raft_advertised_address": f"{self._get_hostname()}:7000"
         }
 
         # Apply cluster configuration
@@ -431,7 +390,7 @@ class ClusterManager:
             try:
                 driver = GraphDatabase.driver(
                     f"bolt://{member}:7687",
-                    auth=basic_auth(self.config.username, self.config.password),
+                    auth=basic_auth(self.config.username, self.config.password)
                 )
 
                 with driver.session() as session:
@@ -439,7 +398,11 @@ class ClusterManager:
                     role = result.single()["role"]
 
                     # Store cluster state
-                    self.redis_client.hset("neo4j:cluster:status", member, role)
+                    self.redis_client.hset(
+                        "neo4j:cluster:status",
+                        member,
+                        role
+                    )
 
                     logger.info(f"Cluster member {member}: {role}")
 
@@ -454,7 +417,6 @@ class ClusterManager:
     def _get_hostname(self) -> str:
         """Get current hostname."""
         import socket
-
         return socket.gethostname()
 
 
@@ -480,16 +442,14 @@ class MonitoringManager:
         if not self.driver:
             self.driver = GraphDatabase.driver(
                 self.config.uri,
-                auth=basic_auth(self.config.username, self.config.password),
+                auth=basic_auth(self.config.username, self.config.password)
             )
 
         metrics = {}
 
         with self.driver.session() as session:
             # Database size
-            result = session.run(
-                "CALL dbms.queryJmx('org.neo4j:instance=kernel#0,name=Store file sizes') YIELD value"
-            )
+            result = session.run("CALL dbms.queryJmx('org.neo4j:instance=kernel#0,name=Store file sizes') YIELD value")
             store_sizes = result.single()["value"]
             metrics["database_size_bytes"] = sum(store_sizes.values())
 
@@ -502,21 +462,17 @@ class MonitoringManager:
             metrics["relationship_count"] = result.single()["count"]
 
             # Transaction metrics
-            result = session.run(
-                "CALL dbms.queryJmx('org.neo4j:instance=kernel#0,name=Transactions') YIELD value"
-            )
+            result = session.run("CALL dbms.queryJmx('org.neo4j:instance=kernel#0,name=Transactions') YIELD value")
             tx_metrics = result.single()["value"]
             metrics["transactions"] = tx_metrics
 
             # Query execution time
-            result = session.run(
-                """
+            result = session.run("""
                 CALL dbms.listQueries()
                 YIELD queryId, query, elapsedTimeMillis
                 RETURN avg(elapsedTimeMillis) as avg_time,
                        max(elapsedTimeMillis) as max_time
-            """
-            )
+            """)
             query_stats = result.single()
             metrics["avg_query_time_ms"] = query_stats["avg_time"] or 0
             metrics["max_query_time_ms"] = query_stats["max_time"] or 0
@@ -540,33 +496,21 @@ class MonitoringManager:
         prometheus_output = []
 
         # Format metrics for Prometheus
-        prometheus_output.append(
-            "# HELP neo4j_database_size_bytes Total database size in bytes"
-        )
+        prometheus_output.append("# HELP neo4j_database_size_bytes Total database size in bytes")
         prometheus_output.append("# TYPE neo4j_database_size_bytes gauge")
-        prometheus_output.append(
-            f"neo4j_database_size_bytes {metrics['database_size_bytes']}"
-        )
+        prometheus_output.append(f"neo4j_database_size_bytes {metrics['database_size_bytes']}")
 
         prometheus_output.append("# HELP neo4j_node_count Total number of nodes")
         prometheus_output.append("# TYPE neo4j_node_count gauge")
         prometheus_output.append(f"neo4j_node_count {metrics['node_count']}")
 
-        prometheus_output.append(
-            "# HELP neo4j_relationship_count Total number of relationships"
-        )
+        prometheus_output.append("# HELP neo4j_relationship_count Total number of relationships")
         prometheus_output.append("# TYPE neo4j_relationship_count gauge")
-        prometheus_output.append(
-            f"neo4j_relationship_count {metrics['relationship_count']}"
-        )
+        prometheus_output.append(f"neo4j_relationship_count {metrics['relationship_count']}")
 
-        prometheus_output.append(
-            "# HELP neo4j_avg_query_time_ms Average query execution time"
-        )
+        prometheus_output.append("# HELP neo4j_avg_query_time_ms Average query execution time")
         prometheus_output.append("# TYPE neo4j_avg_query_time_ms gauge")
-        prometheus_output.append(
-            f"neo4j_avg_query_time_ms {metrics['avg_query_time_ms']}"
-        )
+        prometheus_output.append(f"neo4j_avg_query_time_ms {metrics['avg_query_time_ms']}")
 
         return "\n".join(prometheus_output)
 
@@ -629,7 +573,7 @@ class Neo4jDeployment:
         try:
             driver = GraphDatabase.driver(
                 self.config.uri,
-                auth=basic_auth(self.config.username, self.config.password),
+                auth=basic_auth(self.config.username, self.config.password)
             )
 
             with driver.session() as session:

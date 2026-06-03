@@ -18,14 +18,14 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from brain_researcher.services.tools.tool_base import (
+    NeuroToolWrapper,
+    ToolResult,
+)
 from brain_researcher.services.agent.knowledge.evidence_models import (
     DecisionType,
     EvidenceBundle,
     EvidenceSourceType,
-)
-from brain_researcher.services.tools.tool_base import (
-    NeuroToolWrapper,
-    ToolResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,9 @@ class GatherEvidenceInput(BaseModel):
 class BuildKnowledgePlanInput(BaseModel):
     """Input schema for build_knowledge_plan tool."""
 
-    query: str = Field(description="The neuroimaging question to build a plan for")
+    query: str = Field(
+        description="The neuroimaging question to build a plan for"
+    )
     force_intent: Optional[str] = Field(
         default=None,
         description="Optional forced intent: 'explanation', 'dataset_selection', or 'pipeline_recommendation'",
@@ -264,9 +266,9 @@ class GatherEvidenceTool(NeuroToolWrapper):
                     "citations": bundle.format_citations(max_citations=10),
                 },
                 metadata={
-                    "sources_searched": (
-                        [s.value for s in source_types] if source_types else "all"
-                    ),
+                    "sources_searched": [s.value for s in source_types]
+                    if source_types
+                    else "all",
                 },
             )
 
@@ -460,9 +462,7 @@ class RecommendDatasetsTool(NeuroToolWrapper):
 
                     # Check modalities
                     if required_modalities:
-                        item_modalities = [
-                            m.lower() for m in meta.get("modalities", [])
-                        ]
+                        item_modalities = [m.lower() for m in meta.get("modalities", [])]
                         if not any(
                             rm.lower() in item_modalities for rm in required_modalities
                         ):
@@ -516,19 +516,15 @@ class RecommendDatasetsTool(NeuroToolWrapper):
                             "title": item.label,
                             "relevance_score": item.relevance_score,
                             "url": item.url,
-                            "tasks": (
-                                item.metadata.get("tasks", []) if item.metadata else []
-                            ),
-                            "modalities": (
-                                item.metadata.get("modalities", [])
-                                if item.metadata
-                                else []
-                            ),
-                            "n_subjects": (
-                                item.metadata.get("n_subjects")
-                                if item.metadata
-                                else None
-                            ),
+                            "tasks": item.metadata.get("tasks", [])
+                            if item.metadata
+                            else [],
+                            "modalities": item.metadata.get("modalities", [])
+                            if item.metadata
+                            else [],
+                            "n_subjects": item.metadata.get("n_subjects")
+                            if item.metadata
+                            else None,
                         }
                         for item in top_datasets
                     ],

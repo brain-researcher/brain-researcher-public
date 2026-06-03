@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 class ExportFormat(Enum):
     """Supported export formats."""
-
     JSON = "json"
     NDJSON = "ndjson"
     CSV = "csv"
@@ -30,7 +29,6 @@ class ExportFormat(Enum):
 @dataclass
 class ExportConfig:
     """Configuration for data export."""
-
     format: ExportFormat
     include_nodes: bool = True
     include_edges: bool = True
@@ -50,7 +48,9 @@ class DataExporter:
         self.db = db
 
     def export(
-        self, config: ExportConfig, output: Optional[IO] = None
+        self,
+        config: ExportConfig,
+        output: Optional[IO] = None
     ) -> Optional[str]:
         """
         Export data according to configuration.
@@ -77,39 +77,35 @@ class DataExporter:
         else:
             raise ValueError(f"Unsupported format: {config.format}")
 
-    def _export_json(self, config: ExportConfig, output: Optional[IO]) -> Optional[str]:
+    def _export_json(
+        self,
+        config: ExportConfig,
+        output: Optional[IO]
+    ) -> Optional[str]:
         """Export as JSON."""
         data = {
-            "metadata": (
-                {
-                    "exported_at": datetime.now().isoformat(),
-                    "format": "json",
-                    "version": "1.0",
-                }
-                if config.include_metadata
-                else {}
-            ),
+            "metadata": {
+                "exported_at": datetime.now().isoformat(),
+                "format": "json",
+                "version": "1.0"
+            } if config.include_metadata else {},
             "nodes": [],
-            "edges": [],
+            "edges": []
         }
 
         # Export nodes
         if config.include_nodes:
             node_count = 0
-            for node_type in config.node_types or [
-                "Concept",
-                "Task",
-                "Region",
-                "Dataset",
-                "Publication",
-            ]:
+            for node_type in config.node_types or ["Concept", "Task", "Region", "Dataset", "Publication"]:
                 for node_id, props in self.db.find_nodes(node_type, None):
                     if config.max_nodes and node_count >= config.max_nodes:
                         break
 
-                    data["nodes"].append(
-                        {"id": node_id, "type": node_type, "properties": props}
-                    )
+                    data["nodes"].append({
+                        "id": node_id,
+                        "type": node_type,
+                        "properties": props
+                    })
                     node_count += 1
 
         # Export edges
@@ -123,14 +119,12 @@ class DataExporter:
                 if config.edge_types and edge_type not in config.edge_types:
                     continue
 
-                data["edges"].append(
-                    {
-                        "source": source,
-                        "target": target,
-                        "type": edge_type,
-                        "properties": {k: v for k, v in props.items() if k != "type"},
-                    }
-                )
+                data["edges"].append({
+                    "source": source,
+                    "target": target,
+                    "type": edge_type,
+                    "properties": {k: v for k, v in props.items() if k != "type"}
+                })
                 edge_count += 1
 
         # Output
@@ -142,7 +136,9 @@ class DataExporter:
         return json_str
 
     def _export_ndjson(
-        self, config: ExportConfig, output: Optional[IO]
+        self,
+        config: ExportConfig,
+        output: Optional[IO]
     ) -> Optional[str]:
         """Export as NDJSON (newline-delimited JSON)."""
         lines = []
@@ -150,18 +146,16 @@ class DataExporter:
         # Export nodes
         if config.include_nodes:
             node_count = 0
-            for node_type in config.node_types or [
-                "Concept",
-                "Task",
-                "Region",
-                "Dataset",
-                "Publication",
-            ]:
+            for node_type in config.node_types or ["Concept", "Task", "Region", "Dataset", "Publication"]:
                 for node_id, props in self.db.find_nodes(node_type, None):
                     if config.max_nodes and node_count >= config.max_nodes:
                         break
 
-                    entity = {"type": node_type, "id": node_id, **props}
+                    entity = {
+                        "type": node_type,
+                        "id": node_id,
+                        **props
+                    }
 
                     line = json.dumps(entity, default=str)
                     if output:
@@ -185,7 +179,7 @@ class DataExporter:
                     "type": edge_type,
                     "source_id": source,
                     "target_id": target,
-                    **{k: v for k, v in props.items() if k != "type"},
+                    **{k: v for k, v in props.items() if k != "type"}
                 }
 
                 line = json.dumps(entity, default=str)
@@ -199,7 +193,11 @@ class DataExporter:
             return "\n".join(lines)
         return None
 
-    def _export_csv(self, config: ExportConfig, output: Optional[IO]) -> Optional[str]:
+    def _export_csv(
+        self,
+        config: ExportConfig,
+        output: Optional[IO]
+    ) -> Optional[str]:
         """Export as CSV (separate files for nodes and edges)."""
         csv_data = {}
 
@@ -209,25 +207,23 @@ class DataExporter:
             node_writer = None
             node_count = 0
 
-            for node_type in config.node_types or [
-                "Concept",
-                "Task",
-                "Region",
-                "Dataset",
-                "Publication",
-            ]:
+            for node_type in config.node_types or ["Concept", "Task", "Region", "Dataset", "Publication"]:
                 for node_id, props in self.db.find_nodes(node_type, None):
                     if config.max_nodes and node_count >= config.max_nodes:
                         break
 
-                    row = {"id": node_id, "type": node_type, **props}
+                    row = {
+                        "id": node_id,
+                        "type": node_type,
+                        **props
+                    }
 
                     if node_writer is None:
                         # Create writer with headers from first row
                         node_writer = csv.DictWriter(
                             node_buffer,
                             fieldnames=list(row.keys()),
-                            extrasaction="ignore",
+                            extrasaction='ignore'
                         )
                         node_writer.writeheader()
 
@@ -254,12 +250,14 @@ class DataExporter:
                     "source": source,
                     "target": target,
                     "type": edge_type,
-                    **{k: v for k, v in props.items() if k != "type"},
+                    **{k: v for k, v in props.items() if k != "type"}
                 }
 
                 if edge_writer is None:
                     edge_writer = csv.DictWriter(
-                        edge_buffer, fieldnames=list(row.keys()), extrasaction="ignore"
+                        edge_buffer,
+                        fieldnames=list(row.keys()),
+                        extrasaction='ignore'
                     )
                     edge_writer.writeheader()
 
@@ -281,7 +279,9 @@ class DataExporter:
         return json.dumps(csv_data)  # Return as JSON with separate CSV strings
 
     def _export_graphml(
-        self, config: ExportConfig, output: Optional[IO]
+        self,
+        config: ExportConfig,
+        output: Optional[IO]
     ) -> Optional[str]:
         """Export as GraphML XML format."""
         # Create root element
@@ -293,34 +293,25 @@ class DataExporter:
                 ("name", "string"),
                 ("type", "string"),
                 ("confidence", "double"),
-                ("source", "string"),
+                ("source", "string")
             ]:
-                key = ET.SubElement(
-                    graphml,
-                    "key",
-                    {
-                        "id": attr_name,
-                        "for": "node" if attr_name == "name" else "edge",
-                        "attr.name": attr_name,
-                        "attr.type": attr_type,
-                    },
-                )
+                key = ET.SubElement(graphml, "key", {
+                    "id": attr_name,
+                    "for": "node" if attr_name == "name" else "edge",
+                    "attr.name": attr_name,
+                    "attr.type": attr_type
+                })
 
         # Create graph element
-        graph = ET.SubElement(
-            graphml, "graph", {"id": "BR-KG", "edgedefault": "directed"}
-        )
+        graph = ET.SubElement(graphml, "graph", {
+            "id": "BR-KG",
+            "edgedefault": "directed"
+        })
 
         # Export nodes
         if config.include_nodes:
             node_count = 0
-            for node_type in config.node_types or [
-                "Concept",
-                "Task",
-                "Region",
-                "Dataset",
-                "Publication",
-            ]:
+            for node_type in config.node_types or ["Concept", "Task", "Region", "Dataset", "Publication"]:
                 for node_id, props in self.db.find_nodes(node_type, None):
                     if config.max_nodes and node_count >= config.max_nodes:
                         break
@@ -349,15 +340,11 @@ class DataExporter:
                 if config.edge_types and edge_type not in config.edge_types:
                     continue
 
-                edge = ET.SubElement(
-                    graph,
-                    "edge",
-                    {
-                        "id": f"{source}_{target}_{edge_count}",
-                        "source": source,
-                        "target": target,
-                    },
-                )
+                edge = ET.SubElement(graph, "edge", {
+                    "id": f"{source}_{target}_{edge_count}",
+                    "source": source,
+                    "target": target
+                })
 
                 # Add edge data
                 for key, value in props.items():
@@ -376,7 +363,9 @@ class DataExporter:
         return xml_str
 
     def _export_cypher(
-        self, config: ExportConfig, output: Optional[IO]
+        self,
+        config: ExportConfig,
+        output: Optional[IO]
     ) -> Optional[str]:
         """Export as Cypher queries for Neo4j import."""
         queries = []
@@ -391,13 +380,7 @@ class DataExporter:
             queries.append("// Create nodes")
             node_count = 0
 
-            for node_type in config.node_types or [
-                "Concept",
-                "Task",
-                "Region",
-                "Dataset",
-                "Publication",
-            ]:
+            for node_type in config.node_types or ["Concept", "Task", "Region", "Dataset", "Publication"]:
                 for node_id, props in self.db.find_nodes(node_type, None):
                     if config.max_nodes and node_count >= config.max_nodes:
                         break
@@ -454,13 +437,20 @@ class DataExporter:
             return None
         return cypher_str
 
-    def _export_gexf(self, config: ExportConfig, output: Optional[IO]) -> Optional[str]:
+    def _export_gexf(
+        self,
+        config: ExportConfig,
+        output: Optional[IO]
+    ) -> Optional[str]:
         """Export as GEXF format for Gephi."""
         # Similar to GraphML but using GEXF schema
         # This is a simplified version
         return self._export_graphml(config, output)  # Fallback to GraphML
 
-    def stream_export(self, config: ExportConfig) -> Generator[str, None, None]:
+    def stream_export(
+        self,
+        config: ExportConfig
+    ) -> Generator[str, None, None]:
         """
         Stream export data for large datasets.
 
@@ -470,22 +460,18 @@ class DataExporter:
         if config.format == ExportFormat.NDJSON:
             # Stream nodes
             if config.include_nodes:
-                for node_type in config.node_types or [
-                    "Concept",
-                    "Task",
-                    "Region",
-                    "Dataset",
-                    "Publication",
-                ]:
+                for node_type in config.node_types or ["Concept", "Task", "Region", "Dataset", "Publication"]:
                     for node_id, props in self.db.find_nodes(node_type, None):
-                        entity = {"type": node_type, "id": node_id, **props}
+                        entity = {
+                            "type": node_type,
+                            "id": node_id,
+                            **props
+                        }
                         yield json.dumps(entity, default=str) + "\n"
 
             # Stream edges
             if config.include_edges:
-                for source, target, props in self.db.find_relationships(
-                    None, None, None
-                ):
+                for source, target, props in self.db.find_relationships(None, None, None):
                     edge_type = props.get("type", "UNKNOWN")
                     if config.edge_types and edge_type not in config.edge_types:
                         continue
@@ -494,7 +480,7 @@ class DataExporter:
                         "type": edge_type,
                         "source_id": source,
                         "target_id": target,
-                        **{k: v for k, v in props.items() if k != "type"},
+                        **{k: v for k, v in props.items() if k != "type"}
                     }
                     yield json.dumps(entity, default=str) + "\n"
         else:
@@ -527,7 +513,7 @@ def create_export_endpoints(app):
                 edge_types=data.get("edge_types"),
                 max_nodes=data.get("max_nodes"),
                 max_edges=data.get("max_edges"),
-                stream=data.get("stream", False),
+                stream=data.get("stream", False)
             )
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
@@ -548,7 +534,7 @@ def create_export_endpoints(app):
                 ExportFormat.CSV: "text/csv",
                 ExportFormat.GRAPHML: "application/xml",
                 ExportFormat.CYPHER: "text/plain",
-                ExportFormat.GEXF: "application/xml",
+                ExportFormat.GEXF: "application/xml"
             }.get(config.format, "text/plain")
 
             return Response(generate(), mimetype=mimetype)
@@ -570,8 +556,8 @@ def create_export_endpoints(app):
                     ExportFormat.CSV: "Comma-separated values",
                     ExportFormat.GRAPHML: "Graph Markup Language (XML)",
                     ExportFormat.CYPHER: "Neo4j Cypher queries",
-                    ExportFormat.GEXF: "Graph Exchange XML Format (Gephi)",
-                }.get(f, ""),
+                    ExportFormat.GEXF: "Graph Exchange XML Format (Gephi)"
+                }.get(f, "")
             }
             for f in ExportFormat
         ]

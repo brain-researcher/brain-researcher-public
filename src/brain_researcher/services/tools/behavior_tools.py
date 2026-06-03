@@ -70,9 +70,7 @@ class BehaviorIngestTAPSTool(NeuroToolWrapper):
         return "behavior.ingest_taps"
 
     def get_tool_description(self) -> str:
-        return (
-            "Ingest TAPS/psyflow/PsychoPy outputs and normalize to BehaviorTrial rows"
-        )
+        return "Ingest TAPS/psyflow/PsychoPy outputs and normalize to BehaviorTrial rows"
 
     def get_args_schema(self):
         return IngestTAPSArgs
@@ -102,6 +100,7 @@ class BehaviorIngestTAPSTool(NeuroToolWrapper):
             return ToolResult(status="error", error=str(exc))
 
 
+
 class QCScanArgs(BaseModel):
     """Arguments for QC/outlier scan of normalized trials."""
 
@@ -121,18 +120,12 @@ class BehaviorQCScanTool(NeuroToolWrapper):
         return "behavior.qc_scan"
 
     def get_tool_description(self) -> str:
-        return (
-            "Apply default behavior outlier policy and emit QC report + marked trials"
-        )
+        return "Apply default behavior outlier policy and emit QC report + marked trials"
 
     def get_args_schema(self):
         return QCScanArgs
 
-    def _run(
-        self,
-        trials: list[dict[str, Any]],
-        policy_path: str = "configs/behavior_outlier_policy.yaml",
-    ) -> ToolResult:
+    def _run(self, trials: list[dict[str, Any]], policy_path: str = "configs/behavior_outlier_policy.yaml") -> ToolResult:
         try:
             policies = load_behavior_policies([policy_path])
             policy = policies[0] if policies else {}
@@ -188,16 +181,8 @@ class BehaviorQCScanTool(NeuroToolWrapper):
                         message=f"Accuracy {accuracy:.3f} < threshold {accuracy_min}",
                         severity="warn",
                         blocking=False,
-                        where=ViolationLocation(
-                            stage="preflight", path="behavior.accuracy"
-                        ),
-                        evidence=[
-                            EvidenceRef(
-                                type="metric",
-                                uri="behavior.accuracy",
-                                summary=str(accuracy),
-                            )
-                        ],
+                        where=ViolationLocation(stage="preflight", path="behavior.accuracy"),
+                        evidence=[EvidenceRef(type="metric", uri="behavior.accuracy", summary=str(accuracy))],
                         details={"accuracy": accuracy, "threshold": accuracy_min},
                     )
                 )
@@ -208,16 +193,8 @@ class BehaviorQCScanTool(NeuroToolWrapper):
                         message=f"Miss rate {miss_rate:.3f} > threshold {miss_rate_max}",
                         severity="warn",
                         blocking=False,
-                        where=ViolationLocation(
-                            stage="preflight", path="behavior.miss_rate"
-                        ),
-                        evidence=[
-                            EvidenceRef(
-                                type="metric",
-                                uri="behavior.miss_rate",
-                                summary=str(miss_rate),
-                            )
-                        ],
+                        where=ViolationLocation(stage="preflight", path="behavior.miss_rate"),
+                        evidence=[EvidenceRef(type="metric", uri="behavior.miss_rate", summary=str(miss_rate))],
                         details={"miss_rate": miss_rate, "threshold": miss_rate_max},
                     )
                 )
@@ -350,9 +327,7 @@ class BehaviorExportBIDSEventsTool(NeuroToolWrapper):
             sidecar_path: str | None = None
             sidecar_sha256: str | None = None
             if write_sidecar:
-                sidecar = self._build_sidecar(
-                    policy_id=policy_id, param_modulators=param_modulators
-                )
+                sidecar = self._build_sidecar(policy_id=policy_id, param_modulators=param_modulators)
                 if sidecar_template_path:
                     tmpl_path = Path(sidecar_template_path).expanduser()
                     if tmpl_path.exists():
@@ -381,9 +356,7 @@ class BehaviorExportBIDSEventsTool(NeuroToolWrapper):
                 if include_hash:
                     import hashlib
 
-                    sidecar_sha256 = hashlib.sha256(
-                        sidecar_file.read_bytes()
-                    ).hexdigest()
+                    sidecar_sha256 = hashlib.sha256(sidecar_file.read_bytes()).hexdigest()
 
             events_sha256: str | None = None
             if include_hash:
@@ -405,15 +378,11 @@ class BehaviorExportBIDSEventsTool(NeuroToolWrapper):
                         "name": target.name,
                         "path": str(target),
                         "type": "behavior_events",
-                        "checksum": (
-                            f"sha256:{events_sha256}" if events_sha256 else None
-                        ),
+                        "checksum": f"sha256:{events_sha256}" if events_sha256 else None,
                         "metadata": {
                             "policy_id": policy_id,
                             "sidecar": sidecar_path,
-                            "sidecar_sha256": (
-                                f"sha256:{sidecar_sha256}" if sidecar_sha256 else None
-                            ),
+                            "sidecar_sha256": f"sha256:{sidecar_sha256}" if sidecar_sha256 else None,
                         },
                     },
                 },
@@ -422,9 +391,7 @@ class BehaviorExportBIDSEventsTool(NeuroToolWrapper):
             return ToolResult(status="error", error=str(exc))
 
     @staticmethod
-    def _build_sidecar(
-        policy_id: str | None, param_modulators: list[dict[str, Any]] | None
-    ) -> dict[str, Any]:
+    def _build_sidecar(policy_id: str | None, param_modulators: list[dict[str, Any]] | None) -> dict[str, Any]:
         columns = {
             "onset": {"Description": "Event onset (s) relative to run start"},
             "duration": {"Description": "Event duration (s)"},
@@ -464,9 +431,7 @@ class BehaviorExportBIDSEventsTool(NeuroToolWrapper):
 class BehaviorResolveTaskSpecArgs(BaseModel):
     """Arguments for resolving paradigm defaults into a canonical task spec."""
 
-    paradigm: str = Field(
-        ..., description="Paradigm key (e.g. 'n_back', 'go_no_go', 'flanker')"
-    )
+    paradigm: str = Field(..., description="Paradigm key (e.g. 'n_back', 'go_no_go', 'flanker')")
     overrides: dict[str, Any] = Field(
         default_factory=dict, description="Deep-merge overrides for defaults"
     )
@@ -508,9 +473,7 @@ class BehaviorResolveTaskSpecTool(NeuroToolWrapper):
 
 
 class BehaviorValidateTaskSpecArgs(BaseModel):
-    spec: dict[str, Any] = Field(
-        ..., description="behavior-task-spec-v1 payload to validate"
-    )
+    spec: dict[str, Any] = Field(..., description="behavior-task-spec-v1 payload to validate")
 
 
 class BehaviorValidateTaskSpecTool(NeuroToolWrapper):
@@ -551,12 +514,9 @@ class BehaviorValidateTaskSpecTool(NeuroToolWrapper):
 
 class BehaviorGeneratePsyflowTaskArgs(BaseModel):
     spec: dict[str, Any] = Field(..., description="behavior-task-spec-v1 payload")
-    out_dir: str = Field(
-        ..., description="Output root; scaffold writes under <out>/planned/<paradigm>/"
-    )
+    out_dir: str = Field(..., description="Output root; scaffold writes under <out>/planned/<paradigm>/")
     review: dict[str, Any] = Field(
-        ...,
-        description="behavior-review-v1 payload (spec_digest must match and approved=True)",
+        ..., description="behavior-review-v1 payload (spec_digest must match and approved=True)"
     )
 
 
@@ -639,9 +599,7 @@ class BehaviorGeneratePsyflowTaskTool(NeuroToolWrapper):
 
 class BehaviorIngestPsyflowRunArgs(BaseModel):
     bundle: dict[str, Any] = Field(..., description="psyflow-task-bundle-v1 payload")
-    run_data_dir: str = Field(
-        ..., description="Directory under <out>/run/ containing psyflow run output"
-    )
+    run_data_dir: str = Field(..., description="Directory under <out>/run/ containing psyflow run output")
     out_dir: str = Field(..., description="Output root (same as generate step)")
 
 
@@ -652,9 +610,7 @@ class BehaviorIngestPsyflowRunTool(NeuroToolWrapper):
         return "behavior.ingest_psyflow_run"
 
     def get_tool_description(self) -> str:
-        return (
-            "Ingest a psyflow run into BehaviorTrial rows (enforces planned/run split)"
-        )
+        return "Ingest a psyflow run into BehaviorTrial rows (enforces planned/run split)"
 
     def get_args_schema(self):
         return BehaviorIngestPsyflowRunArgs

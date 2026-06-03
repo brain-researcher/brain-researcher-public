@@ -4,21 +4,21 @@ failover handling, and circuit breaker pattern implementation.
 """
 
 import asyncio
-import logging
 import os
-import random
-import statistics
+import logging
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Callable, Set
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+import random
+import statistics
 
 import httpx
 from pydantic import BaseModel, Field
 
 from .env import AGENT_URL, BR_KG_URL, WEB_UI_URL
-from .models import HealthResponse, ServiceHealth
+from .models import ServiceHealth, HealthResponse
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +27,8 @@ logger = logging.getLogger(__name__)
 # Models and Enums
 # ============================================================================
 
-
 class ServiceStatus(str, Enum):
     """Service status levels."""
-
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -40,15 +38,13 @@ class ServiceStatus(str, Enum):
 
 class CircuitState(str, Enum):
     """Circuit breaker states."""
-
-    CLOSED = "closed"  # Normal operation
-    OPEN = "open"  # Circuit is open, rejecting requests
+    CLOSED = "closed"      # Normal operation
+    OPEN = "open"          # Circuit is open, rejecting requests
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
 class ServiceType(str, Enum):
     """Types of services in the system."""
-
     AGENT = "agent"
     BR_KG = "br_kg"
     WEB_UI = "web_ui"
@@ -60,7 +56,6 @@ class ServiceType(str, Enum):
 
 class FailoverStrategy(str, Enum):
     """Failover strategies."""
-
     ROUND_ROBIN = "round_robin"
     WEIGHTED = "weighted"
     LEAST_CONNECTIONS = "least_connections"
@@ -70,7 +65,6 @@ class FailoverStrategy(str, Enum):
 
 class ServiceEndpoint(BaseModel):
     """Service endpoint configuration."""
-
     id: str
     name: str
     service_type: ServiceType
@@ -85,17 +79,15 @@ class ServiceEndpoint(BaseModel):
 
 class CircuitBreakerConfig(BaseModel):
     """Circuit breaker configuration."""
-
     failure_threshold: int = 5  # Failures needed to open circuit
     success_threshold: int = 3  # Successes needed to close circuit
-    timeout_seconds: int = 60  # How long circuit stays open
+    timeout_seconds: int = 60   # How long circuit stays open
     slow_call_threshold_ms: int = 5000  # Calls slower than this count as failures
     minimum_throughput: int = 10  # Minimum calls before circuit can open
 
 
 class LoadBalancingConfig(BaseModel):
     """Load balancing configuration."""
-
     strategy: FailoverStrategy = FailoverStrategy.ROUND_ROBIN
     health_check_interval_seconds: int = 30
     max_retries_per_request: int = 3
@@ -106,7 +98,6 @@ class LoadBalancingConfig(BaseModel):
 # ============================================================================
 # Circuit Breaker Implementation
 # ============================================================================
-
 
 class CircuitBreaker:
     """Circuit breaker for service calls with failure detection."""
@@ -135,19 +126,13 @@ class CircuitBreaker:
                 self.last_state_change = datetime.utcnow()
                 logger.info(f"Circuit breaker for {self.service_id} moved to HALF_OPEN")
             else:
-                raise CircuitBreakerOpenError(
-                    f"Circuit breaker is OPEN for {self.service_id}"
-                )
+                raise CircuitBreakerOpenError(f"Circuit breaker is OPEN for {self.service_id}")
 
         start_time = time.time()
 
         try:
             # Execute the function call
-            result = (
-                await func(*args, **kwargs)
-                if asyncio.iscoroutinefunction(func)
-                else func(*args, **kwargs)
-            )
+            result = await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
 
             # Record successful call
             call_duration_ms = (time.time() - start_time) * 1000
@@ -164,9 +149,7 @@ class CircuitBreaker:
     def _record_success(self, call_duration_ms: float):
         """Record a successful call."""
         call_time = datetime.utcnow()
-        self.call_history.append(
-            {"time": call_time, "success": True, "duration_ms": call_duration_ms}
-        )
+        self.call_history.append({"time": call_time, "success": True, "duration_ms": call_duration_ms})
 
         if self.state == CircuitState.HALF_OPEN:
             self.success_count += 1
@@ -179,9 +162,7 @@ class CircuitBreaker:
     def _record_failure(self, call_duration_ms: float):
         """Record a failed call."""
         call_time = datetime.utcnow()
-        self.call_history.append(
-            {"time": call_time, "success": False, "duration_ms": call_duration_ms}
-        )
+        self.call_history.append({"time": call_time, "success": False, "duration_ms": call_duration_ms})
 
         # Count slow calls as failures
         is_slow_call = call_duration_ms > self.config.slow_call_threshold_ms
@@ -193,9 +174,7 @@ class CircuitBreaker:
         if self._should_open_circuit():
             self._open_circuit()
 
-        logger.warning(
-            f"Call failed for {self.service_id} (failure count: {self.failure_count}, slow: {is_slow_call})"
-        )
+        logger.warning(f"Call failed for {self.service_id} (failure count: {self.failure_count}, slow: {is_slow_call})")
 
     def _should_open_circuit(self) -> bool:
         """Check if circuit should be opened."""
@@ -227,9 +206,7 @@ class CircuitBreaker:
         self.success_count = 0
         self.last_state_change = datetime.utcnow()
 
-        logger.warning(
-            f"Circuit breaker OPENED for {self.service_id} (failures: {self.failure_count})"
-        )
+        logger.warning(f"Circuit breaker OPENED for {self.service_id} (failures: {self.failure_count})")
 
     def _close_circuit(self):
         """Close the circuit breaker."""
@@ -255,32 +232,22 @@ class CircuitBreaker:
             "state": self.state.value,
             "failure_count": self.failure_count,
             "success_count": self.success_count,
-            "last_failure_time": (
-                self.last_failure_time.isoformat() if self.last_failure_time else None
-            ),
+            "last_failure_time": self.last_failure_time.isoformat() if self.last_failure_time else None,
             "last_state_change": self.last_state_change.isoformat(),
             "recent_calls": len(recent_calls),
-            "recent_success_rate": (
-                len(success_calls) / len(recent_calls) if recent_calls else 0
-            ),
-            "avg_response_time_ms": (
-                statistics.mean([call["duration_ms"] for call in recent_calls])
-                if recent_calls
-                else 0
-            ),
+            "recent_success_rate": len(success_calls) / len(recent_calls) if recent_calls else 0,
+            "avg_response_time_ms": statistics.mean([call["duration_ms"] for call in recent_calls]) if recent_calls else 0
         }
 
 
 class CircuitBreakerOpenError(Exception):
     """Exception raised when circuit breaker is open."""
-
     pass
 
 
 # ============================================================================
 # Service Discovery and Registry
 # ============================================================================
-
 
 class ServiceRegistry:
     """Service discovery and registry with health monitoring."""
@@ -303,7 +270,8 @@ class ServiceRegistry:
 
         # Remove any existing endpoint with same ID
         self.services[service_name] = [
-            ep for ep in self.services[service_name] if ep.id != endpoint.id
+            ep for ep in self.services[service_name]
+            if ep.id != endpoint.id
         ]
 
         # Add new endpoint
@@ -322,9 +290,7 @@ class ServiceRegistry:
     def unregister_service(self, endpoint_id: str):
         """Unregister a service endpoint."""
         for service_name, endpoints in self.services.items():
-            self.services[service_name] = [
-                ep for ep in endpoints if ep.id != endpoint_id
-            ]
+            self.services[service_name] = [ep for ep in endpoints if ep.id != endpoint_id]
 
         # Clean up circuit breaker
         if endpoint_id in self.circuit_breakers:
@@ -336,7 +302,7 @@ class ServiceRegistry:
         self,
         service_type: ServiceType,
         strategy: FailoverStrategy = FailoverStrategy.ROUND_ROBIN,
-        tags: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None
     ) -> Optional[ServiceEndpoint]:
         """Discover an available service endpoint."""
         service_name = service_type.value
@@ -348,7 +314,10 @@ class ServiceRegistry:
 
         # Filter by tags if provided
         if tags:
-            endpoints = [ep for ep in endpoints if any(tag in ep.tags for tag in tags)]
+            endpoints = [
+                ep for ep in endpoints
+                if any(tag in ep.tags for tag in tags)
+            ]
 
         # Filter out unhealthy endpoints
         healthy_endpoints = []
@@ -372,15 +341,13 @@ class ServiceRegistry:
             return random.choice(endpoints) if endpoints else None
 
         # Apply load balancing strategy
-        return self._apply_load_balancing_strategy(
-            service_name, healthy_endpoints, strategy
-        )
+        return self._apply_load_balancing_strategy(service_name, healthy_endpoints, strategy)
 
     def _apply_load_balancing_strategy(
         self,
         service_name: str,
         endpoints: List[ServiceEndpoint],
-        strategy: FailoverStrategy,
+        strategy: FailoverStrategy
     ) -> ServiceEndpoint:
         """Apply load balancing strategy to select endpoint."""
 
@@ -407,21 +374,19 @@ class ServiceRegistry:
             return endpoints[-1]  # Fallback
 
         elif strategy == FailoverStrategy.LEAST_CONNECTIONS:
-            connection_counts = self.load_balancing_state[service_name].get(
-                "connection_counts", {}
-            )
+            connection_counts = self.load_balancing_state[service_name].get("connection_counts", {})
             return min(endpoints, key=lambda ep: connection_counts.get(ep.id, 0))
 
         elif strategy == FailoverStrategy.FASTEST_RESPONSE:
             # Use circuit breaker stats to find fastest endpoint
             fastest_endpoint = None
-            fastest_time = float("inf")
+            fastest_time = float('inf')
 
             for endpoint in endpoints:
                 circuit_breaker = self.circuit_breakers.get(endpoint.id)
                 if circuit_breaker:
                     stats = circuit_breaker.get_stats()
-                    avg_time = stats.get("avg_response_time_ms", float("inf"))
+                    avg_time = stats.get("avg_response_time_ms", float('inf'))
                     if avg_time < fastest_time:
                         fastest_time = avg_time
                         fastest_endpoint = endpoint
@@ -464,7 +429,8 @@ class ServiceRegistry:
 
                 # Perform health checks concurrently
                 tasks = [
-                    self._check_endpoint_health(endpoint) for endpoint in all_endpoints
+                    self._check_endpoint_health(endpoint)
+                    for endpoint in all_endpoints
                 ]
 
                 if tasks:
@@ -495,10 +461,8 @@ class ServiceRegistry:
             self.service_health[endpoint.id] = ServiceHealth(
                 name=endpoint.name,
                 status="healthy",
-                latency_ms=int(
-                    circuit_breaker.get_stats().get("avg_response_time_ms", 0)
-                ),
-                last_check=datetime.utcnow(),
+                latency_ms=int(circuit_breaker.get_stats().get("avg_response_time_ms", 0)),
+                last_check=datetime.utcnow()
             )
 
         except CircuitBreakerOpenError:
@@ -507,7 +471,7 @@ class ServiceRegistry:
                 name=endpoint.name,
                 status="unavailable",
                 last_check=datetime.utcnow(),
-                error="Circuit breaker is open",
+                error="Circuit breaker is open"
             )
 
         except Exception as e:
@@ -516,25 +480,20 @@ class ServiceRegistry:
                 name=endpoint.name,
                 status="unhealthy",
                 last_check=datetime.utcnow(),
-                error=str(e),
+                error=str(e)
             )
 
-    def get_service_health(
-        self, service_type: Optional[ServiceType] = None
-    ) -> Dict[str, ServiceHealth]:
+    def get_service_health(self, service_type: Optional[ServiceType] = None) -> Dict[str, ServiceHealth]:
         """Get health status for all services or specific service type."""
         if service_type:
             service_name = service_type.value
             endpoints = self.services.get(service_name, [])
             return {
-                endpoint.id: self.service_health.get(
-                    endpoint.id,
-                    ServiceHealth(
-                        name=endpoint.name,
-                        status="unknown",
-                        last_check=datetime.utcnow(),
-                    ),
-                )
+                endpoint.id: self.service_health.get(endpoint.id, ServiceHealth(
+                    name=endpoint.name,
+                    status="unknown",
+                    last_check=datetime.utcnow()
+                ))
                 for endpoint in endpoints
             }
         else:
@@ -551,7 +510,6 @@ class ServiceRegistry:
 # ============================================================================
 # Service Coordinator
 # ============================================================================
-
 
 class ServiceCoordinator:
     """Main service coordination class with failover and circuit breaker integration."""
@@ -592,7 +550,7 @@ class ServiceCoordinator:
                 url=AGENT_URL,
                 weight=10,
                 priority=1,
-                tags=["primary", "llm", "agent"],
+                tags=["primary", "llm", "agent"]
             ),
             ServiceEndpoint(
                 id="br_kg_primary",
@@ -601,7 +559,7 @@ class ServiceCoordinator:
                 url=BR_KG_URL,
                 weight=10,
                 priority=1,
-                tags=["primary", "knowledge-graph", "database"],
+                tags=["primary", "knowledge-graph", "database"]
             ),
             ServiceEndpoint(
                 id="web_ui_primary",
@@ -610,36 +568,35 @@ class ServiceCoordinator:
                 url=web_ui_url,
                 weight=10,
                 priority=1,
-                tags=["primary", "frontend", "ui"],
-            ),
+                tags=["primary", "frontend", "ui"]
+            )
         ]
 
         for service in default_services:
             self.registry.register_service(service)
 
     async def make_request(
-        self, service_type: ServiceType, method: str, path: str, **kwargs
+        self,
+        service_type: ServiceType,
+        method: str,
+        path: str,
+        **kwargs
     ) -> Any:
         """Make a request to a service with failover and circuit breaker protection."""
 
         for attempt in range(self.config.max_retries_per_request):
             endpoint = self.registry.discover_service(
-                service_type, self.config.strategy
+                service_type,
+                self.config.strategy
             )
 
             if not endpoint:
-                raise ServiceUnavailableError(
-                    f"No available endpoints for {service_type.value}"
-                )
+                raise ServiceUnavailableError(f"No available endpoints for {service_type.value}")
 
             try:
                 # Track connection count for load balancing
-                connection_counts = self.registry.load_balancing_state[
-                    service_type.value
-                ].get("connection_counts", {})
-                connection_counts[endpoint.id] = (
-                    connection_counts.get(endpoint.id, 0) + 1
-                )
+                connection_counts = self.registry.load_balancing_state[service_type.value].get("connection_counts", {})
+                connection_counts[endpoint.id] = connection_counts.get(endpoint.id, 0) + 1
 
                 circuit_breaker = self.registry.circuit_breakers[endpoint.id]
 
@@ -672,9 +629,7 @@ class ServiceCoordinator:
                 return response
 
             except CircuitBreakerOpenError:
-                logger.warning(
-                    f"Circuit breaker open for {endpoint.id}, trying next endpoint"
-                )
+                logger.warning(f"Circuit breaker open for {endpoint.id}, trying next endpoint")
                 continue
 
             except Exception as e:
@@ -684,12 +639,8 @@ class ServiceCoordinator:
                 self._record_request_stats(endpoint.id, False, 0)
 
                 # Update connection count
-                connection_counts = self.registry.load_balancing_state[
-                    service_type.value
-                ].get("connection_counts", {})
-                connection_counts[endpoint.id] = max(
-                    0, connection_counts.get(endpoint.id, 1) - 1
-                )
+                connection_counts = self.registry.load_balancing_state[service_type.value].get("connection_counts", {})
+                connection_counts[endpoint.id] = max(0, connection_counts.get(endpoint.id, 1) - 1)
 
                 # Notify failover handlers
                 await self._notify_failover_handlers(service_type, endpoint, e)
@@ -700,23 +651,18 @@ class ServiceCoordinator:
 
         raise ServiceUnavailableError(f"All attempts failed for {service_type.value}")
 
-    def _record_request_stats(
-        self, endpoint_id: str, success: bool, duration_ms: float
-    ):
+    def _record_request_stats(self, endpoint_id: str, success: bool, duration_ms: float):
         """Record request statistics."""
-        self.request_stats[endpoint_id].append(
-            {
-                "timestamp": datetime.utcnow(),
-                "success": success,
-                "duration_ms": duration_ms,
-            }
-        )
+        self.request_stats[endpoint_id].append({
+            "timestamp": datetime.utcnow(),
+            "success": success,
+            "duration_ms": duration_ms
+        })
 
         # Keep only recent stats (last hour)
         cutoff_time = datetime.utcnow() - timedelta(hours=1)
         self.request_stats[endpoint_id] = [
-            stat
-            for stat in self.request_stats[endpoint_id]
+            stat for stat in self.request_stats[endpoint_id]
             if stat["timestamp"] > cutoff_time
         ]
 
@@ -724,7 +670,7 @@ class ServiceCoordinator:
         self,
         service_type: ServiceType,
         failed_endpoint: ServiceEndpoint,
-        error: Exception,
+        error: Exception
     ):
         """Notify registered failover handlers."""
         for handler in self.failover_handlers[service_type]:
@@ -736,7 +682,11 @@ class ServiceCoordinator:
             except Exception as e:
                 logger.error(f"Failover handler error: {str(e)}")
 
-    def register_failover_handler(self, service_type: ServiceType, handler: Callable):
+    def register_failover_handler(
+        self,
+        service_type: ServiceType,
+        handler: Callable
+    ):
         """Register a failover event handler."""
         self.failover_handlers[service_type].append(handler)
         logger.info(f"Registered failover handler for {service_type.value}")
@@ -749,16 +699,8 @@ class ServiceCoordinator:
         if not all_health:
             overall_status = "healthy"
         else:
-            unhealthy_count = len(
-                [
-                    h
-                    for h in all_health.values()
-                    if h.status in ["unhealthy", "unavailable"]
-                ]
-            )
-            degraded_count = len(
-                [h for h in all_health.values() if h.status == "degraded"]
-            )
+            unhealthy_count = len([h for h in all_health.values() if h.status in ["unhealthy", "unavailable"]])
+            degraded_count = len([h for h in all_health.values() if h.status == "degraded"])
             total_count = len(all_health)
 
             if unhealthy_count > total_count * 0.5:
@@ -769,7 +711,9 @@ class ServiceCoordinator:
                 overall_status = "healthy"
 
         return HealthResponse(
-            status=overall_status, services=all_health, timestamp=datetime.utcnow()
+            status=overall_status,
+            services=all_health,
+            timestamp=datetime.utcnow()
         )
 
     def get_service_stats(self) -> Dict[str, Any]:
@@ -782,14 +726,12 @@ class ServiceCoordinator:
             if stats:
                 success_count = len([s for s in stats if s["success"]])
                 total_count = len(stats)
-                avg_duration = statistics.mean(
-                    [s["duration_ms"] for s in stats if s["success"]]
-                )
+                avg_duration = statistics.mean([s["duration_ms"] for s in stats if s["success"]])
 
                 request_summary[endpoint_id] = {
                     "total_requests": total_count,
                     "success_rate": success_count / total_count * 100,
-                    "avg_response_time_ms": avg_duration,
+                    "avg_response_time_ms": avg_duration
                 }
 
         return {
@@ -799,13 +741,12 @@ class ServiceCoordinator:
                 service_type: len(endpoints)
                 for service_type, endpoints in self.registry.services.items()
             },
-            "load_balancing_strategy": self.config.strategy.value,
+            "load_balancing_strategy": self.config.strategy.value
         }
 
 
 class ServiceUnavailableError(Exception):
     """Exception raised when no services are available."""
-
     pass
 
 

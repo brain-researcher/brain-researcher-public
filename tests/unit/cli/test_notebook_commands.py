@@ -31,12 +31,14 @@ def test_agent_setup_prints_pairing_and_fallback_paths():
     assert "npx skills add marimo-team/marimo-pair" in result.stdout
     assert "uvx marimo@latest pair prompt" in result.stdout
     assert "Config -> Pair with an agent" in result.stdout
-    assert "docs/marimo/MARIMO_AGENT.md" in result.stdout
+    assert "docs/mcp.md" in result.stdout
+    assert "Operations guide" in result.stdout
+    assert "docs/OPERATIONS.md" in result.stdout
     assert "~/.codex/skills/marimo-pair" in result.stdout
     assert "marimo edit --watch" in result.stdout
     assert "br notebook check" in result.stdout
     assert "BR_MCP_SERVER_COMMAND=brain-researcher-mcp" in result.stdout
-    assert "BR_MCP_HTTP_URL=https://brain-researcher.com/mcp" in result.stdout
+    assert "BR_MCP_HTTP_URL=https://${PUBLIC_HOSTNAME}/mcp" in result.stdout
     assert 'BR_MCP_AUTH_HEADER="Bearer <token>"' in result.stdout
     assert "BR_MCP_TOKEN=<token>" in result.stdout
     assert "br.call()" in result.stdout

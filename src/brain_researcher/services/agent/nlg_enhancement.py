@@ -10,27 +10,19 @@ This module provides comprehensive natural language generation capabilities incl
 - Real-time explanation optimization
 """
 
-import asyncio
-import json
-import logging
-import re
+from typing import Dict, List, Optional, Any, Union, Tuple, Callable
 from dataclasses import dataclass, field
-from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+import logging
+import asyncio
+from datetime import datetime
+import json
+import re
 
+from .language_templates import LanguageTemplates, Language, ExplanationLevel, TemplateCategory
 from .explanation_generator import (
-    ExpertiseLevel,
-    ExplanationContext,
-    ExplanationGenerator,
-    ExplanationResult,
-    StructuredExplanation,
-)
-from .language_templates import (
-    ExplanationLevel,
-    Language,
-    LanguageTemplates,
-    TemplateCategory,
+    ExplanationGenerator, ExpertiseLevel, ExplanationContext,
+    StructuredExplanation, ExplanationResult
 )
 
 logger = logging.getLogger(__name__)
@@ -38,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 class ResponseType(Enum):
     """Types of responses the NLG engine can generate"""
-
     ANALYSIS_RESULT = "analysis_result"
     ERROR_MESSAGE = "error_message"
     PROGRESS_UPDATE = "progress_update"
@@ -51,7 +42,6 @@ class ResponseType(Enum):
 
 class AdaptationStrategy(Enum):
     """Strategies for adapting responses to users"""
-
     FIXED = "fixed"  # Always use same level
     PROGRESSIVE = "progressive"  # Gradually increase complexity
     ADAPTIVE = "adaptive"  # Adapt based on user feedback
@@ -61,7 +51,6 @@ class AdaptationStrategy(Enum):
 @dataclass
 class UserProfile:
     """User profile for adaptive NLG"""
-
     user_id: str
     expertise_level: ExpertiseLevel = ExpertiseLevel.INTERMEDIATE
     preferred_language: Language = Language.ENGLISH
@@ -80,16 +69,13 @@ class UserProfile:
     confusion_patterns: List[str] = field(default_factory=list)
 
     # Context preferences
-    domain_focus: List[str] = field(
-        default_factory=list
-    )  # ["cognitive", "clinical", "methods"]
+    domain_focus: List[str] = field(default_factory=list)  # ["cognitive", "clinical", "methods"]
     time_preferences: Optional[str] = None  # "brief", "standard", "comprehensive"
 
 
 @dataclass
 class ResponseContext:
     """Context for generating responses"""
-
     response_type: ResponseType
     user_profile: UserProfile
     session_context: Dict[str, Any] = field(default_factory=dict)
@@ -105,7 +91,6 @@ class ResponseContext:
 @dataclass
 class NLGResponse:
     """Complete NLG response with metadata"""
-
     primary_text: str
     alternative_texts: List[str] = field(default_factory=list)
     confidence_score: float = 0.0
@@ -133,13 +118,8 @@ class MultiLanguageTranslator:
     """Advanced multi-language translation with domain knowledge"""
 
     def __init__(self):
-        self.supported_languages = [
-            Language.ENGLISH,
-            Language.SPANISH,
-            Language.FRENCH,
-            Language.GERMAN,
-            Language.CHINESE,
-        ]
+        self.supported_languages = [Language.ENGLISH, Language.SPANISH, Language.FRENCH,
+                                   Language.GERMAN, Language.CHINESE]
         self.fallback_language = Language.ENGLISH
 
         # Domain-specific terminology
@@ -148,12 +128,8 @@ class MultiLanguageTranslator:
         # Translation models (in practice, would integrate with translation APIs)
         self.translation_models = {}
 
-    def translate(
-        self,
-        text: str,
-        target_language: Language,
-        preserve_technical_terms: bool = True,
-    ) -> str:
+    def translate(self, text: str, target_language: Language,
+                 preserve_technical_terms: bool = True) -> str:
         """Translate text while preserving domain-specific terminology"""
 
         if target_language == Language.ENGLISH:
@@ -183,44 +159,41 @@ class MultiLanguageTranslator:
                 "connectivity": "conectividad",
                 "preprocessing": "preprocesamiento",
                 "statistical significance": "significancia estadística",
-                "false discovery rate": "tasa de falsos descubrimientos",
+                "false discovery rate": "tasa de falsos descubrimientos"
             },
             Language.FRENCH: {
                 "activation": "activation",
                 "connectivity": "connectivité",
                 "preprocessing": "prétraitement",
                 "statistical significance": "significativité statistique",
-                "false discovery rate": "taux de fausses découvertes",
+                "false discovery rate": "taux de fausses découvertes"
             },
             Language.GERMAN: {
                 "activation": "Aktivierung",
                 "connectivity": "Konnektivität",
                 "preprocessing": "Vorverarbeitung",
                 "statistical significance": "statistische Signifikanz",
-                "false discovery rate": "falsche Entdeckungsrate",
+                "false discovery rate": "falsche Entdeckungsrate"
             },
             Language.CHINESE: {
                 "activation": "激活",
                 "connectivity": "连接",
                 "preprocessing": "预处理",
                 "statistical significance": "统计显著性",
-                "false discovery rate": "错误发现率",
-            },
+                "false discovery rate": "错误发现率"
+            }
         }
 
     def _extract_technical_terms(self, text: str) -> List[str]:
         """Extract technical terms that should be preserved"""
         # Pattern matching for common neuroimaging terms
         technical_patterns = [
-            r"\bp\s*[<>=]\s*\d+\.?\d*",  # p-values
-            r"\bt\s*=\s*\d+\.?\d*",  # t-statistics
-            r"\bFWE\b",
-            r"\bFDR\b",  # correction methods
-            r"\bGLM\b",
-            r"\bICA\b",  # analysis methods
-            r"\bBOLD\b",
-            r"\bfMRI\b",  # imaging terms
-            r"\b\w+\s*cortex\b",  # brain regions
+            r'\bp\s*[<>=]\s*\d+\.?\d*',  # p-values
+            r'\bt\s*=\s*\d+\.?\d*',      # t-statistics
+            r'\bFWE\b', r'\bFDR\b',      # correction methods
+            r'\bGLM\b', r'\bICA\b',      # analysis methods
+            r'\bBOLD\b', r'\bfMRI\b',    # imaging terms
+            r'\b\w+\s*cortex\b',         # brain regions
         ]
 
         terms = []
@@ -238,12 +211,9 @@ class MultiLanguageTranslator:
         # For now, return original text with language marker
         return f"[{target_language.value}] {text}"
 
-    def _restore_technical_terms(
-        self,
-        translated_text: str,
-        technical_terms: List[str],
-        target_language: Language,
-    ) -> str:
+    def _restore_technical_terms(self, translated_text: str,
+                                technical_terms: List[str],
+                                target_language: Language) -> str:
         """Restore technical terms in translated text"""
         # Simple placeholder - would need sophisticated term restoration
         for term in technical_terms:
@@ -276,9 +246,8 @@ class EnhancedNLGEngine:
         self.response_cache: Dict[str, NLGResponse] = {}
         self.cache_ttl = 3600  # 1 hour
 
-    async def generate_response(
-        self, content: Dict[str, Any], context: ResponseContext
-    ) -> NLGResponse:
+    async def generate_response(self, content: Dict[str, Any],
+                               context: ResponseContext) -> NLGResponse:
         """Generate comprehensive response with all enhancements"""
 
         # Check cache first
@@ -318,15 +287,12 @@ class EnhancedNLGEngine:
         self._cache_response(cache_key, optimized_response)
 
         # Update user profile based on response
-        await self._update_user_profile(
-            user_profile, optimized_response, adapted_context
-        )
+        await self._update_user_profile(user_profile, optimized_response, adapted_context)
 
         return optimized_response
 
-    async def _generate_base_response(
-        self, content: Dict[str, Any], context: ResponseContext
-    ) -> NLGResponse:
+    async def _generate_base_response(self, content: Dict[str, Any],
+                                     context: ResponseContext) -> NLGResponse:
         """Generate base response using templates and explanation generator"""
 
         # Create explanation context
@@ -335,7 +301,7 @@ class EnhancedNLGEngine:
             language=context.user_profile.preferred_language,
             preferred_level=context.user_profile.preferred_explanation_level,
             domain_knowledge=context.analysis_context,
-            time_constraints=context.user_profile.time_preferences,
+            time_constraints=context.user_profile.time_preferences
         )
 
         # Generate explanation
@@ -351,14 +317,11 @@ class EnhancedNLGEngine:
 
         else:
             # Use templates for other response types
-            template_category = self._map_response_type_to_template(
-                context.response_type
-            )
+            template_category = self._map_response_type_to_template(context.response_type)
             primary_text = self.templates.format_template(
-                template_category,
-                content,
+                template_category, content,
                 context.user_profile.preferred_language,
-                context.user_profile.preferred_explanation_level,
+                context.user_profile.preferred_explanation_level
             )
             structured = None
             citations = []
@@ -371,17 +334,14 @@ class EnhancedNLGEngine:
             explanation_level=context.user_profile.preferred_explanation_level,
             language=context.user_profile.preferred_language,
             structured_explanation=structured,
-            citations=citations,
+            citations=citations
         )
 
         return response
 
-    async def _apply_enhancements(
-        self,
-        base_response: NLGResponse,
-        content: Dict[str, Any],
-        context: ResponseContext,
-    ) -> NLGResponse:
+    async def _apply_enhancements(self, base_response: NLGResponse,
+                                 content: Dict[str, Any],
+                                 context: ResponseContext) -> NLGResponse:
         """Apply various enhancements to the base response"""
 
         enhanced_response = base_response
@@ -389,7 +349,8 @@ class EnhancedNLGEngine:
         # Multi-language translation if needed
         if context.user_profile.preferred_language != Language.ENGLISH:
             enhanced_response.primary_text = self.translator.translate(
-                enhanced_response.primary_text, context.user_profile.preferred_language
+                enhanced_response.primary_text,
+                context.user_profile.preferred_language
             )
 
         # Generate alternative explanations
@@ -423,12 +384,9 @@ class EnhancedNLGEngine:
 
         return enhanced_response
 
-    async def _generate_alternatives(
-        self,
-        base_response: NLGResponse,
-        content: Dict[str, Any],
-        context: ResponseContext,
-    ) -> List[str]:
+    async def _generate_alternatives(self, base_response: NLGResponse,
+                                   content: Dict[str, Any],
+                                   context: ResponseContext) -> List[str]:
         """Generate alternative explanations at different levels"""
 
         alternatives = []
@@ -442,7 +400,7 @@ class EnhancedNLGEngine:
                 user_expertise=context.user_profile.expertise_level,
                 language=context.user_profile.preferred_language,
                 preferred_level=level,
-                domain_knowledge=context.analysis_context,
+                domain_knowledge=context.analysis_context
             )
 
             if context.response_type == ResponseType.ANALYSIS_RESULT:
@@ -451,73 +409,57 @@ class EnhancedNLGEngine:
                 )
                 alternatives.append(alt_result.text)
             else:
-                template_category = self._map_response_type_to_template(
-                    context.response_type
-                )
+                template_category = self._map_response_type_to_template(context.response_type)
                 alt_text = self.templates.format_template(
-                    template_category,
-                    content,
-                    context.user_profile.preferred_language,
-                    level,
+                    template_category, content,
+                    context.user_profile.preferred_language, level
                 )
                 if alt_text:
                     alternatives.append(alt_text)
 
         return alternatives
 
-    def _generate_follow_up_questions(
-        self, content: Dict[str, Any], context: ResponseContext
-    ) -> List[str]:
+    def _generate_follow_up_questions(self, content: Dict[str, Any],
+                                     context: ResponseContext) -> List[str]:
         """Generate relevant follow-up questions"""
 
         questions = []
 
         if context.response_type == ResponseType.ANALYSIS_RESULT:
-            questions.extend(
-                [
-                    "Would you like me to explain the methodology in more detail?",
-                    "Are you interested in seeing visualizations of these results?",
-                    "Would you like to know about the clinical significance of these findings?",
-                ]
-            )
+            questions.extend([
+                "Would you like me to explain the methodology in more detail?",
+                "Are you interested in seeing visualizations of these results?",
+                "Would you like to know about the clinical significance of these findings?"
+            ])
         elif context.response_type == ResponseType.ERROR_MESSAGE:
-            questions.extend(
-                [
-                    "Would you like suggestions for fixing this issue?",
-                    "Do you need help understanding what went wrong?",
-                    "Should I recommend alternative approaches?",
-                ]
-            )
+            questions.extend([
+                "Would you like suggestions for fixing this issue?",
+                "Do you need help understanding what went wrong?",
+                "Should I recommend alternative approaches?"
+            ])
         elif context.response_type == ResponseType.PROGRESS_UPDATE:
-            questions.extend(
-                [
-                    "Would you like more details about the current processing step?",
-                    "Are you interested in estimated completion time?",
-                    "Do you want to see intermediate results?",
-                ]
-            )
+            questions.extend([
+                "Would you like more details about the current processing step?",
+                "Are you interested in estimated completion time?",
+                "Do you want to see intermediate results?"
+            ])
 
         # Add expertise-level appropriate questions
         if context.user_profile.expertise_level == ExpertiseLevel.EXPERT:
-            questions.extend(
-                [
-                    "Would you like to see the raw statistical output?",
-                    "Do you want to explore the parameter sensitivity?",
-                ]
-            )
+            questions.extend([
+                "Would you like to see the raw statistical output?",
+                "Do you want to explore the parameter sensitivity?"
+            ])
         elif context.user_profile.expertise_level == ExpertiseLevel.NOVICE:
-            questions.extend(
-                [
-                    "Would you like me to explain any technical terms?",
-                    "Do you need background information on this analysis type?",
-                ]
-            )
+            questions.extend([
+                "Would you like me to explain any technical terms?",
+                "Do you need background information on this analysis type?"
+            ])
 
         return questions[:3]  # Limit to 3 questions
 
-    def _generate_clarification_options(
-        self, content: Dict[str, Any], context: ResponseContext
-    ) -> List[str]:
+    def _generate_clarification_options(self, content: Dict[str, Any],
+                                       context: ResponseContext) -> List[str]:
         """Generate clarification options for ambiguous results"""
 
         options = []
@@ -537,19 +479,16 @@ class EnhancedNLGEngine:
                 options.append("Explain limitations due to small sample size")
 
         # General clarification options
-        options.extend(
-            [
-                "Simplify the explanation",
-                "Provide more technical detail",
-                "Focus on practical implications",
-            ]
-        )
+        options.extend([
+            "Simplify the explanation",
+            "Provide more technical detail",
+            "Focus on practical implications"
+        ])
 
         return options[:3]
 
-    def _generate_related_topics(
-        self, content: Dict[str, Any], context: ResponseContext
-    ) -> List[str]:
+    def _generate_related_topics(self, content: Dict[str, Any],
+                                context: ResponseContext) -> List[str]:
         """Generate related topics for further exploration"""
 
         topics = []
@@ -558,87 +497,70 @@ class EnhancedNLGEngine:
             method = content.get("method", "")
 
             if "GLM" in method:
-                topics.extend(
-                    [
-                        "Multiple comparison correction methods",
-                        "Effect size interpretation",
-                        "Power analysis for fMRI studies",
-                    ]
-                )
+                topics.extend([
+                    "Multiple comparison correction methods",
+                    "Effect size interpretation",
+                    "Power analysis for fMRI studies"
+                ])
             elif "connectivity" in method.lower():
-                topics.extend(
-                    [
-                        "Network analysis approaches",
-                        "Dynamic connectivity",
-                        "Graph theory metrics",
-                    ]
-                )
+                topics.extend([
+                    "Network analysis approaches",
+                    "Dynamic connectivity",
+                    "Graph theory metrics"
+                ])
 
         # Add domain-specific topics based on user profile
         if "cognitive" in context.user_profile.domain_focus:
-            topics.extend(
-                [
-                    "Cognitive task design",
-                    "Behavioral correlations",
-                    "Individual differences",
-                ]
-            )
+            topics.extend([
+                "Cognitive task design",
+                "Behavioral correlations",
+                "Individual differences"
+            ])
 
         if "clinical" in context.user_profile.domain_focus:
-            topics.extend(
-                [
-                    "Clinical applications",
-                    "Biomarker development",
-                    "Diagnostic accuracy",
-                ]
-            )
+            topics.extend([
+                "Clinical applications",
+                "Biomarker development",
+                "Diagnostic accuracy"
+            ])
 
         return topics[:4]
 
-    def _generate_visualization_descriptions(
-        self, content: Dict[str, Any], context: ResponseContext
-    ) -> List[Dict[str, Any]]:
+    def _generate_visualization_descriptions(self, content: Dict[str, Any],
+                                           context: ResponseContext) -> List[Dict[str, Any]]:
         """Generate descriptions for relevant visualizations"""
 
         visualizations = []
 
-        if (
-            context.response_type == ResponseType.ANALYSIS_RESULT
-            and context.user_profile.visual_descriptions
-        ):
+        if context.response_type == ResponseType.ANALYSIS_RESULT and \
+           context.user_profile.visual_descriptions:
 
             # Statistical map visualization
             if "significant_regions" in content:
-                visualizations.append(
-                    {
-                        "type": "statistical_map",
-                        "description": "Brain activation map showing significant clusters",
-                        "data_source": "statistical_results",
-                        "recommended": True,
-                    }
-                )
+                visualizations.append({
+                    "type": "statistical_map",
+                    "description": "Brain activation map showing significant clusters",
+                    "data_source": "statistical_results",
+                    "recommended": True
+                })
 
             # Connectivity visualization
             if "connectivity" in str(content.get("method", "")).lower():
-                visualizations.append(
-                    {
-                        "type": "connectivity_matrix",
-                        "description": "Network connectivity visualization",
-                        "data_source": "connectivity_matrix",
-                        "recommended": True,
-                    }
-                )
+                visualizations.append({
+                    "type": "connectivity_matrix",
+                    "description": "Network connectivity visualization",
+                    "data_source": "connectivity_matrix",
+                    "recommended": True
+                })
 
             # Time series plot
             if "time_series" in content:
-                visualizations.append(
-                    {
-                        "type": "time_series",
-                        "description": "Signal time course visualization",
-                        "data_source": "time_series_data",
-                        "recommended": False,
-                    }
-                )
+                visualizations.append({
+                    "type": "time_series",
+                    "description": "Signal time course visualization",
+                    "data_source": "time_series_data",
+                    "recommended": False
+                })
 
         return visualizations
 
@@ -648,27 +570,19 @@ class EnhancedNLGEngine:
         complexity_factors = []
 
         # Sentence length
-        sentences = text.split(".")
+        sentences = text.split('.')
         avg_sentence_length = sum(len(s.split()) for s in sentences) / len(sentences)
         complexity_factors.append(min(avg_sentence_length / 20, 1.0))
 
         # Technical term density
-        technical_terms = [
-            "statistical",
-            "significance",
-            "correlation",
-            "regression",
-            "activation",
-            "connectivity",
-            "preprocessing",
-            "threshold",
-        ]
+        technical_terms = ['statistical', 'significance', 'correlation', 'regression',
+                          'activation', 'connectivity', 'preprocessing', 'threshold']
         term_count = sum(1 for term in technical_terms if term.lower() in text.lower())
         term_density = term_count / len(text.split()) * 100
         complexity_factors.append(min(term_density / 5, 1.0))
 
         # Statistical notation
-        stat_notation = len(re.findall(r"[pt]\s*[<>=]\s*\d+\.?\d*", text))
+        stat_notation = len(re.findall(r'[pt]\s*[<>=]\s*\d+\.?\d*', text))
         complexity_factors.append(min(stat_notation / 3, 1.0))
 
         return sum(complexity_factors) / len(complexity_factors)
@@ -678,16 +592,14 @@ class EnhancedNLGEngine:
         word_count = len(text.split())
         return int((word_count / 200) * 60)  # 200 words per minute
 
-    def _map_response_type_to_template(
-        self, response_type: ResponseType
-    ) -> TemplateCategory:
+    def _map_response_type_to_template(self, response_type: ResponseType) -> TemplateCategory:
         """Map response type to template category"""
         mapping = {
             ResponseType.ANALYSIS_RESULT: TemplateCategory.ANALYSIS_COMPLETE,
             ResponseType.ERROR_MESSAGE: TemplateCategory.ERROR_OCCURRED,
             ResponseType.PROGRESS_UPDATE: TemplateCategory.PROGRESS_UPDATE,
             ResponseType.STATISTICAL_INTERPRETATION: TemplateCategory.STATISTICAL_RESULTS,
-            ResponseType.METHODOLOGY_EXPLANATION: TemplateCategory.METHODOLOGY,
+            ResponseType.METHODOLOGY_EXPLANATION: TemplateCategory.METHODOLOGY
         }
         return mapping.get(response_type, TemplateCategory.ANALYSIS_COMPLETE)
 
@@ -697,16 +609,15 @@ class EnhancedNLGEngine:
             self.user_profiles[user_id] = UserProfile(user_id=user_id)
         return self.user_profiles[user_id]
 
-    def _generate_cache_key(
-        self, content: Dict[str, Any], context: ResponseContext
-    ) -> str:
+    def _generate_cache_key(self, content: Dict[str, Any],
+                           context: ResponseContext) -> str:
         """Generate cache key for response"""
         key_components = [
             str(hash(json.dumps(content, sort_keys=True))),
             context.response_type.value,
             context.user_profile.preferred_language.value,
             context.user_profile.preferred_explanation_level.value,
-            str(context.current_complexity_level),
+            str(context.current_complexity_level)
         ]
         return "_".join(key_components)
 
@@ -723,9 +634,9 @@ class EnhancedNLGEngine:
         """Cache response"""
         self.response_cache[cache_key] = response
 
-    async def _update_user_profile(
-        self, profile: UserProfile, response: NLGResponse, context: ResponseContext
-    ) -> None:
+    async def _update_user_profile(self, profile: UserProfile,
+                                  response: NLGResponse,
+                                  context: ResponseContext) -> None:
         """Update user profile based on response and context"""
         # This would incorporate user feedback and interaction patterns
         # For now, just track successful explanations
@@ -739,9 +650,8 @@ class EnhancedNLGEngine:
 class AdaptationEngine:
     """Engine for adapting responses to user needs"""
 
-    async def adapt_context(
-        self, context: ResponseContext, profile: UserProfile
-    ) -> ResponseContext:
+    async def adapt_context(self, context: ResponseContext,
+                           profile: UserProfile) -> ResponseContext:
         """Adapt context based on user profile and interaction history"""
 
         adapted_context = context
@@ -758,9 +668,8 @@ class AdaptationEngine:
 
         return adapted_context
 
-    def _adapt_explanation_level(
-        self, context: ResponseContext, profile: UserProfile
-    ) -> ResponseContext:
+    def _adapt_explanation_level(self, context: ResponseContext,
+                                profile: UserProfile) -> ResponseContext:
         """Adapt explanation level based on user feedback"""
 
         # Simple adaptation based on feedback scores
@@ -769,26 +678,15 @@ class AdaptationEngine:
 
             if avg_feedback < 0.3:  # Low satisfaction
                 # Try simpler explanation
-                if (
-                    context.user_profile.preferred_explanation_level
-                    == ExplanationLevel.TECHNICAL
-                ):
-                    context.user_profile.preferred_explanation_level = (
-                        ExplanationLevel.STRUCTURED
-                    )
-                elif (
-                    context.user_profile.preferred_explanation_level
-                    == ExplanationLevel.STRUCTURED
-                ):
-                    context.user_profile.preferred_explanation_level = (
-                        ExplanationLevel.LAYMAN
-                    )
+                if context.user_profile.preferred_explanation_level == ExplanationLevel.TECHNICAL:
+                    context.user_profile.preferred_explanation_level = ExplanationLevel.STRUCTURED
+                elif context.user_profile.preferred_explanation_level == ExplanationLevel.STRUCTURED:
+                    context.user_profile.preferred_explanation_level = ExplanationLevel.LAYMAN
 
         return context
 
-    def _adapt_complexity(
-        self, context: ResponseContext, profile: UserProfile
-    ) -> ResponseContext:
+    def _adapt_complexity(self, context: ResponseContext,
+                         profile: UserProfile) -> ResponseContext:
         """Adapt complexity based on user engagement"""
 
         # Adjust complexity based on confusion patterns
@@ -797,9 +695,8 @@ class AdaptationEngine:
 
         return context
 
-    def _incorporate_domain_focus(
-        self, context: ResponseContext, profile: UserProfile
-    ) -> ResponseContext:
+    def _incorporate_domain_focus(self, context: ResponseContext,
+                                 profile: UserProfile) -> ResponseContext:
         """Incorporate user's domain focus into context"""
 
         if profile.domain_focus:
@@ -811,9 +708,8 @@ class AdaptationEngine:
 class ResponseOptimizer:
     """Optimizes responses for clarity and effectiveness"""
 
-    async def optimize(
-        self, response: NLGResponse, context: ResponseContext
-    ) -> NLGResponse:
+    async def optimize(self, response: NLGResponse,
+                      context: ResponseContext) -> NLGResponse:
         """Optimize response for the given context"""
 
         optimized = response
@@ -837,10 +733,10 @@ class ResponseOptimizer:
         text = response.primary_text
 
         # Remove unnecessary qualifiers
-        text = re.sub(r"\b(very|quite|rather|somewhat)\s+", "", text)
+        text = re.sub(r'\b(very|quite|rather|somewhat)\s+', '', text)
 
         # Shorten technical explanations
-        text = re.sub(r"\([^)]*\)", "", text)  # Remove parenthetical remarks
+        text = re.sub(r'\([^)]*\)', '', text)  # Remove parenthetical remarks
 
         response.primary_text = text
         return response
@@ -850,7 +746,7 @@ class ResponseOptimizer:
 
         # Add paragraph breaks for long text
         text = response.primary_text
-        sentences = text.split(". ")
+        sentences = text.split('. ')
 
         if len(sentences) > 4:
             # Group sentences into paragraphs
@@ -860,28 +756,25 @@ class ResponseOptimizer:
             for sentence in sentences:
                 current_paragraph.append(sentence)
                 if len(current_paragraph) >= 3:
-                    paragraphs.append(". ".join(current_paragraph) + ".")
+                    paragraphs.append('. '.join(current_paragraph) + '.')
                     current_paragraph = []
 
             if current_paragraph:
-                paragraphs.append(". ".join(current_paragraph))
+                paragraphs.append('. '.join(current_paragraph))
 
-            response.primary_text = "\n\n".join(paragraphs)
+            response.primary_text = '\n\n'.join(paragraphs)
 
         return response
 
-    def _optimize_for_engagement(
-        self, response: NLGResponse, context: ResponseContext
-    ) -> NLGResponse:
+    def _optimize_for_engagement(self, response: NLGResponse,
+                                context: ResponseContext) -> NLGResponse:
         """Optimize response for user engagement"""
 
         # Add engaging elements based on user profile
         if context.user_profile.expertise_level == ExpertiseLevel.NOVICE:
             # Add encouraging language
             if response.confidence_score > 0.8:
-                response.primary_text += (
-                    "\n\nThese are robust findings that you can be confident in!"
-                )
+                response.primary_text += "\n\nThese are robust findings that you can be confident in!"
 
         return response
 
@@ -889,7 +782,8 @@ class ResponseOptimizer:
 class ResponseQualityAssessor:
     """Assesses the quality of generated responses"""
 
-    async def assess(self, response: NLGResponse, context: ResponseContext) -> float:
+    async def assess(self, response: NLGResponse,
+                    context: ResponseContext) -> float:
         """Assess response quality and return score (0-1)"""
 
         quality_factors = []
@@ -912,9 +806,8 @@ class ResponseQualityAssessor:
 
         return sum(quality_factors) / len(quality_factors)
 
-    def _assess_completeness(
-        self, response: NLGResponse, context: ResponseContext
-    ) -> float:
+    def _assess_completeness(self, response: NLGResponse,
+                           context: ResponseContext) -> float:
         """Assess if response addresses all relevant aspects"""
 
         required_elements = []
@@ -943,48 +836,37 @@ class ResponseQualityAssessor:
         text = response.primary_text
 
         # Penalize overly long sentences
-        sentences = text.split(".")
+        sentences = text.split('.')
         avg_sentence_length = sum(len(s.split()) for s in sentences) / len(sentences)
         if avg_sentence_length > 25:
             clarity_score -= 0.2
 
         # Penalize excessive jargon for non-expert users
         if response.explanation_level == ExplanationLevel.LAYMAN:
-            technical_terms = [
-                "statistical",
-                "correlation",
-                "regression",
-                "significance",
-            ]
+            technical_terms = ['statistical', 'correlation', 'regression', 'significance']
             jargon_count = sum(1 for term in technical_terms if term in text.lower())
             if jargon_count > 3:
                 clarity_score -= 0.3
 
         return max(clarity_score, 0.0)
 
-    def _assess_appropriateness(
-        self, response: NLGResponse, context: ResponseContext
-    ) -> float:
+    def _assess_appropriateness(self, response: NLGResponse,
+                              context: ResponseContext) -> float:
         """Assess appropriateness for user and context"""
 
         # Check explanation level appropriateness
-        if (
-            context.user_profile.expertise_level == ExpertiseLevel.NOVICE
-            and response.explanation_level == ExplanationLevel.TECHNICAL
-        ):
+        if (context.user_profile.expertise_level == ExpertiseLevel.NOVICE and
+            response.explanation_level == ExplanationLevel.TECHNICAL):
             return 0.5
 
-        if (
-            context.user_profile.expertise_level == ExpertiseLevel.EXPERT
-            and response.explanation_level == ExplanationLevel.LAYMAN
-        ):
+        if (context.user_profile.expertise_level == ExpertiseLevel.EXPERT and
+            response.explanation_level == ExplanationLevel.LAYMAN):
             return 0.7
 
         return 1.0
 
-    def _assess_technical_accuracy(
-        self, response: NLGResponse, context: ResponseContext
-    ) -> float:
+    def _assess_technical_accuracy(self, response: NLGResponse,
+                                  context: ResponseContext) -> float:
         """Assess technical accuracy (simplified check)"""
 
         # Basic checks for common errors
@@ -995,7 +877,7 @@ class ResponseQualityAssessor:
             return 0.5
 
         # Check for impossible values
-        p_values = re.findall(r"p\s*[<>=]\s*(\d+\.?\d*)", text)
+        p_values = re.findall(r'p\s*[<>=]\s*(\d+\.?\d*)', text)
         for p_val in p_values:
             if float(p_val) > 1.0:
                 return 0.3
@@ -1020,11 +902,11 @@ if __name__ == "__main__":
                 "correction_method": "FWE",
                 "p_value": 0.0001,
                 "t_statistic": 5.67,
-                "effect_size": 0.8,
+                "effect_size": 0.8
             },
             "significant_regions": [
                 {"name": "visual cortex", "coordinates": [42, -58, 46]}
-            ],
+            ]
         }
 
         # Test user profiles
@@ -1032,18 +914,19 @@ if __name__ == "__main__":
             UserProfile(
                 user_id="expert_user",
                 expertise_level=ExpertiseLevel.EXPERT,
-                preferred_explanation_level=ExplanationLevel.TECHNICAL,
+                preferred_explanation_level=ExplanationLevel.TECHNICAL
             ),
             UserProfile(
                 user_id="novice_user",
                 expertise_level=ExpertiseLevel.NOVICE,
-                preferred_explanation_level=ExplanationLevel.LAYMAN,
-            ),
+                preferred_explanation_level=ExplanationLevel.LAYMAN
+            )
         ]
 
         for profile in user_profiles:
             context = ResponseContext(
-                response_type=ResponseType.ANALYSIS_RESULT, user_profile=profile
+                response_type=ResponseType.ANALYSIS_RESULT,
+                user_profile=profile
             )
 
             print(f"\n{'='*60}")
@@ -1063,9 +946,7 @@ if __name__ == "__main__":
                     print(f"  - {q}")
 
             if response.alternative_texts:
-                print(
-                    f"\nAlternative Explanations: {len(response.alternative_texts)} available"
-                )
+                print(f"\nAlternative Explanations: {len(response.alternative_texts)} available")
 
     # Run test
     asyncio.run(test_nlg_engine())
