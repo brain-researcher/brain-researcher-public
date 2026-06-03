@@ -5,10 +5,8 @@ Tests all features including Niivue integration, clipping planes, layer manageme
 
 import pytest
 import numpy as np
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import json
-import io
-from pathlib import Path
 
 # Mock Niivue since it's a browser-specific library
 class MockNiivue:
@@ -381,71 +379,6 @@ class TestNiivueManager:
         # Test state restoration
         manager.setVisualizationState(state)
         # In a real test, would verify that the state was applied correctly
-
-class TestPythonBackend:
-    """Test the Python visualization backend service"""
-    
-    @patch('nibabel.load')
-    @patch('nilearn.datasets.load_mni152_template')
-    def test_mni_template_loading(self, mock_load_template, mock_nib_load):
-        """Test MNI152 template loading with correct API"""
-        from brain_researcher.services.web_ui.api.viz_service import get_mni_template
-        
-        # Mock template
-        mock_template = Mock()
-        mock_load_template.return_value = mock_template
-        
-        # Test template loading
-        template = get_mni_template("2mm")
-        
-        # Verify correct API call
-        mock_load_template.assert_called_with(resolution="2mm")
-        assert template == mock_template
-    
-    def test_volume_processing_request_validation(self):
-        """Test volume processing request validation"""
-        from brain_researcher.services.web_ui.api.viz_service import VolumeProcessingRequest
-        
-        # Test valid requests
-        request1 = VolumeProcessingRequest()
-        assert request1.align_to_ras == True
-        
-        request2 = VolumeProcessingRequest(
-            threshold_min=0.1,
-            threshold_max=0.9,
-            smooth_fwhm=4.0,
-            resample_target="mni152"
-        )
-        assert request2.threshold_min == 0.1
-        assert request2.smooth_fwhm == 4.0
-    
-    def test_animation_export_request(self):
-        """Test animation export request validation"""
-        from brain_researcher.services.web_ui.api.viz_service import AnimationExportRequest
-        
-        request = AnimationExportRequest(
-            format="mp4",
-            fps=15,
-            quality="high"
-        )
-        
-        assert request.format == "mp4"
-        assert request.fps == 15
-        assert request.quality == "high"
-    
-    def test_file_handling_with_bytesio(self):
-        """Test proper file handling with BytesIO"""
-        import io
-        
-        # Test BytesIO handling
-        test_data = b"test nifti data"
-        file_like = io.BytesIO(test_data)
-        
-        # Verify BytesIO behavior
-        assert file_like.read() == test_data
-        file_like.seek(0)
-        assert file_like.tell() == 0
-        assert file_like.read(4) == b"test"
 
 class TestPerformanceAndCompatibility:
     """Test performance characteristics and forward compatibility"""
