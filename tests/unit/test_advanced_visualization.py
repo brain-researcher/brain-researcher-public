@@ -3,12 +3,12 @@ Comprehensive tests for UI-031: Advanced Visualization Controls
 Tests all features including Niivue integration, clipping planes, layer management, and animation
 """
 
-import pytest
-import numpy as np
-from unittest.mock import Mock, patch, MagicMock
-import json
 import io
-from pathlib import Path
+import json
+from unittest.mock import Mock, patch
+
+import numpy as np
+import pytest
 
 
 # Mock Niivue since it's a browser-specific library
@@ -29,7 +29,7 @@ class MockNiivue:
         pass
 
     async def loadVolumes(self, volumes):
-        for i, vol in enumerate(volumes):
+        for _i, vol in enumerate(volumes):
             mock_vol = Mock()
             mock_vol.url = vol["url"]
             mock_vol.opacity = 1.0
@@ -173,7 +173,7 @@ class TestClippingPlaneControls:
             "right": {"depth": 0.5, "azimuth": 180, "elevation": 0},
         }
 
-        for preset_name, values in presets.items():
+        for _preset_name, values in presets.items():
             assert 0 <= values["depth"] <= 1
             assert 0 <= values["azimuth"] <= 360
             assert 0 <= values["elevation"] <= 360
@@ -270,7 +270,11 @@ class TestLayerManager:
 
         # Move layer 0 up (should do nothing as it's already at top)
         def move_layer(layers, layer_id, direction):
-            current_index = next(i for i, l in enumerate(layers) if l["id"] == layer_id)
+            current_index = next(
+                i
+                for i, candidate_layer in enumerate(layers)
+                if candidate_layer["id"] == layer_id
+            )
             if direction == "up" and current_index > 0:
                 layers[current_index], layers[current_index - 1] = (
                     layers[current_index - 1],
@@ -298,7 +302,11 @@ class TestLayerManager:
 
         # Test volume ID lookup
         def get_volume_id(layer_id):
-            layer = next(l for l in layers if l["id"] == layer_id)
+            layer = next(
+                candidate_layer
+                for candidate_layer in layers
+                if candidate_layer["id"] == layer_id
+            )
             return layer.get("volumeId")
 
         assert get_volume_id("layer_0") == 0
@@ -311,7 +319,6 @@ class TestAnimationTimeline:
 
     def test_timeline_calculation(self):
         """Test timeline calculations and formatting"""
-        max_frames = 100
         frame_rate = 10
 
         def format_time(frame):
@@ -440,7 +447,7 @@ class TestPythonBackend:
 
         # Test valid requests
         request1 = VolumeProcessingRequest()
-        assert request1.align_to_ras == True
+        assert request1.align_to_ras
 
         request2 = VolumeProcessingRequest(
             threshold_min=0.1,
@@ -465,7 +472,6 @@ class TestPythonBackend:
 
     def test_file_handling_with_bytesio(self):
         """Test proper file handling with BytesIO"""
-        import io
 
         # Test BytesIO handling
         test_data = b"test nifti data"
@@ -527,8 +533,8 @@ class TestPerformanceAndCompatibility:
         def should_cache_volume(size_mb):
             return size_mb <= cache_config["max_volume_size_mb"]
 
-        assert should_cache_volume(30) == True
-        assert should_cache_volume(60) == False
+        assert should_cache_volume(30)
+        assert not should_cache_volume(60)
 
     def test_websocket_state_sync(self):
         """Test state synchronization for UI-033 collaboration"""
