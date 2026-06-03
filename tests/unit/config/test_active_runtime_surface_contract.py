@@ -228,8 +228,7 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
     "infrastructure/autoscaling/autoscaler.py": ("'name': 'api-gateway'",),
 }
 
-LEGACY_REQUIRED_SUBSTRINGS = {
-}
+LEGACY_REQUIRED_SUBSTRINGS = {}
 
 
 def test_active_runtime_surfaces_use_current_local_topology() -> None:
