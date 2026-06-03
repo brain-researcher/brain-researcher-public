@@ -76,6 +76,7 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
         "'name': 'agent'",
         "'name': 'web-ui'",
     ),
+    "apps/web-ui/api/viz_service.py": ('allow_origins=["http://localhost:3000"]',),
     "Dockerfile": (
         "uvicorn brain_researcher.services.agent.asgi:app",
         "FROM base AS br-kg",
@@ -218,6 +219,7 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         "use_backend api_gateway_backend if is_api",
         "server api-gw-1 api-gateway:8080",
     ),
+    "apps/web-ui/api/viz_service.py": ("http://localhost:8050",),
     "apps/web-ui/src/lib/server/downstream.ts": (
         "BR_DEV_ORCH_COMPAT",
         "NEXT_PUBLIC_DEV_ORCH_COMPAT",
